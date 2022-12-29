@@ -32,6 +32,8 @@ import requests
 from arcgis.gis._impl._dataclasses._contentds import (
     ItemTypeEnum,
     ItemProperties,
+)
+from arcgis.gis._impl import (
     MetadataFormatEnum,
     CreateServiceParameter,
     ViewLayerDefParameter,
@@ -7642,11 +7644,7 @@ class ContentManager(object):
                 )
             return
         elif isinstance(df, pd.DataFrame) and "location_type" not in kwargs:
-            # CSV WORKFLOW for publishing a Table
-            service_name = kwargs.pop("service_name", None)
-            if service_name is None:
-                service_name = "a" + uuid4().hex[:7]
-            title = kwargs.pop("title", uuid4().hex)
+            # Table Workflow
             tags = kwargs.pop("tags", "CSV")
 
             # Step 1: Add the csv as an item
@@ -7666,7 +7664,7 @@ class ContentManager(object):
             )
 
             # Step 2: Analyze the data
-            res = self._gis.content.analyze(item=csv_item)
+            res = self._gis.content.analyze(item=csv_item, file_type="csv")
 
             # Step 3: Publish the CSV as a Table
             # publish the csv using the params from analyze
@@ -7674,9 +7672,32 @@ class ContentManager(object):
             publish_parameters["name"] = service_name
             # This makes it a hosted table
             publish_parameters["locationType"] = None
-            published_item = csv_item.publish(publish_parameters)
-            return published_item
-        elif isinstance(df, pd.DataFrame) and "location_type" in kwargs:
+
+            # publish as new layer
+            new_item = csv_item.publish(publish_parameters)
+
+            if overwrite or append:
+                # Get properties from the newly created feature layer
+                new_tbl = new_item.tables[0]
+                publish_parameters = new_tbl.properties
+                if overwrite:
+                    _perform_overwrite(fl_index, flc, flc_manager, publish_parameters)
+                elif append:
+                    fl_index = _perform_append(flc_manager, publish_parameters)
+
+                _add_item_dependency(
+                    "csv", fl_index, csv_item, fs_item, new_item, self._gis
+                )
+
+                # Table layer was added to existing feature service so can delete the item
+                new_item.delete()
+                return self._gis.content.get(fs_id)
+
+            return new_item
+
+        elif (isinstance(df, pd.DataFrame) and "location_type" in kwargs) or (
+            isinstance(df, pd.DataFrame) and address_fields
+        ):
             if kwargs.get("geocode_url", None):
                 geocode_url = kwargs.get("geocode_url")
             else:
