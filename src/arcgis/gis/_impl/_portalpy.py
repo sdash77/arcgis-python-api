@@ -2027,7 +2027,7 @@ class Portal(object):
         # Execute the search and get back the results
         count = 0
         resp = self._groups_page(
-            q, 1, min(max_groups, 100), sort_field, sort_order, categories
+            q, 1, min(max_groups, 100), sort_field, sort_order, categories, filter
         )
         results = resp.get("results")
         count += int(resp["num"])
