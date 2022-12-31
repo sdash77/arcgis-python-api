@@ -4,6 +4,15 @@ import copy
 import shutil
 import tempfile
 from arcgis._impl.common._clone import CloneNode, _deep_get, _ItemDefinition
+from arcgis._impl.common._clone import (
+    _search_org_for_existing_item,
+    _share_item_with_groups,
+)
+
+try:
+    import ujson as json
+except ImportError:
+    import json
 
 
 class _WebExperience(_ItemDefinition):
@@ -24,7 +33,9 @@ class _WebExperience(_ItemDefinition):
         owner=None,
         **kwargs,
     ):
-        super().__init__(target, clone_mapping, search_existing)
+        super().__init__(
+            target, clone_mapping, search_existing, portal_item=portal_item
+        )
         self.info = info
         self._preserve_item_id = kwargs.pop("preserve_item_id", False)
         self._data = data
@@ -51,6 +62,9 @@ class _WebExperience(_ItemDefinition):
         self.owner = owner
         self.item_extent = item_extent
         self.created_items = []
+        self.resources = kwargs.pop("resources", None)
+        self._clone_mapping = clone_mapping
+        self.clone_mapping = self._clone_mapping
 
     def _add_new_item(self, item_properties, data=None):
         """Add the new item to the portal"""

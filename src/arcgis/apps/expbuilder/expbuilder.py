@@ -49,6 +49,7 @@ class WebExperience(object):
             self._resources = self._item.resources.list()
             self._expdict = self._item.resources.get("config/config.json")
             self._draft = self._item.resources.get("config/config.json")
+            self._gis = self._item._gis
         elif (
             item and isinstance(item, arcgis.gis.Item) and item.type != "Web Experience"
         ):
@@ -139,7 +140,9 @@ class WebExperience(object):
             if access:
                 item_properties["access"] = access
             item_properties["typeKeywords"] = keywords
-            self._item.update(item_properties=item_properties, data=self._expdict)
+            return self._item.update(
+                item_properties=item_properties, data=self._expdict
+            )
             # self.publish(item_properties = item_properties, data = self._expdict)
         else:
             item_properties["typeKeywords"] = keywords
@@ -198,6 +201,20 @@ class WebExperience(object):
         return resp
 
     # ----------------------------------------------------------------------
+    def duplicate(
+        self,
+        title: Optional[str] = None,
+        tags: Optional[str] = None,
+        include_private: Optional[bool] = None,
+    ):
+        return self._item.copy_item(
+            title=title,
+            tags=tags,
+            include_resources=True,
+            include_private=include_private,
+        )
+
+    # ----------------------------------------------------------------------
     def publish(self):
 
         draft = self._item.resources.get("config/config.json")
@@ -234,3 +251,52 @@ class WebExperience(object):
                 )
         except:
             return self._item.url
+
+    # ----------------------------------------------------------------------
+    def clone(self, target, owner, **kwargs):
+        """
+        Clone experience to a target GIS
+        """
+
+        def _clone_dict(data_dict, source, target, owner, **kwargs):
+            """
+            Helper function to clone items and update appropriate dict
+            """
+            new_dict = data_dict
+            new_dict["attributes"]["portalUrl"] = target.url
+            for k, v in new_dict["dataSources"].items():
+                v["portalUrl"] = target.url
+                item = source.content.get(v["itemId"])
+                clone_result = target.content.clone_items([item], owner=owner, **kwargs)
+                if clone_result:
+                    v["itemId"] = clone_result[0].itemid
+                else:
+                    targ_item = target.content.search(item.title)[0]
+                    v["itemId"] = targ_item.itemid
+
+            return new_dict
+
+        exp_clone = target.content.clone_items([self._item], owner=owner, **kwargs)
+        if exp_clone:
+            new_dict = _clone_dict(self._expdict, self._gis, target, owner, **kwargs)
+            target_exp = WebExperience(exp_clone[0])
+            target_exp._expdict = new_dict
+            target_exp._item.resources.update(
+                folder_name="config", file_name="config.json", text=target_exp._expdict
+            )
+            keywords = target_exp._item.typeKeywords
+            for word in keywords:
+                if "status" in word:
+                    if "Published" in word or "Changed" in word:
+                        new_data = _clone_dict(
+                            self._item.get_data(), self._gis, target, owner, **kwargs
+                        )
+                        target_exp._item.update(item_properties={}, data=new_data)
+                    else:
+                        target_exp._item.update(
+                            item_properties={}, data={"__not_publish": True}
+                        )
+                    break
+            return target_exp._item
+        else:
+            return False
