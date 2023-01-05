@@ -140,6 +140,15 @@ class WebExperience(object):
             if access:
                 item_properties["access"] = access
             item_properties["typeKeywords"] = keywords
+            if self._gis._is_agol:
+                url = "https://experience.arcgis.com/experience/" + self._item.itemid
+            else:
+                url = (
+                    self._gis.url
+                    + "/apps/experiencebuilder/experience/?id="
+                    + self._item.itemid
+                )
+            item_properties["url"] = url
             return self._item.update(
                 item_properties=item_properties, data=self._expdict
             )
@@ -207,12 +216,18 @@ class WebExperience(object):
         tags: Optional[str] = None,
         include_private: Optional[bool] = None,
     ):
-        return self._item.copy_item(
+        new_item = self._item.copy_item(
             title=title,
             tags=tags,
             include_resources=True,
             include_private=include_private,
         )
+        if new_item:
+            new_exp = WebExperience(new_item)
+            new_exp._draft = self._draft
+            return new_exp
+        else:
+            return False
 
     # ----------------------------------------------------------------------
     def publish(self):
@@ -221,7 +236,7 @@ class WebExperience(object):
         self._item.update(data=draft)
 
     # ----------------------------------------------------------------------
-    def show(self, width: Optional[int] = None, height: Optional[int] = None):
+    def show(self, width: Optional[int] = 800, height: Optional[int] = 500):
         """
         Show a preview of the experience. The default is a width of 700 and height of 300.
 
@@ -237,18 +252,27 @@ class WebExperience(object):
             An Iframe display of the story map if possible, else the item url is returned to be
             clicked on.
         """
-        try:
-            if self._item:
-                width = 700 if width is None else width
-                height = 350 if height is None else height
-                from IPython.display import IFrame
+        import threading
+        import time
 
-                return IFrame(
-                    src=self._item.url,
-                    width=width,
-                    height=height,
-                    params="title=" + self._item.title,
-                )
+        def thread_delete(item):
+            time.sleep(3)
+            item.delete()
+
+        try:
+            dummy_exp = self.duplicate()
+            dummy_exp.save(publish=True)
+            from IPython.display import IFrame
+
+            frame = IFrame(
+                src=dummy_exp._item.url,
+                width=width,
+                height=height,
+            )
+            delete = threading.Thread(target=thread_delete, args=([dummy_exp._item]))
+            delete.start()
+            return frame
+
         except:
             return self._item.url
 
