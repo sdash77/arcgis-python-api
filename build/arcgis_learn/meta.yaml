@@ -117,4 +117,3 @@ about:
   home: https://developers.arcgis.com/python
   license: Esri Master License Agreement (MLA)
   summary: A Metapackage to simplify installation of the required deep learning dependecies for ArcGIS Python API.
-

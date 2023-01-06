@@ -25,7 +25,6 @@ try:
     from arcgis.learn._utils.common import _get_emd_path
     from arcgis.learn._utils.utils import arcpy_localization_helper
     import pickle
-    import shap
     from sklearn.preprocessing import normalize
 
     HAS_FASTAI = True
@@ -506,6 +505,7 @@ class AutoML(object):
         return save_model_path
 
     def _save_explainer(self, path):
+        import shap
         if self._model._get_ml_task() == "regression":
             explainer = shap.KernelExplainer(
                 self._shap_predict, shap.sample(self._data._ml_data[0], 500)
