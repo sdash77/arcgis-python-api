@@ -180,6 +180,9 @@ class PSETAE(ArcGISModel):
         chip_size = emd["ImageHeight"]
         kwargs = emd.get("Kwargs", {})
 
+        if "backbone" in kwargs.keys():
+            kwargs.pop("backbone")
+
         if data is None:
             data = _EmptyData(
                 path=emd_path.parent, loss_func=None, c=2, chip_size=chip_size
