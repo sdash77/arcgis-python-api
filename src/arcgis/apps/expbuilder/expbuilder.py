@@ -7,6 +7,7 @@ from arcgis.auth.tools import LazyLoader
 import re
 import copy
 import json
+from ._ref import templates
 
 arcgis = LazyLoader("arcgis")
 json = LazyLoader("json")
@@ -108,6 +109,7 @@ class WebExperience(object):
         self._item.resources.add(
             folder_name="config", file_name="config.json", text=temp_dict
         )
+        self._resources = self._item.resources.list()
         self._expdict = temp_dict
         self._draft = temp_dict
 
@@ -133,6 +135,7 @@ class WebExperience(object):
         self._item.resources.update(
             folder_name="config", file_name="config.json", text=self._expdict
         )
+        self._resources = self._item.resources.list()
         if publish:
             for i in range(len(keywords)):
                 if "status" in keywords[i]:
@@ -238,7 +241,7 @@ class WebExperience(object):
     # ----------------------------------------------------------------------
     def show(self, width: Optional[int] = 800, height: Optional[int] = 500):
         """
-        Show a preview of the experience. The default is a width of 700 and height of 300.
+        Show a preview of the experience. The default is a width of 800 and height of 500.
 
         ===============     ====================================================================
         **Argument**        **Description**
@@ -249,7 +252,7 @@ class WebExperience(object):
         ===============     ====================================================================
 
         :return:
-            An Iframe display of the story map if possible, else the item url is returned to be
+            An IFrame display of the story map if possible, else the item url is returned to be
             clicked on.
         """
         import threading
@@ -261,6 +264,7 @@ class WebExperience(object):
 
         try:
             dummy_exp = self.duplicate()
+            dummy_exp._item.share(everyone=True)
             dummy_exp.save(publish=True)
             from IPython.display import IFrame
 
@@ -279,7 +283,7 @@ class WebExperience(object):
     # ----------------------------------------------------------------------
     def clone(self, target, owner, **kwargs):
         """
-        Clone experience to a target GIS
+        Clones the experience to a target GIS. User must specify
         """
 
         def _clone_dict(data_dict, source, target, owner, **kwargs):
