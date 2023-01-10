@@ -121,7 +121,8 @@ class AutoML(object):
     ):
         try:
             import platform
-            if platform.system() == 'Linux':
+
+            if platform.system() == "Linux":
                 message = """
                         Please enable tensorflow by setting the required environment variable 'ARCGIS_ENABLE_TF_BACKEND' to '1' before importing arcgis
                         \n for example the following code block needs to be executed before importing arcgis
@@ -514,6 +515,7 @@ class AutoML(object):
 
     def _save_explainer(self, path):
         import shap
+
         if self._model._get_ml_task() == "regression":
             explainer = shap.KernelExplainer(
                 self._shap_predict, shap.sample(self._data._ml_data[0], 500)
