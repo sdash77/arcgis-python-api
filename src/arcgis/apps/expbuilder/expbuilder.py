@@ -16,6 +16,32 @@ time = LazyLoader("time")
 
 class WebExperience(object):
 
+    """
+    A Web Experience is web-based application that provides viewers with an interactive
+    interface to maps, data, feature layers, and other components of the creator's design.
+    Though these experiences are normally constructed via a GUI found on ArcGIS Online or
+    Enterprise, this class provides users a host of supplemental options to manage experiences,
+    in addition to basic creation of experiences.
+
+    ===============     ====================================================================
+    **Argument**        **Description**
+    ---------------     --------------------------------------------------------------------
+    item                Optional String or Item. The string for an item id or an item of type
+                        'Web Experience'. If no item is passed, a new experience is created
+                        and saved to your active portal.
+    ---------------     --------------------------------------------------------------------
+    gis                 Optional instance of :class:`~arcgis.gis.GIS`. If none provided the active gis is used.
+    ---------------     --------------------------------------------------------------------
+    template            Optional string. If a new experience is being created, the template
+                        used to construct the layout. If necessary and none provided, template
+                        will default to `blank fullscreen`.
+    ---------------     --------------------------------------------------------------------
+    name                Optional string. If a new experience is being created, the name of the
+                        item. Otherwise, will default to "Experience via Python" followed by a
+                        random number.
+    ===============     ====================================================================
+    """
+
     _properties = None
     _gis = None
     _itemid = None
@@ -61,6 +87,13 @@ class WebExperience(object):
 
     # -----------------------------------------------------------------------------------
     def _create_new_experience(self, template="blank fullscreen", name=None):
+
+        """
+        If no experience is specified when creating a WebExperience, this helper function
+        creates a new experience and saves it as an item to the active GIS. Users can specify
+        a template from the experience builder to create their template, in addition to a custom
+        item name (done as arguments in the initial creation of the WebExperience).
+        """
 
         # retrieve template for experience
         if template is None:
@@ -121,6 +154,35 @@ class WebExperience(object):
         access: str = None,
         publish: bool = False,
     ):
+        """
+        This method will save your Web Experience to your active GIS. The experience will be saved
+        with unpublished changes unless the `publish` parameter is set to True.
+
+        The title only needs to be specified if a change is wanted, otherwise the existing title
+        is used.
+
+        ===============     ====================================================================
+        **Argument**        **Description**
+        ---------------     --------------------------------------------------------------------
+        title               Optional string. The new title of the WebExperience, if desired.
+        ---------------     --------------------------------------------------------------------
+        tags                Optional string. Updated tags for the WebExperience, if desired.
+        ---------------     --------------------------------------------------------------------
+        access              Optional string. The sharing setting of the WebExperience. If none
+                            is specified, the current access is kept. This is used when the
+                            `publish` parameter is set to True.
+
+                            Values: `private` | `org` | `public`
+        ---------------     --------------------------------------------------------------------
+        publish             Optional boolean. If True, the experience is saved and also
+                            published. Default is False, meaning the experience is saved with
+                            unpublished changes.
+        ===============     ====================================================================
+
+
+        :return: A boolean indicating the success of the operation.
+        """
+
         keywords = self._item.typeKeywords
         for i in range(len(keywords)):
             if keywords[i] == "status: Published":
@@ -162,19 +224,61 @@ class WebExperience(object):
 
     # ----------------------------------------------------------------------
     def reset_save(self):
+        """
+        Resets any changes that the user has made to the last saved state. Note that
+        this only applies to changes made through a Python API object, and not the GUI.
+
+        :return: A boolean indicating the success of the operation.
+        """
+
         self._draft = self._expdict
         return self._item.resources.update(
             folder_name="config", file_name="config.json", text=self._expdict
         )
 
     # ----------------------------------------------------------------------
-    def preview_changes(self):
-        return self._item.resources.update(
-            folder_name="config", file_name="config.json", text=self._draft
-        )
+    def view(self, width: Optional[int] = 800, height: Optional[int] = 500):
+        """
+        Shows the currently published experience, if possible. Default width is 800 and default
+        height is 500.
+
+        ===============     ====================================================================
+        **Argument**        **Description**
+        ---------------     --------------------------------------------------------------------
+        width               Optional integer. The desired width to show the preview.
+        ---------------     --------------------------------------------------------------------
+        height              Optional integer. The desired height to show the preview.
+        ===============     ====================================================================
+
+        :return:
+            An IFrame display of the story map if possible, else the item url is returned to be
+            clicked on. If the item is unpublished, the function returns False.
+        """
+        keywords = self._item.typeKeywords
+        if "status: Published" in keywords:
+
+            from IPython.display import IFrame
+
+            try:
+                frame = IFrame(
+                    src=self._item.url,
+                    width=width,
+                    height=height,
+                )
+                return frame
+            except:
+                return self._item.url
+        else:
+            return False
 
     # ----------------------------------------------------------------------
     def delete_experience(self):
+        """
+        Deletes the experience and its associated item from the portal.
+
+        :return:
+            A boolean indicating the success of the operation.
+        """
         item = self._gis.content.get(self._itemid)
         return item.delete()
 
@@ -219,6 +323,27 @@ class WebExperience(object):
         tags: Optional[str] = None,
         include_private: Optional[bool] = None,
     ):
+        """
+        Creates a copy of the experience within the active GIS. Returns a new
+        WebExperience object that retains the unsaved changes from the original.
+
+        ===============     ====================================================================
+        **Argument**        **Description**
+        ---------------     --------------------------------------------------------------------
+        title               Optional string. The name of the new experience. If left blank, the
+                            new item copies the name of the original.
+        ---------------     --------------------------------------------------------------------
+        tags                Optional string. The desired tags for the new item, separated by
+                            commas.
+        ---------------     --------------------------------------------------------------------
+        include_private     Optional boolean. If True, the private resources of the original
+                            item will be included in the new item.
+        ===============     ====================================================================
+
+        :return:
+            The newly created WebExperience object.
+
+        """
         new_item = self._item.copy_item(
             title=title,
             tags=tags,
@@ -233,15 +358,37 @@ class WebExperience(object):
             return False
 
     # ----------------------------------------------------------------------
-    def publish(self):
+    def publish(self, access: str = None):
+        """
+        Publishes the currently saved version of the experience. Leaves unsaved changes intact,
+        but doesn't publish them. Also allows user to set access level of published experience.
 
-        draft = self._item.resources.get("config/config.json")
-        self._item.update(data=draft)
+        :return:
+            A boolean indicating the success of the operation.
+        """
+        keywords = self._item.typeKeywords
+        item_properties = {}
+        for i in range(len(keywords)):
+            if "status" in keywords[i]:
+                keywords[i] = "status: Published"
+        if access:
+            item_properties["access"] = access
+        item_properties["typeKeywords"] = keywords
+        if self._gis._is_agol:
+            url = "https://experience.arcgis.com/experience/" + self._item.itemid
+        else:
+            url = (
+                self._gis.url
+                + "/apps/experiencebuilder/experience/?id="
+                + self._item.itemid
+            )
+        item_properties["url"] = url
+        return self._item.update(item_properties=item_properties, data=self._expdict)
 
     # ----------------------------------------------------------------------
-    def show(self, width: Optional[int] = 800, height: Optional[int] = 500):
+    def preview(self, width: Optional[int] = 800, height: Optional[int] = 500):
         """
-        Show a preview of the experience. The default is a width of 800 and height of 500.
+        Show a preview of the current experience draft. The default is a width of 800 and height of 500.
 
         ===============     ====================================================================
         **Argument**        **Description**
@@ -283,7 +430,26 @@ class WebExperience(object):
     # ----------------------------------------------------------------------
     def clone(self, target, owner, **kwargs):
         """
-        Clones the experience to a target GIS. User must specify
+        Clones the experience and all of it's data sources to a target GIS. User must
+        have admin privileges on the original item's GIS, and provide an authenticated
+        instance of a target GIS. Users must also specify the name of an account on the
+        target GIS to own the items. Also accepts arguments for :class:`~arcgis.gis.Item.clone_items()`
+
+        ===============     ====================================================================
+        **Argument**        **Description**
+        ---------------     --------------------------------------------------------------------
+        target              Required GIS. An authenticated instance of the GIS that the user
+                            wishes to clone the experience to.
+        ---------------     --------------------------------------------------------------------
+        owner               Required string. The username of the account that will be the owner
+                            of the experience and its data source items in the target GIS.
+        ---------------     --------------------------------------------------------------------
+        **kwargs            Optional additional arguments. See ``Item.clone_items()`` for the full
+                            list.
+        ===============     ====================================================================
+
+        :return:
+            The item corresponding to the cloned experience in the target GIS.
         """
 
         def _clone_dict(data_dict, source, target, owner, **kwargs):
