@@ -1,0 +1,136 @@
+import sys
+
+sys.path.insert(0, r"YOUR PATH HERE")
+import unittest
+from arcgis.gis import GIS, Item
+from arcgis.apps.expbuilder import WebExperience
+from arcgis.apps.expbuilder._ref import templates
+
+profiles = ["your_online_profile", "your_enterprise_profile"]
+
+
+class TestExperience(unittest.TestCase):
+    """Test Basic WebExperience Methods"""
+
+    def test_new_experience(self):
+        """Make a new experience, reset save, save, publish, delete"""
+        for profile in profiles:
+            # establish gis connection
+            gis = GIS(profile=profile, verify_cert=False)
+            exp = WebExperience()
+
+            # assert some properties
+            with self.subTest(msg=profile + " properties"):
+                assert exp._gis
+                assert exp._item
+                assert exp._itemid
+                assert exp._expdict["template"] == "blankfullscreen"
+                assert exp._draft["template"] == "blankfullscreen"
+                assert isinstance(exp._resources, list)
+
+            # test reset save
+            with self.subTest(msg=profile + " reset save"):
+                exp._draft = templates["foldable"]
+                assert exp.reset_save()
+                assert exp._draft == exp._expdict
+                assert exp._draft["template"] == "blankfullscreen"
+
+            # test save
+            with self.subTest(msg=profile + " save"):
+                exp._draft = templates["foldable"]
+                assert exp.save(title="pikachu", tags="ash, misty, brock")
+                assert exp._expdict["template"] == "foldable"
+                assert exp._item.title == "pikachu"
+                assert exp._item.tags == ["ash", "misty", "brock"]
+
+            # test publish
+            with self.subTest(msg=profile + " publish"):
+                assert exp._item.get_data() == {}
+                assert exp.publish(access="org")
+                assert exp._item.get_data()["template"] == "foldable"
+                # assert exp._item.access == "org"
+
+            # test delete
+            with self.subTest(msg=profile + " delete"):
+                exp_id = exp._itemid
+                assert gis.content.get(exp_id)
+                assert exp.delete_experience()
+                assert not gis.content.get(exp_id)
+
+    def test_duplicate_clone(self):
+        """Assert existing experiences are able to be duplicated and cloned"""
+        # get our online and enterprise experiences and assert they're as expected
+        online = GIS(profile=profiles[0], verify_cert=False)
+        ent = GIS(profile=profiles[1], verify_cert=False)
+        online_exp = WebExperience(item="43391102644f4067b05a7aaca5f7a89d", gis=online)
+        ent_exp = WebExperience(item="a8a9f5d8008d4a0b8f91befc3563e684", gis=ent)
+        assert online_exp
+        assert ent_exp
+
+        # test duplicating
+        for exp in [online_exp, ent_exp]:
+            with self.subTest(msg="duplicate " + exp._gis.url):
+                exp2 = exp.duplicate(
+                    title="rhyperior", tags=["jesse", "james", "meowth"]
+                )
+                assert exp2
+                assert exp2._item.title == "rhyperior"
+                # assert exp2._item.tags == ["jesse", "james", "meowth"]
+                assert exp2._expdict == exp._expdict
+                assert exp2._draft == exp._draft
+                assert exp2._item.get_data() == exp._item.get_data()
+                assert exp2.delete_experience()
+
+        # test cloning from online to enterprise
+        # admin privileges needed for this
+        with self.subTest(msg="Clone from online to ent"):
+            to_ent = online_exp.clone(target=ent, owner=ent.users.me.username)
+            assert to_ent
+            assert to_ent.title == "rhydon"
+            assert (
+                to_ent.get_data()["template"] == online_exp._item.get_data()["template"]
+            )
+            assert (
+                WebExperience(to_ent)._expdict["template"]
+                == online_exp._expdict["template"]
+            )
+            assert WebExperience(to_ent).delete_experience()
+
+        # test cloning from enterprise to online
+        # admin privileges needed for this
+        with self.subTest(msg="Clone from ent to online"):
+            to_onl = ent_exp.clone(target=online, owner=online.users.me.username)
+            assert to_onl
+            assert to_onl.title == "rhyhorn"
+            assert to_onl.get_data()["template"] == ent_exp._item.get_data()["template"]
+            assert (
+                WebExperience(to_onl)._expdict["template"]
+                == ent_exp._expdict["template"]
+            )
+            assert WebExperience(to_onl).delete_experience()
+
+    def test_views(self):
+        """Assert an IFrame is returned for the previewing methods"""
+        from IPython.display import IFrame
+
+        for profile in profiles:
+            gis = GIS(profile=profile, verify_cert=False)
+            exp = WebExperience()
+            assert exp
+
+            # test preview method
+            with self.subTest(msg=profile + " preview"):
+                preview = exp.preview()
+                assert isinstance(preview, IFrame)
+
+            # test view method
+            with self.subTest(msg=profile + " view"):
+                assert exp.publish()
+                view = exp.view()
+                assert isinstance(view, IFrame)
+
+            assert exp.delete_experience()
+
+
+if __name__ == "__main__":
+    unittest.main()

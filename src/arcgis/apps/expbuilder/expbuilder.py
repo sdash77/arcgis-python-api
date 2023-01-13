@@ -320,7 +320,7 @@ class WebExperience(object):
     def duplicate(
         self,
         title: Optional[str] = None,
-        tags: Optional[str] = None,
+        tags: Optional[Union[list[str], str]] = None,
         include_private: Optional[bool] = None,
     ):
         """
