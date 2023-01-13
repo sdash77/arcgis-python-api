@@ -8,7 +8,6 @@ import datetime
 from datetime import date
 import tempfile
 from contextlib import contextmanager
-import six
 import logging
 import decimal
 import functools
@@ -311,9 +310,9 @@ def _to_utf8(data):
         return [_to_utf8(element) for element in data]
     elif isinstance(data, str):
         return data
-    elif isinstance(data, six.text_type):
+    elif isinstance(data, str):
         return data.encode("utf-8")
-    elif isinstance(data, (float, six.integer_types)):
+    elif isinstance(data, (float, int)):
         return data
     else:
         return data

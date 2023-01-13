@@ -15,7 +15,6 @@ requirements:
   - cachetools
   - ujson >=3
   - setuptools
-  - six
   - notebook
   - jupyter_client <=6.1.12
   - ipywidgets >=7
@@ -44,7 +43,6 @@ requirements:
   run:
   - python
   - pillow
-  - six
   - cachetools
   - notebook
   - jupyter_client <=6.1.12

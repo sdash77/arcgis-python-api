@@ -15,14 +15,11 @@ from __future__ import print_function
 #
 
 import sys
-import six
+
+# import six
 from arcgis.gis import *
 
-if six.PY3:
-    from urllib.error import URLError
-else:
-    # unresolved reference in Python3, but should work if running from Python2
-    from urllib2 import URLError
+from urllib.error import URLError
 
 
 def copy_user(target, user, password, role_name):

@@ -173,10 +173,10 @@ class Security(BasePortalAdmin):
         """
         See main ``tokens`` property docsring
         """
-        import six
+        # import six
 
         params = {"f": "json", "tokenConfig": None}
-        if isinstance(value, six.string_types):
+        if isinstance(value, str):
             params["tokenConfig"] = {"sharedKey": value}
         elif isinstance(value, dict) and "sharedKey" in value:
             params["tokenConfig"] = value
