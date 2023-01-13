@@ -505,7 +505,12 @@ class FeatureLayer(Layer):
         return self._con.post(path=url, postdata=params)
 
     def _add_attachment(
-        self, oid, file_path, keywords=None, return_moment=False, version=None
+        self,
+        oid,
+        file_path,
+        keywords=None,
+        return_moment=False,
+        version=None,
     ):
         """
         Adds an attachment to a feature service
@@ -617,7 +622,12 @@ class FeatureLayer(Layer):
 
     # ----------------------------------------------------------------------
     def _update_attachment(
-        self, oid, attachment_id, file_path, return_moment=False, version=None
+        self,
+        oid,
+        attachment_id,
+        file_path,
+        return_moment=False,
+        version=None,
     ):
         """
         Updates an existing attachment with a new file
@@ -4316,7 +4326,9 @@ class FeatureLayerCollection(_GISResource):
         self._populate_layers()
         self._admin = None
         try:
-            from arcgis.gis.server._service._adminfactory import AdminServiceGen
+            from arcgis.gis.server._service._adminfactory import (
+                AdminServiceGen,
+            )
 
             self.service = AdminServiceGen(service=self, gis=gis)
         except:
@@ -4471,6 +4483,7 @@ class FeatureLayerCollection(_GISResource):
         change_extent_grid_cell: Optional[str] = None,
         return_geometry_updates: Optional[bool] = None,
         fields_to_compare: list | None = None,
+        out_sr: int | None = None,
     ):
         """
         A change tracking mechanism for applications. Applications can use ``extract_changes`` to
@@ -4672,23 +4685,26 @@ class FeatureLayerCollection(_GISResource):
         url = "%s/extractChanges" % self._url
         params = {
             "f": "json",
-            "layerQueries": queries,
-            "layers": layers,
-            "geometry": geometry,
-            "geometryType": geometry_type,
-            "inSR": in_sr,
-            "gdbVersion": version,
+            "layerQueries": queries or "",
+            "layers": layers,  # ",".join([str(lyr) for lyr in layers]),
+            "geometry": geometry or "",
+            "outSR": out_sr or "",
+            "geometryType": geometry_type or "esriGeometryEnvelope",
+            "inSR": in_sr or "",
+            "gdbVersion": version or "",
             "returnInserts": return_inserts,
             "returnUpdates": return_updates,
             "returnDeletes": return_deletes,
+            "returnDeletedFeatures": return_deletes,
             "returnIdsOnly": return_ids_only,
             "returnExtentOnly": return_extent_only,
             "returnAttachments": return_attachments,
             "returnAttachmentsDatabyURL": attachments_by_url,
             "dataFormat": data_format,
-            "layerServerGens": servergen,
+            "serverGens": servergen or "",
             "changesExtentGridCell": change_extent_grid_cell,
-            "fieldsToCompare": None,
+            "fieldsToCompare": None or "",
+            "async": True,
         }
         if not fields_to_compare is None:
             params["fieldsToCompare"] = {"fields": fields_to_compare}
