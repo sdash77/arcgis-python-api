@@ -10469,7 +10469,7 @@ class User(dict):
             self._user_id,
         )
         res = self._gis._con.post(url, params)
-        time.sleep(2)
+        time.sleep(10)
         try:
             count = 0
             item = None
