@@ -108,7 +108,9 @@ class FeatureLayer(Layer):
 
         v = []
         if isinstance(value, _dt.datetime):
-            self._time_filter = f"{int(value.timestamp() * 1000)}"  # means single time
+            self._time_filter = (
+                f"{int(value.timestamp() * 1000)}"  # means single time
+            )
         elif isinstance(value, (tuple, list)):
             for idx, d in enumerate(value):
                 if idx > 1:
@@ -149,7 +151,9 @@ class FeatureLayer(Layer):
         from arcgis._impl.common._isd import InsensitiveDict
 
         if self._renderer is None and "drawingInfo" in self.properties:
-            self._renderer = InsensitiveDict(dict(self.properties.drawingInfo.renderer))
+            self._renderer = InsensitiveDict(
+                dict(self.properties.drawingInfo.renderer)
+            )
         return self._renderer
 
     @renderer.setter
@@ -353,7 +357,9 @@ class FeatureLayer(Layer):
         """
         self._storage = value
 
-    def export_attachments(self, output_folder: str, label_field: Optional[str] = None):
+    def export_attachments(
+        self, output_folder: str, label_field: Optional[str] = None
+    ):
         """
         Exports attachments from the :class:`~arcgis.features.FeatureLayer` in Imagenet
         format using the ``output_label_field``.
@@ -429,7 +435,9 @@ class FeatureLayer(Layer):
             attachment_path = os.path.join(path, f"{md5_hash}.jpg")
 
             object_attachments_mapping[row[1][object_id_field]].append(
-                os.path.join("images", os.path.join(folder, f"{md5_hash}.jpg"))
+                os.path.join(
+                    "images", os.path.join(folder, f"{md5_hash}.jpg")
+                )
             )
 
             if os.path.exists(attachment_path):
@@ -444,7 +452,9 @@ class FeatureLayer(Layer):
         file.close()
 
     # ----------------------------------------------------------------------
-    def generate_renderer(self, definition: dict, where: Optional[str] = None):
+    def generate_renderer(
+        self, definition: dict, where: Optional[str] = None
+    ):
         """
         Groups data using the supplied definition (classification definition) and an optional where clause. The
         result is a renderer object.
@@ -546,12 +556,16 @@ class FeatureLayer(Layer):
             if self._gis.version > [7, 3] and keywords:
                 params["keywords"] = keywords
             if self._dynamic_layer:
-                attach_url = self._url.split("?")[0] + "/%s/addAttachment" % oid
+                attach_url = (
+                    self._url.split("?")[0] + "/%s/addAttachment" % oid
+                )
                 params["layer"] = self._dynamic_layer
             else:
                 attach_url = self._url + "/%s/addAttachment" % oid
             files = {"attachment": file_path}
-            res = self._con.post(path=attach_url, postdata=params, files=files)
+            res = self._con.post(
+                path=attach_url, postdata=params, files=files
+            )
             return res
         else:
             params = {
@@ -564,7 +578,9 @@ class FeatureLayer(Layer):
             container = self.container
             itemid = container.upload(file_path)
             if self._dynamic_layer:
-                attach_url = self._url.split("?")[0] + "/%s/addAttachment" % oid
+                attach_url = (
+                    self._url.split("?")[0] + "/%s/addAttachment" % oid
+                )
                 params["layer"] = self._dynamic_layer
             else:
                 attach_url = self._url + "/%s/addAttachment" % oid
@@ -1066,21 +1082,27 @@ class FeatureLayer(Layer):
                     "Coordinate quantization is not enabled for this layer. Ignoring quantization_params..."
                 )
         if result_offset:
-            if layer_props["advancedQueryCapabilities"]["supportsPagination"]:
+            if layer_props["advancedQueryCapabilities"][
+                "supportsPagination"
+            ]:
                 params["resultOffset"] = result_offset
             else:
                 print(
                     "Query pagination is not enabled for this layer. Ignoring result_offset..."
                 )
         if result_record_count:
-            if layer_props["advancedQueryCapabilities"]["supportsPagination"]:
+            if layer_props["advancedQueryCapabilities"][
+                "supportsPagination"
+            ]:
                 params["resultRecordCount"] = result_record_count
             else:
                 print(
                     "Query pagination is not enabled for this layer. Ignoring result_record_count..."
                 )
         if return_exceeded_limit_features:
-            params["returnExceededLimitedFeatures"] = return_exceeded_limit_features
+            params[
+                "returnExceededLimitedFeatures"
+            ] = return_exceeded_limit_features
 
         result = self._con.post(qdb_url, params)
         return result
@@ -1286,7 +1308,11 @@ class FeatureLayer(Layer):
         url = self._url + "/queryTopFeatures"
         if as_df and return_count_only == False and return_ids_only == False:
             return self._query_df(url, params)
-        elif as_df == False and return_count_only == False and return_ids_only == False:
+        elif (
+            as_df == False
+            and return_count_only == False
+            and return_ids_only == False
+        ):
             res = self._con.post(url, params)
             return FeatureSet.from_dict(res)
         elif return_count_only:
@@ -1300,7 +1326,9 @@ class FeatureLayer(Layer):
     def _qa_worker(self, url, params):
         """Processes the job, gets the status and returns the results"""
 
-        count = self.query(where=params.get("where", "1=1"), return_count_only=True)
+        count = self.query(
+            where=params.get("where", "1=1"), return_count_only=True
+        )
         if "maxRecordCount" in self.properties:
             max_records = self.properties["maxRecordCount"]
         else:
@@ -1360,10 +1388,14 @@ class FeatureLayer(Layer):
             else:
                 raise Exception(f"Job Failed: {submit_job}")
             if "resultUrl" in status_job:
-                download_json = self._con.get(status_job["resultUrl"], {"f": "json"})
+                download_json = self._con.get(
+                    status_job["resultUrl"], {"f": "json"}
+                )
             else:
                 raise Exception(f"Job Failed: {status_job}")
-            if isinstance(download_json, str) and os.path.isfile(download_json):
+            if isinstance(download_json, str) and os.path.isfile(
+                download_json
+            ):
                 with open(download_json, "r") as reader:
                     feature_dict = json.loads(reader.read())
                     parts.append(feature_dict)
@@ -1407,7 +1439,9 @@ class FeatureLayer(Layer):
                 from arcgis.geometry import Geometry
 
                 geom = feature["geometry"] if "geometry" in feature else None
-                attribs = feature["attributes"] if "attributes" in feature else {}
+                attribs = (
+                    feature["attributes"] if "attributes" in feature else {}
+                )
                 if "centroid" in feature:
                     if attribs is None:
                         attribs = {"centroid": feature["centroid"]}
@@ -1435,7 +1469,10 @@ class FeatureLayer(Layer):
             geom = None
             names = None
             dfields = []
-            rows = [feature_to_row(row, sr) for row in featureset_dict["features"]]
+            rows = [
+                feature_to_row(row, sr)
+                for row in featureset_dict["features"]
+            ]
             if len(rows) == 0:
                 return None
             df = pd.DataFrame.from_records(data=rows)
@@ -1460,9 +1497,9 @@ class FeatureLayer(Layer):
         elif len(parts) == 0:
             return pd.DataFrame([])
         else:
-            results = pd.concat([_process_result(df) for df in parts]).reset_index(
-                drop=True
-            )
+            results = pd.concat(
+                [_process_result(df) for df in parts]
+            ).reset_index(drop=True)
             return results
 
     # ----------------------------------------------------------------------
@@ -1734,7 +1771,9 @@ class FeatureLayer(Layer):
                 params[k] = v
         params["async"] = True
         executor = concurrent.futures.ThreadPoolExecutor(1)
-        future_job = executor.submit(self._qa_worker, **{"url": url, "params": params})
+        future_job = executor.submit(
+            self._qa_worker, **{"url": url, "params": params}
+        )
         executor.shutdown(False)
 
         if future == False:
@@ -2099,7 +2138,9 @@ class FeatureLayer(Layer):
         if return_true_curves is not None:
             params["returnTrueCurves"] = return_true_curves
         if return_exceeded_limit_features is not None:
-            params["returnExceededLimitFeatures"] = return_exceeded_limit_features
+            params[
+                "returnExceededLimitFeatures"
+            ] = return_exceeded_limit_features
         params["where"] = where
         params["returnGeometry"] = return_geometry
         params["returnDistinctValues"] = return_distinct_values
@@ -2143,8 +2184,12 @@ class FeatureLayer(Layer):
         if order_by_fields:
             params["orderByFields"] = order_by_fields
         if group_by_fields_for_statistics:
-            params["groupByFieldsForStatistics"] = group_by_fields_for_statistics
-        if statistic_filter and isinstance(statistic_filter, StatisticFilter):
+            params[
+                "groupByFieldsForStatistics"
+            ] = group_by_fields_for_statistics
+        if statistic_filter and isinstance(
+            statistic_filter, StatisticFilter
+        ):
             params["outStatistics"] = statistic_filter.filter
         if out_statistics:
             params["outStatistics"] = out_statistics
@@ -2229,8 +2274,11 @@ class FeatureLayer(Layer):
         supports_pagination = True
         if (
             "advancedQueryCapabilities" not in self.properties
-            or "supportsPagination" not in self.properties["advancedQueryCapabilities"]
-            or not self.properties["advancedQueryCapabilities"]["supportsPagination"]
+            or "supportsPagination"
+            not in self.properties["advancedQueryCapabilities"]
+            or not self.properties["advancedQueryCapabilities"][
+                "supportsPagination"
+            ]
         ):
             supports_pagination = False
 
@@ -2267,7 +2315,9 @@ class FeatureLayer(Layer):
                 columns["SHAPE"] = object
             if return_geometry == False:
                 columns.pop("SHAPE", None)
-            df = pd.DataFrame([], columns=columns.keys()).astype(columns, True)
+            df = pd.DataFrame([], columns=columns.keys()).astype(
+                columns, True
+            )
             if out_fields != "*":
                 df = df[out_fields.split(",")].copy()
 
@@ -2779,8 +2829,12 @@ class FeatureLayer(Layer):
         import copy
 
         if (
-            hasattr(self._gis, "_portal") and self._gis._portal.is_logged_in == False
-        ) or (hasattr(self._gis, "is_logged_in") and self._gis.is_logged_in == False):
+            hasattr(self._gis, "_portal")
+            and self._gis._portal.is_logged_in == False
+        ) or (
+            hasattr(self._gis, "is_logged_in")
+            and self._gis.is_logged_in == False
+        ):
             raise Exception("Authentication required to perform append.")
         if self.properties.supportsAppend == False:
             raise Exception(
@@ -2816,10 +2870,8 @@ class FeatureLayer(Layer):
             params["upsertMatchingField"] = upsert_matching_field
         if not skip_inserts is None:
             params["skipInserts"] = skip_inserts
-        upload_formats = (
-            """sqlite,shapefile,filegdb,featureCollection,geojson,csv,excel""".split(
-                ","
-            )
+        upload_formats = """sqlite,shapefile,filegdb,featureCollection,geojson,csv,excel""".split(
+            ","
         )
         if upload_format not in upload_formats:
             raise ValueError("Invalid upload format: %s." % upload_format)
@@ -2833,7 +2885,9 @@ class FeatureLayer(Layer):
         res = self._con.post(path=url, postdata=params)
         if future:
             executor = concurrent.futures.ThreadPoolExecutor(1)
-            future = executor.submit(self._check_append_status, *(res, return_messages))
+            future = executor.submit(
+                self._check_append_status, *(res, return_messages)
+            )
             executor.shutdown(False)
             return future
         return self._check_append_status(res, return_messages)
@@ -2962,7 +3016,11 @@ class FeatureLayer(Layer):
         elif deletes is not None and isinstance(deletes, FeatureSet):
             params["objectIds"] = ",".join(
                 [
-                    str(feat.get_value(field_name=deletes.object_id_field_name))
+                    str(
+                        feat.get_value(
+                            field_name=deletes.object_id_field_name
+                        )
+                    )
                     for feat in deletes.features
                 ]
             )
@@ -2970,10 +3028,14 @@ class FeatureLayer(Layer):
         if where is not None:
             params["where"] = where
 
-        if geometry_filter is not None and isinstance(geometry_filter, GeometryFilter):
+        if geometry_filter is not None and isinstance(
+            geometry_filter, GeometryFilter
+        ):
             for key, val in geometry_filter.filter:
                 params[key] = val
-        elif geometry_filter is not None and isinstance(geometry_filter, dict):
+        elif geometry_filter is not None and isinstance(
+            geometry_filter, dict
+        ):
             for key, val in geometry_filter.items():
                 params[key] = val
 
@@ -3252,9 +3314,15 @@ class FeatureLayer(Layer):
         }
         if gdb_version is not None:
             params["gdbVersion"] = gdb_version
-        if HAS_PANDAS and isinstance(adds, pd.DataFrame) and _is_geoenabled(adds):
+        if (
+            HAS_PANDAS
+            and isinstance(adds, pd.DataFrame)
+            and _is_geoenabled(adds)
+        ):
             cols = [
-                c for c in adds.columns.tolist() if c.lower() not in ["objectid", "fid"]
+                c
+                for c in adds.columns.tolist()
+                if c.lower() not in ["objectid", "fid"]
             ]
             params["adds"] = json.dumps(
                 adds[cols].spatial.__feature_set__["features"],
@@ -3267,10 +3335,15 @@ class FeatureLayer(Layer):
         ):
             # we have a regular panadas dataframe
             cols = [
-                c for c in adds.columns.tolist() if c.lower() not in ["objectid", "fid"]
+                c
+                for c in adds.columns.tolist()
+                if c.lower() not in ["objectid", "fid"]
             ]
             params["adds"] = json.dumps(
-                [{"attributes": row} for row in adds[cols].to_dict(orient="record")],
+                [
+                    {"attributes": row}
+                    for row in adds[cols].to_dict(orient="record")
+                ],
                 default=_date_handler,
             )
         elif isinstance(adds, FeatureSet):
@@ -3280,7 +3353,9 @@ class FeatureLayer(Layer):
 
         elif len(adds) > 0:
             if isinstance(adds[0], dict):
-                params["adds"] = json.dumps([f for f in adds], default=_date_handler)
+                params["adds"] = json.dumps(
+                    [f for f in adds], default=_date_handler
+                )
             elif isinstance(adds[0], PropertyMap):
                 params["adds"] = json.dumps(
                     [dict(f) for f in adds], default=_date_handler
@@ -3297,13 +3372,17 @@ class FeatureLayer(Layer):
                     [_handle_feature(f) for f in adds], default=_date_handler
                 )
             else:
-                print("pass in features as list of Features, dicts or PropertyMap")
+                print(
+                    "pass in features as list of Features, dicts or PropertyMap"
+                )
         if isinstance(updates, FeatureSet):
             params["updates"] = json.dumps(
                 [f.as_dict for f in updates.features], default=_date_handler
             )
         elif (
-            HAS_PANDAS and isinstance(updates, pd.DataFrame) and _is_geoenabled(updates)
+            HAS_PANDAS
+            and isinstance(updates, pd.DataFrame)
+            and _is_geoenabled(updates)
         ):
             params["updates"] = json.dumps(
                 updates.spatial.__feature_set__["features"],
@@ -3321,7 +3400,10 @@ class FeatureLayer(Layer):
                 if c.lower() not in ["objectid", "fid"]
             ]
             params["updates"] = json.dumps(
-                [{"attributes": row} for row in updates[cols].to_dict(orient="record")],
+                [
+                    {"attributes": row}
+                    for row in updates[cols].to_dict(orient="record")
+                ],
                 default=_date_handler,
             )
         elif len(updates) > 0:
@@ -3338,7 +3420,9 @@ class FeatureLayer(Layer):
                     [f.as_dict for f in updates], default=_date_handler
                 )
             else:
-                print("pass in features as list of Features, dicts or PropertyMap")
+                print(
+                    "pass in features as list of Features, dicts or PropertyMap"
+                )
         if deletes is not None and isinstance(deletes, str):
             params["deletes"] = deletes
         elif deletes is not None and isinstance(deletes, PropertyMap):
@@ -3347,10 +3431,14 @@ class FeatureLayer(Layer):
             )
         elif deletes is not None and isinstance(deletes, pd.DataFrame):
             cols = [
-                c for c in deletes.columns.tolist() if c.lower() in ["objectid", "fid"]
+                c
+                for c in deletes.columns.tolist()
+                if c.lower() in ["objectid", "fid"]
             ]
             if len(cols) > 0:
-                params["deletes"] = ",".join([str(d) for d in deletes[cols[0]]])
+                params["deletes"] = ",".join(
+                    [str(d) for d in deletes[cols[0]]]
+                )
             else:
                 raise Exception("Could not find ObjectId or FID field.")
         elif deletes is not None and isinstance(deletes, FeatureSet):
@@ -3361,7 +3449,9 @@ class FeatureLayer(Layer):
             elif self.properties.objectIdField in deletes.fields:
                 field_name = self.properties.objectIdField
             else:
-                print("deletes FeatureSet must have object_id_field_name parameter set")
+                print(
+                    "deletes FeatureSet must have object_id_field_name parameter set"
+                )
 
             if field_name:
                 params["deletes"] = ",".join(
@@ -3396,7 +3486,9 @@ class FeatureLayer(Layer):
             if future:
                 params["async"] = True
                 executor = concurrent.futures.ThreadPoolExecutor(1)
-                res = self._con.post_multipart(path=edit_url, postdata=params)
+                res = self._con.post_multipart(
+                    path=edit_url, postdata=params
+                )
                 future = executor.submit(
                     self._status_via_url,
                     *(self._con, res["statusUrl"], {"f": "json"}, True),
@@ -3409,7 +3501,9 @@ class FeatureLayer(Layer):
         except Exception as e:
             if str(e).lower().find("Invalid Token".lower()) > -1:
                 params.pop("token", None)
-                return self._con.post_multipart(path=edit_url, postdata=params)
+                return self._con.post_multipart(
+                    path=edit_url, postdata=params
+                )
             else:
                 raise
 
@@ -3581,7 +3675,11 @@ class FeatureLayer(Layer):
                     if "resultRecordCount" in params
                     else 1000
                 )
-                offset = int(params["resultOffset"]) if "resultOffset" in params else 0
+                offset = (
+                    int(params["resultOffset"])
+                    if "resultOffset" in params
+                    else 0
+                )
                 # reduce this number to 125 if you still sees 500/504 error
                 if max_record < 250:
                     # when max_record is lower than 250, but still getting error 500 or 504, just exit with exception
@@ -3621,7 +3719,9 @@ class FeatureLayer(Layer):
 
         if "error" in result:
             raise ValueError(result)
-        if "returnCountOnly" in params and is_true(params["returnCountOnly"]):
+        if "returnCountOnly" in params and is_true(
+            params["returnCountOnly"]
+        ):
             return result["count"]
         elif "returnIdsOnly" in params and is_true(params["returnIdsOnly"]):
             return result
@@ -3678,7 +3778,9 @@ class FeatureLayer(Layer):
         def feature_to_row(feature, sr):
             """:return: a feature from a dict"""
             geom = feature["geometry"] if "geometry" in feature else None
-            attribs = feature["attributes"] if "attributes" in feature else {}
+            attribs = (
+                feature["attributes"] if "attributes" in feature else {}
+            )
             if "centroid" in feature:
                 if attribs is None:
                     attribs = {"centroid": feature["centroid"]}
@@ -3713,7 +3815,11 @@ class FeatureLayer(Layer):
                     if "resultRecordCount" in params
                     else 1000
                 )
-                offset = int(params["resultOffset"]) if "resultOffset" in params else 0
+                offset = (
+                    int(params["resultOffset"])
+                    if "resultOffset" in params
+                    else 0
+                )
                 # reduce this number to 125 if you still sees 500/504 error
                 if max_record < 250:
                     # when max_record is lower than 250, but still getting error 500 or 504, just exit with exception
@@ -3733,7 +3839,9 @@ class FeatureLayer(Layer):
                             records = self._query(url, params, raw=True)
                             if featureset_dict is not None:
                                 for feature in records["features"]:
-                                    featureset_dict["features"].append(feature)
+                                    featureset_dict["features"].append(
+                                        feature
+                                    )
                             else:
                                 featureset_dict = records
                             i += 1
@@ -3754,7 +3862,9 @@ class FeatureLayer(Layer):
         geom = None
         names = None
         dfields = []
-        rows = [feature_to_row(row, sr) for row in featureset_dict["features"]]
+        rows = [
+            feature_to_row(row, sr) for row in featureset_dict["features"]
+        ]
         if len(rows) == 0:
             return None
         df = pd.DataFrame.from_records(data=rows)
@@ -4034,7 +4144,9 @@ class Table(FeatureLayer):
         if sql_format is not None:
             params["sqlFormat"] = sql_format
         if return_exceeded_limit_features is not None:
-            params["returnExceededLimitFeatures"] = return_exceeded_limit_features
+            params[
+                "returnExceededLimitFeatures"
+            ] = return_exceeded_limit_features
         params["where"] = where
         params["returnDistinctValues"] = return_distinct_values
         params["returnCountOnly"] = return_count_only
@@ -4067,8 +4179,12 @@ class Table(FeatureLayer):
         if order_by_fields:
             params["orderByFields"] = order_by_fields
         if group_by_fields_for_statistics:
-            params["groupByFieldsForStatistics"] = group_by_fields_for_statistics
-        if statistic_filter and isinstance(statistic_filter, StatisticFilter):
+            params[
+                "groupByFieldsForStatistics"
+            ] = group_by_fields_for_statistics
+        if statistic_filter and isinstance(
+            statistic_filter, StatisticFilter
+        ):
             params["outStatistics"] = statistic_filter.filter
         if out_statistics:
             params["outStatistics"] = out_statistics
@@ -4130,8 +4246,11 @@ class Table(FeatureLayer):
         supports_pagination = True
         if (
             "advancedQueryCapabilities" not in self.properties
-            or "supportsPagination" not in self.properties["advancedQueryCapabilities"]
-            or not self.properties["advancedQueryCapabilities"]["supportsPagination"]
+            or "supportsPagination"
+            not in self.properties["advancedQueryCapabilities"]
+            or not self.properties["advancedQueryCapabilities"][
+                "supportsPagination"
+            ]
         ):
             supports_pagination = False
 
@@ -4166,7 +4285,9 @@ class Table(FeatureLayer):
                 and not self.properties.geometryType is None
             ):
                 columns["SHAPE"] = object
-            df = pd.DataFrame([], columns=columns.keys()).astype(columns, True)
+            df = pd.DataFrame([], columns=columns.keys()).astype(
+                columns, True
+            )
             if "SHAPE" in df.columns:
                 df["SHAPE"] = GeoArray([])
                 df.spatial.set_geometry("SHAPE")
@@ -4286,7 +4407,9 @@ class Table(FeatureLayer):
                         df[fld] / 1000, infer_datetime_format=True, unit="s"
                     )
                 except:
-                    df[fld] = pd.to_datetime(df[fld], infer_datetime_format=True)
+                    df[fld] = pd.to_datetime(
+                        df[fld], infer_datetime_format=True
+                    )
             return df
         return result
 
@@ -4369,7 +4492,9 @@ class FeatureLayerCollection(_GISResource):
             part2 = url[res[1] :]
             admin_url = "%s%s%s" % (part1, add_text, part2)
 
-            self._admin = FeatureLayerCollectionManager(admin_url, self._gis, self)
+            self._admin = FeatureLayerCollectionManager(
+                admin_url, self._gis, self
+            )
         return self._admin
 
     @property
@@ -4466,7 +4591,8 @@ class FeatureLayerCollection(_GISResource):
     def extract_changes(
         self,
         layers: list[int],
-        servergen: list[dict[str, Any]],
+        servergen: list[int] = None,
+        layer_servergen: list[dict[str, Any]] = None,
         queries: Optional[dict[str, Any]] = None,
         geometry: Optional[Union[Geometry, dict[str, int]]] = None,
         geometry_type: Optional[str] = None,
@@ -4505,7 +4631,28 @@ class FeatureLayerCollection(_GISResource):
         layers                               Required List.  The list of layers (by index value) and tables to include in the
                                              output.
         --------------------------------     --------------------------------------------------------------------
-        servergen                            Required List.   The servergen numbers allow a client to specify the last
+        servergen                            Required List (when layer_servergen not present). Introduced at 11.0.
+                                             This parameter sets the servergens to apply to all layers included in
+                                             the layers parameter. Either a single generation, or a pair of
+                                             generations, can be used as values for this parameter. If a single
+                                             servergen value is provided, all changes that have happened since
+                                             that generation are returned. If a pair of serverGen values are
+                                             provided, changes that have happened between the first generation
+                                             (the minimum value) and the second generation (the maximum value)
+                                             are returned. If providing two generations, the first value in the
+                                             pair is expected to be the smaller of the two values.
+                                             Support for this parameter is indicated when the service-level
+                                             'supportServerGens' property, under 'extractChangesCapabilities', is
+                                             set as 'True'. This operation requires either 'serverGens' or
+                                             'layerServerGens' be submitted with the request.
+
+                                             .. code-block:: python
+
+                                                # Usage Example:
+
+                                                servergen= [10500,11000]
+        --------------------------------     --------------------------------------------------------------------
+        layer_servergen                      Required List (when servergen not present). The servergen numbers allow a client to specify the last
                                              layer generation numbers (a Unix epoch time value in milliseconds) for the
                                              changes received from the server. All changes made after this value will be
                                              returned.
@@ -4528,9 +4675,9 @@ class FeatureLayerCollection(_GISResource):
 
                                                 # Usage Example:
 
-                                                servergen= [{"id": 0, "serverGen": 10500},
-                                                            {"id": 1, "serverGen": 1100},
-                                                            {"id": 2, "serverGen": 1200}]
+                                                layer_servergen= [{"id": 0, "serverGen": 10500},
+                                                                  {"id": 1, "serverGen": 1100},
+                                                                  {"id": 2, "serverGen": 1200}]
         --------------------------------     --------------------------------------------------------------------
         queries                              Optional Dictionary. In addition to the layers and geometry
                                              parameters, the `queries` parameter can be used to further define
@@ -4682,6 +4829,8 @@ class FeatureLayerCollection(_GISResource):
             'edits': [{'id': 0,
               'objectIds': {'adds': [], 'updates': [194], 'deletes': []}}]}
         """
+        if servergen is None and layer_servergen is None:
+            raise ValueError("Please provide a servergen or layer_servergen")
         url = "%s/extractChanges" % self._url
         params = {
             "f": "json",
@@ -4702,6 +4851,7 @@ class FeatureLayerCollection(_GISResource):
             "returnAttachmentsDatabyURL": attachments_by_url,
             "dataFormat": data_format,
             "serverGens": servergen or "",
+            "layerServerGens": layer_servergen or "",
             "changesExtentGridCell": change_extent_grid_cell,
             "fieldsToCompare": None or "",
             "async": True,
@@ -4808,9 +4958,13 @@ class FeatureLayerCollection(_GISResource):
             "returnZ": return_z,
             "returnM": return_m,
         }
-        if layer_defs_filter is not None and isinstance(layer_defs_filter, dict):
+        if layer_defs_filter is not None and isinstance(
+            layer_defs_filter, dict
+        ):
             params["layerDefs"] = layer_defs_filter
-        elif layer_defs_filter is not None and isinstance(layer_defs_filter, dict):
+        elif layer_defs_filter is not None and isinstance(
+            layer_defs_filter, dict
+        ):
             pass
         if geometry_filter is not None and isinstance(geometry_filter, dict):
             params["geometryType"] = geometry_filter["geometryType"]
@@ -5198,7 +5352,9 @@ class FeatureLayerCollection(_GISResource):
             "f": "json",
             "replicaName": replica_name,
             "returnAttachments": json.dumps(return_attachments),
-            "returnAttachmentsDatabyUrl": json.dumps(return_attachments_data_by_url),
+            "returnAttachmentsDatabyUrl": json.dumps(
+                return_attachments_data_by_url
+            ),
             "async": json.dumps(asynchronous),
             "syncModel": sync_model,
             "layers": layers,
@@ -5229,7 +5385,9 @@ class FeatureLayerCollection(_GISResource):
             params["transportType"] = transport_type
         # parameter added at version 10.9
         if self._gis.version >= [8, 4]:
-            params["timeReferenceUnknownClient"] = time_reference_unknown_client
+            params[
+                "timeReferenceUnknownClient"
+            ] = time_reference_unknown_client
         if asynchronous:
             if wait:
                 export_job = self._con.post(path=url, postdata=params)
@@ -5242,7 +5400,9 @@ class FeatureLayerCollection(_GISResource):
                         return status
                     # wait before checking again
                     time.sleep(2)
-                    status = self._replica_status(url=export_job["statusUrl"])
+                    status = self._replica_status(
+                        url=export_job["statusUrl"]
+                    )
 
                 res = status
 
@@ -5541,7 +5701,9 @@ class FeatureLayerCollection(_GISResource):
         if return_ids_for_adds is not None:
             params["returnIdsForAdds"] = return_ids_for_adds
         if return_attachment_databy_url is not None:
-            params["returnAttachmentDatabyURL"] = return_attachment_databy_url
+            params[
+                "returnAttachmentDatabyURL"
+            ] = return_attachment_databy_url
         if asynchronous is not None:
             params["async"] = asynchronous
         if sync_direction is not None:
@@ -5670,7 +5832,9 @@ class FeatureLayerCollection(_GISResource):
                 steps += 1
             for i in range(steps):
                 files = {}
-                tempFile = os.path.join(tempfile.gettempdir(), "split.part%s" % i)
+                tempFile = os.path.join(
+                    tempfile.gettempdir(), "split.part%s" % i
+                )
                 if os.path.isfile(tempFile):
                     os.remove(tempFile)
                 with open(tempFile, "wb") as writer:
@@ -5680,7 +5844,9 @@ class FeatureLayerCollection(_GISResource):
                 del writer
                 files["file"] = tempFile
                 params["partId"] = i + 1
-                res = self._con.post(upload_part_url, postdata=params, files=files)
+                res = self._con.post(
+                    upload_part_url, postdata=params, files=files
+                )
                 if "error" in res:
                     raise Exception(res)
                 os.remove(tempFile)
