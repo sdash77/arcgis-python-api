@@ -1941,7 +1941,8 @@ class Portal(object):
         sort_order: str = "asc",
         max_groups: int = 1000,
         outside_org: bool = False,
-        categories: Optional[str] = None,
+        categories: str | None = None,
+        filter: str | None = None,
     ):
         """Searches for portal groups.
 
@@ -1972,6 +1973,10 @@ class Portal(object):
         max_groups        optional int, maximum number of groups returned
         ----------------  --------------------------------------------------------
         outside_org       optional boolean, controls whether to search outside your org
+        ----------------  --------------------------------------------------------
+        categories        optional string.
+        ----------------  --------------------------------------------------------
+        filter            optional string.
         ================  ========================================================
 
         :return:
@@ -2022,7 +2027,7 @@ class Portal(object):
         # Execute the search and get back the results
         count = 0
         resp = self._groups_page(
-            q, 1, min(max_groups, 100), sort_field, sort_order, categories
+            q, 1, min(max_groups, 100), sort_field, sort_order, categories, filter
         )
         results = resp.get("results")
         count += int(resp["num"])
@@ -2035,6 +2040,7 @@ class Portal(object):
                 sort_field,
                 sort_order,
                 categories,
+                filter,
             )
             resp_users = resp.get("results")
             results.extend(resp_users)
@@ -2842,7 +2848,14 @@ class Portal(object):
         return self.con.post("search", postdata)
 
     def _groups_page(
-        self, q=None, start=1, num=10, sortfield="", sortorder="asc", categories=None
+        self,
+        q=None,
+        start=1,
+        num=10,
+        sortfield="",
+        sortorder="asc",
+        categories=None,
+        filter=None,
     ):
         _log.info(
             "Searching groups (q="
@@ -2865,6 +2878,8 @@ class Portal(object):
         )
         if categories is not None:
             postdata["categoryFilters"] = categories
+        if filter is not None:
+            postdata["filter"] = filter
         return self.con.post("community/groups", postdata)
 
     def _org_users_page(
