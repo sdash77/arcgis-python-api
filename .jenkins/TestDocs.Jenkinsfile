@@ -12,14 +12,14 @@ pipeline {
             stages {
                 stage('Build') {
                     steps {
-                        dir('geosaurus/docs/api_ref') {
+                        dir('docs/api_ref') {
                             sh 'make html'
                         }
                     }
                 }
                 stage('Deploy') {
                     steps {
-                        dir('geosaurus/docs/api_ref/build/html') {
+                        dir('docs/api_ref/build/html') {
                             // clean and deploy to crdata share
                             sh 'rm -rf /media/crdata_apiref/*'
                             sh 'cp -r . /media/crdata_apiref'
@@ -40,14 +40,14 @@ pipeline {
             stages {
                 stage('Build') {
                     steps {
-                        dir('geosaurus/docs/api_ref') {
+                        dir('docs/api_ref') {
                             sh 'make json'
                         }
                     }
                 }
                 stage('Deploy') {
                     steps {
-                        dir('geosaurus/docs/api_ref/build/json') {
+                        dir('docs/api_ref/build/json') {
                             // clean and deploy to geosaurus share (master)
                             sh 'rm -rf /media/geosaurus_public/docs/python-api/master/json/*'
                             sh 'cp -r . /media/geosaurus_public/docs/python-api/master/json'
