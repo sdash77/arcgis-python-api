@@ -1159,7 +1159,7 @@ class Version(object):
                 gdb_version=self.properties.versionName,
                 use_global_ids=use_global_ids,
                 rollback_on_failure=rollback_on_failure,
-                session_id=self._guid
+                session_id=self._guid,
             )
         else:
             raise Exception(
