@@ -15780,6 +15780,8 @@ class Item(dict):
 
         :return: An :class:`~arcgis.gis.Item` object
         """
+        if tags and type(tags) is list:
+            tags = ",".join(tags)
 
         url = "%s/sharing/rest/content/users/%s/items/%s/copy" % (
             self._portal.url,
