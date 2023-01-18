@@ -6896,6 +6896,82 @@ class ImageryLayer(Layer):
             plot_properties=plot_properties,
         )
 
+    def dimension_profile(self,
+                          dimension: [str],
+                          time : datetime.datetime,
+                          points: list[Point],
+                          variables: list[str] = [],
+                          time_field: Optional[str] = None,
+                          show_values: bool = False,
+                          show_trend_line : bool = False,
+                          plot_properties: dict[str, Any] = {},
+                         ):
+        """
+        Dimension profile chart visualizes change along a vertical dimension, such as depth or height, 
+        using a multidimensional raster dataset with a z-dimension.
+        Dimension Profile is only available for multidimensional datasets that contain a z-dimension.
+
+        Change is plotted in the form of a line graph for a given location and date or time. This allows 
+        trends in two variables to be displayed and compared simultaneously, while taking into account 
+        different unit scales. 
+
+        The x-axis of the dimension profile displays the values of the variable. Default minimum and 
+        maximum x-axis bounds are set based on the range of data values represented on the axis. 
+
+        The y-axis of the dimension profile displays the vertical dimension value.
+
+
+        ====================================     ====================================================================
+        **Parameter**                             **Description**
+        ------------------------------------     --------------------------------------------------------------------
+        raster                                   Required Imagery Layer object.
+        ------------------------------------     --------------------------------------------------------------------
+        dimension                                Required dimension name. Use this parameter to set the field that 
+                                                 represents the dimension field in the image service.
+        ------------------------------------     --------------------------------------------------------------------
+        time                                     Required datetime.date, datetime.datetime or timestamp string. 
+                                                 The time slice that will be used for plotting dimension profile.
+        ------------------------------------     --------------------------------------------------------------------
+        points                                   Required list of point Geometry objects.
+        ------------------------------------     --------------------------------------------------------------------
+        variables                                Required list of variable names.
+                                                 The Dimension profile chart allows a maximum of two variables to be displayed.
+        ------------------------------------     --------------------------------------------------------------------
+        time_field                               Optional string. The time field that will be used for plotting dimension profile.
+                                                 If not specified the time field is obtained from the timeInfo of the image service.
+        ------------------------------------     --------------------------------------------------------------------
+        show_values                              Optional bool. Default False.
+                                                 Set this parameter to True to display the values at each point in the line graph.
+        ------------------------------------     --------------------------------------------------------------------
+        show_trend_line                          Optional string. Default False.
+                                                 Set this parameter to True to add a linear trend line to the dimension profile chart.
+                                                 One trend line will be drawn for each location when charting multiple locations, 
+                                                 or each variable when charting multiple variables.
+        ------------------------------------     --------------------------------------------------------------------
+        plot_properties                          Optional dict. This parameter can be used to set the figure
+                                                 properties. These are the matplotlib.pyplot.figure() parameters and values
+                                                 specified in dict format.
+
+                                                 eg: {"figsize":(15,15)}
+        ====================================     ====================================================================
+
+        :return:
+            None
+
+        """
+        from arcgis.raster._charts import dimension_profile
+
+        return dimension_profile(self,
+                                 dimension=dimension,
+                                 time=time,
+                                 points=points,
+                                 variables=variables,
+                                 time_field=time_field,
+                                 show_values=show_values,
+                                 show_trend_line=show_trend_line,
+                                 plot_properties=plot_properties
+                                )
+
     def _repr_jpeg_(self):
         if self._uses_gbl_function:
             return self._repr_svg_()
