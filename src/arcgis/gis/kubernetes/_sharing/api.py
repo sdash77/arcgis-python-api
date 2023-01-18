@@ -15,12 +15,17 @@ from urllib.parse import urlparse, urlunparse
 from urllib.request import urlretrieve
 
 from arcgis.gis._impl._con import Connection
-from arcgis.gis._impl._con import _normalize_url, _is_http_url, _parse_hostname, _unpack
+from arcgis.gis._impl._con import (
+    _normalize_url,
+    _is_http_url,
+    _parse_hostname,
+    _unpack,
+)
 from arcgis._impl.common._utils import _to_utf8
 from urllib import request
 from urllib.parse import urlparse
 
-__version__ = "2.1.0"
+__version__ = "2.1.1"
 
 _log = logging.getLogger(__name__)
 
@@ -268,7 +273,13 @@ class KbertnetesPy(object):
     #### GROUP OPERATIONS  ################################################
     # ----------------------------------------------------------------------
     def _groups_page(
-        self, q=None, start=1, num=10, sortfield="", sortorder="asc", categories=None
+        self,
+        q=None,
+        start=1,
+        num=10,
+        sortfield="",
+        sortorder="asc",
+        categories=None,
     ):
         _log.info(
             "Searching groups (q="
@@ -685,7 +696,8 @@ class KbertnetesPy(object):
         """
 
         return self.con.post(
-            f"{self.resturl}community/groups/{group_id}/users", self._postdata()
+            f"{self.resturl}community/groups/{group_id}/users",
+            self._postdata(),
         )
 
     # ----------------------------------------------------------------------
@@ -963,7 +975,10 @@ class KbertnetesPy(object):
 
     # ----------------------------------------------------------------------
     def share_item_as_group_admin(
-        self, item_id: str, groups: str = "", allow_members_to_edit: bool = False
+        self,
+        item_id: str,
+        groups: str = "",
+        allow_members_to_edit: bool = False,
     ):
         """Shares public item with the specified list of groups belonging to caller
 
@@ -1700,7 +1715,8 @@ class KbertnetesPy(object):
             return False
         else:
             resp = self.con.post(
-                "content/users/" + owner + "/" + folder_id + "/delete", postdata
+                "content/users/" + owner + "/" + folder_id + "/delete",
+                postdata,
             )
             if resp:
                 return resp.get("success")
@@ -1993,7 +2009,11 @@ class KbertnetesPy(object):
                         os.rename(large_thumbnail, new_thumbnail)
                         large_thumbnail = new_large_thumbnail
             files.append(
-                ("largeThumbnail", large_thumbnail, os.path.basename(large_thumbnail))
+                (
+                    "largeThumbnail",
+                    large_thumbnail,
+                    os.path.basename(large_thumbnail),
+                )
             )
         # If owner isn't specified, use the logged in user
         if not owner:
@@ -2273,7 +2293,11 @@ class KbertnetesPy(object):
 
     # ----------------------------------------------------------------------
     def unshare_item(
-        self, item_id: str, owner: str, folder: Optional[str] = None, groups: str = ""
+        self,
+        item_id: str,
+        owner: str,
+        folder: Optional[str] = None,
+        groups: str = "",
     ):
         """Stops sharing the item with the specified list of groups
 
@@ -2502,18 +2526,31 @@ class KbertnetesPy(object):
 
     # ----------------------------------------------------------------------
     def get_item_data(
-        self, itemid: str, try_json: bool = True, folder: Optional[str] = None
+        self,
+        itemid: str,
+        try_json: bool = True,
+        folder: Optional[str] = None,
     ):
         # print('content/items/' + itemid + '/data')
         return self.con.get(
-            "content/items/" + itemid + "/data", try_json=try_json, out_folder=folder
+            "content/items/" + itemid + "/data",
+            try_json=try_json,
+            out_folder=folder,
         )
         # return self.con.post('content/items/' + itemid + '/data', self._postdata(), use_ordered_dict=try_json)
         # return self.con.post('content/items/' + itemid + '/data', self._postdata(), use_ordered_dict=True)
 
     # ----------------------------------------------------------------------
     def usage(
-        self, startTime, endTime, period, vars, etype, stype, groupby, appId=None
+        self,
+        startTime,
+        endTime,
+        period,
+        vars,
+        etype,
+        stype,
+        groupby,
+        appId=None,
     ):
         postdata = self._postdata()
         postdata["startTime"] = startTime * 1000
@@ -2616,7 +2653,10 @@ class KbertnetesPy(object):
 
         # Send the POST request, and return the id from the response
         resp = self.con.post(
-            "community/users/" + username + "/update", postdata, files, ssl=True
+            "community/users/" + username + "/update",
+            postdata,
+            files,
+            ssl=True,
         )
 
         if resp:
