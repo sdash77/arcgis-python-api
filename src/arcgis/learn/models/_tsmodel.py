@@ -795,19 +795,20 @@ class TimeSeriesModel(ArcGISModel):
 
         processed_dataframe_transform = processed_dataframe.copy()
 
-        for col in list(processed_dataframe.columns):
-            transformed_data = processed_dataframe[col]
-            for transform in self._data._column_transforms_mapping.get(col, []):
-                transformed_data = transform.fit_transform(
-                    np.array(
-                        transformed_data[:-number_of_predictions],
-                        dtype=type(processed_dataframe[col][0]),
-                    ).reshape(-1, 1)
+        if number_of_predictions is not None and number_of_predictions > 0:
+            for col in list(processed_dataframe.columns):
+                transformed_data = processed_dataframe[col]
+                for transform in self._data._column_transforms_mapping.get(col, []):
+                    transformed_data = transform.fit_transform(
+                        np.array(
+                            transformed_data[:-number_of_predictions],
+                            dtype=type(processed_dataframe[col][0]),
+                        ).reshape(-1, 1)
+                    )
+                    transformed_data = transformed_data.squeeze(1)
+                processed_dataframe_transform[col][:-number_of_predictions] = np.array(
+                    transformed_data, dtype=type(processed_dataframe[col][0])
                 )
-                transformed_data = transformed_data.squeeze(1)
-            processed_dataframe_transform[col][:-number_of_predictions] = np.array(
-                transformed_data, dtype=type(processed_dataframe[col][0])
-            )
         big_bunch = []
         prediction_sequence_list = None
         processed_dataframe_transform = processed_dataframe_transform.values

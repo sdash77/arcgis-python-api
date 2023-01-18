@@ -2629,9 +2629,6 @@ class FeatureLayerCollectionManager(_GISResource):
             # overwriting a SD case - no need for detailed publish parameters
             publish_parameters = None
 
-        # endregion
-
-        # region Perform overwriting
         if related_data_item.update(item_properties=params, data=data_file):
             published_item = related_data_item.publish(
                 publish_parameters, overwrite=True

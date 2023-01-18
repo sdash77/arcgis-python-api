@@ -1330,6 +1330,9 @@ def _pyshp2(df, out_path, out_name):
                         row[idx] = None
                     else:
                         row[idx] = row[idx].to_pydatetime()
+            for idx, value in enumerate(row):
+                if value is np.nan:
+                    row[idx] = None
             shpfile.record(*row)
             del idx
             del row

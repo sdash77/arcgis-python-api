@@ -753,6 +753,9 @@ class FeatureSet(object):
                 geometry = {}
                 geometry["type"] = get_geom_type(esri_geom_type)
                 geometry["coordinates"] = get_coordinates(geom, geometry["type"])
+                # add check for MultiPolygon
+                if geometry["type"] == "Polygon" and len(geometry["coordinates"]) > 1:
+                    geometry["type"] = "MultiPolygon"
                 item["geometry"] = geometry
                 item["properties"] = feature["attributes"]
 

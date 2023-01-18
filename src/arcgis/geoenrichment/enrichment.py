@@ -677,7 +677,7 @@ class Country(object):
         proximity_type: Optional[str] = None,
         proximity_value: Optional[Union[float, int]] = None,
         proximity_metric: Optional[str] = None,
-        output_spatial_reference: Union[int, dict, SpatialReference] = 4326,
+        output_spatial_reference: Union[int, dict, SpatialReference] = None,
         **kwargs,
     ):
         """
@@ -1166,9 +1166,7 @@ def get_countries(gis: Optional[GIS] = None, as_df: bool = True):
                 for cntry in out_res[["iso3", "vintage"]].iterrows()
             ]
         else:
-            out_res = [
-                Country(cntry[1], gis=gis) for cntry in out_res["iso3"].iteritems()
-            ]
+            out_res = [Country(cntry[1], gis=gis) for cntry in out_res["iso3"].items()]
 
     return out_res
 

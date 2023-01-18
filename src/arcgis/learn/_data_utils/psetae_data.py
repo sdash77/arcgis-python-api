@@ -557,7 +557,12 @@ def create_dataloaders(datasets, batch_size, dataloader_kwargs):
 
 
 def prepare_psetae_data(
-    path, batch_size, val_split_pct, working_dir, class_mapping, **kwargs,
+    path,
+    batch_size,
+    val_split_pct,
+    working_dir,
+    class_mapping,
+    **kwargs,
 ):
     train_val_dataset = create_train_val_sets(
         path, val_split_pct, working_dir, **kwargs

@@ -269,7 +269,6 @@ try:
 
         return keep, torch.tensor([count]).to(scores.device).int()
 
-
 except:
     print("\ntorch not available\n")
 
@@ -674,6 +673,23 @@ def pixel_classify_wnet_image(model, tiles, device, model_info):
         rescale_batch(wnet_predictions, model_info, norm_stats_c)
     )[:, :num_band_tar, :, :]
     return wnet_predictions
+
+
+def variable_tile_size_check(json_info, parameters):
+    if json_info.get("SupportsVariableTileSize", False):
+        parameters.extend(
+            [
+                {
+                    "name": "tile_size",
+                    "dataType": "numeric",
+                    "value": int(json_info["ImageHeight"]),
+                    "required": False,
+                    "displayName": "Tile Size",
+                    "description": "Tile size used for inferencing",
+                }
+            ]
+        )
+    return parameters
 
 
 def detect_change(model, batch, device, model_info):

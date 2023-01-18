@@ -1,4 +1,4 @@
-__version__ = "2.1.0"
+__version__ = "2.1.1"
 
 from arcgis.auth.tools import LazyLoader
 
@@ -82,6 +82,7 @@ __all__ = [
     "geometry",
     "geoprocessing",
     "network",
+    "notebook",
     "raster",
     "apps",
     "realtime",

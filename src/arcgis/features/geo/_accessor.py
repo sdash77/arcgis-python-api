@@ -1691,7 +1691,7 @@ class GeoAccessor(object):
         if idxmatch.shape[0] > 0:
             # if output from join has overlapping geometries
             r_idx = np.concatenate(idxmatch.values)
-            l_idx = np.concatenate([[i] * len(v) for i, v in idxmatch.iteritems()])
+            l_idx = np.concatenate([[i] * len(v) for i, v in idxmatch.items()])
 
             # Vectorize predicate operations
             def find_intersects(a1, a2):
@@ -1835,7 +1835,7 @@ class GeoAccessor(object):
                                 needs to create.  Valid inputs are: simple, picture,
                                 text, or carto.  The default is simple.
         ----------------------  ---------------------------------------------------------
-        symbol_type             optional string. This is the symbology used by the
+        symbol_style            optional string. This is the symbology used by the
                                 geometry.  For example 's' for a Line geometry is a solid
                                 line. And '-' is a dash line.
 
@@ -1898,7 +1898,7 @@ class GeoAccessor(object):
                                 needs to create.  Valid inputs are: simple, picture, text,
                                 or carto.  The default is simple.
         ----------------------  ---------------------------------------------------------
-        symbol_type             optional string. This is the symbology used by the
+        symbol_style            optional string. This is the symbology used by the
                                 geometry.  For example 's' for a Line geometry is a solid
                                 line. And '-' is a dash line.
 
@@ -2137,7 +2137,7 @@ class GeoAccessor(object):
                                  needs to create.  Valid inputs are: simple, picture, text,
                                  or carto.  The default is simple.
         -----------------------  ---------------------------------------------------------
-        symbol_type              optional string. This is the symbology used by the
+        symbol_style             optional string. This is the symbology used by the
                                  geometry.  For example 's' for a Line geometry is a solid
                                  line. And '-' is a dash line.
 
@@ -3934,7 +3934,7 @@ class GeoAccessor(object):
         """
         q = self._data[self.name].notnull()
         df = pd.DataFrame(
-            data=self._data[self.name][q].geom.true_centroid.tolist(),
+            data=list(row.true_centroid for row in self._data[self.name][q]),
             columns=["x", "y"],
         ).mean()
         return df["x"], df["y"]

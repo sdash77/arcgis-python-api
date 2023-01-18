@@ -324,7 +324,7 @@ def publish_hosted_imagery_layer(
 
         output_name = "layer" + "_" + _id_generator()
 
-    if layer_configuration == "ONE_IMAGE":
+    if layer_configuration.upper() == "ONE_IMAGE":
 
         gis = env.active_gis if gis is None else gis
 
@@ -340,7 +340,7 @@ def publish_hosted_imagery_layer(
             **kwargs,
         )
 
-    elif layer_configuration == "IMAGE_COLLECTION":
+    elif layer_configuration.upper() == "IMAGE_COLLECTION":
 
         gis = env.active_gis if gis is None else gis
 
@@ -354,4 +354,9 @@ def publish_hosted_imagery_layer(
             gis=gis,
             future=future,
             **kwargs,
+        )
+
+    else:
+        raise RuntimeError(
+            "layer_configuration should be either ONE_IMAGE or IMAGE_COLLECTION"
         )

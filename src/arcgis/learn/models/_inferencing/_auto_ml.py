@@ -20,7 +20,6 @@ except:
     pass
 
 
-
 class ChildImageClassifier:
     def initialize(self, model, model_as_file):
 
@@ -59,18 +58,17 @@ class ChildImageClassifier:
             required_parameters.extend(
                 [
                     {
-                        "name": f'{col}',
+                        "name": f"{col}",
                         "dataType": "numeric",
                         "value": band_cnt,
                         "required": True,
                         "displayName": "Band Value",
-                        "description": "mapping of band"
-
+                        "description": "mapping of band",
                     },
                 ]
             )
             band_cnt = band_cnt + 1
-        
+
         return required_parameters
 
     def getConfiguration(self, **scalars):
@@ -80,8 +78,7 @@ class ChildImageClassifier:
         return {"fixedTileSize": 1}
 
     def updatePixels(self, tlc, shape, props, **pixelBlocks):
-        image = pixelBlocks["raster_pixels"].astype(np.float32) # change to int
-
+        image = pixelBlocks["raster_pixels"].astype(np.float32)  # change to int
 
         cols = {}
 
@@ -99,11 +96,16 @@ class ChildImageClassifier:
                 processed_row.append(raster_data[raster_name][i])
             processed_data.append(processed_row)
 
-        processed_df = pd.DataFrame(data=np.array(processed_data), columns=sorted(raster_data))
+        processed_df = pd.DataFrame(
+            data=np.array(processed_data), columns=sorted(raster_data)
+        )
         processed_numpy = self.automl._data._process_data(processed_df, fit=False)
         predictions = self.automl._predict(processed_numpy)
 
-        predictions = np.array(predictions.reshape([image.shape[1], image.shape[2]]), dtype="float64",)
+        predictions = np.array(
+            predictions.reshape([image.shape[1], image.shape[2]]),
+            dtype="float64",
+        )
 
         predictions = np.expand_dims(predictions, axis=0)
 
