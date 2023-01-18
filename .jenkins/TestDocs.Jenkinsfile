@@ -6,19 +6,8 @@ pipeline {
             customWorkspace "workspace/$JOB_NAME/$BUILD_NUMBER"
         }
     }
-    options {
-        skipDefaultCheckout()
-    }
 
     stages {
-        stage('Setup') {
-            steps {
-                dir('geosaurus') {
-                    checkout scm
-                    sh "echo Building for $GIT_COMMIT"
-                }
-            }
-        }
         stage('Sphinx HTML') {
             stages {
                 stage('Build') {
@@ -73,7 +62,7 @@ pipeline {
         }
         stage('Cleanup') {
             steps {
-                sh 'rm -rf geosaurus'
+                cleanWs()
             }
         }
     }
