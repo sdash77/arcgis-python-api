@@ -173,7 +173,6 @@ class Security(BasePortalAdmin):
         """
         See main ``tokens`` property docsring
         """
-        # import six
 
         params = {"f": "json", "tokenConfig": None}
         if isinstance(value, str):

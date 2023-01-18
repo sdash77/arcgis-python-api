@@ -18,7 +18,6 @@ from __future__ import print_function
 
 import sys
 
-# import six
 from arcgis.gis import *
 
 from urllib.error import URLError

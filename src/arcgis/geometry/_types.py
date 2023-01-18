@@ -12,7 +12,6 @@ try:
     import numpy as np
 except ImportError as e:
     pass
-# from six import add_metaclass
 from functools import partial, lru_cache
 
 _number_type = (int, float)
@@ -298,7 +297,6 @@ class GeometryFactory(type):
         return type.__call__(cls, iterable, **kwargs)
 
 
-# @add_metaclass(GeometryFactory)
 class Geometry(BaseGeometry, metaclass=GeometryFactory):
     """
     The base class for all geometries.
@@ -2601,7 +2599,6 @@ class Geometry(BaseGeometry, metaclass=GeometryFactory):
             >>> geom2.type
                 arcgis.geometry.Geometry
         """
-        # from six import string_types, integer_types
 
         HASARCPY, HASSHAPELY = _check_geometry_engine()
 

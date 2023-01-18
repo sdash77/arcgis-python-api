@@ -200,8 +200,6 @@ class Logs(BasePortalAdmin):
         """
         from datetime import datetime
 
-        # from six import integer_types, string_types
-
         url = "%s/query" % self._url
         if isinstance(start_time, datetime):
             start_time = start_time.strftime("%Y-%m-%dT%H:%M:%S")
