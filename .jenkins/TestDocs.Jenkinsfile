@@ -6,6 +6,9 @@ pipeline {
             customWorkspace "workspace/$JOB_NAME/$BUILD_NUMBER"
         }
     }
+    options {
+        skipDefaultCheckout()
+    }
 
     stages {
         stage('Setup') {
