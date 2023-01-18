@@ -6439,6 +6439,7 @@ class ContentManager(object):
         count_fields: Optional[str] = None,
         count_size: Optional[int] = None,
         as_dict: bool = False,
+        enrich: bool = False,
     ):
         """
         The ``advanced_search`` method allows the ability to fully customize the search experience.
@@ -6518,6 +6519,10 @@ class ContentManager(object):
         as_dict             Required Boolean. If True, the results comes back as a dictionary.
                             The result of the method will always be a dictionary but the
                             `results` key in the dictionary will be changed if set to False.
+        ----------------    ---------------------------------------------------------------
+        enrich              Optional Boolean. If True, search results will include both
+                            literal and relevant matches. Without this parameter search
+                            results will include only literal matches.
         ================    ===============================================================
 
         :return:
@@ -6555,6 +6560,7 @@ class ContentManager(object):
                 count_size=count_size,
                 group_id=group_id,
                 as_dict=as_dict,
+                enrich=enrich,
             )["total"]
         so = {
             "asc": "asc",
@@ -6583,6 +6589,7 @@ class ContentManager(object):
                 count_size=count_size,
                 group_id=group_id,
                 as_dict=as_dict,
+                enrich=enrich,
             )
             if "total" in res and return_count:
                 return res["total"]
@@ -6603,6 +6610,7 @@ class ContentManager(object):
                 "count_fields",
                 "count_size",
                 "as_dict",
+                "enrich",
             ]
             inputs = locals()
             kwargs = {}
@@ -6737,6 +6745,7 @@ class ContentManager(object):
         outside_org: bool = False,
         categories: Optional[Union[list[str], str]] = None,
         category_filters: Optional[Union[list[str], str]] = None,
+        enrich: Optional[bool] = None,
     ):
 
         """
@@ -6799,7 +6808,10 @@ class ContentManager(object):
 
                           Up to 2 category_filters parameter are allowed per request. It can not be
                           used together with categories to search in a request.
-
+        ----------------  --------------------------------------------------------------------------
+        enrich            Optional Boolean. If True, search results will include both literal and
+                          relevant matches. Without this parameter search results will include only
+                          literal matches.
         ================  ==========================================================================
 
         :return:
@@ -6871,6 +6883,7 @@ class ContentManager(object):
             start=1,
             sort_field=sort_field,
             sort_order=sort_order,
+            enrich=enrich,
         )["results"]
         return itemlist
 
