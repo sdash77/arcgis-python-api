@@ -2823,13 +2823,19 @@ class Timeline(object):
         timeline = {self.node: {}}
         for event in self._events:
             timeline[self.node][event] = {}
-            for child in self._story._properties["nodes"][event]["children"]:
-                node_type = self._story._properties["nodes"][child]["type"]
-                if node_type == "text":
-                    node_type = self._story._properties["nodes"][child]["data"]["type"]
-                    if node_type == "h3":
-                        node_type = "subheading"
-                timeline[self.node][event][node_type] = child
+            if "children" in self._story._properties["nodes"][event]:
+                for child in self._story._properties["nodes"][event]["children"]:
+                    node_type = self._story._properties["nodes"][child]["type"]
+                    if node_type == "text":
+                        node_type = self._story._properties["nodes"][child]["data"][
+                            "type"
+                        ]
+                        if node_type == "h3":
+                            node_type = "subheading"
+                    timeline[self.node][event][node_type] = child
+            else:
+                node_type = self._story._properties["nodes"][event]["type"]
+                timeline[self.node][event] = node_type
         return timeline
 
     # ----------------------------------------------------------------------
@@ -3039,7 +3045,7 @@ class Timeline(object):
 
     # ----------------------------------------------------------------------
     def _add_item_story(self, content):
-        if content.node in self.story._properties["nodes"]:
+        if content.node in self._story._properties["nodes"]:
             content.node = "n-" + uuid.uuid4().hex[0:6]
         if isinstance(content, Image):
             content._add_image(story=self._story)
