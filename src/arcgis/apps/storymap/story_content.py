@@ -2436,6 +2436,7 @@ class Sidecar(object):
         # Method 2: Use the get method in story
         >>> sidecar = my_story.get(node = <node_id>)
     """
+
     def __init__(self, style: Optional[str] = None, **kwargs):
         # Can be created from scratch or already exist in story
         self._story = kwargs.pop("story", None)
@@ -2454,7 +2455,7 @@ class Sidecar(object):
     # ----------------------------------------------------------------------
     def __str__(self) -> str:
         return "Sidecar"
- 
+
     # ----------------------------------------------------------------------
     def _add_sidecar(
         self,
@@ -2469,11 +2470,11 @@ class Sidecar(object):
                 "type": "sidecar",
                 "subtype": self._style,
                 "narrativePanelPosition": "start",
-                "narrativePanelSize": "medium"
+                "narrativePanelSize": "medium",
             },
             "children": [],
         }
- 
+
     # ----------------------------------------------------------------------
     @property
     def properties(self):
@@ -2669,7 +2670,7 @@ class Sidecar(object):
         if len(self._slides) > 0:
             first_slide = self._story.properties["nodes"][self._slides[0]]
             first_np = self._story.properties["nodes"][first_slide["children"][0]]
-            data = first_np["data"] # keep same settings as other slide
+            data = first_np["data"]  # keep same settings as other slide
         else:
             if self._style == "slideshow":
                 data = {"position": "start-top", "panelStyle": "themed"}
@@ -2680,7 +2681,7 @@ class Sidecar(object):
         np_node = "n-" + uuid.uuid4().hex[0:6]
         np_def = {
             "type": "immersive-narrative-panel",
-            "data": data,  
+            "data": data,
             "children": np_children,
         }
         self._story._properties["nodes"][np_node] = np_def
@@ -2784,6 +2785,7 @@ class Sidecar(object):
             return False
         else:
             return True
+
 
 ###############################################################################################################
 class Timeline(object):

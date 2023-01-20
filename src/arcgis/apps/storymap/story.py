@@ -767,7 +767,7 @@ class StoryMap(object):
                 Content.Text,
                 Content.Gallery,
                 Content.Timeline,
-                Content.Sidecar
+                Content.Sidecar,
             ]
         ] = None,
         caption: Optional[str] = None,
