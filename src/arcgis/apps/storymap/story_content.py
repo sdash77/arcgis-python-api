@@ -2422,9 +2422,8 @@ class Sidecar(object):
     ===============     ====================================================================
     **Parameter**        **Description**
     ---------------     --------------------------------------------------------------------
-    node_id             Required String. The node id for the sidecar type.
-    ---------------     --------------------------------------------------------------------
-    story               Required :class:`~arcgis.apps.storymap.story.StoryMap` that the sidecar belongs to.
+    style               Optional string that depicts the sidecar style.
+                        Values: 'floating-panel' | 'docked-panel' | 'slideshow'
     ===============     ====================================================================
 
     .. code-block:: python
@@ -2437,22 +2436,44 @@ class Sidecar(object):
         # Method 2: Use the get method in story
         >>> sidecar = my_story.get(node = <node_id>)
     """
-
-    def __init__(self, story, node: str):
-        # Content must already exist in the story
-        # Sidecar is an immersive node
-        self._story = story
-        self.node = node
-        self._type = story._properties["nodes"][node]["data"]["type"]
-        if self._type != "sidecar":
-            raise Exception("This node is not of type sidecar.")
-        self._subtype = story._properties["nodes"][node]["data"]["subtype"]
-        self._slides = story._properties["nodes"][node]["children"]
+    def __init__(self, style: Optional[str] = None, **kwargs):
+        # Can be created from scratch or already exist in story
+        self._story = kwargs.pop("story", None)
+        self._type = "immersive"
+        self.node = kwargs.pop("node_id", None)
+        # Check if node exists else create new instance
+        existing = self._check_node()
+        if existing is True:
+            self._style = self._story._properties["nodes"][self.node]["data"]["subtype"]
+            self._slides = self._story._properties["nodes"][self.node]["children"]
+        else:
+            self.node = "n-" + uuid.uuid4().hex[0:6]
+            self._style = style if style else "floating-panel"
+            self._slides = []
 
     # ----------------------------------------------------------------------
     def __str__(self) -> str:
         return "Sidecar"
-
+ 
+    # ----------------------------------------------------------------------
+    def _add_sidecar(
+        self,
+        story=None,
+    ):
+        # Add the story to the node
+        self._story = story
+        # Create timeline nodes
+        self._story._properties["nodes"][self.node] = {
+            "type": "immersive",
+            "data": {
+                "type": "sidecar",
+                "subtype": self._style,
+                "narrativePanelPosition": "start",
+                "narrativePanelSize": "medium"
+            },
+            "children": [],
+        }
+ 
     # ----------------------------------------------------------------------
     @property
     def properties(self):
@@ -2645,14 +2666,21 @@ class Sidecar(object):
             self._add_item_story(media)
 
         # For reference on some styles, grab first slide to go off of
-        first_slide = self._story.properties["nodes"][self._slides[0]]
-        first_np = self._story.properties["nodes"][first_slide["children"][0]]
+        if len(self._slides) > 0:
+            first_slide = self._story.properties["nodes"][self._slides[0]]
+            first_np = self._story.properties["nodes"][first_slide["children"][0]]
+            data = first_np["data"] # keep same settings as other slide
+        else:
+            if self._style == "slideshow":
+                data = {"position": "start-top", "panelStyle": "themed"}
+            else:
+                data = {"position": "start", "size": "small", "panelStyle": "themed"}
 
         # Create narrative panel node
         np_node = "n-" + uuid.uuid4().hex[0:6]
         np_def = {
             "type": "immersive-narrative-panel",
-            "data": first_np["data"],  # keep same settings as other slide
+            "data": data,  
             "children": np_children,
         }
         self._story._properties["nodes"][np_node] = np_def
@@ -2747,6 +2775,15 @@ class Sidecar(object):
         elif isinstance(content, Audio):
             content._add_audio(display="wide", story=self._story)
 
+    # ----------------------------------------------------------------------
+    def _check_node(self):
+        # Node is not in the story if no story or node id is present
+        if self._story is None:
+            return False
+        elif self.node is None:
+            return False
+        else:
+            return True
 
 ###############################################################################################################
 class Timeline(object):
@@ -2784,7 +2821,7 @@ class Timeline(object):
         existing = self._check_node()
         if existing is True:
             self._style = self._story._properties["nodes"][self.node]["data"]["type"]
-            self._events = self._story._properties["nodes"][self._node]["children"]
+            self._events = self._story._properties["nodes"][self.node]["children"]
         else:
             self.node = "n-" + uuid.uuid4().hex[0:6]
             self._style = style if style else "waterfall"

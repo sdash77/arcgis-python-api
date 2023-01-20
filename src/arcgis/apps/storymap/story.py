@@ -1,6 +1,6 @@
 from __future__ import annotations
 import os
-from typing import Literal, Optional, Union
+from typing import Optional, Union
 import uuid
 from enum import Enum
 from arcgis.auth.tools import LazyLoader
@@ -766,6 +766,8 @@ class StoryMap(object):
                 Content.Button,
                 Content.Text,
                 Content.Gallery,
+                Content.Timeline,
+                Content.Sidecar
             ]
         ] = None,
         caption: Optional[str] = None,
@@ -779,11 +781,6 @@ class StoryMap(object):
         at which it will be in your story.
         Not passing in any content means a separator will be added.
 
-        .. note::
-            Not all story content can be added from scratch. Content such as ``swipe``, ``sidecar``, and
-            ``timeline`` can only be edited from pre-existing story content of those types. Please refer
-            to the documentation for each.
-
         ===============     ====================================================================
         **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
@@ -795,7 +792,9 @@ class StoryMap(object):
                             :class:`~arcgis.apps.storymap.story_content.Embed`,
                             :class:`~arcgis.apps.storymap.story_content.Map`,
                             :class:`~arcgis.apps.storymap.story_content.Text`,
-                            :class:`~arcgis.apps.storymap.story_content.Button`
+                            :class:`~arcgis.apps.storymap.story_content.Button`,
+                            :class:`~arcgis.apps.storymap.story_content.Timeline`,
+                            :class:`~arcgis.apps.storymap.story_content.Sidecar`
 
                             If none is provided, a separator is added.
         ---------------     --------------------------------------------------------------------
@@ -863,6 +862,8 @@ class StoryMap(object):
             content._add_text(self)
         elif isinstance(content, Content.Timeline):
             content._add_timeline(self)
+        elif isinstance(content, Content.Sidecar):
+            content._add_sidecar(self)
         else:
             # If no content passed, separator is added
             self._properties["nodes"][node_id] = {"type": "separator"}
