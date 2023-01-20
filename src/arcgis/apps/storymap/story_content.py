@@ -2759,9 +2759,9 @@ class Timeline(object):
     ===============     ====================================================================
     **Parameter**        **Description**
     ---------------     --------------------------------------------------------------------
-    node_id             Required String. The node id for the timeline type.
-    ---------------     --------------------------------------------------------------------
-    story               Required :class:`~arcgis.apps.storymap.story.StoryMap` that the timeline belongs to.
+    style               Required string, the style type of the timeline.
+
+                        Values: 'waterfall' | 'single-side' | 'condensed'
     ===============     ====================================================================
 
     .. code-block:: python
@@ -2775,20 +2775,40 @@ class Timeline(object):
         >>> timeline = my_story.get(node = <node_id>)
     """
 
-    def __init__(self, story, node: str):
-        # Content must already exist in the story
-        # Timeline is not an immersive node
-        self._story = story
-        self.node = node
-        self._type = story._properties["nodes"][node]["type"]
-        if self._type != "timeline":
-            raise Exception("This node is not of type timeline.")
-        self._subtype = story._properties["nodes"][node]["data"]["type"]
-        self._events = story._properties["nodes"][node]["children"]
+    def __init__(self, style: Optional[str] = None, **kwargs):
+        # Can be created from scratch or already exist in story
+        self._story = kwargs.pop("story", None)
+        self._type = "timeline"
+        self.node = kwargs.pop("node_id", None)
+        # Check if node exists else create new instance
+        existing = self._check_node()
+        if existing is True:
+            self._style = self._story._properties["nodes"][self.node]["data"]["type"]
+            self._events = self._story._properties["nodes"][self._node]["children"]
+        else:
+            self.node = "n-" + uuid.uuid4().hex[0:6]
+            self._style = style if style else "waterfall"
+            self._events = []
 
     # ----------------------------------------------------------------------
     def __str__(self) -> str:
         return "Timeline"
+
+    # ----------------------------------------------------------------------
+    def _add_timeline(
+        self,
+        story=None,
+    ):
+        # Add the story to the node
+        self._story = story
+        # Create timeline nodes
+        self._story._properties["nodes"][self.node] = {
+            "type": "timeline",
+            "data": {
+                "type": self._style,
+            },
+            "children": [],
+        }
 
     # ----------------------------------------------------------------------
     @property
@@ -2814,19 +2834,23 @@ class Timeline(object):
 
     # ----------------------------------------------------------------------
     @property
-    def style(self):
+    def style(self) -> str:
         """
         Get/Set the style of the timeline
 
         Values: `waterfall` | `single-slide` | `condensed`
         """
-        return self._story._properties["nodes"][self.node]["data"]["type"]
+        if self._check_node() is True:
+            return self._story._properties["nodes"][self.node]["data"]["type"]
+        else:
+            return self._style
 
     # ----------------------------------------------------------------------
     @style.setter
     def style(self, style):
-        self._story._properties["nodes"][self.node]["data"]["type"] = style
-        return self.style
+        if self._check_node() is True:
+            self._story._properties["nodes"][self.node]["data"]["type"] = style
+            self._style = style
 
     # ----------------------------------------------------------------------
     def edit(
@@ -2835,7 +2859,7 @@ class Timeline(object):
         event: int,
     ):
         """
-        Edit event text or image content.
+        Edit event text or image content. To add a new event use the `add_event` method.
 
         ===============     ====================================================================
         **Parameter**        **Description**
@@ -2885,6 +2909,69 @@ class Timeline(object):
             else:
                 # Image was not currently present so simply add
                 self._story._properties["nodes"][event]["children"].append(content.node)
+
+    # ----------------------------------------------------------------------
+    def add_event(
+        self, contents: list[Image | Text] | None = None, position: int | None = None
+    ) -> bool:
+        """
+        Add event or spacer to the timeline.
+
+        ===============     ====================================================================
+        **Parameter**        **Description**
+        ---------------     --------------------------------------------------------------------
+        contents            Optional item list that will be in the event. Need to be passed in
+                            by order of appearance.
+                            Item type can be :class:`~arcgis.apps.storymap.story_content.Image` or :class:`~arcgis.apps.storymap.story_content.Text` .
+
+                            Text can only be of style TextStyles.SUBHEADING or TextStyles.PARAGRAPH
+
+                            .. note::
+                                To create timeline spacer, do not pass in any value for this parameter.
+        ---------------     --------------------------------------------------------------------
+        position            Optional Integer. The position at which the even will be added. First event is 1.
+                            If None, then the event will be added to the end.
+        ===============     ====================================================================
+
+        """
+        if self._check_node() is True:
+            # Check if able to add event (20 max)
+            if len(self._events) == 20:
+                raise ValueError(
+                    "There is a maximum of 20 events allowed per timeline. To remove an event use the `remove_event` method."
+                )
+
+            event_node = "n-" + uuid.uuid4().hex[0:6]
+            if position:
+                self._story._properties["nodes"][self.node]["children"].insert(
+                    position, event_node
+                )
+            else:
+                self._story._properties["nodes"][self.node]["children"].append(
+                    event_node
+                )
+            if contents:
+                contents_ids = []
+                for content in contents:
+                    # Check to see if content has been added to node properties
+                    if content.node not in self._story._properties["nodes"]:
+                        self._add_item_story(content)
+                    contents_ids.append(content.node)
+                self._story._properties["nodes"][event_node] = {
+                    "type": "timeline-event",
+                    "children": contents_ids,
+                }
+            else:
+                self._story._properties["nodes"][event_node] = {
+                    "type": "timeline-spacer"
+                }
+
+            # update self._events
+            self._events = self._story._properties["nodes"][self.node]["children"]
+
+            return True
+        else:
+            return Exception("The node must be part of a story before editing")
 
     # ----------------------------------------------------------------------
     def remove_event(self, event: str):
@@ -2959,6 +3046,16 @@ class Timeline(object):
         elif isinstance(content, Text):
             content._add_text(story=self._story)
 
+    # ----------------------------------------------------------------------
+    def _check_node(self):
+        # Node is not in the story if no story or node id is present
+        if self._story is None:
+            return False
+        elif self.node is None:
+            return False
+        else:
+            return True
+
 
 ###############################################################################################################
 class MapTour(object):
@@ -2984,17 +3081,17 @@ class MapTour(object):
         >>> maptour = my_story.get(node = <node_id>)
     """
 
-    def __init__(self, story, node: str):
+    def __init__(self, story, node_id: str):
         # Content must already exist in the story
         # Map Tour is not an immersive node
         self._story = story
-        self.node = node
-        self.map = story._properties["nodes"][node]["data"]["map"]
-        if story._properties["nodes"][node]["type"] != "tour":
+        self.node = node_id
+        self.map = story._properties["nodes"][node_id]["data"]["map"]
+        if story._properties["nodes"][node_id]["type"] != "tour":
             raise Exception("This node is not of type tour.")
-        self._type = story._properties["nodes"][node]["data"]["type"]
-        self._subtype = story._properties["nodes"][node]["data"]["subtype"]
-        self._places = story._properties["nodes"][node]["data"]["places"]
+        self._type = story._properties["nodes"][node_id]["data"]["type"]
+        self._subtype = story._properties["nodes"][node_id]["data"]["subtype"]
+        self._places = story._properties["nodes"][node_id]["data"]["places"]
 
     # ----------------------------------------------------------------------
     def __str__(self) -> str:

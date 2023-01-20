@@ -1,6 +1,6 @@
 from __future__ import annotations
 import os
-from typing import Optional, Union
+from typing import Literal, Optional, Union
 import uuid
 from enum import Enum
 from arcgis.auth.tools import LazyLoader
@@ -861,6 +861,8 @@ class StoryMap(object):
             content._add_button(self)
         elif isinstance(content, Content.Text):
             content._add_text(self)
+        elif isinstance(content, Content.Timeline):
+            content._add_timeline(self)
         else:
             # If no content passed, separator is added
             self._properties["nodes"][node_id] = {"type": "separator"}
@@ -1505,14 +1507,14 @@ class StoryMap(object):
         elif node_type == "gallery":
             node = Content.Gallery(story=self, node_id=node_id)
         elif node_type == "timeline":
-            node = Content.Timeline(self, node_id)
+            node = Content.Timeline(self, node_id=node_id)
         elif node_type == "tour":
-            node = Content.MapTour(self, node_id)
+            node = Content.MapTour(self, node_id=node_id)
         elif node_type == "immersive":
             # immersive has subtype sidecar (more to add later)
             subtype = self._properties["nodes"][node_id]["data"]["type"]
             if subtype == "sidecar":
-                node = Content.Sidecar(self, node_id)
+                node = Content.Sidecar(self, node_id=node_id)
             else:
                 node = subtype
         else:
