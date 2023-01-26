@@ -1361,7 +1361,8 @@ class Map(object):
                                 | 'xmax': 6068184.160383142,
                                 | 'ymax': 6642754.094035632}
         ------------------  ----------------------------------------
-        scale               Optional Scales Value. Define the scale of the map.
+        scale               Optional Scales Value or dict with scale and zoom keys.
+                            Define the scale of the map.
                             If none specified, current scale is kept.
                             Find the available scales in the
                             :class:`~arcgis.apps.storymap.story_content.Scales` Class.
@@ -1411,6 +1412,13 @@ class Map(object):
                 self._story._properties["nodes"][self.node]["data"][
                     "zoom"
                 ] = scale.value["zoom"]
+            elif isinstance(scale, dict):
+                self._story._properties["nodes"][self.node]["data"]["viewpoint"][
+                    "scale"
+                ] = scale["scale"]
+                self._story._properties["nodes"][self.node]["data"]["zoom"] = scale[
+                    "zoom"
+                ]
         return self._story._properties["nodes"][self.node]["data"]["viewpoint"]
 
     # ----------------------------------------------------------------------
