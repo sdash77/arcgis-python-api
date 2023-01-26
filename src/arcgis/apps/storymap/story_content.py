@@ -2746,9 +2746,10 @@ class Sidecar(object):
         # Get narrative panel, always first child of the slide
         narrative_panel = self._story._properties["nodes"][slide]["children"][0]
         # Delete the children of the narrative panel
-        children = self._story._properties["nodes"][narrative_panel]["children"]
-        for child in children:
-            self._story._delete(child)
+        if "children" in self._story._properties["nodes"][narrative_panel]:
+            children = self._story._properties["nodes"][narrative_panel]["children"]
+            for child in children:
+                self._story._delete(child)
         # Delete the narrative panel itself
         self._story._delete(narrative_panel)
 
@@ -3029,10 +3030,10 @@ class Timeline(object):
         event               Required String. The node id for the timeline event that will be removed.
         ===============     ====================================================================
         """
-        self._story._properties["nodes"][self.node]["children"].remove(event)
-        self._events.remove(event)
-        self._story._delete(event)
         self._remove_associated(event)
+        self._story._properties["nodes"][self.node]["children"].remove(event)
+        self._story._delete(event)
+        return True
 
     # ----------------------------------------------------------------------
     def delete(self):

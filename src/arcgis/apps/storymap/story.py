@@ -1504,18 +1504,18 @@ class StoryMap(object):
         elif node_type == "button":
             node = Content.Button(story=self, node_id=node_id)
         elif node_type == "swipe":
-            node = Content.Swipe(self, node_id)
+            node = Content.Swipe(story=self, node=node_id)
         elif node_type == "gallery":
             node = Content.Gallery(story=self, node_id=node_id)
         elif node_type == "timeline":
-            node = Content.Timeline(self, node_id=node_id)
+            node = Content.Timeline(story=self, node_id=node_id)
         elif node_type == "tour":
-            node = Content.MapTour(self, node_id=node_id)
+            node = Content.MapTour(story=self, node_id=node_id)
         elif node_type == "immersive":
             # immersive has subtype sidecar (more to add later)
             subtype = self._properties["nodes"][node_id]["data"]["type"]
             if subtype == "sidecar":
-                node = Content.Sidecar(self, node_id=node_id)
+                node = Content.Sidecar(story=self, node_id=node_id)
             else:
                 node = subtype
         else:
