@@ -1802,12 +1802,14 @@ class FeatureLayerCollectionManager(_GISResource):
         :return:
             :class:`~arcgis.features.managers.WebHookServiceManager`
         """
-        if self._gis.version >= [8, 2]:
+        if self._gis.version >= [8, 2] and self._gis._portal.is_arcgisonline:
             if self._wh is None:
                 self._wh = WebHookServiceManager(
                     url=self._url + "/WebHooks", fc=self._fs, gis=self._gis
                 )
             return self._wh
+        elif self._gis.version >= [8, 2] and self._gis._portal.is_arcgisonline == False:
+            return self._fs.service.webhook_manager
         return None
 
     # ----------------------------------------------------------------------

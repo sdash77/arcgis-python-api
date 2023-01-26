@@ -3,6 +3,7 @@ Contains the base class that all server object inherit from.
 """
 from __future__ import absolute_import
 import json
+import functools
 from collections import OrderedDict
 from urllib.request import HTTPError
 from ..._impl._con import Connection
@@ -39,6 +40,15 @@ class BaseServer(object):
             raise ValueError("gis must be of type SiteConnection")
         if initialize:
             self._init(gis)
+
+    @functools.lru_cache(maxsize=10)
+    def _server_version(self) -> list[float]:
+        """returns the server version number"""
+        params: dict[str, Any] = {"f": "json"}
+        url: str = self._url.split("/admin/")[0] + "/admin"
+        return [
+            int(v) for v in str(self._con.get(url, params)["currentVersion"]).split(".")
+        ]
 
     # ----------------------------------------------------------------------
     def _init(self, connection=None):
