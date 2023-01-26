@@ -2,6 +2,7 @@
 Contains the base class that all server object inherit from.
 """
 from __future__ import absolute_import
+from __future__ import annotations
 import json
 import functools
 from collections import OrderedDict
