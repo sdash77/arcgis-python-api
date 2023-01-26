@@ -1613,7 +1613,7 @@ class Map(object):
                 "viewpoint": self._viewpoint,
                 "itemId": self._path.id,
                 "itemType": self._type,
-                "type": "default",
+                "type": "minimal",
             },
         }
 
