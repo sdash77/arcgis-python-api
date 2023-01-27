@@ -6,7 +6,6 @@ from enum import Enum
 from arcgis.auth.tools import LazyLoader
 import re
 import copy
-import json
 from ._ref import templates
 
 arcgis = LazyLoader("arcgis")
