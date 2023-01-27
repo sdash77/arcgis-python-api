@@ -71,7 +71,7 @@ else:
         "lxml",
         "notebook",
         "cryptography",
-        "ipywidgets >=7",
+        "ipywidgets >=7,<8",
         "widgetsnbextension >=3",
         "jupyter-client <=6.1.12",
         "pandas >=1.3.5",
