@@ -42,19 +42,10 @@ def is_supported(gis: Optional[GIS] = None):
     checks if :attr:`~arcgis.env.active_gis` supports raster analytics
     """
     gis = _arcgis.env.active_gis if gis is None else gis
-    if (
-        gis is not None
-        and hasattr(gis.properties, "helperServices")
-        and "rasterAnalytics" in gis.properties.helperServices
-    ):
-        user = gis.users.me
-        if user is not None and "premium:publisher:rasteranalysis" in user.privileges:
-            if (
-                "portal:publisher:publishDynamicImagery" in user.privileges
-                or "portal:publisher:publishTiledImagery" in user.privileges
-            ):
-                return True
-    return False
+    if "rasterAnalytics" in gis.properties.helperServices:
+        return True
+    else:
+        return False
 
 
 def _id_generator(size=6, chars=_string.ascii_uppercase + _string.digits):
