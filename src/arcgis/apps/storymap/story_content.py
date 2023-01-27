@@ -2984,9 +2984,11 @@ class MapTour(object):
         >>> maptour = my_story.get(node = <node_id>)
     """
 
-    def __init__(self, story, node: str):
+    def __init__(self, **kwargs):
         # Content must already exist in the story
         # Map Tour is not an immersive node
+        story = kwargs.pop("story", None)
+        node = kwargs.pop("node_id", None)
         self._story = story
         self.node = node
         self.map = story._properties["nodes"][node]["data"]["map"]
@@ -3062,3 +3064,95 @@ class MapTour(object):
 
         """
         return self._story._assign_node_class(node_id)
+
+
+###############################################################################################################
+class MapAction:
+    """
+    Within the sidecar block, there are stationary media panels and scrolling narrative panels works hand in hand
+    to deliver an immersive experience. If the media panel consists of a web map or web scene, the map actions
+    functionality allows authors to include options for further interactivity.
+    Simply put, map actions are buttons that change something on the map or scene when toggled.
+    These buttons can be configured to modify the map extent, the visibility of different layers etc., and this can be
+    useful to include additional details without deviating from the primary narrative.
+
+    There are two main types: Inline text map actions and map action blocks in sidecar.
+
+    ===============     ====================================================================
+    **Parameter**        **Description**
+    ---------------     --------------------------------------------------------------------
+    node_id             Required String. The node id for the map tour type.
+    ---------------     --------------------------------------------------------------------
+    story               Required :class:`~arcgis.apps.storymap.story.StoryMap` that the map tour belongs to.
+    ===============     ====================================================================
+
+    """
+
+    def __init__(self, **kwargs) -> None:
+        node = kwargs.pop("node_id", None)
+        story = kwargs.pop("story", None)
+        self.node = node
+        self._story = story
+        actions = story._properties["actions"]
+        for action in actions:
+            if action["origin"] == node:
+                self.target = action["target"]
+                self.properties = action
+
+    # ----------------------------------------------------------------------
+    def __str__(self) -> str:
+        return "Map Action: " + self.properties["event"]
+
+    # ----------------------------------------------------------------------
+    @property
+    def data(self) -> dict:
+        return self.properties["data"]
+
+    # ----------------------------------------------------------------------
+    @property
+    def text(self) -> str:
+        """
+        Get/Set the button text for a map action button.
+        """
+        node_dict = self._story._properties["nodes"][self.node]
+        if "text" in node_dict["data"]:
+            return node_dict["data"]["text"]
+        return ""
+
+    # ----------------------------------------------------------------------
+    @text.setter
+    def text(self, text: str) -> None:
+        """"""
+        if isinstance(text, str):
+            self._story._properties["nodes"][self.node]["data"]["text"] = text
+        else:
+            raise TypeError("Text must be of type string.")
+
+    # ----------------------------------------------------------------------
+    @property
+    def extent(self) -> dict:
+        """
+        Get/Set the map action's extent.
+        The extent dictionary needs to include
+        'spatialReference', 'xmin', 'ymin', 'xmax', and 'ymax' keys.
+
+        Example:
+            extent = {
+                'spatialReference': {'latestWkid': 3857, 'wkid': 102100},
+                'xmin': -19358013.53575059,
+                'ymin': -2062725.667610119,
+                'xmax': 3203751.2291224618,
+                'ymax': 10636827.95979891
+            }
+        """
+        return self.properties["data"]["extent"]
+
+    # ----------------------------------------------------------------------
+    @extent.setter
+    def extent(self, extent: dict):
+        # get the index of the action in the list
+        action_idx = self._story._properties["actions"].index(self.properties)
+        # set the extent
+        self._story._properties["actions"][action_idx]["data"]["extent"] = extent
+
+    # ----------------------------------------------------------------------
