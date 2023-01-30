@@ -2591,6 +2591,127 @@ class Sidecar(object):
         return self._story._assign_node_class(node_id)
 
     # ----------------------------------------------------------------------
+    def add_action(
+        self,
+        slide_number: int,
+        text: str,
+        extent: dict | None = None,
+        map_layers: list[dict] | None = None,
+        viewpoint: dict | None = None,
+    ):
+        """
+        Add a map action button to a slide. You can specify the data of the action.
+
+        ===============     ====================================================================
+        **Parameter**        **Description**
+        ---------------     --------------------------------------------------------------------
+        slide_number        Required Integer. The slide that the map action will be added to. First slide is 1.
+        ---------------     --------------------------------------------------------------------
+        text                Required String. The map action button text
+        ---------------     --------------------------------------------------------------------
+        extent              Optional Dictionary. The extent of the map that will be shown when
+                            the action button is used.
+
+                            Example:
+                                extent = {
+                                    "spatialReference": {
+                                        "latestWkid": 3857,
+                                        "wkid": 102100
+                                    },
+                                    "xmin": -8839182.968379805,
+                                    "ymin": 3907027.5240857545,
+                                    "xmax": -8824335.075635428,
+                                    "ymax": 3915378.269425899
+                                }
+        ---------------     --------------------------------------------------------------------
+        mapLayers           Optional list of dictionaries. Each dictionary represents a map layer
+                            and the parameters set on the map layer.
+
+                            Example:
+                                map_layers = [
+                                    {
+                                        "id": "18511776c33-layer-2",
+                                        "title": "USA Forest Type",
+                                        "visible": true
+                                    }
+                                ]
+        ---------------     --------------------------------------------------------------------
+        viewpoint           Optional Dictionary. The viewpoint to be set. The minimum keys to include are
+                            an x and y center point in the target geometry.
+
+                            Example:
+                                viewpoint = {
+                                    "rotation": 0,
+                                    "scale": 18055.954822,
+                                    "targetGeometry": {
+                                        "spatialReference": {
+                                            "latestWkid": 3857,
+                                            "wkid": 102100
+                                        },
+                                        "x": -8723429.856341356,
+                                        "y": 4019095.847955684
+                                    }
+                                }
+        ===============     ====================================================================
+
+        :return: Map Action class
+        """
+        # create node for the action
+        node = "n-" + uuid.uuid4().hex[0:6]
+
+        # find the target map
+        slide_node = self._slides[slide_number - 1]
+        slide_dict = self.properties[slide_number][slide_node]
+        if "media" not in slide_dict:
+            raise ValueError(
+                "The slide needs a webmap or expressmap for the map action to be created."
+            )
+
+        # get the map type
+        map_type = list(slide_dict["media"].keys())[0]
+        if map_type not in ["expressmap", "webmap"]:
+            raise ValueError(
+                "The slide needs a webmap or expressmap for the map action to be created."
+            )
+        map_node = slide_dict["media"][map_type]
+
+        # compose the action dict
+        action_dict = {
+            "origin": node,
+            "trigger": "ActionButton_Apply",
+            "target": map_node,
+            "event": "ExpressMap_UpdateData"
+            if map_type == "expressmap"
+            else "WebMap_UpdateData",
+            "data": {},
+        }
+        if extent:
+            action_dict["data"]["extent"] = extent
+        if map_layers:
+            action_dict["data"]["mapLayers"] = map_layers
+        if viewpoint:
+            action_dict["data"]["viewpoint"] = viewpoint
+
+        # add to actions list in story properties
+        if "actions" in self._story._properties:
+            self._story._properties["actions"].append(action_dict)
+        else:
+            self._story._properties["actions"] = [action_dict]
+
+        # compose the node dict in story properties
+        self._story._properties["nodes"][node] = {
+            "type": "action-button",
+            "data": {"text": text},
+            "config": {"size": "wide"},
+        }
+
+        # add to the narrative panel
+        narrative_panel_node = slide_dict["narrative_panel"]["panel"]
+        self._story._properties["nodes"][narrative_panel_node]["children"].append(node)
+
+        return MapAction(story=self._story, node_id=node)
+
+    # ----------------------------------------------------------------------
     def add_slide(
         self,
         contents: list,
@@ -3078,6 +3199,8 @@ class MapAction:
 
     There are two main types: Inline text map actions and map action blocks in sidecar.
 
+    To create a map action you must use the `create_action` method found in the sidecar.
+
     ===============     ====================================================================
     **Parameter**        **Description**
     ---------------     --------------------------------------------------------------------
@@ -3091,13 +3214,17 @@ class MapAction:
     def __init__(self, **kwargs) -> None:
         node = kwargs.pop("node_id", None)
         story = kwargs.pop("story", None)
-        self.node = node
-        self._story = story
-        actions = story._properties["actions"]
-        for action in actions:
-            if action["origin"] == node:
-                self.target = action["target"]
-                self.properties = action
+        if node:
+            self.node = node
+            self._story = story
+            actions = story._properties["actions"]
+            for action in actions:
+                if action["origin"] == node:
+                    self.target = action["target"]
+                    self.properties = action
+        else:
+            self.node = "n-" + uuid.uuid4().hex[0:6]
+            self._story = story
 
     # ----------------------------------------------------------------------
     def __str__(self) -> str:
