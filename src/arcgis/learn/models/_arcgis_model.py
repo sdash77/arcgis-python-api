@@ -1510,9 +1510,14 @@ class ArcGISModel(object):
             self.framework = framework
             self.learn.model_dir = temp1
 
-        _emd_template = self._create_emd_template(
-            saved_path.with_suffix(".pth"), compute_metrics, save_inference_file
-        )
+        if (type(self).__name__) == "EfficientDet":
+            _emd_template = self._create_emd_template(
+                saved_path.with_suffix(".tflite"), compute_metrics, save_inference_file
+            )
+        else:
+            _emd_template = self._create_emd_template(
+                saved_path.with_suffix(".pth"), compute_metrics, save_inference_file
+            )
 
         if framework.lower() == "tf-onnx":
             batch_size = kwargs.get("batch_size", 16)

@@ -1,5 +1,4 @@
 from pickle import TRUE
-from turtle import back
 import warnings
 import traceback
 from pathlib import Path
@@ -24,13 +23,6 @@ try:
         read_image,
     )
     from .._image_utils import _draw_predictions
-
-    from ._efficientdet_utils import (
-        EfficientDetTrainer,
-        EfficientDetLearner,
-        check_data_sanity,
-        _get_tf_data_loader,
-    )
     from .._utils.env import is_arcgispronotebook
     from .._utils.object_tracking_data import get_image_for_tracking
     import matplotlib
@@ -83,6 +75,13 @@ class EfficientDet(ArcGISModel):
     ):
         if not HAS_FASTAI:
             raise_fastai_import_error(import_exception=import_exception)
+        self._check_tf()
+
+        from ._efficientdet_utils import (
+            EfficientDetTrainer,
+            check_data_sanity,
+            _get_tf_data_loader,
+        )
 
         self._learn_version = kwargs.get("ArcGISLearnVersion", "1.9.1")
 
@@ -121,7 +120,6 @@ class EfficientDet(ArcGISModel):
                 f"Enter only compatible backbones from {', '.join(self.supported_backbones)}"
             )
 
-        self._check_tf()
         self._tf_data_loader = _get_tf_data_loader(data)
         self._trainer = EfficientDetTrainer.create(data, self._backbone.get_name())
         self._tf_dataset = self._trainer.get_tf_dataset(
@@ -144,7 +142,7 @@ class EfficientDet(ArcGISModel):
 
     @staticmethod
     def _supported_datasets():
-        return ["PASCAL_VOC_rectangles", "KITTI_rectangles"]
+        return ["PASCAL_VOC_rectangles"]
 
     @staticmethod
     def _supported_backbones():
@@ -165,6 +163,7 @@ class EfficientDet(ArcGISModel):
         return EfficientDet._supported_backbones()[0]
 
     def _setup_backend(self, data, pretrained_path):
+        from ._efficientdet_utils import EfficientDetLearner
         from .._utils.fastai_tf_fit import TfLearner
         import tensorflow as tf
         from tensorflow.keras.models import Model

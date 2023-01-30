@@ -3934,7 +3934,7 @@ class GeoAccessor(object):
         """
         q = self._data[self.name].notnull()
         df = pd.DataFrame(
-            data=self._data[self.name][q].geom.true_centroid.tolist(),
+            data=list(row.true_centroid for row in self._data[self.name][q]),
             columns=["x", "y"],
         ).mean()
         return df["x"], df["y"]

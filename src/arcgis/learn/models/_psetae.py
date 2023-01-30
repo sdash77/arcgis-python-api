@@ -124,6 +124,8 @@ class PSETAE(ArcGISModel):
             ] = "[Functions]System\\DeepLearning\\ArcGISLearn\\ArcGISImageTsClassifier.py"
         _emd_template["ModelType"] = "ImageClassification"
         _emd_template["Class_mapping"] = self._data._class_map_dict
+        if self._data._num_class_map_dict:
+            _emd_template["Num_class_mapping"] = self._data._num_class_map_dict
         _emd_template["n_channel"] = self._data._n_channel
         _emd_template["n_temporal"] = self._data._n_temp
         _emd_template["IsMultidimensional"] = self._data._is_multidimensional
@@ -177,6 +179,9 @@ class PSETAE(ArcGISModel):
         model_params = emd["ModelParameters"]
         chip_size = emd["ImageHeight"]
         kwargs = emd.get("Kwargs", {})
+
+        if "backbone" in kwargs.keys():
+            kwargs.pop("backbone")
 
         if data is None:
             data = _EmptyData(

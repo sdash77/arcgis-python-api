@@ -1118,8 +1118,8 @@ class TabularDataObject(object):
                 )
             except:
                 ts_bunch = self._time_series_bunch(seq_len, False, False)
-                X_train = ts_bunch.train_ds.x
-                y_train = ts_bunch.train_ds.y
+                X_train = ts_bunch.train_ds.x.items
+                y_train = ts_bunch.train_ds.y.items
 
             n_items = rows**2
             if n_items > len(X_train):

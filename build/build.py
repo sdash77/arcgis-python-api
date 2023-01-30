@@ -34,8 +34,13 @@ BASE_CONVERT_CMD = (
 BASE_INDEX_CMD = "cd {output_dir} && conda index {os_build_target}"
 BASE_UPLOAD_CMD = "anaconda upload -f {conda_package}"
 
+BINARIES_ROOT_PATH = r"\\geosaurus.esri.com\Public\build\geosaurus2"
 # Note that this command alone will place pkgs in src/dist, not build/output
-BASE_PIP_BUILD_CMD = "cd {src_dir} && python setup.py sdist"
+BASE_PIP_BUILD_CMD = (
+    r"python {build_dir}/manage_binaries.py copy --bin-path " + BINARIES_ROOT_PATH + " --src-path {src_dir}/arcgis " +
+    "&& cd {src_dir} && python setup.py sdist " +
+    "&& python {build_dir}/manage_binaries.py clean --src-path {src_dir}/arcgis"
+)
 
 SUPPORTED_WIN = ['win-64']
 SUPPORTED_LINUX = ['linux-64']
@@ -412,7 +417,7 @@ def build_pip_package(clear_output_folder=True):
     """Build the pip .tar.gz for hosting on pypi servers"""
     if clear_output_folder:
         _clear_output_folder()
-    _run_shell_cmd(BASE_PIP_BUILD_CMD.format(src_dir=SRC_DIR))
+    _run_shell_cmd(BASE_PIP_BUILD_CMD.format(src_dir=SRC_DIR, build_dir=BUILD_DIR))
     if os.path.exists(BUILD_OUTPUT_PIP_DIR):
         shutil.rmtree(BUILD_OUTPUT_PIP_DIR)
     shutil.copytree(SRC_DIST_DIR, BUILD_OUTPUT_PIP_DIR)
