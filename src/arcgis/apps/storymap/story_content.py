@@ -2471,10 +2471,11 @@ class Sidecar(object):
                 if "children" in self._story._properties["nodes"][narrative_panel]
                 else ""
             )
-            narrative_children = {}
+            narrative_children = []
             for child in children:
                 info = self._story._properties["nodes"][child]
-                narrative_children[info["type"]] = child
+                narrative_children.append({info["type"]: child})
+
             # there will always be a narrative panel node but not always a media node
             if len(self._story._properties["nodes"][slide]["children"]) == 2:
                 media_item = self._story._properties["nodes"][slide]["children"][1]
@@ -2654,7 +2655,7 @@ class Sidecar(object):
                                 }
         ===============     ====================================================================
 
-        :return: Map Action class
+        :return: The node id for the action that was added to the slide
         """
         # create node for the action
         node = "n-" + uuid.uuid4().hex[0:6]
@@ -2709,7 +2710,7 @@ class Sidecar(object):
         narrative_panel_node = slide_dict["narrative_panel"]["panel"]
         self._story._properties["nodes"][narrative_panel_node]["children"].append(node)
 
-        return MapAction(story=self._story, node_id=node)
+        return node
 
     # ----------------------------------------------------------------------
     def add_slide(
