@@ -7557,6 +7557,7 @@ class ContentManager(object):
                 # When filegdb not supported through append, use featureCollection
                 features = new_item.layers[0].query().features
                 fs_item.layers[fl_index].edit_features(adds=features)
+            fs_item.add_relationship(rel_item=file_item, rel_type="Service2Data")
 
         # If overwrite or append specified, set up necessary params
         overwrite = kwargs.pop("overwrite", False)
@@ -7660,7 +7661,11 @@ class ContentManager(object):
                     publish_parameters=publish_parameters, item_id=item_id
                 )
             return
-        elif isinstance(df, pd.DataFrame) and "location_type" not in kwargs:
+        elif (
+            isinstance(df, pd.DataFrame)
+            and "location_type" not in kwargs
+            and (overwrite or append)
+        ):
             # Table Workflow
             tags = kwargs.pop("tags", "CSV")
 
@@ -7678,9 +7683,10 @@ class ContentManager(object):
                     "type": "CSV",
                     "tags": tags,
                 },
+                data=temp_file,
             )
 
-            # Step 2: Analyze the data
+            # # Step 2: Analyze the data
             res = self._gis.content.analyze(item=csv_item, file_type="csv")
 
             # Step 3: Publish the CSV as a Table
@@ -7711,7 +7717,54 @@ class ContentManager(object):
                 return self._gis.content.get(fs_id)
 
             return new_item
+        elif isinstance(df, pd.DataFrame) and "location_type" not in kwargs:
+            # To not break backwards compatibility
+            # TODO: At 3.0.0 return an item not a Feature Set anymore: remove this elif block and keep one above
+            # CSV WORKFLOW
+            path = "content/features/analyze"
+            if kwargs.get("geocode_url", None):
+                geocode_url = kwargs.get("geocode_url")
+            else:
+                locators = [
+                    gc["url"]
+                    for gc in self._gis.properties.helperServices.geocode
+                    if gc.get("batch", False)
+                ]
+                if len(locators) == 0:
+                    raise Exception("No batch geocoding service found.")
+                geocode_url = locators[0]
+            postdata = {
+                "f": "pjson",
+                "text": df.to_csv(index_label="OBJECTID"),
+                "filetype": "csv",
+                "analyzeParameters": {
+                    "enableGlobalGeocoding": "true",
+                    "sourceLocale": "en-us",
+                    "sourceCountry": "",
+                    "sourceCountryHint": "",
+                    "geocodeServiceUrl": geocode_url,
+                },
+            }
 
+            if address_fields is not None:
+                postdata["analyzeParameters"]["locationType"] = "address"
+
+            res = self._portal.con.post(path, postdata)
+            if address_fields is not None:
+                res["publishParameters"].update({"addressFields": address_fields})
+            path = "content/features/generate"
+            postdata = {
+                "f": "pjson",
+                "text": df.to_csv(index_label="OBJECTID"),
+                "filetype": "csv",
+                "publishParameters": json.dumps(res["publishParameters"]),
+            }
+            if item_id:
+                postdata["itemIdToCreate"] = item_id
+            res = self._portal.con.post_multipart(path, postdata)
+
+            fc = FeatureCollection(res["featureCollection"]["layers"][0])
+            return fc
         elif (isinstance(df, pd.DataFrame) and "location_type" in kwargs) or (
             isinstance(df, pd.DataFrame) and address_fields
         ):
