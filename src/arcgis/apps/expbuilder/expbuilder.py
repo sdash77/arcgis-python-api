@@ -1,16 +1,69 @@
 from __future__ import annotations
-import os
 from typing import Optional, Union
 import uuid
 from enum import Enum
 from arcgis.auth.tools import LazyLoader
-import re
 import copy
 from ._ref import templates
 
 arcgis = LazyLoader("arcgis")
 json = LazyLoader("json")
 time = LazyLoader("time")
+
+
+class Templates(Enum):
+
+    BLANKFULLSCREEN = "blank fullscreen"
+    BLANKSCROLLING = "blank scrolling"
+    FOLDABLE = "foldable"
+    LAUNCHPAD = "launchpad"
+    JEWELERYBOX = "jewelrybox"
+    BILLBOARD = "billboard"
+    JOURNEY = "journey"
+    RIBBON = "ribbon"
+    GENERAL = "general"
+    INTRODUCTION = "introduction"
+    GALLERY = "gallery"
+    EPIC = "epic"
+    SNAPSHOT = "snapshot"
+    SUMMARY = "summary"
+    TIMELINE = "timeline"
+    SCENIC = "scenic"
+    EXHIBITION = "exhibition"
+    DART = "dart"
+    POCKET = "pocket"
+    QUICKNAVIGATION = "quick navigation"
+    PARALLAX = "parallax"
+    DASH = "dash"
+    INDICATOR = "indicator"
+    MONITOR = "monitor"
+    REVEAL = "reveal"
+
+    def preview(self, width: Optional[int] = 800, height: Optional[int] = 500):
+        import threading
+        import time
+
+        def thread_delete(item):
+            time.sleep(3)
+            item.delete()
+
+        try:
+            temp = WebExperience(template=self.value)
+            temp._item.share(everyone=True)
+            temp.publish()
+            from IPython.display import IFrame
+
+            frame = IFrame(
+                src=temp._item.url,
+                width=width,
+                height=height,
+            )
+            delete = threading.Thread(target=thread_delete, args=([temp._item]))
+            delete.start()
+            return frame
+
+        except:
+            return False
 
 
 class WebExperience(object):
@@ -53,7 +106,7 @@ class WebExperience(object):
         self,
         item: Optional[Union[arcgis.gis.Item, str]] = None,
         gis: Optional[arcgis.gis.GIS] = None,
-        template: Optional[str] = None,
+        template: Optional[Union[Templates, str]] = None,
         name: Optional[str] = None,
     ):
 
@@ -93,6 +146,9 @@ class WebExperience(object):
         a template from the experience builder to create their template, in addition to a custom
         item name (done as arguments in the initial creation of the WebExperience).
         """
+
+        if isinstance(template, Templates):
+            template = template.value
 
         # retrieve template for experience
         if template is None:
