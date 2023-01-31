@@ -112,6 +112,63 @@ def is_supported(gis=None):
     else:
         return False
 
+def create_project(name, definition, * , gis: Optional[GIS] = None, **kwargs):
+
+    folder = None
+    folderId = None
+    if kwargs is not None:
+        if "folder" in kwargs:
+            folder = kwargs["folder"]
+
+    if folder is None:
+        folder = "_orthomapping_"+ name
+    if folder is not None:
+        if isinstance(folder, dict):
+            if "id" in folder:
+                folderId = folder["id"]
+                folder=folder["title"]
+        else:
+            owner = gis.properties.user.username
+            folderId = gis._portal.get_folder_id(owner, folder)
+        if folderId is None:
+            folder_dict = gis.content.create_folder(folder, owner)
+            folder = folder_dict["title"]
+            folderId = folder_dict["id"]  
+
+    item_properties = {
+        "title": name,
+        "type": "Ortho Mapping Project",
+        "properties": {"flightCount": 1, "status": "inProgress"}
+    }
+     
+    item_properties["text"] = json.dumps(definition)
+    item = gis.content.add(item_properties, folder=folder)
+    return item
+
+def add_flight(project_item, 
+              flight_name, 
+              image_collection, 
+              image_list, 
+              raster_type_name, 
+              raster_type_params: Optional[dict[str, Any]] = None,
+              * , gis: Optional[GIS] = None, **kwargs):
+
+
+    for f in gis.users.me.folders:
+        if f['id'] == project_item.ownerFolder:
+            folder = f
+            break
+
+    from arcgis.raster.analytics import create_image_collection
+    output_collection = create_image_collection(image_collection=image_collection, 
+                                                input_rasters=image_list,
+                                                raster_type_name=raster_type_name,
+                                                raster_type_params=raster_type_params,
+                                                gis=gis,
+                                                folder=folder)
+    return output_collection
+
+
 
 ###################################################################################################
 ## Compute Sensor model
