@@ -10,6 +10,7 @@ from ..tools import parse_url
 
 requests = LazyLoader("requests")
 
+
 ###########################################################################
 class ProxyAuth(HTTPProxyAuth, SupportMultiAuth):  # pragma: no cover
     """Extends ProxyAuth for Chaining"""
@@ -159,7 +160,6 @@ class EsriBasicAuth(HTTPBasicAuth, SupportMultiAuth):
         return r
 
     def __call__(self, r):
-
         if self.auth:
             self.auth.__call__(r)
         r.headers["Authorization"] = _basic_auth_str(self.username, self.password)

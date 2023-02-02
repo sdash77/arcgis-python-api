@@ -10,7 +10,7 @@ def generate_direct_access_url(
     Function to get the direct access url for user's rasterStore on ArcGIS Online.
 
     ====================================     ====================================================================
-    **Argument**                             **Description**
+    **Parameter**                             **Description**
     ------------------------------------     --------------------------------------------------------------------
     expiration                               Optional integer. Direct access URL expiration time in minutes.
                                              (The default is 1440 ie. 24 hours)
@@ -44,7 +44,7 @@ def upload_imagery_to_agol_userstore(
     needs to be pre-installed. Refer https://docs.microsoft.com/en-us/azure/storage/blobs/storage-quickstart-blobs-python#install-the-package
 
     ====================================     ====================================================================
-    **Argument**                             **Description**
+    **Parameter**                             **Description**
     ------------------------------------     --------------------------------------------------------------------
     files                                    Required. It can be a folder, list of files or single file that needs to be uploaded.
     ------------------------------------     --------------------------------------------------------------------
@@ -128,7 +128,6 @@ def publish_hosted_imagery_layer(
     future: bool = False,
     **kwargs,
 ):
-
     """
     The function can create hosted imagery layers in ArcGIS Enterprise and ArcGIS Online 
     from local raster datasets by uploading the data to the server. 
@@ -136,7 +135,7 @@ def publish_hosted_imagery_layer(
     A collection can also be created from multiple input rasters.
 
     ====================================     ====================================================================
-    **Argument**                             **Description**
+    **Parameter**                             **Description**
     ------------------------------------     --------------------------------------------------------------------
     input_data                               Required list. The list of input raster paths(s) to be added to 
                                              the imagery layer being created. 
@@ -324,8 +323,7 @@ def publish_hosted_imagery_layer(
 
         output_name = "layer" + "_" + _id_generator()
 
-    if layer_configuration == "ONE_IMAGE":
-
+    if layer_configuration.upper() == "ONE_IMAGE":
         gis = env.active_gis if gis is None else gis
 
         return gis._tools.rasteranalysis.copy_raster(
@@ -340,8 +338,7 @@ def publish_hosted_imagery_layer(
             **kwargs,
         )
 
-    elif layer_configuration == "IMAGE_COLLECTION":
-
+    elif layer_configuration.upper() == "IMAGE_COLLECTION":
         gis = env.active_gis if gis is None else gis
 
         return gis._tools.rasteranalysis.create_image_collection(
@@ -354,4 +351,9 @@ def publish_hosted_imagery_layer(
             gis=gis,
             future=future,
             **kwargs,
+        )
+
+    else:
+        raise RuntimeError(
+            "layer_configuration should be either ONE_IMAGE or IMAGE_COLLECTION"
         )

@@ -57,7 +57,7 @@ class ImageryModel(ArcGISModel):
         which can be used to further fine tune the models saved using AutoDL.
 
         =====================   ===========================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ---------------------   -------------------------------------------
         path                    Required string. Path to
                                 Esri Model Definition(EMD) file.
@@ -114,7 +114,7 @@ class ImageryModel(ArcGISModel):
         specified learning rates
 
         =====================   ===========================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ---------------------   -------------------------------------------
         epochs                  Optional integer. Number of cycles of training
                                 on the data. Increase it if the model is underfitting.
@@ -178,7 +178,6 @@ class ImageryModel(ArcGISModel):
             print("Load the model first using load()")
 
     def show_results(self, rows=5, **kwargs):
-
         """
         Displays the results of a trained model on a part of the validation set.
 
@@ -205,7 +204,7 @@ class ImageryModel(ArcGISModel):
         Learning Package zip for deployment to Image Server or ArcGIS Pro.
 
         =====================   ===========================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ---------------------   -------------------------------------------
         name_or_path            Required string. Name of the model to save. It
                                 stores it at the pre-defined location. If path
@@ -273,7 +272,7 @@ class ImageryModel(ArcGISModel):
         optimum learning rate for training the model.
 
         =====================   ===========================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ---------------------   -------------------------------------------
         allow_plot              Optional boolean. Display the plot of losses
                                 against the learning rates and mark the optimal
@@ -324,7 +323,7 @@ class ImageryModel(ArcGISModel):
         Computes mean IOU on the validation set for each class.
 
         =====================   ===========================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ---------------------   -------------------------------------------
         mean                    Optional bool. If False returns class-wise
                                 mean IOU, otherwise returns mean iou of all
@@ -354,7 +353,7 @@ class ImageryModel(ArcGISModel):
         Computes average precision on the validation set for each class.
 
         =====================   ===========================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ---------------------   -------------------------------------------
         detect_thresh           Optional float. The probability above which
                                 a detection will be considered for computing
@@ -392,7 +391,7 @@ class AutoDL:
     arcgis.learn supported deep learning models within a specified time limit.
 
     =====================   ===========================================
-    **Argument**            **Description**
+    **Parameter**            **Description**
     ---------------------   -------------------------------------------
     data                    Required ImageryDataObject. Returned data object from
                             :meth:`~arcgis.learn.prepare_data`  function.
@@ -441,7 +440,6 @@ class AutoDL:
         verbose=True,
         **kwargs
     ):
-
         if "max_batch_size" in kwargs:
             self.batch_size = kwargs["max_batch_size"]
         else:
@@ -564,6 +562,8 @@ class AutoDL:
                 self._total_training_time += int(model_stats[algo]["time"])
 
         self._total_training_time //= 60
+        if self._total_training_time == 0:
+            self._total_training_time = 1
         self._algos = self._sort_algos(self._algos)
 
         if total_time_limit is None:
@@ -574,6 +574,9 @@ class AutoDL:
         required_time = (
             self._total_training_time * number_of_images
         ) // self._max_image_set
+
+        if required_time == 0:
+            required_time = 1
 
         self._tiles_required = (
             self._max_image_set * total_time_limit
@@ -619,6 +622,8 @@ class AutoDL:
             model_time_required = (
                 (mt // 60) * self._tiles_required
             ) // self._max_image_set
+            if model_time_required == 0:
+                model_time_required = 1
             time_ratio = (model_time_required / required_time) * 100
             model_remaining_time = (time_ratio / 100) * self._remaining_time
             model_epochs = int((20 * model_remaining_time) // model_time_required)
@@ -655,10 +660,11 @@ class AutoDL:
         from ._autodl_utils import EvaluateBatchSize
 
         data_path = self._data.path
-        dataset_type_temp = dataset_type = self._data.dataset_type
+
+        dataset_type_temp = self._data.dataset_type
+
 
         try:
-
             if not self._model_stats()[model]["is_mm"]:
                 evaluate_batchsize = EvaluateBatchSize(
                     model,
@@ -1283,15 +1289,12 @@ class AutoDL:
                     "AutoDL_" + str(self.best_model) + "_" + self._best_backbone
                 )
                 if self.verbose:
-                    log_msg = "{date}: Saving best performing model at {path}".format(
+                    log_msg = "{date}: model saved at {path}".format(
                         date=dt.now().strftime("%d-%m-%Y %H:%M:%S"),
                         path=os.path.join(
-                            self._output_path,
+                            self._data.path,
                             "models",
-                            "AutoDL_"
-                            + str(self.best_model)
-                            + "_"
-                            + self._best_backbone,
+                            "AutoDL_" + str(model) + "_" + self._best_backbone,
                         ),
                     )
                     print(log_msg)
@@ -1329,7 +1332,7 @@ class AutoDL:
         Shows sample results for the model.
 
         =====================   ===========================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ---------------------   -------------------------------------------
         rows                    Optional number of rows. By default, 5 rows
                                 are displayed.

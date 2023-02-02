@@ -23,7 +23,7 @@ def create_snapshot(
     Creates a Snapshot of a Given Item.
 
     ==================     ====================================================================
-    **Argument**           **Description**
+    **Parameter**           **Description**
     ------------------     --------------------------------------------------------------------
     item                   Required Item. The 'Notebook' typed item to create a snapshot for.
     ------------------     --------------------------------------------------------------------

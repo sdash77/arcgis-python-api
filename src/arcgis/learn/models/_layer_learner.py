@@ -46,7 +46,6 @@ except:
 
 
 def _get_learner_object(data, layers, emb_szs, ps, emb_drop, pretrained_path):
-
     if pretrained_path:
         learn = load_learner(
             os.path.dirname(pretrained_path),
@@ -81,7 +80,7 @@ class FullyConnectedNetwork(ArcGISModel):
     Based on the Fast.ai's Tabular Learner
 
     =====================   ===========================================
-    **Argument**            **Description**
+    **Parameter**            **Description**
     ---------------------   -------------------------------------------
     data                    Required TabularDataObject. Returned data object from
                             :class:`~arcgis.learn.prepare_tabulardata` function.
@@ -99,7 +98,6 @@ class FullyConnectedNetwork(ArcGISModel):
     """
 
     def __init__(self, data, layers=None, emb_szs=None, **kwargs):
-
         if data._is_unsupervised:
             raise Exception("Cannot train on unsupervised data")
 
@@ -137,7 +135,7 @@ class FullyConnectedNetwork(ArcGISModel):
         Creates a :class:`~arcgis.learn.FullyConnectedNetwork` Object from an Esri Model Definition (EMD) file.
 
         =====================   ===========================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ---------------------   -------------------------------------------
         emd_path                Required string. Path to Deep Learning Package
                                 (DLPK) or Esri Model Definition(EMD) file.
@@ -166,7 +164,6 @@ class FullyConnectedNetwork(ArcGISModel):
         layers = emd["layers"]
         cell_sizes = emd.get("cell_sizes", None)
         if data is None:
-
             data = TabularDataObject._empty(
                 categorical_variables, continuous_variables, dependent_variable, None
             )
@@ -193,7 +190,7 @@ class FullyConnectedNetwork(ArcGISModel):
         Learning Package zip for deployment to Image Server or ArcGIS Pro.
 
         =====================   ===========================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ---------------------   -------------------------------------------
         name_or_path            Required string. Folder path to save the model.
         ---------------------   -------------------------------------------
@@ -313,6 +310,8 @@ class FullyConnectedNetwork(ArcGISModel):
             prediction = self._predict(dataframe.iloc[i])[0].obj
             if isinstance(prediction, (list, np.ndarray)):
                 prediction = prediction[0]
+            if isinstance(prediction, np.float32):
+                prediction = prediction.astype(np.float64)
             preds.append(prediction)
 
         return preds
@@ -336,7 +335,7 @@ class FullyConnectedNetwork(ArcGISModel):
         Predict on data from feature layer, dataframe and or raster data.
 
         =================================   =========================================================================
-        **Argument**                        **Description**
+        **Parameter**                        **Description**
         ---------------------------------   -------------------------------------------------------------------------
         input_features                      Optional :class:`~arcgis.features.FeatureLayer` or spatially enabled dataframe.
                                             Required if prediction_type='features'.
@@ -416,7 +415,6 @@ class FullyConnectedNetwork(ArcGISModel):
             explain = False
             explain_index = None
         if prediction_type in ["features", "dataframe"]:
-
             if input_features is None:
                 raise Exception("Feature Layer required for predict_features=True")
 
@@ -569,7 +567,6 @@ class FullyConnectedNetwork(ArcGISModel):
         explain=False,
         explain_index=None,
     ):
-
         if not os.path.exists(os.path.dirname(output_folder_path)):
             raise Exception("Output directory doesn't exist")
 
@@ -776,7 +773,7 @@ class FullyConnectedNetwork(ArcGISModel):
         Prints the rows of the dataframe with target and prediction columns.
 
         =====================   ===========================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ---------------------   -------------------------------------------
         rows                    Optional Integer.
                                 Number of rows to print.

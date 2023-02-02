@@ -8,7 +8,7 @@ class RichText(_BaseWidget):
     Creates a dashboard Rich Text widget.
 
     =========================   ===========================================
-    **Argument**                **Description**
+    **Parameter**                **Description**
     -------------------------   -------------------------------------------
     html_text                   Required HTML text. This text will be
                                 displayed in Rich Text format.

@@ -3,7 +3,7 @@ from arcgis.auth.tools import LazyLoader
 
 
 try:
-    import _arcgisknowledge as _kgparser
+    import arcgis.graph._arcgisknowledge as _kgparser
 
     HAS_KG = True
 except ImportError as e:
@@ -20,7 +20,7 @@ class KnowledgeGraph:
     methods to search and query the graph.
 
     ==================     ====================================================================
-    **Argument**           **Description**
+    **Parameter**           **Description**
     ------------------     --------------------------------------------------------------------
     url                    Knowledge Graph service URL
     ------------------     --------------------------------------------------------------------
@@ -78,7 +78,7 @@ class KnowledgeGraph:
         `Learn more about searching a knowledge graph <https://developers.arcgis.com/rest/services-reference/enterprise/kgs-graph-search.htm>`_
 
         ================    ===============================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ----------------    ---------------------------------------------------------------
         search              Required String. The search to perform on the Knowledge Graph.
         ----------------    ---------------------------------------------------------------
@@ -88,6 +88,10 @@ class KnowledgeGraph:
 
                             The allowed values are: both, entities, relationships
         ================    ===============================================================
+
+        .. note::
+            Check the `service definition for the Knowledge Graph service <https://developers.arcgis.com/rest/services-reference/enterprise/kgs-hosted-server.htm>`_
+            for valid values of category. Not all services support both.
 
         .. code-block:: python
 
@@ -143,7 +147,7 @@ class KnowledgeGraph:
         `Learn more about querying a knowledge graph <https://developers.arcgis.com/rest/services-reference/enterprise/kgs-graph-query.htm>`_
 
         ================    ===============================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ----------------    ---------------------------------------------------------------
         query               Required String. Allows you to return the entities and
                             relationships in a graph, as well as the properties of those

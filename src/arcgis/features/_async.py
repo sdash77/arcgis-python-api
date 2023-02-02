@@ -21,7 +21,7 @@ class EditFeatureJob(object):
 
 
     ================  ===============================================================
-    **Argument**      **Description**
+    **Parameter**      **Description**
     ----------------  ---------------------------------------------------------------
     future            Future. The future request.
     ----------------  ---------------------------------------------------------------
@@ -32,6 +32,7 @@ class EditFeatureJob(object):
 
     _future = None
     _con = None
+
     # ----------------------------------------------------------------------
     def __init__(self, future, connection):
         """
@@ -113,12 +114,10 @@ class EditFeatureJob(object):
         :return: object
         """
         try:
-
             res = self._future.result()
             url = res.get("resultUrl", None)
             if url is None:
                 return None
             return self._con.get(url)
         except Exception as e:
-
             raise e

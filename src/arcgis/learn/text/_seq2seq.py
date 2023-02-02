@@ -58,7 +58,7 @@ class SequenceToSequence(ArcGISModel):
     Based on the Hugging Face transformers library
 
     =====================   ===========================================
-    **Argument**            **Description**
+    **Parameter**            **Description**
     ---------------------   -------------------------------------------
     data                    Required text data object, returned from
                             :class:`~arcgis.learn.prepare_textdata` function.
@@ -75,7 +75,7 @@ class SequenceToSequence(ArcGISModel):
     **kwargs**
 
     =====================   ===========================================
-    **Argument**            **Description**
+    **Parameter**            **Description**
     ---------------------   -------------------------------------------
     verbose                 Optional string. Default set to `error`. The
                             log level you want to set. It means the amount
@@ -228,7 +228,7 @@ class SequenceToSequence(ArcGISModel):
         Get available models for the given transformer backbone
 
         =====================   ===========================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ---------------------   -------------------------------------------
         architecture            Required string. name of the transformer
                                 backbone one wish to use. To learn more about
@@ -258,7 +258,7 @@ class SequenceToSequence(ArcGISModel):
         Package(DLPK) or Esri Model Definition (EMD) file.
 
         =====================   ===========================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ---------------------   -------------------------------------------
         emd_path                Required string. Path to Deep Learning Package
                                 (DLPK) or Esri Model Definition(EMD) file.
@@ -310,7 +310,7 @@ class SequenceToSequence(ArcGISModel):
         Loads a saved SequenceToSequence model from disk.
 
         =====================   ===========================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ---------------------   -------------------------------------------
         name_or_path            Required string. Path to Deep Learning Package
                                 (DLPK) or Esri Model Definition(EMD) file.
@@ -335,7 +335,7 @@ class SequenceToSequence(ArcGISModel):
         Learning Package zip for deployment.
 
         =====================   ===========================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ---------------------   -------------------------------------------
         name_or_path            Required string. Folder path to save the model.
         ---------------------   -------------------------------------------
@@ -431,7 +431,7 @@ class SequenceToSequence(ArcGISModel):
         Prints the rows of the dataframe with target and prediction columns.
 
         =====================   ===========================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ---------------------   -------------------------------------------
         rows                    Optional Integer.
                                 Number of rows to print.
@@ -479,7 +479,6 @@ class SequenceToSequence(ArcGISModel):
             return metrics
 
     def _calculate_model_metrics(self):
-
         self._check_requisites()
         self.logger.info("Calculating Model Metrics")
         metrics_names = ["accuracy", "bleu"]
@@ -497,7 +496,7 @@ class SequenceToSequence(ArcGISModel):
         Predicts the translated outcome.
 
         =====================   ===========================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ---------------------   -------------------------------------------
         text_or_list            Required input string or list of input strings.
         ---------------------   -------------------------------------------
@@ -515,7 +514,7 @@ class SequenceToSequence(ArcGISModel):
         **kwargs**
 
         =====================   ===========================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ---------------------   -------------------------------------------
         num_beams               Optional integer.
                                 Number of beams for beam search. 1 means no beam search.
@@ -539,7 +538,6 @@ class SequenceToSequence(ArcGISModel):
         return list(zip(text_or_list, preds))
 
     def _save_df_to_html(self, path):
-
         if getattr(self._data, "_is_empty", False):
             copy_metrics(self._data.emd_path, path, model_characteristics_folder)
             return
@@ -571,7 +569,7 @@ class SequenceToSequence(ArcGISModel):
         Plot training and validation losses.
 
         =====================   ===========================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ---------------------   -------------------------------------------
         show                    Optional bool. Defaults to True
                                 If set to False, figure will not be plotted

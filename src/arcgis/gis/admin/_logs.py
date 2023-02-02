@@ -6,6 +6,7 @@ from typing import Optional, Union
 from .. import GIS
 from ._base import BasePortalAdmin
 
+
 ########################################################################
 class Logs(BasePortalAdmin):
     """
@@ -13,7 +14,7 @@ class Logs(BasePortalAdmin):
     query the logs, clean the logs, and edit log settings.
 
     ================  ===============================================================
-    **Argument**      **Description**
+    **Parameter**      **Description**
     ----------------  ---------------------------------------------------------------
     gis               required GIS, portal connection object
     ----------------  ---------------------------------------------------------------
@@ -26,6 +27,7 @@ class Logs(BasePortalAdmin):
     _url = None
     _con = None
     _portal = None
+
     # ----------------------------------------------------------------------
     def __init__(self, url, gis):
         """Constructor"""
@@ -75,7 +77,7 @@ class Logs(BasePortalAdmin):
         Get/Set the current log settings for the portal.
 
         ================  ===============================================================
-        **Argument**      **Description**
+        **Parameter**      **Description**
         ----------------  ---------------------------------------------------------------
         value             required dictionary, the dictionary of the log settings
         ================  ===============================================================
@@ -135,7 +137,7 @@ class Logs(BasePortalAdmin):
         through logs written by the portal.
 
         ================  ===============================================================
-        **Argument**      **Description**
+        **Parameter**      **Description**
         ----------------  ---------------------------------------------------------------
         start_time        required datetime/float. The most recent time to query.
 

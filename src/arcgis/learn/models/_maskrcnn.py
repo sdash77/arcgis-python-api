@@ -178,7 +178,7 @@ class MaskRCNN(ArcGISModel):
     based on https://github.com/pytorch/vision/blob/master/torchvision/models/detection/mask_rcnn.py.
 
     =====================   ===========================================
-    **Argument**            **Description**
+    **Parameter**            **Description**
     ---------------------   -------------------------------------------
     data                    Required fastai Databunch. Returned data object from
                             :meth:`~arcgis.learn.prepare_data`  function.
@@ -201,7 +201,7 @@ class MaskRCNN(ArcGISModel):
     **kwargs**
 
     =============================   =============================================
-    **Argument**                    **Description**
+    **Parameter**                    **Description**
     -----------------------------   ---------------------------------------------
     rpn_pre_nms_top_n_train         Optional int. Number of proposals to keep before
                                     applying NMS during training.
@@ -285,7 +285,6 @@ class MaskRCNN(ArcGISModel):
         *args,
         **kwargs,
     ):
-
         # Set default backbone to be 'resnet50'
         if backbone is None:
             backbone = models.resnet50
@@ -531,7 +530,7 @@ class MaskRCNN(ArcGISModel):
         Creates a :class:`~arcgis.learn.MaskRCNN` Instance segmentation object from an Esri Model Definition (EMD) file.
 
         =====================   ===========================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ---------------------   -------------------------------------------
         emd_path                Required string. Path to Deep Learning Package
                                 (DLPK) or Esri Model Definition(EMD) file.
@@ -755,7 +754,6 @@ class MaskRCNN(ArcGISModel):
         return predictionsf
 
     def _predict_postprocess(self, predictions, threshold=0.5, box_threshold=0.5):
-
         pred_mask = []
         pred_box = []
 
@@ -800,7 +798,7 @@ class MaskRCNN(ArcGISModel):
         Displays the results of a trained model on a part of the validation set.
 
         =====================   ===========================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ---------------------   -------------------------------------------
         ---------------------   -------------------------------------------
         rows                    Optional int. Number of rows of results
@@ -950,7 +948,10 @@ class MaskRCNN(ArcGISModel):
             if mode in ["mask", "bbox_mask"]:
                 n_instance = y_batch[i].unique().shape[0]
                 y_merged = y_batch[i].max(dim=0)[0].cpu().numpy()
-                y_rgba = cmap_fn.resampled(n_instance)(y_merged)
+                try:
+                    y_rgba = cmap_fn.resampled(n_instance)(y_merged)
+                except:
+                    y_rgba = cmap_fn._resample(n_instance)(y_merged)
                 y_rgba[y_merged == 0] = 0
                 y_rgba[:, :, -1] = alpha
                 ax_i[0].imshow(y_rgba)
@@ -961,7 +962,10 @@ class MaskRCNN(ArcGISModel):
             ax_i[1].axis("off")
             if mode in ["mask", "bbox_mask"]:
                 n_instance = np.unique(pred_mask[i]).shape[0]
-                p_rgba = cmap_fn.resampled(n_instance)(pred_mask[i])
+                try:
+                    p_rgba = cmap_fn.resampled(n_instance)(pred_mask[i])
+                except:
+                    p_rgba = cmap_fn._resample(n_instance)(pred_mask[i])
                 p_rgba[pred_mask[i] == 0] = 0
                 p_rgba[:, :, -1] = alpha
                 ax_i[1].imshow(p_rgba)
@@ -995,12 +999,11 @@ class MaskRCNN(ArcGISModel):
         show_progress=True,
         tta_prediction=False,
     ):
-
         """
         Computes average precision on the validation set for each class.
 
         =====================   ===========================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ---------------------   -------------------------------------------
         detect_thresh           Optional float. The probability above which
                                 a detection will be considered for computing
@@ -1241,7 +1244,7 @@ class MaskRCNN(ArcGISModel):
         This method is only supported for RGB images.
 
         =====================   ===========================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ---------------------   -------------------------------------------
         image_path              Required. Path to the image file to make the
                                 predictions on.
@@ -1281,7 +1284,7 @@ class MaskRCNN(ArcGISModel):
         **kwargs**
 
         =====================   ===========================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ---------------------   -------------------------------------------
         batch_size              Optional int. Batch size to be used
                                 during tiled inferencing

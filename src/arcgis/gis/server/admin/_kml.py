@@ -18,13 +18,14 @@ class KML(BaseServer):
     _con = None
     _url = None
     _json_dict = None
+
     # ----------------------------------------------------------------------
     def __init__(self, url: str, gis: GIS, initialize: bool = False):
         """
         Constructor
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         url                 Required string. The administration URL for the ArcGIS Server.
         ---------------     --------------------------------------------------------------------

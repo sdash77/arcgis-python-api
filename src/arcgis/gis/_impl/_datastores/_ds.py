@@ -1,5 +1,6 @@
+from __future__ import annotations
 import time as _time
-from typing import Union
+from typing import Union, Any
 import uuid
 from arcgis.gis import GIS
 from .._con import Connection
@@ -79,7 +80,7 @@ class PortalDataStore(object):
 
 
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
         item                   Required Item. The data store :class:`~arcgis.gis.Item` to describe.
         ------------------     --------------------------------------------------------------------
@@ -227,7 +228,11 @@ class PortalDataStore(object):
             if key:
                 params["key"] = key
             res = self._con.post(url, params)
-            while res["status"] not in ["completed", "complete", "succeeded"]:
+            while res["status"] not in [
+                "completed",
+                "complete",
+                "succeeded",
+            ]:
                 res = self._con.post(url, params)
                 if res["status"] == "failed":
                     raise Exception(res)
@@ -275,7 +280,7 @@ class PortalDataStore(object):
             the server.
 
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
         item                   Required data store :class:`~arcgis.gis.Item` or Item Id
                                string.
@@ -387,7 +392,7 @@ class PortalDataStore(object):
             from a server, all of its bulk-published layers must be deleted.
 
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
         item                   Required Item. The database data store
                                :class:`~arcgis.gis.Item` from which to delete all
@@ -418,9 +423,9 @@ class PortalDataStore(object):
         url = f"{self._url}/allDatasets/deleteLayers"
         res = self._con.post(url, params)
         if res["success"] == True:
-            status = item.status(self, job_id=res["jobId"])
+            status = item.status()
             while status["status"].lower() != "completed":
-                status = item.status(self, job_id=res["jobId"])
+                status = item.status()
                 if status["status"].lower() == "failed":
                     return False
                 else:
@@ -441,7 +446,7 @@ class PortalDataStore(object):
             layer created during publishing.
 
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
         item                   Required Item. The data store :class:`~arcgis.gis.Item` to list all
                                published layers and registered datasets.
@@ -518,7 +523,7 @@ class PortalDataStore(object):
         specific datasets in a data store.
 
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
         config                 Required Dictionary.  This is the service configuration property
                                and it must contain the reference to the data in the data store. It
@@ -621,7 +626,7 @@ class PortalDataStore(object):
 
 
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
         item                   Required Item. The data store :class:`~arcgis.gis.Item` to
                                for which to list all registered servers.
@@ -668,12 +673,15 @@ class PortalDataStore(object):
     # ----------------------------------------------------------------------
     def publish_layers(
         self,
-        item,
-        srv_config: dict,
-        server_id,
-        folder=None,
-        server_folder=None,
-        future=False,
+        item: Item,
+        srv_config: dict[str, Any],
+        server_id: str,
+        *,
+        folder: str | None = None,
+        server_folder: str | None = None,
+        sync_metadata: bool | None = None,
+        use_config: bool | None = None,
+        future: bool = False,
     ):
         """
         The ``publish_layers`` operation publishes, or syncs, the datasets from a
@@ -689,7 +697,7 @@ class PortalDataStore(object):
             longer found in the data store.
 
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
         item                   Required Item. The data store :class:`~arcgis.gis.Item` holding
                                the content to publish.
@@ -718,6 +726,13 @@ class PortalDataStore(object):
                                .. note::
                                    If this folder does not exist, the method will
                                    create it.
+        ------------------     --------------------------------------------------------------------
+        sync_metadata          Optional bool. Determines if item info details are updated using the
+                               metadata of the source dataset when a sync is performed. The default
+                               is false.
+        ------------------     --------------------------------------------------------------------
+        use_config             Optional bool. When true, the new `srv_config` will be applied to
+                               all layers.
         ------------------     --------------------------------------------------------------------
         future                 Optional Boolean.  If False, the value is returned, else a
                                `StatusJob` is returned.
@@ -792,6 +807,10 @@ class PortalDataStore(object):
             "serverId": server_id,
             "serverFolder": server_folder,
         }
+        if not sync_metadata is None and isinstance(sync_metadata, bool):
+            params["syncItemInfo"] = sync_metadata
+        if not use_config is None and isinstance(use_config, bool):
+            params["applySvcConfigChanges"] = use_config
         res = self._con.post(url, params)
         if res["success"] == True:
             status = item.status()
@@ -856,7 +875,7 @@ class PortalDataStore(object):
             store information has been updated.
 
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
         item                   Required data store :class:`~arcgis.gis.Item` or item id (as string).
                                The data store to register with the server. Note that a data store
@@ -910,7 +929,7 @@ class PortalDataStore(object):
             registration on the server.
 
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
         server_id              Required String. The unique id of the server with which you want to
                                register the data store.

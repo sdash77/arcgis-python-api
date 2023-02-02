@@ -813,7 +813,6 @@ class _ImageryUploaderAGOL:
         raster_type,
         gis,
     ):
-
         from azure.storage.blob import ContainerClient
         from azure.core.exceptions import (
             ClientAuthenticationError,
@@ -1177,6 +1176,10 @@ def _upload_imagery_enterprise(files, raster_type_name=None, gis=None):
             if os.path.isdir(file):
                 if file.endswith(".crf") or raster_type_name != "Raster Dataset":
                     append_path = True
+                elif not file.endswith(".crf") or raster_type_name == "Raster Dataset":
+                    for dir_ele in [x[0] for x in os.walk(file)]:
+                        if dir_ele.endswith(".crf"):
+                            append_path = True  # case when parent of the crf folder is specified and raster type is specified as Raster Dataset, we need to append path
                 folder = os.path.basename(file)
                 basename_len = len(os.path.dirname(file))
                 for root, d_names, f_names in os.walk(file):
@@ -1225,7 +1228,7 @@ def _upload(path, description=None, gis=None):
         Once the operation is completed successfully, item id of the uploaded item is returned.
 
     ===============     ====================================================================
-    **Argument**        **Description**
+    **Parameter**        **Description**
     ---------------     --------------------------------------------------------------------
     path                Optional string. Filepath of the file to upload.
     ---------------     --------------------------------------------------------------------

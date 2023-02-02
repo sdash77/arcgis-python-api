@@ -37,7 +37,7 @@ class Dashboard(object):
         Publishes a Dashboard Object.
 
         =========================   ===========================================
-        **Argument**                **Description**
+        **Parameter**                **Description**
         -------------------------   -------------------------------------------
         title                       Required string. Title or Caption for the
                                     Dashboard.

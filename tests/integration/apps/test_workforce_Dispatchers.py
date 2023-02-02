@@ -3,10 +3,8 @@
 # Purpose:     Sanity tests for ArcGIS Python API
 # -------------------------------------------------------------------------------
 import sys
-
-sys.path.insert(0, r"c:\SVN\geosaurus_master\src")
-sys.path.insert(1, r"c:\SVN\geosaurus_master\tests")
-sys.path.insert(2, r"c:\SVN\geosaurus_master\tests\integration")
+sys.path.insert(0, r"C:\ipython_workfolder\geosaurus\tests")
+sys.path.insert(1, r"C:\ipython_workfolder\geosaurus\src")
 import unittest
 from integration.dino_utils.dino_precondition_checks import (
     PreconditionChecks,

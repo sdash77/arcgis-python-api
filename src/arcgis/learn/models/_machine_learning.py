@@ -115,7 +115,7 @@ class MLModel(object):
     Refer https://scikit-learn.org/stable/unsupervised_learning.html
 
     =====================   ===========================================
-    **Argument**            **Description**
+    **Parameter**            **Description**
     ---------------------   -------------------------------------------
     data                    Required TabularDataObject. Returned data object from
                             :class:`~arcgis.learn.prepare_tabulardata` function.
@@ -209,7 +209,7 @@ class MLModel(object):
         Shows sample results for the model.
 
         =====================   ===========================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ---------------------   -------------------------------------------
         rows                    Optional number of rows. By default, 5 rows
                                 are displayed.
@@ -356,7 +356,7 @@ class MLModel(object):
         Using protocol level 2. Protocol level is backward compatible.
 
         =====================   ===========================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ---------------------   -------------------------------------------
         name_or_path            Required string. Folder path to save the model.
         ---------------------   -------------------------------------------
@@ -511,7 +511,7 @@ class MLModel(object):
         Creates a :class:`~arcgis.learn.MLModel` Object from an Esri Model Definition (EMD) file.
 
         =====================   ===========================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ---------------------   -------------------------------------------
         emd_path                Required string. Path to Esri Model Definition
                                 file.
@@ -708,7 +708,7 @@ class MLModel(object):
         Loads a compatible saved model for inferencing or fine tuning from the disk.
 
         =====================   ===========================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ---------------------   -------------------------------------------
         name_or_path            Required string. Name or Path to
                                 Esri Model Definition(EMD) file.
@@ -806,7 +806,7 @@ class MLModel(object):
         Predict on data from feature layer, dataframe and or raster data.
 
         =================================   =========================================================================
-        **Argument**                        **Description**
+        **Parameter**                        **Description**
         ---------------------------------   -------------------------------------------------------------------------
         input_features                      Optional :class:`~arcgis.features.FeatureLayer` or spatial dataframe. Required if prediction_type='features'.
                                             Contains features with location and
@@ -879,7 +879,6 @@ class MLModel(object):
                 explain = False
                 explain_index = None
         if prediction_type in ["features", "dataframe"]:
-
             if input_features is None:
                 raise Exception("Feature Layer required for predict_features=True")
 
@@ -1045,7 +1044,6 @@ class MLModel(object):
         output_layer_name=None,
         gis=None,
     ):
-
         if not os.path.exists(os.path.dirname(output_folder_path)):
             raise Exception("Output directory doesn't exist")
 

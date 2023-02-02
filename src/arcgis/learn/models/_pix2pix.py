@@ -35,7 +35,7 @@ class Pix2Pix(ArcGISModel):
     Creates a model object which generates fake images of type B from type A.
 
     =====================   ===========================================
-    **Argument**            **Description**
+    **Parameter**            **Description**
     ---------------------   -------------------------------------------
     data                    Required fastai Databunch with image chip sizes
                             in multiples of 256. Returned data object from
@@ -103,7 +103,7 @@ class Pix2Pix(ArcGISModel):
         Creates a :class:`~arcgis.learn.Pix2Pix` object from an Esri Model Definition (EMD) file.
 
         =====================   ===========================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ---------------------   -------------------------------------------
         emd_path                Required string. Path to Deep Learning Package
                                 (DLPK) or Esri Model Definition(EMD) file.
@@ -208,7 +208,7 @@ class Pix2Pix(ArcGISModel):
         Displays the results of a trained model on a part of the validation set.
 
         =====================   ===========================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ---------------------   -------------------------------------------
         rows                    Optional int. Number of rows of results
                                 to be displayed.
@@ -230,7 +230,7 @@ class Pix2Pix(ArcGISModel):
         Predicts and display the image.
 
         =====================   ===========================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ---------------------   -------------------------------------------
         img_path                Required path of an image.
         =====================   ===========================================

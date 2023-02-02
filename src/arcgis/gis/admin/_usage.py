@@ -11,6 +11,7 @@ from ..._impl.common._utils import local_time_to_online, timestamp_to_datetime
 from ...gis import GIS
 from ._base import BasePortalAdmin
 
+
 ########################################################################
 class AGOLUsageReports(BasePortalAdmin):
     """
@@ -27,6 +28,7 @@ class AGOLUsageReports(BasePortalAdmin):
     _portal = None
     _gis = None
     _url = None
+
     # ----------------------------------------------------------------------
     def _init(self, connection=None):
         """loads the properties into the class"""
@@ -51,7 +53,7 @@ class AGOLUsageReports(BasePortalAdmin):
 
 
         ===============     ====================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     ----------------------------------------------------
         focus               Required String. The level to perform the report on.
                             The allowed value is only `org`.
@@ -130,7 +132,7 @@ class AGOLUsageReports(BasePortalAdmin):
 
 
         ===============     ====================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     ----------------------------------------------------
         start_time          optional datetime, the time to step back from.  If
                             None, the current time is used.
@@ -226,7 +228,7 @@ class AGOLUsageReports(BasePortalAdmin):
 
 
         ===============     ====================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     ----------------------------------------------------
         start_time          optional datetime, the time to step back from.  If
                             None, the current time is used.
@@ -293,7 +295,7 @@ class AGOLUsageReports(BasePortalAdmin):
             Reports can contain users outside your orgnanization that used the application
 
         ===============     ====================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     ----------------------------------------------------
         start_time          optional datetime, the time to step back from.  If
                             None, the current time is used.

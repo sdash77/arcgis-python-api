@@ -15,7 +15,7 @@ class StreamLayer(_FeedTemplate, _HasTime):
     Data format is Esri stream layer. ArcGIS Velocity will automatically handle the location for you.
 
     ==================              ====================================================================
-    **Argument**                    **Description**
+    **Parameter**                    **Description**
     ------------------              --------------------------------------------------------------------
     label                           String. Unique label for the feed instance.
     ------------------              --------------------------------------------------------------------

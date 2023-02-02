@@ -136,7 +136,7 @@ class GIS(object):
 
 
     ================    ===============================================================
-    **Argument**        **Description**
+    **Parameter**        **Description**
     ----------------    ---------------------------------------------------------------
     url                 Optional string. If URL is None, then the URL will be ArcGIS
                         Online.  This should be a web address to either an ArcGIS Enterprise portal
@@ -340,6 +340,7 @@ class GIS(object):
     _pds = None
     _validate_item_url = None
     """If 'True', the GIS instance is a GIS('home') from hosted nbs"""
+
     # admin = None
     # oauth = None
     def __init__(
@@ -717,7 +718,6 @@ class GIS(object):
                     url = self._portal.url + "/admin"
                     self.admin = KubernetesAdmin(url=url, gis=self)
                 else:
-
                     from .admin.portaladmin import PortalAdminManager
 
                     self.admin = PortalAdminManager(
@@ -860,7 +860,7 @@ class GIS(object):
         returns the public and private URL for a given registered service
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         service_url         Required string.  The URL to the service.
         ===============     ====================================================================
@@ -882,7 +882,7 @@ class GIS(object):
         """Decrypts the .pfx file to be used with requests.
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         pfx_path            Required string.  File pathname to .pfx file to parse.
         ---------------     --------------------------------------------------------------------
@@ -1190,7 +1190,7 @@ class GIS(object):
 
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         properties_dict     Required dictionary. A dictionary of just those properties and
                             values that are to be updated.
@@ -1297,7 +1297,6 @@ class GIS(object):
         :returns: list
         """
         if self._portal.is_arcgisonline:
-
             info = self._registered_servers()
             tile_urls = set(info["urls"].get("tiles", {}).get("https", []))
             feature_urls = set(info["urls"].get("features", {}).get("https", []))
@@ -1343,7 +1342,6 @@ class GIS(object):
             info = self._registered_servers()
             return info
         elif self._portal.is_kubernetes or self._portal.is_arcgisonline == False:
-
             url = self._portal.resturl + f"portals/{self.properties['id']}/servers"
             params = {"f": "json"}
         return self._con.get(url, params)
@@ -1359,7 +1357,7 @@ class GIS(object):
         configuration for any access notices or information banners.
 
         ======================     ===============================================================
-        **Parameters**             **Description**
+        **Parameter**             **Description**
         ----------------------     ---------------------------------------------------------------
         settings                   Required Dict.  A dictionary of the settings
 
@@ -1444,7 +1442,7 @@ class GIS(object):
             Please use the latest version of Google Chrome, Mozilla Firefox, Apple Safari, or Microsoft Edge.
 
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
         location               Optional string. The address or lat-long tuple of where the map is to be centered.
         ------------------     --------------------------------------------------------------------
@@ -1711,7 +1709,7 @@ class Datastore(dict):
         The ``update`` method edits this data item to update its connection information.
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         item                Required dictionary. The representation of the updated item.
         ===============     ====================================================================
@@ -1895,7 +1893,7 @@ class GroupMigrationManager(object):
             items are supported. You need to have **administrative** privileges to run this
             operation.
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
         items                  Optional List<Item>. A set of items to export from the group.  If
                                nothing is given, all items will be attempted to be exported.
@@ -2095,7 +2093,7 @@ class DatastoreManager(object):
         published can reference data.
 
         ==================      ====================================================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ------------------      --------------------------------------------------------------------
         value                   Required bool.
                                 Values: True | False
@@ -2130,13 +2128,12 @@ class DatastoreManager(object):
     def add_folder(
         self, name: str, server_path: str, client_path: Optional[str] = None
     ):
-
         """
         The ``add_folder`` method registers a folder with the :class:`~arcgis.gis.Datastore`.
 
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         name                Required string. The unique fileshare name on the server.
         ---------------     --------------------------------------------------------------------
@@ -2192,7 +2189,7 @@ class DatastoreManager(object):
 
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         name                Required string. The unique bigdata fileshare name on the server.
         ---------------     --------------------------------------------------------------------
@@ -2269,7 +2266,7 @@ class DatastoreManager(object):
         Allows administrators to registered Amazon S3 Buckets as a :class:`~arcgis.gis.Datastore` object.
 
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
         name                   Required string. The name of the Amazon S3 instance.
         ------------------     --------------------------------------------------------------------
@@ -2345,7 +2342,7 @@ class DatastoreManager(object):
         The ``add_ms_azure_storage`` creates a cloud store with Microsoft Azure.
 
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
         cloud_storage_name     Required string. The name of the storage entry.
         ------------------     --------------------------------------------------------------------
@@ -2433,7 +2430,7 @@ class DatastoreManager(object):
             store are optional.
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         name                Required string. The name of the cloud store.
         ---------------     --------------------------------------------------------------------
@@ -2507,7 +2504,7 @@ class DatastoreManager(object):
 
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         name                Required string. The unique database name on the server.
         ---------------     --------------------------------------------------------------------
@@ -2564,7 +2561,7 @@ class DatastoreManager(object):
 
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         name                Required string. The name of the item to be added on the server.
         ---------------     --------------------------------------------------------------------
@@ -2601,7 +2598,7 @@ class DatastoreManager(object):
         The ``get`` method retrieves the data :class:`~arcgis.gis.Item` object at the given path.
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         path                Required string. The path for the data item.
         ===============     ====================================================================
@@ -2634,7 +2631,7 @@ class DatastoreManager(object):
 
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         parentPath          Optional string. The path of the parent under which to find items.
                             Pass '/' to get the root data items.
@@ -2723,6 +2720,7 @@ class UserManager(object):
     """
 
     _me = None
+
     # ----------------------------------------------------------------------
     def __init__(self, gis):
         self._gis = gis
@@ -2743,13 +2741,16 @@ class UserManager(object):
         administrator can remove the user, all of the user's content and
         groups must be reassigned or deleted.
 
-        ================  =========]======================================================================
-        **Keys**          **Description**
-        ----------------  -------------------------------------------------------------------------------
-        users             Required list[User]. A list of users to delete from the organization.
-        ================  ===============================================================================
+        ================  ====================================================
+        **Parameter**      **Description**
+        ----------------  ----------------------------------------------------
+        users             Required list of :class:`users <arcgis.gis.User>` to
+                          delete from the organization.
+        ================  ====================================================
 
-        :returns: list[str] containing the users who could not be removed.
+        :return:
+           list containing the :class:`users <arcgis.gis.User>`
+           who could not be removed.
         """
         from arcgis._impl.common._utils import chunks as _chunks
 
@@ -2956,7 +2957,7 @@ class UserManager(object):
         for a given `type`.  A `type` can be a role, app, bundle or user license type.
 
         ================  ===============================================================================
-        **Argument**      **Description**
+        **Parameter**      **Description**
         ----------------  -------------------------------------------------------------------------------
         type              Required String. The type of data to return.  The following values are valid:
 
@@ -3048,7 +3049,7 @@ class UserManager(object):
 
 
         ================  ===============================================================================
-        **Argument**      **Description**
+        **Parameter**      **Description**
         ----------------  -------------------------------------------------------------------------------
         users             Required List. A list of strings or User objects to send notifications to.
         ----------------  -------------------------------------------------------------------------------
@@ -3142,7 +3143,7 @@ class UserManager(object):
             the user connects to the website.
 
         ================  ===============================================================================
-        **Argument**      **Description**
+        **Parameter**      **Description**
         ----------------  -------------------------------------------------------------------------------
         username          Required string. The user name, which must be unique in the Portal, and
                           6-24 characters long.
@@ -3330,7 +3331,7 @@ class UserManager(object):
             the user connects to the website.
 
         ================  ===============================================================================
-        **Argument**      **Description**
+        **Parameter**      **Description**
         ----------------  -------------------------------------------------------------------------------
         username          Required string. The user name, which must be unique in the Portal, and
                           6-24 characters long.
@@ -3486,7 +3487,7 @@ class UserManager(object):
             the user connects to the website.
 
         ================  ===============================================================================
-        **Argument**      **Description**
+        **Parameter**      **Description**
         ----------------  -------------------------------------------------------------------------------
         username          Required string. The user name, which must be unique in the Portal, and
                           6-24 characters long.
@@ -3749,7 +3750,7 @@ class UserManager(object):
         The ``invite`` method invites a :class:`~arcgis.gis.User` object to an organization by email.
 
         ================  ===============================================================================
-        **Argument**      **Description**
+        **Parameter**      **Description**
         ----------------  -------------------------------------------------------------------------------
         email             Required String. The user's email that will be invited to the organization.
         ----------------  -------------------------------------------------------------------------------
@@ -3856,7 +3857,7 @@ class UserManager(object):
             such as Active Directory, LDAP, or SAML IDPs.
 
         ================  ========================================================
-        **Argument**      **Description**
+        **Parameter**      **Description**
         ----------------  --------------------------------------------------------
         username          Required string. The desired username, which must be unique in the Portal,
                           and at least 4 characters.
@@ -3890,7 +3891,7 @@ class UserManager(object):
         The ``get`` method retrieves the :class:`~arcgis.gis.User` object for the specified username.
 
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
         username               Required string. The user to get as a string. This can be the
                                user's login name or the user's ID.
@@ -3936,7 +3937,7 @@ class UserManager(object):
             The ``enable_users`` method is supported on ArcGIS REST API 6.4+.
 
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
         users                  Required List. List of :class:`user <arcgis.gis.User>` or UserNames to enable
         ==================     ====================================================================
@@ -3986,7 +3987,7 @@ class UserManager(object):
             The ``disable_users`` method is supported on ArcGIS REST API 6.4+.
 
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
         users                  Required List. List of :class:`user <arcgis.gis.User>` or UserNames to disable
         ==================     ====================================================================
@@ -4029,7 +4030,7 @@ class UserManager(object):
         """Adds categories to :class:`users <arcgis.gis.User>`.
 
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
         users                  Required list of :class:`~arcgis.gis.User` objects to categorize.
         ------------------     --------------------------------------------------------------------
@@ -4052,7 +4053,7 @@ class UserManager(object):
         for additional details.
 
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
         value                  Required List of strings or dictionary defining the categories to
                                create for assigning to organizational members. If `None` is given,
@@ -4097,7 +4098,7 @@ class UserManager(object):
         for additional details.
 
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
         value                  Required List of strings naming the categories to create for
                                assigning to organizational members. If `None` is given, the
@@ -4176,7 +4177,7 @@ class UserManager(object):
             The results of a search only contain items that the user has permission to access.
 
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
         query                  Required String.  The search query. When the search filters
                                contain two or more clauses, the recommended schema is to have
@@ -4343,7 +4344,7 @@ class UserManager(object):
         the organization.
 
         ================  ========================================================
-        **Argument**      **Description**
+        **Parameter**      **Description**
         ----------------  --------------------------------------------------------
         query             Optional string. The query string.  See notes above. Pass None
                           to get list of all users in the organization.
@@ -4407,7 +4408,6 @@ class UserManager(object):
         if as_dict:
             return tuple(results)
         else:
-
             return tuple(
                 User(gis=self._gis, username=user["username"], userdict=user)
                 for user in results
@@ -4451,7 +4451,7 @@ class UserManager(object):
                into parenthesis when using outside_org.
 
         ================  ========================================================
-        **Argument**      **Description**
+        **Parameter**      **Description**
         ----------------  --------------------------------------------------------
         query             Optional string. The query string.  See notes above. Pass None
                           to get list of all users in the organization.
@@ -4567,7 +4567,7 @@ class UserManager(object):
         tool for administrators so they can easily manage a user or users groups.
 
         ================  ========================================================
-        **Argument**      **Description**
+        **Parameter**      **Description**
         ----------------  --------------------------------------------------------
         users             Required List. An array of User objects or usernames.
         ----------------  --------------------------------------------------------
@@ -4634,7 +4634,7 @@ class RoleManager(object):
             The ``create`` method creates a custom :class:`~arcgis.gis.Role` with the specified parameters.
 
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
         name                   Required string. The custom role's name.
         ------------------     --------------------------------------------------------------------
@@ -4679,7 +4679,7 @@ class RoleManager(object):
         The ``exists`` method checks to see if a :class:`~arcgis.gis.Role` object exists given the declared role name.
 
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
         role_name              Required string. The name of the role to determine if it exists or not.
         ==================     ====================================================================
@@ -4707,7 +4707,7 @@ class RoleManager(object):
         for detailed descriptions of each role.)
 
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
         max_roles              Required integer. The maximum number of roles to be returned, defaults to 1000.
         ==================     ====================================================================
@@ -4751,7 +4751,7 @@ class RoleManager(object):
         The ``get_role`` method retrieves the :class:`~arcgis.gis.Role` object with the specified custom roleId.
 
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
         role_id                Required string. The role ID of the custom role to get.
         ==================     ====================================================================
@@ -5003,7 +5003,7 @@ class GroupManager(object):
 
 
         ====================  =========================================================
-        **Argument**          **Description**
+        **Parameter**          **Description**
         --------------------  ---------------------------------------------------------
         title                 Required string. The name of the group.
         --------------------  ---------------------------------------------------------
@@ -5169,7 +5169,7 @@ class GroupManager(object):
 
 
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
         dict                   Required dictionary. A dictionary of entries to create/define the
                                group.  See help of the :attr:`~arcgis.gis.GroupManager.create` method for parameters.
@@ -5197,7 +5197,7 @@ class GroupManager(object):
 
 
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
         groupid                Required string. The group identifier.
         ==================     ====================================================================
@@ -5230,7 +5230,8 @@ class GroupManager(object):
         sort_order: str = "asc",
         max_groups: int = 1000,
         outside_org: bool = False,
-        categories: Optional[Union[list[str], str]] = None,
+        categories: list[str] | str | None = None,
+        filter: str | None = None,
     ):
         """
         The ``search`` method searches for portal groups.
@@ -5252,24 +5253,32 @@ class GroupManager(object):
                 default. If you don't want the API to append to your query
                 set outside_org to True.
 
-        ================  ========================================================
-        **Argument**      **Description**
-        ----------------  --------------------------------------------------------
-        query             Optional string on Portal, or required string for ArcGIS Online.
-                          If not specified, all groups will be searched. See notes above.
-        ----------------  --------------------------------------------------------
-        sort_field        Optional string. Valid values can be title, owner,
-                          created.
-        ----------------  --------------------------------------------------------
-        sort_order        Optional string. Valid values are asc or desc.
-        ----------------  --------------------------------------------------------
-        max_groups        Optional integer. Maximum number of groups returned, default is 1,000.
-        ----------------  --------------------------------------------------------
-        outside_org       Optional boolean. Controls whether to search outside
-                          your org. Default is False, do not search ourside your org.
-        ----------------  --------------------------------------------------------
-        categories        Optional string or list. A string of category values.
-        ================  ========================================================
+        ================    ========================================================
+        **Parameter**       **Description**
+        ----------------    --------------------------------------------------------
+        query               Optional string on Portal, or required string for ArcGIS Online.
+                            If not specified, all groups will be searched. See notes above.
+        ----------------    --------------------------------------------------------
+        sort_field          Optional string. Valid values can be title, owner,
+                            created.
+        ----------------    --------------------------------------------------------
+        sort_order          Optional string. Valid values are asc or desc.
+        ----------------    --------------------------------------------------------
+        max_groups          Optional integer. Maximum number of groups returned, default is 1,000.
+        ----------------    --------------------------------------------------------
+        outside_org         Optional boolean. Controls whether to search outside
+                            your org. Default is False, do not search ourside your org.
+        ----------------    --------------------------------------------------------
+        categories          Optional string or list. A string of category values.
+        ----------------    --------------------------------------------------------
+        filter              Optional string. Structured filtering is accomplished
+                            by specifying a field name followed by a colon and the
+                            term you are searching for with double quotation marks.
+                            It allows the passing in of application-level filters
+                            based on the context. Use an exact keyword match of the expected
+                            value for the specified field. Partially matching the filter keyword
+                            will not return meaningful results.
+        ================    ========================================================
 
         :return:
            A List of :class:`~arcgis.gis.Group` objects matching the specified query.
@@ -5283,12 +5292,7 @@ class GroupManager(object):
         """
         grouplist = []
         groups = self._portal.search_groups(
-            query,
-            sort_field,
-            sort_order,
-            max_groups,
-            outside_org,
-            categories,
+            query, sort_field, sort_order, max_groups, outside_org, categories, filter
         )
         for group in groups:
             grouplist.append(Group(self._gis, group["id"], group))
@@ -5355,7 +5359,7 @@ class ContentManager(object):
         privilege assigned to them to transfer content to another user.
 
         ======================     ====================================================================
-        **Argument**               **Description**
+        **Parameter**               **Description**
         ----------------------     --------------------------------------------------------------------
         items                      Required list[Item]. A list of Items. The maximum number of items
                                    that can be transferred at one time is 100.
@@ -5419,7 +5423,7 @@ class ContentManager(object):
             This operation is only supported on ArcGIS Online.
 
         ======================     ====================================================================
-        **Argument**               **Description**
+        **Parameter**               **Description**
         ----------------------     --------------------------------------------------------------------
         tile_storage               Optional Float.  The size of the uncompressed tiles in MBs.
         ----------------------     --------------------------------------------------------------------
@@ -5507,7 +5511,7 @@ class ContentManager(object):
         This is an internal method used by `add`
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         file_path           Required String.  The path to the file to load into Portal.
         ---------------     --------------------------------------------------------------------
@@ -5582,7 +5586,6 @@ class ContentManager(object):
         with concurrent.futures.ThreadPoolExecutor(
             max_workers=5, thread_name_prefix="upld_"
         ) as tp:
-
             futures = {
                 tp.submit(
                     self._gis._con.post_multipart,
@@ -5649,7 +5652,7 @@ class ContentManager(object):
         setting.
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         item                Required :class:`~arcgis.gis.Item`. The `Item` to be erased.
         ===============     ====================================================================
@@ -5714,7 +5717,6 @@ class ContentManager(object):
         item_id: Optional[str] = None,
         **kwargs,
     ):
-
         """
         The ``add`` method adds content to the GIS by creating an :class:`~arcgis.gis.Item`.
 
@@ -5735,7 +5737,7 @@ class ContentManager(object):
 
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         item_properties     Required dictionary. See table below for the keys and values.
         ---------------     --------------------------------------------------------------------
@@ -6055,7 +6057,7 @@ class ContentManager(object):
             The third option for text files is to pass the text in as the value of the text parameter.
 
         =======================    =============================================================
-        **Argument**               **Description**
+        **Parameter**               **Description**
         -----------------------    -------------------------------------------------------------
         url                        Optional string. The URL of the csv file.
         -----------------------    -------------------------------------------------------------
@@ -6165,7 +6167,7 @@ class ContentManager(object):
         Creates a blank or view based service.
 
         =======================    =============================================================
-        **Argument**               **Description**
+        **Parameter**               **Description**
         -----------------------    -------------------------------------------------------------
         parameters                 Required CreateServiceParameter. A dataclass that provides the
                                    create service parameters.
@@ -6215,14 +6217,13 @@ class ContentManager(object):
         snippet: Optional[Union[list[str], str]] = None,
         item_id: Optional[str] = None,
     ):
-
         """
         The ``create_service`` method creates a service in the Portal. See the table below for a list of arguments
         passed when calling ``create_service``.
 
 
         =======================    =============================================================
-        **Argument**               **Description**
+        **Parameter**               **Description**
         -----------------------    -------------------------------------------------------------
         name                       Required string. The unique name of the service.
         -----------------------    -------------------------------------------------------------
@@ -6388,12 +6389,11 @@ class ContentManager(object):
 
     # ----------------------------------------------------------------------
     def get(self, itemid: str):
-
         """
         The ``get`` method returns the :class:`~arcgis.gis.Item` object for the specified itemid.
 
         =======================    =============================================================
-        **Argument**               **Description**
+        **Parameter**               **Description**
         -----------------------    -------------------------------------------------------------
         itemid                     Required string. The item identifier.
         =======================    =============================================================
@@ -6432,6 +6432,7 @@ class ContentManager(object):
         count_fields: Optional[str] = None,
         count_size: Optional[int] = None,
         as_dict: bool = False,
+        enrich: bool = False,
     ):
         """
         The ``advanced_search`` method allows the ability to fully customize the search experience.
@@ -6440,7 +6441,7 @@ class ContentManager(object):
         information and how the data is returned.
 
         ================    ===============================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ----------------    ---------------------------------------------------------------
         query               Required String.  The search query. When the search filters
                             contain two or more clauses, the recommended schema is to have
@@ -6511,6 +6512,10 @@ class ContentManager(object):
         as_dict             Required Boolean. If True, the results comes back as a dictionary.
                             The result of the method will always be a dictionary but the
                             `results` key in the dictionary will be changed if set to False.
+        ----------------    ---------------------------------------------------------------
+        enrich              Optional Boolean. If True, search results will include both
+                            literal and relevant matches. Without this parameter search
+                            results will include only literal matches.
         ================    ===============================================================
 
         :return:
@@ -6548,6 +6553,7 @@ class ContentManager(object):
                 count_size=count_size,
                 group_id=group_id,
                 as_dict=as_dict,
+                enrich=enrich,
             )["total"]
         so = {
             "asc": "asc",
@@ -6576,6 +6582,7 @@ class ContentManager(object):
                 count_size=count_size,
                 group_id=group_id,
                 as_dict=as_dict,
+                enrich=enrich,
             )
             if "total" in res and return_count:
                 return res["total"]
@@ -6596,6 +6603,7 @@ class ContentManager(object):
                 "count_fields",
                 "count_size",
                 "as_dict",
+                "enrich",
             ]
             inputs = locals()
             kwargs = {}
@@ -6666,7 +6674,7 @@ class ContentManager(object):
         public and private listings in your organization.
 
         ================    ===============================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ----------------    ---------------------------------------------------------------
         query               Required String.  The search query.
         ----------------    ---------------------------------------------------------------
@@ -6730,8 +6738,8 @@ class ContentManager(object):
         outside_org: bool = False,
         categories: Optional[Union[list[str], str]] = None,
         category_filters: Optional[Union[list[str], str]] = None,
+        enrich: Optional[bool] = None,
     ):
-
         """
         The ``search`` method searches for portal items.
 
@@ -6752,7 +6760,7 @@ class ContentManager(object):
                set outside_org to True.
 
         ================  ==========================================================================
-        **Argument**      **Description**
+        **Parameter**      **Description**
         ----------------  --------------------------------------------------------------------------
         query             Required string. A query string.  See notes above. When the search filters
                           contain two or more clauses, the recommended schema is to have clauses
@@ -6792,7 +6800,10 @@ class ContentManager(object):
 
                           Up to 2 category_filters parameter are allowed per request. It can not be
                           used together with categories to search in a request.
-
+        ----------------  --------------------------------------------------------------------------
+        enrich            Optional Boolean. If True, search results will include both literal and
+                          relevant matches. Without this parameter search results will include only
+                          literal matches.
         ================  ==========================================================================
 
         :return:
@@ -6864,6 +6875,7 @@ class ContentManager(object):
             start=1,
             sort_field=sort_field,
             sort_order=sort_order,
+            enrich=enrich,
         )["results"]
         return itemlist
 
@@ -6877,7 +6889,7 @@ class ContentManager(object):
 
 
         ================  ==========================================================================
-        **Argument**      **Description**
+        **Parameter**      **Description**
         ----------------  --------------------------------------------------------------------------
         folder            Required string. The name of the folder to create for the owner.
         ----------------  --------------------------------------------------------------------------
@@ -6911,7 +6923,6 @@ class ContentManager(object):
     def rename_folder(
         self, old_folder: str, new_folder: str, owner: Optional[str] = None
     ):
-
         """
         The ``rename_folder`` method renames an existing folder from it's existing name to a new name.
 
@@ -6920,7 +6931,7 @@ class ContentManager(object):
 
 
         ================  ==========================================================================
-        **Argument**      **Description**
+        **Parameter**      **Description**
         ----------------  --------------------------------------------------------------------------
         old_folder        Required string. The name of the folder to rename for the owner.
         ----------------  --------------------------------------------------------------------------
@@ -6965,7 +6976,7 @@ class ContentManager(object):
         The ``delete_items`` method deletes a collection of :class:`~arcgis.gis.Item` objects from a users content.
 
         ================  ==========================================================================
-        **Argument**      **Description**
+        **Parameter**      **Description**
         ----------------  --------------------------------------------------------------------------
         items             list of :class:`~arcgis.gis.Item` objects or Item Ids.  This is an array
                           of items to be deleted from the current user's content
@@ -7017,7 +7028,7 @@ class ContentManager(object):
 
 
         ================  ==========================================================================
-        **Argument**      **Description**
+        **Parameter**      **Description**
         ----------------  --------------------------------------------------------------------------
         folder            Required string. The name of the folder to delete.
         ----------------  --------------------------------------------------------------------------
@@ -7086,7 +7097,7 @@ class ContentManager(object):
             The maximum upload size for shapefiles is now 2 Mb and 10 Mb for all other supported file types.
 
         ===================  ==========================================================================
-        **Argument**         **Description**
+        **Parameter**         **Description**
         -------------------  --------------------------------------------------------------------------
         item                 Optional Item. An `Item` on the current portal.
         -------------------  --------------------------------------------------------------------------
@@ -7242,7 +7253,7 @@ class ContentManager(object):
             dataframes. This limit isn't there for spatial dataframes.
 
         ================  ==========================================================================
-        **Argument**      **Description**
+        **Parameter**      **Description**
         ----------------  --------------------------------------------------------------------------
         df                Required DataFrame. Pandas dataframe
         ----------------  --------------------------------------------------------------------------
@@ -7552,7 +7563,6 @@ class ContentManager(object):
                 else:
                     return new_item
             elif has_pyshp:
-
                 name = "%s%s.shp" % (
                     random.choice(string.ascii_lowercase),
                     uuid4().hex[:5],
@@ -7746,13 +7756,12 @@ class ContentManager(object):
         return None
 
     def is_service_name_available(self, service_name: str, service_type: str):
-
         """
             The ``is_service_name_available`` method determines if that service name is
             available for use or not, for the specified service type.
 
         ================  ======================================================================
-        **Argument**      **Description**
+        **Parameter**      **Description**
         ----------------  ----------------------------------------------------------------------
         service_name      Required string. A desired service name.
         ----------------  ----------------------------------------------------------------------
@@ -7791,7 +7800,6 @@ class ContentManager(object):
         owner: Optional[str] = None,
         preserve_item_id: bool = False,
     ):
-
         """
         The ``clone_items`` method is used to clone content to the GIS by creating new :class:`~arcgis.gis.Item`
         objects.
@@ -7811,7 +7819,7 @@ class ContentManager(object):
             in the :class:`~arcgis.gis.GIS`.
 
         =====================     ====================================================================
-        **Argument**              **Description**
+        **Parameter**              **Description**
         ---------------------     --------------------------------------------------------------------
         items                     Required list. Collection of :class:`~arcgis.gis.Item` objects to clone.
         ---------------------     --------------------------------------------------------------------
@@ -7912,7 +7920,7 @@ class ContentManager(object):
             bulk_update only works with content categories at this time.
 
         ================  ======================================================================
-        **Argument**      **Description**
+        **Parameter**      **Description**
         ----------------  ----------------------------------------------------------------------
         itemids           Required list of string or Item. The collection of Items to update.
         ----------------  ----------------------------------------------------------------------
@@ -7996,7 +8004,7 @@ class ContentManager(object):
         You can provide any name for the replaced service as long as it is not pre-existing on your portal content.
 
         ======================  ======================================================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ----------------------  ----------------------------------------------------------------------
         replace_item            Required Item or Item's Id as string. The service to be replaced
         ----------------------  ----------------------------------------------------------------------
@@ -8070,7 +8078,7 @@ class ContentManager(object):
         :attr:`~arcgis.gis.ContentManager.unshare_items` method, which achieves the exact opposite of ``share_items``.
 
         =====================     ====================================================================
-        **Argument**              **Description**
+        **Parameter**              **Description**
         ---------------------     --------------------------------------------------------------------
         items                     Required List. A list of Item or item ids to modify sharing on.
         ---------------------     --------------------------------------------------------------------
@@ -8152,7 +8160,7 @@ class ContentManager(object):
             Each item's current sharing will be overwritten with this method.
 
         =====================     ====================================================================
-        **Argument**              **Description**
+        **Parameter**              **Description**
         ---------------------     --------------------------------------------------------------------
         items                     Required List. A list of Item or item ids to modify sharing on.
         ---------------------     --------------------------------------------------------------------
@@ -8302,7 +8310,7 @@ class CategorySchemaManager(object):
         based on the `dict` this property is set to. See below.
 
         ==================  =========================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ------------------  ---------------------------------------------------------
         categories          Required Dict. A category schema object consists of an
                             array of dict objects representing top level categories.
@@ -8380,7 +8388,7 @@ class CategorySchemaManager(object):
             A maximum of 100 items can be bulk updated per request.
 
         ==================  =========================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ------------------  ---------------------------------------------------------
         items               Required List. A JSON array of item objects. Each is
                             specified with the item ID that consists of a categories
@@ -8537,7 +8545,7 @@ class ResourceManager(object):
         This operation is only available to the item owner and the organization administrator.
 
         ================  ===============================================================
-        **Argument**      **Description**
+        **Parameter**      **Description**
         ----------------  ---------------------------------------------------------------
         file              Optional string. The path to the file that needs to be added.
         ----------------  ---------------------------------------------------------------
@@ -8637,7 +8645,7 @@ class ResourceManager(object):
         This operation is only available to the item owner and the organization administrator.
 
         ================  ===============================================================
-        **Argument**      **Description**
+        **Parameter**      **Description**
         ----------------  ---------------------------------------------------------------
         file              Required string. The path to the file on disk to be used for
                           overwriting an existing file resource.
@@ -8774,7 +8782,7 @@ class ResourceManager(object):
             This operation is only available to the item owner and the organization administrator.
 
         ================  ===============================================================
-        **Argument**      **Description**
+        **Parameter**      **Description**
         ----------------  ---------------------------------------------------------------
         file              Required string. The path to the file to be downloaded.
                           For files in the root, just specify the file name. For files in
@@ -8873,7 +8881,7 @@ class ResourceManager(object):
             and the organization administrator.
 
         ================  ===============================================================
-        **Argument**      **Description**
+        **Parameter**      **Description**
         ----------------  ---------------------------------------------------------------
         file              Optional string. The path to the file to be removed.
                           For files in the root, just specify the file name. For files in
@@ -8985,7 +8993,6 @@ class Group(dict):
         )
 
     def get_thumbnail_link(self):
-
         """
         The ``get_thumbnail_link`` method retrieves the URL to the thumbnail image.
 
@@ -9023,7 +9030,7 @@ class Group(dict):
         The ``search`` operation allows users to find content within the specific group.
 
         ================    ===============================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ----------------    ---------------------------------------------------------------
         query               Required String.  The search query. When the search filters
                             contain two or more clauses, the recommended schema is to have
@@ -9218,7 +9225,7 @@ class Group(dict):
 
 
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
         max_items              Required integer. The maximum number of items to be returned, defaults to 1000.
         ==================     ====================================================================
@@ -9281,7 +9288,7 @@ class Group(dict):
 
 
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
         save_folder            Optional string. The file path to where the group thumbnail will be downloaded.
         ==================     ====================================================================
@@ -9322,7 +9329,6 @@ class Group(dict):
         usernames: Optional[Union[list[str], str]] = None,
         admins: Optional[Union[list[str], str]] = None,
     ):
-
         """
         The ``adds_users`` method adds users to this group.
 
@@ -9332,7 +9338,7 @@ class Group(dict):
             Portal or the owner of the group.
 
         ============    ======================================
-        **Argument**    **Description**
+        **Parameter**    **Description**
         ------------    --------------------------------------
         usernames       Optional list of strings or single string.
                         The list of usernames or single username
@@ -9413,7 +9419,7 @@ class Group(dict):
         The ``remove_users`` method is used to remove users from this group.
 
         ================  ========================================================
-        **Argument**      **Description**
+        **Parameter**      **Description**
         ----------------  --------------------------------------------------------
         usernames         Required list of strings.
                           A comma-separated list of users to be removed.
@@ -9443,7 +9449,7 @@ class Group(dict):
         The ``update_users_roles`` upgrades a set of users to become either Group Members or Group Managers.
 
         ================  ========================================================
-        **Argument**      **Description**
+        **Parameter**      **Description**
         ----------------  --------------------------------------------------------
         managers          Required List.  A comma-separated array of User objects to upgrade to a group manager role.
         ----------------  --------------------------------------------------------
@@ -9506,7 +9512,7 @@ class Group(dict):
             The user executing the ``invite_users`` command must be the owner of the group.
 
         ================  ========================================================
-        **Argument**      **Description**
+        **Parameter**      **Description**
         ----------------  --------------------------------------------------------
         usernames         Required list of strings. The users to invite.
         ----------------  --------------------------------------------------------
@@ -9555,7 +9561,7 @@ class Group(dict):
         The ``invite_by_email`` method invites a user by email to the existing group.
 
         ================  ========================================================
-        **Argument**      **Description**
+        **Parameter**      **Description**
         ----------------  --------------------------------------------------------
         email             Required string. The user to send join email to.
         ----------------  --------------------------------------------------------
@@ -9596,7 +9602,7 @@ class Group(dict):
         The ``reassign_to`` method reassigns this group from its current owner to another owner.
 
         ================  ========================================================
-        **Argument**      **Description**
+        **Parameter**      **Description**
         ----------------  --------------------------------------------------------
         target_owner      Required string or User.  The username of the new group owner.
         ================  ========================================================
@@ -9632,7 +9638,7 @@ class Group(dict):
         the group.
 
         ==================  =========================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ------------------  ---------------------------------------------------------
         users               Required List. A list of users or user names.
         ------------------  ---------------------------------------------------------
@@ -9783,7 +9789,7 @@ class Group(dict):
 
 
         ==================  =========================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ------------------  ---------------------------------------------------------
         title               Optional string. The new name of the group.
         ------------------  ---------------------------------------------------------
@@ -9985,7 +9991,7 @@ class Group(dict):
         The ``application`` method retrieves one group application for the given group.
 
         ==================  ====================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ------------------  ------------------------------------
         user                Required String. The username of
                             the user applying to join the group.
@@ -10014,7 +10020,7 @@ class Group(dict):
         Indicates if the group is protected from deletion.
 
         ==================      ====================================================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ------------------      --------------------------------------------------------------------
         value                   Required bool.
                                 Values: True (protect group) | False (unprotect)
@@ -10376,7 +10382,7 @@ class User(dict):
         items.
 
         ================  ========================================================
-        **Argument**      **Description**
+        **Parameter**      **Description**
         ----------------  --------------------------------------------------------
         report_type       Required String. The type of organizational report to
                           generated. The allowed report types are: `credits`,
@@ -10470,7 +10476,7 @@ class User(dict):
             self._user_id,
         )
         res = self._gis._con.post(url, params)
-        time.sleep(2)
+        time.sleep(10)
         try:
             count = 0
             item = None
@@ -10530,7 +10536,7 @@ class User(dict):
             The ``generate_direct_access_url`` is available in ArcGIS Online Only
 
         =====================  =========================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ---------------------  ---------------------------------------------------------
         store_type             Optional String. The type of upload URL to generate.
                                Types: `big_data_file`, 'notebook', or 'raster`.
@@ -10658,7 +10664,6 @@ class User(dict):
 
     # ----------------------------------------------------------------------
     def get_thumbnail_link(self):
-
         """
         ``The get_thumbnail_link`` method retrieves the URL to the thumbnail image.
 
@@ -10948,7 +10953,7 @@ class User(dict):
             The ``update_license_type`` method is available in ArcGIS Online and Portal 10.7+.
 
         =====================  =========================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ---------------------  ---------------------------------------------------------
         user_type              Required string. The user license type to assign a user.
 
@@ -11011,7 +11016,7 @@ class User(dict):
         Expires the current user's Password.
 
         =====================  ==========================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ---------------------  ----------------------------------------------------------
         temporary_password     Optional String. Allows the administrator to set a new
                                temporary password for a given user. This is available on
@@ -11021,7 +11026,6 @@ class User(dict):
         :returns: Boolean
         """
         if temporary_password and self._gis._portal.is_arcgisonline == False:
-
             url = f"{self._gis._portal.resturl}community/users/{self.username}/update"
             params = {"f": "json", "password": temporary_password}
             resp = self._gis._con.post(url, params)
@@ -11029,7 +11033,6 @@ class User(dict):
             f"{self._gis._portal.resturl}community/users/{self.username}/expirePassword"
         )
         if self._gis._portal.is_arcgisonline:
-
             params = {"f": "json", "expiration": -1}
         else:
             params = {"f": "json", "expiration": 1}
@@ -11044,7 +11047,6 @@ class User(dict):
         new_security_answer: Optional[str] = None,
         reset_by_email: bool = False,
     ):
-
         """
         The ``reset`` method resets a user's password, security question, and/or security answer.
         If a new security question is specified, a new security answer should be provided.
@@ -11060,7 +11062,7 @@ class User(dict):
             to `None`.
 
         =====================  =========================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ---------------------  ---------------------------------------------------------
         password               Required string. The current password.
         ---------------------  ---------------------------------------------------------
@@ -11125,7 +11127,6 @@ class User(dict):
         culture_format: Optional[str] = None,
         categories: Optional[list] = None,
     ):
-
         """
         The ``update`` method updates this user's properties based on the arguments passed when calling ``update``.
 
@@ -11138,7 +11139,7 @@ class User(dict):
            **When updating the security question, you must provide a security_answer as well.**
 
         ==================  ==========================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ------------------  ----------------------------------------------------------
         access              Optional string. The access level for the user, values
                             allowed are private, org, public.
@@ -11273,7 +11274,7 @@ class User(dict):
         Gets or sets the User's login page,
 
         ================  ==========================================================
-        **Argument**      **Description**
+        **Parameter**      **Description**
         ----------------  ----------------------------------------------------------
         value             Required string. The values are `home`, `gallery`, `map`,
                           `scene`, `groups`, `content`, or `organization`
@@ -11317,7 +11318,7 @@ class User(dict):
         Returns the User's login page
 
         ================  ==========================================================
-        **Argument**      **Description**
+        **Parameter**      **Description**
         ----------------  ----------------------------------------------------------
         value             Required string. The values are `home`, `gallery`, `map`,
                           `scene`, `groups`, `content`, or `organization`
@@ -11356,7 +11357,7 @@ class User(dict):
         Get/set the current user's settings that are defined in the user profile.
 
         ================  ==========================================================
-        **Argument**      **Description**
+        **Parameter**      **Description**
         ----------------  ----------------------------------------------------------
         value             Required dict. The `landingPage` and `appLauncher` settings.
         ================  ==========================================================
@@ -11388,7 +11389,7 @@ class User(dict):
         Get/set the current user's settings that are defined in the user profile.
 
         ================  ==========================================================
-        **Argument**      **Description**
+        **Parameter**      **Description**
         ----------------  ----------------------------------------------------------
         value             Required dict. The `landingPage` and `appLauncher` settings.
         ================  ==========================================================
@@ -11473,7 +11474,7 @@ class User(dict):
         section in the Manage members page in ArcGIS Online Resources for more information.
 
         ================  ==========================================================
-        **Argument**      **Description**
+        **Parameter**      **Description**
         ----------------  ----------------------------------------------------------
         value             Required boolean. The current user will be allowed to use
                           the username for other Esri/ArcGIS logins when the value
@@ -11549,7 +11550,7 @@ class User(dict):
         for addtional information.
 
         ================  ==========================================================
-        **Argument**      **Description**
+        **Parameter**      **Description**
         ----------------  ----------------------------------------------------------
         username          required string/User. This is the username or User object
                           that a user wants to link to.
@@ -11595,7 +11596,7 @@ class User(dict):
         for addtional information.
 
         ================  ==========================================================
-        **Argument**      **Description**
+        **Parameter**      **Description**
         ----------------  ----------------------------------------------------------
         username          required string/User. This is the username or User object
                           that a user wants to unlink.
@@ -11661,7 +11662,7 @@ class User(dict):
             apps that are not allowed at the targeting level.
 
         =====================  =========================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ---------------------  ---------------------------------------------------------
         level                  Required int. The values of 1 or 2. This
                                is the user level for the given user.
@@ -11721,7 +11722,7 @@ class User(dict):
             do everything that is possible in Portal. A custom roles privileges can be customized.
 
         ================  ========================================================
-        **Argument**      **Description**
+        **Parameter**      **Description**
         ----------------  --------------------------------------------------------
         role              Required string. Value must be either org_user,
                           org_publisher, org_admin, viewer, view_only, viewplusedit
@@ -11766,7 +11767,7 @@ class User(dict):
             information on reassignment.
 
         ================  ========================================================
-        **Argument**      **Description**
+        **Parameter**      **Description**
         ----------------  --------------------------------------------------------
         reassign_to       Optional string. The new owner of the items and groups
                           that belong to the user being deleted.
@@ -11825,7 +11826,7 @@ class User(dict):
             can not be undone.  The changes are immediately made and permanent.
 
         ================  ===========================================================
-        **Argument**      **Description**
+        **Parameter**      **Description**
         ----------------  -----------------------------------------------------------
         target_username   Required string. The user who will be the new owner of the
                           items and groups from which these are being reassigned from.
@@ -11844,7 +11845,27 @@ class User(dict):
         """
         if isinstance(target_username, User):
             target_username = target_username.username
-        return self._portal.reassign_user(self._user_id, target_username)
+        # currently issue with REST API method, so we try/except for it
+        try:
+            return self._portal.reassign_user(self._user_id, target_username)
+        except:
+            # variables to ensure that every item & group is assigned
+            # issue with dependencies for these methods too, so try/except/pass
+            items_success = True
+            group_success = True
+            for item in self.items():
+                try:
+                    if not item.reassign_to(target_username):
+                        items_success = False
+                except:
+                    pass
+            for group in self.groups:
+                try:
+                    if not group.reassign_to(target_username):
+                        group_success = False
+                except:
+                    pass
+            return items_success and group_success
 
     def get_thumbnail(self):
         """
@@ -11878,7 +11899,7 @@ class User(dict):
         is passed when ``download_thumbnail`` is called.
 
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
         save_folder            Optional string. The desired folder name to download the thumbnail to.
         ==================     ====================================================================
@@ -11947,7 +11968,7 @@ class User(dict):
         the folder ID, such as the dictionary obtained from the folders property.
 
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
         folder                 Optional string. The specifc folder (as a string or dictionary)
                                to get a list of items in.
@@ -12372,7 +12393,7 @@ class Item(dict):
         should be either this information or not.
 
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
         value                  Optional string or None.  Defines if an Item is deprecated or
                                authoritative.
@@ -12446,7 +12467,7 @@ class Item(dict):
         copies the selected Feature Layer Collections.
 
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
         service_name           Required string. It is the name of the service.
         ------------------     --------------------------------------------------------------------
@@ -12628,7 +12649,7 @@ class Item(dict):
 
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         save_path           Optional string. Folder location to download the file to.
         ---------------     --------------------------------------------------------------------
@@ -12663,7 +12684,6 @@ class Item(dict):
         if not save_path:
             save_path = self._workdir
         try:
-
             url = self._gis._portal.resturl + data_path
             con = self._gis._con
             resp = self._portal.con.get(
@@ -12743,7 +12763,7 @@ class Item(dict):
 
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         title               Required string. The desired name of the exported service item.
         ---------------     --------------------------------------------------------------------
@@ -12860,7 +12880,7 @@ class Item(dict):
 
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         job_id              Optional string. The job ID returned during publish, generateFeatures,
                             export, and createService calls.
@@ -12925,7 +12945,7 @@ class Item(dict):
 
 
          ===============     ====================================================================
-         **Argument**        **Description**
+         **Parameter**        **Description**
          ---------------     --------------------------------------------------------------------
          save_folder          Optional string. Folder location to download the item's thumbnail to.
          ===============     ====================================================================
@@ -12963,7 +12983,6 @@ class Item(dict):
 
     # ----------------------------------------------------------------------
     def get_thumbnail_link(self):
-
         """
         The ``get_thumbnail_link`` method is similar to the ``get_thumbnail`` method, but retrieves the link to the
         item's thumbnail rather than the bytes that make up the thumbnail for this item.
@@ -12994,7 +13013,7 @@ class Item(dict):
         symbology and the print service registered for the enterprise.
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         update              Optional boolean. When set to True, the item will be updated with the
                             thumbnail generated in this call, else it will not update the item.
@@ -13130,7 +13149,7 @@ class Item(dict):
         a direct URL to the thumbnail file, or as a Base64 encoded image.
 
         ================  =========================================================================================
-        **Argument**      **Description**
+        **Parameter**      **Description**
         ----------------  -----------------------------------------------------------------------------------------
         file_path         Optional String. The local path to the thumbnail.
         ----------------  -----------------------------------------------------------------------------------------
@@ -13267,7 +13286,7 @@ class Item(dict):
 
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         save_folder          Optional string. Folder location to download the item's metadata to.
         ===============     ====================================================================
@@ -13456,7 +13475,7 @@ class Item(dict):
             user.reassign_to() method.  The ``item.reassign_to`` method (this method) only moves one item at a time.
 
         ================  ========================================================
-        **Argument**      **Description**
+        **Parameter**      **Description**
         ----------------  --------------------------------------------------------
         target_owner      Required string. The new desired owner of the item.
         ----------------  --------------------------------------------------------
@@ -13515,7 +13534,6 @@ class Item(dict):
 
         # find if portal is ArcGIS Online
         try:
-
             ig_url = f"{self._gis._portal.resturl}content/itemsgroups"
             params = {"f": "json", "items": self.itemid}
             ig_groups = list(self._portal.con.get(ig_url, params).keys())
@@ -13622,7 +13640,7 @@ class Item(dict):
         The ``share`` method shares an item with the specified list of groups.
 
         ======================  ========================================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ----------------------  --------------------------------------------------------
         everyone                Optional boolean. Default is False, don't share with
                                 everyone.
@@ -13681,7 +13699,6 @@ class Item(dict):
             # old API - groups sent as comma separated group ids
             group_ids = groups
         if self.owner == self._gis.users.me.username:
-
             url = "{resturl}content/users/{owner}/shareItems".format(
                 resturl=self._gis._portal.resturl, owner=self.owner
             )
@@ -13725,7 +13742,7 @@ class Item(dict):
 
 
         ================  =========================================================================================
-        **Argument**      **Description**
+        **Parameter**      **Description**
         ----------------  -----------------------------------------------------------------------------------------
         groups            Optional list of group names as strings, or a list of :class:`~arcgis.gis.Group` objects,
                           or a comma-separated list of group IDs.
@@ -13778,7 +13795,7 @@ class Item(dict):
         without actually deleting the item.
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         force               Optional boolean. Available in ArcGIS Enterprise 10.6.1 and higher.
                             Force deletion is applicable only to items that were orphaned when
@@ -13865,72 +13882,69 @@ class Item(dict):
         thumbnail: Optional[str] = None,
         metadata: Optional[str] = None,
     ):
-
         """
-         The ``update`` method updates an item in a Portal.
+        The ``update`` method updates an item in a Portal.
 
-         .. note::
-             The content can be a file (such as a layer package, geoprocessing package,
-             map package) or a URL (to an ArcGIS Server service, WMS service,
-             or an application).
+        .. note::
+            The content can be a file (such as a layer package, geoprocessing package,
+            map package) or a URL (to an ArcGIS Server service, WMS service,
+            or an application).
 
-             To upload a package or other type of file,  a path or URL
-             to the file must be provided in the data argument.
+            To upload a package or other type of file,  a path or URL
+            to the file must be provided in the data argument.
 
-             For item_properties, pass in arguments for only the properties you want to be updated.
-             All other properties will be untouched.  For example, if you want to update only the
-             item's description, then only provide the description argument in item_properties.
+            For item_properties, pass in arguments for only the properties you want to be updated.
+            All other properties will be untouched.  For example, if you want to update only the
+            item's description, then only provide the description argument in item_properties.
 
-
-         ===============     ====================================================================
-         **Argument**        **Description**
-         ---------------     --------------------------------------------------------------------
-         item_properties     Required dictionary. See table below for the keys and values.
-         ---------------     --------------------------------------------------------------------
-         data                Optional string, io.StringIO, or io.BytesIO. Either a path or URL to
-                             the data or an instance of `StringIO` or `BytesIO` objects.
-         ---------------     --------------------------------------------------------------------
-         thumbnail           Optional string. Either a path or URL to a thumbnail image.
-         ---------------     --------------------------------------------------------------------
-         metadata            Optional string. Either a path or URL to the metadata.
-         ===============     ====================================================================
-
-
-         *Key:Value Dictionary Options for Argument item_properties*
+        ===============     ====================================================================
+        **Parameter**        **Description**
+        ---------------     --------------------------------------------------------------------
+        item_properties     Required dictionary. See table below for the keys and values.
+        ---------------     --------------------------------------------------------------------
+        data                Optional string, io.StringIO, or io.BytesIO. Either a path or URL to
+                            the data or an instance of `StringIO` or `BytesIO` objects.
+        ---------------     --------------------------------------------------------------------
+        thumbnail           Optional string. Either a path or URL to a thumbnail image.
+        ---------------     --------------------------------------------------------------------
+        metadata            Optional string. Either a path or URL to the metadata.
+        ===============     ====================================================================
 
 
-         =================  =====================================================================
-         **Key**            **Value**
-         -----------------  ---------------------------------------------------------------------
-         type               Optional string. Indicates type of item, see the link below for valid values.
-         -----------------  ---------------------------------------------------------------------
-         typeKeywords       Optional string. Provide a lists all sub-types, see the link below for valid values.
-         -----------------  ---------------------------------------------------------------------
-         description        Optional string. Description of the item.
-         -----------------  ---------------------------------------------------------------------
-         title              Optional string. Name label of the item.
-         -----------------  ---------------------------------------------------------------------
-         url                Optional string. URL to item that are based on URLs.
-         -----------------  ---------------------------------------------------------------------
-         tags               Optional string. Tags listed as comma-separated values, or a list of strings.
-                            Used for searches on items.
-         -----------------  ---------------------------------------------------------------------
-         text               Optional string. For text based items such as Feature Collections & WebMaps
-         -----------------  ---------------------------------------------------------------------
-         snippet            Optional string. Provide a short summary (limit to max 250 characters) of the what the item is.
-         -----------------  ---------------------------------------------------------------------
-         extent             Optional string. Provide comma-separated values for min x, min y, max x, max y.
-         -----------------  ---------------------------------------------------------------------
-         spatialReference   Optional string. Coordinate system that the item is in.
-         -----------------  ---------------------------------------------------------------------
-         accessInformation  Optional string. Information on the source of the content.
-         -----------------  ---------------------------------------------------------------------
-         licenseInfo        Optional string.  Any license information or restrictions regarding the content.
-         -----------------  ---------------------------------------------------------------------
-         culture            Optional string. Locale, country and language information.
-         -----------------  ---------------------------------------------------------------------
-         access             Optional string. Valid values are private, shared, org, or public.
-         =================  =====================================================================
+        *Key:Value Dictionary Options for Argument item_properties*
+
+        =================  =====================================================================
+        **Key**            **Value**
+        -----------------  ---------------------------------------------------------------------
+        type               Optional string. Indicates type of item, see the link below for valid values.
+        -----------------  ---------------------------------------------------------------------
+        typeKeywords       Optional string. Provide a lists all sub-types, see the link below for valid values.
+        -----------------  ---------------------------------------------------------------------
+        description        Optional string. Description of the item.
+        -----------------  ---------------------------------------------------------------------
+        title              Optional string. Name label of the item.
+        -----------------  ---------------------------------------------------------------------
+        url                Optional string. URL to item that are based on URLs.
+        -----------------  ---------------------------------------------------------------------
+        tags               Optional string. Tags listed as comma-separated values, or a list of strings.
+                           Used for searches on items.
+        -----------------  ---------------------------------------------------------------------
+        text               Optional string. For text based items such as Feature Collections & WebMaps
+        -----------------  ---------------------------------------------------------------------
+        snippet            Optional string. Provide a short summary (limit to max 250 characters) of the what the item is.
+        -----------------  ---------------------------------------------------------------------
+        extent             Optional string. Provide comma-separated values for min x, min y, max x, max y.
+        -----------------  ---------------------------------------------------------------------
+        spatialReference   Optional string. Coordinate system that the item is in.
+        -----------------  ---------------------------------------------------------------------
+        accessInformation  Optional string. Information on the source of the content.
+        -----------------  ---------------------------------------------------------------------
+        licenseInfo        Optional string.  Any license information or restrictions regarding the content.
+        -----------------  ---------------------------------------------------------------------
+        culture            Optional string. Locale, country and language information.
+        -----------------  ---------------------------------------------------------------------
+        access             Optional string. Valid values are private, shared, org, or public.
+        =================  =====================================================================
 
 
         .. note::
@@ -13938,15 +13952,16 @@ class Item(dict):
              <https://developers.arcgis.com/rest/users-groups-and-items/items-and-item-types.htm>`_
              in the ArcGIS REST API documentation for more details.
 
-         :return:
+        :return:
             A boolean indicating success (True) or failure (False).
 
-         .. code-block:: python
+        .. code-block:: python
 
-             # Usage Example
+            # Usage Example
 
-             item.update(description ="aggregated US hurricane data", title = "US Hurricane Data",
-                             tags = "Hurricanes, USA, Natural Disasters")
+            >>> item.update(description ="aggregated US hurricane data",
+                            title = "US Hurricane Data",
+                            tags = "Hurricanes, USA, Natural Disasters")
         """
         if isinstance(item_properties, ItemProperties):
             if (
@@ -14040,7 +14055,6 @@ class Item(dict):
                 self._hydrate()
             return ret
         else:
-
             owner = self._user_id
 
             try:
@@ -14090,7 +14104,7 @@ class Item(dict):
         Must be the owner of the item to update this.
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         file                Required String. The path to the file that will be uploaded.
         ---------------     --------------------------------------------------------------------
@@ -14120,7 +14134,7 @@ class Item(dict):
         This is available for all items and allows you to delete an individual file from an item's esriinfo folder.
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         file                Required String. The file to be deleted.
         ===============     ====================================================================
@@ -14148,7 +14162,10 @@ class Item(dict):
         can have views.  This Manager allows users to work with `Feature Service`
         to create **views**
 
-        :returns: ViewManager
+        :returns:
+            A  :class:`~arcgis.gis.ViewManager` object to administer hosted
+            feature layer view :class:`items <arcgis.gis.Item>` created from
+            the hosted feature layer.
         """
         if self.type == "Feature Service" and "Hosted Service" in self.typeKeywords:
             return ViewManager(item=self)
@@ -14188,7 +14205,7 @@ class Item(dict):
         reporting period can be changed.
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         date_range          Optional string.  The default is 7d.  This is the period to query
                             usage for a given item.
@@ -14453,7 +14470,7 @@ class Item(dict):
             in the ArcGIS REST API for more information.
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         try_json            Optional string. Default is True. For JSON/text files, if try_json
                             is True, the method tries to convert the data to a Python dictionary
@@ -14553,7 +14570,7 @@ class Item(dict):
             With WebMaps items, relationships are only available on local enterprises.
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         rel_type            Required string.  The type of the related item; is one of
                             ['Map2Service', 'WMA2Code', 'Map2FeatureCollection', 'MobileApp2Code',
@@ -14593,7 +14610,6 @@ class Item(dict):
 
     # ----------------------------------------------------------------------
     def add_relationship(self, rel_item: Item, rel_type: str):
-
         """The ``add_relationship`` method adds a relationship from the current item to ``rel_item``.
 
         .. note::
@@ -14609,7 +14625,7 @@ class Item(dict):
 
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         rel_item            Required Item object corresponding to the related item.
         ---------------     --------------------------------------------------------------------
@@ -14650,7 +14666,7 @@ class Item(dict):
 
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         rel_item            Required Item object corresponding to the related item.
         ---------------     --------------------------------------------------------------------
@@ -14722,7 +14738,7 @@ class Item(dict):
             ArcGIS for Enterprise for Kubernetes does not support publishing service definition file generated by ArcMap.
 
         ===================    ===============================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         -------------------    ---------------------------------------------------------------
         publish_parameters     Optional dictionary. containing publish instructions and customizations.
                                Cannot be combined with overwrite.
@@ -15123,7 +15139,7 @@ class Item(dict):
         The ``move`` method moves the current item to the name of the folder passed when ``move`` is called.
 
         ================  ===============================================================
-        **Argument**      **Description**
+        **Parameter**      **Description**
         ----------------  ---------------------------------------------------------------
         folder            Required string. The name of the folder to move the item to.
                           Use '/' for the root folder. For other folders, pass in the
@@ -15184,7 +15200,7 @@ class Item(dict):
         layers and hosted feature layer views as a tile service.
 
         ================  ===============================================================
-        **Argument**      **Description**
+        **Parameter**      **Description**
         ----------------  ---------------------------------------------------------------
         title             Required string. The name of the new service.
         ----------------  ---------------------------------------------------------------
@@ -15403,7 +15419,7 @@ class Item(dict):
         deleted or protecting it from deletion.
 
         ================  ===============================================================
-        **Argument**      **Description**
+        **Parameter**      **Description**
         ----------------  ---------------------------------------------------------------
         enable            Optional boolean. Default is True which enables delete
                           protection, False to disable delete protection.
@@ -15430,7 +15446,7 @@ class Item(dict):
 
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         ret                 Required dictionary. Represents the result of a publish REST call.
                             This dict should contain the `serviceItemId` and `jobId` of the publishing job.
@@ -15534,7 +15550,7 @@ class Item(dict):
 
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         comment             Required string. Text to be added as a comment to a specific item.
         ===============     ====================================================================
@@ -15570,7 +15586,7 @@ class Item(dict):
         authenticated users.
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         value               Required float. The rating to be applied for the item. The value
                             must be a floating point number between 1.0 and 5.0.
@@ -15652,7 +15668,7 @@ class Item(dict):
         specify will be able to access the service.
 
         ===================    ===============================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         -------------------    ---------------------------------------------------------------
         url                    Optional string. Represents the hosted service URLs to proxy.
         -------------------    ---------------------------------------------------------------
@@ -15705,7 +15721,7 @@ class Item(dict):
         administrator.
 
         ===================    ===============================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         -------------------    ---------------------------------------------------------------
         proxy_id               Required string. This is a comma seperated list of proxy ids.
         ===================    ===============================================================
@@ -15753,7 +15769,7 @@ class Item(dict):
             This method is only available on ArcGIS Online or ArcGIS Enterprise 10.9 or higher
 
         =======================    =============================================================
-        **Argument**               **Description**
+        **Parameter**               **Description**
         -----------------------    -------------------------------------------------------------
         title                      Optional string. The title of the destination item. If not specified, title of the original item is used.
         -----------------------    -------------------------------------------------------------
@@ -15828,7 +15844,7 @@ class Item(dict):
 
 
         =======================    =============================================================
-        **Argument**               **Description**
+        **Parameter**               **Description**
         -----------------------    -------------------------------------------------------------
         title                      Optional string. The name of the new item.
         -----------------------    -------------------------------------------------------------
@@ -16136,7 +16152,7 @@ class Item(dict):
             The ``register`` method is available to the item owner.
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         app_type            Required string. The type of app that was registered indicating
                             whether it's a browser app, native app, server app, or a multiple
@@ -16266,7 +16282,7 @@ class Item(dict):
         (.pkinfo) being downloaded.
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         folder              Optional string. The save location of the pkinfo file.
         ===============     ====================================================================
@@ -16323,7 +16339,7 @@ class Item(dict):
         """checks if the URL endpoint is reachable via public and/or private url
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         url                 Optional String. URL to check. If `None` it is obtained from the Item['url'] key
         ---------------     --------------------------------------------------------------------
@@ -16377,7 +16393,15 @@ class Item(dict):
 
 ########################################################################
 class ViewManager:
-    """The View Manager"""
+    """
+    A helper class to work with hosted feature layer views created from
+    :class:`items <arcgis.gis.Item>` whose `type` property value is ``feature
+    service.``
+
+    This class is not meant to be created directly, but instead returned
+    from the :attr:`~arcgis.gis.Item.view_manager` property on an
+    :class:`~arcgis.gis.Item`.
+    """
 
     _item = None
     _gis = None
@@ -16391,7 +16415,8 @@ class ViewManager:
         """
         Returns all views for a given item
 
-        :returns: list[Item]
+        :returns:
+            List of feature layer view :class:`items <arcgis.gis.Item>`
         """
         return [
             i
@@ -16419,23 +16444,23 @@ class ViewManager:
         preserve_layer_ids: bool = False,
     ) -> Item:
         """
-        Creates a view of an existing feature service Item. You can create a view, if you need a different view of the data
-        represented by a hosted feature layer, for example, you want to apply different editor settings, apply different
-        styles or filters, define which features or fields are available, or share the data to different groups than
-        the hosted feature layer  create a hosted feature layer view of that hosted feature layer.
+        Creates a view of an existing feature service Item. You can create a view if you need a different view of the data
+        represented by a hosted feature layer. For example, you want to apply different editor settings,
+        styles or filters or define which features or fields are available, or share the data to different groups than
+        the hosted feature layer.
 
-        When you create a feature layer view, a new hosted feature layer item is added to Content. This new layer is a
-        view of the data in the hosted feature layer, which means updates made to the data appear in the hosted feature
-        layer and all of its hosted feature layer views. However, since the view is a separate layer, you can change
+        When you create a feature layer view, a new hosted feature layer :class:`~arcgis.gis.Item` is added to your content. This new layer is a
+        view of the data in the :class:`hosted feature layer <arcgis.features.FeatureLayerCollection>`, which means updates made to the data appear in the hosted feature layer and all of its hosted feature layer views. However, since the view is a separate layer, you can change
         properties and settings on this item separately from the hosted feature layer from which it is created.
 
         For example, you can allow members of your organization to edit the hosted feature layer but share a read-only
         feature layer view with the public.
 
-        To learn more about views visit: https://doc.arcgis.com/en/arcgis-online/share-maps/create-hosted-views.htm
+        See `Create hosted feature layer views <https://doc.arcgis.com/en/arcgis-online/manage-data/create-hosted-views.htm>`_
+        to learn more details.
 
         ====================     ====================================================================
-        **Argument**             **Description**
+        **Parameter**             **Description**
         --------------------     --------------------------------------------------------------------
         name                     Required string. Name of the new view item
         --------------------     --------------------------------------------------------------------
@@ -16451,11 +16476,11 @@ class ViewManager:
         capabilities             Optional string. Specify capabilities as a comma separated string.
                                  For example "Query, Update, Delete". Default is 'Query'.
         --------------------     --------------------------------------------------------------------
-        view_layers              Optional list. Specify list of layers present in the FeatureLayerCollection
-                                 that you want in the view.
+        view_layers              Optional list. Specify list of layers present in the
+                                 :class:`~arcgis.features.FeatureLayerCollection` you want in the view.
         --------------------     --------------------------------------------------------------------
-        view_tables              Optional list. Specify list of tables present in the FeatureLayerCollection
-                                 that you want in the view.
+        view_tables              Optional list. Specify list of tables present in the
+                                 :class:`~arcgis.features.FeatureLayerCollection` you want in the view
         --------------------     --------------------------------------------------------------------
         description              Optional String. A user-friendly description for the published dataset.
         --------------------     --------------------------------------------------------------------
@@ -16467,21 +16492,22 @@ class ViewManager:
         --------------------     --------------------------------------------------------------------
         set_item_id              Optional String. If set, the ItemId is defined by the user, not the system.
         --------------------     --------------------------------------------------------------------
-        preserve_layer_ids       Optional Boolean. Preserves the layer's `id` on it's definition when `True`.  The default is `False`.
+        preserve_layer_ids       Optional Boolean. Preserves the layer's `id` on it's definition when `True`.
+                                 The default is `False`.
         ====================     ====================================================================
 
-        .. code-block:: python  (optional)
+        .. code-block:: python
 
-           USAGE EXAMPLE: Create a veiw from a hosted feature layer
+            # USAGE EXAMPLE: Create a veiw from a hosted feature layer
 
-           crime_fl_item = gis.content.search("2012 crime")[0]
-           view = crime_fl_item.view_manager.create(name=uuid.uuid4().hex[:9], # create random name
-                                                    updateable=True,
-                                                    allow_schema_changes=False,
-                                                    capabilities="Query,Update,Delete")
+            >>> crime_fl_item = gis.content.search("2012 crime")[0]
+            >>> view = crime_fl_item.view_manager.create(name=uuid.uuid4().hex[:9], # create random name
+                                                         updateable=True,
+                                                         allow_schema_changes=False,
+                                                         capabilities="Query,Update,Delete")
 
         :return:
-            Returns the newly created :class:`~arcgis.gis.Item` for the view.
+            The :class:`~arcgis.gis.Item` for the view.
         """
         flc = arcgis.features.FeatureLayerCollection.fromitem(self._item)
         mgr = flc.manager
@@ -16504,7 +16530,20 @@ class ViewManager:
 
     # ----------------------------------------------------------------------
     def get_definitions(self, item: Item) -> list[ViewLayerDefParameter]:
-        """Gets the View Definition Parmaeters for a Given Item"""
+        """Gets the View Definition Parameters for a Given Item
+
+        =============     =====================================================
+        **Argument**      **Description**
+        -------------     -----------------------------------------------------
+        item              The :class:`~arcgis.gis.Item` to return the
+                          view layer definitions for.
+        =============     =====================================================
+
+
+        :return:
+            List of :class:`~arcgis.gis._impl._dataclasses.ViewLayerDefParameter`
+            objects or None.
+        """
         if "View Service" in item.typeKeywords:
             from arcgis.gis._impl._dataclasses import ViewLayerDefParameter
 
@@ -16517,7 +16556,16 @@ class ViewManager:
         """
         Updates a set of layers with new queries, geometries, and column visibilities.
 
-        :returns: boolean
+        =============     =====================================================
+        **Argument**      **Description**
+        -------------     -----------------------------------------------------
+        layer_def         List of
+                          :class:`~arcgis.gis._impl._dataclasses.ViewLayerDefParameter`
+                          objects for modifying the layers.
+        =============     =====================================================
+
+
+        :returns: Boolean
         """
         results = []
         assert isinstance(layer_def, (list, tuple))
@@ -16554,7 +16602,7 @@ class ItemDependency(object):
     When an item is updated, its dependencies are updated as well and always be kept in sync.
 
     ===============     ====================================================================
-    **Argument**        **Description**
+    **Parameter**        **Description**
     ---------------     --------------------------------------------------------------------
     item                Required Item. Item object to examine dependencies on.
     ===============     ====================================================================
@@ -16572,6 +16620,7 @@ class ItemDependency(object):
     _item = None
     _portal = None
     _properties = None
+
     # ----------------------------------------------------------------------
     def __init__(self, item):
         """Constructor"""
@@ -16604,7 +16653,6 @@ class ItemDependency(object):
         start = 0
         num = 100
         while res["nextStart"] > -1:
-
             start += num
             params = {"f": "json", "num": 100, "start": res["nextStart"]}
             res = self._con.get(self._url, params)
@@ -16626,7 +16674,7 @@ class ItemDependency(object):
         Assigns a dependency to the current item
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         depend_type         Required String. This is the type of dependency that is registered
                             for the item. Allowed values:
@@ -16657,7 +16705,7 @@ class ItemDependency(object):
         Deletes a dependency to the current item
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         depend_type         Required String. This is the type of dependency that is registered
                             for the item. The allowed values are: table, url, or itemid.
@@ -16772,7 +16820,6 @@ class _GISResource(object):
     """a GIS service"""
 
     def __init__(self, url, gis=None):
-
         from ._impl._con import Connection
 
         self._hydrated = False
@@ -16799,7 +16846,7 @@ class _GISResource(object):
         :class:`~arcgis.gis.Item` class.
 
         ======================     ====================================================================
-        **Argument**               **Description**
+        **Parameter**               **Description**
         ----------------------     --------------------------------------------------------------------
         item                       A required :class:`~arcgis.gis.Item` object. The item needed to convert to
                                    a :class:`~arcgis.features.FeatureLayerCollection` object.
@@ -16968,7 +17015,7 @@ class Layer(_GISResource):
         The ``fromitem`` method returns the layer at the specified index from a layer :class:`~arcgis.gis.Item` object.
 
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
         item                   Required string. An item ID representing a layer.
         ------------------     --------------------------------------------------------------------

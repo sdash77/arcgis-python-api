@@ -203,7 +203,12 @@ def areas_and_lengths(
     if isinstance(area_unit, AreaUnits):
         area_unit = area_unit.value
     return gis._tools.geometry.areas_and_lengths(
-        polygons, length_unit, area_unit, calculation_type, spatial_ref, future=future
+        polygons,
+        length_unit,
+        area_unit,
+        calculation_type,
+        spatial_ref,
+        future=future,
     )
 
 
@@ -615,7 +620,12 @@ def distance(
     if isinstance(distance_unit, LengthUnits):
         distance_unit = distance_unit.value
     return gis._tools.geometry.distance(
-        spatial_ref, geometry1, geometry2, distance_unit, geodesic, future=future
+        spatial_ref,
+        geometry1,
+        geometry2,
+        distance_unit,
+        geodesic,
+        future=future,
     )
 
 
@@ -966,8 +976,8 @@ def lengths(
         gis = arcgis.env.active_gis
     if isinstance(length_unit, LengthUnits):
         length_unit = length_unit.value
-
-    return gis._tools.geometry.lengths(
+    service = gis._tools.geometry
+    return service.lengths(
         spatial_ref, polylines, length_unit, calculation_type, future=future
     )
 
@@ -1138,7 +1148,12 @@ def project(
     if gis is None:
         gis = arcgis.env.active_gis
     return gis._tools.geometry.project(
-        geometries, in_sr, out_sr, transformation, transform_forward, future=future
+        geometries,
+        in_sr,
+        out_sr,
+        transformation,
+        transform_forward,
+        future=future,
     )
 
 

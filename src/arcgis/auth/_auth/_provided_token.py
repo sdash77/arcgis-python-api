@@ -16,6 +16,7 @@ class EsriUserTokenAuth(AuthBase, SupportMultiAuth):
     _invalid_token_urls = None
     token = None
     auth = None
+
     # ----------------------------------------------------------------------
     def __init__(
         self, token: str, referer: str = None, verify_cert: bool = True, **kwargs

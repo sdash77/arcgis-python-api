@@ -11,6 +11,7 @@ class EsriAPIKeyAuth(AuthBase, SupportMultiAuth):
     api_key = None
     auth = None
     _no_go_token = None
+
     # ----------------------------------------------------------------------
     def __init__(
         self,

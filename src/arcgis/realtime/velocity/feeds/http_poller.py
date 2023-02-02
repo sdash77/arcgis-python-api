@@ -36,7 +36,7 @@ class HttpPoller(_FeedTemplate, _HasTime, _HasGeometry):
     the feed.
 
     ===================      ====================================================================
-    **Argument**             **Description**
+    **Parameter**             **Description**
     -------------------      --------------------------------------------------------------------
     label                    String. Unique label for this feed instance.
     -------------------      --------------------------------------------------------------------

@@ -292,7 +292,6 @@ class TemporalAttentionEncoder(nn.Module):
         self.dropout = nn.Dropout(dropout)
 
     def forward(self, x):
-
         sz_b, seq_len, d = x.shape
 
         x = self.inlayernorm(x)
@@ -707,9 +706,10 @@ def model_eval(valid_dt, model, class_dict):
 
 def confusion_matrix_analysis(mat, cls_dict):
     """
-    This method computes all the performance metrics from the confusion matrix. In addition to overall accuracy, the
-    precision, recall, f-score and IoU for each class is computed.
-    The class-wise metrics are averaged to provide overall indicators in two ways (MICRO and MACRO average)
+    This method computes all the performance metrics from the confusion matrix.
+    In addition to overall accuracy, the precision, recall, f-score and IoU for
+    each class is computed.The class-wise metrics are averaged to provide overall
+    indicators in two ways (MICRO and MACRO average).
     Args:
         mat (array): confusion matrix
     Returns:
@@ -721,6 +721,7 @@ def confusion_matrix_analysis(mat, cls_dict):
     FN = 0
 
     per_class = {}
+    zero_divide = lambda n, d: 0 if n == 0 or d == 0 else n / d
 
     for j in range(mat.shape[0]):
         d = {}
@@ -728,10 +729,10 @@ def confusion_matrix_analysis(mat, cls_dict):
         fp = np.sum(mat[:, j]) - tp
         fn = np.sum(mat[j, :]) - tp
 
-        d["IoU"] = tp / (tp + fp + fn)
-        d["Precision"] = tp / (tp + fp)
-        d["Recall"] = tp / (tp + fn)
-        d["F1-score"] = 2 * tp / (2 * tp + fp + fn)
+        d["IoU"] = zero_divide(tp, tp + fp + fn)
+        d["Precision"] = zero_divide(tp, tp + fp)
+        d["Recall"] = zero_divide(tp, tp + fn)
+        d["F1-score"] = zero_divide(2 * tp, 2 * tp + fp + fn)
 
         per_class[str(list(cls_dict.values())[j])] = d
 

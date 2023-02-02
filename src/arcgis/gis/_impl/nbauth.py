@@ -7,6 +7,7 @@ from hashlib import sha256
 from functools import lru_cache
 from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
 
+
 # -------------------------------------------------------------------------
 @lru_cache(maxsize=255)
 def _sha256(value: str) -> bytes:
@@ -90,6 +91,7 @@ def _pad_string(value: str) -> str:
 class AESCipher:
     _iv = None
     _key = None
+
     # -------------------------------------------------------------------------
     def __init__(self, password, iv):
         self._key = password

@@ -1,22 +1,14 @@
-import os
 import sys
 import unittest
+sys.path.insert(0, r"C:\ipython_workfolder\geosaurus\src")
 
-sys.path.append(r"C:\SVN\geosaurus_master\src")
-
-import tempfile
-import shutil, datetime
 from arcgis.features.geo._array import GeoArray, GeoType
 from arcgis.features.geo import GeoAccessor, GeoSeriesAccessor
 from arcgis.geometry import Geometry
-import copy
-from arcgis.features.geo import _io
 import pandas as pd
-from pandas.core.internals import ExtensionBlock
 from arcgis.geometry import Geometry
 import numpy as np
 import pandas as pd
-import pandas.util.testing as tm
 
 try:
     HASARCPY = True
@@ -118,7 +110,7 @@ class SeriesGeoTests(unittest.TestCase):
     def test_create_df_from_series(self):
         """tests df creation from series"""
         if HASARCPY:
-            series = pd.Series(GeoArray)
+            series = pd.Series(data=GeoArray(geoms))
             df = pd.DataFrame(data=series, columns=["SHAPE"])
             df.spatial.set_geometry("SHAPE")
             assert hasattr(df.SHAPE, "geom")

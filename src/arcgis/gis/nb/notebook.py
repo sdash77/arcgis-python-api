@@ -14,6 +14,7 @@ from ._security import SecurityManager
 from ._machines import MachineManager
 from ._nbm import NotebookManager
 
+
 ########################################################################
 class NotebookServer(object):
     """
@@ -32,6 +33,7 @@ class NotebookServer(object):
     _services = None
     _version = None
     _sitemanager = None
+
     # ----------------------------------------------------------------------
     def __init__(self, url, gis):
         """Constructor"""

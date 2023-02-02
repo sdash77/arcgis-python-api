@@ -32,7 +32,7 @@ class FillMask(InferenceOnlyModel):
     Based on the Hugging Face transformers library
 
     =====================   ===========================================
-    **Argument**            **Description**
+    **Parameter**            **Description**
     ---------------------   -------------------------------------------
     backbone                Optional string. Specify the HuggingFace
                             transformer model name which will be used to
@@ -46,7 +46,7 @@ class FillMask(InferenceOnlyModel):
     **kwargs**
 
     =====================   ===========================================
-    **Argument**            **Description**
+    **Parameter**            **Description**
     ---------------------   -------------------------------------------
     pretrained_path         Option str. Path to a directory, where pretrained
                             model files are saved.
@@ -110,7 +110,7 @@ class FillMask(InferenceOnlyModel):
         Summarize the given text or list of text
 
         =====================   ===========================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ---------------------   -------------------------------------------
         text_or_list            Required string or list. A text/sentence
                                 or a list of texts/sentences for which on wishes

@@ -8,6 +8,7 @@ except:
     hasArcPy = False
 tempfile = LazyLoader("tempfile")
 
+
 # ----------------------------------------------------------------------
 def scratchFolder():
     if hasArcPy:

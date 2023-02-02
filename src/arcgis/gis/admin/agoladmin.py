@@ -9,6 +9,7 @@ from ._resources import PortalResourceManager
 from ._base import BasePortalAdmin
 from ...apps.tracker._location_tracking import LocationTrackingManager
 
+
 ########################################################################
 class AGOLAdminManager(object):
     """
@@ -38,6 +39,7 @@ class AGOLAdminManager(object):
     _category_schema = None
     _certificates = None
     _servers = None
+
     # ----------------------------------------------------------------------
     def __init__(self, gis, ux=None, metadata=None, collaborations=None):
         """initializer"""
@@ -87,7 +89,7 @@ class AGOLAdminManager(object):
         organization.
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         value               Required boolean. True means that the organization will be enrolled
                             in the Esri User Experience Improvement Program. False means the
@@ -290,7 +292,7 @@ class AGOLAdminManager(object):
         This property allows `org_admins` to be able to see all scheduled tasks on the enterprise
 
         ================  ===============================================================================
-        **Argument**      **Description**
+        **Parameter**      **Description**
         ----------------  -------------------------------------------------------------------------------
         item              Optional Item. The item to query tasks about.
         ----------------  -------------------------------------------------------------------------------
@@ -352,7 +354,7 @@ class AGOLAdminManager(object):
         Returns a CSV file or Pandas's DataFrame containing the login history from a start_date to the present.
 
         ================  ===============================================================================
-        **Argument**      **Description**
+        **Parameter**      **Description**
         ----------------  -------------------------------------------------------------------------------
         start_date        Required datetime.datetime object. The beginning date to start with.
         ----------------  -------------------------------------------------------------------------------

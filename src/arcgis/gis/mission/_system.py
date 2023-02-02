@@ -3,6 +3,7 @@ import os
 from arcgis.gis import GIS
 from arcgis._impl.common._mixins import PropertyMap
 
+
 ########################################################################
 class SystemManager(object):
     """
@@ -21,6 +22,7 @@ class SystemManager(object):
     _dir = None
     _wam = None
     _properties = None
+
     # ----------------------------------------------------------------------
     def __init__(self, url, gis):
         """Constructor"""
@@ -172,6 +174,7 @@ class DirectoryManager(object):
     _con = None
     _gis = None
     _properties = None
+
     # ----------------------------------------------------------------------
     def __init__(self, url, gis):
         """Constructor"""
@@ -282,6 +285,7 @@ class WebAdaptorManager(object):
     _con = None
     _gis = None
     _properties = None
+
     # ----------------------------------------------------------------------
     def __init__(self, url, gis):
         """Constructor"""
@@ -332,7 +336,7 @@ class WebAdaptorManager(object):
         Registers a new web adapter.
 
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
         name                   Required String. The name of the web adapter
         ------------------     --------------------------------------------------------------------
@@ -390,7 +394,7 @@ class WebAdaptorManager(object):
         in the request.
 
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
         config                 Required dict. The configuration items to be updated for this web
                                adaptor. Always include the web adaptor's sharedkey attribute.
@@ -459,6 +463,7 @@ class WebAdaptor(object):
     _con = None
     _gis = None
     _properties = None
+
     # ----------------------------------------------------------------------
     def __init__(self, url, gis):
         """Constructor"""

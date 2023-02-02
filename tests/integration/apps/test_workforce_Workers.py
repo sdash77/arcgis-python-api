@@ -3,10 +3,8 @@
 # Purpose:     Sanity tests for ArcGIS Python API
 # -------------------------------------------------------------------------------
 import sys
-
-sys.path.insert(0, r"c:\SVN\geosaurus_master\src")
-sys.path.insert(1, r"c:\SVN\geosaurus_master\tests")
-sys.path.insert(2, r"c:\SVN\geosaurus_master\tests\integration")
+sys.path.insert(0, r"C:\ipython_workfolder\geosaurus\tests")
+sys.path.insert(1, r"C:\ipython_workfolder\geosaurus\src")
 import unittest
 from integration.dino_utils.dino_precondition_checks import (
     PreconditionChecks,
@@ -392,10 +390,6 @@ class Test_Workforce_Workers(unittest.TestCase):
         except Exception as testException:
             self.fail("Error during test: " + testException.__str__())
 
-
-# TestModule
-def tearDownModule():
-    print("**End Workforce WorkerManager Tests**")
 
 
 if __name__ == "__main__":

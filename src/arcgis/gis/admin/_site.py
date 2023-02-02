@@ -1,6 +1,7 @@
 from typing import Optional
 from ._base import BasePortalAdmin
 
+
 ########################################################################
 class Site(BasePortalAdmin):
     """
@@ -15,6 +16,7 @@ class Site(BasePortalAdmin):
     _properties = None
     _json = None
     _json_dict = None
+
     # ----------------------------------------------------------------------
     def __init__(self, url, portaladmin, **kwargs):
         """Constructor"""
@@ -60,7 +62,7 @@ class Site(BasePortalAdmin):
         restarted.
 
         ===========================     ====================================================================
-        **Argument**                    **Description**
+        **Parameter**                    **Description**
         ---------------------------     --------------------------------------------------------------------
         con                             Required Connection. The connection object.
         ---------------------------     --------------------------------------------------------------------
@@ -134,7 +136,7 @@ class Site(BasePortalAdmin):
            the database connection information
 
         ===========================     ====================================================================
-        **Argument**                    **Description**
+        **Parameter**                    **Description**
         ---------------------------     --------------------------------------------------------------------
         location                        Required string. The path to the folder accessible to the portal
                                         where the exported site configuration will be written.
@@ -175,7 +177,7 @@ class Site(BasePortalAdmin):
         content index.
 
         ===========================     ====================================================================
-        **Argument**                    **Description**
+        **Parameter**                    **Description**
         ---------------------------     --------------------------------------------------------------------
         location                        Required string. A file path to an exported configuration.
         ===========================     ====================================================================
@@ -219,7 +221,7 @@ class Site(BasePortalAdmin):
         the API will be restarted.
 
         ===========================     ====================================================================
-        **Argument**                    **Description**
+        **Parameter**                    **Description**
         ---------------------------     --------------------------------------------------------------------
         admin_url                       Required string. The admin URL of the existing portal site to which
                                         a machine will be joined

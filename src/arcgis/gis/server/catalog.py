@@ -10,6 +10,8 @@ from arcgis.gis import GIS
 from arcgis.gis._impl._profile import ServerProfileManager
 
 _log = logging.getLogger()
+
+
 ########################################################################
 class ServicesDirectory(BaseServer):
     """
@@ -38,7 +40,7 @@ class ServicesDirectory(BaseServer):
 
 
     =====================     ====================================================================
-    **Arguments**             **Description**
+    **Parameter**             **Description**
     ---------------------     --------------------------------------------------------------------
     url                       string required. The web address to the ArcGIS Server administration
                               end point.
@@ -98,6 +100,7 @@ class ServicesDirectory(BaseServer):
     _pmgr = None
     _adminurl = None
     _properties = None
+
     # ----------------------------------------------------------------------
     def __init__(
         self,
@@ -161,7 +164,6 @@ class ServicesDirectory(BaseServer):
         self._is_agol = kwargs.pop("is_agol", False)
         con = kwargs.pop("con", None)
         if verify_cert == False:
-
             ssl._create_default_https_context = ssl._create_unverified_context
         aurl = None
         if "admin_url" in kwargs:
@@ -335,7 +337,7 @@ class ServicesDirectory(BaseServer):
         Returns the Services' extents for all services in a given folder.
 
         =====================     ====================================================================
-        **Arguments**             **Description**
+        **Parameter**             **Description**
         ---------------------     --------------------------------------------------------------------
         folder                    Optional String. The name of the folder to examine for the footprints.
         ---------------------     --------------------------------------------------------------------

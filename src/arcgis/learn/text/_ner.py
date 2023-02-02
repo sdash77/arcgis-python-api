@@ -51,7 +51,7 @@ class EntityRecognizer:
     Creates an entity recognition model to extract text entities from unstructured text documents.
 
     =====================   ===========================================
-    **Argument**            **Description**
+    **Parameter**            **Description**
     ---------------------   -------------------------------------------
     data                    Optional data object returned from :meth:`~arcgis.learn.prepare_data` function.
                             data object can be `None`, in case where someone wants to use a
@@ -80,7 +80,7 @@ class EntityRecognizer:
     **kwargs**
 
     =====================   ===========================================
-    **Argument**            **Description**
+    **Parameter**            **Description**
     ---------------------   -------------------------------------------
     verbose                 Optional string. Default set to `error`. The
                             log level you want to set. It means the amount
@@ -186,7 +186,7 @@ class EntityRecognizer:
         Get available models for the given entity recognition backbone
 
         =====================   ===========================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ---------------------   -------------------------------------------
         architecture            Required string. name of the architecture
                                 one wishes to use. To learn more about
@@ -209,7 +209,7 @@ class EntityRecognizer:
         optimum learning rate for training the model.
 
         =====================   ===========================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ---------------------   -------------------------------------------
         allow_plot              Optional boolean. Display the plot of losses
                                 against the learning rates and mark the optimal
@@ -245,7 +245,7 @@ class EntityRecognizer:
         specified learning rates
 
         =====================   ===========================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ---------------------   -------------------------------------------
         epochs                  Required integer. Number of cycles of training
                                 on the data. Increase it if underfitting.
@@ -322,7 +322,7 @@ class EntityRecognizer:
         Learning Package zip for deployment to Image Server or ArcGIS Pro.
 
         =====================   ===========================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ---------------------   -------------------------------------------
         name_or_path            Required string. Name of the model to save. It
                                 stores it at the pre-defined location. If path
@@ -358,7 +358,7 @@ class EntityRecognizer:
         Loads a saved EntityRecognizer model from disk.
 
         =====================   ===========================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ---------------------   -------------------------------------------
         name_or_path            Required string. Path to Deep Learning Package
                                 (DLPK) or Esri Model Definition(EMD) file.
@@ -375,7 +375,7 @@ class EntityRecognizer:
         Hugging Face Transformer backbone.
 
         =====================   ===========================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ---------------------   -------------------------------------------
         backbone                Required string. Specify the Hugging Face Transformer
                                 backbone name fine-tuned on Named Entity Recognition(NER)/
@@ -389,7 +389,7 @@ class EntityRecognizer:
         **kwargs**
 
         =====================   ===========================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ---------------------   -------------------------------------------
         verbose                 Optional string. Default set to `error`. The
                                 log level you want to set. It means the amount
@@ -446,7 +446,7 @@ class EntityRecognizer:
         Package(DLPK) or Esri Model Definition (EMD) file.
 
         =====================   ===========================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ---------------------   -------------------------------------------
         emd_path                Required string. Path to Deep Learning Package
                                 (DLPK) or Esri Model Definition(EMD) file.
@@ -507,7 +507,7 @@ class EntityRecognizer:
         for each location in the resulting dataframe.
 
         =====================   ===========================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ---------------------   -------------------------------------------
         text_list               Required string(path) or list(documents).
                                 List of documents for entity extraction OR
@@ -539,7 +539,7 @@ class EntityRecognizer:
         Runs entity extraction on a random batch from the mentioned ds_type.
 
         =====================   ===========================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ---------------------   -------------------------------------------
         ds_type                 Optional string, defaults to valid.
         =====================   ===========================================
@@ -579,7 +579,7 @@ class EntityRecognizer:
         Plot training and validation losses.
 
         =====================   ===========================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ---------------------   -------------------------------------------
         show                    Optional bool. Defaults to True
                                 If set to False, figure will not be plotted

@@ -60,7 +60,7 @@ def solve_location_allocation(
     affected population.
 
     ======================================  ==========================================================================================================================================
-    **Argument**                             **Description**
+    **Parameter**                             **Description**
     --------------------------------------  ------------------------------------------------------------------------------------------------------------------------------------------
     facilities                              Required :class:`~arcgis.features.FeatureSet` . Specify one or more ``facilities`` (up to 1,000). The tool chooses the best locations
                                             from the set of ``facilities`` you specify here. In a competitive analysis, in which  you try to find the best

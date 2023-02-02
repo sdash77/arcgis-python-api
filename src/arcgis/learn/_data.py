@@ -125,7 +125,6 @@ imagery_type_lib = {
 
 
 def get_installation_command():
-
     installation_steps = (
         "\nPlease install all required dependencies by following the"
         " instructions at: \nhttps://developers.arcgis.com/python/guide/install-and-set-up/#Install"
@@ -752,7 +751,7 @@ def prepare_textdata(
     Prepares a text data object from the files present at data folder
 
     =====================   ===========================================
-    **Argument**            **Description**
+    **Parameter**            **Description**
     ---------------------   -------------------------------------------
     path                    Required directory path.
                             The directory path where the training and
@@ -842,7 +841,7 @@ def prepare_textdata(
     **Keyword Arguments**
 
     =====================   ===========================================
-    **Argument**            **Description**
+    **Parameter**            **Description**
     ---------------------   -------------------------------------------
     stratify                Optional boolean.
                             If True, prepare_textdata
@@ -1001,7 +1000,7 @@ def prepare_tabulardata(
     Prepares a tabular data object from input_features and optionally rasters.
 
     =====================   ===========================================
-    **Argument**            **Description**
+    **Parameter**            **Description**
     ---------------------   -------------------------------------------
     input_features          Optional :class:`~arcgis.features.FeatureLayer` Object or spatially enabled dataframe.
                             This contains features denoting the value of the dependent variable.
@@ -1126,7 +1125,7 @@ def prepare_tabulardata(
     **Keyword Arguments**
 
     =====================   ===========================================
-    **Argument**            **Description**
+    **Parameter**            **Description**
     ---------------------   -------------------------------------------
     stratify                Optional boolean.
                             If True, prepare_tabulardata
@@ -1247,14 +1246,14 @@ def prepare_data(
     training and validation data sets with the specified transformations,
     chip size, batch size, split percentage, etc.
 
-    -For object detection, use Pascal_VOC_rectangles or KITTI_rectangles format.
-    -For feature categorization use Labelled Tiles or Imagenet format.
-    -For pixel classification, use Classified Tiles format.
-    -For DeepSort, use Imagenet format.
-    -For panoptic segmentation, use Panoptic_Segmentation format.
+    - For object detection, use Pascal_VOC_rectangles or KITTI_rectangles format.
+    - For feature categorization use Labelled Tiles or Imagenet format.
+    - For pixel classification, use Classified Tiles format.
+    - For DeepSort, use Imagenet format.
+    - For panoptic segmentation, use Panoptic_Segmentation format.
 
     =====================   ===========================================
-    **Argument**            **Description**
+    **Parameter**           **Description**
     ---------------------   -------------------------------------------
     path                    Required string. Path to data directory or a list of paths.
     ---------------------   -------------------------------------------
@@ -1320,14 +1319,15 @@ def prepare_data(
     **Keyword Arguments**
 
     =====================   ===========================================
-    **Argument**            **Description**
+    **Parameter**           **Description**
     ---------------------   -------------------------------------------
     n_masks                 Optional int. Default value is 30.
                             Required for MaXDeepLab panoptic segmentation
                             model. It represents the max number of class
                             labels and instances any image can contain.
                             To compute the exact value for your dataset,
-                            use the :meth:`~arcgis.learn.MaXDeepLab.compute_n_masks`
+                            use the
+                            :meth:`~arcgis.learn.MaXDeepLab.compute_n_masks`
                             method available with MaXDeepLab model.
     ---------------------   -------------------------------------------
     downsample_factor       Optional float. Factor to downsample the images
@@ -1432,11 +1432,13 @@ def prepare_data(
                             For example, If we have stacked imagery of n bands each
                             from two dates then, ['YYYY-MM-DD','YYYY-MM-DD'].
                             Applicable only for dataset_type='PSETAE'.
+    =====================   ===========================================
 
-    :return: data object
+    :return:
+        data object
 
     """
-    #
+
     arcgis_init_kwargs = {
         "path": path,
         "class_mapping": class_mapping,
@@ -2080,7 +2082,6 @@ def prepare_data(
 
     ## Create databunch for Panoptic Segmentation
     elif dataset_type == "Panoptic_Segmentation":
-
         if class_mapping.get(0):
             del class_mapping[0]
 

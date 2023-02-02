@@ -593,7 +593,7 @@ def find_routes(
     operation.
 
     ======================================  ==========================================================================================================================================
-    **Argument**                            **Description**
+    **Parameter**                            **Description**
     --------------------------------------  ------------------------------------------------------------------------------------------------------------------------------------------
     stops                                   Required :class:`~arcgis.features.FeatureSet` . Specify the locations you want the output route
                                             or routes to visit. You can add up to 10,000 stops and assign up to 150 stops to a single

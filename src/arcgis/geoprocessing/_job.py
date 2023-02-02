@@ -17,7 +17,7 @@ class GPJob(object):
 
 
     ================  ===============================================================
-    **Argument**      **Description**
+    **Parameter**      **Description**
     ----------------  ---------------------------------------------------------------
     future            Required `Future <https://docs.python.org/3/library/concurrent.futures.html>`_ object.  The async object created by
                       the geoprocessing (GP) task.
@@ -50,6 +50,7 @@ class GPJob(object):
     _end_time = None
     _item_properties = None
     _return_item = None
+
     # ----------------------------------------------------------------------
     def __init__(self, future, gptool, jobid, task_url, gis, notify=False):
         """
@@ -593,7 +594,7 @@ class RAJob(GPJob):
 
 
     ================  ===============================================================
-    **Argument**      **Description**
+    **Parameter**      **Description**
     ----------------  ---------------------------------------------------------------
     gpjob
     ----------------  ---------------------------------------------------------------
@@ -604,6 +605,7 @@ class RAJob(GPJob):
 
     _item = None
     _gpjob = None
+
     # ----------------------------------------------------------------------
     def __init__(self, gpjob: GPJob, item: "Item" = None):
         """

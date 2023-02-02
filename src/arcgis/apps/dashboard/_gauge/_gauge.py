@@ -9,7 +9,7 @@ class Gauge(_BaseWidget):
     Creates a dashboard Gauge widget.
 
     =========================   ===========================================
-    **Argument**                **Description**
+    **Parameter**                **Description**
     -------------------------   -------------------------------------------
     item                        Required Portal :class:`~arcgis.gis.Item` object. Item object can
                                 be a :class:`~arcgis.features.FeatureLayer` or a MapWidget.
@@ -112,7 +112,6 @@ class Gauge(_BaseWidget):
             self._show_last_update = True
 
     def _convert_to_json(self):
-
         self._arrows = []
         self._bands = []
         self._axes = []

@@ -19,7 +19,6 @@ except Exception as e:
 
 
 class MMDetectionConfig:
-
     try:
         import torch
         import types
@@ -30,7 +29,6 @@ class MMDetectionConfig:
         pass
 
     def get_model(self, data, backbone=None, **kwargs):
-
         import mmdet.models
         import mmcv
         import logging
@@ -87,9 +85,7 @@ class MMDetectionConfig:
 
         @auto_fp16(apply_to=("img",))
         def forward_modified(self, img, img_metas=None, gt_bboxes=None, gt_labels=None):
-
             if self.training:
-
                 losses = self.forward_train(img, img_metas, gt_bboxes, gt_labels)
                 loss, log_vars = self._parse_losses(losses)
 
@@ -112,7 +108,6 @@ class MMDetectionConfig:
         return model
 
     def on_batch_begin(self, learn, model_input_batch, model_target_batch, **kwargs):
-
         if kwargs.get("train"):
             self.model.train_val = False
         else:
@@ -128,14 +123,12 @@ class MMDetectionConfig:
         )
 
         for bboxes, classes in zip(*model_target_batch):
-
             non_pad_index = bboxes.sum(dim=1) != 0
             bboxes = bboxes[non_pad_index]
             classes = classes[non_pad_index] - 1
 
             bboxes = ((bboxes + 1) / 2) * learn.data.chip_size
             if bboxes.nelement() == 0:
-
                 bboxes = self.torch.tensor([[0.0, 0.0, 1.0, 1.0]]).to(learn.data.device)
                 classes = self.torch.tensor([0]).to(learn.data.device)
 
@@ -173,7 +166,6 @@ class MMDetectionConfig:
             self.model.bbox_head.test_cfg.score_thr = thresh
 
     def transform_input(self, xb, thresh=0.5, nms_overlap=0.1):
-
         self.set_test_parms(thresh, nms_overlap)
         img_metas = []
         image_pad_shape = xb.permute(0, 2, 3, 1).shape[1:]
@@ -182,7 +174,6 @@ class MMDetectionConfig:
         )
 
         for i in range(xb.shape[0]):
-
             img_metas_dict = {}
             img_metas_dict["pad_shape"] = image_pad_shape
             img_metas_dict["img_shape"] = image_pad_shape
@@ -194,15 +185,12 @@ class MMDetectionConfig:
         return model_input
 
     def transform_input_multispectral(self, xb, thresh=0.5, nms_overlap=0.1):
-
         return self.transform_input(xb, thresh, nms_overlap)
 
     def loss(self, model_output, *model_target):
-
         return model_output[1]["loss"]
 
     def post_process(self, pred, nms_overlap, thres, chip_size, device):
-
         if hasattr(self.model, "roi_head"):
             self.model.roi_head.test_cfg.nms.iou_threshold = self.nms_thres
             thres = self.model.roi_head.test_cfg.score_thr
@@ -245,7 +233,7 @@ class MMDetectionConfig:
 class MMDetection(ModelExtension):
     """
     =============================   =============================================
-    **Argument**                    **Description**
+    **Parameter**                    **Description**
     -----------------------------   ---------------------------------------------
     data                            Required fastai Databunch. Returned data object from
                                     :meth:`~arcgis.learn.prepare_data`  function.
@@ -266,7 +254,6 @@ class MMDetection(ModelExtension):
     """
 
     def __init__(self, data, model, model_weight=False, pretrained_path=None, **kwargs):
-
         self._check_dataset_support(data)
 
         super().__init__(
@@ -346,7 +333,7 @@ class MMDetection(ModelExtension):
         Creates a :class:`~arcgis.learn.MMDetection` object from an Esri Model Definition (EMD) file.
 
         =====================   ===========================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ---------------------   -------------------------------------------
         emd_path                Required string. Path to Deep Learning Package
                                 (DLPK) or Esri Model Definition(EMD) file.
@@ -385,7 +372,6 @@ class MMDetection(ModelExtension):
 
         data_passed = True
         if data is None:
-
             data_passed = False
             train_tfms = []
             val_tfms = []
@@ -433,12 +419,11 @@ class MMDetection(ModelExtension):
         visualize=False,
         resize=False,
     ):
-
         """
         Runs prediction on an Image. This method is only supported for RGB images.
 
         =====================   ===========================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ---------------------   -------------------------------------------
         image_path              Required. Path to the image file to make the
                                 predictions on.
@@ -501,13 +486,12 @@ class MMDetection(ModelExtension):
         },
         resize=False,
     ):
-
         """
         Runs prediction on a video and appends the output VMTI predictions in the metadata file.
         This method is only supported for RGB images.
 
         =====================   ===========================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ---------------------   -------------------------------------------
         input_video_path        Required. Path to the video file to make the
                                 predictions on.
@@ -572,12 +556,11 @@ class MMDetection(ModelExtension):
     def average_precision_score(
         self, detect_thresh=0.2, iou_thresh=0.1, mean=False, show_progress=True
     ):
-
         """
         Computes average precision on the validation set for each class.
 
         =====================   ===========================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ---------------------   -------------------------------------------
         detect_thresh           Optional float. The probability above which
                                 a detection will be considered for computing
@@ -597,12 +580,11 @@ class MMDetection(ModelExtension):
         """
 
     def show_results(self, rows=5, thresh=0.5, nms_overlap=0.1):
-
         """
         Displays the results of a trained model on a part of the validation set.
 
         =====================   ===========================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ---------------------   -------------------------------------------
         rows                    Optional int. Number of rows of results
                                 to be displayed.

@@ -276,7 +276,10 @@ class ArcGISImageList(ImageList):
     ):
         try:
             labelval = [(func(o)) for o in self.items]
-            total_sample = np.array(labelval)
+            if any(isinstance(el, list) for el in labelval):
+                total_sample = np.concatenate(np.array(labelval))
+            else:
+                total_sample = np.array(labelval)
             unique_sample = set(total_sample)
             check_imbalance(total_sample, unique_sample, class_imbalance_pct, stratify)
         except Exception as e:

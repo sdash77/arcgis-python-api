@@ -9,6 +9,8 @@ import pandas as pd
 from ._base import BaseOpenData
 
 _PD_LESS_THAN1 = [int(v) for v in pd.__version__.split(".")] < [1, 0, 0]
+
+
 ###########################################################################
 class CSVLayer(BaseOpenData):
     r"""
@@ -16,7 +18,7 @@ class CSVLayer(BaseOpenData):
 
 
     ===============     ====================================================================
-    **Argument**        **Description**
+    **Parameter**        **Description**
     ---------------     --------------------------------------------------------------------
     url_or_item         Required String or Item. The web address or :class:`~arcgis.gis.Item` to the CSV resource.
     ---------------     --------------------------------------------------------------------
@@ -49,6 +51,7 @@ class CSVLayer(BaseOpenData):
     _latitude = None
     _longitude = None
     _type = "CSV"
+
     # ----------------------------------------------------------------------
     def __init__(self, url_or_item, gis=None, **kwargs):
         """initializer"""

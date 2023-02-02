@@ -9,6 +9,7 @@ __all__ = ["NotebookManager"]
 K = TypeVar("K")
 V = TypeVar("V")
 
+
 ########################################################################
 class NotebookManager(object):
     """
@@ -22,6 +23,7 @@ class NotebookManager(object):
     _properties = None
     _nbs = None
     _snapshot = None
+
     # ----------------------------------------------------------------------
     def __init__(self, url, gis, nbs):
         """Constructor"""
@@ -108,7 +110,7 @@ class NotebookManager(object):
         parameters to a cell.
 
         ====================    ====================================================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         --------------------    --------------------------------------------------------------------
         item                    Required :class:`~arcgis.gis.Item`. Opens an existing portal item.
         --------------------    --------------------------------------------------------------------
@@ -215,7 +217,7 @@ class NotebookManager(object):
         Opens a notebook on the notebook server
 
         ==================      ====================================================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ------------------      --------------------------------------------------------------------
         itemid                  Required String. Opens an existing portal item.
         ------------------      --------------------------------------------------------------------

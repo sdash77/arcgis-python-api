@@ -39,7 +39,6 @@ def temporal_profile(
     trend_order: Optional[int] = None,
     plot_properties: dict[str, Any] = {},
 ):
-
     """
     A temporal profile serves as a basic analysis tool for imagery data in a time series.
     Visualizing change over time with the temporal profile allows trends to be displayed
@@ -60,7 +59,7 @@ def temporal_profile(
 
 
     ====================================     ====================================================================
-    **Argument**                             **Description**
+    **Parameter**                             **Description**
     ------------------------------------     --------------------------------------------------------------------
     raster                                   Required Imagery Layer object.
     ------------------------------------     --------------------------------------------------------------------
@@ -143,7 +142,6 @@ def temporal_profile(
         "hasMultidimensions" in raster.properties
         and raster.properties["hasMultidimensions"] == True
     ):
-
         mosaic_rule = {
             "mosaicMethod": "esriMosaicAttribute",
             "ascending": False,
@@ -505,7 +503,6 @@ def plot_histograms(
     plot_properties: Optional[dict[str, Any]] = None,
     subplot_properties: Optional[Union[list[dict], dict[str, Any]]] = None,
 ):
-
     """
     Image histograms visually summarize the distribution of a continuous numeric variable by measuring 
     the frequency at which certain values appear in the image. The x-axis in the image histogram is a 
@@ -517,7 +514,7 @@ def plot_histograms(
     ``plot_histograms()`` can be used for plotting the band-wise image histogram charts of any Raster object.
 
     ============================    ====================================================================
-    **Arguments**                   **Description**
+    **Parameter**                   **Description**
     ----------------------------    --------------------------------------------------------------------
     geometry                        Optional Polygon or Extent. A geometry that defines the geometry
                                     within which the histogram is computed. The geometry can be an
@@ -771,7 +768,6 @@ def spectral_profile(
     show_values: bool = False,
     plot_properties: dict[str, Any] = {},
 ):
-
     """
     Spectral profile charts allow you to select areas of interest or ground features on the image and review the spectral information of all bands in a chart format.
 
@@ -781,7 +777,7 @@ def spectral_profile(
 
 
     ====================================     ====================================================================
-    **Argument**                             **Description**
+    **Parameter**                             **Description**
     ------------------------------------     --------------------------------------------------------------------
     raster                                   Required Imagery Layer object.
     ------------------------------------     --------------------------------------------------------------------

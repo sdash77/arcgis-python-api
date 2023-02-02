@@ -11,7 +11,7 @@ class Attachment(Model):
     Represents a file attachment for an Assignment
 
     ==================     ====================================================================
-    **Argument**           **Description**
+    **Parameter**           **Description**
     ------------------     --------------------------------------------------------------------
     assignment             Required :class:`~arcgis.apps.workforce.Assignment`. The assignment object that this attachment belongs
                            to

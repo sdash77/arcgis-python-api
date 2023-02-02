@@ -24,7 +24,7 @@ def get_travel_modes(gis: Optional[GIS] = None):
     Get a list of travel modes that can be used with directions and routing services available in your portal.
 
     =================================================     ========================================================================
-    **Argument**                                          **Description**
+    **Parameter**                                          **Description**
     -------------------------------------------------     ------------------------------------------------------------------------
     gis                                                   Optional, the :class:`~arcgis.gis.GIS` on which this tool runs. If not specified, the active GIS is used.
     =================================================     ========================================================================
