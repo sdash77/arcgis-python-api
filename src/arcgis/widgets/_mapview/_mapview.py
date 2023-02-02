@@ -461,29 +461,31 @@ class MapView(widgets.DOMWidget):
         """
         Get/Set the basemap you would like to apply to the widget.
 
-         ===============     ====================================================================
-         **Parameter**        **Description**
-         ---------------     --------------------------------------------------------------------
-         value               Required string. Ex: ('topo', 'national-geographic', etc.).
-                             .. note::
-                                 See :attr:`~arcgis.widgets.MapView.basemaps` for a full list of possible maps
-         ===============     ====================================================================
+        ===============     ====================================================================
+        **Parameter**       **Description**
+        ---------------     --------------------------------------------------------------------
+        value               Required string. Ex: ('topo', 'national-geographic', etc.).
 
-         :return: basemap being used.
+                            .. note::
+                                See :attr:`~arcgis.widgets.MapView.basemaps` for a full list
+                                of options.
+        ===============     ====================================================================
 
-         .. code-block:: python
+        :return: basemap being used.
 
-             # Usage example: Set the widget basemap equal to an item
+        .. code-block:: python
 
-             from arcgis.mapping import WebMap
-             widget = gis.map()
+            # Usage example: Set the widget basemap equal to an item
 
-             # Use basemap from another item as your own
-             widget.basemap = webmap
-             widget.basemap = tiled_map_service_item
-             widget.basemap = image_layer_item
-             widget.basemap = webmap2.basemap
-             widget.basemap - 'national-geographic'
+            >>> from arcgis.mapping import WebMap
+            >>> widget = gis.map()
+
+            >>> # Use basemap from another item as your own
+            >>> widget.basemap = webmap
+            >>> widget.basemap = tiled_map_service_item
+            >>> widget.basemap = image_layer_item
+            >>> widget.basemap = webmap2.basemap
+            >>> widget.basemap - 'national-geographic'
 
         """
         return self._basemap

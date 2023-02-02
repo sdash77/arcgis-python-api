@@ -596,7 +596,7 @@ class _SpacyEntityRecognizer(ArcGISModel):
         )  # creating an empty processed dataframe
         for i, adds in unprocessed_df[
             address_tag
-        ].iteritems():  # duplicating rows with multiple addresses to be one row per address
+        ].items():  # duplicating rows with multiple addresses to be one row per address
             if len(adds) > 0:  # adding data for address documents
                 for j, add in enumerate(adds):
                     curr_index = len(processed_df)
@@ -608,7 +608,7 @@ class _SpacyEntityRecognizer(ArcGISModel):
                 processed_df.loc[curr_index][address_tag] = ""
         drop_ids = []
 
-        for i, add in processed_df[address_tag].iteritems():
+        for i, add in processed_df[address_tag].items():
             if len(add.split(" ")) < 2:
                 drop_ids.append(i)
         del unprocessed_df
@@ -717,9 +717,7 @@ class _SpacyEntityRecognizer(ArcGISModel):
             #         1. Set address tag to the address field in your data [your_model._address_tag=\'your_address_field\']\n\
             #         2. If your data does not have any address field set _has_address=False [your_model._has_address=False]')
             data_list = []
-            for i, item in progress_bar(
-                list(item_list.iteritems()), display=show_progress
-            ):
+            for i, item in progress_bar(list(item_list.items()), display=show_progress):
                 doc = self._extract_entities_text(
                     item
                 )  # predicting entities using entity_extractor model

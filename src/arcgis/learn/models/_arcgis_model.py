@@ -959,8 +959,8 @@ class ArcGISModel(object):
                         learn=self.learn, monitor=monitor, min_delta=0.001, patience=5
                     )
                 )
+            self._is_checkpointed = checkpoint
             if checkpoint:
-                self._is_checkpointed = checkpoint
                 from datetime import datetime
 
                 now = datetime.now()
@@ -1425,11 +1425,15 @@ class ArcGISModel(object):
         save_inference_file=True,
         **kwargs,
     ):
+        if (type(self).__name__) == "EfficientDet":
+            framework = "tflite"
+
         save_format = kwargs.get("save_format", "default")  # 'default', 'tflite'
         post_processed = kwargs.get("post_processed", True)  # True, False
         quantized = kwargs.get("quantized", False)  # True, False
         temp = self.learn.path
         temp1 = self.learn.model_dir
+        self._framework = framework
         if "\\" in name_or_path or "/" in name_or_path:
             path = Path(name_or_path)
             name = path.parts[-1]
@@ -1506,9 +1510,14 @@ class ArcGISModel(object):
             self.framework = framework
             self.learn.model_dir = temp1
 
-        _emd_template = self._create_emd_template(
-            saved_path.with_suffix(".pth"), compute_metrics, save_inference_file
-        )
+        if (type(self).__name__) == "EfficientDet":
+            _emd_template = self._create_emd_template(
+                saved_path.with_suffix(".tflite"), compute_metrics, save_inference_file
+            )
+        else:
+            _emd_template = self._create_emd_template(
+                saved_path.with_suffix(".pth"), compute_metrics, save_inference_file
+            )
 
         if framework.lower() == "tf-onnx":
             batch_size = kwargs.get("batch_size", 16)

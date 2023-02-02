@@ -81,7 +81,10 @@ class WebHookScheduleInfo:
         return {
             "name": self.name,
             "startAt": int(self.start_at.timestamp() * 1000),
-            "recurrenceInfo": {"frequency": self.frequency, "interval": self.interval},
+            "recurrenceInfo": {
+                "frequency": self.frequency,
+                "interval": self.interval,
+            },
         }
 
 
@@ -110,7 +113,9 @@ class AttachmentManager(object):
     """
 
     def __init__(
-        self, layer: features.FeatureLayer, version: str | _version.Version = None
+        self,
+        layer: features.FeatureLayer,
+        version: str | _version.Version = None,
     ):
         self._layer = layer
         if isinstance(version, str):
@@ -704,7 +709,11 @@ class AttachmentManager(object):
         )
 
     def update(
-        self, oid: str, attachment_id: str, file_path: str, return_moment: bool = False
+        self,
+        oid: str,
+        attachment_id: str,
+        file_path: str,
+        return_moment: bool = False,
     ) -> bool:
         """
         Updates an existing attachment with a new file
@@ -1799,6 +1808,8 @@ class FeatureLayerCollectionManager(_GISResource):
                     url=self._url + "/WebHooks", fc=self._fs, gis=self._gis
                 )
             return self._wh
+        elif self._gis.version >= [8, 2] and self._gis._portal.is_arcgisonline == False:
+            return self._fs.service.webhook_manager
         return None
 
     # ----------------------------------------------------------------------
@@ -2629,9 +2640,6 @@ class FeatureLayerCollectionManager(_GISResource):
             # overwriting a SD case - no need for detailed publish parameters
             publish_parameters = None
 
-        # endregion
-
-        # region Perform overwriting
         if related_data_item.update(item_properties=params, data=data_file):
             published_item = related_data_item.publish(
                 publish_parameters, overwrite=True

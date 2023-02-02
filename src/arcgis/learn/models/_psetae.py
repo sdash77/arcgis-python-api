@@ -124,11 +124,15 @@ class PSETAE(ArcGISModel):
             ] = "[Functions]System\\DeepLearning\\ArcGISLearn\\ArcGISImageTsClassifier.py"
         _emd_template["ModelType"] = "ImageClassification"
         _emd_template["Class_mapping"] = self._data._class_map_dict
+        if self._data._num_class_map_dict:
+            _emd_template["Num_class_mapping"] = self._data._num_class_map_dict
         _emd_template["n_channel"] = self._data._n_channel
         _emd_template["n_temporal"] = self._data._n_temp
+        _emd_template["IsMultidimensional"] = self._data._is_multidimensional
         _emd_template["date_positions"] = self._data._date_positions
         _emd_template["ImageHeight"] = 256
         _emd_template["ImageWidth"] = 256
+        _emd_template["ImageSpaceUsed"] = self._data._imagespace
         _emd_template["mean_norm_stats"] = {
             "mean_stats": [
                 list(i) for i in (self._data._mean_norm_stats).astype(np.float64)
@@ -175,6 +179,9 @@ class PSETAE(ArcGISModel):
         model_params = emd["ModelParameters"]
         chip_size = emd["ImageHeight"]
         kwargs = emd.get("Kwargs", {})
+
+        if "backbone" in kwargs.keys():
+            kwargs.pop("backbone")
 
         if data is None:
             data = _EmptyData(
@@ -228,7 +235,7 @@ class PSETAE(ArcGISModel):
         overall accuracy (OA) on validation set.
 
         """
-        if hasattr(self._data, "_num_class_map_dict"):
+        if not hasattr(self._data, "load_empty"):
             raise Exception("Dataset is required for compute metrics")
         class_dict = (
             self._data._num_class_map_dict
@@ -246,8 +253,8 @@ class PSETAE(ArcGISModel):
         Computes overall accuracy (OA) on validation set.
 
         """
-        if self._data is None:
-            raise Exception("Dataset is required for accuracy")
+        if not hasattr(self._data, "load_empty"):
+            raise Exception("Dataset is required for compute metrics")
         class_dict = (
             self._data._num_class_map_dict
             if self._data._num_class_map_dict
@@ -261,8 +268,8 @@ class PSETAE(ArcGISModel):
         Computes mean intersection over union (mIOU) on validation set.
 
         """
-        if self._data is None:
-            raise Exception("Dataset is required for mIOU")
+        if not hasattr(self._data, "load_empty"):
+            raise Exception("Dataset is required for compute metrics")
         class_dict = (
             self._data._num_class_map_dict
             if self._data._num_class_map_dict
@@ -276,8 +283,8 @@ class PSETAE(ArcGISModel):
         Computes IoU, Precision, Recall, F1-score for all classes.
 
         """
-        if self._data is None:
-            raise Exception("Dataset is required for per_class_metrics")
+        if not hasattr(self._data, "load_empty"):
+            raise Exception("Dataset is required for compute metrics")
         class_dict = (
             self._data._num_class_map_dict
             if self._data._num_class_map_dict
@@ -290,14 +297,19 @@ class PSETAE(ArcGISModel):
         mat = []
         for i in class_dict.values():
             for j in mat_types:
-                mat.append(mats[0][str(i)][j])
+                if str(i) in mats[0].keys():
+                    mat.append(mats[0][str(i)][j])
 
-        matrix_1 = np.reshape(np.array(mat), (len(class_dict.keys()), 4))
+        matrix_1 = np.reshape(np.array(mat), (len(mats[0].keys()), 4))
 
         display(
             pd.DataFrame(
                 matrix_1,
-                index=list(self._data._class_map_dict.values()),
+                index=[
+                    self._data._class_map_dict.get(i)
+                    for i, j in class_dict.items()
+                    if str(j) in mats[0].keys()
+                ],
                 columns=mat_types,
             )
         )

@@ -21,9 +21,9 @@ all_required_dlls = {
         "url": os.path.join(hosted_ip, "build_files", "tracking-engine"),
         "destination": os.path.join(workspace_path, "src", "arcgis", "learn", "_tracking", "libTrackingEngine.so")
     },
-    "nearest_neighbors.cpython-38-x86_64-linux-gnu.so": {
+    "nearest_neighbors.cpython-39-x86_64-linux-gnu.so": {
         "url": os.path.join(hosted_ip, "build_files", "knn"),
-        "destination": os.path.join(workspace_path, "src", "arcgis", "learn", "_utils", "nearest_neighbors.cpython-38-x86_64-linux-gnu.so")
+        "destination": os.path.join(workspace_path, "src", "arcgis", "learn", "_utils", "nearest_neighbors.cpython-39-x86_64-linux-gnu.so")
     },
     "nearest_neighbors.py": {
         "url": os.path.join(hosted_ip, "build_files", "knn"),

@@ -13015,7 +13015,7 @@ class _RasterAnalysisTools(BaseAnalytics):
                     raster_type = json.loads(raster_type)
                 except:
                     pass
-            if raster_type_name is not None:
+            if raster_type_name:
                 if isinstance(input_raster, dict) and isinstance(raster_type, dict):
                     input_raster.update({"rasterType": raster_type})
 

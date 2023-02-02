@@ -5233,7 +5233,8 @@ class GroupManager(object):
         sort_order: str = "asc",
         max_groups: int = 1000,
         outside_org: bool = False,
-        categories: Optional[Union[list[str], str]] = None,
+        categories: list[str] | str | None = None,
+        filter: str | None = None,
     ):
         """
         The ``search`` method searches for portal groups.
@@ -5255,24 +5256,32 @@ class GroupManager(object):
                 default. If you don't want the API to append to your query
                 set outside_org to True.
 
-        ================  ========================================================
-        **Parameter**      **Description**
-        ----------------  --------------------------------------------------------
-        query             Optional string on Portal, or required string for ArcGIS Online.
-                          If not specified, all groups will be searched. See notes above.
-        ----------------  --------------------------------------------------------
-        sort_field        Optional string. Valid values can be title, owner,
-                          created.
-        ----------------  --------------------------------------------------------
-        sort_order        Optional string. Valid values are asc or desc.
-        ----------------  --------------------------------------------------------
-        max_groups        Optional integer. Maximum number of groups returned, default is 1,000.
-        ----------------  --------------------------------------------------------
-        outside_org       Optional boolean. Controls whether to search outside
-                          your org. Default is False, do not search ourside your org.
-        ----------------  --------------------------------------------------------
-        categories        Optional string or list. A string of category values.
-        ================  ========================================================
+        ================    ========================================================
+        **Parameter**       **Description**
+        ----------------    --------------------------------------------------------
+        query               Optional string on Portal, or required string for ArcGIS Online.
+                            If not specified, all groups will be searched. See notes above.
+        ----------------    --------------------------------------------------------
+        sort_field          Optional string. Valid values can be title, owner,
+                            created.
+        ----------------    --------------------------------------------------------
+        sort_order          Optional string. Valid values are asc or desc.
+        ----------------    --------------------------------------------------------
+        max_groups          Optional integer. Maximum number of groups returned, default is 1,000.
+        ----------------    --------------------------------------------------------
+        outside_org         Optional boolean. Controls whether to search outside
+                            your org. Default is False, do not search ourside your org.
+        ----------------    --------------------------------------------------------
+        categories          Optional string or list. A string of category values.
+        ----------------    --------------------------------------------------------
+        filter              Optional string. Structured filtering is accomplished
+                            by specifying a field name followed by a colon and the
+                            term you are searching for with double quotation marks.
+                            It allows the passing in of application-level filters
+                            based on the context. Use an exact keyword match of the expected
+                            value for the specified field. Partially matching the filter keyword
+                            will not return meaningful results.
+        ================    ========================================================
 
         :return:
            A List of :class:`~arcgis.gis.Group` objects matching the specified query.
@@ -5286,12 +5295,7 @@ class GroupManager(object):
         """
         grouplist = []
         groups = self._portal.search_groups(
-            query,
-            sort_field,
-            sort_order,
-            max_groups,
-            outside_org,
-            categories,
+            query, sort_field, sort_order, max_groups, outside_org, categories, filter
         )
         for group in groups:
             grouplist.append(Group(self._gis, group["id"], group))
@@ -6435,6 +6439,7 @@ class ContentManager(object):
         count_fields: Optional[str] = None,
         count_size: Optional[int] = None,
         as_dict: bool = False,
+        enrich: bool = False,
     ):
         """
         The ``advanced_search`` method allows the ability to fully customize the search experience.
@@ -6514,6 +6519,10 @@ class ContentManager(object):
         as_dict             Required Boolean. If True, the results comes back as a dictionary.
                             The result of the method will always be a dictionary but the
                             `results` key in the dictionary will be changed if set to False.
+        ----------------    ---------------------------------------------------------------
+        enrich              Optional Boolean. If True, search results will include both
+                            literal and relevant matches. Without this parameter search
+                            results will include only literal matches.
         ================    ===============================================================
 
         :return:
@@ -6551,6 +6560,7 @@ class ContentManager(object):
                 count_size=count_size,
                 group_id=group_id,
                 as_dict=as_dict,
+                enrich=enrich,
             )["total"]
         so = {
             "asc": "asc",
@@ -6579,6 +6589,7 @@ class ContentManager(object):
                 count_size=count_size,
                 group_id=group_id,
                 as_dict=as_dict,
+                enrich=enrich,
             )
             if "total" in res and return_count:
                 return res["total"]
@@ -6599,6 +6610,7 @@ class ContentManager(object):
                 "count_fields",
                 "count_size",
                 "as_dict",
+                "enrich",
             ]
             inputs = locals()
             kwargs = {}
@@ -6733,6 +6745,7 @@ class ContentManager(object):
         outside_org: bool = False,
         categories: Optional[Union[list[str], str]] = None,
         category_filters: Optional[Union[list[str], str]] = None,
+        enrich: Optional[bool] = None,
     ):
 
         """
@@ -6795,7 +6808,10 @@ class ContentManager(object):
 
                           Up to 2 category_filters parameter are allowed per request. It can not be
                           used together with categories to search in a request.
-
+        ----------------  --------------------------------------------------------------------------
+        enrich            Optional Boolean. If True, search results will include both literal and
+                          relevant matches. Without this parameter search results will include only
+                          literal matches.
         ================  ==========================================================================
 
         :return:
@@ -6867,6 +6883,7 @@ class ContentManager(object):
             start=1,
             sort_field=sort_field,
             sort_order=sort_order,
+            enrich=enrich,
         )["results"]
         return itemlist
 
@@ -10469,7 +10486,7 @@ class User(dict):
             self._user_id,
         )
         res = self._gis._con.post(url, params)
-        time.sleep(2)
+        time.sleep(10)
         try:
             count = 0
             item = None
@@ -11843,7 +11860,27 @@ class User(dict):
         """
         if isinstance(target_username, User):
             target_username = target_username.username
-        return self._portal.reassign_user(self._user_id, target_username)
+        # currently issue with REST API method, so we try/except for it
+        try:
+            return self._portal.reassign_user(self._user_id, target_username)
+        except:
+            # variables to ensure that every item & group is assigned
+            # issue with dependencies for these methods too, so try/except/pass
+            items_success = True
+            group_success = True
+            for item in self.items():
+                try:
+                    if not item.reassign_to(target_username):
+                        items_success = False
+                except:
+                    pass
+            for group in self.groups:
+                try:
+                    if not group.reassign_to(target_username):
+                        group_success = False
+                except:
+                    pass
+            return items_success and group_success
 
     def get_thumbnail(self):
         """

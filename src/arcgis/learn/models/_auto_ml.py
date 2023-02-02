@@ -14,6 +14,7 @@ from pathlib import Path
 import traceback
 import arcgis
 from arcgis.features import FeatureLayer
+from ._codetemplate import ml_raster_prf
 
 HAS_AUTO_ML_DEPS = True
 import_exception = None
@@ -24,7 +25,6 @@ try:
     from arcgis.learn._utils.common import _get_emd_path
     from arcgis.learn._utils.utils import arcpy_localization_helper
     import pickle
-    import shap
     from sklearn.preprocessing import normalize
 
     HAS_FASTAI = True
@@ -120,6 +120,15 @@ class AutoML(object):
         ml_task="auto",
     ):
         try:
+            import platform
+
+            if platform.system() == "Linux":
+                message = """
+                        Please enable tensorflow by setting the required environment variable 'ARCGIS_ENABLE_TF_BACKEND' to '1' before importing arcgis
+                        \n for example the following code block needs to be executed before importing arcgis
+                        \n\n`import os; os.environ['ARCGIS_ENABLE_TF_BACKEND'] = '1'`
+                        """
+                print(message)
             from supervised.automl import AutoML as base_AutoML
         except Exception as e:
             import_exception = "\n".join(
@@ -144,6 +153,7 @@ class AutoML(object):
                 )
                 return
 
+        self._code = ml_raster_prf
         if algorithms:
             algorithms = algorithms
         else:
@@ -438,6 +448,9 @@ class AutoML(object):
         if not os.path.exists(save_model_path):
             os.makedirs(save_model_path)
 
+        with open(Path(save_model_path) / "ArcGISImageClassifier.py", "w") as f:
+            f.write(self._code)
+
         MLModel._save_encoders(
             self._data._encoder_mapping, save_model_path, base_file_name
         )
@@ -501,6 +514,8 @@ class AutoML(object):
         return save_model_path
 
     def _save_explainer(self, path):
+        import shap
+
         if self._model._get_ml_task() == "regression":
             explainer = shap.KernelExplainer(
                 self._shap_predict, shap.sample(self._data._ml_data[0], 500)
@@ -543,6 +558,10 @@ class AutoML(object):
             emd_params["_feature_field_variables"] = self._data._feature_field_variables
         if self._data._raster_field_variables:
             emd_params["_raster_field_variables"] = self._data._raster_field_variables
+
+        emd_params["Framework"] = "arcgis.learn.models._inferencing"
+        emd_params["ModelConfiguration"] = "_auto_ml"
+        emd_params["InferenceFunction"] = "ArcGISImageClassifier.py"
 
         if self._model._get_ml_task() != "regression":
             try:

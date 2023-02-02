@@ -226,7 +226,7 @@ class AOI(object):
         proximity_type: Optional[str] = None,
         proximity_value: Optional[Union[float, int]] = None,
         proximity_metric: Optional[str] = None,
-        output_spatial_reference: Union[int, dict, SpatialReference] = 4326,
+        output_spatial_reference: Union[int, dict, SpatialReference] = None,
         estimate_credits: bool = False,
         **kwargs,
     ) -> Union[pd.DataFrame, Path, float]:
@@ -1454,7 +1454,7 @@ class BusinessAnalyst(object):
         proximity_value: Optional[Union[float, int]] = None,
         proximity_metric: Optional[str] = None,
         return_geometry: bool = True,
-        output_spatial_reference: Union[int, dict, SpatialReference] = 4326,
+        output_spatial_reference: Union[int, dict, SpatialReference] = None,
         estimate_credits: bool = False,
         **kwargs,
     ) -> pd.DataFrame:
@@ -1563,6 +1563,11 @@ class BusinessAnalyst(object):
         elif geo_is_df and standard_geography_id_column and not geo_is_dict:
             geographies = geographies[standard_geography_id_column]
 
+        if geo_is_df and output_spatial_reference is None:
+            output_spatial_reference = geographies.spatial.sr
+        elif geo_is_dict and output_spatial_reference is None:
+            if "spatialReference" in first_geo:
+                output_spatial_reference = first_geo["spatialReference"]
         # ensure if specifying a standard geography id column, the standard geography level is also provided
         if standard_geography_id_column is not None:
             assert standard_geography_level is not None, (
@@ -1914,7 +1919,7 @@ class BusinessAnalyst(object):
         proximity_value: Optional[Union[float, int]] = None,
         proximity_metric: Optional[str] = None,
         return_geometry: bool = True,
-        output_spatial_reference: Union[int, dict, SpatialReference] = 4326,
+        output_spatial_reference: Union[int, dict, SpatialReference] = None,
         estimate_credits: bool = False,
         **kwargs,
     ) -> pd.DataFrame:
@@ -1961,6 +1966,8 @@ class BusinessAnalyst(object):
         # get the enrichment variables as a string ready to submit as a payload parameter
         evars = self._enrich_variable_preprocessing(enrich_variables, country=country)
 
+        if output_spatial_reference is None:
+            output_spatial_reference = 4326
         # properly format the output spatial reference
         if isinstance(output_spatial_reference, (int, str)):
             output_spatial_reference = SpatialReference(output_spatial_reference)
@@ -1968,7 +1975,6 @@ class BusinessAnalyst(object):
         # start building out the package for enrich REST call
         params = {
             "f": "json",
-            "token": self.source._con.token,
             "analysisVariables": evars,
         }
 

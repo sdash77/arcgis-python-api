@@ -244,18 +244,22 @@ class TabularDataObject(object):
                 )
 
             tabular_data._validation_indexes = validation_indexes
-
-        if tabular_data._is_classification():
-            tabular_data._training_indexes = list(
-                set([i for i in tabular_data._dataframe.index])
-                - set(validation_indexes)
-            )
-        else:
+        if tabular_data._dependent_variable:
+            if tabular_data._is_classification():
+                tabular_data._training_indexes = list(
+                    set([i for i in tabular_data._dataframe.index])
+                    - set(validation_indexes)
+                )
+            else:
+                tabular_data._training_indexes = list(
+                    set([i for i in range(len(tabular_data._dataframe))])
+                    - set(validation_indexes)
+                )
+        if not tabular_data._dependent_variable:
             tabular_data._training_indexes = list(
                 set([i for i in range(len(tabular_data._dataframe))])
                 - set(validation_indexes)
             )
-        if not tabular_data._dependent_variable:
             tabular_data._validation_indexes = list(
                 set([i for i in range(len(tabular_data._dataframe))])
             )
@@ -674,13 +678,28 @@ class TabularDataObject(object):
             for col in list(df.columns):
                 transformed_data = df[col]
                 for transform in self._column_transforms_mapping.get(col, []):
-                    transformed_data = transform.fit_transform(
-                        np.array(transformed_data, dtype=df[col].dtype).reshape(-1, 1)
-                    )
+                    try:
+                        transformed_data = transform.fit_transform(
+                            np.array(transformed_data, dtype=df[col].dtype).reshape(
+                                -1, 1
+                            )
+                        )
+                    except:
+                        transformed_data = transform.fit_transform(
+                            np.array(
+                                transformed_data,
+                                dtype=type(df[col][0]),
+                            ).reshape(-1, 1)
+                        )
                     transformed_data = transformed_data.squeeze(1)
-                processed_dataframe[col] = np.array(
-                    transformed_data, dtype=df[col].dtype
-                )
+                try:
+                    processed_dataframe[col] = np.array(
+                        transformed_data, dtype=df[col].dtype
+                    )
+                except:
+                    processed_dataframe[col] = np.array(
+                        transformed_data, dtype=type(df[col][0])
+                    )
         else:
             processed_dataframe = df.copy()
 
@@ -767,13 +786,28 @@ class TabularDataObject(object):
             for col in list(df.columns):
                 transformed_data = df[col]
                 for transform in self._column_transforms_mapping.get(col, []):
-                    transformed_data = transform.fit_transform(
-                        np.array(transformed_data, dtype=df[col].dtype).reshape(-1, 1)
-                    )
+                    try:
+                        transformed_data = transform.fit_transform(
+                            np.array(transformed_data, dtype=df[col].dtype).reshape(
+                                -1, 1
+                            )
+                        )
+                    except:
+                        transformed_data = transform.fit_transform(
+                            np.array(
+                                transformed_data,
+                                dtype=type(df[col][0]),
+                            ).reshape(-1, 1)
+                        )
                     transformed_data = transformed_data.squeeze(1)
-                processed_dataframe[col] = np.array(
-                    transformed_data, dtype=df[col].dtype
-                )
+                try:
+                    processed_dataframe[col] = np.array(
+                        transformed_data, dtype=df[col].dtype
+                    )
+                except:
+                    processed_dataframe[col] = np.array(
+                        transformed_data, dtype=type(df[col][0])
+                    )
         else:
             processed_dataframe = df.copy()
 
@@ -874,17 +908,34 @@ class TabularDataObject(object):
             processed_dataframe = self._dataframe.copy()
             transformed_data = processed_dataframe[self._dependent_variable]
             for transform in self._column_transforms_mapping[self._dependent_variable]:
-                transformed_data = transform.fit_transform(
-                    np.array(
-                        transformed_data,
-                        dtype=processed_dataframe[self._dependent_variable].dtype,
-                    ).reshape(-1, 1)
-                )
+                try:
+                    transformed_data = transform.fit_transform(
+                        np.array(
+                            transformed_data,
+                            dtype=processed_dataframe[self._dependent_variable].dtype,
+                        ).reshape(-1, 1)
+                    )
+                except:
+                    transformed_data = transform.fit_transform(
+                        np.array(
+                            transformed_data,
+                            dtype=type(
+                                processed_dataframe[self._dependent_variable][0]
+                            ),
+                        ).reshape(-1, 1)
+                    )
                 transformed_data = transformed_data.squeeze(1)
 
-            processed_dataframe[self._dependent_variable] = np.array(
-                transformed_data, dtype=self._dataframe[self._dependent_variable].dtype
-            )
+            try:
+                processed_dataframe[self._dependent_variable] = np.array(
+                    transformed_data,
+                    dtype=self._dataframe[self._dependent_variable].dtype,
+                )
+            except:
+                processed_dataframe[self._dependent_variable] = np.array(
+                    transformed_data,
+                    dtype=type(processed_dataframe[self._dependent_variable][0]),
+                )
         else:
             processed_dataframe = self._dataframe.copy()
 
@@ -1061,9 +1112,14 @@ class TabularDataObject(object):
         import matplotlib.pyplot as plt
 
         if seq_len is not None:
-            X_train, X_valid, y_train, y_valid = self._time_series_bunch(
-                seq_len, False, False
-            )
+            try:
+                X_train, X_valid, y_train, y_valid = self._time_series_bunch(
+                    seq_len, False, False
+                )
+            except:
+                ts_bunch = self._time_series_bunch(seq_len, False, False)
+                X_train = ts_bunch.train_ds.x.items
+                y_train = ts_bunch.train_ds.y.items
 
             n_items = rows**2
             if n_items > len(X_train):

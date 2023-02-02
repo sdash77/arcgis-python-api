@@ -122,7 +122,10 @@ def _infer_type(df, col):
 def _geojson_to_esrijson(geojson):
     """converts the geojson spec to esri json spec"""
     if geojson["type"] in ["Polygon", "MultiPolygon"]:
-        return {"rings": geojson["coordinates"], "spatialReference": {"wkid": 4326}}
+        return {
+            "rings": geojson["coordinates"],
+            "spatialReference": {"wkid": 4326},
+        }
     elif geojson["type"] == "Point":
         return {
             "x": geojson["coordinates"][0],
@@ -130,7 +133,10 @@ def _geojson_to_esrijson(geojson):
             "spatialReference": {"wkid": 4326},
         }
     elif geojson["type"] == "MultiPoint":
-        return {"points": geojson["coordinates"], "spatialReference": {"wkid": 4326}}
+        return {
+            "points": geojson["coordinates"],
+            "spatialReference": {"wkid": 4326},
+        }
     elif geojson["type"] in ["LineString"]:  # , 'MultiLineString']:
         return {
             "paths": [[list(gj) for gj in geojson["coordinates"]]],
@@ -537,6 +543,7 @@ def to_table(geo, location, overwrite=True, sanitize_columns=False):
                 dtypes.append((col, np.int32))
             elif df[col].dtype.name == "datetime64[ns]":
                 dtypes.append((col, "<M8[us]"))
+                df[col] = df[col].dt.to_pydatetime()
             elif df[col].dtype.name == "object":
                 try:
                     u = type(df[col][df[col].first_valid_index()])
@@ -588,9 +595,22 @@ def to_table(geo, location, overwrite=True, sanitize_columns=False):
             if fld.type not in ["OID", "Geometry", "FID"] and fld.name in df.columns
         ]
         with arcpy.da.InsertCursor(fc, icols) as irows:
+            dt_fld_idx = [
+                irows.fields.index(col)
+                for col in df.columns
+                if df[col].dtype.name.startswith("datetime64[ns")
+            ]
+            if len(dt_fld_idx) > 0:
+                df = df.replace({pd.NaT: None})
             for idx, row in df[dfcols].iterrows():
                 try:
-                    irows.insertRow(row.tolist())
+                    row = row.tolist()
+                    if len(dt_fld_idx) > 0:
+                        for idx in dt_fld_idx:
+                            if row[idx]:
+                                row[idx] = row[idx].to_pydatetime()
+                    irows.insertRow(row)
+
                 except:
                     _logging.warn("row %s could not be inserted." % idx)
         if not old_column is None:
@@ -1179,7 +1199,8 @@ def _pyshp_to_shapefile(df, out_path, out_name):
                             shpfile.field(name=c, fieldType="F", size=19, decimal=11)
                         elif (
                             isinstance(
-                                df[c].loc[idx], (datetime.datetime, np.datetime64)
+                                df[c].loc[idx],
+                                (datetime.datetime, np.datetime64),
                             )
                             or df[c].dtype.name == "datetime64[ns]"
                         ):
@@ -1277,7 +1298,9 @@ def _pyshp2(df, out_path, out_name):
         if idx > -1:
             geom_type = df.loc[idx][geom_field].type
         shpfile = shapefile.Writer(
-            target=out_fc, shapeType=GEOMTYPELOOKUP[geom_type], autoBalance=True
+            target=out_fc,
+            shapeType=GEOMTYPELOOKUP[geom_type],
+            autoBalance=True,
         )
 
         # Start writing to shapefile
@@ -1302,7 +1325,10 @@ def _pyshp2(df, out_path, out_name):
                     elif isinstance(df[c].loc[idx], (np.float, np.float64, np.int64)):
                         shpfile.field(name=c, fieldType="F", size=19, decimal=11)
                     elif (
-                        isinstance(df[c].loc[idx], (datetime.datetime, np.datetime64))
+                        isinstance(
+                            df[c].loc[idx],
+                            (datetime.datetime, np.datetime64),
+                        )
                         or df[c].dtype.name == "datetime64[ns]"
                     ):
                         shpfile.field(name=c, fieldType="D", size=8)
@@ -1330,6 +1356,9 @@ def _pyshp2(df, out_path, out_name):
                         row[idx] = None
                     else:
                         row[idx] = row[idx].to_pydatetime()
+            for idx, value in enumerate(row):
+                if value is np.nan:
+                    row[idx] = None
             shpfile.record(*row)
             del idx
             del row

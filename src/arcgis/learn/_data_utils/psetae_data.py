@@ -289,8 +289,9 @@ def create_train_val_sets(path, val_split_pct, working_dir, **kwargs):
     emd_path = os.path.join(path, "esri_model_definition.emd")
     with open(emd_path) as f:
         emd_stats = json.load(f)
-    IsMultidimensional = emd_stats.get("IsMultidimensional")
+    IsMultidimensional = emd_stats.get("IsMultidimensional", False)
     serialDates = emd_stats.get("DimensionValues")
+    imagespace = emd_stats.get("ImageSpaceUsed")
 
     if IsMultidimensional:
         ntempdates = [
@@ -538,6 +539,8 @@ def create_train_val_sets(path, val_split_pct, working_dir, **kwargs):
         labs,
         npixels,
         nt,
+        IsMultidimensional,
+        imagespace,
     ]
 
 
@@ -595,6 +598,8 @@ def prepare_psetae_data(
     data._train_arrs_lst = train_val_dataset[3]
     data._train_labs = train_val_dataset[4]
     data._npixel = train_val_dataset[5]
+    data._is_multidimensional = train_val_dataset[7]
+    data._imagespace = train_val_dataset[8]
 
     return data
 

@@ -1269,7 +1269,6 @@ class SingleShotDetector(ArcGISModel):
             )
 
         if isinstance(image_path, str):
-            #
             if self._data._is_multispectral:
                 resize_to = None
                 if resize:
@@ -1283,6 +1282,8 @@ class SingleShotDetector(ArcGISModel):
         else:
             image = image_path
 
+        if image is None:
+            raise Exception(str("No such file or directory: %s" % (image_path)))
         orig_height, orig_width, _ = image.shape
         orig_frame = image.copy()
         tytx = self._data.chip_size

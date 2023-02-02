@@ -950,7 +950,10 @@ class MaskRCNN(ArcGISModel):
             if mode in ["mask", "bbox_mask"]:
                 n_instance = y_batch[i].unique().shape[0]
                 y_merged = y_batch[i].max(dim=0)[0].cpu().numpy()
-                y_rgba = cmap_fn.resampled(n_instance)(y_merged)
+                try:
+                    y_rgba = cmap_fn.resampled(n_instance)(y_merged)
+                except:
+                    y_rgba = cmap_fn._resample(n_instance)(y_merged)
                 y_rgba[y_merged == 0] = 0
                 y_rgba[:, :, -1] = alpha
                 ax_i[0].imshow(y_rgba)
@@ -961,7 +964,10 @@ class MaskRCNN(ArcGISModel):
             ax_i[1].axis("off")
             if mode in ["mask", "bbox_mask"]:
                 n_instance = np.unique(pred_mask[i]).shape[0]
-                p_rgba = cmap_fn.resampled(n_instance)(pred_mask[i])
+                try:
+                    p_rgba = cmap_fn.resampled(n_instance)(pred_mask[i])
+                except:
+                    p_rgba = cmap_fn._resample(n_instance)(pred_mask[i])
                 p_rgba[pred_mask[i] == 0] = 0
                 p_rgba[:, :, -1] = alpha
                 ax_i[1].imshow(p_rgba)

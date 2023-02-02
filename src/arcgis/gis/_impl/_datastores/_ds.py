@@ -1,5 +1,6 @@
+from __future__ import annotations
 import time as _time
-from typing import Union
+from typing import Union, Any
 import uuid
 from arcgis.gis import GIS
 from .._con import Connection
@@ -227,7 +228,11 @@ class PortalDataStore(object):
             if key:
                 params["key"] = key
             res = self._con.post(url, params)
-            while res["status"] not in ["completed", "complete", "succeeded"]:
+            while res["status"] not in [
+                "completed",
+                "complete",
+                "succeeded",
+            ]:
                 res = self._con.post(url, params)
                 if res["status"] == "failed":
                     raise Exception(res)
@@ -418,9 +423,9 @@ class PortalDataStore(object):
         url = f"{self._url}/allDatasets/deleteLayers"
         res = self._con.post(url, params)
         if res["success"] == True:
-            status = item.status(self, job_id=res["jobId"])
+            status = item.status()
             while status["status"].lower() != "completed":
-                status = item.status(self, job_id=res["jobId"])
+                status = item.status()
                 if status["status"].lower() == "failed":
                     return False
                 else:
@@ -668,12 +673,15 @@ class PortalDataStore(object):
     # ----------------------------------------------------------------------
     def publish_layers(
         self,
-        item,
-        srv_config: dict,
-        server_id,
-        folder=None,
-        server_folder=None,
-        future=False,
+        item: Item,
+        srv_config: dict[str, Any],
+        server_id: str,
+        *,
+        folder: str | None = None,
+        server_folder: str | None = None,
+        sync_metadata: bool | None = None,
+        use_config: bool | None = None,
+        future: bool = False,
     ):
         """
         The ``publish_layers`` operation publishes, or syncs, the datasets from a
@@ -718,6 +726,13 @@ class PortalDataStore(object):
                                .. note::
                                    If this folder does not exist, the method will
                                    create it.
+        ------------------     --------------------------------------------------------------------
+        sync_metadata          Optional bool. Determines if item info details are updated using the
+                               metadata of the source dataset when a sync is performed. The default
+                               is false.
+        ------------------     --------------------------------------------------------------------
+        use_config             Optional bool. When true, the new `srv_config` will be applied to
+                               all layers.
         ------------------     --------------------------------------------------------------------
         future                 Optional Boolean.  If False, the value is returned, else a
                                `StatusJob` is returned.
@@ -792,6 +807,10 @@ class PortalDataStore(object):
             "serverId": server_id,
             "serverFolder": server_folder,
         }
+        if not sync_metadata is None and isinstance(sync_metadata, bool):
+            params["syncItemInfo"] = sync_metadata
+        if not use_config is None and isinstance(use_config, bool):
+            params["applySvcConfigChanges"] = use_config
         res = self._con.post(url, params)
         if res["success"] == True:
             status = item.status()

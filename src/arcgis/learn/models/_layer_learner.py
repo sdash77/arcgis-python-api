@@ -313,6 +313,8 @@ class FullyConnectedNetwork(ArcGISModel):
             prediction = self._predict(dataframe.iloc[i])[0].obj
             if isinstance(prediction, (list, np.ndarray)):
                 prediction = prediction[0]
+            if isinstance(prediction, np.float32):
+                prediction = prediction.astype(np.float64)
             preds.append(prediction)
 
         return preds

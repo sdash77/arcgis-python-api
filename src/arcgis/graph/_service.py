@@ -3,7 +3,7 @@ from arcgis.auth.tools import LazyLoader
 
 
 try:
-    import _arcgisknowledge as _kgparser
+    import arcgis.graph._arcgisknowledge as _kgparser
 
     HAS_KG = True
 except ImportError as e:

@@ -3,6 +3,8 @@ Classes and objects used to manage published services.
 """
 from __future__ import absolute_import
 from __future__ import print_function
+from __future__ import annotations
+from typing import Any
 import os
 import json
 import tempfile
@@ -13,6 +15,7 @@ from arcgis.gis import GIS
 from arcgis.gis._impl._con import Connection
 import datetime as _datetime
 from typing import Optional
+from arcgis.features.managers import WebHookScheduleInfo, WebHookEvents
 
 ########################################################################
 class ServiceManager(BaseServer):
@@ -949,6 +952,429 @@ class ServiceManager(BaseServer):
 
 
 ########################################################################
+class ServiceWebHook(BaseServer):
+    """
+    The webhooks resource returns a list of service webhooks configured
+    for a specific geoprocessing or feature service, including
+    deactivated and activated webhooks. Webhooks are an ArcGIS
+    Enterprise capability that provide other applications or webhook
+    receivers with event-driven information, delivered as an HTTPS POST
+    request, that can be used to create automated and integrative
+    workflows. For more information on how webhooks are supported in
+    ArcGIS Enterprise, see Webhooks in ArcGIS Enterprise.
+    """
+
+    _url: str = None
+    _con: Connection = None
+    _gis: GIS = None
+
+    def __init__(
+        self,
+        url: str,
+        gis: GIS | Connection,
+        initialize: bool = False,
+        **kwargs,
+    ):
+        """initializer"""
+        super()
+        if isinstance(gis, GIS):
+            con = gis._con
+        else:
+            con = gis
+
+        self._url = url
+        self._con = con
+        if initialize:
+            self._init(self._con)
+
+    # ----------------------------------------------------------------------
+    def edit(
+        self,
+        *,
+        name: str | None = None,
+        change_types: WebHookEvents | str | None = None,
+        hook_url: str | None = None,
+        signature_key: str | None = None,
+        active: bool | None = None,
+        schedule_info: WebHookScheduleInfo | dict[str, Any] | None = None,
+        payload_format: str | None = None,
+        content_type: str | None = None,
+    ) -> dict[str, Any]:
+        """
+        Updates the existing WebHook's Properties.
+
+        =====================================    ===========================================================================
+        **Parameter**                             **Description**
+        -------------------------------------    ---------------------------------------------------------------------------
+        name                                     Optional String. Use valid name for a webhook. This name needs to be unique per service.
+        -------------------------------------    ---------------------------------------------------------------------------
+        hook_url                                 Optional String.  The URL to which the payloads will be delivered.
+        -------------------------------------    ---------------------------------------------------------------------------
+        change_types                             Optional :class:`~arcgis.features.managers.WebHookEvents` or String.
+                                                 The default is "*", which means all events.  This is a
+                                                 comma separated list of values that will fire off the web hook.  The list
+                                                 each supported type is below.
+        -------------------------------------    ---------------------------------------------------------------------------
+        signature_key                            Optional String. If specified, the key will be used in generating the HMAC
+                                                 hex digest of value using sha256 hash function and is return in the
+                                                 x-esriHook-Signature header.
+        -------------------------------------    ---------------------------------------------------------------------------
+        active                                   Optional bool. Enable or disable call backs when the webhook is triggered.
+        -------------------------------------    ---------------------------------------------------------------------------
+        schedule_info                            Optional :class:`~arcgis.features.managers.WebHookScheduleInfo` or Dict.
+                                                 Allows the trigger to be used as a given schedule.
+
+                                                 Example Dictionary:
+
+
+                                                     | {
+                                                     |    "name" : "Every-5seconds",
+                                                     |    "startAt" : 1478280677536,
+                                                     |    "state" : "enabled",
+                                                     |    "recurrenceInfo" : {
+                                                     |     "frequency" : "second",
+                                                     |     "interval" : 5
+                                                     |   }
+                                                     | }
+
+        -------------------------------------    ---------------------------------------------------------------------------
+        payload_format                           Optional String. The payload can be sent in pretty format or standard.
+                                                 The default is `json`.
+        -------------------------------------    ---------------------------------------------------------------------------
+        content_type                             Optional String. The Content Type is used to indicate the media type of the
+                                                 resource. The media type is a string sent along with the file indicating
+                                                 the format of the file.
+        =====================================    ===========================================================================
+
+
+        A list of allowed web hook triggers is shown below.
+
+        =====================================    ===========================================================================
+        **Name**                                 **Triggered When**
+        -------------------------------------    ---------------------------------------------------------------------------
+        `*`                                      Wildcard event. Any time any event is triggered.
+        -------------------------------------    ---------------------------------------------------------------------------
+        `FeaturesCreated`                        A new feature is created
+        -------------------------------------    ---------------------------------------------------------------------------
+        `FeaturesUpdated`                        Any time a feature is updated
+        -------------------------------------    ---------------------------------------------------------------------------
+        `FeaturesDeleted`                        Any time a feature is deleted
+        -------------------------------------    ---------------------------------------------------------------------------
+        `FeaturesEdited`                         Any time a feature is edited (insert or update or delete)
+        -------------------------------------    ---------------------------------------------------------------------------
+        `AttachmentsCreated`                     Any time adding a new attachment to a feature
+        -------------------------------------    ---------------------------------------------------------------------------
+        `AttachmentsUpdated`                     Any time updating a feature attachment
+        -------------------------------------    ---------------------------------------------------------------------------
+        `AttachmentsDeleted`                     Any time an attachment is deleted from a feature
+        -------------------------------------    ---------------------------------------------------------------------------
+        `LayerSchemaChanged`                     Any time a schema is changed in a layer
+        -------------------------------------    ---------------------------------------------------------------------------
+        `LayerDefinitionChanged`                 Any time a layer definition is changed
+        -------------------------------------    ---------------------------------------------------------------------------
+        `FeatureServiceDefinitionChanged`        Any time a feature service is changed
+        =====================================    ===========================================================================
+
+
+        :return: Response of edit as a dict.
+
+        """
+        props: dict[str, Any] = dict(self.properties)
+        url: str = f"{self._url}/edit"
+        if isinstance(schedule_info, WebHookScheduleInfo):
+            schedule_info: dict[str, Any] = schedule_info.as_dict()
+        if isinstance(change_types, list):
+            ctypes: list[str] = []
+            for ct in change_types:
+                if isinstance(ct, WebHookEvents):
+                    ctypes.append(ct.value)
+                else:
+                    ctypes.append(ct)
+
+            change_types: str = ",".join(ctypes)
+        elif isinstance(change_types, WebHookEvents):
+            change_types: str = change_types.value
+        elif change_types is None:
+            change_types: str = ",".join(self.properties["changeTypes"])
+        params: dict[str, Any] = {
+            "f": "json",
+            "name": name,
+            "changeTypes": change_types,
+            "signatureKey": signature_key,
+            "hookUrl": hook_url,
+            "active": active,
+            "scheduleInfo": schedule_info,
+            "payloadFormat": payload_format,
+            "content_type": content_type,
+        }
+        for k in list(params.keys()):
+            if params[k] is None:
+                params.pop(k)
+            del k
+        props.update(params)
+        resp: dict[str, Any] = self._con.post(url, props)
+        self._properties: PropertyMap = PropertyMap(resp)
+        return resp
+
+    # ----------------------------------------------------------------------
+    def delete(self) -> bool:
+        """
+        Deletes the current webhook from the system
+
+        :return: Boolean, True if successful
+        """
+        url = f"{self._url}/delete"
+        params = {"f": "json"}
+        resp = self._con.post(url, params)
+        return resp["status"] == "success"
+
+
+########################################################################
+class ServiceWebHookManager(BaseServer):
+    """
+    The webhooks resource returns a list of service webhooks configured
+    for a specific geoprocessing or feature service, including
+    deactivated and activated webhooks. Webhooks are an ArcGIS
+    Enterprise capability that provide other applications or webhook
+    receivers with event-driven information, delivered as an HTTPS POST
+    request, that can be used to create automated and integrative
+    workflows. For more information on how webhooks are supported in
+    ArcGIS Enterprise, see Webhooks in ArcGIS Enterprise.
+    """
+
+    _url: str = None
+    _con: Connection = None
+    _properties: dict = None
+
+    def __init__(self, url: str, con: Connection, **kwargs):
+        """initializer"""
+        super()
+        self._url = url
+        self._con = con
+
+    # ----------------------------------------------------------------------
+    def __str__(self):
+        """returns the class as a string"""
+        return f"< ServiceWebHookManager @ {self._url} >"
+
+    # ----------------------------------------------------------------------
+    def __repr__(self):
+        return self.__str__()
+
+    # ----------------------------------------------------------------------
+    def create(
+        self,
+        name: str,
+        hook_url: str,
+        *,
+        change_types: WebHookEvents | str = WebHookEvents.ALL,
+        signature_key: str | None = None,
+        active: bool = False,
+        schedule_info: dict[str, Any] | WebHookScheduleInfo | None = None,
+        payload_format: str = "json",
+        content_type: str | None = None,
+    ) -> ServiceWebHook:
+        """
+
+        Creates a new Feature Collection Web Hook
+
+
+        =====================================    ===========================================================================
+        **Parameter**                             **Description**
+        -------------------------------------    ---------------------------------------------------------------------------
+        name                                     Required String. Use valid name for a webhook. This name needs to be unique per service.
+        -------------------------------------    ---------------------------------------------------------------------------
+        hook_url                                 Required String.  The URL to which the payloads will be delivered.
+        -------------------------------------    ---------------------------------------------------------------------------
+        change_types                             Optional WebHookEvents or String.  The default is "WebHookEvents.ALL", which means all events.  This is a
+                                                 comma separated list of values that will fire off the web hook.  The list
+                                                 each supported type is below.
+        -------------------------------------    ---------------------------------------------------------------------------
+        signature_key                            Optional String. If specified, the key will be used in generating the HMAC
+                                                 hex digest of value using sha256 hash function and is return in the
+                                                 x-esriHook-Signature header.
+        -------------------------------------    ---------------------------------------------------------------------------
+        active                                   Optional bool. Enable or disable call backs when the webhook is triggered.
+        -------------------------------------    ---------------------------------------------------------------------------
+        schedule_info                            Optional Dict or `WebHookScheduleInfo`. Allows the trigger to be used as a given schedule.
+
+                                                 Example Dictionary:
+
+                                                     | {
+                                                     |   "name" : "Every-5seconds",
+                                                     |   "startAt" : 1478280677536,
+                                                     |   "state" : "enabled"
+                                                     |   "recurrenceInfo" : {
+                                                     |     "frequency" : "second",
+                                                     |     "interval" : 5
+                                                     |   }
+                                                     | }
+
+        -------------------------------------    ---------------------------------------------------------------------------
+        payload_format                           Optional String. The payload can be sent in pretty format or standard.
+                                                 The default is `json`.
+        -------------------------------------    ---------------------------------------------------------------------------
+        content_type                             Optional String. The Content Type is used to indicate the media type of the
+                                                 resource. The media type is a string sent along with the file indicating
+                                                 the format of the file.
+        =====================================    ===========================================================================
+
+
+        A list of allowed web hook triggers is shown below.
+
+        =====================================    ===========================================================================
+        **Name**                                 **Triggered When**
+        -------------------------------------    ---------------------------------------------------------------------------
+        `*`                                      Wildcard event. Any time any event is triggered.
+        -------------------------------------    ---------------------------------------------------------------------------
+        `FeaturesCreated`                        A new feature is created
+        -------------------------------------    ---------------------------------------------------------------------------
+        `FeaturesUpdated`                        Any time a feature is updated
+        -------------------------------------    ---------------------------------------------------------------------------
+        `FeaturesDeleted`                        Any time a feature is deleted
+        -------------------------------------    ---------------------------------------------------------------------------
+        `FeaturesEdited`                         Any time a feature is edited (insert or update or delete)
+        -------------------------------------    ---------------------------------------------------------------------------
+        `AttachmentsCreated`                     Any time adding a new attachment to a feature
+        -------------------------------------    ---------------------------------------------------------------------------
+        `AttachmentsUpdated`                     Any time updating a feature attachment
+        -------------------------------------    ---------------------------------------------------------------------------
+        `AttachmentsDeleted`                     Any time an attachment is deleted from a feature
+        -------------------------------------    ---------------------------------------------------------------------------
+        `LayerSchemaChanged`                     Any time a schema is changed in a layer
+        -------------------------------------    ---------------------------------------------------------------------------
+        `LayerDefinitionChanged`                 Any time a layer definition is changed
+        -------------------------------------    ---------------------------------------------------------------------------
+        `FeatureServiceDefinitionChanged`        Any time a feature service is changed
+        =====================================    ===========================================================================
+
+        :return:
+            A :class:`~arcgis.gis.server.admin._services.ServiceWebHook` object
+
+        """
+        url: str = f"{self._url}/create"
+        if isinstance(change_types, list):
+            ctnew: list[str] = []
+            for ct in change_types:
+                if isinstance(ct, str):
+                    ctnew.append(ct)
+                elif isinstance(ct, WebHookEvents):
+                    ctnew.append(ct.value)
+            change_types: str = ",".join(ctnew)
+        elif isinstance(change_types, WebHookEvents):
+            change_types: str = change_types.value
+        if isinstance(schedule_info, WebHookScheduleInfo):
+            schedule_info: dict[str, Any] = schedule_info.as_dict()
+        elif schedule_info is None:
+            schedule_info: dict[str, Any] = {
+                "name": "",
+                "state": "enabled",
+                "startAt": int(_datetime.datetime.now().timestamp() * 1000),
+                "recurrenceInfo": {"interval": 20, "frequency": "second"},
+            }
+        params: dict[str, Any] = {
+            "f": "json",
+            "name": name,
+            "changeTypes": change_types,
+            "signatureKey": signature_key,
+            "hookUrl": hook_url,
+            "active": active,
+            "scheduleInfo": schedule_info,
+            "payloadFormat": payload_format,
+        }
+        if content_type:
+            params["contentType"] = content_type
+        resp: dict[str, Any] = self._con.post(url, params)
+        self._properties = None
+        if "status" in resp and resp["status"] == "error":
+            raise ValueError(". ".join(resp["messages"]))
+        elif not "url" in resp:
+            hook_id: str = resp.get("id", None) or resp.get("globalId", None)
+            hook_url: str = self._url + f"/{hook_id}"
+            return ServiceWebHook(url=hook_url, gis=self._con)
+        else:
+            return ServiceWebHook(url=resp["url"], gis=self._con)
+
+    # ----------------------------------------------------------------------
+    @property
+    def list(self) -> list[ServiceWebHook]:
+        """
+        Lists the existing webhooks
+
+        :return: list[ServiceWebHook]
+        """
+        hooks: list[ServiceWebHook] = []
+        url: str = f"{self.url}"
+        params: dict[str, Any] = {
+            "f": "json",
+            "start": 1,
+            "num": 25,
+            "sortField": None,
+            "sortOrder": None,
+        }
+        res: dict[str, Any] = self._con.get(url, params=params)
+        hooks.extend(
+            [
+                ServiceWebHook(url, gis=self._con)
+                for url in ["%s/%s" % (self._url, wh["id"]) for wh in res["webhooks"]]
+            ]
+        )
+
+        while res.get("nextStart", -1) > -1:
+            params["start"] = res["nextStart"]
+            res: dict[str, Any] = self._con.get(url, params=params)
+            hooks.extend(
+                [
+                    ServiceWebHook(url, gis=self._gis)
+                    for url in [
+                        "%s/%s" % (self._url, wh["id"]) for wh in res["webhooks"]
+                    ]
+                ]
+            )
+        return hooks
+
+    # ----------------------------------------------------------------------
+    def disable_hooks(self) -> bool:
+        """
+        The `disable_hooks` will temporarily deactivate all configured webhooks
+        for a geoprocessing or feature service. While deactivated, the service's
+        webhooks will not be invoked and payloads will not be delivered.
+
+        :return: Bool, True if successful
+
+        """
+        url: str = f"{self._url}/deactivateAll"
+        params: dict[str, Any] = {"f": "json"}
+        return self._con.post(url, params).get("status", "failed") == "success"
+
+    # ----------------------------------------------------------------------
+    def delete_all_hooks(self) -> bool:
+        """
+        The `delete_all_hooks` operation will permanently remove the specified webhook.
+
+        :return: Bool, True if successful
+
+        """
+        url = f"{self._url}/deleteAll"
+        params = {"f": "json"}
+        return self._con.post(url, params).get("status", "failed") == "success"
+
+    # ----------------------------------------------------------------------
+    def enable_hooks(self) -> bool:
+        """
+        The `enable_hooks` operation restarts a deactivated webhook. When
+        activated, payloads will be delivered to the payload URL when the
+        webhook is invoked.
+
+        :return: Bool, True if successful
+
+        """
+        url: str = f"{self._url}/activateAll"
+        params: dict[str, Any] = {"f": "json"}
+        return self._con.post(url, params).get("status", "failed") == "success"
+
+
+########################################################################
 class Service(BaseServer):
     """
     Represents a GIS administrative service
@@ -993,6 +1419,8 @@ class Service(BaseServer):
     _url = None
     _extensions = None
     _jm = None
+    _whm = None
+
     # ----------------------------------------------------------------------
     def __init__(self, url: str, gis: GIS, initialize: bool = False, **kwargs):
         """
@@ -1011,13 +1439,14 @@ class Service(BaseServer):
 
 
         """
+        super()
         from arcgis.gis import GIS
 
         if isinstance(gis, GIS):
             con = gis._con
         else:
             con = gis
-        super(Service, self)
+        # super(Service, self)
 
         self._service_manager = kwargs.pop("service_manager", None)
         self._url = url
@@ -1265,6 +1694,16 @@ class Service(BaseServer):
         params = {"f": "json"}
         u_url = self._url + "/permissions"
         return self._con.get(path=u_url, param_dict=params)
+
+    # ----------------------------------------------------------------------
+    @property
+    def webhook_manager(self) -> ServiceWebHookManager:
+        """Returns the Service Based Webhook Manager (ArcGIS Server 11.1+)"""
+        if self._server_version() >= [11, 0]:
+            url: str = f"{self._url}/webhooks"
+            if self._whm is None:
+                self._whm = ServiceWebHookManager(url, con=self._con)
+        return self._whm
 
     # ----------------------------------------------------------------------
     @property
