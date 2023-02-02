@@ -166,6 +166,33 @@ def add_flight(project_item,
                                                 raster_type_params=raster_type_params,
                                                 gis=gis,
                                                 folder=folder)
+
+    job_info=output_collection.properties
+    job_response={}
+    if "jobUrl" in job_info :
+        # Get the url of the Analysis job to track the status.
+
+        job_url = job_info.get("jobUrl")
+        params = {"f": "json"}
+        job_response = gis._con.post(job_url, params)
+
+    flight_json = {}  
+    flight_json.update({"items":{"imageCollection":{"itemId": output_collection.itemid, "url":output_collection.url}}})
+
+    flight_json.update({"jobs":{"imageCollection": {"messages": job_response["messages"]} }})
+
+    flight_json.update({"rasterType":raster_type_name})
+
+    flight_json.update({"cameraInfo":raster_type_params["cameraProperties"]})        
+
+    resource_manager = project_item.resources
+
+    if not flight_name.endswith(".json"):
+        flight_name = flight_name+".json"
+    try:
+        resource_manager.add(file_name=flight_name, text=flight_json, properties={"oid":0,"imageCount":len(image_list),"items":[{"product":"imageCollection","id":output_collection.id,"created":True}],"gcpItems":[],"baStatus":"succeeded"}) 
+    except:
+        raise RuntimeError("Error adding the flight")
     return output_collection
 
 

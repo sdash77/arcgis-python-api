@@ -9121,7 +9121,7 @@ class _RasterAnalysisTools(BaseAnalytics):
         output_service.update(item_properties)
         return output_service
 
-    def _build_param_dictionary(
+    def  _build_param_dictionary(
         self,
         input_rasters,
         raster_type_name,
