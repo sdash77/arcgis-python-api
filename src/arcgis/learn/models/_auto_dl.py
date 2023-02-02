@@ -663,7 +663,6 @@ class AutoDL:
 
         dataset_type_temp = self._data.dataset_type
 
-
         try:
             if not self._model_stats()[model]["is_mm"]:
                 evaluate_batchsize = EvaluateBatchSize(

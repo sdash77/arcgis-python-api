@@ -12,7 +12,6 @@ time = LazyLoader("time")
 
 
 class Templates(Enum):
-
     BLANKFULLSCREEN = "blank fullscreen"
     BLANKSCROLLING = "blank scrolling"
     FOLDABLE = "foldable"
@@ -109,7 +108,6 @@ class WebExperience(object):
         template: Optional[Union[Templates, str]] = None,
         name: Optional[str] = None,
     ):
-
         if gis is None:
             gis = arcgis.env.active_gis
             self._gis = gis
@@ -139,7 +137,6 @@ class WebExperience(object):
 
     # -----------------------------------------------------------------------------------
     def _create_new_experience(self, template="blank fullscreen", name=None):
-
         """
         If no experience is specified when creating a WebExperience, this helper function
         creates a new experience and saves it as an item to the active GIS. Users can specify
@@ -314,7 +311,6 @@ class WebExperience(object):
         """
         keywords = self._item.typeKeywords
         if "status: Published" in keywords:
-
             from IPython.display import IFrame
 
             try:
