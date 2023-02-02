@@ -309,7 +309,6 @@ def loss_function_attention(inputs, captions, lengths):
 
 
 def load_fasttext_embeddings(language="en"):
-
     embeddings_file = f"cc.{language}.300.bin"
     embeddings_path = os.path.join(Path.home(), ".cache", "embeddings")
     if not os.path.exists(embeddings_path):

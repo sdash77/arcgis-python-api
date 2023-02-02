@@ -43,7 +43,6 @@ class ModelBackbone:
 
 
 class ArcGISTransformer(nn.Module, metaclass=abc.ABCMeta):
-
     _outfile = "model_architecture.json"
 
     def __init__(

@@ -7,6 +7,7 @@ from arcgis.gis import GIS
 from arcgis._impl.common._isd import InsensitiveDict
 from typing import Dict, Any, Optional, List
 
+
 ###########################################################################
 class KubeSecurityCert(object):
     """
@@ -173,7 +174,6 @@ class KubeSecurityCert(object):
         :return: Dict
         """
         if cert_type.lower() == "trust":
-
             url = self._url + f"/trust/{cert_id}"
             params = {"f": "json"}
             return self._con.get(url, params)

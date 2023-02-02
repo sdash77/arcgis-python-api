@@ -99,7 +99,6 @@ class RetinaNetModel(nn.Module):
         chip_size=(256, 256),
         n_bands=3,
     ):
-
         # chs - channels for top down layers in FPN
 
         super().__init__()
@@ -428,7 +427,6 @@ class RetinaNetFocalLoss(nn.Module):
         return final_lloss
 
     def forward(self, output, bbox_tgts, clas_tgts):
-
         clas_preds, bbox_preds = output
         return sum(
             [
@@ -535,7 +533,6 @@ class AveragePrecision(Callback):
         )
 
     def on_batch_end(self, last_output, last_target, **kwargs):
-
         tps, p_scores, clas, self.n_gts = compute_cm(
             self.model, last_output, last_target, self.n_gts, self.classes
         )
@@ -554,7 +551,6 @@ class AveragePrecision(Callback):
 def compute_class_AP(
     model, dl, n_classes, show_progress, iou_thresh=0.1, detect_thresh=0.5, num_keep=100
 ):
-
     tps, clas, p_scores = [], [], []
     classes, n_gts = LongTensor(range(n_classes)), torch.zeros(n_classes).long()
     model.learn.model.eval()
@@ -598,7 +594,6 @@ def compute_cm(
         try:
             bbox_pred, preds, scores = op
             if len(bbox_pred) != 0 and len(tgt_bbox) != 0:
-
                 bbox_pred = bbox_pred.to(model._device)
                 preds = preds.to(model._device)
                 tgt_bbox = tgt_bbox.to(model._device)
@@ -769,7 +764,6 @@ try:
 
         batch = 0
         for chip_idx, (clas) in enumerate(output[0]):
-
             bboxes = output[1]
             bbox = bboxes[chip_idx].clone().detach()
 

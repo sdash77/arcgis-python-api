@@ -694,7 +694,6 @@ class SiteManager(object):
         basemap = {}
 
         if self._gis._portal.is_arcgisonline:
-
             # register site as an app
             _app_dict = site.register(app_type="browser", redirect_uris=[site.url])
             client_key = _app_dict["client_id"]

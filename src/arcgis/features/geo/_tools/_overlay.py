@@ -12,6 +12,7 @@ from arcgis.features.geo._array import GeoArray
 
 _HASARCPY, _HASSHAPELY = None, None
 
+
 # ----------------------------------------------------------------------
 def _check_geometry_engine():
     """checks if the geometry engine exists"""

@@ -2411,7 +2411,6 @@ class GeoAccessor(object):
 
         # small helper to address zoom level
         def _adjust_zoom(mp_wdgt):
-
             # if a single point, the extent will zoom to a scale so large it is almost irrelevant, so back out slightly
             if mp_wdgt.zoom > 16:
                 mp_wdgt.zoom = 16
@@ -2431,7 +2430,6 @@ class GeoAccessor(object):
 
         # otherwise, if a map widget is NOT explicitly defined
         else:
-
             from arcgis.gis import GIS
             from arcgis.env import active_gis
 
@@ -2943,7 +2941,6 @@ class GeoAccessor(object):
             df.spatial.project(sr)
             return df
         else:
-
             if geocoder is None:
                 geocoder = arcgis.env.active_gis._tools.geocoders[0]
             sr = dict(geocoder.properties.spatialReference)
@@ -3456,7 +3453,6 @@ class GeoAccessor(object):
                 except:
                     row[f] = None
             if geom and pd.notna(geom):
-
                 features.append({"geometry": dict(geom), "attributes": row})
             elif pd.notna(geom) == False:
                 features.append({"geometry": None, "attributes": row})
@@ -3552,7 +3548,6 @@ class GeoAccessor(object):
                 elif isinstance(ref, int):
                     ref = {"wkid": ref}
                 if len(self._data[self.name]) > 0:
-
                     self._data[self.name].apply(
                         lambda x: x.update({"spatialReference": ref})
                         if pd.notnull(x)
@@ -3618,7 +3613,6 @@ class GeoAccessor(object):
 
         old_columns, old_index = None, None
         if sanitize_columns:
-
             old_columns = self._data.columns.tolist()
             old_index = copy.deepcopy(self._data.index)
             pd.DataFrame.reset_index(self._data)
@@ -4288,7 +4282,6 @@ class GeoAccessor(object):
         except ImportError:
             HASPYPROJ = False
         try:
-
             if isinstance(spatial_reference, (int, str)) and HASARCPY:
                 import arcpy
 

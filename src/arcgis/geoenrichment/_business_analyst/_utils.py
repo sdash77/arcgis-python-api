@@ -39,7 +39,6 @@ def local_vs_gis(fn):
 
     @wraps(fn)
     def wrapped(self, *args, **kwargs):
-
         # get source no matter how defined
         for val in ["source", "_source", "_gis", "gis"]:
             if val in self.__dict__.keys():
@@ -100,14 +99,12 @@ def local_ba_data_avail() -> bool:
     avail = False
 
     if local_business_analyst_avail():
-
         # lazy load to avoid import issues
         import arcpy._ba
 
         # TODO: remove once bapy patched
         # addresses issue with bapy not being part of Notebook server docker image
         if "getLocalDatasets" in arcpy._ba.__dict__.keys() or module_avail("bapy"):
-
             # if data is available, there will be more than one dataset available
             avail = len(list(arcpy._ba.ListDatasets())) > 0
 
@@ -125,7 +122,6 @@ def set_source(in_source: Optional[Union[str, GIS]] = None) -> Union[str, GIS]:
 
     # if string input is provided, should be 'local'
     if isinstance(in_source, str):
-
         # cast to lowercast
         in_source = in_source.lower()
 
@@ -263,7 +259,6 @@ def has_networkanalysis_gis(
 
     # if a specific network function is being checked
     else:
-
         # just in case, ensure the input is lowercase
         network_function = network_function.lower()
 
@@ -495,7 +490,6 @@ def get_spatially_enabled_dataframe(
     if isinstance(input_object, (Iterable, np.ndarray)) and not isinstance(
         input_object, pd.DataFrame
     ):
-
         # Geometry objects may be passed in as an iterable of dicts - convert to Geometry if this is the case
         first_obj = input_object[0]
         if isinstance(first_obj, dict):
@@ -657,7 +651,6 @@ def validate_network_travel_mode(source, travel_mode: str):
 
     # if the travel mode was provided as a string, get the correct travel mode alias
     if isinstance(travel_mode, str):
-
         # switch to all lowercase to mitigate case discrepancies
         travel_mode = travel_mode.lower()
 
@@ -677,7 +670,6 @@ def validate_network_travel_mode(source, travel_mode: str):
 
         # tru to find a transportation travel mode
         else:
-
             # account for potential differences in descriptions from alias dict by building a list of candidates
             prx_lst = [travel_mode]
 
@@ -687,7 +679,6 @@ def validate_network_travel_mode(source, travel_mode: str):
 
             # look in the name and alias columns for a match
             for col, prx_mthd in product(["name", "alias"], prx_lst):
-
                 # try to find a match in the column for the proximity method
                 tmp_df = source.travel_modes[
                     source.travel_modes[col].str.lower() == prx_mthd
@@ -724,7 +715,6 @@ def add_proximity_to_enrich_feature(
     """Add proximity metrics onto a feature in a feature set for sending to the enrich REST endpoint."""
     # alias list to standardize the proximity_metric input
     if proximity_metric is not None:
-
         trvl_md_aliases = {
             "kilometers": ["kilometer", "km"],
             "miles": ["mile"],

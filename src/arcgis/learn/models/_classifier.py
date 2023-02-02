@@ -166,7 +166,6 @@ class FeatureClassifier(ArcGISModel):
         *args,
         **kwargs,
     ):
-
         # condition when databunch is from fastai
         # it will not contain class_mapping
         if not hasattr(data, "class_mapping"):
@@ -177,7 +176,6 @@ class FeatureClassifier(ArcGISModel):
             super().__init__(data, None)
             self._intialize_tensorflow(data, backbone, pretrained_path, mixup, kwargs)
         else:
-
             super().__init__(data, backbone, pretrained_path=pretrained_path, **kwargs)
             data = self._data
 
@@ -986,7 +984,6 @@ class FeatureClassifier(ArcGISModel):
         confidence_field=None,
         predict_function=_prediction_function,
     ):
-
         features = feature_layer.query().features
         features_to_update = []
 
@@ -1088,7 +1085,6 @@ class FeatureClassifier(ArcGISModel):
         confidence_field=None,
         predict_function=None,
     ):
-
         """
         Deprecated in ArcGIS version 1.9.1 and later: Use the Classify Objects Using Deep Learning tool or :meth:`~arcgis.learn.classify_objects`
 
@@ -1462,7 +1458,6 @@ class FeatureClassifier(ArcGISModel):
         batch_size,
         overwrite,
     ):
-
         # class values
         class_values = list(self._data.class_mapping.keys())
 

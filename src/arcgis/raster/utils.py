@@ -128,7 +128,6 @@ def publish_hosted_imagery_layer(
     future: bool = False,
     **kwargs,
 ):
-
     """
     The function can create hosted imagery layers in ArcGIS Enterprise and ArcGIS Online 
     from local raster datasets by uploading the data to the server. 
@@ -325,7 +324,6 @@ def publish_hosted_imagery_layer(
         output_name = "layer" + "_" + _id_generator()
 
     if layer_configuration.upper() == "ONE_IMAGE":
-
         gis = env.active_gis if gis is None else gis
 
         return gis._tools.rasteranalysis.copy_raster(
@@ -341,7 +339,6 @@ def publish_hosted_imagery_layer(
         )
 
     elif layer_configuration.upper() == "IMAGE_COLLECTION":
-
         gis = env.active_gis if gis is None else gis
 
         return gis._tools.rasteranalysis.create_image_collection(

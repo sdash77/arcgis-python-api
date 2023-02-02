@@ -7,6 +7,8 @@ from enum import Enum
 
 arcgis = LazyLoader("arcgis")
 __all__ = ["TraversabilityScopeEnum", "FilterScopeEnum"]
+
+
 ###########################################################################
 def _parse_enum(value: Enum | Any | None) -> Any | None:
     """returns the Enum's value or the current value"""

@@ -10,6 +10,7 @@ class _Metadata(object):
 
     _source = None
     _renderer = None
+
     # ----------------------------------------------------------------------
     def __init__(self):
         """initializer"""

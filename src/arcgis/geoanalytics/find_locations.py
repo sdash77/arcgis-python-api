@@ -769,7 +769,6 @@ def find_dwell_locations(
     time_boundary_unit: Optional[str] = None,
     time_boundary_ref: Optional[datetime] = None,
 ):
-
     """
 
     .. image:: _static/images/find_similar_locations/find_similar_locations.png
@@ -1246,7 +1245,6 @@ def find_similar_locations(
     params = inspect_function_inputs(tbx.find_similar_locations, **params)
     params["future"] = True
     try:
-
         gpjob = tbx.find_similar_locations(**params)
         if future:
             return GAJob(gpjob=gpjob, return_service=output_service)

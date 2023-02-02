@@ -1,6 +1,7 @@
 import json
 from typing import Union
 
+
 ########################################################################
 class Extension(object):
     """
@@ -23,6 +24,7 @@ class Extension(object):
         "wcsserver",
         "wmsserver",
     ]
+
     # ----------------------------------------------------------------------
     def __init__(
         self,
@@ -173,6 +175,7 @@ class ClusterProtocol(object):
     """
 
     _tcpClusterPort = None
+
     # ----------------------------------------------------------------------
     def __init__(self, tcpClusterPort: int):
         """Constructor"""

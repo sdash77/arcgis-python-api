@@ -13,6 +13,7 @@ class InvitationManager(object):
     _gis = None
     _url = None
     _invites = None
+
     # ----------------------------------------------------------------------
     def __init__(self, url, gis):
         self._url = url

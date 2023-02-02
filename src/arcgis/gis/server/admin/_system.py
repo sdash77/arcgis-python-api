@@ -11,6 +11,7 @@ from arcgis.gis import GIS
 from arcgis.gis._impl._con import Connection
 from typing import Optional
 
+
 ########################################################################
 class SystemManager(BaseServer):
     """
@@ -24,6 +25,7 @@ class SystemManager(BaseServer):
     _con = None
     _url = None
     _resources = None
+
     # ----------------------------------------------------------------------
     def __init__(self, url: str, gis: GIS, initialize: bool = False):
         """
@@ -612,6 +614,7 @@ class PlatformServiceManager(BaseServer):
     _url = None
     _json = None
     _json_dict = None
+
     # ----------------------------------------------------------------------
     def __init__(self, url: str, connection: Connection, initialize: bool = False):
         """
@@ -726,6 +729,7 @@ class PlatformService(BaseServer):
 
     _url = None
     _con = None
+
     # ----------------------------------------------------------------------
     def __init__(self, url: str, connection: Connection, initialize: bool = False):
         """
@@ -798,6 +802,7 @@ class ConfigurationStore(BaseServer):
     _url = None
     _json = None
     _json_dict = None
+
     # ----------------------------------------------------------------------
     def __init__(self, url: str, connection: Connection, initialize: bool = False):
         """
@@ -922,6 +927,7 @@ class Jobs(BaseServer):
     _jobs = None
     _json_dict = None
     _url = None
+
     # ----------------------------------------------------------------------
     def __init__(self, url: str, connection: Connection, initialize: bool = False):
         """
@@ -1088,6 +1094,7 @@ class ServerProperties(BaseServer):
     _url = None
     _json = None
     _json_dict = None
+
     # ----------------------------------------------------------------------
     def __init__(self, url: str, connection: Connection, initialize: bool = False):
         """
@@ -1367,6 +1374,7 @@ class ServerDirectory(BaseServer):
     _maxFileAge = None
     _description = None
     _virtualPath = None
+
     # ----------------------------------------------------------------------
     def __init__(self, url: str, connection: Connection, initialize: bool = False):
         """

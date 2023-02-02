@@ -7,6 +7,7 @@ from arcgis._impl.common._utils import _validate_url
 
 _log = logging.getLogger()
 
+
 # -------------------------------------------------------------------------
 def _gp_travel_mode(gis: GIS, travel_mode: str = None) -> str:
     """Calculates the travel mode via the GP Service"""

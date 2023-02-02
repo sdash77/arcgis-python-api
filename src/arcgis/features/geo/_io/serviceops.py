@@ -4,6 +4,7 @@ from arcgis.geometry import Geometry
 import numpy as np
 import pandas as pd
 
+
 # --------------------------------------------------------------------------
 def _chunks(l, n):
     """yield successive n-sized chunks from l."""
@@ -48,6 +49,7 @@ else:
         "esriFieldTypeXML": object,
     }
 
+
 # --------------------------------------------------------------------------
 def to_featureset(df):
     """converts a pd.DataFrame to a FeatureSet Object"""
@@ -90,7 +92,6 @@ def from_featureset(fset, sr=None):
         pandas_dtypes = {}
         for fld in fset.fields:
             if fld["name"].lower() != "shape":
-
                 if "type" in fld:
                     pandas_dtypes[fld["name"]] = _look_up_types[fld["type"]]
                 elif "fieldType" in fld:

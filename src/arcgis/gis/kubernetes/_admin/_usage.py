@@ -23,6 +23,7 @@ class UsageStatistics:
     _gis = None
     _url = None
     _properties = None
+
     # ---------------------------------------------------------------------
     def __init__(self, url: str, gis: GIS) -> None:
         """initializer"""
