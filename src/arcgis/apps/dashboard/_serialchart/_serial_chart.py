@@ -163,7 +163,6 @@ class SerialChart(_BaseWidget):
         return self._no_data
 
     def _convert_to_json(self):
-
         common_graph_properties = {
             "lineColorField": "_lineColor_",
             "fillColorsField": "_fillColor_",

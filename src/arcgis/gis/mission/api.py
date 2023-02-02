@@ -18,6 +18,7 @@ class MissionJob(object):
     _url = None
     _con = None
     _gis = None
+
     # ---------------------------------------------------------------------
     def __init__(self, url: str, gis: "GIS", **kwargs) -> "MissionJob":
         self._url = url
@@ -47,7 +48,6 @@ class MissionJob(object):
     # ---------------------------------------------------------------------
     @property
     def status(self) -> object:
-
         """
         Returns the status
 
@@ -82,6 +82,7 @@ class Mission(object):
     _url = None
     _con = None
     _gis = None
+
     # ---------------------------------------------------------------------
     def __init__(self, url: str, gis: "GIS", **kwargs) -> "Mission":
         self._url = url
@@ -220,6 +221,7 @@ class MissionCatalog:
     _url = None
     _admin = None
     _properties = None
+
     # ---------------------------------------------------------------------
     def __init__(self, gis: "GIS") -> "MissionCatalog":
         url = None

@@ -103,7 +103,6 @@ __all__ = [
 __version__ = "0.0.1"
 
 if HAS_FASTAI and HAS_TENSORFLOW:
-
     if ARCGIS_ENABLE_TF_BACKEND:
         defaults.device = torch.device("cpu")
 
@@ -127,6 +126,7 @@ if HAS_FASTAI and HAS_TENSORFLOW:
     tf.Tensor.item = lambda x: x.numpy()
     tf.Tensor.size = lambda x, axis: tf.shape(x)[axis].numpy()
     tf.Tensor.float = lambda x: tf.dtypes.cast(x, tf.float32)
+
 
 # Activation function for losses
 def noop(x):

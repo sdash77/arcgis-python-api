@@ -4,6 +4,7 @@ from arcgis.gis import GIS, Item
 from arcgis._impl.common._mixins import PropertyMap
 import concurrent.futures
 
+
 ########################################################################
 class NotebookManager(object):
     """
@@ -17,6 +18,7 @@ class NotebookManager(object):
     _properties = None
     _nbs = None
     _snapshot = None
+
     # ----------------------------------------------------------------------
     def __init__(self, url, gis, nbs):
         """Constructor"""
@@ -438,6 +440,7 @@ class Runtime(object):
     _url = None
     _gis = None
     _properties = None
+
     # ----------------------------------------------------------------------
     def __init__(self, url, gis):
         """Constructor"""
@@ -549,7 +552,6 @@ class Runtime(object):
         import json
 
         for k in list(params.keys()):
-
             if params[k] is None and k in self.properties:
                 params[k] = self.properties[k]
             elif params[k] is None:
@@ -600,6 +602,7 @@ class Notebook(object):
     _item_id = None
     _properties = None
     _gis = None
+
     # ----------------------------------------------------------------------
     def __init__(self, url, item_id, properties=None, gis=None):
         self._url = url + "/%s" % item_id

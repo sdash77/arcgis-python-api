@@ -42,6 +42,8 @@ You need to a security question by integer:
 13. What is your dream job?
 14. Where did you go on your first date?
 """
+
+
 # -------------------------------------------------------------------------
 @lru_cache(maxsize=255)
 def _token_url_validator(
@@ -61,7 +63,6 @@ def _token_url_validator(
         warnings.simplefilter("ignore")
         for pt in parts:
             try:
-
                 resp = session.get(
                     f"{parsed_url}{pt}?f=json",
                     proxies=proxies,
@@ -428,6 +429,7 @@ class EsriBuiltInAuth(AuthBase, SupportMultiAuth):
     _response_type = None
     _client = None
     _expiration = None
+
     # ----------------------------------------------------------------------
     def __init__(
         self,
@@ -646,7 +648,6 @@ class EsriBuiltInAuth(AuthBase, SupportMultiAuth):
                     oauth_info = json.loads(js_object + "}")
                 break
         if oauth_info:
-
             oauth_state = oauth_info["oauth_state"]
         else:
             raise ArcGISLoginError(
@@ -884,7 +885,6 @@ class EsriBuiltInAuth(AuthBase, SupportMultiAuth):
             )
             self._init_response_type_token()
         else:
-
             self._auth_token = self._oauth.refresh_token(
                 token_url=self._token_url,
                 verify=self._verify_cert,
@@ -919,6 +919,7 @@ class EsriGenTokenAuth(AuthBase, SupportMultiAuth):
     _token = None
     _expires_on = None
     _portal_auth = None
+
     # ----------------------------------------------------------------------
     def __init__(
         self,
@@ -1108,7 +1109,6 @@ class EsriGenTokenAuth(AuthBase, SupportMultiAuth):
                 r.close()
                 prep = r.request.copy()
                 if self._legacy_auth and prep.method == "GET":
-
                     parsed = parse_url(prep.url)
                     url = urlunparse(
                         (
@@ -1124,7 +1124,6 @@ class EsriGenTokenAuth(AuthBase, SupportMultiAuth):
                     kv.pop("token", None)
                     prep.prepare_url(url=url, params=kv)
                 elif self._legacy_auth and prep.method == "POST":
-
                     data = parse_qs(prep.body)
                     data.pop("token", None)
                     prep.prepare_body(data, None, None)

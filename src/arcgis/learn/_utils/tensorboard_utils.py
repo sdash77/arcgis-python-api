@@ -332,7 +332,6 @@ class ArcGISTBCallback(
         return fig
 
     def _show_results_modified(self, rows=5, **kwargs):
-
         if rows > len(self._arcgis_model._data.valid_ds):
             rows = len(self._arcgis_model._data.valid_ds)
 
@@ -363,7 +362,6 @@ class ArcGISTBCallback(
                 self._arcgis_model._model_conf.transform_input(xb, transform_kwargs)
             )
         except Exception as e:
-
             if getattr(self._arcgis_model, "_is_fasterrcnn", False):
                 preds = []
                 for _ in range(xb.shape[0]):

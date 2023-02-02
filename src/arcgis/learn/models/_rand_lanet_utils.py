@@ -38,7 +38,6 @@ knn_search = partial(knn_search, omp=True)
 
 
 def input_dict(input_list, cfg, is_sqn=False):
-
     num_layers = cfg["num_layers"]
     inputs = {}
     inputs["xyz"] = []
@@ -103,7 +102,6 @@ def batch_preprocess_dict(batch_pc, cfg, is_sqn=False):
 
 
 def transform_data(input, target, sample_point_num, cfg, **kwargs):
-
     (
         input,
         point_nums,
@@ -379,7 +377,6 @@ class Att_pooling(nn.Module):
         self.mlp = Conv2d(d_in, d_out, kernel_size=(1, 1), bn=True)
 
     def forward(self, feature_set):
-
         att_activation = self.fc(feature_set)
         att_scores = F.softmax(att_activation, dim=3)
         f_agg = feature_set * att_scores

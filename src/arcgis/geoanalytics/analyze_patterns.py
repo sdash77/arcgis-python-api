@@ -30,6 +30,8 @@ from ._util import (
 _log = _logging.getLogger(__name__)
 
 _use_async = True
+
+
 # --------------------------------------------------------------------------
 def forest(
     input_layer: Union[
@@ -1021,7 +1023,6 @@ def find_point_clusters(
         params["future"] = True
         gpjob = tbx.find_point_clusters(**params)
         if future:
-
             return GAJob(gpjob=gpjob, return_service=output_service)
         gpjob.result()
         return output_service
@@ -1537,7 +1538,6 @@ def find_hot_spots(
         params["future"] = True
         gpjob = tbx.find_hot_spots(**params)
         if future:
-
             return GAJob(gpjob=gpjob, return_service=output_service)
         gpjob.result()
         return output_service

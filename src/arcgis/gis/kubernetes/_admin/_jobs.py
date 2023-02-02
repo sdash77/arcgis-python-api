@@ -8,6 +8,7 @@ class Job(_BaseKube):
     """A Kubernetes asynchronous opertion"""
 
     _properties = None
+
     # ----------------------------------------------------------------------
     @property
     def properties(self) -> dict[str, Any]:

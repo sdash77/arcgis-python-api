@@ -15,6 +15,7 @@ _imagemgr = LazyLoader("arcgis.raster._layer")
 
 _log = logging.getLogger()
 
+
 ###########################################################################
 class AGOLServerManager:
     """
@@ -158,7 +159,6 @@ class AGOLServerManager:
                     url = f"{self._url}/{name}.{service['type']}"
                 serivce_type = service["type"].lower()
                 if serivce_type == "mapserver":
-
                     services.append(
                         _mapservermgr.MapImageLayerManager(url=url, gis=self._gis)
                     )
@@ -170,15 +170,12 @@ class AGOLServerManager:
                     )
 
                 elif serivce_type.find("vector") > -1:
-
                     services.append(
                         _mapservermgr.VectorTileLayerManager(url=url, gis=self._gis)
                     )
                 elif serivce_type == "sceneserver":
-
                     services.append(_scenemgr.SceneLayerManager(url=url, gis=self._gis))
                 elif serivce_type == "imageserver":
-
                     services.append(
                         _imagemgr.ImageryLayerCacheManager(url, gis=self._gis)
                     )

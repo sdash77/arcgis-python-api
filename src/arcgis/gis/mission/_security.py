@@ -3,6 +3,7 @@ import os
 from arcgis.gis import GIS
 from arcgis._impl.common._mixins import PropertyMap
 
+
 ########################################################################
 class SecurityManager(object):
     """
@@ -16,6 +17,7 @@ class SecurityManager(object):
     _url = None
     _gis = None
     _properties = None
+
     # ----------------------------------------------------------------------
     def __init__(self, url, gis):
         """Constructor"""

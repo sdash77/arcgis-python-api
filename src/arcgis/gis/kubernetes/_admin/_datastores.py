@@ -14,6 +14,7 @@ from typing import Dict, Any, List, Tuple
 
 class DataStore(_BaseKube):
     _parent = None
+
     # ----------------------------------------------------------------------
     def __init__(self, url, gis, parent, initialize=False):
         """Constructor
@@ -90,6 +91,7 @@ class DataStores(_BaseKube):
     _json_dict = None
     _json = None
     _properties = None
+
     # ----------------------------------------------------------------------
     def __init__(self, url, gis, initialize=False):
         """Constructor

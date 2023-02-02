@@ -13,6 +13,7 @@ from .._common import BaseServer
 from arcgis.gis import GIS
 from typing import Optional
 
+
 ########################################################################
 class Security(BaseServer):
     """
@@ -33,6 +34,7 @@ class Security(BaseServer):
     _json = None
     _um = None
     _rm = None
+
     # ----------------------------------------------------------------------
     def __init__(self, url: str, gis: GIS, initialize: bool = False):
         """Constructor
@@ -181,6 +183,7 @@ class UserManager(BaseServer):
     _json_dict = None
     _json = None
     _rm = None
+
     # ----------------------------------------------------------------------
     def __init__(self, url: str, gis: GIS, initialize: bool = False):
         """
@@ -585,6 +588,7 @@ class User(dict):
 
     _security = None
     _user_dict = None
+
     # ----------------------------------------------------------------------
     def __init__(self, usermanager: UserManager, user_dict: dict):
         """Constructor"""
@@ -609,7 +613,9 @@ class User(dict):
     # ----------------------------------------------------------------------
     def __getitem__(
         self, k: str
-    ) -> object:  # support user attributes as dictionary keys on this object, eg. user['role']
+    ) -> (
+        object
+    ):  # support user attributes as dictionary keys on this object, eg. user['role']
         try:
             return dict.__getitem__(self, k)
         except KeyError:
@@ -776,6 +782,7 @@ class RoleManager(BaseServer):
     _resources = None
     _json_dict = None
     _json = None
+
     # ----------------------------------------------------------------------
     def __init__(self, url: str, gis: GIS, initialize: bool = False):
         """
@@ -1254,6 +1261,7 @@ class Role(dict):
 
     _roledict = None
     _security = None
+
     # ----------------------------------------------------------------------
     def __init__(self, rolemanager: RoleManager, roledict: dict):
         """Constructor"""
@@ -1276,7 +1284,9 @@ class Role(dict):
     # ----------------------------------------------------------------------
     def __getitem__(
         self, k: str
-    ) -> object:  # support user attributes as dictionary keys on this object, eg. user['role']
+    ) -> (
+        object
+    ):  # support user attributes as dictionary keys on this object, eg. user['role']
         try:
             return dict.__getitem__(self, k)
         except KeyError:

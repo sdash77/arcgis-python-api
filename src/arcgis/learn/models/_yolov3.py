@@ -165,7 +165,6 @@ class YOLOv3(ArcGISModel):
     """
 
     def __init__(self, data=None, pretrained_path=None, **kwargs):
-
         self._check_dataset_support(data)
 
         if data is None:
@@ -903,7 +902,6 @@ class YOLOv3(ArcGISModel):
         return [save_path_tflite, save_path_onnx]
 
     def _get_emd_params(self, save_inference_file):
-
         class_data = {}
         _emd_template = {}
         _emd_template["Framework"] = "arcgis.learn.models._inferencing"

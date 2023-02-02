@@ -112,7 +112,6 @@ class Gauge(_BaseWidget):
             self._show_last_update = True
 
     def _convert_to_json(self):
-
         self._arrows = []
         self._bands = []
         self._axes = []

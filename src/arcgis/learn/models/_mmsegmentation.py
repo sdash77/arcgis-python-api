@@ -53,6 +53,7 @@ class MMSegmentationConfig:
         if self.os.path.exists(self.pathlib.Path(config)):
             cfg = mmcv.Config.fromfile(config)
             cfg.model.pretrained = None
+
             # changes normalizaion layers for custom cfg since by default mmseg config consider multigpu env
             def change_norm_layer(cfg):
                 for k, v in cfg.items():
@@ -109,9 +110,7 @@ class MMSegmentationConfig:
 
         @auto_fp16(apply_to=("img",))
         def forward_modified(self, img, img_metas=None, gt_semantic_seg=None):
-
             if self.training:
-
                 losses = self.forward_train(img, img_metas, gt_semantic_seg)
                 loss, log_vars = self._parse_losses(losses)
 
@@ -123,7 +122,6 @@ class MMSegmentationConfig:
 
         # default simple_test of the model from the original API should be modified to correctly work in test time.
         def simple_test_modified(self, img, img_meta, rescale=True):
-
             seg_logit = self.encode_decode(img, img_meta)
             return seg_logit
 
@@ -138,7 +136,6 @@ class MMSegmentationConfig:
         return model
 
     def on_batch_begin(self, learn, model_input_batch, model_target_batch, **kwargs):
-
         image_pad_shape = model_input_batch.permute(0, 2, 3, 1).shape[1:]
         image_scale_factor = self.numpy.array(
             [1.0, 1.0, 1.0, 1.0], dtype=self.numpy.float32
@@ -161,7 +158,6 @@ class MMSegmentationConfig:
             return model_input, model_target_batch
 
     def transform_input(self, xb):
-
         image_pad_shape = xb.permute(0, 2, 3, 1).shape[1:]
         image_scale_factor = self.numpy.array(
             [1.0, 1.0, 1.0, 1.0], dtype=self.numpy.float32
@@ -179,11 +175,9 @@ class MMSegmentationConfig:
         return model_input
 
     def transform_input_multispectral(self, xb):
-
         return self.transform_input(xb)
 
     def loss(self, model_output, *model_target):
-
         if not self.model.training:
             if self.cfg.model.type == "CascadeEncoderDecoder":
                 losses = 0.0
@@ -246,7 +240,6 @@ class MMSegmentation(ModelExtension):
     """
 
     def __init__(self, data, model, model_weight=False, pretrained_path=None, **kwargs):
-
         self._check_dataset_support(data)
 
         self._ignore_classes = kwargs.get("ignore_classes", [])
@@ -429,7 +422,6 @@ class MMSegmentation(ModelExtension):
         return cls(data, pretrained_path=str(model_file), **kwargs)
 
     def show_results(self, rows=5, thresh=0.5, thinning=True, **kwargs):
-
         """
         Displays the results of a trained model on a part of the validation set.
         """

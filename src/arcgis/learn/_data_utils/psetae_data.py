@@ -169,7 +169,6 @@ class PSATAEDataset(data.Dataset):
             mask = np.ones(self.npixel)
 
         elif x0.shape[-1] < self.npixel:
-
             if x0.shape[-1] == 0:
                 x = np.zeros((*x0.shape[:2], self.npixel))
                 mask = np.zeros(self.npixel)
@@ -254,7 +253,6 @@ image_extensions = set(
 
 
 def create_train_val_sets(path, val_split_pct, working_dir, **kwargs):
-
     path = Path(path)
     images, labels = os.path.join(path, "images"), os.path.join(path, "labels")
     label_folds = [file for file in os.listdir(labels)]

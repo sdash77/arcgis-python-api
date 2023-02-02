@@ -46,7 +46,6 @@ def change_spatial_reference(
 
     # if a spatial reference is explicitly provided, but the data does not have one set, use the one provided
     elif input_spatial_reference is not None:
-
         # check the input
         assert isinstance(input_spatial_reference, int) or isinstance(
             input_spatial_reference, SpatialReference
@@ -63,7 +62,6 @@ def change_spatial_reference(
     # if the spatial reference is not set, common for data coming from geojson, check if values are in lat/lon
     # range, and if so, go with WGS84, as this is likely the case if in this range
     else:
-
         # get the bounding values for the data
         x_min, y_min, x_max, y_max = input_dataframe.spatial.full_extent
 
@@ -93,19 +91,16 @@ def change_spatial_reference(
 
     # if a transformation was not explicitly provided, see if one is needed
     if transformation_name is None:
-
         # variable for saving the transformations if needed
         trns_lst = []
 
         # if arcpy is available, use it to find the transformation
         if arcpy_avail:
-
             # get any necessary transformations using arcpy, which returns only a list of transformation names
             trns_lst = arcpy.ListTransformations(in_sr.as_arcpy, out_sr.as_arcpy)
 
         # otherwise we will have to use the geometry rest endpoint to find transformations
         elif transformation_name is None:
-
             # explicitly ensure find_transformations has a gis instance
             gis = active_gis if active_gis else GIS()
 

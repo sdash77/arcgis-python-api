@@ -132,7 +132,6 @@ class DatePicker(object):
         self.label = label
 
     def _convert_to_json(self):
-
         if self._selection_type == "range":
             self._operator_logic = "between"
         else:
@@ -211,7 +210,6 @@ class NumberSelector(object):
     def __init__(
         self, range=False, display_type="spinner", label="Select a number", **kwargs
     ):
-
         self._json = {}
         self._display_type = display_type
         self.type = "numberSelectorWidget"
@@ -382,7 +380,6 @@ class NumberSelector(object):
         }
 
     def _convert_to_json(self):
-
         # self._dataset = {
         #     "type": "serviceDataset",
         #     "dataSource": {

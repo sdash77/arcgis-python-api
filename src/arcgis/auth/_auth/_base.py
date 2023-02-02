@@ -1,6 +1,7 @@
 from requests.auth import AuthBase
 from requests import PreparedRequest, Response
 
+
 ###########################################################################
 class BaseEsriAuth(AuthBase):
     """

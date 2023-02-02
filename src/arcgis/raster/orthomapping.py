@@ -29,7 +29,6 @@ from arcgis.geoprocessing._support import (
 
 
 def _execute_task(gis, taskname, params):
-
     gptool_url = gis.properties.helperServices.orthoMapping.url
     gptool = arcgis.gis._GISResource(gptool_url, gis)
     task = taskname
@@ -432,6 +431,8 @@ def append_control_points(image_collection, control_points, gis = None):
     _execute_task(gis, task, None)
     return
 """
+
+
 ###################################################################################################
 ## Match control points
 ###################################################################################################

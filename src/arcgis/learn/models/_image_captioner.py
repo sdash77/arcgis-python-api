@@ -79,7 +79,6 @@ class ImageCaptioner(ArcGISModel):
     """
 
     def __init__(self, data, backbone=None, pretrained_path=None, **kwargs):
-
         if not HAS_FASTAI:
             raise_fastai_import_error(
                 import_exception=import_exception, message="", installation_steps=" "
@@ -110,7 +109,6 @@ class ImageCaptioner(ArcGISModel):
 
     @classmethod
     def from_model(cls, emd_path, data=None):
-
         """
         Creates a ImageCaptioner model from an Esri Model Definition (EMD)
         file.

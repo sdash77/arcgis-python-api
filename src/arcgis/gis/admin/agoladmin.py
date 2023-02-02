@@ -9,6 +9,7 @@ from ._resources import PortalResourceManager
 from ._base import BasePortalAdmin
 from ...apps.tracker._location_tracking import LocationTrackingManager
 
+
 ########################################################################
 class AGOLAdminManager(object):
     """
@@ -38,6 +39,7 @@ class AGOLAdminManager(object):
     _category_schema = None
     _certificates = None
     _servers = None
+
     # ----------------------------------------------------------------------
     def __init__(self, gis, ux=None, metadata=None, collaborations=None):
         """initializer"""

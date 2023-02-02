@@ -3,6 +3,7 @@
 from __future__ import absolute_import
 from .._common._base import BaseServer
 
+
 ########################################################################
 class GeoData(BaseServer):
     """
@@ -18,6 +19,7 @@ class GeoData(BaseServer):
     _replicas = None
     _serviceDescription = None
     _versions = None
+
     # ----------------------------------------------------------------------
     @property
     def replicasResource(self):
