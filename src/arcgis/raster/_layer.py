@@ -13774,7 +13774,7 @@ class RasterCollection:
 
     def reduce(self, func, func_args={}):
         """
-        The ``reduce`` method composite all the images in the collection to a single image based on a reducer function.
+        The ``reduce`` method composites all the images in the collection to a single image based on a reducer function.
 
         ====================================     ====================================================================
         **Parameter**                            **Description**
@@ -13782,7 +13782,7 @@ class RasterCollection:
         func                                     Required. The Python function to reduce the raster collection.
                                                  The function should accept a list of rasters and return a single reduced raster
         ------------------------------------     --------------------------------------------------------------------
-        func_args                                Optional dictionary. Additional paramters to be passed the reducer function.
+        func_args                                Optional dictionary. Additional paramters to be passed to the reducer function.
         ====================================     ====================================================================
 
         :return: a ``Raster`` object
@@ -13814,7 +13814,7 @@ class RasterCollection:
 
     def merge(self, collection2):
         """
-        The ``merge`` method merges two image collections into one. The output has all the items that were in either collection.
+        The ``merge`` method merges two `RasterCollections` into one. The output has all the items that were in either collection.
 
         ====================================     ====================================================================
         **Parameter**                            **Description**
@@ -13948,7 +13948,7 @@ class RasterCollection:
         context: Optional[dict[str, Any]] = None,
     ):
         """
-        Adds a new field to the raster collection and populate it with values.
+        Adds a new field to the raster collection and populates it with values.
 
         ====================================     ====================================================================
         **Parameter**                             **Description**
@@ -13995,7 +13995,7 @@ class RasterCollection:
         ====================================     ====================================================================
         **Parameter**                             **Description**
         ------------------------------------     --------------------------------------------------------------------
-        field_name                               Required string.The name of the field that is used to group the raster collection.
+        field_name                               Required string. The name of the field that is used to group the raster collection.
                                                  Items with the same field values will be grouped together.
         ------------------------------------     --------------------------------------------------------------------
         context                                  Optional dictionary. Additional properties to control the creation of RasterCollection.
