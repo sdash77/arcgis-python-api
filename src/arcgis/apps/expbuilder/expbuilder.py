@@ -211,7 +211,9 @@ class WebExperience(object):
     ):
         """
         This method will save your Web Experience to your active GIS. The experience will be saved
-        with unpublished changes unless the `publish` parameter is set to True.
+        with unpublished changes unless the `publish` parameter is set to True. Note that this is
+        different from the `publish()` method in that this will save and publish the unsaved draft
+        of the WebExperience object, as opposed to the already existing save state.
 
         The title only needs to be specified if a change is wanted, otherwise the existing title
         is used.
@@ -295,7 +297,8 @@ class WebExperience(object):
     def view(self, width: Optional[int] = 800, height: Optional[int] = 500):
         """
         Shows the currently published experience, if possible. Default width is 800 and default
-        height is 500.
+        height is 500. Note that this displays the actively published version of the
+        WebExperience object; to visualize unsaved changes, `preview()` should be used.
 
         ===============     ====================================================================
         **Argument**        **Description**
@@ -415,8 +418,10 @@ class WebExperience(object):
     # ----------------------------------------------------------------------
     def publish(self, access: str = None):
         """
-        Publishes the currently saved version of the experience. Leaves unsaved changes intact,
+        Publishes the last saved version of the experience. Leaves unsaved changes intact,
         but doesn't publish them. Also allows user to set access level of published experience.
+        Note that if a user wishes to publish the draft version of the WebExperience they're
+        working on, they should do that through the `save()` method.
 
         :return:
             A boolean indicating the success of the operation.
@@ -444,6 +449,8 @@ class WebExperience(object):
     def preview(self, width: Optional[int] = 800, height: Optional[int] = 500):
         """
         Show a preview of the current experience draft. The default is a width of 800 and height of 500.
+        Note that this should be used to visualize unsaved changes to the WebExperience object; to see
+        the actively published version of the object, `view()` should be used.
 
         ===============     ====================================================================
         **Argument**        **Description**
