@@ -1665,7 +1665,6 @@ class ScannedMapDigitizer:
 
     @classmethod
     def set_search_region_extent(cls, extent):
-
         """
         Creates the object for :class:`~arcgis.learn.ScannedMapDigitizer` class
 
@@ -2101,7 +2100,6 @@ class ScannedMapDigitizer:
 
     @classmethod
     def georeference_image(cls, padding_param, show_result=True):
-
         """
         This method estimates the control point pairs by traversing the
         contours of template image and finding the corresponding matches
@@ -2293,7 +2291,6 @@ class ScannedMapDigitizer:
 
     @classmethod
     def digitize_image(cls, show_result=True):
-
         """
         This method is the final step in the pipeline that maps the
         species regions on the search image using the computed

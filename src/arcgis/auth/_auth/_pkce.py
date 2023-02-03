@@ -11,6 +11,7 @@ import base64
 from arcgis.auth.tools import parse_url
 from urllib.parse import parse_qs
 
+
 ###########################################################################
 class EsriPKCEAuth(BaseEsriAuth):
     """Implements OAuth 2.0 PKCE Workflow"""
@@ -28,6 +29,7 @@ class EsriPKCEAuth(BaseEsriAuth):
     _expiration = None
     _expires_in = None
     _tokens = None
+
     # ---------------------------------------------------------------------
     def __init__(
         self, url: str, username: str, password: str, *, legacy: bool = False, **kwargs

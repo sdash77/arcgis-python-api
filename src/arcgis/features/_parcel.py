@@ -88,7 +88,6 @@ class ParcelFabricManager(object):
     def properties(self):
         """returns the properties of the service"""
         if self._properties is None:
-
             res = self._con.get(self._url, {"f": "json"})
             self._properties = PropertyMap(res)
         return self._properties

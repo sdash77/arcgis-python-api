@@ -8,6 +8,7 @@ from ...gis import GIS
 from ...gis import Group, GroupManager
 from ._base import BasePortalAdmin
 
+
 ########################################################################
 class LivingAtlas(BasePortalAdmin):
     """
@@ -98,6 +99,7 @@ class LivingAtlas(BasePortalAdmin):
     _living_atlas_group = None
     _living_atlas_content_group = None
     _groups = None
+
     # ----------------------------------------------------------------------
     def __init__(self, url, gis):
         """Constructor"""

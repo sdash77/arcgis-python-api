@@ -675,7 +675,6 @@ class NearestNeighborDistanceMetric(object):
     """
 
     def __init__(self, metric, matching_threshold, budget=None):
-
         if metric == "euclidean":
             self._metric = _nn_euclidean_distance
         elif metric == "cosine":
@@ -1152,7 +1151,6 @@ class Tracker:
 def get_corrected_labels_scores(
     labels=None, scores=None, target_len=0, default_label="Object", default_score=1.0
 ):
-
     if labels is None:
         labels = [default_label] * target_len
     elif len(labels) < target_len:
@@ -1252,7 +1250,6 @@ class Detection(object):
 
 class DeepSortPredictor(object):
     def __init__(self, model, cfg, device, update_interval):
-
         self.min_confidence = cfg["min_confidence"]
         self.nms_max_overlap = cfg["nms_max_overlap"]
         self._update_interval = update_interval

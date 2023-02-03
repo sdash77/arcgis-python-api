@@ -154,7 +154,6 @@ def batch_to_tile(batch, batch_height, batch_width):
 
 class ChildInstanceDetector:
     def initialize(self, model, model_as_file):
-
         if not HAS_TORCH:
             raise Exception(
                 "PyTorch is not installed. Install it using conda install -c pytorch pytorch torchvision"
@@ -293,7 +292,6 @@ class ChildInstanceDetector:
         }
 
     def vectorize(self, **pixelBlocks):  # 8 x 3 x 224 x 224
-
         input_image = pixelBlocks["raster_pixels"].astype(np.float32)
         batch, batch_height, batch_width = tile_to_batch(
             input_image,
@@ -328,7 +326,6 @@ class ChildInstanceDetector:
 def predict_mask_rcnn(
     model, images, device, chip_size, threshold=0.5, use_tta=False, merge_policy="mean"
 ):
-
     model = model.to(device)
     normed_batch_tensor = torch.tensor(images).to(device).float()
     if use_tta:
@@ -353,7 +350,6 @@ def pixel_mask_image(
     use_tta=False,
     merge_policy="mean",
 ):
-
     side = int(math.sqrt(batch_size))
 
     predictions = predict_mask_rcnn(

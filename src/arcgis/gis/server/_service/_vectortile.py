@@ -12,6 +12,7 @@ import tempfile
 from typing import Optional
 from .._common._base import BaseServer
 
+
 ########################################################################
 class VectorTile(BaseServer):
     """

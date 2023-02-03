@@ -23,6 +23,7 @@ class Job(object):
     _start_time = None
     _end_time = None
     _verbose = None
+
     # ----------------------------------------------------------------------
     def __init__(
         self,
@@ -166,7 +167,6 @@ class GeometryJob(Job):
             sr = {"spatialReference": {"wkid": self._wkid}}
             res = self._future.result()
             if isinstance(res, (list, tuple)):
-
                 [g.update(sr) for g in res if not "spatialReference" in g]
                 return [Geometry(g) for g in res]
             elif isinstance(res, dict) and not "spatialReference" in res:
@@ -187,6 +187,7 @@ class ItemStatusJob(Job):
     _start_time = None
     _end_time = None
     _verbose = None
+
     # ----------------------------------------------------------------------
     def __init__(
         self,
@@ -197,7 +198,6 @@ class ItemStatusJob(Job):
         notify=False,
         gis=None,
     ):
-
         executor = concurrent.futures.ThreadPoolExecutor(1)
         future = executor.submit(self._status, *(item, jobid, job_type))
         executor.shutdown(False)

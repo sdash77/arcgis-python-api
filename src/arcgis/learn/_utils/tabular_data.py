@@ -84,7 +84,6 @@ class TabularDataObject(object):
         index_field=None,
         column_transforms_mapping=None,
     ):
-
         if not HAS_FASTAI:
             return
 
@@ -1917,7 +1916,6 @@ class TabularDataObject(object):
         batch_size=64,
         is_classification=False,
     ):
-
         if procs is None:
             procs = [Categorify, Normalize]
             fm = FillMissing(
@@ -2101,7 +2099,6 @@ def add_h3(sdf, cell_sizes):
             "polygon" in sdf.spatial.geometry_type
             or "point" in sdf.spatial.geometry_type
         ):
-
             try:
                 sdf = point_to_h3(sdf, cell_sizes)
             except:
@@ -2116,7 +2113,6 @@ def point_to_h3(sdf, cell_sizes):
         h3_id = []
 
         if "polygon" in sdf.spatial.geometry_type:
-
             for poly in sdf["SHAPE"]:
                 centroid = poly.centroid
                 h3_id.append(h3.geo_to_h3(centroid[1], centroid[0], res))

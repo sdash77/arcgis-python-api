@@ -18,7 +18,6 @@ from arcgis.geometry import Geometry
 
 
 try:
-
     arcpy = LazyLoader("arcpy", strict=True)
     HASARCPY = True
 except:
@@ -672,7 +671,6 @@ def from_featureclass(filename, **kwargs):
     ):
         filename = filename
     else:
-
         filename = _ensure_path_string(filename)
         if not isinstance(filename, (str, Path, PurePath)):
             raise ValueError(
@@ -815,7 +813,6 @@ def from_featureclass(filename, **kwargs):
     ):
         is_gdb = os.path.dirname(filename).lower().find(".gdb") > -1
         if is_gdb:
-
             # Remove deprecation warning.
             fiona_env = fiona.drivers
             if hasattr(fiona, "Env"):
@@ -1059,7 +1056,6 @@ def to_featureclass(
             smaller_array = [np.array([], np.dtype(d)) for d in smaller_dtypes]
             for array in smaller_array:
                 try:
-
                     arcpy.da.ExtendTable(
                         fc, oidfld, array, join_dummy, append_only=False
                     )

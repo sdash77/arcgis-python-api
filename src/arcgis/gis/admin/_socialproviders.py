@@ -4,6 +4,7 @@ Configures Social Providers for a Portal or ArcGIS Online
 from arcgis.gis import GIS
 from arcgis._impl.common._mixins import PropertyMap
 
+
 ########################################################################
 class SocialProviders(object):
     """
@@ -24,6 +25,7 @@ class SocialProviders(object):
     _gis = None
     _portal = None
     _properties = None
+
     # ----------------------------------------------------------------------
     def __init__(self, gis):
         """Constructor"""

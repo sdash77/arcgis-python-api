@@ -5,7 +5,6 @@ import fastai
 precondition = True
 
 if fastai.__version__ == "1.0.60":
-
     import fastai.vision.image
     from fastai.vision.image import Image, plt, image2np
     from .common import ArcGISMSImage

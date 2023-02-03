@@ -1056,7 +1056,6 @@ def geocode_from_items(
         if gis._con.token:
             kwargs["input_table"]["serviceToken"] = gis._con.token
         if geocode_parameters is None:
-
             kwargs["geocode_parameters"] = analyze_geocode_input(
                 input_table_or_item=lyr,
                 geocode_service_url=geocode_service_url,
@@ -1096,7 +1095,6 @@ def geocode_from_items(
         "XLSX",
         "xlsx",
     ]:
-
         if header_rows_to_skip is None:
             hre = "false"
         else:
@@ -1110,7 +1108,6 @@ def geocode_from_items(
         output_type = "Feature Service"
         kwargs["output_type"] = "Feature Service"
         if output_name is None:
-
             kwargs["output_name"] = {
                 "serviceProperties": {"name": "Geocoded_Feature_Service_%s" % uid}
             }

@@ -122,6 +122,7 @@ class SnapshotManager(object):
     _gis = None
     _url = None
     _properties = None
+
     # ----------------------------------------------------------------------
     def __init__(self, url, gis):
         self._url = url

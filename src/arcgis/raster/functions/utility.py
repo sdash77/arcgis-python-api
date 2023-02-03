@@ -330,7 +330,6 @@ def _get_raster_url(raster, layer):
 
 
 def _get_raster_ra(raster):
-
     if isinstance(raster, (ImageryLayer, Raster)):
         try:
             url = raster._url
@@ -498,7 +497,6 @@ def _find_object_ref(rft_dict, record, instance):
 
 
 def _replace_object_id(rft_dict, record):
-
     if isinstance(rft_dict, dict):
         if "_object_ref_id" in rft_dict.keys():
             ref_value = record[rft_dict["_object_ref_id"]]

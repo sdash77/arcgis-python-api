@@ -125,7 +125,6 @@ imagery_type_lib = {
 
 
 def get_installation_command():
-
     installation_steps = (
         "\nPlease install all required dependencies by following the"
         " instructions at: \nhttps://developers.arcgis.com/python/guide/install-and-set-up/#Install"
@@ -2083,7 +2082,6 @@ def prepare_data(
 
     ## Create databunch for Panoptic Segmentation
     elif dataset_type == "Panoptic_Segmentation":
-
         if class_mapping.get(0):
             del class_mapping[0]
 

@@ -810,7 +810,6 @@ class Pix2PixHDLoss(nn.Module):
         return self.p2p_model.D.forward(input_concat)
 
     def forward(self, output, target):
-
         fake_image = output[0]
 
         # Real Detection and Loss
@@ -927,7 +926,6 @@ class Pix2PixHDTrainer(LearnerCallback):
             self.G_l1_smter.add_value(self.loss_func.loss_G_l1.detach().cpu())
 
     def on_batch_end(self, last_input, last_output, **kwargs):
-
         self.G.zero_grad()
         fake_image = last_output[0].detach()
         input_label, real_image = last_input

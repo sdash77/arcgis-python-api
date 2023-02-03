@@ -879,7 +879,6 @@ class MLModel(object):
                 explain = False
                 explain_index = None
         if prediction_type in ["features", "dataframe"]:
-
             if input_features is None:
                 raise Exception("Feature Layer required for predict_features=True")
 
@@ -1045,7 +1044,6 @@ class MLModel(object):
         output_layer_name=None,
         gis=None,
     ):
-
         if not os.path.exists(os.path.dirname(output_folder_path)):
             raise Exception("Output directory doesn't exist")
 

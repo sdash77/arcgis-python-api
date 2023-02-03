@@ -3,6 +3,7 @@ import os
 from arcgis.gis import GIS
 from arcgis._impl.common._mixins import PropertyMap
 
+
 ########################################################################
 class SiteManager(object):
     """

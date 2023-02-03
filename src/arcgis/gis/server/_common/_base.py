@@ -11,6 +11,7 @@ from ..._impl._con import Connection
 from arcgis.gis import GIS
 from arcgis._impl.common._mixins import PropertyMap
 
+
 ###########################################################################
 class BaseServer(object):
     """class most server object inherit from"""

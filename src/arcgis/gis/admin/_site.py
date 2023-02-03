@@ -1,6 +1,7 @@
 from typing import Optional
 from ._base import BasePortalAdmin
 
+
 ########################################################################
 class Site(BasePortalAdmin):
     """
@@ -15,6 +16,7 @@ class Site(BasePortalAdmin):
     _properties = None
     _json = None
     _json_dict = None
+
     # ----------------------------------------------------------------------
     def __init__(self, url, portaladmin, **kwargs):
         """Constructor"""

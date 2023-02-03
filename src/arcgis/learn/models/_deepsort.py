@@ -69,7 +69,6 @@ class DeepSort(ArcGISModel):
     # TODO: kwargs description
 
     def __init__(self, data, **kwargs):
-
         if not HAS_FASTAI:
             raise_fastai_import_error(import_exception=import_exception)
 

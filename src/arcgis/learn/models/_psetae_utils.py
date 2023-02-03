@@ -292,7 +292,6 @@ class TemporalAttentionEncoder(nn.Module):
         self.dropout = nn.Dropout(dropout)
 
     def forward(self, x):
-
         sz_b, seq_len, d = x.shape
 
         x = self.inlayernorm(x)

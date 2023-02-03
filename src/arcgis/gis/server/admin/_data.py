@@ -529,10 +529,8 @@ class DataStoreManager(BaseServer):
         """
         res = self._register_data_item(item=item)
         if res["status"] == "success" or res["status"] == "exists":
-
             return Datastore(self, item["path"])
         else:
-
             return res
 
     # ----------------------------------------------------------------------
