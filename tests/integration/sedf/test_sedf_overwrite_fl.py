@@ -1837,6 +1837,25 @@ class TestSeDFOverwrite(unittest.TestCase):
             for related_item in related_items:
                 related_item.delete()
             updated_item.delete()
+    
+    def test_insert_table(self):
+        for profile in profiles:
+            #establish connection
+            gis = GIS(profile=profile, verify_cert=False)
+            print("User: ", gis.users.me.username)
+            if gis._is_agol:
+                table_item = gis.content.get("78aafb7632864f4dbd6e44eccb2610e1")
+            else:
+                table_item = gis.content.get("7147fdcab0654e5e8c9a60ecabb0b977")
+            tbl_df = pd.DataFrame.spatial.from_layer(table_item.tables[0])
+            tbl_df["pop2000"][18] = 8000
+            tbl_df["pop2007"][18] = 10000
+            tbl_df.iloc[15:19]
+            updated_item = tbl_df.spatial.to_featurelayer(
+                overwrite=True,
+                service={"featureServiceId": table_item.id, "layer": 0},
+            )
+            assert len(table_item.layers) == len(updated_item.layers)   
 
 
 if __name__ == "__main__":
