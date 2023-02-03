@@ -176,21 +176,77 @@ def add_flight(project_item,
         params = {"f": "json"}
         job_response = gis._con.post(job_url, params)
 
-    flight_json = {}  
+    flight_json = {'items': {'imageCollection': {}},
+    'jobs': {'imageCollection': {'checked': True,
+    'progress': 100,
+    'success': True},
+    'adjustment': {'checked': False, "mode":"Quick"},
+    'ortho': {'checked': False},
+    'matchControlPoint': {'checked': False},
+    'queryControlPoints': {'checked': False},
+    'computeControlPoints': {'checked': False},
+    'appendControlPoints': {'checked': False}},
+    'rasterType': 'UAV/UAS',
+    'cameraInfo': {},
+    'sourceData': {},
+    'processingSettings': {}}
     flight_json.update({"items":{"imageCollection":{"itemId": output_collection.itemid, "url":output_collection.url}}})
 
-    flight_json.update({"jobs":{"imageCollection": {"messages": job_response["messages"]} }})
+    flight_json['jobs']['imageCollection'].update({"messages": job_response["messages"]})
 
     flight_json.update({"rasterType":raster_type_name})
 
-    flight_json.update({"cameraInfo":raster_type_params["cameraProperties"]})        
+    flight_json.update({"cameraInfo":raster_type_params["cameraProperties"]}) 
+
+    gps_data = []
+    gps_info_list = ["name", "lat", "long", "alt"]
+
+    if "gps" in raster_type_params:
+        for ele in raster_type_params['gps']:
+            dict_gps = dict(zip(gps_info_list, ele))
+            gps_data.append(dict_gps)
+
+    flight_json.update({"sourceData":{"gps":gps_data}})
+
+    import tempfile, uuid, os
+
+    fname = "%s.json" % uuid.uuid4().hex
+    temp_dir = tempfile.gettempdir() 
+    temp_file = os.path.join(temp_dir, fname)
+    with open(temp_file , 'w') as writer:
+        json.dump(flight_json, writer)
+    del writer
+
+    json_inp = {'items': {'imageCollection': None, 'ortho': None},
+    'jobs': {'imageCollection': {'checked': True},
+    'adjustment': {'checked': True, 'mode': 'Quick'},
+    'dsm': {'checked': False},
+    'dtm': {'checked': False},
+    'ortho': {'checked': False},
+    'matchControlPoint': {'checked': False},
+    'queryControlPoints': {'checked': False},
+    'computeControlPoints': {'checked': False},
+    'appendControlPoints': {'checked': False}},
+    'rasterType': 'UAV/UAS',
+    'cameraInfo': {},
+    'customProducts': [],
+    'sourceData': {},
+    'spatialReference': {},
+    'adjustSettings': {},
+    'processingSettings': {},
+    'mapping': {},
+    'projectVersion': 2,
+    'createTS': '',
+    'oid': 0,
+    'gcsExtent': {}}
 
     resource_manager = project_item.resources
 
     if not flight_name.endswith(".json"):
         flight_name = flight_name+".json"
     try:
-        resource_manager.add(file_name=flight_name, text=flight_json, properties={"oid":0,"imageCount":len(image_list),"items":[{"product":"imageCollection","id":output_collection.id,"created":True}],"gcpItems":[],"baStatus":"succeeded"}) 
+        resource_manager.add(file=temp_file, text=json_inp,folder_name="flights", properties={"oid":0,"imageCount":len(image_list),"items":[{"product":"imageCollection","id":output_collection.id,"created":True}],"gcpItems":[],"baStatus":"succeeded"})
+        project_item.update(data = json.dumps({"projectVersion":2,"rasterType":raster_type_name}))
     except:
         raise RuntimeError("Error adding the flight")
     return output_collection
