@@ -34,7 +34,6 @@ requests = LazyLoader("requests")
 
 
 class EsriWindowsAuth(AuthBase, SupportMultiAuth):
-
     _token_url = None
     _server_log = None
     _tokens = None
@@ -195,7 +194,6 @@ class EsriWindowsAuth(AuthBase, SupportMultiAuth):
 
 
 class EsriKerberosAuth(AuthBase, SupportMultiAuth):
-
     _token_url = None
     _server_log = None
     _tokens = None
@@ -242,7 +240,6 @@ class EsriKerberosAuth(AuthBase, SupportMultiAuth):
                     **kwargs,
                 )
             else:
-
                 self.auth = requests_kerberos.HTTPKerberosAuth(
                     mutual_authentication=mutual_auth, **kwargs
                 )

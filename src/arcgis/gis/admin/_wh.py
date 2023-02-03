@@ -321,6 +321,7 @@ class Webhook(object):
     _gis = None
     _url = None
     _properties = None
+
     # ----------------------------------------------------------------------
     def __init__(self, url, gis):
         """Constructor"""

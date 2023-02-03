@@ -96,7 +96,6 @@ class PanopticSegmentationLabelList(ImageList):
                     self.inst_lbl_files.append(os.path.join(root, file))
 
     def get(self, i):
-
         # Use the default method to open semantic labels
         semantics = super().get(i)
         # Create individual masks of all semantic segments
@@ -148,7 +147,6 @@ class PanopticSegmentationLabelList(ImageList):
 
     # Method to convert the semantics to individual masks and labels
     def create_semantic_masks(self, semantic):
-
         # Change the instance class pixels to -1
         for inst_cls in self.indexed_inst_classes:
             semantic = torch.where(
@@ -178,7 +176,6 @@ class PanopticSegmentationLabelList(ImageList):
 
     # Method to convert the instance label files to masks and labels
     def create_instance_masks(self, fn):
-
         masks = []
         labels = []
 

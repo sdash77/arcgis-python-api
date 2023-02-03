@@ -6,7 +6,6 @@ cv2 = LazyLoader("cv2")
 
 
 def _pad_image(image, stride):
-
     img_h = image.shape[0] + stride * 2
     img_w = image.shape[1] + stride * 2
 
@@ -84,7 +83,6 @@ def _get_transformed_predictions(chips_data):
     labels = []
     scores = []
     for chip_data in chips_data:
-
         for prediction in chip_data["predictions"]:
             prediction["xmin"] = prediction["xmin"] + chip_data["xmin"]
             prediction["ymin"] = prediction["ymin"] + chip_data["ymin"]

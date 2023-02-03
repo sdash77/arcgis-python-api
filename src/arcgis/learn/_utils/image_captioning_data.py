@@ -403,7 +403,6 @@ class ImageCaptioningDataset(Dataset):
         split,
         flip_vert,
     ):
-
         # set path and annotations
         self.root_path = Path(root_path)
 
@@ -768,7 +767,6 @@ def show_batch(self, rows=2, **kwargs):
 
 
 def show_results(self, rows, **kwargs):
-
     figsize = kwargs.get("figsize", (20, rows * 5))
     return_fig = kwargs.get("return_fig", False)
     show_coords = kwargs.get("show_coords", False)

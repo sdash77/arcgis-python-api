@@ -17,6 +17,7 @@ import datetime as _datetime
 from typing import Optional
 from arcgis.features.managers import WebHookScheduleInfo, WebHookEvents
 
+
 ########################################################################
 class ServiceManager(BaseServer):
     """
@@ -39,6 +40,7 @@ class ServiceManager(BaseServer):
     _isDefault = None
     _services = None
     _json = None
+
     # ----------------------------------------------------------------------
     def __init__(
         self,
@@ -1911,7 +1913,6 @@ class Service(BaseServer):
     # ----------------------------------------------------------------------
     @property
     def _jobs(self) -> "JobManager":
-
         """returns a `JobManager` to manage asynchronous geoprocessing tasks"""
 
         if self._jm is None:
@@ -1931,6 +1932,7 @@ class JobManager(BaseServer):
     _gis = None
     _url = None
     _properties = None
+
     # ----------------------------------------------------------------------
     def __init__(self, url: str, con: Connection):
         """Constructor"""
@@ -2043,6 +2045,7 @@ class Job(BaseServer):
     _con = None
     _url = None
     _properties = None
+
     # ----------------------------------------------------------------------
     def __init__(self, url: str, con: GIS):
         """Constructor"""

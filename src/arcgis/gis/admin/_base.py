@@ -7,6 +7,7 @@ from ...gis._impl._con import Connection
 from ...gis import GIS
 from ..._impl.common._mixins import PropertyMap
 
+
 ###########################################################################
 class BasePortalAdmin(object):
     _con = None

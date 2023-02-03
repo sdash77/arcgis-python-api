@@ -3,6 +3,7 @@ from __future__ import print_function
 import json
 from arcgis.geometry import Polygon, Polyline, Point, MultiPoint
 
+
 ########################################################################
 class StatisticFilter(object):
     """
@@ -71,6 +72,7 @@ class LayerDefinitionFilter(object):
     _ids = []
     _filterTemplate = {"layerId": "", "where": "", "outFields": "*"}
     _filter = []
+
     # ----------------------------------------------------------------------
     def __init__(self):
         """Constructor"""
@@ -155,6 +157,7 @@ class GeometryFilter(object):
         "esriSRUnit_NauticalMile",
         "esriSRUnit_USNauticalMile",
     ]
+
     # ----------------------------------------------------------------------
     def __init__(
         self,
@@ -246,6 +249,7 @@ class TimeFilter(object):
 
     _startTime = None
     _endTime = None
+
     # ----------------------------------------------------------------------
     def __init__(self, start_time, time_zone="UTC", end_time=None):
         """Constructor"""

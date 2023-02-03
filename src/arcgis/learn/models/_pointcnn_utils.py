@@ -415,7 +415,6 @@ class PointCNNSeg(nn.Module):
         ############## Encoder ################
         self.encoder_layers = nn.ModuleList([])
         for i in range(len(P)):
-
             self.encoder_layers.append(
                 ## in_channels is equal to num_extra_features for the first layer.
                 XConvDepthwise(
@@ -435,7 +434,6 @@ class PointCNNSeg(nn.Module):
         self.decoder_layers = nn.ModuleList([])
         self.densecat_layers = nn.ModuleList([])
         for j in reversed(range(len(P) - 1)):
-
             if P[j] == -1:
                 P[j] = sampled_num_points
 

@@ -1274,7 +1274,6 @@ class MapView(widgets.DOMWidget):
                 if hasattr(auth, "token")
             ]
             if len(tokens) > 0:
-
                 self._portal_token = str(tokens[0])
                 self._auth_mode = "tokenBased"
             else:
@@ -1384,7 +1383,6 @@ class MapView(widgets.DOMWidget):
                 self.extent = item.item.extent
 
     def _check_if_webscene(self, item):
-
         if isinstance(item, Item):
             if item.type.lower() == "web scene":
                 self.webscene_item = item
@@ -2646,7 +2644,8 @@ class MapView(widgets.DOMWidget):
         The ``start_time`` property is a representation of a `datetime.datetime` property.
         If `time_mode` == `"time-window"`,
         represents the lower bound 'thumb' of the time slider. For all other
-        `time_mode` values, ``start_time`` represents the single thumb on the time slider."""
+        `time_mode` values, ``start_time`` represents the single thumb on the time slider.
+        """
         date_as_iso = dateutil.parser.parse(self._readonly_start_time)
         date_local = date_as_iso.astimezone()
         return date_local

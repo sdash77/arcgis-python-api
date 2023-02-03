@@ -1799,7 +1799,6 @@ class ImageryLayer(Layer):
         return newlyr
 
     def _clone_layer(self):
-
         if type(self).__name__ == "Raster" or type(self).__name__ == "RasterCollection":
             newlyr = Raster(
                 self._url, is_multidimensional=self._is_multidimensional, gis=self._gis
@@ -4656,7 +4655,6 @@ class ImageryLayer(Layer):
         variable_field_name=None,
         dimension_field_names=None,
     ):
-
         """
         Opertion to get the multidimensional info.
         ==============================  ====================================================================
@@ -4781,7 +4779,6 @@ class ImageryLayer(Layer):
 
     @mosaic_rule.setter
     def mosaic_rule(self, value):
-
         self._mosaic_rule = value
 
     def _mosaic_operation(self, op):
@@ -5010,7 +5007,6 @@ class ImageryLayer(Layer):
         gr_output = None
 
         if for_viz:
-
             if g._con._auth.lower() != "ANON".lower() and g._con._auth is not None:
                 text_data = {
                     "id": "resultLayer",
@@ -5758,7 +5754,6 @@ class ImageryLayer(Layer):
         def _rft_draw_graph(
             G, gdict, gnodenumber, groot, show_attributes, **kwargs
         ):  # rft fnra
-
             global nodenumber, connect, root
             global dict_arg
 
@@ -6348,7 +6343,6 @@ class ImageryLayer(Layer):
         trend_order: Optional[int] = None,
         plot_properties: dict = {},
     ):
-
         """
         The ``temporal_profile`` method creates a temporal profile.
         A temporal profile serves as a basic analysis tool for imagery data in a time series.
@@ -6541,7 +6535,6 @@ class ImageryLayer(Layer):
                     mask_array = np.concatenate((mask_array, ele), axis=0)
             num_bands = self.band_count
             try:
-
                 if numarray.dtype != "uint8" or (
                     numarray.dtype == "float"
                     and (numarray.min() < 0 or 1 < numarray.max())
@@ -6858,7 +6851,6 @@ class ImageryLayer(Layer):
         show_values: bool = False,
         plot_properties: dict[str, Any] = {},
     ):
-
         """
         The ``spectral_profile`` method can be used to create spectral profile charts.
 
@@ -7201,7 +7193,6 @@ from arcgis.raster._util import (
 
 
 def _get_engine(engine):
-
     """
     Function to get the engine that will be used to process the Raster object.
 
@@ -8429,7 +8420,6 @@ class Raster:
     def set_colormap(
         self, color_map: Union[str, dict[str, Any]], variable_name: Optional[str] = None
     ):
-
         """
         The ``set_colormap`` method sets the color map for the raster.
 
@@ -9841,7 +9831,6 @@ class _ImageServerRaster(ImageryLayer, Raster):
             i = 0
             for slice in mdim_slices["slices"]:
                 for ele in slice["multidimensionalDefinition"]:
-
                     # if ele["values"][0][0]==ele["values"][0][1]:
                     #    if ele['dimensionName'] == 'StdTime' or ele['dimensionName'].lower() == 'time' or ele['dimensionName'].lower() == 'date' or  ele['dimensionName'].lower() == 'acquisitiondate' or ele['dimensionName'] == 'ISO8601':
                     #        slice_list[i].update({ele["dimensionName"]:_epoch_to_iso(ele["values"][0][0])})
@@ -11881,7 +11870,6 @@ class _ArcpyRaster(Raster, ImageryLayer):
 
 
 def _get_raster_collection_engine(engine):
-
     """
     Function to get the engine that will be used to process the Raster object.
 
@@ -14523,7 +14511,6 @@ class _ArcpyRasterCollection(RasterCollection, ImageryLayer):
         return reduced_raster
 
     def merge(self, collection2):
-
         newcollection = self._clone_raster_collection()
 
         newcollection._ras_coll_engine_obj._raster_collection = (
@@ -15294,7 +15281,6 @@ class _ImageServerRasterCollection(ImageryLayer, RasterCollection):
         return reduced_raster
 
     def merge(self, collection2):
-
         import pandas as pd
 
         rc1 = self._as_df()
@@ -15588,7 +15574,6 @@ class _LocalRasterCollection(ImageryLayer, RasterCollection):
                     with concurrent.futures.ThreadPoolExecutor(
                         max_workers=len(rasters)
                     ) as executor:
-
                         future_to_url = (
                             executor.submit(_get_shape, ele) for ele in arcgis_rasters
                         )
@@ -16313,7 +16298,6 @@ class _LocalRasterCollection(ImageryLayer, RasterCollection):
         return reduced_raster
 
     def merge(self, collection2):
-
         import pandas as pd
 
         rc1 = self._as_df()
@@ -16451,6 +16435,7 @@ class ImageryTileManager(object):
     _service = None
     _url = None
     _con = None
+
     # ----------------------------------------------------------------------
     def __init__(self, imglyr):
         """Constructor"""
@@ -17266,6 +17251,7 @@ class RasterManager(object):
     """
 
     _service = None
+
     # ----------------------------------------------------------------------
     def __init__(self, imglyr):
         """Constructor"""

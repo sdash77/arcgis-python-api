@@ -7,6 +7,7 @@ from arcgis.gis import GIS
 from arcgis._impl.common._mixins import PropertyMap
 from typing import Dict, Any, Optional, List
 
+
 ###########################################################################
 class KubeEnterpriseGroups:
     """
@@ -153,6 +154,7 @@ class KubeOrgSecurity(object):
     _gis = None
     _url = None
     _properties = None
+
     # ----------------------------------------------------------------------
     def __init__(self, url: str, gis: "GIS") -> "KubeOrgSecurity":
         self._url = url
@@ -364,6 +366,7 @@ class KubeOrganization:
     _security = None
     _federation = None
     _license = None
+
     # ----------------------------------------------------------------------
     def __init__(self, url, gis: "GIS", **kwargs):
         """class initializer"""
@@ -495,6 +498,7 @@ class KubeOrgFederations:
     _gis = None
     _url = None
     _properties = None
+
     # ----------------------------------------------------------------------
     def __init__(self, url: str, gis: "GIS") -> "KubeOrgFederations":
         self._url = url
@@ -646,6 +650,7 @@ class KubeOrgLicense:
     _gis = None
     _url = None
     _properties = None
+
     # ---------------------------------------------------------------------
     def __init__(self, url: str, gis: "GIS") -> "KubeOrgLicense":
         """
@@ -799,6 +804,7 @@ class KubeOrganizations:
     _gis = None
     _url = None
     _properties = None
+
     # ----------------------------------------------------------------------
     def __init__(
         self, url: str, gis: "GIS", initialize: bool = True

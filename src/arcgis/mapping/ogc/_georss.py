@@ -7,6 +7,7 @@ from arcgis.mapping import create_symbol
 from arcgis._impl.common._isd import InsensitiveDict
 from ._base import BaseOGC
 
+
 ###########################################################################
 class GeoRSSLayer(BaseOGC):
     """
@@ -43,6 +44,7 @@ class GeoRSSLayer(BaseOGC):
     _point_symbol = None
     _polygon_symbol = None
     _type = "GeoRSS"
+
     # ----------------------------------------------------------------------
     def __init__(self, url, **kwargs):
         super(GeoRSSLayer, self)

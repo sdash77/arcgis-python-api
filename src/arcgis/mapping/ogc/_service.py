@@ -7,6 +7,7 @@ from arcgis import env as _env
 from arcgis._impl.common._isd import InsensitiveDict
 from functools import lru_cache
 
+
 ###########################################################################
 class OGCCollection:
     """
@@ -115,7 +116,6 @@ class OGCCollection:
             while True:
                 res = self._gis._con.get(url, params)
                 if res["numberReturned"] == 0:
-
                     break
                 elif return_all == False and len(results) >= limit:
                     results = results[:limit]
@@ -190,6 +190,7 @@ class OGCFeatureService:
     _gis = None
     _url = None
     _properties = None
+
     # ---------------------------------------------------------------------
     def __init__(self, url, gis=None) -> "OGCFeatureService":
         """Constructor"""

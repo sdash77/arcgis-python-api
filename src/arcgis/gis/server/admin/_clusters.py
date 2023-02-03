@@ -11,6 +11,7 @@ from .parameters import ClusterProtocol
 from arcgis.gis import GIS
 from typing import Optional
 
+
 ########################################################################
 class Clusters(BaseServer):
     """
@@ -34,6 +35,7 @@ class Clusters(BaseServer):
     _json_dict = None
     _json = None
     _url = None
+
     # ----------------------------------------------------------------------
     def __init__(self, url: str, gis: GIS, initialize: bool = False):
         """Constructor"""
@@ -143,6 +145,7 @@ class Cluster(BaseServer):
     _json_dict = None
     _json = None
     _url = None
+
     # ----------------------------------------------------------------------
     def __init__(self, url: str, gis: GIS, initialize: bool = False):
         """Constructor"""

@@ -121,7 +121,6 @@ class KubernetesAdmin(_BaseKube):
         :return: `DataStores`
         """
         if self._ds is None:
-
             url = self._url + "/data"
             self._ds = DataStores(url=url, gis=self._gis)
         return self._ds
@@ -165,7 +164,6 @@ class KubernetesAdmin(_BaseKube):
         entitlements.
         """
         if self._license is None:
-
             url = self._gis._portal.resturl + "portals/self/purchases"
             self._license = LicenseManager(url=url, gis=self._gis)
         return self._license

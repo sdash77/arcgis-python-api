@@ -1088,7 +1088,6 @@ class FeatureSet(object):
                 geom = arcpy.AsShape(geom)
                 geometry = Geometry(geom)
             else:
-
                 geometry = Geometry(geomet.esri.dumps(geom))
             return geometry
 
@@ -1120,7 +1119,6 @@ class FeatureSet(object):
         if "features" in featureset_dict:
             sr = featureset_dict.get("spatialReference", None)
             for feat in featureset_dict["features"]:
-
                 features.append(Feature.from_dict(feat, sr=sr))
         return FeatureSet(
             features=features,

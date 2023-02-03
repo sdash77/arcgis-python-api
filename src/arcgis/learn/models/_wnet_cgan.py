@@ -75,7 +75,6 @@ class WNet_cGAN(ArcGISModel):
 
     @classmethod
     def from_model(cls, emd_path, data=None):
-
         """
         Creates a :class:`~arcgis.learn.WNet_cGAN` object from an Esri Model Definition (EMD) file.
 
@@ -194,7 +193,6 @@ class WNet_cGAN(ArcGISModel):
         show_results(self, rows, **kwargs)
 
     def predict(self, img_path1, img_path2):
-
         """
         Predicts and display the image.
 

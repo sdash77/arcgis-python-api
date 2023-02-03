@@ -41,6 +41,7 @@ from .tools import LazyLoader
 
 urllib3 = LazyLoader("urllib3")
 
+
 ###########################################################################
 class EsriSession:
     """
@@ -145,6 +146,7 @@ class EsriSession:
     _baseurl = None  # if partial url given, try the base url
     _referer = None
     allow_redirects = None
+
     # ----------------------------------------------------------------------
     def __init__(
         self,

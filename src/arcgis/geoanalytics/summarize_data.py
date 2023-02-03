@@ -31,6 +31,8 @@ from ._util import (
 _log = _logging.getLogger(__name__)
 
 _use_async = True
+
+
 # --------------------------------------------------------------------------
 def summarize_center_and_dispersion(
     input_layer: Union[

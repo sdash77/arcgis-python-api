@@ -345,6 +345,8 @@ cmaps = [
         ],
     ),
 ]
+
+
 ###########################################################################
 def _cmap2rgb(colors, step, alpha=1):
     """converts a color map to RGBA list"""
@@ -768,7 +770,6 @@ def create_symbol(
         return symbol
 
     if symbol_type.lower() == "simple":  # Default Simple Symbol
-
         if symbol_style is None:
             if gtype == "POINT":
                 symbol_type = "esriSMS"

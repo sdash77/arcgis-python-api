@@ -222,7 +222,6 @@ class TextDataObject:
         val_split_pct=0.1,
         label2id=None,
     ):
-
         if not HAS_FASTAI:
             _raise_fastai_exception(import_exception)
 
@@ -386,7 +385,6 @@ class TextDataObject:
         remove_html_tags=False,
         remove_urls=False,
     ):
-
         if not HAS_FASTAI:
             _raise_fastai_exception(import_exception)
 

@@ -46,6 +46,7 @@ class _DotDensity(object):
     _seed = 1
     _outline = None
     _type = "dotDensity"
+
     # ----------------------------------------------------------------------
     def __init__(
         self,
@@ -432,7 +433,6 @@ def _trans_info(data, **kwargs):
             stops = []
             transp = 100 / len(data)
             for d in data:
-
                 stops.append({"stop": {"value": d, "transparency": transp}})
                 transp += transp
                 del d
