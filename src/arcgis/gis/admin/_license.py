@@ -8,6 +8,7 @@ from ..._impl.common._mixins import PropertyMap
 from ...gis import GIS, User
 from ._base import BasePortalAdmin
 
+
 ########################################################################
 class LicenseManager(BasePortalAdmin):
     """
@@ -242,6 +243,7 @@ class Bundle(object):
     _properties = None
     _gis = None
     _id = None
+
     # ----------------------------------------------------------------------
     def __init__(self, url, properties=None, gis=None):
         """Constructor"""
@@ -433,6 +435,7 @@ class License(object):
     _properties = None
     _gis = None
     _con = None
+
     # ----------------------------------------------------------------------
     def __init__(self, gis, info):
         """Constructor"""

@@ -96,7 +96,6 @@ class SiamMask(ArcGISModel):
     """
 
     def __init__(self, data=None, **kwargs):
-
         if not HAS_FASTAI:
             raise_fastai_import_error(
                 import_exception=import_exception, message="", installation_steps=" "
@@ -507,12 +506,10 @@ class SiamMask(ArcGISModel):
         )
 
         for idx in range(0, rows):
-
             if len(all_images) == image_counter:
                 break
 
             for j in range(0, 3):
-
                 if len(all_images) == image_counter:
                     break
 

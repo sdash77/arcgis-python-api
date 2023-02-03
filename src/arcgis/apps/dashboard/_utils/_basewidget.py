@@ -3,7 +3,6 @@ import uuid
 
 class _BaseWidget(object):
     def __init__(self, name, title, description):
-
         self._title = ""
         self._name = ""
         self._description = ""
@@ -207,7 +206,6 @@ class NoDataProperties(object):
         show_title=True,
         show_description=True,
     ):
-
         nodata = NoDataProperties()
 
         if alignment not in ["top", "middle", "bottom"]:

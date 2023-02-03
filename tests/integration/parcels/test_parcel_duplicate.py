@@ -1,4 +1,6 @@
+import sys
 
+# sys.path.insert(0, r"C:\ipython_workfolder\geosaurus\src")
 import unittest
 import concurrent.futures
 from arcgis.gis import GIS
@@ -25,7 +27,10 @@ class TestDuplicateParcels(unittest.TestCase):
             "https://dev0016752.esri.com/server/rest/services/WashingtonCountyLSA/"
         )
         cls.gis = GIS(
-            "https://dev0016752.esri.com/portal/", "admin", "esri.agp", verify_cert=False
+            "https://dev0016752.esri.com/portal/",
+            "admin",
+            "esri.agp",
+            verify_cert=False,
         )
         endpoints = ["FeatureServer", "ParcelFabricServer", "VersionManagementServer"]
         cls.service_urls = {url: cls.base_server_url + url for url in endpoints}
@@ -37,7 +42,9 @@ class TestDuplicateParcels(unittest.TestCase):
     def test_duplicate_one_parcel_into_condiv_increment_field(self):
         fq_version_name = pfutils.create_version(self.vms)
         existing_record_guid = "{ABBBA98B-953F-48B2-A907-EBF5E2E9DA03}"
-        parcel_feature = [{"id": "{F736D9F3-DFD9-4FEE-A2E8-07352E74EBDF}", "layerId": "15"}]
+        parcel_feature = [
+            {"id": "{F736D9F3-DFD9-4FEE-A2E8-07352E74EBDF}", "layerId": "15"}
+        ]
 
         with self.vms.get(fq_version_name, "read") as version:
             parcel_fabric = ParcelFabricManager(
@@ -56,23 +63,28 @@ class TestDuplicateParcels(unittest.TestCase):
                     repeat_count=5,
                     start_value=1000,
                     update_field="name",
-                    increment_value=4
+                    increment_value=4,
                 )
                 self.assertTrue(
                     len(duplicate["serviceEdits"]) > 0,
                     "No edits returned from Duplicate.",
                 )
-                
-                #Expecting 5 parcels starting from original parcel at 1000 up to 1016
-                conveyance_div_lyr = pfutils.get_feature_layer(self.parcel_fabric_flc, "ConveyanceDivision_PF")
+
+                # Expecting 5 parcels starting from original parcel at 1000 up to 1016
+                conveyance_div_lyr = pfutils.get_feature_layer(
+                    self.parcel_fabric_flc, "ConveyanceDivision_PF"
+                )
                 increment_check = conveyance_div_lyr.query(
                     where="name IN  ('1000', '1004', '1008', '1012', '1016')",
-                    out_fields=["name"], gdb_version=fq_version_name, return_geometry=False)
+                    out_fields=["name"],
+                    gdb_version=fq_version_name,
+                    return_geometry=False,
+                )
 
                 self.assertEqual(5, len(increment_check))
             except Exception as ex:
                 self.fail(f"Duplicate failed: {str(ex)}")
-                
+
     def test_duplicate_two_parcels_into_condiv_increment_field_async(self):
         fq_version_name = pfutils.create_version(self.vms)
         existing_record_guid = "{ABBBA98B-953F-48B2-A907-EBF5E2E9DA03}"
@@ -96,7 +108,7 @@ class TestDuplicateParcels(unittest.TestCase):
                     start_value=1000,
                     update_field="name",
                     increment_value=4,
-                    future=True
+                    future=True,
                 )
                 assert isinstance(duplicate_result, concurrent.futures.Future)
                 result = duplicate_result.result()
@@ -107,9 +119,15 @@ class TestDuplicateParcels(unittest.TestCase):
                 )
 
                 # Expecting each parcel to be duplicate each with a 1000 and 1004 name
-                conveyance_div_lyr = pfutils.get_feature_layer(self.parcel_fabric_flc, "ConveyanceDivision_PF")
+                conveyance_div_lyr = pfutils.get_feature_layer(
+                    self.parcel_fabric_flc, "ConveyanceDivision_PF"
+                )
                 increment_check = conveyance_div_lyr.query(
-                    where="name IN ('1000', '1004')", out_fields=["name"], gdb_version=fq_version_name, return_geometry=False)
+                    where="name IN ('1000', '1004')",
+                    out_fields=["name"],
+                    gdb_version=fq_version_name,
+                    return_geometry=False,
+                )
                 self.assertEqual(4, len(increment_check))
 
             except Exception as ex:
@@ -127,5 +145,8 @@ class TestDuplicateParcels(unittest.TestCase):
     def tearDownClass(cls):
         pfutils.clean_up_versions(cls.vms)
 
-if __name__ == "__main__": 
-    unittest.main( exit=False, failfast=True, buffer=False, catchbreak=False, verbosity=1 )
+
+if __name__ == "__main__":
+    unittest.main(
+        exit=False, failfast=True, buffer=False, catchbreak=False, verbosity=1
+    )

@@ -23,6 +23,7 @@ class CreditManager(object):
     _gis = None
     _con = None
     _portal = None
+
     # ----------------------------------------------------------------------
     def __init__(self, gis):
         """Constructor"""

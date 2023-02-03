@@ -17,7 +17,7 @@ from ..._impl.common._utils import _to_utf8
 from urllib import request
 from urllib.parse import urlparse
 
-__version__ = "2.1.0"
+__version__ = "2.1.1"
 
 _log = logging.getLogger(__name__)
 
@@ -392,7 +392,6 @@ class Portal(object):
                 if not os.path.isfile(os.path.abspath(data)):
                     raise RuntimeError("File(" + data + ") not found.")
             if isinstance(data, (io.BytesIO, io.StringIO)):
-
                 fn = item_properties.get("fileName", None)
                 if fn is None:
                     raise ValueError(
@@ -606,7 +605,6 @@ class Portal(object):
     def create_group_from_dict(
         self, group: dict[str, Any], thumbnail: Optional[str] = None
     ):
-
         """Creates a group and returns a group id if successful.
 
         .. note::
@@ -834,7 +832,10 @@ class Portal(object):
             return resp
 
     def share_item_as_group_admin(
-        self, item_id: str, groups: str = "", allow_members_to_edit: bool = False
+        self,
+        item_id: str,
+        groups: str = "",
+        allow_members_to_edit: bool = False,
     ):
         """Shares public item with the specified list of groups belonging to caller
 
@@ -943,7 +944,11 @@ class Portal(object):
             return resp
 
     def unshare_item(
-        self, item_id: str, owner: str, folder: Optional[str] = None, groups: str = ""
+        self,
+        item_id: str,
+        owner: str,
+        folder: Optional[str] = None,
+        groups: str = "",
     ):
         """Stops sharing the item with the specified list of groups
 
@@ -1420,11 +1425,16 @@ class Portal(object):
         return self.con.post("content/items/" + itemid, self._postdata())
 
     def get_item_data(
-        self, itemid: str, try_json: bool = True, folder: Optional[str] = None
+        self,
+        itemid: str,
+        try_json: bool = True,
+        folder: Optional[str] = None,
     ):
         # print('content/items/' + itemid + '/data')
         return self.con.get(
-            "content/items/" + itemid + "/data", try_json=try_json, out_folder=folder
+            "content/items/" + itemid + "/data",
+            try_json=try_json,
+            out_folder=folder,
         )
         # return self.con.post('content/items/' + itemid + '/data', self._postdata(), use_ordered_dict=try_json)
         # return self.con.post('content/items/' + itemid + '/data', self._postdata(), use_ordered_dict=True)
@@ -1895,7 +1905,6 @@ class Portal(object):
         categories: Optional[str] = None,
         category_filters: Optional[str] = None,
     ):
-
         if not outside_org:
             accountid = self._properties.get("id")
             if accountid and q:
@@ -1941,7 +1950,8 @@ class Portal(object):
         sort_order: str = "asc",
         max_groups: int = 1000,
         outside_org: bool = False,
-        categories: Optional[str] = None,
+        categories: str | None = None,
+        filter: str | None = None,
     ):
         """Searches for portal groups.
 
@@ -1972,6 +1982,10 @@ class Portal(object):
         max_groups        optional int, maximum number of groups returned
         ----------------  --------------------------------------------------------
         outside_org       optional boolean, controls whether to search outside your org
+        ----------------  --------------------------------------------------------
+        categories        optional string.
+        ----------------  --------------------------------------------------------
+        filter            optional string.
         ================  ========================================================
 
         :return:
@@ -2022,7 +2036,7 @@ class Portal(object):
         # Execute the search and get back the results
         count = 0
         resp = self._groups_page(
-            q, 1, min(max_groups, 100), sort_field, sort_order, categories
+            q, 1, min(max_groups, 100), sort_field, sort_order, categories, filter
         )
         results = resp.get("results")
         count += int(resp["num"])
@@ -2035,6 +2049,7 @@ class Portal(object):
                 sort_field,
                 sort_order,
                 categories,
+                filter,
             )
             resp_users = resp.get("results")
             results.extend(resp_users)
@@ -2303,7 +2318,10 @@ class Portal(object):
 
         # Send the POST request, and return the id from the response
         resp = self.con.post(
-            "community/users/" + username + "/update", postdata, files, ssl=True
+            "community/users/" + username + "/update",
+            postdata,
+            files,
+            ssl=True,
         )
 
         if resp:
@@ -2606,7 +2624,11 @@ class Portal(object):
                         os.rename(large_thumbnail, new_thumbnail)
                         large_thumbnail = new_large_thumbnail
             files.append(
-                ("largeThumbnail", large_thumbnail, os.path.basename(large_thumbnail))
+                (
+                    "largeThumbnail",
+                    large_thumbnail,
+                    os.path.basename(large_thumbnail),
+                )
             )
         # If owner isn't specified, use the logged in user
         if not owner:
@@ -2723,7 +2745,8 @@ class Portal(object):
             return False
         else:
             resp = self.con.post(
-                "content/users/" + owner + "/" + folder_id + "/delete", postdata
+                "content/users/" + owner + "/" + folder_id + "/delete",
+                postdata,
             )
             if resp:
                 return resp.get("success")
@@ -2842,7 +2865,14 @@ class Portal(object):
         return self.con.post("search", postdata)
 
     def _groups_page(
-        self, q=None, start=1, num=10, sortfield="", sortorder="asc", categories=None
+        self,
+        q=None,
+        start=1,
+        num=10,
+        sortfield="",
+        sortorder="asc",
+        categories=None,
+        filter=None,
     ):
         _log.info(
             "Searching groups (q="
@@ -2865,6 +2895,8 @@ class Portal(object):
         )
         if categories is not None:
             postdata["categoryFilters"] = categories
+        if filter is not None:
+            postdata["filter"] = filter
         return self.con.post("community/groups", postdata)
 
     def _org_users_page(

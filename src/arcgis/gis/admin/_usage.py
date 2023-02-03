@@ -11,6 +11,7 @@ from ..._impl.common._utils import local_time_to_online, timestamp_to_datetime
 from ...gis import GIS
 from ._base import BasePortalAdmin
 
+
 ########################################################################
 class AGOLUsageReports(BasePortalAdmin):
     """
@@ -27,6 +28,7 @@ class AGOLUsageReports(BasePortalAdmin):
     _portal = None
     _gis = None
     _url = None
+
     # ----------------------------------------------------------------------
     def _init(self, connection=None):
         """loads the properties into the class"""

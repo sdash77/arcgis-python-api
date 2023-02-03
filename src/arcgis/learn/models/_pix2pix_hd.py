@@ -158,7 +158,6 @@ class Pix2PixHD(ArcGISModel):
 
     @classmethod
     def from_model(cls, emd_path, data=None):
-
         """
         Creates a :class:`~arcgis.learn.Pix2PixHD` object from an Esri Model Definition (EMD) file.
 

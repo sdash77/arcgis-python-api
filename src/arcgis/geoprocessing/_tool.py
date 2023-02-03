@@ -425,7 +425,6 @@ def _inspect_tool(taskprops, map_as_result):
 
 
 def _process_parameter(param, map_as_result):
-
     gp_param_name = param["name"]
     param_name = _camelCase_to_underscore(gp_param_name)
     param_name_mapping = {param_name: gp_param_name}
@@ -473,7 +472,6 @@ def _process_parameter(param, map_as_result):
                 helpstring = helpstring + "\n      Choice list:" + str(param_chcs)
 
     elif param_drtn == "esriGPParameterDirectionOutput":
-
         if map_as_result:  # 6.3.4.7 Map Images as Geoprocessing Results
             if py_param_type in [FeatureSet, RasterData]:
                 py_param_type = dict  # map image
@@ -626,7 +624,6 @@ _log = _logging.getLogger(__name__)
         import concurrent.futures
 
         with concurrent.futures.ThreadPoolExecutor(8) as executor:
-
             for task in tbx.properties.tasks:
                 f = executor.submit(_generate_fn, **{"task": task, "tbx": tbx})
                 source.append(f)
@@ -768,7 +765,6 @@ class _AsyncResource(_GISResource):
             raise Exception("Unable to get analysis job results.")
 
     def _feature_input(self, input_layer):
-
         point_fs = {
             "layerDefinition": {
                 "currentVersion": 10.11,
@@ -1026,7 +1022,6 @@ class Toolbox(_AsyncResource):
                 )
 
             for param in task_params:
-
                 gp_param_name = param["name"]
 
                 param_name = _camelCase_to_underscore(gp_param_name)
@@ -1108,7 +1103,6 @@ class Toolbox(_AsyncResource):
                         )
 
                 elif param_drtn == "esriGPParameterDirectionOutput":
-
                     if (
                         self.properties.resultMapServerName != ""
                     ):  # 6.3.4.7 Map Images as Geoprocessing Results

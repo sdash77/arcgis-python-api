@@ -68,7 +68,6 @@ def _from_iob_tags(tokens_collection, tags_collection):
     train_data = []
     nlp = spacy.blank("en")
     for tags, tokens in zip(tags_collection, tokens_collection):
-
         try:
             tags = _iob_to_biluo(tags)
 

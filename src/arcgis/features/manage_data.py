@@ -15,6 +15,7 @@ from arcgis.features.layer import FeatureLayer, FeatureLayerCollection
 from arcgis.gis import GIS, Item
 from .._impl.common._utils import inspect_function_inputs
 
+
 # ----------------------------------------------------------------------
 def generate_tessellation(
     extent_layer: Union[
@@ -682,7 +683,6 @@ def create_route_layers(
     estimate: bool = False,
     future: bool = False,
 ):
-
     """
     The ``create_route_layers`` method creates route layer items on the portal from the input route data.
 

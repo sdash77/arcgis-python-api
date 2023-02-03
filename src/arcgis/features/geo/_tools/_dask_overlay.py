@@ -12,6 +12,7 @@ from arcgis.features.geo._array import GeoArray
 
 _HASARCPY, _HASSHAPELY = None, None
 
+
 # ----------------------------------------------------------------------
 @lru_cache(maxsize=10)
 def _check_geometry_engine():

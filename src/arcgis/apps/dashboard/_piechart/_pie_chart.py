@@ -179,7 +179,6 @@ class PieChart(_BaseWidget):
         return hex_number
 
     def _convert_to_json(self):
-
         self._fields_slices = []
         self._statistic_fields = []
 
@@ -569,7 +568,6 @@ class PieChartProperties(object):
         inner_radius=0,
         hover_text=True,
     ):
-
         chart = PieChartProperties()
 
         chart._text_color = text_color

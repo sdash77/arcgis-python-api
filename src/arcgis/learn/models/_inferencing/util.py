@@ -274,7 +274,6 @@ except:
 
 
 def get_nms_preds(b_clas, b_bb, idx, anchors, grid_sizes, classes, nms_overlap, thres):
-
     a_ic = actn_to_bb(b_bb[idx], anchors, grid_sizes)
     clas_pr, clas_ids = b_clas[idx].max(1)
     clas_pr = clas_pr.sigmoid()
@@ -673,6 +672,23 @@ def pixel_classify_wnet_image(model, tiles, device, model_info):
         rescale_batch(wnet_predictions, model_info, norm_stats_c)
     )[:, :num_band_tar, :, :]
     return wnet_predictions
+
+
+def variable_tile_size_check(json_info, parameters):
+    if json_info.get("SupportsVariableTileSize", False):
+        parameters.extend(
+            [
+                {
+                    "name": "tile_size",
+                    "dataType": "numeric",
+                    "value": int(json_info["ImageHeight"]),
+                    "required": False,
+                    "displayName": "Tile Size",
+                    "description": "Tile size used for inferencing",
+                }
+            ]
+        )
+    return parameters
 
 
 def detect_change(model, batch, device, model_info):

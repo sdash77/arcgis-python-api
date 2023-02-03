@@ -9,6 +9,7 @@ __all__ = ["NotebookManager"]
 K = TypeVar("K")
 V = TypeVar("V")
 
+
 ########################################################################
 class NotebookManager(object):
     """
@@ -22,6 +23,7 @@ class NotebookManager(object):
     _properties = None
     _nbs = None
     _snapshot = None
+
     # ----------------------------------------------------------------------
     def __init__(self, url, gis, nbs):
         """Constructor"""

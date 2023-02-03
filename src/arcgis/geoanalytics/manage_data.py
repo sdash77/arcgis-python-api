@@ -182,7 +182,6 @@ def run_python_script(
         "context": context,
     }
     for idx, lyr in enumerate(params["input_layers"]):
-
         if hasattr(lyr, "_lyr_dict"):
             params["input_layers"][idx] = lyr._lyr_dict
         elif hasattr(lyr, "_lyr_json"):

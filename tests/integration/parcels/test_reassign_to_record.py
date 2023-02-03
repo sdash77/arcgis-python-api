@@ -1,3 +1,6 @@
+import sys
+
+# sys.path.insert(0, r"C:\ipython_workfolder\geosaurus\src")
 import unittest
 from arcgis.gis import GIS
 from arcgis.features._parcel import ParcelFabricManager
@@ -162,3 +165,7 @@ class TestReassignToRecord(unittest.TestCase):
     @classmethod
     def tearDownClass(cls):
         pfutils.clean_up_versions(cls.vms)
+
+
+if __name__ == "__main__":
+    unittest.main()

@@ -848,7 +848,6 @@ class Version(object):
         layers=None,
         future=False,
     ):
-
         """
         The ``differences`` operation allows you to view differences between
         the current version and the default version. The two versions can
@@ -1159,6 +1158,7 @@ class Version(object):
                 gdb_version=self.properties.versionName,
                 use_global_ids=use_global_ids,
                 rollback_on_failure=rollback_on_failure,
+                session_id=self._guid,
             )
         else:
             raise Exception(

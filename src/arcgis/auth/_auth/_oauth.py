@@ -20,6 +20,7 @@ getpass = LazyLoader("getpass")
 _dt = LazyLoader("datetime")
 requests = LazyLoader("requests")
 
+
 ###########################################################################
 class EsriOAuth2Auth(AuthBase, SupportMultiAuth):
     """
@@ -38,6 +39,7 @@ class EsriOAuth2Auth(AuthBase, SupportMultiAuth):
     _create_time = None
     _refresh_token = None
     _invalid_token_urls = None
+
     # ----------------------------------------------------------------------
     def __init__(
         self,
@@ -62,7 +64,6 @@ class EsriOAuth2Auth(AuthBase, SupportMultiAuth):
         self.legacy = kwargs.pop("legacy", False)
         self._username = username
         if self._username and password is None:
-
             password = getpass.getpass(f"Enter user {username} password:")
         self._password = password
         if session is None:
@@ -184,7 +185,6 @@ class EsriOAuth2Auth(AuthBase, SupportMultiAuth):
         elif (
             self._client_id and self._username is None and self._password is None
         ):  # case 3: client id only
-
             auth_url = "%s/oauth2/authorize" % self.baseurl
             tu = "%s/oauth2/token" % self.baseurl
             oauth = OAuth2Session(
@@ -225,7 +225,6 @@ class EsriOAuth2Auth(AuthBase, SupportMultiAuth):
         elif self._client_id and not (
             self._username is None and self._password is None
         ):  # case 4: client id and username/password (SAML workflow)
-
             parameters = {
                 "client_id": self._client_id,
                 "response_type": "code",

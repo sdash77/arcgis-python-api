@@ -789,7 +789,6 @@ class Embeddings:
             )
 
         def hover_fn(trace, points, state):
-
             ind = points.point_inds[0]
             item = cluster_dataframe["item"][ind]
             widget.value = image_data[item] if self._dataset_type == "image" else item

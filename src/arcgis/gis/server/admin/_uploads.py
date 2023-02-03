@@ -18,6 +18,7 @@ from .._common import BaseServer
 from arcgis.gis import GIS
 from typing import Optional
 
+
 ########################################################################
 class Uploads(BaseServer):
     """

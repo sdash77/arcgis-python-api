@@ -116,7 +116,6 @@ def nostdout():
 
 
 def _get_device():
-
     if getattr(arcgis.env, "_processorType", "") == "GPU" and torch.cuda.is_available():
         device = torch.device("cuda")
     elif getattr(arcgis.env, "_processorType", "") == "CPU":
@@ -590,7 +589,6 @@ class ArcGISModel(object):
             data.path = Path(os.path.abspath("."))
 
         if getattr(self, "_is_edge_detection", False):
-
             if len(data.classes) > 2:
                 raise Exception(
                     "Found multi-labels in the data, This is a binary segmentation model and hence please export the data with binary labels."
@@ -1039,7 +1037,6 @@ class ArcGISModel(object):
     def _create_emd_template(
         self, path, compute_metrics=True, save_inference_file=True
     ):
-
         _emd_template = {}
 
         # For old models - add lr, ModelName
@@ -1305,7 +1302,6 @@ class ArcGISModel(object):
             """
 
         if emd_template.get("ModelParameters", {}).get("model_name", False):
-
             HTML_TEMPLATE = f"""        
                 <p><b> {emd_template.get("ModelName").replace('>', '').replace('<', '')} </b></p>
                 <p><b>Model Name:</b> {emd_template.get('ModelParameters', {}).get('model_name')}</p>
@@ -1314,7 +1310,6 @@ class ArcGISModel(object):
             """
 
         else:
-
             HTML_TEMPLATE = f"""        
                     <p><b> {emd_template.get("ModelName").replace('>', '').replace('<', '')} </b></p>
                     <p><b>Backbone:</b> {emd_template.get('ModelParameters', {}).get('backbone')}</p>
@@ -1505,14 +1500,18 @@ class ArcGISModel(object):
         except Exception as e:
             raise e
         finally:
-
             self.learn.path = temp
             self.framework = framework
             self.learn.model_dir = temp1
 
-        _emd_template = self._create_emd_template(
-            saved_path.with_suffix(".pth"), compute_metrics, save_inference_file
-        )
+        if (type(self).__name__) == "EfficientDet":
+            _emd_template = self._create_emd_template(
+                saved_path.with_suffix(".tflite"), compute_metrics, save_inference_file
+            )
+        else:
+            _emd_template = self._create_emd_template(
+                saved_path.with_suffix(".pth"), compute_metrics, save_inference_file
+            )
 
         if framework.lower() == "tf-onnx":
             batch_size = kwargs.get("batch_size", 16)
@@ -1743,7 +1742,6 @@ class ArcGISModel(object):
         return get_post_processed_model(self, input_normalization=input_normalization)
 
     def _save_model_characteristics(self, model_characteristics_dir):
-
         import shutil
         import matplotlib.pyplot as plt
 

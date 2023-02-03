@@ -318,7 +318,6 @@ class TST(Module):
     def forward(
         self, x: Tensor, mask: Optional[Tensor] = None
     ) -> Tensor:  # x: [bs x nvars x q_len]
-
         # Input encoding
         if self.new_q_len:
             u = self.W_P(x).transpose(

@@ -491,7 +491,6 @@ def _distance_accumulation_analytics_converter(
 def _distance_allocation_analytics_converter(
     raster_function, output_name=None, other_outputs=None, gis=None, **kwargs
 ):
-
     in_source_data = None
     in_barrier_data = None
     in_surface_raster = None
@@ -776,7 +775,6 @@ def _build_param_dictionary(
     image_collection_properties=None,
     use_input_rasters_by_ref=False,
 ):
-
     inputRasterSpecified = False
     # input rasters
     if isinstance(input_rasters, list):
@@ -1001,7 +999,6 @@ def generate_raster(
     future: bool = False,
     **kwargs,
 ):
-
     """
     .. image:: _static/images/ra_generate_raster/ra_generate_raster.png
 
@@ -1186,7 +1183,6 @@ def convert_feature_to_raster(
     future: bool = False,
     **kwargs,
 ):
-
     """
     .. image:: _static/images/ra_convert_feature_to_raster/ra_convert_feature_to_raster.png
 
@@ -1341,7 +1337,6 @@ def copy_raster(
     future: bool = False,
     **kwargs,
 ):
-
     """
     .. image:: _static/images/ra_copy_raster/ra_copy_raster.png 
 
@@ -1681,7 +1676,6 @@ def summarize_raster_within(
     future: bool = False,
     **kwargs,
 ):
-
     """
     .. image:: _static/images/ra_summarize_raster_within/ra_summarize_raster_within.png 
 
@@ -1945,7 +1939,6 @@ def convert_raster_to_feature(
     future: bool = False,
     **kwargs,
 ):
-
     """
     .. image:: _static/images/ra_convert_raster_to_feature/ra_convert_raster_to_feature.png
 
@@ -2076,7 +2069,6 @@ def calculate_density(
     future: bool = False,
     **kwargs,
 ):
-
     """
     .. image:: _static/images/ra_calculate_density/ra_calculate_density.png
 
@@ -2302,7 +2294,6 @@ def create_viewshed(
     future: bool = False,
     **kwargs,
 ):
-
     """
     .. image:: _static/images/ra_create_viewshed/ra_create_viewshed.png
 
@@ -2581,7 +2572,6 @@ def interpolate_points(
     future: bool = False,
     **kwargs,
 ):
-
     """
     .. image:: _static/images/ra_interpolate_points/ra_interpolate_points.png
 
@@ -2817,7 +2807,6 @@ def classify(
     future: bool = False,
     **kwargs,
 ):
-
     """
     .. image:: _static/images/ra_classify/ra_classify.png
 
@@ -3000,7 +2989,6 @@ def segment(
     future: bool = False,
     **kwargs,
 ):
-
     """
     .. image:: _static/images/ra_segment/ra_segment.png
 
@@ -4559,7 +4547,6 @@ def optimum_travel_cost_network(
     future: bool = False,
     **kwargs,
 ):
-
     """
     .. image:: _static/images/ra_optimum_travel_cost_network/ra_optimum_travel_cost_network.png
 
@@ -4721,7 +4708,6 @@ def build_footprints(
     future: bool = False,
     **kwargs,
 ):
-
     """
     Computes the extent of every raster in an image collection.
 
@@ -4800,7 +4786,6 @@ def build_overview(
     future: bool = False,
     **kwargs,
 ):
-
     """
     Generates overviews on an image collection.
 
@@ -4961,7 +4946,6 @@ def determine_travel_costpath_as_polyline(
     future: bool = False,
     **kwargs,
 ):
-
     """
     .. image:: _static/images/ra_determine_travel_costpath_as_polyline/ra_determine_travel_costpath_as_polyline.png 
 
@@ -5075,7 +5059,6 @@ def _calculate_distance(
     future=False,
     **kwargs,
 ):
-
     """
     Calculates the Euclidean distance, direction, and allocation from a single source or set of sources.
 
@@ -6922,7 +6905,6 @@ def costpath_as_polyline(
     future=False,
     **kwargs,
 ):
-
     """
     .. image:: _static/images/ra_costpath_as_polyline/ra_costpath_as_polyline.png 
 
@@ -7033,7 +7015,6 @@ def define_nodata(
     future: bool = False,
     **kwargs,
 ):
-
     """
     Function specifies one or more values to be represented as NoData.
     Function available in ArcGIS Image Server 10.8 and higher.
@@ -7135,7 +7116,6 @@ def optimal_path_as_line(
     future: bool = False,
     **kwargs,
 ):
-
     """
     Calculates the optimal path from a source to a destination as a feature.
     Function available in ArcGIS Image Server 10.8.1 and higher.
@@ -7266,7 +7246,6 @@ def optimal_region_connections(
     future: bool = False,
     **kwargs,
 ):
-
     """
     Calculates the optimal connectivity network between two or more input regions.
     Function available in ArcGIS Image Server 10.8.1 and higher.
@@ -7451,7 +7430,6 @@ def _distance_accumulation(
     future=False,
     **kwargs,
 ):
-
     gis = _arcgis.env.active_gis if gis is None else gis
     return gis._tools.rasteranalysis.distance_accumulation(
         input_source_raster_or_features=input_source_raster_or_features,
@@ -7502,7 +7480,6 @@ def _distance_allocation(
     future=False,
     **kwargs,
 ):
-
     gis = _arcgis.env.active_gis if gis is None else gis
     return gis._tools.rasteranalysis.distance_allocation(
         input_source_raster_or_features=input_source_raster_or_features,
@@ -7543,7 +7520,6 @@ def analyze_changes_using_ccdc(
     future: bool = False,
     **kwargs,
 ):
-
     """
     Function evaluates changes in pixel values over time using the CCDC algorithm,
     and generates a multidimensional raster containing the model results.
@@ -7751,7 +7727,6 @@ def detect_change_using_change_analysis_raster(
     future: bool = False,
     **kwargs,
 ):
-
     """
     Function generates a raster containing pixel change information using the
     output change analysis raster from the :meth:`~arcgis.raster.analytics.analyze_changes_using_ccdc`
@@ -8246,7 +8221,6 @@ def sample(
     future: bool = False,
     **kwargs,
 ):
-
     """
     Function creates a table that shows the values of cells from a raster, 
     or set of rasters, for defined locations. The locations are defined by raster cells, 
@@ -8415,7 +8389,6 @@ def merge_multidimensional_rasters(
     future: bool = False,
     **kwargs,
 ):
-
     """
     Function merges several multidimensional rasters spatially, or across variables and dimensions into one.
     Function available in ArcGIS Image Server 10.9 and higher (not available in ArcGIS Online).
@@ -8586,7 +8559,6 @@ def analyze_changes_using_landtrendr(
     future: bool = False,
     **kwargs,
 ):
-
     """
     Function evaluates changes in pixel values over time using the Landsat-based detection of trends
     in disturbance and recovery (LandTrendr) method and generates a change analysis raster containing the model results.
@@ -8914,6 +8886,7 @@ def analyze_changes_using_landtrendr(
 
 #    gis = _arcgis.env.active_gis if gis is None else gis
 
+
 #    return gis._tools.rasteranalysis.transfer_files(input_files=input_files,
 #                                                    output_datastore=output_datastore,
 #                                                    tf_filter=tf_filter,
@@ -8939,7 +8912,6 @@ def zonal_statistics_as_table(
     future: bool = False,
     **kwargs,
 ):
-
     """
     Calculates  the values of a raster within the zones of another dataset and reports the results to a table.
 
@@ -9132,7 +9104,6 @@ def compute_change_raster(
     future: bool = False,
     **kwargs,
 ):
-
     """
     Function calculates the absolute, relative, or categorical difference between two raster datasets.
     Function available in ArcGIS Image Server 10.9 and higher.
@@ -9353,7 +9324,6 @@ def summarize_categorical_raster(
     future=False,
     **kwargs,
 ):
-
     """
     Generates a table containing the pixel count for each class, in each slice of an input categorical raster.
     Function available in ArcGIS Image Server 10.9.1 and higher (not available in ArcGIS Online).
@@ -9490,7 +9460,6 @@ def train_random_trees_regression_model(
     future=False,
     **kwargs,
 ):
-
     """
     Models the relationship between explanatory variables (independent variables) and a target dataset (dependent variable).
     Function available in ArcGIS Image Server 10.9.1 and higher (not available in ArcGIS Online).
