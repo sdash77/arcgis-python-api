@@ -29,15 +29,13 @@ def initialize(self, gis):
     if self._url is None:
         raise ValueError("No WorkflowManager Registered with your Organization")
 
-    # Commenting out for testing reasons.
-    # if self.is_enterprise:
-    #     if not any(
-    #         prov.itemid == "50a5f00bcc574358b15eab0e2bdadf39"
-    #         for prov in self._gis.users.me.provisions
-    #     ):
-    #         raise ValueError(
-    #             "No Workflow Manager license is available for the current user"
-    #         )
+    if not any(
+        prov.itemid == "50a5f00bcc574358b15eab0e2bdadf39"
+        for prov in self._gis.users.me.provisions
+    ):
+        raise ValueError(
+            "No Workflow Manager license is available for the current user"
+        )
 
 
 class WorkflowManagerAdmin:
