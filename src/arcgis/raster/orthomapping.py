@@ -7,6 +7,7 @@ For more information about orthomapping workflows in ArcGIS, please visit the he
 """
 
 from __future__ import annotations
+from importlib import resources
 from typing import Any, Optional
 import arcgis
 import json
@@ -95,6 +96,22 @@ def _create_output_image_service(gis, output_name, task):
     output_service.update(item_properties)
     return output_service
 
+def _get_collection_item(project_item=None, gis=None):
+    rm = project_item.resources
+    res_list = rm.list()
+
+    try:
+        last_res = res_list[-1]
+        props_json = last_res["properties"]
+        props = json.loads(props_json)
+        items_list = props["items"]
+        for ele in items_list:
+            if ele["product"] == "imageCollection":
+                item_id  = ele["id"]
+        image_collection_item = gis.content.get(item_id)
+        return image_collection_item, last_res
+    except IndexError as e:
+        raise RuntimeError("Unable to retrieve the flight information")
 
 ###################################################################################################
 ###
@@ -153,6 +170,9 @@ def add_flight(project_item,
               raster_type_params: Optional[dict[str, Any]] = None,
               * , gis: Optional[GIS] = None, **kwargs):
 
+    resource_manager = project_item.resources
+    resources_list = resource_manager.list()
+    oid = len(resources_list)
 
     for f in gis.users.me.folders:
         if f['id'] == project_item.ownerFolder:
@@ -189,7 +209,15 @@ def add_flight(project_item,
     'rasterType': 'UAV/UAS',
     'cameraInfo': {},
     'sourceData': {},
-    'processingSettings': {}}
+    'spatialReference': {},
+    'adjustSettings': {},
+    'processingSettings': {},
+    'mapping': {},
+    'projectVersion': 2,
+    'createTS': '',
+    'oid': oid,
+    'gcsExtent': {}}
+
     flight_json.update({"items":{"imageCollection":{"itemId": output_collection.itemid, "url":output_collection.url}}})
 
     flight_json['jobs']['imageCollection'].update({"messages": job_response["messages"]})
@@ -217,35 +245,8 @@ def add_flight(project_item,
         json.dump(flight_json, writer)
     del writer
 
-    json_inp = {'items': {'imageCollection': None, 'ortho': None},
-    'jobs': {'imageCollection': {'checked': True},
-    'adjustment': {'checked': True, 'mode': 'Quick'},
-    'dsm': {'checked': False},
-    'dtm': {'checked': False},
-    'ortho': {'checked': False},
-    'matchControlPoint': {'checked': False},
-    'queryControlPoints': {'checked': False},
-    'computeControlPoints': {'checked': False},
-    'appendControlPoints': {'checked': False}},
-    'rasterType': 'UAV/UAS',
-    'cameraInfo': {},
-    'customProducts': [],
-    'sourceData': {},
-    'spatialReference': {},
-    'adjustSettings': {},
-    'processingSettings': {},
-    'mapping': {},
-    'projectVersion': 2,
-    'createTS': '',
-    'oid': 0,
-    'gcsExtent': {}}
-
-    resource_manager = project_item.resources
-
-    if not flight_name.endswith(".json"):
-        flight_name = flight_name+".json"
     try:
-        resource_manager.add(file=temp_file, text=json_inp,folder_name="flights", properties={"oid":0,"imageCount":len(image_list),"items":[{"product":"imageCollection","id":output_collection.id,"created":True}],"gcpItems":[],"baStatus":"succeeded"})
+        resource_manager.add(file=temp_file, text=flight_json,folder_name="flights", properties={"oid":oid,"imageCount":len(image_list),"items":[{"product":"imageCollection","id":output_collection.id,"created":True}],"gcpItems":[],"baStatus":"succeeded"})
         project_item.update(data = json.dumps({"projectVersion":2,"rasterType":raster_type_name}))
     except:
         raise RuntimeError("Error adding the flight")
@@ -1404,8 +1405,23 @@ def generate_dem(
 
     """
     gis = arcgis.env.active_gis if gis is None else gis
+    update_flight_json = False
+    if image_collection.type == "Ortho Mapping Project":
+        image_collection, last_res = _get_collection_item(image_collection, gis)
+        update_flight_json = True
 
-    return gis._tools.orthomapping.generate_dem(
+        if kwargs is not None:
+            if "folder" in kwargs:
+                folder = kwargs["folder"]
+            else:
+                for f in gis.users.me.folders:
+                    if f['id'] == image_collection.ownerFolder:
+                        folder = f
+                        break  
+            kwargs.update({"folder":folder})
+
+
+    dem_output =  gis._tools.orthomapping.generate_dem(
         image_collection=image_collection,
         cell_size=cell_size,
         output_dem=out_dem,
@@ -1415,6 +1431,61 @@ def generate_dem(
         future=future,
         **kwargs,
     )
+
+    if update_flight_json:
+        point_cloud_keys = ['maxObjectSize', 'groundSpacing', 'minAngle', 'maxAngle', 'minOverlap', 'maxOmegaPhiDif', 'maxGSDDif', 'numImagePairs', 'adjQualityThreshold']
+        point_cloud_dict = {"pointCloud": {k: context[k] for k in point_cloud_keys if k in context}}
+        point_cloud_dict["pointCloud"].update({"method":matching_method })
+        interpolation_keys = ['pixelSize', 'pixelSizeUnit', 'method', 'smoothingMethod']
+        interpolation_dict = {"interpolation":{k: context[k] for k in interpolation_keys if k in context}}
+
+        apply_to_ortho = context.get("applyToOrtho", False)
+        dem_dict = {"applyToOrtho": apply_to_ortho}
+        dem_dict.update(point_cloud_dict)
+        dem_dict.update(interpolation_dict)
+
+
+        job_info=dem_output.properties
+        job_response={}
+        if "jobUrl" in job_info :
+            # Get the url of the Analysis job to track the status.
+
+            job_url = job_info.get("jobUrl")
+            params = {"f": "json"}
+            job_response = gis._con.post(job_url, params)
+
+        resource = last_res["resource"]
+  
+        rm = image_collection.resources
+        flight_json = rm.get(resource)    
+
+        flight_json.update({"items":{surface_type.lower():{"itemId": dem_output.itemid, "url":dem_output.url}}})
+
+        flight_json['jobs'][surface_type.lower()].update({"messages": job_response["messages"]})
+        flight_json['jobs'][surface_type.lower()].update({"checked": True})
+
+        properties = json.loads(last_res['properties'])   
+        properties_items =properties["items"]
+        properties_items.append({"product": surface_type.lower(), "id": dem_output.itemid, "created": True})
+        properties.update({"items": properties_items})
+
+        import tempfile, uuid, os
+
+        fname = "%s.json" % resource.split("/")[1]
+        temp_dir = tempfile.gettempdir() 
+        temp_file = os.path.join(temp_dir, fname)
+        with open(temp_file , 'w') as writer:
+            json.dump(flight_json, writer)
+        del writer
+
+
+
+        try:
+            rm.add(file=temp_file, text=flight_json,folder_name="flights", properties=properties)
+        except:
+            raise RuntimeError("Error updating the flight")
+
+    return dem_output
 
     """
     gis = arcgis.env.active_gis if gis is None else gis
@@ -1599,6 +1670,19 @@ def generate_orthomosaic(
     """
     gis = arcgis.env.active_gis if gis is None else gis
 
+    if image_collection.type == "Ortho Mapping Project":
+        image_collection = _get_collection_item(image_collection, gis)  
+         
+        if kwargs is not None:
+            if "folder" in kwargs:
+                folder = kwargs["folder"]
+            else:
+                for f in gis.users.me.folders:
+                    if f['id'] == image_collection.ownerFolder:
+                        folder = f
+                        break  
+            kwargs.update({"folder":folder})
+            
     return gis._tools.orthomapping.generate_orthomosaic(
         image_collection=image_collection,
         output_ortho_image=out_ortho,
