@@ -848,7 +848,6 @@ class Version(object):
         layers=None,
         future=False,
     ):
-
         """
         The ``differences`` operation allows you to view differences between
         the current version and the default version. The two versions can

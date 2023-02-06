@@ -615,7 +615,7 @@ def closest(centroids, node):
     dist = -1
     ridx = -1
 
-    for (i, (xx, yy)) in enumerate(centroids):
+    for i, (xx, yy) in enumerate(centroids):
         dsq = ((xx - x) ** 2) + ((yy - y) ** 2)
         if -1 == dist or dsq < dist:
             dist = dsq

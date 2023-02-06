@@ -1677,7 +1677,6 @@ class WebHookServiceManager(object):
             hook_url = self._url + f"/{resp['globalId']}"
             return WebHook(url=hook_url, gis=self._gis)
         else:
-
             return WebHook(url=resp["url"], gis=self._gis)
 
     # ----------------------------------------------------------------------
@@ -1749,7 +1748,6 @@ class FeatureLayerCollectionManager(_GISResource):
         if "layers" in self.properties:
             for table in self.properties.layers:
                 try:
-
                     self._layers.append(
                         FeatureLayerManager(
                             self.url + "/" + str(table["id"]), self._gis
@@ -1771,7 +1769,6 @@ class FeatureLayerCollectionManager(_GISResource):
         if "tables" in self.properties:
             for table in self.properties.tables:
                 try:
-
                     self._tables.append(
                         FeatureLayerManager(
                             self.url + "/" + str(table["id"]), self._gis
@@ -2366,13 +2363,11 @@ class FeatureLayerCollectionManager(_GISResource):
         """
         definition = None
         if json_dict is not None:
-
             if isinstance(json_dict, PropertyMap):
                 definition = dict(json_dict)
             if isinstance(json_dict, collections.OrderedDict):
                 definition = json_dict
             else:
-
                 definition = collections.OrderedDict()
                 if "hasStaticData" in json_dict:
                     definition["hasStaticData"] = json_dict["hasStaticData"]
@@ -2603,7 +2598,6 @@ class FeatureLayerCollectionManager(_GISResource):
             "File Geodatabase",
             "Microsoft Excel",
         ]:
-
             path = (
                 "content/items/"
                 + feature_layer_item.itemid

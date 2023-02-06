@@ -6,6 +6,7 @@ requests.
 from ._base import BasePortalAdmin
 from ..._impl.common._mixins import PropertyMap
 
+
 ########################################################################
 class Machines(BasePortalAdmin):
     """
@@ -19,6 +20,7 @@ class Machines(BasePortalAdmin):
     _properties = None
     _json_dict = None
     _json = None
+
     # ----------------------------------------------------------------------
     def __init__(self, url, gis, portaladmin, **kwargs):
         """Constructor"""
@@ -87,6 +89,7 @@ class Machine(BasePortalAdmin):
     _properties = None
     _json_dict = None
     _json = None
+
     # ----------------------------------------------------------------------
     def __init__(self, name, url, info, gis, portaladmin, **kwargs):
         """Constructor"""

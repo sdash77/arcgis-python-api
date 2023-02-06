@@ -11,6 +11,8 @@ from arcgis.widgets import MapView
 ##  Helper Lambda
 ###########################################################################
 _fn_method = lambda a, op, **kwargs: getattr(a, op)(**kwargs)
+
+
 ###########################################################################
 def dask_plot(df, map_widget=None, renderer=None):
     """

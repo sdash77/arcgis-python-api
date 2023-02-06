@@ -5,6 +5,7 @@ from arcgis.env import active_gis
 from arcgis._impl.common._mixins import PropertyMap
 from arcgis.features._version import Version
 
+
 ###########################################################################
 class ValidationManager(object):
     """

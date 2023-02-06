@@ -340,6 +340,7 @@ class GIS(object):
     _pds = None
     _validate_item_url = None
     """If 'True', the GIS instance is a GIS('home') from hosted nbs"""
+
     # admin = None
     # oauth = None
     def __init__(
@@ -717,7 +718,6 @@ class GIS(object):
                     url = self._portal.url + "/admin"
                     self.admin = KubernetesAdmin(url=url, gis=self)
                 else:
-
                     from .admin.portaladmin import PortalAdminManager
 
                     self.admin = PortalAdminManager(
@@ -1297,7 +1297,6 @@ class GIS(object):
         :returns: list
         """
         if self._portal.is_arcgisonline:
-
             info = self._registered_servers()
             tile_urls = set(info["urls"].get("tiles", {}).get("https", []))
             feature_urls = set(info["urls"].get("features", {}).get("https", []))
@@ -1343,7 +1342,6 @@ class GIS(object):
             info = self._registered_servers()
             return info
         elif self._portal.is_kubernetes or self._portal.is_arcgisonline == False:
-
             url = self._portal.resturl + f"portals/{self.properties['id']}/servers"
             params = {"f": "json"}
         return self._con.get(url, params)
@@ -2130,7 +2128,6 @@ class DatastoreManager(object):
     def add_folder(
         self, name: str, server_path: str, client_path: Optional[str] = None
     ):
-
         """
         The ``add_folder`` method registers a folder with the :class:`~arcgis.gis.Datastore`.
 
@@ -2723,6 +2720,7 @@ class UserManager(object):
     """
 
     _me = None
+
     # ----------------------------------------------------------------------
     def __init__(self, gis):
         self._gis = gis
@@ -4410,7 +4408,6 @@ class UserManager(object):
         if as_dict:
             return tuple(results)
         else:
-
             return tuple(
                 User(gis=self._gis, username=user["username"], userdict=user)
                 for user in results
@@ -5589,7 +5586,6 @@ class ContentManager(object):
         with concurrent.futures.ThreadPoolExecutor(
             max_workers=5, thread_name_prefix="upld_"
         ) as tp:
-
             futures = {
                 tp.submit(
                     self._gis._con.post_multipart,
@@ -5721,7 +5717,6 @@ class ContentManager(object):
         item_id: Optional[str] = None,
         **kwargs,
     ):
-
         """
         The ``add`` method adds content to the GIS by creating an :class:`~arcgis.gis.Item`.
 
@@ -6222,7 +6217,6 @@ class ContentManager(object):
         snippet: Optional[Union[list[str], str]] = None,
         item_id: Optional[str] = None,
     ):
-
         """
         The ``create_service`` method creates a service in the Portal. See the table below for a list of arguments
         passed when calling ``create_service``.
@@ -6395,7 +6389,6 @@ class ContentManager(object):
 
     # ----------------------------------------------------------------------
     def get(self, itemid: str):
-
         """
         The ``get`` method returns the :class:`~arcgis.gis.Item` object for the specified itemid.
 
@@ -6747,7 +6740,6 @@ class ContentManager(object):
         category_filters: Optional[Union[list[str], str]] = None,
         enrich: Optional[bool] = None,
     ):
-
         """
         The ``search`` method searches for portal items.
 
@@ -6931,7 +6923,6 @@ class ContentManager(object):
     def rename_folder(
         self, old_folder: str, new_folder: str, owner: Optional[str] = None
     ):
-
         """
         The ``rename_folder`` method renames an existing folder from it's existing name to a new name.
 
@@ -7572,7 +7563,6 @@ class ContentManager(object):
                 else:
                     return new_item
             elif has_pyshp:
-
                 name = "%s%s.shp" % (
                     random.choice(string.ascii_lowercase),
                     uuid4().hex[:5],
@@ -7766,7 +7756,6 @@ class ContentManager(object):
         return None
 
     def is_service_name_available(self, service_name: str, service_type: str):
-
         """
             The ``is_service_name_available`` method determines if that service name is
             available for use or not, for the specified service type.
@@ -7811,7 +7800,6 @@ class ContentManager(object):
         owner: Optional[str] = None,
         preserve_item_id: bool = False,
     ):
-
         """
         The ``clone_items`` method is used to clone content to the GIS by creating new :class:`~arcgis.gis.Item`
         objects.
@@ -9001,7 +8989,6 @@ class Group(dict):
         )
 
     def get_thumbnail_link(self):
-
         """
         The ``get_thumbnail_link`` method retrieves the URL to the thumbnail image.
 
@@ -9338,7 +9325,6 @@ class Group(dict):
         usernames: Optional[Union[list[str], str]] = None,
         admins: Optional[Union[list[str], str]] = None,
     ):
-
         """
         The ``adds_users`` method adds users to this group.
 
@@ -10674,7 +10660,6 @@ class User(dict):
 
     # ----------------------------------------------------------------------
     def get_thumbnail_link(self):
-
         """
         ``The get_thumbnail_link`` method retrieves the URL to the thumbnail image.
 
@@ -11037,7 +11022,6 @@ class User(dict):
         :returns: Boolean
         """
         if temporary_password and self._gis._portal.is_arcgisonline == False:
-
             url = f"{self._gis._portal.resturl}community/users/{self.username}/update"
             params = {"f": "json", "password": temporary_password}
             resp = self._gis._con.post(url, params)
@@ -11045,7 +11029,6 @@ class User(dict):
             f"{self._gis._portal.resturl}community/users/{self.username}/expirePassword"
         )
         if self._gis._portal.is_arcgisonline:
-
             params = {"f": "json", "expiration": -1}
         else:
             params = {"f": "json", "expiration": 1}
@@ -11060,7 +11043,6 @@ class User(dict):
         new_security_answer: Optional[str] = None,
         reset_by_email: bool = False,
     ):
-
         """
         The ``reset`` method resets a user's password, security question, and/or security answer.
         If a new security question is specified, a new security answer should be provided.
@@ -11141,7 +11123,6 @@ class User(dict):
         culture_format: Optional[str] = None,
         categories: Optional[list] = None,
     ):
-
         """
         The ``update`` method updates this user's properties based on the arguments passed when calling ``update``.
 
@@ -12699,7 +12680,6 @@ class Item(dict):
         if not save_path:
             save_path = self._workdir
         try:
-
             url = self._gis._portal.resturl + data_path
             con = self._gis._con
             resp = self._portal.con.get(
@@ -12999,7 +12979,6 @@ class Item(dict):
 
     # ----------------------------------------------------------------------
     def get_thumbnail_link(self):
-
         """
         The ``get_thumbnail_link`` method is similar to the ``get_thumbnail`` method, but retrieves the link to the
         item's thumbnail rather than the bytes that make up the thumbnail for this item.
@@ -13551,7 +13530,6 @@ class Item(dict):
 
         # find if portal is ArcGIS Online
         try:
-
             ig_url = f"{self._gis._portal.resturl}content/itemsgroups"
             params = {"f": "json", "items": self.itemid}
             ig_groups = list(self._portal.con.get(ig_url, params).keys())
@@ -13717,7 +13695,6 @@ class Item(dict):
             # old API - groups sent as comma separated group ids
             group_ids = groups
         if self.owner == self._gis.users.me.username:
-
             url = "{resturl}content/users/{owner}/shareItems".format(
                 resturl=self._gis._portal.resturl, owner=self.owner
             )
@@ -13901,7 +13878,6 @@ class Item(dict):
         thumbnail: Optional[str] = None,
         metadata: Optional[str] = None,
     ):
-
         """
         The ``update`` method updates an item in a Portal.
 
@@ -14075,7 +14051,6 @@ class Item(dict):
                 self._hydrate()
             return ret
         else:
-
             owner = self._user_id
 
             try:
@@ -14631,7 +14606,6 @@ class Item(dict):
 
     # ----------------------------------------------------------------------
     def add_relationship(self, rel_item: Item, rel_type: str):
-
         """The ``add_relationship`` method adds a relationship from the current item to ``rel_item``.
 
         .. note::
@@ -16640,6 +16614,7 @@ class ItemDependency(object):
     _item = None
     _portal = None
     _properties = None
+
     # ----------------------------------------------------------------------
     def __init__(self, item):
         """Constructor"""
@@ -16672,7 +16647,6 @@ class ItemDependency(object):
         start = 0
         num = 100
         while res["nextStart"] > -1:
-
             start += num
             params = {"f": "json", "num": 100, "start": res["nextStart"]}
             res = self._con.get(self._url, params)
@@ -16840,7 +16814,6 @@ class _GISResource(object):
     """a GIS service"""
 
     def __init__(self, url, gis=None):
-
         from ._impl._con import Connection
 
         self._hydrated = False

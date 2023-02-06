@@ -392,7 +392,6 @@ class Portal(object):
                 if not os.path.isfile(os.path.abspath(data)):
                     raise RuntimeError("File(" + data + ") not found.")
             if isinstance(data, (io.BytesIO, io.StringIO)):
-
                 fn = item_properties.get("fileName", None)
                 if fn is None:
                     raise ValueError(
@@ -606,7 +605,6 @@ class Portal(object):
     def create_group_from_dict(
         self, group: dict[str, Any], thumbnail: Optional[str] = None
     ):
-
         """Creates a group and returns a group id if successful.
 
         .. note::
@@ -1907,7 +1905,6 @@ class Portal(object):
         categories: Optional[str] = None,
         category_filters: Optional[str] = None,
     ):
-
         if not outside_org:
             accountid = self._properties.get("id")
             if accountid and q:

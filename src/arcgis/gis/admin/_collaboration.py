@@ -219,7 +219,6 @@ class CollaborationManager(object):
             for collab in res["collaborations"]:
                 collab_ids.append(collab)
             if res["nextStart"] == -1:
-
                 with concurrent.futures.ThreadPoolExecutor(25) as tp:
                     jobs = {
                         tp.submit(

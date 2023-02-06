@@ -51,7 +51,6 @@ def _call_method_by_source(fn) -> callable:
 
     @wraps(fn)
     def wrapped(*args, **kwargs) -> Any:
-
         # try to pull out the source or gis caller
         src = None
         for param_src in ["source", "gis"]:
@@ -224,7 +223,6 @@ class NamedArea(object):
 
         childlevels = set()
         for branch in dset["branches"]:
-
             levels = branch["levels"]
             if is_whole_country and self._currlvl not in levels:
                 level_attr = _pep8ify(levels[0])
@@ -345,7 +343,6 @@ class Country(object):
         year: Optional[Union[str, int]] = None,
         **kwargs,
     ) -> None:
-
         # handle the caveat of using a GIS('Pro') input
         gis = _check_gis_source(gis)
 
@@ -360,7 +357,6 @@ class Country(object):
 
         # if the source is a GIS set a few more properties
         if isinstance(self._gis, GIS):
-
             # get the helper services to work with
             hlp_svcs = self._gis.properties["helperServices"]
 
@@ -1306,7 +1302,6 @@ def _create_report_gis(
         elif isinstance(area, Geometry):  # geometry, polygons, points
             area_dict = {"geometry": dict(area)}
         elif isinstance(area, BufferStudyArea):
-
             # namedtuple('BufferStudyArea', 'area radii units overlap travel_mode')
             g = area.area
             if isinstance(g, str):

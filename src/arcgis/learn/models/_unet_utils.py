@@ -235,7 +235,6 @@ class ArcGISImageSegment(Image):
             try:
                 color_im = color_mapping[self.data[0]].permute(2, 0, 1)
             except IndexError as e:
-
                 if HAS_GDAL:
                     message = f"Encountered invalid values in training label values, please check your training data."
                 else:
@@ -325,9 +324,7 @@ class ArcGISSegmentationLabelList(ImageList):
     def analyze_pred(
         self, pred, thresh=0.5, ignore_mapped_class=[], model=None, thinning=None
     ):
-
         if getattr(model, "_is_model_extension", False):
-
             if thinning is None:
                 pred = model._model_conf.post_process(pred, thresh)
             else:

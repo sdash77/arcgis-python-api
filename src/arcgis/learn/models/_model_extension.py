@@ -105,7 +105,6 @@ class ModelExtension(ArcGISModel):
     """
 
     def __init__(self, data, model_conf, backbone=None, pretrained_path=None, **kwargs):
-
         self._learn_version = kwargs.get("ArcGISLearnVersion", "1.9.1")
 
         if self._learn_version >= "1.9.0":
@@ -182,7 +181,6 @@ class ModelExtension(ArcGISModel):
                 self.on_batch_begin_fn = on_batch_begin_fn
 
             def on_batch_begin(self, last_input, last_target, **kwargs):
-
                 if self._learn_version >= "1.9.0":
                     last_input, last_target = self.on_batch_begin_fn(
                         self.learn, last_input, last_target, **kwargs
@@ -324,7 +322,6 @@ class ModelExtension(ArcGISModel):
 
         data_passed = True
         if data is None:
-
             data_passed = False
             if dataset_type == "PASCAL_VOC_rectangles":
                 train_tfms = []
@@ -433,7 +430,6 @@ class ModelExtension(ArcGISModel):
         return inter / union
 
     def _bind_dataset_methods(self):
-
         if self._data.dataset_type == "Classified_Tiles":
             if getattr(self, "_is_edge_detection", False):
                 self.show_results = self._show_results_edge_detection
@@ -474,7 +470,6 @@ class ModelExtension(ArcGISModel):
                 logger.error("Metric not found in the loaded model")
 
     def _mIOU(self, mean=False, show_progress=True):
-
         """
         Computes mean IOU on the validation set for each class.
         =====================   ===========================================
@@ -510,7 +505,6 @@ class ModelExtension(ArcGISModel):
             return pd.read_json(self._data.emd["per_class_metrics"])
 
     def _show_results_object_detection(self, rows=5, thresh=0.5, nms_overlap=0.1):
-
         """
         Displays the results of a trained model on a part of the validation set.
         =====================   ===========================================
@@ -536,7 +530,6 @@ class ModelExtension(ArcGISModel):
         )
 
     def _show_results_segmentation(self, rows=5, thresh=0.5, **kwargs):
-
         """
         Displays the results of a trained model on a part of the validation set.
         =====================   ===========================================
@@ -556,7 +549,6 @@ class ModelExtension(ArcGISModel):
         self._show_results_modified(rows=rows, thresh=thresh, model=self, **kwargs)
 
     def _show_results_panoptic(self, rows=5, thresh=0.5, **kwargs):
-
         """
         Displays the results of a trained model on a part of the validation set.
         =====================   ===========================================
@@ -592,7 +584,6 @@ class ModelExtension(ArcGISModel):
         show_results_panoptic(self, rows=rows, thresh=thresh, **kwargs)
 
     def _show_results_edge_detection(self, rows=5, thresh=0.5, thinning=True, **kwargs):
-
         """
         Displays the results of a trained model on a part of the validation set.
         """
@@ -669,7 +660,6 @@ class ModelExtension(ArcGISModel):
             return fig
 
     def _show_results_modified(self, rows=5, **kwargs):
-
         if rows > len(self._data.valid_ds):
             rows = len(self._data.valid_ds)
 
@@ -688,7 +678,6 @@ class ModelExtension(ArcGISModel):
                 self._model_conf.transform_input(xb, **transform_kwargs)
             )
         except Exception as e:
-
             if getattr(self, "_is_fasterrcnn", False):
                 preds = []
                 for _ in range(xb.shape[0]):
@@ -750,7 +739,6 @@ class ModelExtension(ArcGISModel):
     def _average_precision_score(
         self, detect_thresh=0.2, iou_thresh=0.1, mean=False, show_progress=True
     ):
-
         """
         Computes average precision on the validation set for each class.
         =====================   ===========================================
@@ -891,7 +879,6 @@ class ModelExtension(ArcGISModel):
         resize=False,
         batch_size=1,
     ):
-
         """
         Runs prediction on an Image.
         =====================   ===========================================
@@ -1116,7 +1103,6 @@ class ModelExtension(ArcGISModel):
         },
         resize=False,
     ):
-
         """
         Runs prediction on a video and appends the output VMTI predictions in the metadata file.
         =====================   ===========================================

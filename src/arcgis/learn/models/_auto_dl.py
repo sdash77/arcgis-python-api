@@ -178,7 +178,6 @@ class ImageryModel(ArcGISModel):
             print("Load the model first using load()")
 
     def show_results(self, rows=5, **kwargs):
-
         """
         Displays the results of a trained model on a part of the validation set.
 
@@ -441,7 +440,6 @@ class AutoDL:
         verbose=True,
         **kwargs
     ):
-
         if "max_batch_size" in kwargs:
             self.batch_size = kwargs["max_batch_size"]
         else:
@@ -665,7 +663,6 @@ class AutoDL:
         dataset_type_temp = self._data.dataset_type
 
         try:
-
             if not self._model_stats()[model]["is_mm"]:
                 evaluate_batchsize = EvaluateBatchSize(
                     model,

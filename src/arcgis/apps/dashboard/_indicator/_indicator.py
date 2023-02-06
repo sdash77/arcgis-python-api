@@ -111,7 +111,6 @@ class Indicator(_BaseWidget):
             self._show_last_update = True
 
     def _convert_to_json(self):
-
         self._reference_statistic = []
         self._statistic_definition = []
 

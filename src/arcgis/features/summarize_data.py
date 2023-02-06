@@ -19,6 +19,7 @@ from .._impl.common._utils import _date_handler
 from .._impl.common._utils import inspect_function_inputs
 import arcgis.network as network
 
+
 # --------------------------------------------------------------------------
 def aggregate_points(
     point_layer: Union[
@@ -512,7 +513,6 @@ def summarize_center_and_dispersion(
     estimate: bool = False,
     future: bool = False,
 ):
-
     """
     .. image:: _static/images/summarize_center_and_dispersion/summarize_center_and_dispersion.png
 

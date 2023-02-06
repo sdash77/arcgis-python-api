@@ -3,6 +3,7 @@ from typing import Any, Optional, Union
 from arcgis import env
 from arcgis._impl.common._mixins import PropertyMap
 
+
 ########################################################################
 class NetworkDiagramManager(object):
     """
@@ -42,6 +43,7 @@ class NetworkDiagramManager(object):
     _property = None
     _version_guid = None
     _version_name = None
+
     # ----------------------------------------------------------------------
     def __init__(self, url, version=None, gis=None):
         """Constructor"""
@@ -404,6 +406,7 @@ class Diagram(object):
     _property = None
     _version_guid = None
     _version_name = None
+
     # ----------------------------------------------------------------------
     def __init__(self, url, version=None, gis=None):
         """Constructor"""
