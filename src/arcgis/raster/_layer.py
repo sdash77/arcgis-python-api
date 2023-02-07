@@ -13799,7 +13799,7 @@ class RasterCollection:
 
         """
         if func_args is None:
-            func_args= {}
+            func_args = {}
         return self._ras_coll_engine_obj.reduce(func=func, func_args=func_args)
 
     def merge(self, collection2):
