@@ -7,7 +7,6 @@ For more information about orthomapping workflows in ArcGIS, please visit the he
 """
 
 from __future__ import annotations
-from importlib import resources
 from typing import Any, Optional
 import arcgis
 import json
