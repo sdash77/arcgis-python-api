@@ -2870,7 +2870,7 @@ class Timeline(object):
         if isinstance(content, Text):
             # Can either be the heading or subheading of the timeline.
             # Need to either replace old or add new if not already existing.
-            if position:
+            if position is not None:
                 old_text_node = self._story._properties["nodes"][event]["children"].pop(
                     position
                 )
@@ -2882,7 +2882,7 @@ class Timeline(object):
                 self._story._properties["nodes"][event]["children"].append(content.node)
         elif isinstance(content, Image):
             # Remove current image content and add new content if image already present
-            if position:
+            if position is not None:
                 old_image_node = self._story._properties["nodes"][event][
                     "children"
                 ].pop(position)
