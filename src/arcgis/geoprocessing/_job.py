@@ -267,6 +267,16 @@ class GPJob(object):
                 ):
                     if not value["itemId"] in iids:
                         r[key] = arcgis.gis.Item(self._gis, value["itemId"])
+                        if self._item_properties:
+                            _item_properties = {
+                                "properties": {
+                                    "jobUrl": self._url + "/jobs/" + self._jobid,
+                                    "jobType": "GPServer",
+                                    "jobId": self._jobid,
+                                    "jobStatus": "completed",
+                                }
+                            }
+                            r[key].update(item_properties=_item_properties)                        
                         iids.append(value["itemId"])
                 elif len(str(value)) > 0 and value:
                     r[key] = value
@@ -294,10 +304,32 @@ class GPJob(object):
                 return value
             elif "itemId" in value and len(value["itemId"]) > 0:
                 itemid = value["itemId"]
-                return arcgis.gis.Item(gis=self._gis, itemid=itemid)
+                item =  arcgis.gis.Item(gis=self._gis, itemid=itemid)
+                if self._item_properties:
+                    _item_properties = {
+                        "properties": {
+                            "jobUrl": self._url + "/jobs/" + self._jobid,
+                            "jobType": "GPServer",
+                            "jobId": self._jobid,
+                            "jobStatus": "completed",
+                        }
+                    }
+                    item.update(item_properties=_item_properties)
+                return item                
             elif isinstance(value, dict) and "items" in value:
                 itemid = list(value["items"].keys())[0]
-                return arcgis.gis.Item(gis=self._gis, itemid=itemid)
+                item = arcgis.gis.Item(gis=self._gis, itemid=itemid)
+                if self._item_properties:
+                    _item_properties = {
+                        "properties": {
+                            "jobUrl": self._url + "/jobs/" + self._jobid,
+                            "jobType": "GPServer",
+                            "jobId": self._jobid,
+                            "jobStatus": "completed",
+                        }
+                    }
+                    item.update(item_properties=_item_properties)
+                return item                
             elif self.task == "QueryCameraInfo":
                 import pandas as pd
 

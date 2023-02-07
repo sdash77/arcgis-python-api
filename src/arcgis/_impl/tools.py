@@ -8340,6 +8340,7 @@ class _OrthoMappingTools:
         )
 
         job._is_ortho = True
+        job._item_properties = True
         if future:
             return job
         return job.result()
@@ -8456,6 +8457,7 @@ class _OrthoMappingTools:
             future=True,
         )
         job._is_ortho = True
+        job._item_properties = True
         if future:
             return job
         return job.result()

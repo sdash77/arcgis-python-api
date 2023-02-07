@@ -101,7 +101,7 @@ def _get_collection_item(project_item=None, gis=None):
     res_list = rm.list()
 
     try:
-        last_res = res_list[-1]
+        last_res = res_list[0]
         props_json = last_res["properties"]
         props = json.loads(props_json)
         items_list = props["items"]
@@ -1407,6 +1407,7 @@ def generate_dem(
     gis = arcgis.env.active_gis if gis is None else gis
     update_flight_json = False
     if image_collection.type == "Ortho Mapping Project":
+        project_item = image_collection
         image_collection, last_res = _get_collection_item(image_collection, gis)
         update_flight_json = True
 
@@ -1456,13 +1457,13 @@ def generate_dem(
 
         resource = last_res["resource"]
   
-        rm = image_collection.resources
+        rm = project_item.resources
         flight_json = rm.get(resource)    
 
-        flight_json.update({"items":{surface_type.lower():{"itemId": dem_output.itemid, "url":dem_output.url}}})
+        flight_json["items"].update({surface_type.lower():{"itemId": dem_output.itemid, "url":dem_output.url}})
 
-        flight_json['jobs'][surface_type.lower()].update({"messages": job_response["messages"]})
-        flight_json['jobs'][surface_type.lower()].update({"checked": True})
+        flight_json['jobs'].update({surface_type.lower():{"messages": job_response["messages"], "checked": True}})
+        flight_json['processingSettings'].update({surface_type.lower():dem_dict})
 
         properties = json.loads(last_res['properties'])   
         properties_items =properties["items"]
@@ -1471,17 +1472,16 @@ def generate_dem(
 
         import tempfile, uuid, os
 
-        fname = "%s.json" % resource.split("/")[1]
+        fname = resource.split("/")[1]
+        print(fname)
         temp_dir = tempfile.gettempdir() 
         temp_file = os.path.join(temp_dir, fname)
         with open(temp_file , 'w') as writer:
             json.dump(flight_json, writer)
         del writer
 
-
-
         try:
-            rm.add(file=temp_file, text=flight_json,folder_name="flights", properties=properties)
+            rm.update(file=temp_file, text=flight_json,folder_name="flights",file_name=fname, properties=properties)
         except:
             raise RuntimeError("Error updating the flight")
 
