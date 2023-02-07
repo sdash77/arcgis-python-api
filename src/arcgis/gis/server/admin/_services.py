@@ -18,7 +18,6 @@ from typing import Optional
 from arcgis.features.managers import WebHookScheduleInfo, WebHookEvents
 
 
-
 ########################################################################
 class ServiceManager(BaseServer):
     """

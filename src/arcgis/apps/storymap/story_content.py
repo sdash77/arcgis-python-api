@@ -2946,6 +2946,7 @@ class Timeline(object):
                 position = self._story._properties["nodes"][event_node][
                     "children"
                 ].index(child)
+                return position
             elif (
                 self._story._properties["nodes"][child]["type"] == content_type
                 and self._story._properties["nodes"][child]["data"]["type"] == subtype
@@ -2953,6 +2954,7 @@ class Timeline(object):
                 position = self._story._properties["nodes"][event_node][
                     "children"
                 ].index(child)
+                return position
             else:
                 # Content type doesn't exist yet and will need to be added in.
                 position = None
