@@ -13760,7 +13760,7 @@ class RasterCollection:
         """
         return self._ras_coll_engine_obj.map(func=func, context=context)
 
-    def reduce(self, func, func_args={}):
+    def reduce(self, func, func_args=None):
         """
         The ``reduce`` method composites all the images in the collection to a single image based on a reducer function.
 
@@ -13798,6 +13798,8 @@ class RasterCollection:
             skewness = rc.reduce(func=skewness)
 
         """
+        if func_args is None:
+            func_args= {}
         return self._ras_coll_engine_obj.reduce(func=func, func_args=func_args)
 
     def merge(self, collection2):
