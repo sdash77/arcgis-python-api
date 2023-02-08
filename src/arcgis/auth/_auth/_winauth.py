@@ -9,8 +9,10 @@ from ..tools import parse_url
 HAS_SSPI = False
 HAS_GSSAPI = False
 HAS_KERBEROS = False
+WINDOWS = False
 
 if platform.platform().lower().find("windows") > -1:
+    WINDOWS = True
     try:
         requests_negotiate_sspi = LazyLoader("requests_negotiate_sspi", strict=True)
         HAS_SSPI = True
@@ -60,6 +62,9 @@ class EsriWindowsAuth(AuthBase, SupportMultiAuth):
         try:
             if not username and not password and HAS_SSPI:
                 self.auth = requests_negotiate_sspi.HttpNegotiateAuth()
+            elif WINDOWS == True and HAS_KERBEROS:
+                kerb = EsriKerberosAuth(username=username, password=password, referer=referer, verify_cert=verify_cert)
+                self.auth = kerb.auth
             elif HAS_GSSAPI:
                 if not username or not password:
                     self.auth = requests_gssapi.HTTPSPNEGOAuth()
