@@ -15,7 +15,13 @@ Functions can be applied to various rasters (or images), including the following
 # Rasters within mosaic datasets
 from __future__ import annotations
 from typing import Optional, Union
-from .._layer import ImageryLayer, Raster, _ArcpyRaster, RasterCollection
+from .._layer import (
+    ImageryLayer,
+    Raster,
+    _ArcpyRaster,
+    RasterCollection,
+    _ArcpyRasterCollection,
+)
 from .utility import (
     _raster_input,
     _get_raster,
@@ -79,8 +85,20 @@ def _clone_layer(
     layer, function_chain, raster_ra, raster_ra2=None, variable_name="Raster"
 ):
     _set_multidimensional_rules(function_chain)
-
     if isinstance(layer, Raster) or isinstance(layer, RasterCollection):
+        if (isinstance(layer, RasterCollection)) and isinstance(
+            layer, _ArcpyRasterCollection
+        ):
+            if "Rasters" in function_chain["rasterFunctionArguments"].keys():
+                if isinstance(
+                    function_chain["rasterFunctionArguments"]["Rasters"],
+                    RasterCollection,
+                ):
+                    function_chain["rasterFunctionArguments"].pop("Rasters")
+
+            return _clone_layer_raster_without_copy(
+                layer, function_chain, function_chain
+            )
         return _clone_layer_raster(
             layer, function_chain, raster_ra, raster_ra2, variable_name
         )
@@ -313,51 +331,74 @@ def _clone_layer_raster(
 
 
 def _clone_layer_raster_without_copy(layer, function_chain, function_chain_ra):
-    if layer._datastore_raster:
-        if isinstance(layer._uri, dict) or isinstance(layer._uri, bytes):
-            newlyr = Raster(
-                function_chain_ra,
-                is_multidimensional=layer._is_multidimensional,
-                engine=layer._engine,
-                gis=layer._gis,
-            )
+    if (isinstance(layer, RasterCollection)) and isinstance(
+        layer, _ArcpyRasterCollection
+    ):
+        if hasattr(layer, "_ras_coll_engine_obj"):
+            rc = layer._ras_coll_engine_obj
         else:
-            newlyr = Raster(
-                layer._uri,
-                is_multidimensional=layer._is_multidimensional,
-                engine=layer._engine,
-                gis=layer._gis,
-            )
-    else:
-        allow_raster_function = True
-        allow_analysis = True
-        info = layer._get_service_info()
-        if "allowRasterFunction" in info.keys():
-            allow_raster_function = info["allowRasterFunction"]
-        if not allow_raster_function:
-            if "allowAnalysis" in info.keys():
-                allow_analysis = info["allowAnalysis"]
-            if not allow_analysis:
-                raise RuntimeError("Input image service doesnt allow analysis.")
-        if (layer._engine != _ArcpyRaster) and (
-            layer.tiles_only or (not allow_raster_function and allow_analysis)
-        ):
-            newlyr = Raster(
-                function_chain_ra,
-                is_multidimensional=layer._is_multidimensional,
-                engine=layer._engine,
-                gis=layer._gis,
-            )
-        else:
-            newlyr = Raster(
-                layer._url,
-                is_multidimensional=layer._is_multidimensional,
-                engine=layer._engine,
-                gis=layer._gis,
-            )
-            newlyr._engine_obj._tiles_only = layer._tiles_only
+            rc = layer
+        try:
+            import arcpy, json
 
-    if layer._engine == _ArcpyRaster:
+            arcpylyr = arcpy.ia.Apply(
+                rc._raster_collection,
+                json.dumps(function_chain_ra),
+            )
+            newlyr = Raster(
+                arcpylyr,
+                is_multidimensional=True,
+                engine=rc[0]["Raster"]._engine,
+            )
+            return newlyr
+        except Exception as err:
+            _LOGGER.warning(err)
+    else:
+        if (hasattr(layer, "_datastore_raster")) and layer._datastore_raster:
+            if isinstance(layer._uri, dict) or isinstance(layer._uri, bytes):
+                newlyr = Raster(
+                    function_chain_ra,
+                    is_multidimensional=layer._is_multidimensional,
+                    engine=layer._engine,
+                    gis=layer._gis,
+                )
+            else:
+                newlyr = Raster(
+                    layer._uri,
+                    is_multidimensional=layer._is_multidimensional,
+                    engine=layer._engine,
+                    gis=layer._gis,
+                )
+        else:
+            allow_raster_function = True
+            allow_analysis = True
+            info = layer._get_service_info()
+            if "allowRasterFunction" in info.keys():
+                allow_raster_function = info["allowRasterFunction"]
+            if not allow_raster_function:
+                if "allowAnalysis" in info.keys():
+                    allow_analysis = info["allowAnalysis"]
+                if not allow_analysis:
+                    raise RuntimeError("Input image service doesnt allow analysis.")
+            if (layer._engine != _ArcpyRaster) and (
+                layer.tiles_only or (not allow_raster_function and allow_analysis)
+            ):
+                newlyr = Raster(
+                    function_chain_ra,
+                    is_multidimensional=layer._is_multidimensional,
+                    engine=layer._engine,
+                    gis=layer._gis,
+                )
+            else:
+                newlyr = Raster(
+                    layer._url,
+                    is_multidimensional=layer._is_multidimensional,
+                    engine=layer._engine,
+                    gis=layer._gis,
+                )
+                newlyr._engine_obj._tiles_only = layer._tiles_only
+
+    if (hasattr(layer, "_engine")) and layer._engine == _ArcpyRaster:
         allow_analysis = True  # check only allow  analysis if engine is arcpy as there is no export image case
         info = None
         try:
