@@ -100,7 +100,7 @@ def _get_collection_item(project_item=None, gis=None):
     res_list = rm.list()
 
     try:
-        last_res = res_list[0]
+        last_res = res_list[-1]
         props_json = last_res["properties"]
         props = json.loads(props_json)
         items_list = props["items"]
@@ -112,6 +112,50 @@ def _get_collection_item(project_item=None, gis=None):
     except IndexError as e:
         raise RuntimeError("Unable to retrieve the flight information")
 
+def _update_flight_info(output_item,
+                        flight,
+                        project_item,
+                        processing_states={},
+                        item_name='',
+                        gis=None):
+
+    job_info=output_item.properties
+    job_response={}
+    if "jobUrl" in job_info :
+        # Get the url of the Analysis job to track the status.
+
+        job_url = job_info.get("jobUrl")
+        params = {"f": "json"}
+        job_response = gis._con.post(job_url, params)
+
+    resource = flight["resource"]
+
+    rm = project_item.resources
+    flight_json = rm.get(resource)    
+
+    flight_json["items"].update({item_name:{"itemId": output_item.itemid, "url":output_item.url}})
+
+    flight_json['jobs'].update({item_name:{"messages": job_response["messages"], "checked": True, "progress": 100,"success": True}})
+    flight_json['processingSettings'].update({item_name:processing_states})
+
+    properties = json.loads(flight['properties'])   
+    properties_items =properties["items"]
+    properties_items.append({"product": item_name, "id": output_item.itemid, "created": True})
+    properties.update({"items": properties_items})
+
+    import tempfile, uuid, os
+
+    fname = resource.split("/")[1]
+    temp_dir = tempfile.gettempdir() 
+    temp_file = os.path.join(temp_dir, fname)
+    with open(temp_file , 'w') as writer:
+        json.dump(flight_json, writer)
+    del writer
+
+    try:
+        rm.update(file=temp_file, text=flight_json,folder_name="flights",file_name=fname, properties=properties)
+    except:
+        raise RuntimeError("Error updating the flight resource")
 ###################################################################################################
 ###
 ### PUBLIC API
@@ -235,17 +279,10 @@ def add_flight(project_item,
 
     flight_json.update({"sourceData":{"gps":gps_data}})
 
-    import tempfile, uuid, os
-
     fname = "%s.json" % uuid.uuid4().hex
-    temp_dir = tempfile.gettempdir() 
-    temp_file = os.path.join(temp_dir, fname)
-    with open(temp_file , 'w') as writer:
-        json.dump(flight_json, writer)
-    del writer
 
     try:
-        resource_manager.add(file=temp_file, text=flight_json,folder_name="flights", properties={"oid":oid,"imageCount":len(image_list),"items":[{"product":"imageCollection","id":output_collection.id,"created":True}],"gcpItems":[],"baStatus":"succeeded"})
+        resource_manager.add(file_name=fname, text=flight_json,folder_name="flights", properties={"oid":oid,"imageCount":len(image_list),"items":[{"product":"imageCollection","id":output_collection.id,"created":True}],"gcpItems":[],"baStatus":"succeeded"})
         project_item.update(data = json.dumps({"projectVersion":2,"rasterType":raster_type_name}))
     except:
         raise RuntimeError("Error adding the flight")
@@ -1407,7 +1444,7 @@ def generate_dem(
     update_flight_json = False
     if image_collection.type == "Ortho Mapping Project":
         project_item = image_collection
-        image_collection, last_res = _get_collection_item(image_collection, gis)
+        image_collection, flight = _get_collection_item(image_collection, gis)
         update_flight_json = True
 
         if kwargs is not None:
@@ -1444,45 +1481,18 @@ def generate_dem(
         dem_dict.update(point_cloud_dict)
         dem_dict.update(interpolation_dict)
 
-
-        job_info=dem_output.properties
-        job_response={}
-        if "jobUrl" in job_info :
-            # Get the url of the Analysis job to track the status.
-
-            job_url = job_info.get("jobUrl")
-            params = {"f": "json"}
-            job_response = gis._con.post(job_url, params)
-
-        resource = last_res["resource"]
-  
-        rm = project_item.resources
-        flight_json = rm.get(resource)    
-
-        flight_json["items"].update({surface_type.lower():{"itemId": dem_output.itemid, "url":dem_output.url}})
-
-        flight_json['jobs'].update({surface_type.lower():{"messages": job_response["messages"], "checked": True}})
-        flight_json['processingSettings'].update({surface_type.lower():dem_dict})
-
-        properties = json.loads(last_res['properties'])   
-        properties_items =properties["items"]
-        properties_items.append({"product": surface_type.lower(), "id": dem_output.itemid, "created": True})
-        properties.update({"items": properties_items})
-
-        import tempfile, uuid, os
-
-        fname = resource.split("/")[1]
-        print(fname)
-        temp_dir = tempfile.gettempdir() 
-        temp_file = os.path.join(temp_dir, fname)
-        with open(temp_file , 'w') as writer:
-            json.dump(flight_json, writer)
-        del writer
-
         try:
-            rm.update(file=temp_file, text=flight_json,folder_name="flights",file_name=fname, properties=properties)
+            _update_flight_info(output_item =dem_output,
+                                flight=flight,
+                                project_item=project_item,
+                                processing_states=dem_dict,
+                                item_name=surface_type.lower(),
+                                gis=gis)
         except:
             raise RuntimeError("Error updating the flight")
+
+
+
 
     return dem_output
 
@@ -1655,9 +1665,9 @@ def generate_orthomosaic(
                                                |   "colorCorrectionMethod": "DODGING",
                                                |   "dodgingSurface": "Single_Color",
                                                |   "referenceImg": {"url": "``https://...``"},
-                                               |   "skipRows": 10,
-                                               |   "skipCols": 10,
-                                               |   "reCalculateSats": "OVERWRITE"
+                                               |   "skipX": 10,
+                                               |   "skipY": 10,
+                                               |   "overwriteStats": "OVERWRITE"
                                                |  }
     -----------------------------------    --------------------------------------------------------------------
     gis                                    Optional :class:`~arcgis.gis.GIS` . The GIS on which this tool runs. If not specified, the active GIS is used.
@@ -1669,9 +1679,12 @@ def generate_orthomosaic(
     """
     gis = arcgis.env.active_gis if gis is None else gis
 
+    update_flight_json = False
     if image_collection.type == "Ortho Mapping Project":
-        image_collection = _get_collection_item(image_collection, gis)  
-         
+        project_item = image_collection
+        image_collection, flight = _get_collection_item(image_collection, gis)
+        update_flight_json = True
+
         if kwargs is not None:
             if "folder" in kwargs:
                 folder = kwargs["folder"]
@@ -1682,7 +1695,7 @@ def generate_orthomosaic(
                         break  
             kwargs.update({"folder":folder})
             
-    return gis._tools.orthomapping.generate_orthomosaic(
+    ortho_output =  gis._tools.orthomapping.generate_orthomosaic(
         image_collection=image_collection,
         output_ortho_image=out_ortho,
         regen_seamlines=regen_seamlines,
@@ -1691,6 +1704,66 @@ def generate_orthomosaic(
         future=future,
         **kwargs,
     )
+
+    if update_flight_json:
+        color_balance_keys = ['targetRaster', 'skipX', 'skipY', 'overwriteStats', 'dodgingSurface', 'colorCorrectionMethod']
+        color_balance_dict = {}
+        color_balance_dict.update({"colorBalance":{
+        "skipX": 0,
+        "skipY": 0,
+        "overwriteStats": "SKIP_EXISTING",
+        "colorCorrectionMethod": "DODGING",
+        "dodgingSurface": "SINGLE_COLOR",
+        "targetImage": ""
+    }})
+
+        color_balance_dict["colorBalance"].update({k: context[k] for k in color_balance_keys if k in context})
+        if "colorCorrectionMethod" in color_balance_dict['colorBalance']:
+            color_balance_dict["colorBalance"]["method"]=color_balance_dict["colorBalance"].pop("colorCorrectionMethod")
+        if "dodgingSurface" in color_balance_dict['colorBalance']:
+            color_balance_dict["colorBalance"]["surfaceType"]=color_balance_dict["colorBalance"].pop("dodgingSurface")
+
+        seamline_keys = ['computeCandidate', 'maxOverlap', 'maxLoss', 'pixelSize', 'blendType','blendUnit','requestSizeType','requestSize','minThinnessRatio','maxSliverSize','seamlinesMethod']
+        seamline_dict = {}
+        seamline_dict.update({"seamline":{
+        "seamlinesMethod": "DISPARITY",
+        "minRegionSize": 100,
+        "pixelSize": "",
+        "blendType": "Both",
+        "blendWidth": None,
+        "blendUnit": "Pixels",
+        "requestSizeType": "Pixels",
+        "requestSize": 1000,
+        "minThinnessRatio": 0.05,
+        "maxSliverSize": 20
+    }})
+
+        seamline_dict["seamline"].update({k: context[k] for k in color_balance_keys if k in context})
+        if "seamlinesMethod" in seamline_dict['seamline']:
+            seamline_dict["seamline"]["method"]=seamline_dict["seamline"].pop("seamlinesMethod")
+
+        ortho_mosaic_as_ovr = context.get("orthoMosaicAsOvr", False)
+        ortho_dict = {"ortho": {"orthoMosaicAsOvr":ortho_mosaic_as_ovr}}
+
+        if regen_seamlines:
+            ortho_dict.update(seamline_dict)
+        if recompute_color_correction:
+            ortho_dict.update(color_balance_dict)
+
+        try:
+            _update_flight_info(output_item =ortho_output,
+                                flight=flight,
+                                project_item=project_item,
+                                processing_states=ortho_dict,
+                                item_name="ortho",
+                                gis=gis)
+        except:
+            raise RuntimeError("Error updating the flight")
+
+
+
+
+    return ortho_output
     """
     gis = arcgis.env.active_gis if gis is None else gis
 
