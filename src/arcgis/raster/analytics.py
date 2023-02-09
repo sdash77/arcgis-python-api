@@ -9665,8 +9665,8 @@ def export_to_tile_package(
 
 def derive_continuous_flow(
     input_surface_raster,
-    input_depressions_data = None,
-    input_weight_raster = None,
+    input_depressions_data=None,
+    input_weight_raster=None,
     flow_direction_type: str = "D8",
     force_flow: str = "NORMAL",
     output_flow_accumulation_raster_name: str = None,
@@ -9675,9 +9675,8 @@ def derive_continuous_flow(
     *,
     gis: Optional[GIS] = None,
     future: bool = False,
-    **kwargs
+    **kwargs,
 ):
-    
     """
     Generates a raster of accumulated flow into each cell from an input surface raster with no prior sink or depression filling required.
     
@@ -9692,13 +9691,13 @@ def derive_continuous_flow(
     input_weight_raster                      Optional. A raster that defines the fraction of flow that contributes to flow accumulation at each cell.\
                                                 The weight is only applied to flow accumulation. If no weight raster is specified, a default weight of 1 will be applied to each cell. 
     ------------------------------------     --------------------------------------------------------------------
-    flow_direction_type                      Optional string. Specifies the flow direction type to use. Choice list: [‘D8’, ‘MFD’] 
+    flow_direction_type                      Optional string. Specifies the flow direction type to use. Choice list: ['D8', 'MFD'] 
     
                                              D8 is for the D8 flow direction type. This is the default. 
                                              MFD is for the Multi Flow Direction type.
     ------------------------------------     --------------------------------------------------------------------
     force_flow                               Optionalstring. Specifies if edge cells will always flow outward or follow normal flow rules. 
-                                             Choice list: [‘NORMAL’, ‘FORCE’] The default value is ‘NORMAL’.
+                                             Choice list: ['NORMAL', 'FORCE'] The default value is 'NORMAL'.
     ------------------------------------     --------------------------------------------------------------------
     output_flow_accumulation_raster_name     Optional. If not provided, an Image Service is created by the method and used as the output raster. The output raster representing flow accumulation \
                                                 (number of upstream cells draining to each cell). The output raster is of floating-point type. You can pass in an existing Image Service Item from your GIS \
@@ -9745,18 +9744,18 @@ def derive_continuous_flow(
     ====================================     ====================================================================     
 
     """
-    
+
     gis = _arcgis.env.active_gis if gis is None else gis
     return gis._tools.rasteranalysis.derive_continuous_flow(
-        input_surface_raster = input_surface_raster,
-        output_flow_accumulation_raster_name = output_flow_accumulation_raster_name,
-        input_depressions_data = input_depressions_data,
-        input_weight_raster = input_weight_raster,
-        output_flow_direction_raster_name = output_flow_direction_raster_name,
-        flow_direction_type = flow_direction_type,
-        force_flow = force_flow,
-        context = context,
-        future = future,
+        input_surface_raster=input_surface_raster,
+        output_flow_accumulation_raster_name=output_flow_accumulation_raster_name,
+        input_depressions_data=input_depressions_data,
+        input_weight_raster=input_weight_raster,
+        output_flow_direction_raster_name=output_flow_direction_raster_name,
+        flow_direction_type=flow_direction_type,
+        force_flow=force_flow,
+        context=context,
+        future=future,
         **kwargs,
     )
 

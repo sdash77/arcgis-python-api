@@ -13009,6 +13009,7 @@ def interpolate_raster_by_dimension(
 
     return _clone_layer(layer1, template_dict, raster_ra1)
 
+
 def surface_parameters(
     raster: Union[Raster, ImageryLayer],
     parameter_type: str = "SLOPE",
@@ -13061,7 +13062,7 @@ def surface_parameters(
     --------------------------------     --------------------------------------------------------------------
     z_unit                               Optional. The linear unit of vertical z-values. It is defined by a vertical coordinate system if it exists.\
                                             If a vertical coordinate system does not exist, the z-unit should be defined from the unit list to ensure correct geodesic computation.\
-                                            If the input raster has a defined VCS its unit will be the default. Otherwise, the default is ‘METER’. 
+                                            If the input raster has a defined VCS its unit will be the default. Otherwise, the default is 'METER'. 
                                         
                                          INCH — The linear unit will be inches. 
                                          FOOT — The linear unit will be feet. 
@@ -13100,7 +13101,7 @@ def surface_parameters(
 
         surface_parameters_output = surface_parameters(raster, parameter_type="SLOPE", slope_type="PERCENT_RISE")
     """
-    
+
     layer, raster, raster_ra = _raster_input(raster)
 
     template_dict = {
@@ -13124,9 +13125,12 @@ def surface_parameters(
         if parameter_type.upper() not in parameter_types.keys():
             raise RuntimeError(
                 "parameter_type should be one of the following "
-                + str(parameter_types.keys()))
-        template_dict["rasterFunctionArguments"]["SurfaceCalculation"] = parameter_types[parameter_type.upper()]
-    
+                + str(parameter_types.keys())
+            )
+        template_dict["rasterFunctionArguments"][
+            "SurfaceCalculation"
+        ] = parameter_types[parameter_type.upper()]
+
     surface_types = {
         "QUADRATIC": 1,
         "BIQUADRATIC": 2,
@@ -13136,39 +13140,57 @@ def surface_parameters(
         if local_surface_type.upper() not in surface_types.keys():
             raise RuntimeError(
                 "local_surface_type should be one of the following "
-                + str(surface_types.keys()))
-        template_dict["rasterFunctionArguments"]["LocalSurface"] = surface_types[local_surface_type.upper()]
-        
+                + str(surface_types.keys())
+            )
+        template_dict["rasterFunctionArguments"]["LocalSurface"] = surface_types[
+            local_surface_type.upper()
+        ]
+
     if neighborhood_distance_with_units is not None:
-         template_dict["rasterFunctionArguments"]["AnalysisScaleWithUnits"] = neighborhood_distance_with_units
+        template_dict["rasterFunctionArguments"][
+            "AnalysisScaleWithUnits"
+        ] = neighborhood_distance_with_units
 
     if use_adaptive_neighborhood is not None:
-        if  isinstance(use_adaptive_neighborhood, bool):
-            template_dict["rasterFunctionArguments"]["UseAdaptiveScale"] = use_adaptive_neighborhood
-        raise RuntimeError(
-            "use_adaptive_neighborhood should be of type: boolean"
-        )
-    
-    z_unit_types = ["METER", "INCH", "FOOT", "YARD", "MILE_US", "NAUTICAL_MILE", "MILLIMETER", "CENTIMETER", "KILOMETER", "DECIMETER"]
-    
+        if isinstance(use_adaptive_neighborhood, bool):
+            template_dict["rasterFunctionArguments"][
+                "UseAdaptiveScale"
+            ] = use_adaptive_neighborhood
+        raise RuntimeError("use_adaptive_neighborhood should be of type: boolean")
+
+    z_unit_types = [
+        "METER",
+        "INCH",
+        "FOOT",
+        "YARD",
+        "MILE_US",
+        "NAUTICAL_MILE",
+        "MILLIMETER",
+        "CENTIMETER",
+        "KILOMETER",
+        "DECIMETER",
+    ]
+
     if z_unit is not None:
         if z_unit.upper() not in z_unit_types:
             raise RuntimeError(
-                "z_unit should be one of the following "
-                + str(z_unit_types))
+                "z_unit should be one of the following " + str(z_unit_types)
+            )
         template_dict["rasterFunctionArguments"]["ZUnit"] = z_unit.upper()
 
     slope_types = {
         "DEGREE": 1,
         "PERCENT_RISE": 2,
     }
-    
+
     if slope_type is not None:
         if slope_type.upper() not in slope_types.keys():
             raise RuntimeError(
-                "slope_type should be one of the following "
-                + str(slope_types.keys()))
-        template_dict["rasterFunctionArguments"]["SlopeType"] = slope_types[slope_type.upper()]
+                "slope_type should be one of the following " + str(slope_types.keys())
+            )
+        template_dict["rasterFunctionArguments"]["SlopeType"] = slope_types[
+            slope_type.upper()
+        ]
 
     azimuth_types = {
         "GEODESIC_AZIMUTHS": False,
@@ -13179,8 +13201,11 @@ def surface_parameters(
         if project_geodesic_azimuths.upper() not in azimuth_types.keys():
             raise RuntimeError(
                 "project_geodesic_azimuths should be one of the following "
-                + str(azimuth_types.keys()))
-        template_dict["rasterFunctionArguments"]["ProjectAzimuths"] = azimuth_types[project_geodesic_azimuths.upper()]
+                + str(azimuth_types.keys())
+            )
+        template_dict["rasterFunctionArguments"]["ProjectAzimuths"] = azimuth_types[
+            project_geodesic_azimuths.upper()
+        ]
 
     eq_aspect_types = {
         "NORTH_POLE_ASPECT": False,
@@ -13191,10 +13216,14 @@ def surface_parameters(
         if use_equatorial_aspect.upper() not in eq_aspect_types.keys():
             raise RuntimeError(
                 "use_equatorial_aspect should be one of the following "
-                + str(eq_aspect_types.keys()))
-        template_dict["rasterFunctionArguments"]["UseEquatorialAspect"] = eq_aspect_types[use_equatorial_aspect.upper()]
+                + str(eq_aspect_types.keys())
+            )
+        template_dict["rasterFunctionArguments"][
+            "UseEquatorialAspect"
+        ] = eq_aspect_types[use_equatorial_aspect.upper()]
 
     return _clone_layer(layer, template_dict, raster_ra)
+
 
 def geometric_median(
     rasters,

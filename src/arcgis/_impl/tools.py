@@ -17244,17 +17244,16 @@ class _RasterAnalysisTools(BaseAnalytics):
     def derive_continuous_flow(
         self,
         input_surface_raster,
-        input_depressions_data = None,
-        input_weight_raster = None,
+        input_depressions_data=None,
+        input_weight_raster=None,
         flow_direction_type: str = "D8",
         force_flow: bool = False,
-        output_flow_accumulation_raster_name = None,
-        output_flow_direction_raster_name = None,
-        context = None,
-        future = False,
+        output_flow_accumulation_raster_name=None,
+        output_flow_direction_raster_name=None,
+        context=None,
+        future=False,
         **kwargs,
     ):
-
         """
         Generates a raster of accumulated flow into each cell from an input surface raster with no prior sink or depression filling required.
         
@@ -17269,13 +17268,13 @@ class _RasterAnalysisTools(BaseAnalytics):
         input_weight_raster                      Optional. A raster that defines the fraction of flow that contributes to flow accumulation at each cell.\
                                                     The weight is only applied to flow accumulation. If no weight raster is specified, a default weight of 1 will be applied to each cell. 
         ------------------------------------     --------------------------------------------------------------------
-        flow_direction_type                      Optional string. Specifies the flow direction type to use. Choice list: [‘D8’, ‘MFD’] 
+        flow_direction_type                      Optional string. Specifies the flow direction type to use. Choice list: ['D8', 'MFD'] 
         
                                                 D8 is for the D8 flow direction type. This is the default. 
                                                 MFD is for the Multi Flow Direction type.
         ------------------------------------     --------------------------------------------------------------------
         force_flow                               Optionalstring. Specifies if edge cells will always flow outward or follow normal flow rules. 
-                                                Choice list: [‘NORMAL’, ‘FORCE’] The default value is ‘NORMAL’.
+                                                Choice list: ['NORMAL', 'FORCE'] The default value is 'NORMAL'.
         ------------------------------------     --------------------------------------------------------------------
         output_flow_accumulation_raster_name     Optional. If not provided, an Image Service is created by the method and used as the output raster. The output raster representing flow accumulation \
                                                     (number of upstream cells draining to each cell). The output raster is of floating-point type. You can pass in an existing Image Service Item from your GIS \
@@ -17324,7 +17323,7 @@ class _RasterAnalysisTools(BaseAnalytics):
         """
 
         task = "DeriveContinuousFlow"
-        
+
         gis = self._gis
 
         context_param = {}
@@ -17333,14 +17332,18 @@ class _RasterAnalysisTools(BaseAnalytics):
             context = context_param["context"]
 
         input_surface_raster = self._layer_input(input_layer=input_surface_raster)
-        
+
         if isinstance(input_depressions_data, _FEATURE_INPUTS):
-            input_depressions_data = self._feature_input(input_layer=input_depressions_data)
+            input_depressions_data = self._feature_input(
+                input_layer=input_depressions_data
+            )
         elif isinstance(input_depressions_data, Item):
             input_depressions_data = {"itemId": input_depressions_data.itemid}
         elif input_depressions_data is not None:
-            input_depressions_data = self._layer_input(input_layer=input_depressions_data)
-        
+            input_depressions_data = self._layer_input(
+                input_layer=input_depressions_data
+            )
+
         if input_weight_raster is not None:
             input_weight_raster = self._layer_input(input_layer=input_weight_raster)
 
@@ -17367,40 +17370,60 @@ class _RasterAnalysisTools(BaseAnalytics):
                     force_flow = False
                 elif force_flow == "FORCE":
                     force_flow = True
-        
-        (output_accumulation_raster, output_accumulation_service) = self._set_output_raster(
-            output_name=output_flow_accumulation_raster_name, task=task, output_properties=kwargs
+
+        (
+            output_accumulation_raster,
+            output_accumulation_service,
+        ) = self._set_output_raster(
+            output_name=output_flow_accumulation_raster_name,
+            task=task,
+            output_properties=kwargs,
         )
-        
+
         output_direction_raster = None
         if output_flow_direction_raster_name is not None:
-            (output_direction_raster, output_direction_service) = self._set_output_raster(
-                output_name = output_flow_direction_raster_name, task = task, output_properties = kwargs
+            (
+                output_direction_raster,
+                output_direction_service,
+            ) = self._set_output_raster(
+                output_name=output_flow_direction_raster_name,
+                task=task,
+                output_properties=kwargs,
             )
-        
+
         gpjob = self._tbx.derive_continuous_flow(
-            input_surface_raster = input_surface_raster,
-            output_flow_accumulation_raster_name = output_accumulation_raster,
-            input_depressions_data = input_depressions_data,
-            input_weight_raster = input_weight_raster,
-            output_flow_direction_raster_name = output_direction_raster,
-            flow_direction_type = flow_direction_type,
-            force_flow = force_flow,
-            context = context,
-            gis = self._gis,
-            future = True,
+            input_surface_raster=input_surface_raster,
+            output_flow_accumulation_raster_name=output_accumulation_raster,
+            input_depressions_data=input_depressions_data,
+            input_weight_raster=input_weight_raster,
+            output_flow_direction_raster_name=output_direction_raster,
+            flow_direction_type=flow_direction_type,
+            force_flow=force_flow,
+            context=context,
+            gis=self._gis,
+            future=True,
         )
-        
+
         gpjob._is_ra = True
         gpjob._item_properties = True
-        
+
         if future:
             if output_direction_raster:
-                return RAJob(gpjob, item = [output_accumulation_service, output_direction_service])
-            return RAJob(gpjob, item = output_accumulation_service,)
+                return RAJob(
+                    gpjob, item=[output_accumulation_service, output_direction_service]
+                )
+            return RAJob(
+                gpjob,
+                item=output_accumulation_service,
+            )
         if output_direction_raster:
-                return RAJob(gpjob, item = [output_accumulation_service, output_direction_service]).result()
-        return RAJob(gpjob, item = output_accumulation_service,).result() 
+            return RAJob(
+                gpjob, item=[output_accumulation_service, output_direction_service]
+            ).result()
+        return RAJob(
+            gpjob,
+            item=output_accumulation_service,
+        ).result()
 
     def mosaic_image(
         self,
