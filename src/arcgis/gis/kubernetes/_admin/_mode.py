@@ -2,6 +2,7 @@ from __future__ import annotations
 from ._base import _BaseKube
 from typing import Dict, Any, Optional
 
+
 ###########################################################################
 class Mode(_BaseKube):
     _url = None
@@ -38,7 +39,6 @@ class Mode(_BaseKube):
         url = f"{self._url}/update"
         params = {"isReadOnly": read_only}
         if description:
-
             params["message"] = description
         res = self._con.post(path=url, params=params)
         if "success" in res:

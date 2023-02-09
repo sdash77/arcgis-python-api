@@ -4,6 +4,7 @@ from datetime import datetime
 from arcgis.gis.kubernetes._admin._base import _BaseKube
 from typing import Dict, Any, Optional, List, Union
 
+
 ########################################################################
 class LogManager(_BaseKube):
     """
@@ -19,6 +20,7 @@ class LogManager(_BaseKube):
     _con = None
     _json_dict = None
     _json = None
+
     # ----------------------------------------------------------------------
     def __init__(self, url, gis, initialize=False):
         """Constructor

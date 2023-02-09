@@ -1016,7 +1016,6 @@ class WorkflowManager:
 
     @property
     def job_templates(self):
-
         """
         Gets all the job templates in a workflow item.
 

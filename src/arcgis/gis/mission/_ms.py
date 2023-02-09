@@ -8,6 +8,7 @@ from ._machines import MachineManager
 from ._security import SecurityManager
 from .api import MissionCatalog
 
+
 ###########################################################################
 class MissionServer(BaseMissionServer):
     """
@@ -24,9 +25,9 @@ class MissionServer(BaseMissionServer):
     _system = None
     _logs = None
     _machine = None
+
     # ----------------------------------------------------------------------
     def __init__(self, url, gis=None):
-
         self.catalog = MissionCatalog(gis=gis)
         if url.lower().find("/admin") == -1:
             if url.endswith("/"):

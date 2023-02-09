@@ -274,7 +274,6 @@ except:
 
 
 def get_nms_preds(b_clas, b_bb, idx, anchors, grid_sizes, classes, nms_overlap, thres):
-
     a_ic = actn_to_bb(b_bb[idx], anchors, grid_sizes)
     clas_pr, clas_ids = b_clas[idx].max(1)
     clas_pr = clas_pr.sigmoid()

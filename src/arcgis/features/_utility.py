@@ -6,6 +6,7 @@ from arcgis._impl.common._mixins import PropertyMap
 from arcgis.features._trace_configuration import TraceConfiguration
 from arcgis._impl.common._deprecate import deprecated
 
+
 ########################################################################
 class UtilityNetworkManager(object):
     """
@@ -35,6 +36,7 @@ class UtilityNetworkManager(object):
     _version_guid = None
     _version_name = None
     _version = None
+
     # ----------------------------------------------------------------------
     def __init__(self, url, version=None, gis=None):
         """Constructor"""

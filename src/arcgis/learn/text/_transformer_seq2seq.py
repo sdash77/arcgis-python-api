@@ -46,7 +46,6 @@ transformer_seq_length = 512
 
 
 class TransformerForSequenceToSequence(ArcGISTransformer):
-
     _supported_backbones = transformer_architectures
 
     def __init__(

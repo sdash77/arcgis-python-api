@@ -6,6 +6,7 @@ from typing import Optional, Union
 from .. import GIS
 from ._base import BasePortalAdmin
 
+
 ########################################################################
 class Logs(BasePortalAdmin):
     """
@@ -26,6 +27,7 @@ class Logs(BasePortalAdmin):
     _url = None
     _con = None
     _portal = None
+
     # ----------------------------------------------------------------------
     def __init__(self, url, gis):
         """Constructor"""

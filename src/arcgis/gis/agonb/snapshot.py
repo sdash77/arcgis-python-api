@@ -122,6 +122,7 @@ class SnapshotManager(object):
     _gis = None
     _url = None
     _properties = None
+
     # ----------------------------------------------------------------------
     def __init__(self, url: str, gis: GIS):
         self._url = url
@@ -261,7 +262,6 @@ class SnapshotManager(object):
                 and res["status"] == "success"
                 and len(res["snapshots"]) > 0
             ):
-
                 return [
                     SnapShot(item=item, sm=self, properties=snap)
                     for snap in res["snapshots"]

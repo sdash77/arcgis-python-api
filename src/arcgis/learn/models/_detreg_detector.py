@@ -26,7 +26,6 @@ class CustomDetReg:
     import torch
 
     def get_model(self, data, backbone="resnet50", **kwargs):
-
         from arcgis.learn._utils import nested_tensor_from_tensor_list
 
         self.Nt = nested_tensor_from_tensor_list
@@ -85,7 +84,6 @@ class CustomDetReg:
         return model
 
     def on_batch_begin(self, learn, model_input_batch, model_target_batch, **kwargs):
-
         target_list = []
 
         for bbox, label in zip(*model_target_batch):
@@ -117,7 +115,6 @@ class CustomDetReg:
         )
 
     def resize_input_batch(self, input):
-
         input = self.torch.nn.functional.interpolate(
             input,
             scale_factor=self.scale_factor,
@@ -152,7 +149,6 @@ class CustomDetReg:
     def post_process(
         self, pred, nms_overlap, thres, chip_size, device=torch.device("cuda")
     ):
-
         post_processed_pred = []
         pred_logits = pred["pred_logits"]
         results = self.postprocessors(
@@ -205,7 +201,6 @@ class DETReg(ModelExtension):
     """
 
     def __init__(self, data, backbone="resnet50", pretrained_path=None, **kwargs):
-
         self._check_dataset_support(data)
         backbone_name = backbone if type(backbone) is str else backbone.__name__
         if backbone_name not in self.supported_backbones:
@@ -302,7 +297,6 @@ class DETReg(ModelExtension):
 
         data_passed = True
         if data is None:
-
             data_passed = False
             train_tfms = []
             val_tfms = []
@@ -350,7 +344,6 @@ class DETReg(ModelExtension):
         visualize=False,
         resize=False,
     ):
-
         """
         Runs prediction on an Image. This method is only supported for RGB images.
 
@@ -421,7 +414,6 @@ class DETReg(ModelExtension):
         },
         resize=False,
     ):
-
         """
         Runs prediction on a video and appends the output VMTI predictions in the metadata file.
         This method is only supported for RGB images.
@@ -497,7 +489,6 @@ class DETReg(ModelExtension):
         mean=False,
         show_progress=True,
     ):
-
         """
         Computes average precision on the validation set for each class.
 
@@ -522,7 +513,6 @@ class DETReg(ModelExtension):
         """
 
     def show_results(self, rows=5, thresh=0.5, nms_overlap=0.1):
-
         """
         Displays the results of a trained model on a part of the validation set.
 

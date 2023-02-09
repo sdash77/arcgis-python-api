@@ -1468,7 +1468,6 @@ class KbertnetesPy(object):
                 if not os.path.isfile(os.path.abspath(data)):
                     raise RuntimeError("File(" + data + ") not found.")
             if isinstance(data, (io.BytesIO, io.StringIO)):
-
                 fn = item_properties.get("fileName", None)
                 if fn is None:
                     raise ValueError(
@@ -2814,7 +2813,6 @@ class KbertnetesPy(object):
         categories: Optional[str] = None,
         category_filters: Optional[str] = None,
     ):
-
         if not outside_org:
             accountid = self._properties.get("id")
             if accountid and q:

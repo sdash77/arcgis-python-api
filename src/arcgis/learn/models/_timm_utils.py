@@ -110,7 +110,6 @@ def timm_config(arch):
 
 
 def filter_timm_models(flt=[]):
-
     models = timm.list_models(pretrained=True)
     # remove transformer models
     flt = [
@@ -153,7 +152,6 @@ def _get_feature_size(arch, cut, chip_size=(64, 64), channel_in=3):
 
 
 def get_backbone(backbone_fn, pretrained):
-
     if "timm" in backbone_fn.__module__:
         backbone_cut = timm_config(backbone_fn)["cut"]
     elif getattr(backbone_fn, "_is_multispectral", False):

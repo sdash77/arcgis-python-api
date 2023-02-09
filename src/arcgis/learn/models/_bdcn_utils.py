@@ -73,7 +73,6 @@ class _IDblock(nn.Module):
         self.score_dsn1_1 = nn.Conv2d(21, 1, 1, stride=1)
 
     def forward(self, x_input):
-
         act_sum = self.sconvs[0](x_input[0])
         for i in range(1, len(x_input)):
             act_sum += self.sconvs[i](x_input[i])
@@ -99,7 +98,6 @@ def get_bdcn_hooks(backbone_fn, backbone, chip_size):
 
 class _BDCNModel(nn.Module):
     def __init__(self, backbone_fn, chip_size=224, pretrained=True):
-
         super().__init__()
         self.backbone = get_backbone(backbone_fn, pretrained)
         if len(self.backbone) < 2:
@@ -127,7 +125,6 @@ class _BDCNModel(nn.Module):
         self.fuse = nn.Conv2d(10, 1, 1, stride=1)
 
     def forward(self, x):
-
         self.backbone(x)
         features = self.hook.stored
         num_to = self.block_shape[0][-1]
@@ -216,7 +213,6 @@ def crop(data1, data2, crop_h, crop_w):
 
 
 def cross_entropy_loss2d(inputs, targets, balance=1.1):
-
     n, c, h, w = inputs.size()
     weights = np.zeros((n, c, h, w))
     for i in range(n):

@@ -17,6 +17,7 @@ __all__ = [
     "get_countries",
     "service_limits",
     "standard_geography_query",
+    "interesting_facts",
 ]
 
 from .enrichment import (
@@ -27,4 +28,5 @@ from .enrichment import (
     get_countries,
     service_limits,
     standard_geography_query,
+    interesting_facts,
 )

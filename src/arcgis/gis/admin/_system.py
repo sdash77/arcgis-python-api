@@ -7,6 +7,7 @@ from .. import GIS
 from ._base import BasePortalAdmin
 from ..._impl.common._mixins import PropertyMap
 
+
 ###########################################################################
 class Indexer(BasePortalAdmin):
     """
@@ -622,7 +623,6 @@ class System(BasePortalAdmin):
         :return: :class:`~arcgis.gis.admin.Indexer`
         """
         if self._indexer is None:
-
             url = f"{self._url}/indexer"
             self._indexer = Indexer(url=url, gis=self._gis)
         return self._indexer
@@ -640,6 +640,7 @@ class WebAdaptors(BasePortalAdmin):
     _gis = None
     _con = None
     _url = None
+
     # ----------------------------------------------------------------------
     def __init__(self, url, gis=None, **kwargs):
         """Constructor"""
@@ -755,6 +756,7 @@ class WebAdaptor(BasePortalAdmin):
     _gis = None
     _con = None
     _url = None
+
     # ----------------------------------------------------------------------
     def __init__(self, url, gis=None, **kwargs):
         """Constructor"""
@@ -802,6 +804,7 @@ class Directory(BasePortalAdmin):
     _gis = None
     _con = None
     _url = None
+
     # ----------------------------------------------------------------------
     def __init__(self, url, gis=None, **kwargs):
         """Constructor"""
@@ -1083,6 +1086,7 @@ class Licenses(BasePortalAdmin):
     _gis = None
     _con = None
     _url = None
+
     # ----------------------------------------------------------------------
     def __init__(self, url, gis=None, **kwargs):
         """Constructor"""

@@ -11,6 +11,7 @@ from urllib.parse import quote
 from arcgis.gis import GIS
 from typing import Optional
 
+
 ########################################################################
 class ReportManager(BaseServer):
     """
@@ -24,6 +25,7 @@ class ReportManager(BaseServer):
     _json = None
     _metrics = None
     _reports = None
+
     # ----------------------------------------------------------------------
     def __init__(self, url: str, gis: GIS, initialize: bool = False):
         """Constructor
@@ -482,6 +484,7 @@ class Report(BaseServer):
     _aggregationInterval = None
     _queries = None
     _metadata = None
+
     # ----------------------------------------------------------------------
     def __init__(self, url: str, gis: GIS, initialize: bool = False):
         """

@@ -69,7 +69,6 @@ def _id_generator(size=6, chars=_string.ascii_uppercase + _string.digits):
 
 
 def _gbl_clone_layer(layer, function_chain, function_chain_ra, **kwargs):
-
     _set_multidimensional_rules(function_chain)
 
     if isinstance(layer, Raster) or isinstance(layer, RasterCollection):
@@ -154,7 +153,6 @@ def _feature_gbl_clone_layer(layer, function_chain, function_chain_ra, **kwargs)
 
 
 def _gbl_clone_layer_raster(layer, function_chain, function_chain_ra, **kwargs):
-
     if layer._datastore_raster:
         if isinstance(layer._uri, dict) or isinstance(layer._uri, bytes):
             newlyr = Raster(
@@ -377,7 +375,6 @@ def euclidean_allocation(
     distance_method="PLANAR",
     in_barrier_data=None,
 ):
-
     """
     Calculates, for each cell, the nearest source based on Euclidean distance.
     For more information, see
@@ -798,7 +795,6 @@ def zonal_statistics(
     circular_calculation: bool = False,
     circular_wrap_value: float = 360,
 ):
-
     """
     Calculates statistics on values of a raster within the zones of another dataset.
     For more information see,
@@ -1197,7 +1193,6 @@ def flow_distance(
     flow_direction_type: str = "D8",
     statistics_type: str = "MINIMUM",
 ):
-
     """
     This function computes, for each cell, the minimum downslope
     horizontal or vertical distance to cell(s) on a stream or
@@ -1314,7 +1309,6 @@ def flow_accumulation(
     data_type: str = "FLOAT",
     flow_direction_type: str = "D8",
 ):
-
     """
     Replaces cells of a raster corresponding to a mask
     with the values of the nearest neighbors.
@@ -2887,7 +2881,6 @@ def path_distance_allocation(
     source_capacity=None,
     source_direction=None,
 ):
-
     """
     Calculates the least-cost source for each cell based on the least accumulative cost over a cost surface,
     while accounting for surface distance along with horizontal and vertical cost factors.
@@ -3322,7 +3315,6 @@ def calculate_distance(
     in_barrier_data=None,
     distance_method="PLANAR",
 ):
-
     """
 
     Calculates the Euclidean distance, direction, and allocation from a single source or set of sources.

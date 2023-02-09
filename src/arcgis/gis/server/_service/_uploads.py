@@ -6,6 +6,7 @@ from typing import Optional
 from urllib.parse import urlparse, urlencode
 import os
 
+
 ########################################################################
 class Uploads(object):
     """
@@ -23,6 +24,7 @@ class Uploads(object):
     _url = None
     _con = None
     _json_dict = None
+
     # ----------------------------------------------------------------------
     def __init__(self, connection, url, **kwargs):
         self._url = url

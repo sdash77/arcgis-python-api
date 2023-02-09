@@ -22,6 +22,8 @@ from arcgis.geometry import Geometry
 PANDAS_GE_024 = str(pd.__version__) >= LooseVersion("0.24.0")
 PANDAS_GE_025 = str(pd.__version__) >= LooseVersion("0.25.0")
 PANDAS_GE_10 = str(pd.__version__) >= LooseVersion("1")
+
+
 # --------------------------------------------------------------------------
 def _isna(value):
     """
@@ -266,6 +268,20 @@ class GeoArray(ExtensionArray):
         import pyarrow
 
         return pyarrow.array([d.WKB for d in self.data if d], type=type)
+
+    def __eq__(self, other: Geometry):
+        """Checks if the Geometries are Equal"""
+        if isinstance(other, Geometry):
+            return self.equals(other)
+        else:
+            raise ValueError("Input must be a arcgis.geometry.Geometry")
+
+    def __ne__(self, other: Geometry):
+        """Checks if the Geometries are Equal"""
+        if isinstance(other, Geometry):
+            return self.equals(other) == False
+        else:
+            raise ValueError("Input must be a arcgis.geometry.Geometry")
 
     def _formatting_values_backport(self):
         return np.array(self._format_values(), dtype="object")
@@ -927,7 +943,11 @@ class GeoArray(ExtensionArray):
         return _binary_op_geo(
             name="densify",
             left=self.data,
-            **{"method": method, "distance": distance, "deviation": deviation},
+            **{
+                "method": method,
+                "distance": distance,
+                "deviation": deviation,
+            },
         )
 
     # ----------------------------------------------------------------------
@@ -1050,7 +1070,9 @@ class GeoArray(ExtensionArray):
 
         """
         return _binary_op(
-            name="get_area", left=self.data, **{"method": method, "units": units}
+            name="get_area",
+            left=self.data,
+            **{"method": method, "units": units},
         )
 
     # ----------------------------------------------------------------------
@@ -1076,7 +1098,9 @@ class GeoArray(ExtensionArray):
 
         """
         return _binary_op(
-            name="get_length", left=self.data, **{"method": method, "units": units}
+            name="get_length",
+            left=self.data,
+            **{"method": method, "units": units},
         )
 
     # ----------------------------------------------------------------------
@@ -1352,7 +1376,9 @@ class GeoArray(ExtensionArray):
         :return: arcgis.gis.Geometry
         """
         return _binary_op_geo(
-            name="symmetric_difference", left=self.data, right=second_geometry
+            name="symmetric_difference",
+            left=self.data,
+            right=second_geometry,
         )
 
     # ----------------------------------------------------------------------

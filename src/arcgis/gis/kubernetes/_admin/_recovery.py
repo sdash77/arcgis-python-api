@@ -7,7 +7,6 @@ import concurrent.futures
 
 
 def sleep_counter(start=1, mval=6):
-
     while True:
         if start < mval:
             start += 1
@@ -312,7 +311,6 @@ class RecoveryManager(_BaseKube):
 
         """
         try:
-
             url = f"{self._url}/backuprestore/status"
             params = {"f": "json"}
             return self._con.get(url, params).get("status", {})

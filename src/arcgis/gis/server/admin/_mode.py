@@ -12,6 +12,7 @@ from .._common import BaseServer
 from arcgis._impl.common._deprecate import deprecated
 from arcgis.gis import GIS
 
+
 ###########################################################################
 class Mode(BaseServer):
     """
@@ -30,6 +31,7 @@ class Mode(BaseServer):
     _siteMode = None
     _copyConfigLocal = None
     _lastModified = None
+
     # ----------------------------------------------------------------------
     def __init__(self, url: str, gis: GIS, initialize: bool = False):
         """Constructor"""

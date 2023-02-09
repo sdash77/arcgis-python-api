@@ -48,6 +48,8 @@ except ImportError:
 
 
 _log = logging.getLogger(__name__)
+
+
 ###########################################################################
 @contextmanager
 def _tempinput(data):
@@ -2849,6 +2851,7 @@ class OfflineMapAreaManager(object):
     _item = None
     _portal = None
     _web_map = None
+
     # ----------------------------------------------------------------------
     def __init__(self, item, gis):
         self._gis = gis
@@ -2856,7 +2859,6 @@ class OfflineMapAreaManager(object):
         self._item = item
         self._web_map = WebMap(self._item)
         try:
-
             self._url = self._gis.properties.helperServices.packaging.url
             self._pm = self._gis._tools.packaging
 
@@ -3654,7 +3656,6 @@ class OfflineMapAreaManager(object):
         # pkg_tb = Toolbox(url=self._url, gis=self._gis)
         pkg_tb = self._gis._tools.packaging
         if self._gis.version >= [7, 2]:
-
             if _extent:
                 area = _extent
                 area_type = "ENVELOPE"
@@ -3837,7 +3838,6 @@ class OfflineMapAreaManager(object):
                 feature_services = {}
                 for l in self._web_map.layers:
                     if os.path.dirname(l["url"]) not in feature_services:
-
                         feature_services[os.path.dirname(l["url"])] = {
                             "url": os.path.dirname(l["url"]),
                             "layers": [int(os.path.basename(l["url"]))],
@@ -4747,7 +4747,6 @@ class SymbolService:
     def properties(self) -> dict[str, Any]:
         """returns the service's properties"""
         if self._properties is None:
-
             self._properties = arcgis._impl.common._isd.InsensitiveDict(
                 self._gis._con.get(self._url, {"f": "json"})
             )
@@ -4815,7 +4814,6 @@ class SymbolService:
         save_file_name: str = None
         save_folder: str = None
         if file_path:
-
             save_folder, save_file_name = os.path.dirname(file_path), os.path.basename(
                 file_path
             )
@@ -5153,7 +5151,6 @@ class VectorTileLayer(arcgis.gis.Layer):
             raise Exception("No job results.")
 
         if "results" in job_response:
-
             allResults = job_response["results"]
 
             for k, v in allResults.items():
@@ -6021,7 +6018,6 @@ class MapImageLayer(arcgis.gis.Layer):
         layer_parameters: Optional[list[dict[str, Any]]] = None,
         **kwargs,
     ):
-
         """
         The ``identify`` operation is performed on a map service resource
         to discover features at a geographic location. The result of this
@@ -7010,7 +7006,6 @@ class MapImageLayer(arcgis.gis.Layer):
                 raise Exception("No job results.")
 
             if "results" in job_response:
-
                 allResults = job_response["results"]
 
                 for k, v in allResults.items():
@@ -7088,7 +7083,6 @@ class Events(object):
         return self._actions
 
     def sync_widget(self, widgets):
-
         if self.enable == False:
             raise Exception("Please enable events")
 

@@ -73,6 +73,7 @@ def create_version(vms, version_name=None):
         print(ex)
         return None
 
+
 def _generate_where_in_clause(field_name, feature_list):
     """
 
@@ -92,7 +93,8 @@ def _generate_where_in_clause(field_name, feature_list):
             where_str += f"'{str(p)}',"
     where_str = f"{where_str[:-1]})"
     return where_str
-    
+
+
 def get_feature_layer(flc, lyr_name):
     """Get a FeatureLayer out of a FeatureLayerCollection by its name property
 
