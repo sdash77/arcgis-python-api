@@ -65,8 +65,6 @@ class EsriWindowsAuth(AuthBase, SupportMultiAuth):
             elif WINDOWS == True and HAS_KERBEROS:
                 self.auth = requests_kerberos.HTTPKerberosAuth(
                     principal=f"{username}:{password}",
-                    referer=referer,
-                    verify_cert=verify_cert,
                 )
             elif HAS_GSSAPI:
                 if not username or not password:
