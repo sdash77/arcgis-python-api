@@ -28,7 +28,7 @@ from arcgis.geoprocessing import import_toolbox
 from ._async.jobs import GeometryJob
 from arcgis.raster._util import _set_context as _set_raster_context
 from arcgis._impl.common._utils import inspect_function_inputs
-from arcgis.geoprocessing._job import RAJob
+from arcgis.geoprocessing._job import RAJob, OMJob
 from functools import lru_cache
 
 _log = logging.getLogger(__name__)
@@ -8208,6 +8208,7 @@ class _OrthoMappingTools:
         context=None,
         gis=None,
         future=False,
+        flight_json_details=None,
         **kwargs,
     ):
         """
@@ -8341,9 +8342,15 @@ class _OrthoMappingTools:
 
         job._is_ortho = True
         job._item_properties = True
+        item = None
+        if output_dem:
+            item = output_dem
+
+        omjob = OMJob(job, item=item)
+        omjob._flight_details = flight_json_details
         if future:
-            return job
-        return job.result()
+            return omjob
+        return omjob.result()
 
     # ----------------------------------------------------------------------
     def generate_orthomosaic(
@@ -8354,7 +8361,8 @@ class _OrthoMappingTools:
         recompute_color_correction=None,
         context=None,
         gis=None,
-        future=False,
+        future=False,        
+        flight_json_details=None,
         **kwargs,
     ):
         """
@@ -8456,11 +8464,18 @@ class _OrthoMappingTools:
             gis=gis,
             future=True,
         )
+
         job._is_ortho = True
         job._item_properties = True
+        item = None
+        if output_ortho_image:
+            item = output_ortho_image
+
+        omjob = OMJob(job, item=item)
+        omjob._flight_details = flight_json_details
         if future:
-            return job
-        return job.result()
+            return omjob
+        return omjob.result()       
 
     # ----------------------------------------------------------------------
     def generate_report(
