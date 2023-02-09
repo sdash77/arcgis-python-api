@@ -10476,7 +10476,7 @@ class User(dict):
         try:
             count = 0
             item = None
-            while count < 8:
+            while count < 10:
                 try:
                     item = Item(self._gis, res["itemId"])
                 except:
@@ -14406,7 +14406,7 @@ class Item(dict):
             sd = date_range[0]
             end_date = date_range[1]
             params["period"] = "1d"
-            if (end_date.month - sd.month) <= 5:
+            if (end_date - sd).days <= 152:  # 5 months in days
                 # normal workflow
                 params["startTime"] = int(sd.timestamp() * 1000)
                 params["endTime"] = int(end_date.timestamp() * 1000)
