@@ -13146,7 +13146,7 @@ def surface_parameters(
         if  isinstance(use_adaptive_neighborhood, bool):
             template_dict["rasterFunctionArguments"]["UseAdaptiveScale"] = use_adaptive_neighborhood
         raise RuntimeError(
-            "use_adaptive_neighborhood should of type: boolean"
+            "use_adaptive_neighborhood should be of type: boolean"
         )
     
     z_unit_types = ["METER", "INCH", "FOOT", "YARD", "MILE_US", "NAUTICAL_MILE", "MILLIMETER", "CENTIMETER", "KILOMETER", "DECIMETER"]
