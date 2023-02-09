@@ -2776,6 +2776,8 @@ class Sidecar(object):
             content._add_button(story=self._story)
         elif isinstance(content, Audio):
             content._add_audio(display="wide", story=self._story)
+        elif isinstance(content, Timeline):
+            content._add_timeline(story=self._story)
 
     # ----------------------------------------------------------------------
     def _check_node(self):
@@ -2799,7 +2801,9 @@ class Timeline(object):
     ===============     ====================================================================
     **Parameter**        **Description**
     ---------------     --------------------------------------------------------------------
-    style               Required string, the style type of the timeline.
+    style               Required string, the style type of the timeline. If the timeline will be
+                        added to a Sidecar, then only `waterfall` and `single-sided` are allowed.
+
 
                         Values: 'waterfall' | 'single-side' | 'condensed'
     ===============     ====================================================================
