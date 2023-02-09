@@ -17241,6 +17241,96 @@ class _RasterAnalysisTools(BaseAnalytics):
 
         return RAJob(gpjob).result()
 
+    def derive_continuous_flow(
+        self,
+        input_surface_raster,
+        output_flow_accumulation_raster_name = None,
+        input_depressions_data = None,
+        input_weight_raster = None,
+        output_flow_direction_raster_name = None,
+        flow_direction_type: str = "D8",
+        force_flow: bool = False,
+        context = None,
+        future = False,
+        **kwargs,
+    ):
+
+        task = "DeriveContinuousFlow"
+        
+        gis = self._gis
+
+        context_param = {}
+        _set_raster_context(context_param, context)
+        if "context" in context_param.keys():
+            context = context_param["context"]
+
+        input_surface_raster = self._layer_input(input_layer=input_surface_raster)
+        if input_depressions_data is not None:
+            input_depressions_data = self._layer_input(input_layer=input_depressions_data)
+        if input_weight_raster is not None:
+            input_weight_raster = self._layer_input(input_layer=input_weight_raster)
+
+        if flow_direction_type is not None:
+            flow_direction_type_allowed_values = (
+                self._tbx.choice_list.derive_continuous_flow["flow_direction_type"]
+            )
+            if [
+                element.lower() for element in flow_direction_type_allowed_values
+            ].count(flow_direction_type.lower()) <= 0:
+                raise RuntimeError(
+                    "flow_direction_type can only be one of the following: "
+                    + str(flow_direction_type_allowed_values)
+                )
+            for element in flow_direction_type_allowed_values:
+                if flow_direction_type.lower() == element.lower():
+                    flow_direction_type = element
+
+        if force_flow is not None:
+            if isinstance(force_flow, bool):
+                force_flow = force_flow
+            elif isinstance(force_flow, str):
+                if force_flow == "NORMAL":
+                    force_flow = False
+                elif force_flow == "FORCE":
+                    force_flow = True
+        
+        (output_accumulation_raster, output_accumulation_service) = self._set_output_raster(
+            output_name=output_flow_accumulation_raster_name, task=task, output_properties=kwargs
+        )
+        
+        output_direction_raster = None
+        if output_flow_direction_raster_name is not None:
+            (output_direction_raster, output_direction_service) = self._set_output_raster(
+                output_name = output_flow_direction_raster_name, task = task, output_properties = kwargs
+            )
+        
+        try:
+            gpjob = self._tbx.derive_continuous_flow(
+                input_surface_raster = input_surface_raster,
+                output_flow_accumulation_raster_name = output_accumulation_raster,
+                input_depressions_data = input_depressions_data,
+                input_weight_raster = input_weight_raster,
+                output_flow_direction_raster_name = output_direction_raster,
+                flow_direction_type = flow_direction_type,
+                force_flow = force_flow,
+                context = context,
+                gis = self._gis,
+                future = True,
+            )
+        except Exception:
+            print("error here")
+        
+        gpjob._is_ra = True
+        gpjob._item_properties = True
+        
+        if future:
+            if output_direction_raster:
+                return RAJob(gpjob, item = [output_accumulation_service, output_direction_service])
+            return RAJob(gpjob, item = output_accumulation_service,)
+        if output_direction_raster:
+                return RAJob(gpjob, item = [output_accumulation_service, output_direction_service]).result()
+        return RAJob(gpjob, item = output_accumulation_service,).result()
+
     def mosaic_image(
         self,
         input_rasters,

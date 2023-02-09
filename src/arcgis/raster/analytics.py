@@ -9663,6 +9663,35 @@ def export_to_tile_package(
     )
 
 
+def derive_continuous_flow(
+    input_surface_raster,
+    output_flow_accumulation_raster_name: str = None,
+    input_depressions_data = None,
+    input_weight_raster = None,
+    output_flow_direction_raster_name: Optional[str] = None,
+    flow_direction_type: str = "D8",
+    force_flow: str = "NORMAL",
+    context: Optional[dict[str, Any]] = None,
+    *,
+    gis: Optional[GIS] = None,
+    future: bool = False,
+    **kwargs
+):
+    gis = _arcgis.env.active_gis if gis is None else gis
+    return gis._tools.rasteranalysis.derive_continuous_flow(
+        input_surface_raster = input_surface_raster,
+        output_flow_accumulation_raster_name = output_flow_accumulation_raster_name,
+        input_depressions_data = input_depressions_data,
+        input_weight_raster = input_weight_raster,
+        output_flow_direction_raster_name = output_flow_direction_raster_name,
+        flow_direction_type = flow_direction_type,
+        force_flow = force_flow,
+        context = context,
+        future = future,
+        **kwargs,
+    )
+
+
 def mosaic_image(
     input_rasters: list[ImageryLayer],
     target_raster: ImageryLayer,
