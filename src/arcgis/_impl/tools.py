@@ -8038,6 +8038,7 @@ class _OrthoMappingTools:
         context=None,
         gis=None,
         future=False,
+        flight_json_details=None,
         **kwargs,
     ):
         """
@@ -8120,9 +8121,11 @@ class _OrthoMappingTools:
         )
 
         job._is_ortho = True
+        omjob = OMJob(job)
+        omjob._flight_details = flight_json_details
         if future:
-            return job
-        return job.result()
+            return omjob
+        return omjob.result()       
 
     # ----------------------------------------------------------------------
     def edit_control_points(

@@ -906,6 +906,9 @@ class OMJob(GPJob):
             flight = flight_json_details.get("flight", None)
             update_flight_json = flight_json_details.get("update_flight_json", None)
             processing_states = flight_json_details.get("processing_states", None)
+            adjust_settings = flight_json_details.get("adjust_settings", None)
+            mode = adjust_settings.get("mode", None)
+            
 
         if update_flight_json:
             import json
@@ -917,7 +920,11 @@ class OMJob(GPJob):
 
             flight_json['jobs'].update({item_name:{"messages": job_messages, "checked": True, "progress": 100,"success": True}})   
             if processing_states is not None:
-                flight_json['processingSettings'].update({item_name:processing_states})             
+                flight_json['processingSettings'].update({item_name:processing_states})     
+            if adjust_settings is not None:    
+                flight_json['adjustSettings'].update(adjust_settings)  
+                flight_json['jobs']["item_name"].update({"mode": adjust_settings.get("mode", None)})
+
             properties = json.loads(flight['properties'])   
  
             if self._item:

@@ -374,21 +374,15 @@ def compute_sensor_model(
         image_collection, flight = _get_collection_item(image_collection, gis)
         update_flight_json = True
 
-        point_cloud_keys = ['maxObjectSize', 'groundSpacing', 'minAngle', 'maxAngle', 'minOverlap', 'maxOmegaPhiDif', 'maxGSDDif', 'numImagePairs', 'adjQualityThreshold']
-        point_cloud_dict = {"pointCloud": {k: context[k] for k in point_cloud_keys if k in context}}
-        point_cloud_dict["pointCloud"].update({"method":matching_method })
-        interpolation_keys = ['pixelSize', 'pixelSizeUnit', 'method', 'smoothingMethod']
-        interpolation_dict = {"interpolation":{k: context[k] for k in interpolation_keys if k in context}}
-
-        apply_to_ortho = context.get("applyToOrtho", False)
-        dem_dict = {"applyToOrtho": apply_to_ortho}
-        dem_dict.update(point_cloud_dict)
-        dem_dict.update(interpolation_dict)
+        adj_keys = ['computeCandidate', 'maxOverlap', 'maxLoss', 'maxResidual', 'initPointResolution', 'k', 'p', 'principalPoint', 'focalLength']
+        adj_dict = {k: context[k] for k in adj_keys if k in context}
+        adj_dict.update({"locationAccuracy":location_accuracy })
+        adj_dict.update({"mode":mode })
         flight_json_details = {"update_flight_json": update_flight_json,
                                "flight": flight,
                                "project_item":project_item,
-                               "item_name":surface_type.lower(),
-                               "processing_states": dem_dict}            
+                               "item_name":'adjustment',
+                               "adjust_settings": adj_dict}            
 
 
     return gis._tools.orthomapping.compute_sensor_model(
