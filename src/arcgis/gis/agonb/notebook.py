@@ -56,7 +56,13 @@ class NotebookManager(object):
     # ----------------------------------------------------------------------
     @staticmethod
     def _future_job(
-        fn, task_name, jobid=None, task_url=None, notify=False, gis=None, **kwargs
+        fn,
+        task_name,
+        jobid=None,
+        task_url=None,
+        notify=False,
+        gis=None,
+        **kwargs,
     ):
         """
         runs the job asynchronously
@@ -211,6 +217,8 @@ class NotebookManager(object):
         nb_runtimeid: str | None = None,
         template_nb: str | None = None,
         instance_type: str | None = None,
+        *,
+        future: bool = False,
     ):
         """
 
@@ -237,11 +245,46 @@ class NotebookManager(object):
         template_nb             Optional String. The start up template for the notebook.
         ------------------      --------------------------------------------------------------------
         instance_type           Optional String. The name of the instance type.
+        ------------------      --------------------------------------------------------------------
+        future                  Optional Bool.
         ==================      ====================================================================
 
         :return: Dict
 
         """
+
+        def _fn(url, params, nbs):
+            """used to fire off async job"""
+            import time
+
+            start_job = self._gis._con.post(url, params)
+            status_url = start_job.get("jobUrl", None) or start_job.get(
+                "notebookStatusUrl", None
+            )
+            if status_url:
+                resp = self._gis._con.get(status_url, {"f": "json"})
+            else:
+                return start_job
+            if "status" in resp and resp["status"].lower() != "success":
+                status = self._gis._con.get(status_url, {"f": "json"})
+                i = 0
+                while status["status"].lower() != "completed":
+                    time.sleep(0.3 * i)
+                    if status["status"].lower() == "failed":
+                        return status
+                    elif (
+                        status["status"].lower().find("fail") > -1
+                        or status["status"].lower().find("error") > -1
+                    ):
+                        raise Exception(f"Job Fail {status}")
+                    status = self._gis._con.get(status_url, {"f": "json"})
+                    i += 1
+                    if i > 20:
+                        i = 20
+                return status
+
+        if hasattr(itemid, "id"):
+            itemid = getattr(itemid, "id")
         params = {
             "itemId": itemid,
             "templateId": templateid,
@@ -252,14 +295,27 @@ class NotebookManager(object):
             "instanceTypeName": instance_type,
         }
         url = self._url + "/openNotebook"
-        res = self._con.post(url, params)
-        if "jobUrl" in res:
-            job_url = res["jobUrl"]
-            params = {"f": "json"}
-            job_res = self._con.get(job_url, params)
-            while job_res["status"] != "COMPLETED":
+
+        if future:
+            return NotebookManager._future_job(
+                fn=_fn,
+                task_name="Open Notebook",
+                gis=self._gis,
+                **{"url": url, "params": params, "nbs": self._nbs},
+            )
+        else:
+            res = self._con.post(url, params)
+            status_url = res.get("jobUrl", None) or res.get("notebookStatusUrl", None)
+            if status_url:
+                import time
+
+                job_url = status_url
+                params = {"f": "json"}
                 job_res = self._con.get(job_url, params)
-                if job_res["status"].lower().find("fail") > -1:
-                    return job_res
-            return job_res
-        return res
+                while job_res["status"].upper() != "COMPLETED":
+                    job_res = self._con.get(job_url, params)
+                    if job_res["status"].lower().find("fail") > -1:
+                        return job_res
+                    time.sleep(2.5)
+                return job_res
+            return res
