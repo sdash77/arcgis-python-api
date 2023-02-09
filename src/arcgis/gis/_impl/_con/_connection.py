@@ -1197,6 +1197,7 @@ class Connection(object):
                         cert=cert,
                         files=files,
                         allow_redirects=allow_redirects,
+                        verify=self._verify_cert,
                         timeout=timeout,
                     )
                 else:
@@ -1205,6 +1206,7 @@ class Connection(object):
                         json=params,
                         cert=cert,
                         allow_redirects=allow_redirects,
+                        verify=self._verify_cert,
                         files=files,
                     )
             else:
@@ -1217,6 +1219,7 @@ class Connection(object):
                         allow_redirects=allow_redirects,
                         timeout=timeout,
                         headers={"Content-Type": mp_encoder.content_type},
+                        verify=self._verify_cert,
                     )
                 else:
                     resp = self._session.post(
@@ -1225,6 +1228,7 @@ class Connection(object):
                         cert=cert,
                         allow_redirects=allow_redirects,
                         headers={"Content-Type": mp_encoder.content_type},
+                        verify=self._verify_cert,
                     )
             if auth and drop_auth:
                 self._session.auth = auth
