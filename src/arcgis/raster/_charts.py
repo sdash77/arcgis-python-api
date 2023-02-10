@@ -235,9 +235,6 @@ def temporal_profile(
                             y.append(ele["values"][band])
                             x.append(_to_datetime(ele["attributes"][x_var]))
 
-                    # if "bandNames" in raster.properties:
-                    #        band = raster.properties.bandNames[band]
-
                     if dimension_values == []:
                         t1.append(
                             {
@@ -1069,14 +1066,14 @@ def dimension_profile(raster,
         _plt.title(title_string)
 
         #print(t1)
-        no_of_colors = 2 * len(points)
+        no_of_colors = 2 * len(points) if show_trend_line == False else 4 * (len(points))
         lines = []
         color = iter(_cm.rainbow(_np.linspace(0, 1, no_of_colors)))
 
         t1 = var_plot[variables[0]]
         for i in range(0, len(t1)):
             label_string = (
-                "Location " + str(t1[i]["point"]) + "-" + variables[0])
+                f"Location {str(t1[i]['point'])} - {variables[0]}")
 
             c = next(color)
             lines += ax1.plot(t1[i]["x"], t1[i]["y"], c=c, label=label_string)
@@ -1094,18 +1091,20 @@ def dimension_profile(raster,
                     )
 
             if show_trend_line is True:
+                c = next(color)
                 y1_trend, x_trend = _linear_regression(
                             len(t1[i]["y"]), t1[i]["y"], t1[i]["x"], t1[i]["x"]
                         )
                 y_trend = t1[i]["y"]
-                ax1.plot(x_trend, y_trend, "--g")
+                lines +=  ax1.plot(x_trend, y_trend, c=c, linestyle='dashed', label=f"Location {str(t1[i]['point'])} - {variables[0]} trend line")
+                ax1.plot(x_trend, y_trend, c=c, linestyle='dashed')
 
 
         if len(variables) > 1: 
             t1 = var_plot[variables[1]]
             for i in range(0, len(t1)):
                 label_string = (
-                    "Location " + str(t1[i]["point"]) + "-" + variables[1])
+                    f"Location {str(t1[i]['point'])} - {variables[1]}")
 
                 c = next(color)
                 lines +=  ax2.plot(t1[i]["x"], t1[i]["y"], c=c, label=label_string)
@@ -1123,11 +1122,13 @@ def dimension_profile(raster,
                         )
 
                 if show_trend_line is True:
+                    c = next(color)
                     y1_trend, x_trend = _linear_regression(
                             len(t1[i]["y"]), t1[i]["y"], t1[i]["x"], t1[i]["x"]
                         )
                     y_trend = t1[i]["y"]
-                    ax2.plot(x_trend, y_trend, "--g")
+                    lines +=  ax2.plot(x_trend, y_trend, c=c, linestyle='dashed', label=f"Location {str(t1[i]['point'])} - {variables[1]} trend line")
+                    ax2.plot(x_trend, y_trend, c=c, linestyle='dashed')
 
             ax2.xaxis.grid()
 
