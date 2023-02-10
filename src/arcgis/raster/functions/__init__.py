@@ -13029,68 +13029,118 @@ def surface_parameters(
     ================================     ====================================================================
     **Argument**                         **Description**
     --------------------------------     --------------------------------------------------------------------
-    raster                               Required The input surface raster. this can an integer ir a floating-point raster.
+    raster                               Required. The input surface raster. This can be an integer or a floating-point raster.
     --------------------------------     --------------------------------------------------------------------
     parameter_type                       Optional. Specifies the output surface parameter type that will be computed.
-                                         
-                                         SLOPE — The rate of change in elevation will be computed. This is the default. 
-                                         ASPECT — The downslope direction of the maximum rate of change for each cell will be computed. 
-                                         MEAN_CURVATURE —The overall curvature of the surface will be measured. It is computed as the average of the minimum and maximum curvature.\
-                                            This curvature describes the intrinsic convexity or concavity of the surface, independent of direction or gravity influence. 
-                                         TANGENTIAL_CURVATURE — The geometric normal curvature perpendicular to the slope line, tangent to the contour line will be measured.\
-                                            This curvature is typically applied to characterize the convergence or divergence of flow across the surface. 
-                                         PROFILE_CURVATURE — The geometric normal curvature along the slope line will be measured. \
-                                            This curvature is typically applied to characterize the acceleration and deceleration of flow down the surface. 
-                                         CONTOUR_CURVATURE — The curvature along contour lines will be measured. 
-                                         CONTOUR_GEODESIC_TORSION — The rate of change in slope angle along contour lines will be measured. 
-                                         GAUSSIAN_CURVATURE — The overall curvature of the surface will be measured. It is computed as the product of the minimum and maximum curvature. 
-                                         CASORATI_CURVATURE — The general curvature of the surface will be measured. It can be zero or any other positive number.
+
+                                            - SLOPE - The rate of change in elevation will be computed. This is the default.
+                                            
+                                            - ASPECT - The downslope direction of the maximum rate of change for\
+                                            each cell will be computed.
+                                            
+                                            - MEAN_CURVATURE - The overall curvature of the surface will be measured.\
+                                            It is computed as the average of the minimum and maximum curvature.\
+                                            This curvature describes the intrinsic convexity or concavity of\
+                                            the surface, independent of direction or gravity influence.
+                                            
+                                            - TANGENTIAL_CURVATURE - The geometric normal curvature perpendicular\
+                                            to the slope line, tangent to the contour line will be measured. This\
+                                            curvature is typically applied to characterize the convergence or divergence\
+                                            of flow across the surface.
+                                            
+                                            - PROFILE_CURVATURE - The geometric normal curvature along the slope\
+                                            line will be measured. This curvature is typically applied to characterize\
+                                            the acceleration and deceleration of flow down the surface.
+                                            
+                                            - CONTOUR_CURVATURE - The curvature along contour lines will be measured.
+                                            
+                                            - CONTOUR_GEODESIC_TORSION - The rate of change in slope angle along\
+                                            contour lines will be measured.
+                                            
+                                            - GAUSSIAN_CURVATURE - The overall curvature of the surface will be\
+                                            measured. It is computed as the product of the minimum and maximum curvature.
+                                            
+                                            - CASORATI_CURVATURE - The general curvature of the surface will be measured.\
+                                            It can be zero or any other positive number.
     --------------------------------     --------------------------------------------------------------------
-    local_surface_type                   Optional. Specifies the type of surface function that will be fitted around the target cell. 
+    local_surface_type                   Optional. Specifies the type of surface function that will be fitted\
+                                         around the target cell. 
     
-                                         QUADRATIC — A quadratic surface function will be fitted to the neighborhood cells. This is the default. 
-                                         BIQUADRATIC — A biquadratic surface function will be fitted to the neighborhood cells.
+                                            - QUADRATIC - A quadratic surface function will be fitted to the\
+                                            neighborhood cells. This is the default. 
+                                            
+                                            - BIQUADRATIC - A biquadratic surface function will be fitted to\
+                                            the neighborhood cells.
     --------------------------------     --------------------------------------------------------------------
-    neighborhood_distance_with_units     Optional. The output will be calculated over this distance from the target cell center. If this parameter is not specified,\
-                                            the neighborhood distance is the input raster cell size, resulting in a 3 by 3 neighborhood size.
+    neighborhood_distance_with_units     Optional. The output will be calculated over this distance from the target cell center. 
+    
+                                         If this parameter is not specified, the neighborhood distance is the\
+                                         input raster cell size, resulting in a 3 by 3 neighborhood size.
     --------------------------------     --------------------------------------------------------------------
-    use_adaptive_neighborhood            Optional. Specifies whether neighborhood distance will vary with landscape changes (adaptive). The maximum distance is determined\
-                                            by the neighborhood scale. The minimum distance is the input raster cell size. 
+    use_adaptive_neighborhood            Optional. Specifies whether neighborhood distance will vary with landscape\
+                                         changes (adaptive). The maximum distance is determined by the neighborhood\
+                                         scale. The minimum distance is the input raster cell size. 
                                         
-                                         False — A single (fixed) neighborhood distance will be used at all locations. This is the default. 
-                                         True — An adaptive neighborhood distance will be used at all locations.
+                                            - False - A single (fixed) neighborhood distance will be used at all locations.\
+                                            This is the default. 
+                                            
+                                            - True - An adaptive neighborhood distance will be used at all locations.
     --------------------------------     --------------------------------------------------------------------
-    z_unit                               Optional. The linear unit of vertical z-values. It is defined by a vertical coordinate system if it exists.\
-                                            If a vertical coordinate system does not exist, the z-unit should be defined from the unit list to ensure correct geodesic computation.\
-                                            If the input raster has a defined VCS its unit will be the default. Otherwise, the default is 'METER'. 
-                                        
-                                         INCH — The linear unit will be inches. 
-                                         FOOT — The linear unit will be feet. 
-                                         YARD — The linear unit will be yards. 
-                                         MILE_US —The linear unit will be miles. 
-                                         NAUTICAL_MILE — The linear unit will be nautical miles. 
-                                         MILLIMETER — The linear unit will be millimeters. 
-                                         CENTIMETER — The linear unit will be centimeters. 
-                                         METER —The linear unit will be meters. 
-                                         KILOMETER — The linear unit will be kilometers. 
-                                         DECIMETER — The linear unit will be decimeters.
-    --------------------------------     --------------------------------------------------------------------
-    slope_type                           Optional. The measurement units (degrees or percentages) that will be used for the output slope raster. This parameter is only applicable when \
-                                            parameter_type = "SLOPE". 
-                                        
-                                         DEGREE — The inclination of slope will be calculated in degrees. This is the default. 
-                                         PERCENT_RISE — The inclination of slope will be calculated as percent rise, also referred to as the percent slope.
-    --------------------------------     --------------------------------------------------------------------
-    project_geogeodesic_azimuths         Optional. Specifies whether geodesic azimuths will be projected to correct the angle distortion caused by the output spatial reference. \
-                                            This parameter is only applicable when parameter_type = "ASPECT". 
+    z_unit                               Optional. The linear unit of vertical z-values. It is defined by a vertical\
+                                         coordinate system if it exists. 
                                          
-                                         GEODESIC_AZIMUTHS — Geodesic azimuths will not be projected. This is the default. 
-                                         PROJECT_GEODESIC_AZIMUTHS — Geodesic azimuths will be projected.
-    --------------------------------     --------------------------------------------------------------------
-    use_equatorial_aspect                Optional. Specifies whether aspect will be measured from a point on the equator or from the north pole. This parameter is only applicable when parameter_type = "ASPECT"
+                                         If a vertical coordinate system does not exist, the z-unit should be defined\
+                                         from the unit list to ensure correct geodesic computation. 
                                          
-                                         NORTH_POLE_ASPECT — Aspect will be measured from the north pole. This is the default. 
-                                         EQUATORIAL_ASPECT — Aspect will be measured from a point on the equator.
+                                         If the input raster has a defined VCS its unit will be the default. Otherwise,\
+                                         the default is 'METER'. 
+                                        
+                                            - INCH - The linear unit will be inches. 
+                                            
+                                            - FOOT - The linear unit will be feet.
+                                            
+                                            - YARD - The linear unit will be yards.
+                                            
+                                            - MILE_US - The linear unit will be miles.
+                                            
+                                            - NAUTICAL_MILE - The linear unit will be nautical miles.
+                                            -
+                                            - MILLIMETER - The linear unit will be millimeters.
+                                            
+                                            - CENTIMETER - The linear unit will be centimeters.
+                                            
+                                            - METER - The linear unit will be meters.
+                                            
+                                            - KILOMETER - The linear unit will be kilometers.
+                                            
+                                            - DECIMETER - The linear unit will be decimeters.
+    --------------------------------     --------------------------------------------------------------------
+    slope_type                           Optional. The measurement units (degrees or percentages) that will be\
+                                         used for the output slope raster.
+                                         
+                                         This parameter is only applicable when ``parameter_type`` = "SLOPE". 
+                                        
+                                            - DEGREE - The inclination of slope will be calculated in degrees. This is the default.
+                                             
+                                            - PERCENT_RISE - The inclination of slope will be calculated as percent\
+                                            rise, also referred to as the percent slope.
+    --------------------------------     --------------------------------------------------------------------
+    project_geogeodesic_azimuths         Optional. Specifies whether geodesic azimuths will be projected to correct\
+                                         the angle distortion caused by the output spatial reference.
+                                         
+                                         This parameter is only applicable when ``parameter_type`` = "ASPECT". 
+                                         
+                                            - GEODESIC_AZIMUTHS - Geodesic azimuths will not be projected. This is the default.
+                                            
+                                            - PROJECT_GEODESIC_AZIMUTHS - Geodesic azimuths will be projected.
+    --------------------------------     --------------------------------------------------------------------
+    use_equatorial_aspect                Optional. Specifies whether aspect will be measured from a point on the\
+                                         equator or from the north pole. 
+                                         
+                                         This parameter is only applicable when ``parameter_type`` = "ASPECT"
+                                         
+                                            - NORTH_POLE_ASPECT - Aspect will be measured from the north pole. This is the default. 
+                                            - EQUATORIAL_ASPECT - Aspect will be measured from a point on the equator.
     ================================     ====================================================================     
 
     :return: The output raster with the function applied.
