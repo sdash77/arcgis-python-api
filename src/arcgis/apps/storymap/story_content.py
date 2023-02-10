@@ -31,7 +31,10 @@ class TextStyles(Enum):
 
 class Scales(Enum):
     """
-    Represents the supported scales for the webmap view.
+    Scale is a unitless way of describing how any distance on the map translates
+    to a real-world distance. For example, a map at a 1:24,000 scale communicates that 1 unit
+    on the screen represents 24,000 of the same unit in the real world.
+    So one inch on the screen represents 24,000 inches in the real world.
     """
 
     WORLD = {"scale": 147914382, "zoom": 2}
@@ -1153,24 +1156,50 @@ class Map(object):
             ]
             # The item id is in the resource node
             self._path = self.resource_node[2::]
-            self._map_layers = self._story._properties["resources"][self.resource_node][
-                "data"
-            ]["mapLayers"]
-            self._extent = self._story._properties["resources"][self.resource_node][
-                "data"
-            ]["extent"]
-            self._center = self._story._properties["resources"][self.resource_node][
-                "data"
-            ]["center"]
-            self._viewpoint = self._story._properties["resources"][self.resource_node][
-                "data"
-            ]["viewpoint"]
-            self._zoom = self._story._properties["resources"][self.resource_node][
-                "data"
-            ]["zoom"]
-            self._type = self._story._properties["resources"][self.resource_node][
-                "data"
-            ]["itemType"]
+            rdata = self._story._properties["resources"][self.resource_node]["data"]
+            ndata = self._story._properties["nodes"][self.node]["data"]
+            # map layers
+            if "mapLayers" in ndata:
+                self._map_layers = ndata["mapLayers"]
+            elif "mapLayers" in rdata:
+                self._map_layers = rdata["mapLayers"]
+            else:
+                self._map_layers = None
+
+            # extent
+            if "extent" in ndata:
+                self._extent = ndata["extent"]
+            elif "extent" in rdata:
+                self._extent = rdata["extent"]
+            else:
+                self._extent = {}
+
+            # center
+            if "center" in ndata:
+                self._center = ndata["center"]
+            elif "center" in rdata:
+                self._center = rdata["center"]
+            else:
+                self._center = None
+
+            # viewpoint
+            if "viewpoint" in ndata:
+                self._viewpoint = ndata["viewpoint"]
+            elif "viewpoint" in rdata:
+                self._viewpoint = rdata["viewpoint"]
+            else:
+                self._viewpoint = {"rotation": 0, "scale": -1, "targetGeometry": {}}
+
+            # zoom
+            if "zoom" in ndata:
+                self._zoom = ndata["zoom"]
+            elif "zoom" in rdata:
+                self._zoom = rdata["zoom"]
+            else:
+                self._zoom = 2
+
+            # only in rdata
+            self._type = rdata["itemType"]
             if self._type == "Web Scene":
                 self._lighting_date = self._story._properties["resources"][
                     self.resource_node
@@ -1363,19 +1392,24 @@ class Map(object):
         ------------------  ----------------------------------------
         scale               Optional Scales Value or dict with scale and zoom keys.
                             Define the scale of the map.
-                            If none specified, current scale is kept.
-                            Find the available scales in the
-                            :class:`~arcgis.apps.storymap.story_content.Scales` Class.
+
+                                ** Deprecated **
         ==================  ========================================
 
         :return: The current viewpoint dictionary
         """
+        rdata_dict = self._story._properties["resources"][self.resource_node]["data"]
         if "viewpoint" not in self._story._properties["nodes"][self.node]["data"]:
-            self._story._properties["nodes"][self.node]["data"][
-                "viewpoint"
-            ] = self._story._properties["resources"][self.resource_node]["data"][
-                "viewpoint"
-            ]
+            try:
+                self._story._properties["nodes"][self.node]["data"][
+                    "viewpoint"
+                ] = rdata_dict["viewpoint"]
+            except:
+                self._story._properties["nodes"][self.node]["data"]["viewpoint"] = {
+                    "rotation": 0,
+                    "scale": -1,
+                    "targetGeometry": {},
+                }
         # set new extent if specified
         if extent:
             if isinstance(extent, dict):
@@ -1384,9 +1418,12 @@ class Map(object):
                         "Extent dictionary missing one or more of these keys: 'xmin', 'xmax', 'ymin', 'ymax'"
                     )
                 if "spatialReference" not in extent:
-                    extent["spatialReference"] = self._story._properties["resources"][
-                        self.resource_node
-                    ]["data"]["extent"]["spatialReference"]
+                    try:
+                        extent["spatialReference"] = self._story._properties[
+                            "resources"
+                        ][self.resource_node]["data"]["extent"]["spatialReference"]
+                    except:
+                        extent["spatialReference"] = {"wkid": 4326}
 
                 # In order to correctly edit, the viewpoint, extent, and center must be updated.
                 # update extent
@@ -1403,22 +1440,17 @@ class Map(object):
                 self._story._properties["nodes"][self.node]["data"]["viewpoint"][
                     "targetGeometry"
                 ] = self._story._properties["nodes"][self.node]["data"]["center"]
-        # set new scale if specified
-        if scale:
-            if isinstance(scale, Scales):
-                self._story._properties["nodes"][self.node]["data"]["viewpoint"][
-                    "scale"
-                ] = scale.value["scale"]
-                self._story._properties["nodes"][self.node]["data"][
-                    "zoom"
-                ] = scale.value["zoom"]
-            elif isinstance(scale, dict):
-                self._story._properties["nodes"][self.node]["data"]["viewpoint"][
-                    "scale"
-                ] = scale["scale"]
-                self._story._properties["nodes"][self.node]["data"]["zoom"] = scale[
-                    "zoom"
-                ]
+
+                # Once the update made, remove the original information from resources
+                new_data = {
+                    "itemId": rdata_dict["itemId"],
+                    "itemType": rdata_dict["itemType"],
+                    "type": "minimal",
+                }
+                self._story._properties["resources"][self.resource_node][
+                    "data"
+                ] = new_data
+
         return self._story._properties["nodes"][self.node]["data"]["viewpoint"]
 
     # ----------------------------------------------------------------------
