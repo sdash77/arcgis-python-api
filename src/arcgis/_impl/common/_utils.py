@@ -101,7 +101,6 @@ def inspect_function_inputs(fn, **params):
     import inspect
 
     try:
-
         args = list(inspect.signature(fn).parameters.keys()) + ["estimate"]
     except ValueError:
         args = inspect.getfullargspec(func=fn).args
@@ -275,7 +274,7 @@ def zipws(path, outfile, keep=True):
     """
     zipobj = zipfile.ZipFile(outfile, "w", zipfile.ZIP_DEFLATED)
     path = os.path.normpath(path)
-    for (dirpath, dirnames, filenames) in os.walk(path):
+    for dirpath, dirnames, filenames in os.walk(path):
         for file in filenames:
             if not file.endswith(".lock") and not file.endswith(".zip"):
                 try:

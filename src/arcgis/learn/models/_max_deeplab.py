@@ -27,7 +27,6 @@ class MaXDeepLabConfig:
         pass
 
     def on_batch_begin(self, learn, model_input_batch, model_target_batch, **kwargs):
-
         mask, label, semantic = model_target_batch
         semantic = semantic.squeeze(dim=1)
         model_target_batch = (mask, label, semantic)
@@ -35,11 +34,9 @@ class MaXDeepLabConfig:
         return model_input_batch, model_target_batch
 
     def transform_input(self, xb):
-
         return xb
 
     def transform_input_multispectral(self, xb):
-
         return xb
 
     def get_model(self, data, backbone, **kwargs):

@@ -6,6 +6,7 @@ from arcgis.gis._impl._con import Connection
 from arcgis._impl.common._mixins import PropertyMap
 from typing import Dict, Any, List, Tuple, Optional
 
+
 ###########################################################################
 class Overview(_BaseKube):
     """ """
@@ -13,6 +14,7 @@ class Overview(_BaseKube):
     _con = None
     _gis = None
     _url = None
+
     # ---------------------------------------------------------------------
     def __init__(self, url: str, gis: GIS) -> None:
         """initializer"""

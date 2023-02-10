@@ -8,6 +8,7 @@ from arcgis.auth.tools import LazyLoader
 
 geometry = LazyLoader("arcgis.geometry")
 
+
 ########################################################################
 class TraceNetworkManager(object):
     """
@@ -34,6 +35,7 @@ class TraceNetworkManager(object):
     _property = None
     _version_guid = None
     _version_name = None
+
     # ----------------------------------------------------------------------
     def __init__(self, url, version=None, gis=None):
         """Constructor"""

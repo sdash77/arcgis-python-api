@@ -440,7 +440,6 @@ def show_results_multispectral(
     pred_model_external = []
 
     for i in range(0, x_batch.shape[0], self._data.batch_size):
-
         if self._backend == "pytorch":
             if getattr(self, "_is_model_extension", False):
                 xb = self._model_conf.transform_input_multispectral(
@@ -449,7 +448,6 @@ def show_results_multispectral(
                 try:
                     _pred_ext = self.learn.model.eval()(xb)
                 except Exception as e:
-
                     if getattr(self, "_is_fasterrcnn", False):
                         _pred_ext = []
                         for _ in range(self._data.batch_size):
@@ -499,7 +497,6 @@ def show_results_multispectral(
             predictions_store = __predictions_store
 
     if self._is_multispectral:
-
         rgb_bands = kwargs.get("rgb_bands", self._data._symbology_rgb_bands)
 
         e = Exception(

@@ -88,7 +88,6 @@ def _format_colors(colors, alpha, cstep=None):
     if colors is None:
         fmt_colors = "jet"
     if isinstance(colors, list):
-
         # single RGB + Alpha set
         if len(colors) == 4 and all([isinstance(i, int) for i in colors]):
             fmt_colors = [colors]

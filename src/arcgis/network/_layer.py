@@ -14,7 +14,6 @@ from arcgis.network import _utils
 from arcgis._impl.common._utils import _validate_url
 
 try:
-
     import pandas as pd
     from arcgis.features.geo import _is_geoenabled
 
@@ -29,6 +28,7 @@ except ImportError:
 from arcgis.gis import Item
 
 _log = logging.getLogger(__name__)
+
 
 ###########################################################################
 def _handle_spatial_inputs(data, do_not_locate=True, has_z=False, where=None):
@@ -228,7 +228,6 @@ class NetworkLayer(Layer):
 
         tp = concurrent.futures.ThreadPoolExecutor(1)
         try:
-
             future = tp.submit(fn=fn, **inputs)
         except:
             future = tp.submit(fn, **inputs)

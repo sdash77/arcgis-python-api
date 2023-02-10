@@ -46,6 +46,7 @@ class GeoJSONLayer(BaseOGC):
     _type = "geojson"
     _url = ""
     _data = {}
+
     # ----------------------------------------------------------------------
     def __init__(self, url=None, data=None, **kwargs):
         """init"""

@@ -399,7 +399,6 @@ class FeatureLayer(Layer):
 
         folder = "images"
         for row in dataframe_merged.iterrows():
-
             if label_field is not None:
                 folder = row[1][label_field]
 
@@ -505,7 +504,12 @@ class FeatureLayer(Layer):
         return self._con.post(path=url, postdata=params)
 
     def _add_attachment(
-        self, oid, file_path, keywords=None, return_moment=False, version=None
+        self,
+        oid,
+        file_path,
+        keywords=None,
+        return_moment=False,
+        version=None,
     ):
         """
         Adds an attachment to a feature service
@@ -617,7 +621,12 @@ class FeatureLayer(Layer):
 
     # ----------------------------------------------------------------------
     def _update_attachment(
-        self, oid, attachment_id, file_path, return_moment=False, version=None
+        self,
+        oid,
+        attachment_id,
+        file_path,
+        return_moment=False,
+        version=None,
     ):
         """
         Updates an existing attachment with a new file
@@ -2350,7 +2359,6 @@ class FeatureLayer(Layer):
                     if len(records.features) < max_records:
                         break
                 else:
-
                     df = self._query_df(url, params)
                     count += len(df)
                     dfs.append(df)
@@ -3344,7 +3352,6 @@ class FeatureLayer(Layer):
             else:
                 raise Exception("Could not find ObjectId or FID field.")
         elif deletes is not None and isinstance(deletes, FeatureSet):
-
             field_name = None
             if deletes.object_id_field_name:
                 field_name = deletes.object_id_field_name
@@ -3766,7 +3773,6 @@ class FeatureLayer(Layer):
         if "SHAPE" in featureset_dict:
             df.spatial.set_geometry("SHAPE")
         if len(dfields) > 0:
-
             for fld in [fld for fld in dfields if fld in df.columns]:
                 try:
                     df[fld] = pd.to_datetime(
@@ -3776,7 +3782,6 @@ class FeatureLayer(Layer):
                         unit="s",
                     )
                 except:
-
                     df[fld] = pd.to_datetime(
                         df[fld], errors="coerce", infer_datetime_format=True
                     )
@@ -4246,7 +4251,6 @@ class Table(FeatureLayer):
                     if len(records.features) < max_records:
                         break
                 else:
-
                     df = self._query_df(url, params)
                     count += len(df)
                     dfs.append(df)
@@ -4316,7 +4320,9 @@ class FeatureLayerCollection(_GISResource):
         self._populate_layers()
         self._admin = None
         try:
-            from arcgis.gis.server._service._adminfactory import AdminServiceGen
+            from arcgis.gis.server._service._adminfactory import (
+                AdminServiceGen,
+            )
 
             self.service = AdminServiceGen(service=self, gis=gis)
         except:
@@ -4454,7 +4460,8 @@ class FeatureLayerCollection(_GISResource):
     def extract_changes(
         self,
         layers: list[int],
-        servergen: list[dict[str, Any]],
+        servergen: list[int] = None,
+        layer_servergen: list[dict[str, Any]] = None,
         queries: Optional[dict[str, Any]] = None,
         geometry: Optional[Union[Geometry, dict[str, int]]] = None,
         geometry_type: Optional[str] = None,
@@ -4471,6 +4478,7 @@ class FeatureLayerCollection(_GISResource):
         change_extent_grid_cell: Optional[str] = None,
         return_geometry_updates: Optional[bool] = None,
         fields_to_compare: list | None = None,
+        out_sr: int | None = None,
     ):
         """
         A change tracking mechanism for applications. Applications can use ``extract_changes`` to
@@ -4492,7 +4500,28 @@ class FeatureLayerCollection(_GISResource):
         layers                               Required List.  The list of layers (by index value) and tables to include in the
                                              output.
         --------------------------------     --------------------------------------------------------------------
-        servergen                            Required List.   The servergen numbers allow a client to specify the last
+        servergen                            Required List (when layer_servergen not present). Introduced at 11.0.
+                                             This parameter sets the servergens to apply to all layers included in
+                                             the layers parameter. Either a single generation, or a pair of
+                                             generations, can be used as values for this parameter. If a single
+                                             servergen value is provided, all changes that have happened since
+                                             that generation are returned. If a pair of serverGen values are
+                                             provided, changes that have happened between the first generation
+                                             (the minimum value) and the second generation (the maximum value)
+                                             are returned. If providing two generations, the first value in the
+                                             pair is expected to be the smaller of the two values.
+                                             Support for this parameter is indicated when the service-level
+                                             'supportServerGens' property, under 'extractChangesCapabilities', is
+                                             set as 'True'. This operation requires either 'serverGens' or
+                                             'layerServerGens' be submitted with the request.
+
+                                             .. code-block:: python
+
+                                                # Usage Example:
+
+                                                servergen= [10500,11000]
+        --------------------------------     --------------------------------------------------------------------
+        layer_servergen                      Required List (when servergen not present). The servergen numbers allow a client to specify the last
                                              layer generation numbers (a Unix epoch time value in milliseconds) for the
                                              changes received from the server. All changes made after this value will be
                                              returned.
@@ -4515,9 +4544,9 @@ class FeatureLayerCollection(_GISResource):
 
                                                 # Usage Example:
 
-                                                servergen= [{"id": 0, "serverGen": 10500},
-                                                            {"id": 1, "serverGen": 1100},
-                                                            {"id": 2, "serverGen": 1200}]
+                                                layer_servergen= [{"id": 0, "serverGen": 10500},
+                                                                  {"id": 1, "serverGen": 1100},
+                                                                  {"id": 2, "serverGen": 1200}]
         --------------------------------     --------------------------------------------------------------------
         queries                              Optional Dictionary. In addition to the layers and geometry
                                              parameters, the `queries` parameter can be used to further define
@@ -4669,26 +4698,32 @@ class FeatureLayerCollection(_GISResource):
             'edits': [{'id': 0,
               'objectIds': {'adds': [], 'updates': [194], 'deletes': []}}]}
         """
+        if servergen is None and layer_servergen is None:
+            raise ValueError("Please provide a servergen or layer_servergen")
         url = "%s/extractChanges" % self._url
         params = {
             "f": "json",
-            "layerQueries": queries,
-            "layers": layers,
-            "geometry": geometry,
-            "geometryType": geometry_type,
-            "inSR": in_sr,
-            "gdbVersion": version,
+            "layerQueries": queries or "",
+            "layers": layers,  # ",".join([str(lyr) for lyr in layers]),
+            "geometry": geometry or "",
+            "outSR": out_sr or "",
+            "geometryType": geometry_type or "esriGeometryEnvelope",
+            "inSR": in_sr or "",
+            "gdbVersion": version or "",
             "returnInserts": return_inserts,
             "returnUpdates": return_updates,
             "returnDeletes": return_deletes,
+            "returnDeletedFeatures": return_deletes,
             "returnIdsOnly": return_ids_only,
             "returnExtentOnly": return_extent_only,
             "returnAttachments": return_attachments,
             "returnAttachmentsDatabyURL": attachments_by_url,
             "dataFormat": data_format,
-            "layerServerGens": servergen,
+            "serverGens": servergen or "",
+            "layerServerGens": layer_servergen or "",
             "changesExtentGridCell": change_extent_grid_cell,
-            "fieldsToCompare": None,
+            "fieldsToCompare": None or "",
+            "async": True,
         }
         if not fields_to_compare is None:
             params["fieldsToCompare"] = {"fields": fields_to_compare}
@@ -5238,13 +5273,11 @@ class FeatureLayerCollection(_GISResource):
         if out_path is not None and os.path.isdir(out_path):
             dl_url = None
             if "resultUrl" in res:
-
                 dl_url = res["resultUrl"]
             elif "responseUrl" in res:
                 dl_url = res["responseUrl"]
 
             if dl_url is not None:
-
                 return self._con.get(
                     path=dl_url,
                     file_name=dl_url.split("/")[-1],

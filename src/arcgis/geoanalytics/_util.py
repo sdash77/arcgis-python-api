@@ -189,6 +189,7 @@ class GAJob(object):
     _gpjob = None
     _return_service = None
     _add_messages = None
+
     # ----------------------------------------------------------------------
     def __init__(self, gpjob, return_service=None, add_messages=False):
         """
@@ -318,7 +319,6 @@ class GAJob(object):
         :return: object
         """
         try:
-
             res = self._gpjob.result()
             if self._return_service:
                 return self._return_service

@@ -1,3 +1,6 @@
+import sys
+
+# sys.path.insert(0, r"C:\ipython_workfolder\geosaurus\src")
 import unittest
 import time
 import concurrent.futures
@@ -38,12 +41,18 @@ class TestTransferParcels(unittest.TestCase):
 
     def test_scenario_1(self):
         fq_version_name = pfutils.create_version(self.vms, f"api-{int(time.time())}")
-        transfer_parcel = {"id":"{D664B654-D8F2-453C-966F-6FA66E1AE2E2}","layerId":"24"}
+        transfer_parcel = {
+            "id": "{D664B654-D8F2-453C-966F-6FA66E1AE2E2}",
+            "layerId": "24",
+        }
         source_parcels = [
-            {"id":"{8233045B-A337-4087-957A-4F8A4814FF09}","layerId":"15"},
-            {"id":"{EC850938-01F4-48C6-B7DB-16EFB0B544BC}","layerId":"15"},
-            {"id":"{BCF8B086-B5DB-472A-89AA-6A3AF54C75BD}","layerId":"15"}]
-        target_parcels = [{"id":"{449572F3-C2E1-405D-B642-4CFA90C10C46}","layerId":"21"}]
+            {"id": "{8233045B-A337-4087-957A-4F8A4814FF09}", "layerId": "15"},
+            {"id": "{EC850938-01F4-48C6-B7DB-16EFB0B544BC}", "layerId": "15"},
+            {"id": "{BCF8B086-B5DB-472A-89AA-6A3AF54C75BD}", "layerId": "15"},
+        ]
+        target_parcels = [
+            {"id": "{449572F3-C2E1-405D-B642-4CFA90C10C46}", "layerId": "21"}
+        ]
         parcel_record = "{89E0F2EE-9788-4008-9CD4-1F02ABDCD49F}"
         area_unit = 109405
 
@@ -56,7 +65,9 @@ class TestTransferParcels(unittest.TestCase):
             )
 
             try:
-                res = parcel_fabric.transfer_parcel(transfer_parcel, target_parcels, parcel_record, source_parcels)
+                res = parcel_fabric.transfer_parcel(
+                    transfer_parcel, target_parcels, parcel_record, source_parcels
+                )
                 print(res)
             except Exception as ex:
                 print(ex)
@@ -94,3 +105,7 @@ class TestTransferParcels(unittest.TestCase):
     @classmethod
     def tearDownClass(cls):
         pfutils.clean_up_versions(cls.vms)
+
+
+if __name__ == "__main__":
+    unittest.main()

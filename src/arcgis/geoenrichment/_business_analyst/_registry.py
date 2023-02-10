@@ -23,7 +23,6 @@ def get_child_key_strs(key_path) -> list:
 
     # while everything is going good
     while not error:
-
         try:
             # get the child key in the iterated position
             child_key = winreg.EnumKey(parent_key, counter)
@@ -36,7 +35,6 @@ def get_child_key_strs(key_path) -> list:
 
         # when something blows up...typically because no key is found
         except Exception as e:
-
             # switch the error flag to true, stopping the iteration
             error = True
 
@@ -57,7 +55,6 @@ def get_first_child_key_str(key_path, pattern) -> str:
 
     # iterate the list of key paths
     for key in key_list:
-
         # if the key matches the pattern
         if key.find(pattern):
             # pass back the provided key path

@@ -7,6 +7,7 @@ from .. import GIS
 from ._base import BasePortalAdmin
 from arcgis._impl.common._deprecate import deprecated
 
+
 ########################################################################
 class PasswordPolicy(BasePortalAdmin):
     """
@@ -17,6 +18,7 @@ class PasswordPolicy(BasePortalAdmin):
     _gis = None
     _con = None
     _url = None
+
     # ----------------------------------------------------------------------
     def __init__(self, url, gis=None, **kwargs):
         """Constructor"""
@@ -102,6 +104,7 @@ class Security(BasePortalAdmin):
     _eu = None
     _eg = None
     _ssl = None
+
     # ----------------------------------------------------------------------
     def __init__(self, url, gis=None, **kwargs):
         """Constructor"""
@@ -389,6 +392,7 @@ class OAuth(BasePortalAdmin):
     _gis = None
     _con = None
     _url = None
+
     # ----------------------------------------------------------------------
     def __init__(self, url, gis=None, **kwargs):
         """Constructor"""
@@ -469,6 +473,7 @@ class SSLCertificates(BasePortalAdmin):
     _gis = None
     _con = None
     _url = None
+
     # ----------------------------------------------------------------------
     def __init__(self, url, gis=None, **kwargs):
         """Constructor"""
@@ -846,6 +851,7 @@ class SSLCertificate(BasePortalAdmin):
     _con = None
     _url = None
     _mgr = None
+
     # ----------------------------------------------------------------------
     def __init__(self, url, gis=None, **kwargs):
         """Constructor"""
@@ -954,6 +960,7 @@ class EnterpriseGroups(BasePortalAdmin):
     _gis = None
     _con = None
     _url = None
+
     # ----------------------------------------------------------------------
     def __init__(self, url, gis=None, **kwargs):
         """Constructor"""
@@ -1085,6 +1092,7 @@ class EnterpriseUsers(BasePortalAdmin):
     _gis = None
     _con = None
     _url = None
+
     # ----------------------------------------------------------------------
     def __init__(self, url, gis=None, **kwargs):
         """Constructor"""

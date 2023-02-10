@@ -1799,7 +1799,6 @@ class ImageryLayer(Layer):
         return newlyr
 
     def _clone_layer(self):
-
         if type(self).__name__ == "Raster" or type(self).__name__ == "RasterCollection":
             newlyr = Raster(
                 self._url, is_multidimensional=self._is_multidimensional, gis=self._gis
@@ -4656,7 +4655,6 @@ class ImageryLayer(Layer):
         variable_field_name=None,
         dimension_field_names=None,
     ):
-
         """
         Opertion to get the multidimensional info.
         ==============================  ====================================================================
@@ -4781,7 +4779,6 @@ class ImageryLayer(Layer):
 
     @mosaic_rule.setter
     def mosaic_rule(self, value):
-
         self._mosaic_rule = value
 
     def _mosaic_operation(self, op):
@@ -5010,7 +5007,6 @@ class ImageryLayer(Layer):
         gr_output = None
 
         if for_viz:
-
             if g._con._auth.lower() != "ANON".lower() and g._con._auth is not None:
                 text_data = {
                     "id": "resultLayer",
@@ -5758,7 +5754,6 @@ class ImageryLayer(Layer):
         def _rft_draw_graph(
             G, gdict, gnodenumber, groot, show_attributes, **kwargs
         ):  # rft fnra
-
             global nodenumber, connect, root
             global dict_arg
 
@@ -6348,7 +6343,6 @@ class ImageryLayer(Layer):
         trend_order: Optional[int] = None,
         plot_properties: dict = {},
     ):
-
         """
         The ``temporal_profile`` method creates a temporal profile.
         A temporal profile serves as a basic analysis tool for imagery data in a time series.
@@ -6541,7 +6535,6 @@ class ImageryLayer(Layer):
                     mask_array = np.concatenate((mask_array, ele), axis=0)
             num_bands = self.band_count
             try:
-
                 if numarray.dtype != "uint8" or (
                     numarray.dtype == "float"
                     and (numarray.min() < 0 or 1 < numarray.max())
@@ -6858,7 +6851,6 @@ class ImageryLayer(Layer):
         show_values: bool = False,
         plot_properties: dict[str, Any] = {},
     ):
-
         """
         The ``spectral_profile`` method can be used to create spectral profile charts.
 
@@ -7277,7 +7269,6 @@ from arcgis.raster._util import (
 
 
 def _get_engine(engine):
-
     """
     Function to get the engine that will be used to process the Raster object.
 
@@ -8505,7 +8496,6 @@ class Raster:
     def set_colormap(
         self, color_map: Union[str, dict[str, Any]], variable_name: Optional[str] = None
     ):
-
         """
         The ``set_colormap`` method sets the color map for the raster.
 
@@ -9917,7 +9907,6 @@ class _ImageServerRaster(ImageryLayer, Raster):
             i = 0
             for slice in mdim_slices["slices"]:
                 for ele in slice["multidimensionalDefinition"]:
-
                     # if ele["values"][0][0]==ele["values"][0][1]:
                     #    if ele['dimensionName'] == 'StdTime' or ele['dimensionName'].lower() == 'time' or ele['dimensionName'].lower() == 'date' or  ele['dimensionName'].lower() == 'acquisitiondate' or ele['dimensionName'] == 'ISO8601':
                     #        slice_list[i].update({ele["dimensionName"]:_epoch_to_iso(ele["values"][0][0])})
@@ -11957,7 +11946,6 @@ class _ArcpyRaster(Raster, ImageryLayer):
 
 
 def _get_raster_collection_engine(engine):
-
     """
     Function to get the engine that will be used to process the Raster object.
 
@@ -13848,258 +13836,270 @@ class RasterCollection:
         """
         return self._ras_coll_engine_obj.map(func=func, context=context)
 
-    # def reduce(self, func, func_args={}):
-    #    """
-    #    The ``reduce`` method composite all the images in the collection to a single image based on a reducer function.
+    def reduce(self, func, func_args=None):
+        """
+        The ``reduce`` method composites all the images in the collection to a single image based on a reducer function.
 
-    #    ====================================     ====================================================================
-    #    **Parameter**                             **Description**
-    #    ------------------------------------     --------------------------------------------------------------------
-    #    func                                     Required. The Python function to reduce the raster collection.
-    #                                             The function should accept a list of rasters and return a single reduced raster
-    #    ------------------------------------     --------------------------------------------------------------------
-    #    func_args                                Optional dictionary. Additional paramters to be passed the reducer function.
-    #    ====================================     ====================================================================
+        ====================================     ====================================================================
+        **Parameter**                            **Description**
+        ------------------------------------     --------------------------------------------------------------------
+        func                                     Required. The Python function to reduce the raster collection.
+                                                 The function should accept a list of rasters and return a single reduced raster
+        ------------------------------------     --------------------------------------------------------------------
+        func_args                                Optional dictionary. Additional paramters to be passed to the reducer function.
+        ====================================     ====================================================================
 
-    #    :return: a ``Raster`` object
+        :return: a ``Raster`` object
 
-    #    .. code-block:: python
+        .. code-block:: python
 
-    #        # Usage Example 1: This snippet reduces a raster collection based on a reducer function from arcgis.raster.functions module that can accept a list of rasters.
+            # Usage Example 1: This snippet reduces a raster collection based on a reducer function from arcgis.raster.functions module that can accept a list of rasters.
 
-    #        rc = RasterCollection("https://myserver/arcgis/rest/services/ImageServiceName/ImageServer")
-    #        from arcgis.raster.functions import max
-    #        max_raster = rc.reduce(func=max, func_args = {"cellsize_type":"MinOf"})
+            rc = RasterCollection("https://myserver/arcgis/rest/services/ImageServiceName/ImageServer")
+            from arcgis.raster.functions import max
+            max_raster = rc.reduce(func=max, func_args={"cellsize_type":"MinOf"})
 
-    #        # Usage Example 2: This snippet reduces a raster collection based on a custom reducer function.
+            # Usage Example 2: This snippet reduces a raster collection based on a custom reducer function.
 
-    #        rc = RasterCollection("https://myserver/arcgis/rest/services/ImageServiceName/ImageServer")
+            rc = RasterCollection("https://myserver/arcgis/rest/services/ImageServiceName/ImageServer")
 
-    #        def skewness(ras_list):
-    #            from arcgis.raster.functions import mean, std, med
-    #            cs_mean = mean(ras_list, process_as_multiband=True)
-    #            cs_stddev  = std(ras_list, process_as_multiband=True)
-    #            cs_median = med(ras_list, process_as_multiband=True)
-    #            out_skewness = 3*(cs_mean - cs_median)/cs_stddev
-    #            return out_skewness
+            def skewness(ras_list):
+                from arcgis.raster.functions import mean, std, med
+                cs_mean = mean(ras_list, process_as_multiband=True)
+                cs_stddev = std(ras_list, process_as_multiband=True)
+                cs_median = med(ras_list, process_as_multiband=True)
+                out_skewness = 3*(cs_mean - cs_median)/cs_stddev
+                return out_skewness
 
-    #        skewness = rc.reduce(func=skewness)
+            skewness = rc.reduce(func=skewness)
 
-    #    """
-    #    return self._ras_coll_engine_obj.reduce(func=func, func_args=func_args)
+        """
+        if func_args is None:
+            func_args = {}
+        return self._ras_coll_engine_obj.reduce(func=func, func_args=func_args)
 
-    # def merge(self, collection2):
-    #    """
-    #    The ``merge`` method merges two image collections into one. The output has all the items that were in either collection.
+    def merge(self, collection2):
+        """
+        The ``merge`` method merges two `RasterCollections` into one. The output has all the items that were in either collection.
 
-    #    ====================================     ====================================================================
-    #    **Parameter**                             **Description**
-    #    ------------------------------------     --------------------------------------------------------------------
-    #    collection2                              RasterCollection object. The second collection to merge.
-    #    ====================================     ====================================================================
+        ====================================     ====================================================================
+        **Parameter**                            **Description**
+        ------------------------------------     --------------------------------------------------------------------
+        collection2                              RasterCollection object. The second collection to merge.
+        ====================================     ====================================================================
 
-    #    :return: a new Collection that has all the items that were in either collection.
+        :return: a new Collection that has all the items that were in either collection.
 
-    #    .. code-block:: python
+        .. code-block:: python
 
-    #        # Usage Example 1: merges two image collections rc1 and rc2 into one.
+            # Usage Example 1: merges two image collections rc1 and rc2 into one.
 
-    #        rc1 = rc.filter_by_attribute("OBJECTID", "EQUALS", 1)
-    #        rc2 = rc.filter_by_attribute("OBJECTID", "EQUALS", 2)
-    #        new_rc = rc1.merge(rc2)
+            rc1 = rc.filter_by_attribute("OBJECTID", "EQUALS", 1)
+            rc2 = rc.filter_by_attribute("OBJECTID", "EQUALS", 2)
+            new_rc = rc1.merge(rc2)
 
-    #    """
+        """
 
-    #    return self._ras_coll_engine_obj.merge(collection2._ras_coll_engine_obj)
+        return self._ras_coll_engine_obj.merge(collection2._ras_coll_engine_obj)
 
-    # def summarize_field(self, field_name, summary_type="ALL"):
-    #    """
-    #    Summarizes a numeric field of the RasterCollection based on the specified summary_type
-    #    :param field_name: str, the field name to be summarized
-    #    :param summary_type: str or list of str representing the summary type."COUNT", "COUNT_DISTINCT", "FIRST","HISTOGRAM", "MAX", "MEAN", "MIN",
-    #                    "PRODUCT", "SAMPLE_SD", "SAMPLE_VAR", "SUM", "TOTAL_SD", "TOTAL_VAR", "ALL".
-    #    :return: a dictionary with key being the summary type and the value being the summary value.
-    #    """
-    #    property_values = self.get_field_values(field_name)
-    #    summary_dict = {}
-    #    import numbers
+    def summarize_field(self, field_name, summary_type="ALL"):
+        """
+        Summarizes a numeric field of the RasterCollection based on the specified summary_type
 
-    #    if not isinstance(summary_type, list):
-    #        summary_type = [summary_type]
+        ====================================     ====================================================================
+        **Parameter**                             **Description**
+        ------------------------------------     --------------------------------------------------------------------
+        field_name                               Required string. The name of the field to be summarized
+        ------------------------------------     --------------------------------------------------------------------
+        summary_type                             Required string or list of strings representing the summary type.
+                                                 Possible values - "COUNT", "COUNT_DISTINCT", "FIRST","HISTOGRAM", "MAX", "MEAN", "MIN",
+                                                 "PRODUCT", "SAMPLE_SD", "SAMPLE_VAR", "SUM", "TOTAL_SD", "TOTAL_VAR", "ALL".
+        ====================================     ====================================================================
 
-    #    if "ALL" in map(str.upper, summary_type):
-    #        summary_type = [
-    #            "COUNT",
-    #            "COUNT_DISTINCT",
-    #            "FIRST",
-    #            "HISTOGRAM",
-    #            "MAX",
-    #            "MEAN",
-    #            "MIN",
-    #            "PRODUCT",
-    #            "SAMPLE_SD",
-    #            "SAMPLE_VAR",
-    #            "SUM",
-    #            "TOTAL_SD",
-    #            "TOTAL_VAR",
-    #        ]
+        :return:
+            A dictionary with key being the summary type and the value being the summary value.
+        """
 
-    #    from operator import is_not
-    #    from functools import partial
+        property_values = self.get_field_values(field_name)
+        summary_dict = {}
+        import numbers
 
-    #    property_values_not_none = list(filter(partial(is_not, None), property_values))
+        if not isinstance(summary_type, list):
+            summary_type = [summary_type]
 
-    #    all_num = all(isinstance(x, numbers.Number) for x in property_values_not_none)
-    #    if not all_num:
-    #        raise RuntimeError("Only numeric fields can be summarized")
-    #    try:
-    #        for summary in summary_type:
-    #            val = None
-    #            summary = summary.lower()
-    #            if summary == "count":
-    #                val = len(property_values_not_none)
+        if "ALL" in map(str.upper, summary_type):
+            summary_type = [
+                "COUNT",
+                "COUNT_DISTINCT",
+                "FIRST",
+                "HISTOGRAM",
+                "MAX",
+                "MEAN",
+                "MIN",
+                "PRODUCT",
+                "SAMPLE_SD",
+                "SAMPLE_VAR",
+                "SUM",
+                "TOTAL_SD",
+                "TOTAL_VAR",
+            ]
 
-    #            elif summary == "count_distinct":
-    #                val = len(np.unique(property_values_not_none))
+        from operator import is_not
+        from functools import partial
 
-    #            elif summary == "first":
-    #                val = property_values_not_none[0]
+        property_values_not_none = list(filter(partial(is_not, None), property_values))
 
-    #            elif summary == "histogram":
-    #                unique, counts = np.unique(
-    #                    property_values_not_none, return_counts=True
-    #                )
-    #                val = dict(zip(unique, counts))
+        all_num = all(isinstance(x, numbers.Number) for x in property_values_not_none)
+        if not all_num:
+            raise RuntimeError("Only numeric fields can be summarized")
+        try:
+            for summary in summary_type:
+                val = None
+                summary = summary.lower()
+                if summary == "count":
+                    val = len(property_values_not_none)
 
-    #            elif summary == "max":
-    #                val = np.max(property_values_not_none)
+                elif summary == "count_distinct":
+                    val = len(np.unique(property_values_not_none))
 
-    #            elif summary == "mean":
-    #                val = np.mean(property_values_not_none)
+                elif summary == "first":
+                    val = property_values_not_none[0]
 
-    #            elif summary == "min":
-    #                val = np.min(property_values_not_none)
+                elif summary == "histogram":
+                    unique, counts = np.unique(
+                        property_values_not_none, return_counts=True
+                    )
+                    val = dict(zip(unique, counts))
 
-    #            elif summary == "product":
-    #                val = np.prod(property_values_not_none)
+                elif summary == "max":
+                    val = np.max(property_values_not_none)
 
-    #            elif summary == "sample_sd":
-    #                val = np.std(property_values_not_none, ddof=1)
+                elif summary == "mean":
+                    val = np.mean(property_values_not_none)
 
-    #            elif summary == "sample_var":
-    #                val = np.var(property_values_not_none, ddof=1)
+                elif summary == "min":
+                    val = np.min(property_values_not_none)
 
-    #            elif summary == "sum":
-    #                val = np.sum(property_values_not_none)
+                elif summary == "product":
+                    val = np.prod(property_values_not_none)
 
-    #            elif summary == "total_sd":
-    #                val = np.std(property_values_not_none)
+                elif summary == "sample_sd":
+                    val = np.std(property_values_not_none, ddof=1)
 
-    #            elif summary == "total_var":
-    #                val = np.var(property_values_not_none)
+                elif summary == "sample_var":
+                    val = np.var(property_values_not_none, ddof=1)
 
-    #            else:
-    #                raise ValueError("invalid summary_type value")
+                elif summary == "sum":
+                    val = np.sum(property_values_not_none)
 
-    #            summary_dict.update({summary: val})
-    #    except:
-    #        raise RuntimeError("Failed to summarize the property")
+                elif summary == "total_sd":
+                    val = np.std(property_values_not_none)
 
-    #    return summary_dict
+                elif summary == "total_var":
+                    val = np.var(property_values_not_none)
 
-    # def add_field(
-    #    self,
-    #    field_name: str,
-    #    field_values: list,
-    #    context: Optional[dict[str, Any]] = None,
-    # ):
-    #    """
-    #    Adds a new field to the raster collection and populate it with values.
+                else:
+                    raise ValueError("invalid summary_type value")
 
-    #    ====================================     ====================================================================
-    #    **Parameter**                             **Description**
-    #    ------------------------------------     --------------------------------------------------------------------
-    #    field_name                               Required string. The name of the field to be added.
-    #    ------------------------------------     --------------------------------------------------------------------
-    #    field_values                             Required list. The list of values associated with the field name.
-    #                                             The length of the list should match the number of items in the raster collection
-    #                                             Providing only one value will set the same value for all rows.
-    #    ------------------------------------     --------------------------------------------------------------------
-    #    context                                  Optional dictionary. Additional properties to control the creation of RasterCollection.
-    #                                             The default value for the context parameter would be the same as that of the
-    #                                             context settings applied to the parent collection.
+                summary_dict.update({summary: val})
+        except:
+            raise RuntimeError("Failed to summarize the property")
 
-    #                                             Currently available:
+        return summary_dict
 
-    #                                                 -  query_boundary:
-    #                                                    This boolean value set to this option determines whether to add SHAPE field
-    #                                                    to the RasterCollection. The value in the SHAPE field represents the
-    #                                                    boundary/geometry of the raster. The query_boundary parameter is honoured
-    #                                                    only when the RasterCollection is created from a list of Rasters.
+    def add_field(
+        self,
+        field_name: str,
+        field_values: list,
+        context: Optional[dict[str, Any]] = None,
+    ):
+        """
+        Adds a new field to the raster collection and populates it with values.
 
-    #                                                    - True: Set query_boundary to True to add the SHAPE field to the RasterCollection.
+        ====================================     ====================================================================
+        **Parameter**                             **Description**
+        ------------------------------------     --------------------------------------------------------------------
+        field_name                               Required string. The name of the field to be added.
+        ------------------------------------     --------------------------------------------------------------------
+        field_values                             Required list. The list of values associated with the field name.
+                                                 The length of the list should match the number of items in the raster collection
+                                                 Providing only one value will set the same value for all rows.
+        ------------------------------------     --------------------------------------------------------------------
+        context                                  Optional dictionary. Additional properties to control the creation of RasterCollection.
+                                                 The default value for the context parameter would be the same as that of the
+                                                 context settings applied to the parent collection.
 
-    #                                                    - False: Set query_boundary to False to not add the SHAPE field to the RasterCollection. (Creation of RasterCollection would be faster)
+                                                 Currently available:
 
-    #                                                    Example:
+                                                     -  query_boundary:
+                                                        This boolean value set to this option determines whether to add SHAPE field
+                                                        to the RasterCollection. The value in the SHAPE field represents the
+                                                        boundary/geometry of the raster. The query_boundary parameter is honoured
+                                                        only when the RasterCollection is created from a list of Rasters.
 
-    #                                                    {"query_boundary":True}
-    #    ====================================     ====================================================================
+                                                        - True: Set query_boundary to True to add the SHAPE field to the RasterCollection.
 
-    #    :return:
-    #        A new :class:`~arcgis.raster.RasterCollection` that has the new field added.
-    #    """
+                                                        - False: Set query_boundary to False to not add the SHAPE field to the RasterCollection. (Creation of RasterCollection would be faster)
 
-    #    return self._ras_coll_engine_obj.add_field(
-    #        field_name, field_values, context=context
-    #    )
+                                                        Example:
 
-    # def group_by(self, field_name: str, context: Optional[dict[str, Any]] = None):
-    #    """
-    #    group_by method can be used to group the raster collection based on a field.
+                                                        {"query_boundary":True}
+        ====================================     ====================================================================
 
-    #    ====================================     ====================================================================
-    #    **Parameter**                             **Description**
-    #    ------------------------------------     --------------------------------------------------------------------
-    #    field_name                               Required string.The name of the field that is used to group the raster collection.
-    #                                             Items with the same field values will be grouped together.
-    #    ------------------------------------     --------------------------------------------------------------------
-    #    context                                  Optional dictionary. Additional properties to control the creation of RasterCollection.
-    #                                             The default value for the context parameter would be the same as that of the
-    #                                             context settings applied to the parent collection.
+        :return:
+            A new :class:`~arcgis.raster.RasterCollection` that has the new field added.
+        """
 
-    #                                             Currently available:
+        return self._ras_coll_engine_obj.add_field(
+            field_name, field_values, context=context
+        )
 
-    #                                                 -  query_boundary:
-    #                                                    This boolean value set to this option determines whether to add SHAPE field
-    #                                                    to the RasterCollection. The value in the SHAPE field represents the
-    #                                                    boundary/geometry of the raster. The query_boundary parameter is honoured
-    #                                                    only when the RasterCollection is created from a list of Rasters.
+    def group_by(self, field_name: str, context: Optional[dict[str, Any]] = None):
+        """
+        group_by method can be used to group the raster collection based on a field.
 
-    #                                                    - True: Set query_boundary to True to add the SHAPE field to the RasterCollection.
+        ====================================     ====================================================================
+        **Parameter**                             **Description**
+        ------------------------------------     --------------------------------------------------------------------
+        field_name                               Required string. The name of the field that is used to group the raster collection.
+                                                 Items with the same field values will be grouped together.
+        ------------------------------------     --------------------------------------------------------------------
+        context                                  Optional dictionary. Additional properties to control the creation of RasterCollection.
+                                                 The default value for the context parameter would be the same as that of the
+                                                 context settings applied to the parent collection.
 
-    #                                                    - False: Set query_boundary to False to not add the SHAPE field to the RasterCollection. (Creation of RasterCollection would be faster)
+                                                 Currently available:
 
-    #                                                    Example:
+                                                     -  query_boundary:
+                                                        This boolean value set to this option determines whether to add SHAPE field
+                                                        to the RasterCollection. The value in the SHAPE field represents the
+                                                        boundary/geometry of the raster. The query_boundary parameter is honoured
+                                                        only when the RasterCollection is created from a list of Rasters.
 
-    #                                                    {"query_boundary":True}
-    #    ====================================     ====================================================================
+                                                        - True: Set query_boundary to True to add the SHAPE field to the RasterCollection.
 
-    #    :return:
-    #        A Dictionary. The dictionary that contains the grouped raster collections. The key of the dictionary is a
-    #        field value of the field name that the grouping is based on. The value of the dictionary is a raster
-    #        collection whose field name contains the same field value.
+                                                        - False: Set query_boundary to False to not add the SHAPE field to the RasterCollection. (Creation of RasterCollection would be faster)
 
-    #    .. code-block:: python
+                                                        Example:
 
-    #        # Usage Example 1: This example groups the raster collection into yearly data and creates a new raster collection using data from 1990.
+                                                        {"query_boundary":True}
+        ====================================     ====================================================================
 
-    #        group_by_year = rc.group_by(field_name="Year", context=None)
-    #        rc_1990 = group_by_year[1990]
+        :return:
+            A Dictionary. The dictionary that contains the grouped raster collections. The key of the dictionary is a
+            field value of the field name that the grouping is based on. The value of the dictionary is a raster
+            collection whose field name contains the same field value.
 
-    #    """
+        .. code-block:: python
 
-    #    return self._ras_coll_engine_obj.group_by(field_name, context=context)
+            # Usage Example 1: This example groups the raster collection into yearly data and creates a new raster collection using data from 1990.
+
+            group_by_year = rc.group_by(field_name="Year", context=None)
+            rc_1990 = group_by_year[1990]
+
+        """
+
+        return self._ras_coll_engine_obj.group_by(field_name, context=context)
 
     def _as_df(
         self, result_offset=None, result_record_count=None, return_all_records=False
@@ -14585,12 +14585,10 @@ class _ArcpyRasterCollection(RasterCollection, ImageryLayer):
         return RasterCollection(rasters, attribute_dict, context=context)
 
     def reduce(self, func, func_args={}):
-        rasters = self._rasters_list
-        reduced_raster = func(rasters, **func_args)
+        reduced_raster = func(self, **func_args)
         return reduced_raster
 
     def merge(self, collection2):
-
         newcollection = self._clone_raster_collection()
 
         newcollection._ras_coll_engine_obj._raster_collection = (
@@ -15361,7 +15359,6 @@ class _ImageServerRasterCollection(ImageryLayer, RasterCollection):
         return reduced_raster
 
     def merge(self, collection2):
-
         import pandas as pd
 
         rc1 = self._as_df()
@@ -15655,7 +15652,6 @@ class _LocalRasterCollection(ImageryLayer, RasterCollection):
                     with concurrent.futures.ThreadPoolExecutor(
                         max_workers=len(rasters)
                     ) as executor:
-
                         future_to_url = (
                             executor.submit(_get_shape, ele) for ele in arcgis_rasters
                         )
@@ -16380,7 +16376,6 @@ class _LocalRasterCollection(ImageryLayer, RasterCollection):
         return reduced_raster
 
     def merge(self, collection2):
-
         import pandas as pd
 
         rc1 = self._as_df()
@@ -16518,6 +16513,7 @@ class ImageryTileManager(object):
     _service = None
     _url = None
     _con = None
+
     # ----------------------------------------------------------------------
     def __init__(self, imglyr):
         """Constructor"""
@@ -17333,6 +17329,7 @@ class RasterManager(object):
     """
 
     _service = None
+
     # ----------------------------------------------------------------------
     def __init__(self, imglyr):
         """Constructor"""

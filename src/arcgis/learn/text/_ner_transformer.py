@@ -127,7 +127,6 @@ class TransformerNERLoss(nn.Module):
 
 
 class TransformerForEntityRecognition(ArcGISTransformer):
-
     _supported_backbones = transformer_architectures
 
     def __init__(
@@ -358,7 +357,6 @@ class TransformerForEntityRecognition(ArcGISTransformer):
 
 
 class _TransformerEntityRecognizer(ArcGISModel):
-
     supported_backbones = transformer_architectures
 
     def __init__(self, data, backbone="bert-base-cased", **kwargs):
@@ -421,7 +419,6 @@ class _TransformerEntityRecognizer(ArcGISModel):
         seq_len=transformer_seq_length,
         config=None,
     ):
-
         model_type = infer_model_type(backbone, transformer_architectures)
         self.logger.info(f"Inferred Backbone: {model_type}")
         pretrained_model_name = backbone

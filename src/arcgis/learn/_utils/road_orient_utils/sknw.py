@@ -196,7 +196,7 @@ def build_sknw(ske, multi=False):
 def draw_graph(img, graph, cn=255, ce=128):
     acc = np.cumprod((1,) + img.shape[::-1][:-1])[::-1]
     img = img.ravel()
-    for (s, e) in graph.edges():
+    for s, e in graph.edges():
         eds = graph[s][e]
         if isinstance(graph, nx.MultiGraph):
             for i in eds:
@@ -232,7 +232,7 @@ if __name__ == "__main__":
     plt.imshow(node_img[1:-1, 1:-1], cmap="gray")
 
     # draw edges by pts
-    for (s, e) in graph.edges():
+    for s, e in graph.edges():
         ps = graph[s][e]["pts"]
         plt.plot(ps[:, 1], ps[:, 0], "green")
 

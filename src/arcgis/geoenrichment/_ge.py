@@ -105,6 +105,7 @@ class _GeoEnrichment(object):
     _url_list_reports = "/Geoenrichment/Reports"
     _url_enrich_data = "/Geoenrichment/Enrich"
     _url_data_collection = "/Geoenrichment/dataCollections"
+
     # ----------------------------------------------------------------------
     def __init__(
         self,

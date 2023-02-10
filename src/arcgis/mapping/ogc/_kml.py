@@ -7,6 +7,7 @@ from arcgis import env as _env
 from arcgis._impl.common._isd import InsensitiveDict
 from ._base import BaseOGC
 
+
 ###########################################################################
 class KMLLayer(BaseOGC):
     """

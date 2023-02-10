@@ -84,6 +84,7 @@ class ServerManager(_BaseKube):
     _gis = None
     _con = None
     _properties = None
+
     # ----------------------------------------------------------------------
     @property
     def list(self):
@@ -233,6 +234,7 @@ class SystemManager(_BaseKube):
     _deployments = None
     _upgrades = None
     _license = None
+
     # ----------------------------------------------------------------------
     def __init__(self, url, gis, initialize=False):
         """Constructor
@@ -399,7 +401,6 @@ class SystemManager(_BaseKube):
         :return: `Indexer`
         """
         if self._indexer is None:
-
             url = f"{self._url}/indexer"
             self._indexer = Indexer(url=url, gis=self._gis)
         return self._indexer

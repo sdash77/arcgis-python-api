@@ -20,6 +20,7 @@ from arcgis.gis import GIS
 from arcgis.gis._impl._con import Connection
 from typing import Optional
 
+
 ########################################################################
 class MachineManager(BaseServer):
     """
@@ -45,6 +46,7 @@ class MachineManager(BaseServer):
     _con = None
     _url = None
     _json = None
+
     # ----------------------------------------------------------------------
     def __init__(self, url: str, gis: GIS, initialize: bool = False):
         """Constructor
@@ -260,6 +262,7 @@ class Machine(BaseServer):
     _json_dict = None
     _con = None
     _url = None
+
     # ----------------------------------------------------------------------
     def __init__(self, url: str, gis: GIS, initialize: bool = False):
         """
