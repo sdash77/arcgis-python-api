@@ -13104,7 +13104,7 @@ def surface_parameters(
                                             - MILE_US - The linear unit will be miles.
                                             
                                             - NAUTICAL_MILE - The linear unit will be nautical miles.
-                                            -
+                                            
                                             - MILLIMETER - The linear unit will be millimeters.
                                             
                                             - CENTIMETER - The linear unit will be centimeters.
@@ -13140,6 +13140,7 @@ def surface_parameters(
                                          This parameter is only applicable when ``parameter_type`` = "ASPECT"
                                          
                                             - NORTH_POLE_ASPECT - Aspect will be measured from the north pole. This is the default. 
+                                            
                                             - EQUATORIAL_ASPECT - Aspect will be measured from a point on the equator.
     ================================     ====================================================================     
 
