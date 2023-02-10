@@ -2994,7 +2994,7 @@ class Timeline(object):
             event_node = "n-" + uuid.uuid4().hex[0:6]
             if position:
                 self._story._properties["nodes"][self.node]["children"].insert(
-                    position, event_node
+                    position - 1, event_node
                 )
             else:
                 self._story._properties["nodes"][self.node]["children"].append(
