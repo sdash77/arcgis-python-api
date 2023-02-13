@@ -7617,7 +7617,6 @@ class ContentManager(object):
             elif has_pyshp:
                 shpfl_item, publish_parameters = _create_file_item("Shapefile")
                 if overwrite or append:
-
                     # Analyze the shapefile item to get definition for new feature layer
                     publish_parameters = self._gis.content.analyze(
                         item=shpfl_item, file_type="shapefile"
