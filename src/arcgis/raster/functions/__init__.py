@@ -8158,7 +8158,7 @@ def vector_field(
 
 def complex(
     raster: Union[Raster, ImageryLayer],
-    imaginery_raster: Optional[Raster] = None,
+    imaginary_raster: Optional[Raster] = None,
     value_type: str = "AMPLITUDE"
 ):
 
@@ -8176,7 +8176,7 @@ def complex(
     --------------------------------     --------------------------------------------------------------------
     raster                                   Required input :class:`Raster <arcgis.raster.Raster>` /  :class:`ImageryLayer <arcgis.raster.ImageryLayer>` object.
     --------------------------------     --------------------------------------------------------------------
-    imaginery_raster                         The imaginery raster input
+    imaginary_raster                         The imaginary raster input
     --------------------------------     --------------------------------------------------------------------
     value_type                               Specifies which value type to calculate:
                                                  
@@ -8198,9 +8198,9 @@ def complex(
     }
     
     layer2 = None
-    if imaginery_raster is not None:
-        layer2, raster2, raster_ra2 = _raster_input(raster, imaginery_raster)
-        template_dict["rasterFunctionArguments"]["ImagineryRaster"] = raster2
+    if imaginary_raster is not None:
+        layer2, raster2, raster_ra2 = _raster_input(raster, imaginary_raster)
+        template_dict["rasterFunctionArguments"]["ImaginaryRaster"] = raster2
     
     if layer1 is not None or (layer2 is not None and layer2._datastore_raster is False):
         layer = layer1
@@ -8215,7 +8215,7 @@ def complex(
             )
         template_dict["rasterFunctionArguments"]["ValueType"] = value_type.upper()
     
-    if imaginery_raster is not None:
+    if imaginary_raster is not None:
         return _clone_layer(layer, template_dict, raster_ra1, raster_ra2)    
     return _clone_layer(layer, template_dict, raster_ra1)
 
