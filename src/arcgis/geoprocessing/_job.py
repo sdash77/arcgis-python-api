@@ -907,7 +907,7 @@ class OMJob(GPJob):
             update_flight_json = flight_json_details.get("update_flight_json", None)
             processing_states = flight_json_details.get("processing_states", None)
             adjust_settings = flight_json_details.get("adjust_settings", None)
-            mode = adjust_settings.get("mode", None)
+
             
 
         if update_flight_json:
@@ -918,12 +918,16 @@ class OMJob(GPJob):
             rm = project_item.resources
             flight_json = rm.get(resource)  
 
-            flight_json['jobs'].update({item_name:{"messages": job_messages, "checked": True, "progress": 100,"success": True}})   
+            start_time = self._gpjob._start_time.isoformat()
+            end_time = self._gpjob._end_time.isoformat()
+
+            flight_json['jobs'].update({item_name:{"messages": job_messages, "checked": True, "progress": 100,"success": True, "startTime":start_time, "completionTime":end_time }})   
             if processing_states is not None:
                 flight_json['processingSettings'].update({item_name:processing_states})     
-            if adjust_settings is not None:    
+            if adjust_settings is not None:                    
+                mode = adjust_settings.pop("mode", None)
+                flight_json['jobs'][item_name].update({"mode": mode})
                 flight_json['adjustSettings'].update(adjust_settings)  
-                flight_json['jobs']["item_name"].update({"mode": adjust_settings.get("mode", None)})
 
             properties = json.loads(flight['properties'])   
  
@@ -932,7 +936,6 @@ class OMJob(GPJob):
                 url = json.loads(self._item)["serviceProperties"]["serviceUrl"]   
                 itemid = json.loads(self._item)["itemProperties"]["itemId"]
                 flight_json["items"].update({item_name:{"itemId": itemid, "url":url}})
-
 
                 properties = json.loads(flight['properties'])   
                 properties_items =properties["items"]

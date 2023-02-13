@@ -374,8 +374,9 @@ def compute_sensor_model(
         image_collection, flight = _get_collection_item(image_collection, gis)
         update_flight_json = True
 
+        context_new = {k.lower(): v for k, v in context.items()}
         adj_keys = ['computeCandidate', 'maxOverlap', 'maxLoss', 'maxResidual', 'initPointResolution', 'k', 'p', 'principalPoint', 'focalLength']
-        adj_dict = {k: context[k] for k in adj_keys if k in context}
+        adj_dict = {k: context_new[k.lower()] for k in adj_keys if k.lower() in context_new}
         adj_dict.update({"locationAccuracy":location_accuracy })
         adj_dict.update({"mode":mode })
         flight_json_details = {"update_flight_json": update_flight_json,
@@ -391,6 +392,7 @@ def compute_sensor_model(
         location_accuracy=location_accuracy,
         context=context,
         future=future,
+        flight_json_details=flight_json_details,
         **kwargs,
     )
 
@@ -475,6 +477,11 @@ def alter_processing_states(
     """
     gis = arcgis.env.active_gis if gis is None else gis
 
+    if image_collection.type == "Ortho Mapping Project":
+        project_item = image_collection
+        image_collection, flight = _get_collection_item(image_collection, gis)
+ 
+
     return gis._tools.orthomapping.alter_processing_states(
         image_collection=image_collection,
         new_states=new_states,
@@ -534,6 +541,11 @@ def get_processing_states(
     """
 
     gis = arcgis.env.active_gis if gis is None else gis
+
+    if image_collection.type == "Ortho Mapping Project":
+        project_item = image_collection
+        image_collection, flight = _get_collection_item(image_collection, gis)
+ 
 
     return gis._tools.orthomapping.get_processing_states(
         image_collection=image_collection, future=future, **kwargs
@@ -758,6 +770,17 @@ def match_control_points(
 
     """
     gis = arcgis.env.active_gis if gis is None else gis
+    update_flight_json = False
+    flight_json_details = {}
+    if image_collection.type == "Ortho Mapping Project":
+        project_item = image_collection
+        image_collection, flight = _get_collection_item(image_collection, gis)
+        update_flight_json = True
+
+        flight_json_details = {"update_flight_json": update_flight_json,
+                               "flight": flight,
+                               "project_item":project_item,
+                               "item_name":'matchControlPoint'}   
 
     return gis._tools.orthomapping.match_control_points(
         image_collection=image_collection,
@@ -765,6 +788,7 @@ def match_control_points(
         similarity=similarity,
         context=context,
         future=future,
+        flight_json_details=flight_json_details,
         **kwargs,
     )
 
@@ -915,6 +939,17 @@ def color_correction(
     """
 
     gis = arcgis.env.active_gis if gis is None else gis
+    update_flight_json = False
+    flight_json_details = {}
+    if image_collection.type == "Ortho Mapping Project":
+        project_item = image_collection
+        image_collection, flight = _get_collection_item(image_collection, gis)
+        update_flight_json = True
+
+        flight_json_details = {"update_flight_json": update_flight_json,
+                               "flight": flight,
+                               "project_item":project_item,
+                               "item_name":'colorCorrection'}   
 
     return gis._tools.orthomapping.compute_color_correction(
         image_collection=image_collection,
@@ -923,6 +958,7 @@ def color_correction(
         target_image=target_image,
         context=context,
         future=future,
+        flight_json_details=flight_json_details,
         **kwargs,
     )
 
@@ -1066,6 +1102,18 @@ def compute_control_points(
 
     """
     gis = arcgis.env.active_gis if gis is None else gis
+    update_flight_json = False
+    flight_json_details = {}
+    if image_collection.type == "Ortho Mapping Project":
+        project_item = image_collection
+        image_collection, flight = _get_collection_item(image_collection, gis)
+        update_flight_json = True
+
+        flight_json_details = {"update_flight_json": update_flight_json,
+                               "flight": flight,
+                               "project_item":project_item,
+                               "item_name":'computeControlPoints'}   
+
 
     return gis._tools.orthomapping.compute_control_points(
         image_collection=image_collection,
@@ -1073,6 +1121,7 @@ def compute_control_points(
         image_location_accuracy=image_location_accuracy,
         context=context,
         future=future,
+        flight_json_details=flight_json_details,
         **kwargs,
     )
 
@@ -1185,12 +1234,24 @@ def compute_seamlines(
     """
 
     gis = arcgis.env.active_gis if gis is None else gis
+    update_flight_json = False
+    flight_json_details = {}
+    if image_collection.type == "Ortho Mapping Project":
+        project_item = image_collection
+        image_collection, flight = _get_collection_item(image_collection, gis)
+        update_flight_json = True
+
+        flight_json_details = {"update_flight_json": update_flight_json,
+                               "flight": flight,
+                               "project_item":project_item,
+                               "item_name":'seamline'}  
 
     return gis._tools.orthomapping.compute_seamlines(
         image_collection=image_collection,
         seamlines_method=seamlines_method,
         context=context,
         future=future,
+        flight_json_details=flight_json_details,
         **kwargs,
     )
 
@@ -1326,11 +1387,23 @@ def edit_control_points(
     """
 
     gis = arcgis.env.active_gis if gis is None else gis
+    update_flight_json = False
+    flight_json_details = {}
+    if image_collection.type == "Ortho Mapping Project":
+        project_item = image_collection
+        image_collection, flight = _get_collection_item(image_collection, gis)
+        update_flight_json = True
+
+        flight_json_details = {"update_flight_json": update_flight_json,
+                               "flight": flight,
+                               "project_item":project_item,
+                               "item_name":'appendControlPoints'}  
 
     return gis._tools.orthomapping.edit_control_points(
         image_collection=image_collection,
         input_control_points=control_points,
         future=future,
+        flight_json_details=flight_json_details,
         **kwargs,
     )
 
@@ -1476,11 +1549,13 @@ def generate_dem(
                         break  
             kwargs.update({"folder":folder})
 
+        context_new = {k.lower(): v for k, v in context.items()}         
+
         point_cloud_keys = ['maxObjectSize', 'groundSpacing', 'minAngle', 'maxAngle', 'minOverlap', 'maxOmegaPhiDif', 'maxGSDDif', 'numImagePairs', 'adjQualityThreshold']
-        point_cloud_dict = {"pointCloud": {k: context[k] for k in point_cloud_keys if k in context}}
+        point_cloud_dict = {"pointCloud": {k: context_new[k.lower()] for k in point_cloud_keys if k.lower() in context_new}}
         point_cloud_dict["pointCloud"].update({"method":matching_method })
         interpolation_keys = ['pixelSize', 'pixelSizeUnit', 'method', 'smoothingMethod']
-        interpolation_dict = {"interpolation":{k: context[k] for k in interpolation_keys if k in context}}
+        interpolation_dict = {"interpolation":{k: context_new[k.lower()] for k in interpolation_keys if k.lower() in context_new}}
 
         apply_to_ortho = context.get("applyToOrtho", False)
         dem_dict = {"applyToOrtho": apply_to_ortho}
@@ -1714,8 +1789,8 @@ def generate_orthomosaic(
         "dodgingSurface": "SINGLE_COLOR",
         "targetImage": ""
     }})
-
-        color_balance_dict["colorBalance"].update({k: context[k] for k in color_balance_keys if k in context})
+        context_new = {k.lower(): v for k, v in context.items()}
+        color_balance_dict["colorBalance"].update({k: context_new[k.lower()] for k in color_balance_keys if k.lower() in context_new})
         if "colorCorrectionMethod" in color_balance_dict['colorBalance']:
             color_balance_dict["colorBalance"]["method"]=color_balance_dict["colorBalance"].pop("colorCorrectionMethod")
         if "dodgingSurface" in color_balance_dict['colorBalance']:
@@ -1736,7 +1811,7 @@ def generate_orthomosaic(
         "maxSliverSize": 20
     }})
 
-        seamline_dict["seamline"].update({k: context[k] for k in color_balance_keys if k in context})
+        seamline_dict["seamline"].update({k: context_new[k.lower()] for k in seamline_keys if k.lower() in concontext_newtext})
         if "seamlinesMethod" in seamline_dict['seamline']:
             seamline_dict["seamline"]["method"]=seamline_dict["seamline"].pop("seamlinesMethod")
 
@@ -1869,11 +1944,23 @@ def generate_report(
 
     """
     gis = arcgis.env.active_gis if gis is None else gis
+    update_flight_json = False
+    flight_json_details = {}
+    if image_collection.type == "Ortho Mapping Project":
+        project_item = image_collection
+        image_collection, flight = _get_collection_item(image_collection, gis)
+        update_flight_json = True
+
+        flight_json_details = {"update_flight_json": update_flight_json,
+                               "flight": flight,
+                               "project_item":project_item,
+                               "item_name":'report'}  
 
     return gis._tools.orthomapping.generate_report(
         image_collection=image_collection,
         report_format=report_format,
         future=future,
+        flight_json_details=flight_json_details,
         **kwargs,
     )
     """
@@ -2001,9 +2088,20 @@ def query_control_points(
 
     """
     gis = arcgis.env.active_gis if gis is None else gis
+    update_flight_json = False
+    flight_json_details = {}
+    if image_collection.type == "Ortho Mapping Project":
+        project_item = image_collection
+        image_collection, flight = _get_collection_item(image_collection, gis)
+        update_flight_json = True
+
+        flight_json_details = {"update_flight_json": update_flight_json,
+                               "flight": flight,
+                               "project_item":project_item,
+                               "item_name":'queryControlPoints'}   
 
     return gis._tools.orthomapping.query_control_points(
-        image_collection=image_collection, where=query, future=future, **kwargs
+        image_collection=image_collection, where=query, future=future,flight_json_details=flight_json_details, **kwargs
     )
 
     """
@@ -2061,6 +2159,11 @@ def reset_image_collection(
 
     """
     gis = arcgis.env.active_gis if gis is None else gis
+
+    if image_collection.type == "Ortho Mapping Project":
+        project_item = image_collection
+        image_collection, flight = _get_collection_item(image_collection, gis)
+        
 
     return gis._tools.orthomapping.reset_image_collection(
         image_collection=image_collection, future=future, **kwargs
