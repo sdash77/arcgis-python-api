@@ -7726,7 +7726,7 @@ class _OrthoMappingTools:
         omjob = OMJob(job)
         if future:
             return omjob
-        return omjob.result()   
+        return omjob.result()
 
     # ----------------------------------------------------------------------
     def compute_color_correction(
@@ -7849,7 +7849,7 @@ class _OrthoMappingTools:
         omjob._flight_details = flight_json_details
         if future:
             return omjob
-        return omjob.result()   
+        return omjob.result()
 
     # ----------------------------------------------------------------------
     def compute_control_points(
@@ -7946,7 +7946,7 @@ class _OrthoMappingTools:
         omjob._flight_details = flight_json_details
         if future:
             return omjob
-        return omjob.result()           
+        return omjob.result()
 
     # ----------------------------------------------------------------------
     def compute_seamlines(
@@ -8043,8 +8043,7 @@ class _OrthoMappingTools:
         omjob._flight_details = flight_json_details
         if future:
             return omjob
-        return omjob.result()           
-
+        return omjob.result()
 
     # ----------------------------------------------------------------------
     def compute_sensor_model(
@@ -8142,7 +8141,7 @@ class _OrthoMappingTools:
         omjob._flight_details = flight_json_details
         if future:
             return omjob
-        return omjob.result()       
+        return omjob.result()
 
     # ----------------------------------------------------------------------
     def edit_control_points(
@@ -8218,7 +8217,7 @@ class _OrthoMappingTools:
         omjob._flight_details = flight_json_details
         if future:
             return omjob
-        return omjob.result()     
+        return omjob.result()
 
     # ----------------------------------------------------------------------
     def generate_dem(
@@ -8384,7 +8383,7 @@ class _OrthoMappingTools:
         recompute_color_correction=None,
         context=None,
         gis=None,
-        future=False,        
+        future=False,
         flight_json_details=None,
         **kwargs,
     ):
@@ -8498,11 +8497,17 @@ class _OrthoMappingTools:
         omjob._flight_details = flight_json_details
         if future:
             return omjob
-        return omjob.result()       
+        return omjob.result()
 
     # ----------------------------------------------------------------------
     def generate_report(
-        self, image_collection, report_format=None, gis=None, future=False,flight_json_details=None, **kwargs
+        self,
+        image_collection,
+        report_format=None,
+        gis=None,
+        future=False,
+        flight_json_details=None,
+        **kwargs,
     ):
         """
 
@@ -8563,7 +8568,7 @@ class _OrthoMappingTools:
         omjob._flight_details = flight_json_details
         if future:
             return omjob
-        return omjob.result()     
+        return omjob.result()
 
     # ----------------------------------------------------------------------
     def get_processing_states(self, image_collection, gis=None, future=False, **kwargs):
@@ -8597,8 +8602,7 @@ class _OrthoMappingTools:
         omjob = OMJob(job)
         if future:
             return omjob
-        return omjob.result()     
-
+        return omjob.result()
 
     # ----------------------------------------------------------------------
     def match_control_points(
@@ -8680,7 +8684,7 @@ class _OrthoMappingTools:
         omjob._flight_details = flight_json_details
         if future:
             return omjob
-        return omjob.result()     
+        return omjob.result()
 
     # ----------------------------------------------------------------------
     def query_camera_info(self, camera_query=None, gis=None, future=False, **kwargs):
@@ -8712,11 +8716,17 @@ class _OrthoMappingTools:
         omjob = OMJob(job)
         if future:
             return omjob
-        return omjob.result() 
+        return omjob.result()
 
     # ----------------------------------------------------------------------
     def query_control_points(
-        self, image_collection, where, gis=None, future=False,flight_json_details=None, **kwargs
+        self,
+        image_collection,
+        where,
+        gis=None,
+        future=False,
+        flight_json_details=None,
+        **kwargs,
     ):
         """
         The `query_control_points` allows users to use a SQL query to query certain control
@@ -8752,7 +8762,7 @@ class _OrthoMappingTools:
         omjob._flight_details = flight_json_details
         if future:
             return omjob
-        return omjob.result() 
+        return omjob.result()
 
     # ----------------------------------------------------------------------
     def reset_image_collection(
@@ -8790,7 +8800,7 @@ class _OrthoMappingTools:
         omjob = OMJob(job)
         if future:
             return omjob
-        return omjob.result() 
+        return omjob.result()
 
 
 ###########################################################################

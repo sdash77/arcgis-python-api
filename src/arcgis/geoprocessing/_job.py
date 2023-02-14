@@ -277,7 +277,7 @@ class GPJob(object):
                                     "jobStatus": "completed",
                                 }
                             }
-                            r[key].update(item_properties=_item_properties)                        
+                            r[key].update(item_properties=_item_properties)
                         iids.append(value["itemId"])
                 elif len(str(value)) > 0 and value:
                     r[key] = value
@@ -305,7 +305,7 @@ class GPJob(object):
                 return value
             elif "itemId" in value and len(value["itemId"]) > 0:
                 itemid = value["itemId"]
-                item =  arcgis.gis.Item(gis=self._gis, itemid=itemid)
+                item = arcgis.gis.Item(gis=self._gis, itemid=itemid)
                 if self._item_properties:
                     _item_properties = {
                         "properties": {
@@ -316,7 +316,7 @@ class GPJob(object):
                         }
                     }
                     item.update(item_properties=_item_properties)
-                return item                
+                return item
             elif isinstance(value, dict) and "items" in value:
                 itemid = list(value["items"].keys())[0]
                 item = arcgis.gis.Item(gis=self._gis, itemid=itemid)
@@ -330,7 +330,7 @@ class GPJob(object):
                         }
                     }
                     item.update(item_properties=_item_properties)
-                return item                
+                return item
             elif self.task == "QueryCameraInfo":
                 import pandas as pd
 
@@ -778,6 +778,7 @@ class OMJob(GPJob):
     _item = None
     _gpjob = None
     _flight_details = None
+
     # ----------------------------------------------------------------------
     def __init__(self, gpjob: GPJob, item: "Item" = None):
         """
@@ -899,9 +900,8 @@ class OMJob(GPJob):
         return self._gpjob.done()
 
     def _update_flight_info(self):
-
         flight_json_details = self._flight_details
-        update_flight_json=False
+        update_flight_json = False
         if isinstance(flight_json_details, dict):
             project_item = flight_json_details.get("project_item", None)
             item_name = flight_json_details.get("item_name", None)
@@ -910,58 +910,80 @@ class OMJob(GPJob):
             processing_states = flight_json_details.get("processing_states", None)
             adjust_settings = flight_json_details.get("adjust_settings", None)
 
-            
-
         if update_flight_json:
             import json
-        
+
             job_messages = self.messages
             resource = flight["resource"]
             rm = project_item.resources
-            flight_json = rm.get(resource)  
+            flight_json = rm.get(resource)
 
-            start_time = self._gpjob._start_time.isoformat(timespec='milliseconds')+"Z"
-            end_time = self._gpjob._end_time.isoformat(timespec='milliseconds')+"Z"
+            start_time = (
+                self._gpjob._start_time.isoformat(timespec="milliseconds") + "Z"
+            )
+            end_time = self._gpjob._end_time.isoformat(timespec="milliseconds") + "Z"
 
-            flight_json['jobs'].update({item_name:{"messages": job_messages, "checked": True, "progress": 100,"success": True, "startTime":start_time, "completionTime":end_time }})   
+            flight_json["jobs"].update(
+                {
+                    item_name: {
+                        "messages": job_messages,
+                        "checked": True,
+                        "progress": 100,
+                        "success": True,
+                        "startTime": start_time,
+                        "completionTime": end_time,
+                    }
+                }
+            )
             if processing_states is not None:
-                flight_json['processingSettings'].update({item_name:processing_states})     
-            if adjust_settings is not None:                    
+                flight_json["processingSettings"].update({item_name: processing_states})
+            if adjust_settings is not None:
                 mode = adjust_settings.pop("mode", None)
-                flight_json['jobs'][item_name].update({"mode": mode})
-                flight_json['adjustSettings'].update(adjust_settings)  
+                flight_json["jobs"][item_name].update({"mode": mode})
+                flight_json["adjustSettings"].update(adjust_settings)
 
-            properties = json.loads(flight['properties'])   
- 
+            properties = json.loads(flight["properties"])
+
             if self._item:
-                
-                url = json.loads(self._item)["serviceProperties"]["serviceUrl"]   
+                url = json.loads(self._item)["serviceProperties"]["serviceUrl"]
                 itemid = json.loads(self._item)["itemProperties"]["itemId"]
-                flight_json["items"].update({item_name:{"itemId": itemid, "url":url}})
+                flight_json["items"].update({item_name: {"itemId": itemid, "url": url}})
 
-                properties = json.loads(flight['properties'])   
-                properties_items =properties["items"]
+                properties = json.loads(flight["properties"])
+                properties_items = properties["items"]
                 products = []
                 for dict_item in properties_items:
                     products.append(dict_item["product"])
                 if item_name not in products:
-                    properties_items.append({"product": item_name, "id": itemid, "created": True})
+                    properties_items.append(
+                        {"product": item_name, "id": itemid, "created": True}
+                    )
                 else:
                     index = products.index(item_name)
-                    properties_items[index] = {"product": item_name, "id": itemid, "created": True}
+                    properties_items[index] = {
+                        "product": item_name,
+                        "id": itemid,
+                        "created": True,
+                    }
                 properties.update({"items": properties_items})
 
             fname = resource.split("/")[1]
             import tempfile, uuid, os
 
             fname = resource.split("/")[1]
-            temp_dir = tempfile.gettempdir() 
+            temp_dir = tempfile.gettempdir()
             temp_file = os.path.join(temp_dir, fname)
-            with open(temp_file , 'w') as writer:
+            with open(temp_file, "w") as writer:
                 json.dump(flight_json, writer)
             del writer
 
             try:
-                rm.update(file=temp_file,text=flight_json,folder_name="flights",file_name=fname, properties=properties)
+                rm.update(
+                    file=temp_file,
+                    text=flight_json,
+                    folder_name="flights",
+                    file_name=fname,
+                    properties=properties,
+                )
             except:
                 raise RuntimeError("Error updating the flight resource")

@@ -94,6 +94,7 @@ def _create_output_image_service(gis, output_name, task):
     output_service.update(item_properties)
     return output_service
 
+
 def _get_collection_item(project_item=None, gis=None):
     rm = project_item.resources
     res_list = rm.list()
@@ -105,57 +106,63 @@ def _get_collection_item(project_item=None, gis=None):
         items_list = props["items"]
         for ele in items_list:
             if ele["product"] == "imageCollection":
-                item_id  = ele["id"]
+                item_id = ele["id"]
         image_collection_item = gis.content.get(item_id)
         return image_collection_item, last_res
     except:
         raise RuntimeError("Unable to retrieve the flight information")
 
-def _update_flight_info(flight,
-                        project_item,
-                        processing_states={},
-                        item_name='',
-                        gis=None):
 
-    #job_info=output_item.properties
-    #job_response={}
-    #if "jobUrl" in job_info :
-        # Get the url of the Analysis job to track the status.
+def _update_flight_info(
+    flight, project_item, processing_states={}, item_name="", gis=None
+):
+    # job_info=output_item.properties
+    # job_response={}
+    # if "jobUrl" in job_info :
+    # Get the url of the Analysis job to track the status.
 
-        #job_url = job_info.get("jobUrl")
-        #params = {"f": "json"}
-        #job_response = gis._con.post(job_url, params)
+    # job_url = job_info.get("jobUrl")
+    # params = {"f": "json"}
+    # job_response = gis._con.post(job_url, params)
 
     resource = flight["resource"]
 
     rm = project_item.resources
-    flight_json = rm.get(resource)    
+    flight_json = rm.get(resource)
 
-    #flight_json["items"].update({item_name:{"itemId": output_item.itemid, "url":output_item.url}})
+    # flight_json["items"].update({item_name:{"itemId": output_item.itemid, "url":output_item.url}})
 
-    #flight_json['jobs'].update({item_name:{"messages": job_response["messages"], "checked": True, "progress": 100,"success": True}})
-    flight_json['processingSettings'].update({item_name:processing_states})
+    # flight_json['jobs'].update({item_name:{"messages": job_response["messages"], "checked": True, "progress": 100,"success": True}})
+    flight_json["processingSettings"].update({item_name: processing_states})
 
-    properties = json.loads(flight['properties'])  
+    properties = json.loads(flight["properties"])
 
-    #properties = json.loads(flight['properties'])   
-    #properties_items =properties["items"]
-    #properties_items.append({"product": item_name, "id": output_item.itemid, "created": True})
-    #properties.update({"items": properties_items})
+    # properties = json.loads(flight['properties'])
+    # properties_items =properties["items"]
+    # properties_items.append({"product": item_name, "id": output_item.itemid, "created": True})
+    # properties.update({"items": properties_items})
 
     import tempfile, uuid, os
 
     fname = resource.split("/")[1]
-    temp_dir = tempfile.gettempdir() 
+    temp_dir = tempfile.gettempdir()
     temp_file = os.path.join(temp_dir, fname)
-    with open(temp_file , 'w') as writer:
+    with open(temp_file, "w") as writer:
         json.dump(flight_json, writer)
     del writer
 
     try:
-        rm.update(file=temp_file, text=flight_json,folder_name="flights",file_name=fname, properties=properties)
+        rm.update(
+            file=temp_file,
+            text=flight_json,
+            folder_name="flights",
+            file_name=fname,
+            properties=properties,
+        )
     except:
         raise RuntimeError("Error updating the flight resource")
+
+
 ###################################################################################################
 ###
 ### PUBLIC API
@@ -172,8 +179,8 @@ def is_supported(gis=None):
     else:
         return False
 
-def create_project(name, definition, * , gis: Optional[GIS] = None, **kwargs):
 
+def create_project(name, definition, *, gis: Optional[GIS] = None, **kwargs):
     folder = None
     folderId = None
     if kwargs is not None:
@@ -181,149 +188,160 @@ def create_project(name, definition, * , gis: Optional[GIS] = None, **kwargs):
             folder = kwargs["folder"]
 
     if folder is None:
-        folder = "_orthomapping_"+ name
+        folder = "_orthomapping_" + name
     if folder is not None:
         if isinstance(folder, dict):
             if "id" in folder:
                 folderId = folder["id"]
-                folder=folder["title"]
+                folder = folder["title"]
         else:
             owner = gis.properties.user.username
             folderId = gis._portal.get_folder_id(owner, folder)
         if folderId is None:
             folder_dict = gis.content.create_folder(folder, owner)
             folder = folder_dict["title"]
-            folderId = folder_dict["id"]  
+            folderId = folder_dict["id"]
 
     item_properties = {
         "title": name,
         "type": "Ortho Mapping Project",
-        "properties": {"flightCount": 1, "status": "inProgress"}
+        "properties": {"flightCount": 1, "status": "inProgress"},
     }
-     
+
     item_properties["text"] = json.dumps(definition)
     item = gis.content.add(item_properties, folder=folder)
     return item
 
-def add_flight(project_item, 
-              flight_name, 
-              image_collection, 
-              image_list, 
-              raster_type_name, 
-              raster_type_params: Optional[dict[str, Any]] = None,
-              * , gis: Optional[GIS] = None, **kwargs):
 
+def add_flight(
+    project_item,
+    flight_name,
+    image_collection,
+    image_list,
+    raster_type_name,
+    raster_type_params: Optional[dict[str, Any]] = None,
+    *,
+    gis: Optional[GIS] = None,
+    **kwargs,
+):
     resource_manager = project_item.resources
     resources_list = resource_manager.list()
     oid = len(resources_list)
 
     for f in gis.users.me.folders:
-        if f['id'] == project_item.ownerFolder:
+        if f["id"] == project_item.ownerFolder:
             folder = f
             break
 
     from arcgis.raster.analytics import create_image_collection
-    output_collection = create_image_collection(image_collection=image_collection, 
-                                                input_rasters=image_list,
-                                                raster_type_name=raster_type_name,
-                                                raster_type_params=raster_type_params,
-                                                gis=gis,
-                                                folder=folder)
 
-    job_info=output_collection.properties
-    job_response={}
-    if "jobUrl" in job_info :
+    output_collection = create_image_collection(
+        image_collection=image_collection,
+        input_rasters=image_list,
+        raster_type_name=raster_type_name,
+        raster_type_params=raster_type_params,
+        gis=gis,
+        folder=folder,
+    )
+
+    job_info = output_collection.properties
+    job_response = {}
+    if "jobUrl" in job_info:
         # Get the url of the Analysis job to track the status.
 
         job_url = job_info.get("jobUrl")
         params = {"f": "json"}
         job_response = gis._con.post(job_url, params)
 
-    flight_json = {'items': {'imageCollection': {}},
-    'jobs': {'imageCollection': {'checked': True,
-    'progress': 100,
-    'success': True},
-    'adjustment': {'checked': False, "mode":"Quick"},
-    'ortho': {'checked': False},
-    'matchControlPoint': {'checked': False},
-    'queryControlPoints': {'checked': False},
-    'computeControlPoints': {'checked': False},
-    'appendControlPoints': {'checked': False}},
-    'rasterType': 'UAV/UAS',
-    'cameraInfo': {},
-    'sourceData': {},
-    'spatialReference': {},
-    'adjustSettings': {},
-    'processingSettings': {},
-    'mapping': {
-    "basemap":{
-      "title":"Topographic",
-      "baseMapLayers":[
-        {
-          "layerType":"ArcGISTiledMapServiceLayer",
-          "opacity":1,
-          "visibility":True,
-          "url":"https://services.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer"
-        }
-      ]
-    },
-    "referenceData":[
-      
-    ],
-    "layers":{
-      "visibilities":{
-        "footprint":False
-      }
+    flight_json = {
+        "items": {"imageCollection": {}},
+        "jobs": {
+            "imageCollection": {"checked": True, "progress": 100, "success": True},
+            "adjustment": {"checked": False, "mode": "Quick"},
+            "ortho": {"checked": False},
+            "matchControlPoint": {"checked": False},
+            "queryControlPoints": {"checked": False},
+            "computeControlPoints": {"checked": False},
+            "appendControlPoints": {"checked": False},
+        },
+        "rasterType": "UAV/UAS",
+        "cameraInfo": {},
+        "sourceData": {},
+        "spatialReference": {},
+        "adjustSettings": {},
+        "processingSettings": {},
+        "mapping": {
+            "basemap": {
+                "title": "Topographic",
+                "baseMapLayers": [
+                    {
+                        "layerType": "ArcGISTiledMapServiceLayer",
+                        "opacity": 1,
+                        "visibility": True,
+                        "url": "https://services.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer",
+                    }
+                ],
+            },
+            "referenceData": [],
+            "layers": {"visibilities": {"footprint": False}},
+        },
+        "projectVersion": 2,
+        "createTS": "",
+        "oid": oid,
+        "gcsExtent": {},
     }
-  },
-    'projectVersion': 2,
-    'createTS': '',
-    'oid': oid,
-    'gcsExtent': {}}
 
-    flight_json.update({"items":{"imageCollection":{"itemId": output_collection.itemid, "url":output_collection.url}}})
+    flight_json.update(
+        {
+            "items": {
+                "imageCollection": {
+                    "itemId": output_collection.itemid,
+                    "url": output_collection.url,
+                }
+            }
+        }
+    )
 
-    flight_json['jobs']['imageCollection'].update({"messages": job_response["messages"]})
+    flight_json["jobs"]["imageCollection"].update(
+        {"messages": job_response["messages"]}
+    )
 
-    flight_json.update({"rasterType":raster_type_name})
+    flight_json.update({"rasterType": raster_type_name})
 
-    flight_json.update({"cameraInfo":raster_type_params["cameraProperties"]}) 
+    flight_json.update({"cameraInfo": raster_type_params["cameraProperties"]})
 
     gps_data = []
     gps_info_list = ["name", "lat", "long", "alt"]
 
     if "gps" in raster_type_params:
-        for ele in raster_type_params['gps']:
+        for ele in raster_type_params["gps"]:
             dict_gps = dict(zip(gps_info_list, ele))
             gps_data.append(dict_gps)
 
-    flight_json.update({"sourceData":{"gps":gps_data, "imageCount": len(image_list)}})
+    flight_json.update({"sourceData": {"gps": gps_data, "imageCount": len(image_list)}})
 
     from datetime import datetime
+
     project_id = datetime.now().strftime("%Y%m%d%H%M%S")
-    flight_json.update({"projectId" : project_id})   
+    flight_json.update({"projectId": project_id})
 
-    ts = int(datetime.timestamp(datetime.now()))*1000
-    flight_json.update({"createTS" : ts})
+    ts = int(datetime.timestamp(datetime.now())) * 1000
+    flight_json.update({"createTS": ts})
 
- 
     ## Set extent
     try:
         gcs_extent = {}
         extent_arr = output_collection.extent
         if extent_arr is not None:
             gcs_extent = {
-            "xmin":extent_arr[0][0],
-            "ymin":extent_arr[0][1],
-            "xmax":extent_arr[1][0],
-            "ymax":extent_arr[1][1],
-            "spatialReference":{
-            "wkid":4326
+                "xmin": extent_arr[0][0],
+                "ymin": extent_arr[0][1],
+                "xmax": extent_arr[1][0],
+                "ymax": extent_arr[1][1],
+                "spatialReference": {"wkid": 4326},
             }
-        }
     except:
         gcs_extent = {}
-        
 
     projected_extent = {}
     try:
@@ -331,24 +349,43 @@ def add_flight(project_item,
     except:
         projected_extent = {}
 
-    flight_json.update({"gcsExtent" : gcs_extent, "projectedExtent":projected_extent })   
+    flight_json.update({"gcsExtent": gcs_extent, "projectedExtent": projected_extent})
 
     try:
-       coverage_area =  output_collection.layers[0].query_boundary()["area"]
-       flight_json.update({"coverage" : coverage_area})   
+        coverage_area = output_collection.layers[0].query_boundary()["area"]
+        flight_json.update({"coverage": coverage_area})
     except:
         pass
 
-    import  uuid
+    import uuid
+
     fname = "%s.json" % flight_name
 
     try:
-        resource_manager.add(file_name=fname, text=flight_json,folder_name="flights", properties={"oid":oid,"imageCount":len(image_list),"items":[{"product":"imageCollection","id":output_collection.id,"created":True}],"gcpItems":[],"baStatus":"succeeded"})
-        project_item.update(data = json.dumps({"projectVersion":2,"rasterType":raster_type_name}))
+        resource_manager.add(
+            file_name=fname,
+            text=flight_json,
+            folder_name="flights",
+            properties={
+                "oid": oid,
+                "imageCount": len(image_list),
+                "items": [
+                    {
+                        "product": "imageCollection",
+                        "id": output_collection.id,
+                        "created": True,
+                    }
+                ],
+                "gcpItems": [],
+                "baStatus": "succeeded",
+            },
+        )
+        project_item.update(
+            data=json.dumps({"projectVersion": 2, "rasterType": raster_type_name})
+        )
     except:
         raise RuntimeError("Error adding the flight")
     return output_collection
-
 
 
 ###################################################################################################
@@ -435,16 +472,29 @@ def compute_sensor_model(
         update_flight_json = True
 
         context_new = {k.lower(): v for k, v in context.items()}
-        adj_keys = ['computeCandidate', 'maxOverlap', 'maxLoss', 'maxResidual', 'initPointResolution', 'k', 'p', 'principalPoint', 'focalLength']
-        adj_dict = {k: context_new[k.lower()] for k in adj_keys if k.lower() in context_new}
-        adj_dict.update({"locationAccuracy":location_accuracy })
-        adj_dict.update({"mode":mode })
-        flight_json_details = {"update_flight_json": update_flight_json,
-                               "flight": flight,
-                               "project_item":project_item,
-                               "item_name":'adjustment',
-                               "adjust_settings": adj_dict}            
-
+        adj_keys = [
+            "computeCandidate",
+            "maxOverlap",
+            "maxLoss",
+            "maxResidual",
+            "initPointResolution",
+            "k",
+            "p",
+            "principalPoint",
+            "focalLength",
+        ]
+        adj_dict = {
+            k: context_new[k.lower()] for k in adj_keys if k.lower() in context_new
+        }
+        adj_dict.update({"locationAccuracy": location_accuracy})
+        adj_dict.update({"mode": mode})
+        flight_json_details = {
+            "update_flight_json": update_flight_json,
+            "flight": flight,
+            "project_item": project_item,
+            "item_name": "adjustment",
+            "adjust_settings": adj_dict,
+        }
 
     return gis._tools.orthomapping.compute_sensor_model(
         image_collection=image_collection,
@@ -540,7 +590,6 @@ def alter_processing_states(
     if image_collection.type == "Ortho Mapping Project":
         project_item = image_collection
         image_collection, flight = _get_collection_item(image_collection, gis)
- 
 
     return gis._tools.orthomapping.alter_processing_states(
         image_collection=image_collection,
@@ -605,7 +654,6 @@ def get_processing_states(
     if image_collection.type == "Ortho Mapping Project":
         project_item = image_collection
         image_collection, flight = _get_collection_item(image_collection, gis)
- 
 
     return gis._tools.orthomapping.get_processing_states(
         image_collection=image_collection, future=future, **kwargs
@@ -839,10 +887,12 @@ def match_control_points(
         image_collection, flight = _get_collection_item(image_collection, gis)
         update_flight_json = True
 
-        flight_json_details = {"update_flight_json": update_flight_json,
-                               "flight": flight,
-                               "project_item":project_item,
-                               "item_name":'matchControlPoint'}   
+        flight_json_details = {
+            "update_flight_json": update_flight_json,
+            "flight": flight,
+            "project_item": project_item,
+            "item_name": "matchControlPoint",
+        }
 
     return gis._tools.orthomapping.match_control_points(
         image_collection=image_collection,
@@ -1008,10 +1058,12 @@ def color_correction(
         image_collection, flight = _get_collection_item(image_collection, gis)
         update_flight_json = True
 
-        flight_json_details = {"update_flight_json": update_flight_json,
-                               "flight": flight,
-                               "project_item":project_item,
-                               "item_name":'colorCorrection'}   
+        flight_json_details = {
+            "update_flight_json": update_flight_json,
+            "flight": flight,
+            "project_item": project_item,
+            "item_name": "colorCorrection",
+        }
 
     return gis._tools.orthomapping.compute_color_correction(
         image_collection=image_collection,
@@ -1171,11 +1223,12 @@ def compute_control_points(
         image_collection, flight = _get_collection_item(image_collection, gis)
         update_flight_json = True
 
-        flight_json_details = {"update_flight_json": update_flight_json,
-                               "flight": flight,
-                               "project_item":project_item,
-                               "item_name":'computeControlPoints'}   
-
+        flight_json_details = {
+            "update_flight_json": update_flight_json,
+            "flight": flight,
+            "project_item": project_item,
+            "item_name": "computeControlPoints",
+        }
 
     return gis._tools.orthomapping.compute_control_points(
         image_collection=image_collection,
@@ -1303,10 +1356,12 @@ def compute_seamlines(
         image_collection, flight = _get_collection_item(image_collection, gis)
         update_flight_json = True
 
-        flight_json_details = {"update_flight_json": update_flight_json,
-                               "flight": flight,
-                               "project_item":project_item,
-                               "item_name":'seamline'}  
+        flight_json_details = {
+            "update_flight_json": update_flight_json,
+            "flight": flight,
+            "project_item": project_item,
+            "item_name": "seamline",
+        }
 
     return gis._tools.orthomapping.compute_seamlines(
         image_collection=image_collection,
@@ -1456,10 +1511,12 @@ def edit_control_points(
         image_collection, flight = _get_collection_item(image_collection, gis)
         update_flight_json = True
 
-        flight_json_details = {"update_flight_json": update_flight_json,
-                               "flight": flight,
-                               "project_item":project_item,
-                               "item_name":'appendControlPoints'}  
+        flight_json_details = {
+            "update_flight_json": update_flight_json,
+            "flight": flight,
+            "project_item": project_item,
+            "item_name": "appendControlPoints",
+        }
 
     return gis._tools.orthomapping.edit_control_points(
         image_collection=image_collection,
@@ -1606,29 +1663,52 @@ def generate_dem(
                 folder = kwargs["folder"]
             else:
                 for f in gis.users.me.folders:
-                    if f['id'] == image_collection.ownerFolder:
+                    if f["id"] == image_collection.ownerFolder:
                         folder = f
-                        break  
-            kwargs.update({"folder":folder})
+                        break
+            kwargs.update({"folder": folder})
 
-        context_new = {k.lower(): v for k, v in context.items()}         
+        context_new = {k.lower(): v for k, v in context.items()}
 
-        point_cloud_keys = ['maxObjectSize', 'groundSpacing', 'minAngle', 'maxAngle', 'minOverlap', 'maxOmegaPhiDif', 'maxGSDDif', 'numImagePairs', 'adjQualityThreshold']
-        point_cloud_dict = {"pointCloud": {k: context_new[k.lower()] for k in point_cloud_keys if k.lower() in context_new}}
-        point_cloud_dict["pointCloud"].update({"method":matching_method })
-        interpolation_keys = ['pixelSize', 'pixelSizeUnit', 'method', 'smoothingMethod']
-        interpolation_dict = {"interpolation":{k: context_new[k.lower()] for k in interpolation_keys if k.lower() in context_new}}
+        point_cloud_keys = [
+            "maxObjectSize",
+            "groundSpacing",
+            "minAngle",
+            "maxAngle",
+            "minOverlap",
+            "maxOmegaPhiDif",
+            "maxGSDDif",
+            "numImagePairs",
+            "adjQualityThreshold",
+        ]
+        point_cloud_dict = {
+            "pointCloud": {
+                k: context_new[k.lower()]
+                for k in point_cloud_keys
+                if k.lower() in context_new
+            }
+        }
+        point_cloud_dict["pointCloud"].update({"method": matching_method})
+        interpolation_keys = ["pixelSize", "pixelSizeUnit", "method", "smoothingMethod"]
+        interpolation_dict = {
+            "interpolation": {
+                k: context_new[k.lower()]
+                for k in interpolation_keys
+                if k.lower() in context_new
+            }
+        }
 
         apply_to_ortho = context.get("applyToOrtho", False)
         dem_dict = {"applyToOrtho": apply_to_ortho}
         dem_dict.update(point_cloud_dict)
         dem_dict.update(interpolation_dict)
-        flight_json_details = {"update_flight_json": update_flight_json,
-                               "flight": flight,
-                               "project_item":project_item,
-                               "item_name":surface_type.lower(),
-                               "processing_states": dem_dict}        
-
+        flight_json_details = {
+            "update_flight_json": update_flight_json,
+            "flight": flight,
+            "project_item": project_item,
+            "item_name": surface_type.lower(),
+            "processing_states": dem_dict,
+        }
 
     return gis._tools.orthomapping.generate_dem(
         image_collection=image_collection,
@@ -1836,61 +1916,108 @@ def generate_orthomosaic(
                 folder = kwargs["folder"]
             else:
                 for f in gis.users.me.folders:
-                    if f['id'] == image_collection.ownerFolder:
+                    if f["id"] == image_collection.ownerFolder:
                         folder = f
-                        break  
-            kwargs.update({"folder":folder})
+                        break
+            kwargs.update({"folder": folder})
 
-        color_balance_keys = ['targetRaster', 'skipX', 'skipY', 'overwriteStats', 'dodgingSurface', 'colorCorrectionMethod']
+        color_balance_keys = [
+            "targetRaster",
+            "skipX",
+            "skipY",
+            "overwriteStats",
+            "dodgingSurface",
+            "colorCorrectionMethod",
+        ]
         color_balance_dict = {}
-        color_balance_dict.update({"colorBalance":{
-        "skipX": 0,
-        "skipY": 0,
-        "overwriteStats": "SKIP_EXISTING",
-        "colorCorrectionMethod": "DODGING",
-        "dodgingSurface": "SINGLE_COLOR",
-        "targetImage": ""
-    }})
+        color_balance_dict.update(
+            {
+                "colorBalance": {
+                    "skipX": 0,
+                    "skipY": 0,
+                    "overwriteStats": "SKIP_EXISTING",
+                    "colorCorrectionMethod": "DODGING",
+                    "dodgingSurface": "SINGLE_COLOR",
+                    "targetImage": "",
+                }
+            }
+        )
         context_new = {k.lower(): v for k, v in context.items()}
-        color_balance_dict["colorBalance"].update({k: context_new[k.lower()] for k in color_balance_keys if k.lower() in context_new})
-        if "colorCorrectionMethod" in color_balance_dict['colorBalance']:
-            color_balance_dict["colorBalance"]["method"]=color_balance_dict["colorBalance"].pop("colorCorrectionMethod")
-        if "dodgingSurface" in color_balance_dict['colorBalance']:
-            color_balance_dict["colorBalance"]["surfaceType"]=color_balance_dict["colorBalance"].pop("dodgingSurface")
+        color_balance_dict["colorBalance"].update(
+            {
+                k: context_new[k.lower()]
+                for k in color_balance_keys
+                if k.lower() in context_new
+            }
+        )
+        if "colorCorrectionMethod" in color_balance_dict["colorBalance"]:
+            color_balance_dict["colorBalance"]["method"] = color_balance_dict[
+                "colorBalance"
+            ].pop("colorCorrectionMethod")
+        if "dodgingSurface" in color_balance_dict["colorBalance"]:
+            color_balance_dict["colorBalance"]["surfaceType"] = color_balance_dict[
+                "colorBalance"
+            ].pop("dodgingSurface")
 
-        seamline_keys = ['computeCandidate', 'maxOverlap', 'maxLoss', 'pixelSize', 'blendType','blendUnit','requestSizeType','requestSize','minThinnessRatio','maxSliverSize','seamlinesMethod']
+        seamline_keys = [
+            "computeCandidate",
+            "maxOverlap",
+            "maxLoss",
+            "pixelSize",
+            "blendType",
+            "blendUnit",
+            "requestSizeType",
+            "requestSize",
+            "minThinnessRatio",
+            "maxSliverSize",
+            "seamlinesMethod",
+        ]
         seamline_dict = {}
-        seamline_dict.update({"seamline":{
-        "seamlinesMethod": "DISPARITY",
-        "minRegionSize": 100,
-        "pixelSize": "",
-        "blendType": "Both",
-        "blendWidth": None,
-        "blendUnit": "Pixels",
-        "requestSizeType": "Pixels",
-        "requestSize": 1000,
-        "minThinnessRatio": 0.05,
-        "maxSliverSize": 20
-    }})
+        seamline_dict.update(
+            {
+                "seamline": {
+                    "seamlinesMethod": "DISPARITY",
+                    "minRegionSize": 100,
+                    "pixelSize": "",
+                    "blendType": "Both",
+                    "blendWidth": None,
+                    "blendUnit": "Pixels",
+                    "requestSizeType": "Pixels",
+                    "requestSize": 1000,
+                    "minThinnessRatio": 0.05,
+                    "maxSliverSize": 20,
+                }
+            }
+        )
 
-        seamline_dict["seamline"].update({k: context_new[k.lower()] for k in seamline_keys if k.lower() in context_new})
-        if "seamlinesMethod" in seamline_dict['seamline']:
-            seamline_dict["seamline"]["method"]=seamline_dict["seamline"].pop("seamlinesMethod")
+        seamline_dict["seamline"].update(
+            {
+                k: context_new[k.lower()]
+                for k in seamline_keys
+                if k.lower() in context_new
+            }
+        )
+        if "seamlinesMethod" in seamline_dict["seamline"]:
+            seamline_dict["seamline"]["method"] = seamline_dict["seamline"].pop(
+                "seamlinesMethod"
+            )
 
         ortho_mosaic_as_ovr = context.get("orthoMosaicAsOvr", False)
-        ortho_dict = {"ortho": {"orthoMosaicAsOvr":ortho_mosaic_as_ovr}}
+        ortho_dict = {"ortho": {"orthoMosaicAsOvr": ortho_mosaic_as_ovr}}
 
         if regen_seamlines:
             ortho_dict.update(seamline_dict)
         if recompute_color_correction:
-            ortho_dict.update(color_balance_dict)            
+            ortho_dict.update(color_balance_dict)
 
-        flight_json_details = {"update_flight_json": update_flight_json,
-                               "flight": flight,
-                               "project_item":project_item,
-                               "item_name":"ortho",
-                               "processing_states": ortho_dict}               
-            
+        flight_json_details = {
+            "update_flight_json": update_flight_json,
+            "flight": flight,
+            "project_item": project_item,
+            "item_name": "ortho",
+            "processing_states": ortho_dict,
+        }
+
     return gis._tools.orthomapping.generate_orthomosaic(
         image_collection=image_collection,
         output_ortho_image=out_ortho,
@@ -2013,10 +2140,12 @@ def generate_report(
         image_collection, flight = _get_collection_item(image_collection, gis)
         update_flight_json = True
 
-        flight_json_details = {"update_flight_json": update_flight_json,
-                               "flight": flight,
-                               "project_item":project_item,
-                               "item_name":'report'}  
+        flight_json_details = {
+            "update_flight_json": update_flight_json,
+            "flight": flight,
+            "project_item": project_item,
+            "item_name": "report",
+        }
 
     return gis._tools.orthomapping.generate_report(
         image_collection=image_collection,
@@ -2157,13 +2286,19 @@ def query_control_points(
         image_collection, flight = _get_collection_item(image_collection, gis)
         update_flight_json = True
 
-        flight_json_details = {"update_flight_json": update_flight_json,
-                               "flight": flight,
-                               "project_item":project_item,
-                               "item_name":'queryControlPoints'}   
+        flight_json_details = {
+            "update_flight_json": update_flight_json,
+            "flight": flight,
+            "project_item": project_item,
+            "item_name": "queryControlPoints",
+        }
 
     return gis._tools.orthomapping.query_control_points(
-        image_collection=image_collection, where=query, future=future,flight_json_details=flight_json_details, **kwargs
+        image_collection=image_collection,
+        where=query,
+        future=future,
+        flight_json_details=flight_json_details,
+        **kwargs,
     )
 
     """
@@ -2225,7 +2360,6 @@ def reset_image_collection(
     if image_collection.type == "Ortho Mapping Project":
         project_item = image_collection
         image_collection, flight = _get_collection_item(image_collection, gis)
-        
 
     return gis._tools.orthomapping.reset_image_collection(
         image_collection=image_collection, future=future, **kwargs
