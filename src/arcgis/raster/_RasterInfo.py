@@ -215,7 +215,6 @@ class RasterInfo(object):
                              'pixelType': 'U8'})
         """
         if raster_info_dict is not None and isinstance(raster_info_dict, dict):
-
             if "extent" in raster_info_dict:
                 self.extent = raster_info_dict["extent"]
 

@@ -14,7 +14,6 @@ V = TypeVar("V")
 
 
 class AGOLNotebookManager:
-
     _container = None
     _istpref = None
     _runtimes = None

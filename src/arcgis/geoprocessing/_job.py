@@ -50,6 +50,7 @@ class GPJob(object):
     _end_time = None
     _item_properties = None
     _return_item = None
+
     # ----------------------------------------------------------------------
     def __init__(self, future, gptool, jobid, task_url, gis, notify=False):
         """
@@ -636,6 +637,7 @@ class RAJob(GPJob):
 
     _item = None
     _gpjob = None
+
     # ----------------------------------------------------------------------
     def __init__(self, gpjob: GPJob, item: "Item" = None):
         """

@@ -85,7 +85,6 @@ def get_ssd_head_output(ssd):
 
     # Create Output Pipeline for each grid_size
     for grid in ssd.grids:
-
         # Grid upsampling Block
         head_block2_conv1 = Conv2D(
             256,

@@ -419,7 +419,6 @@ class EfficientDet(ArcGISModel):
         },
         resize=False,
     ):
-
         """
         Runs prediction on a video and appends the output VMTI predictions in the metadata file.
         This method is only supported for RGB images.

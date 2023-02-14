@@ -71,6 +71,8 @@ __all__ = [
     "_GeometryService",
     "_RasterAnalysisTools",
 ]
+
+
 # --------------------------------------------------------------------------
 def _inspect_function_inputs(fn, **params):
     """
@@ -568,7 +570,6 @@ class _AsyncService(_GISService):
             raise Exception("Unable to get analysis job results.")
 
     def _feature_input(self, input_layer):
-
         point_fs = {
             "layerDefinition": {
                 "currentVersion": 10.11,
@@ -757,6 +758,7 @@ class _FeatureAnalysisTools(BaseAnalytics):
     _url = None
     _gis = None
     _properties = None
+
     # ----------------------------------------------------------------------
     def __init__(self, url, gis, verbose=False):
         """initializer"""
@@ -6886,6 +6888,7 @@ class _PackagingTools(object):
     _url = None
     _gis = None
     _properties = None
+
     # ----------------------------------------------------------------------
     def __init__(self, url, gis, verbose=False):
         """initializer"""
@@ -7198,6 +7201,7 @@ class _HydrologyTool:
     _gis = None
     _properties = None
     _return_item = None
+
     # ----------------------------------------------------------------------
     def __init__(self, url, gis, verbose=False):
         """initializer"""
@@ -7469,6 +7473,7 @@ class _OrthoMappingTools:
     _gis = None
     _properties = None
     _return_item = None
+
     # ----------------------------------------------------------------------
     def __init__(self, url, gis, verbose=False):
         """initializer"""
@@ -8797,6 +8802,7 @@ class _RasterAnalysisTools(BaseAnalytics):
     _gis = None
     _properties = None
     _return_item = None
+
     # ----------------------------------------------------------------------
     def __init__(self, url, gis, verbose=False):
         """initializer"""
@@ -9452,7 +9458,6 @@ class _RasterAnalysisTools(BaseAnalytics):
         future=False,
         **kwargs,
     ):
-
         """
         Add a collection of images to an existing image_collection. Provides provision to use input rasters by reference
         and to specify image collection properties through context parameter.
@@ -9675,7 +9680,6 @@ class _RasterAnalysisTools(BaseAnalytics):
         future=False,
         **kwargs,
     ):
-
         """
         input_point_or_line_features: inputPointOrLineFeatures (FeatureSet). Required parameter.
 
@@ -9764,7 +9768,6 @@ class _RasterAnalysisTools(BaseAnalytics):
         future=False,
         **kwargs,
     ):
-
         """
            input_source_raster_or_features: inputSourceRasterOrFeatures (str). Required parameter.
 
@@ -9895,7 +9898,6 @@ class _RasterAnalysisTools(BaseAnalytics):
     def calculate_statistics(
         self, image_collection, skip_factors=None, context=None, future=False, **kwargs
     ):
-
         """
         image_collection: imageCollection (str). Required parameter.
 
@@ -9958,7 +9960,6 @@ class _RasterAnalysisTools(BaseAnalytics):
         future=False,
         **kwargs,
     ):
-
         """ """
         task = "CalculateTravelCost"
         gis = self._gis
@@ -10037,7 +10038,6 @@ class _RasterAnalysisTools(BaseAnalytics):
         future=False,
         **kwargs,
     ):
-
         """
         ----------
         input_raster : Required string
@@ -10104,7 +10104,6 @@ class _RasterAnalysisTools(BaseAnalytics):
         future=False,
         **kwargs,
     ):
-
         """
         Function to classify input imagery data using a deep learning model.
         Note that the deep learning library needs to be installed separately,
@@ -10233,7 +10232,6 @@ class _RasterAnalysisTools(BaseAnalytics):
         future=False,
         **kwargs,
     ):
-
         """
         Parameters:
 
@@ -10446,7 +10444,6 @@ class _RasterAnalysisTools(BaseAnalytics):
         md_to_upload=None,
         **kwargs,
     ):
-
         """
         Create a collection of images that will participate in the ortho-mapping project.
         Provides provision to use input rasters by reference
@@ -10651,7 +10648,6 @@ class _RasterAnalysisTools(BaseAnalytics):
         gpjob._is_ra = True
         gpjob._item_properties = True
         if future:
-
             return RAJob(gpjob, output_service)
         return RAJob(gpjob, output_service).result()
 
@@ -10679,7 +10675,6 @@ class _RasterAnalysisTools(BaseAnalytics):
         future=False,
         **kwargs,
     ):
-
         """ """
         task = "CreateViewshed"
 
@@ -12814,7 +12809,6 @@ class _RasterAnalysisTools(BaseAnalytics):
         future=False,
         **kwargs,
     ):
-
         """
         Transfer Files GP Tool
 
@@ -12863,7 +12857,6 @@ class _RasterAnalysisTools(BaseAnalytics):
     # ----------------------------------------------------------------------
     # TODO: Format Inputs/ Outputs, doc
     def uninstall_deep_learning_model(self, model_item_id, future=False, **kwargs):
-
         """
         Function is used to uninstall the uploaded model package that was installed using the install_model()
         This function will delete the named deep learning model from the server but not the portal item.
@@ -15065,7 +15058,6 @@ class _RasterAnalysisTools(BaseAnalytics):
         future=False,
         **kwargs,
     ):
-
         """
         Parameters
         ----------
@@ -15258,7 +15250,6 @@ class _RasterAnalysisTools(BaseAnalytics):
         future=False,
         **kwargs,
     ):
-
         """
         Parameters
         ----------
@@ -17308,7 +17299,6 @@ class _RasterAnalysisTools(BaseAnalytics):
         gis=None,
         future=False,
     ):
-
         """
         input_rasters: inputRasters (str). Required parameter.
 
@@ -19139,7 +19129,6 @@ class _GeometryService(_GISService):
         template = {"geometryType": None, "geometries": []}
         if isinstance(geometries, list) and len(geometries) > 0:
             for g in geometries:
-
                 if not isinstance(g, Geometry):
                     g = Geometry(g)
 
@@ -19195,7 +19184,6 @@ class _GeometryService(_GISService):
         """function to convert the geomtries to strings"""
         listGeoms = []
         for g in geometries:
-
             if not isinstance(g, Geometry):
                 g = Geometry(g)
             if isinstance(g, Point):
@@ -19600,7 +19588,6 @@ class _GeometryService(_GISService):
         }
         if isinstance(geometries, list) and len(geometries) > 0:
             for g in geometries:
-
                 if not isinstance(g, Geometry):
                     g = Geometry(g)
                 if isinstance(g, Polyline):
@@ -19613,7 +19600,6 @@ class _GeometryService(_GISService):
                 template["geometries"].append(g)
 
         elif isinstance(geometries, dict):
-
             if not isinstance(geometries, Geometry):
                 g = Geometry(geometries)
 
@@ -20709,7 +20695,6 @@ class _Tools(object):
         if self._packaging is not None:
             return self._packaging
         try:
-
             svcurl = self._gis.properties["helperServices"]["packaging"]["url"]
             if self._gis._is_hosted_nb_home:
                 svcurl = self._validate_url(svcurl)

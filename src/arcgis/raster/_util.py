@@ -813,7 +813,6 @@ class _ImageryUploaderAGOL:
         raster_type,
         gis,
     ):
-
         from azure.storage.blob import ContainerClient
         from azure.core.exceptions import (
             ClientAuthenticationError,

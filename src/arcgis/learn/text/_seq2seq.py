@@ -479,7 +479,6 @@ class SequenceToSequence(ArcGISModel):
             return metrics
 
     def _calculate_model_metrics(self):
-
         self._check_requisites()
         self.logger.info("Calculating Model Metrics")
         metrics_names = ["accuracy", "bleu"]
@@ -539,7 +538,6 @@ class SequenceToSequence(ArcGISModel):
         return list(zip(text_or_list, preds))
 
     def _save_df_to_html(self, path):
-
         if getattr(self._data, "_is_empty", False):
             copy_metrics(self._data.emd_path, path, model_characteristics_folder)
             return

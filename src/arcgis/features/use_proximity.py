@@ -22,6 +22,8 @@ from .._impl.common._utils import inspect_function_inputs
 from arcgis import network
 
 _logger = logging.getLogger()
+
+
 # --------------------------------------------------------------------------
 def connect_origins_to_destinations(
     origins_layer: Union[
@@ -349,7 +351,6 @@ def connect_origins_to_destinations(
         **kwargs,
     )
     try:
-
         if (
             isinstance(measurement_type, str)
             and str(measurement_type).lower() != "straightline"

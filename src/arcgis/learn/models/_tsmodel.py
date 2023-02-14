@@ -101,7 +101,6 @@ class TimeSeriesModel(ArcGISModel):
     def __init__(
         self, data, seq_len, model_arch="InceptionTime", location_var=None, **kwargs
     ):
-
         data_bunch = None
         if not data._is_empty:
             data_bunch = data._time_series_bunch(seq_len, location_var)
@@ -446,7 +445,6 @@ class TimeSeriesModel(ArcGISModel):
 
         rasters = explanatory_rasters if explanatory_rasters else []
         if prediction_type in ["features", "dataframe"]:
-
             if input_features is None:
                 raise Exception("Feature Layer required for predict_features=True")
 

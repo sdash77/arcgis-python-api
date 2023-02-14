@@ -53,7 +53,6 @@ class ChangeDetector(ArcGISModel):
     def __init__(
         self, data, backbone=None, attention_type="PAM", pretrained_path=None, **kwargs
     ):
-
         if not HAS_FASTAI:
             raise_fastai_import_error(
                 import_exception=import_exception, message="", installation_steps=" "
@@ -106,7 +105,6 @@ class ChangeDetector(ArcGISModel):
 
     @classmethod
     def from_model(cls, emd_path, data=None):
-
         """
         Creates a ChangeDetector model from an Esri Model Definition (EMD)
         file.

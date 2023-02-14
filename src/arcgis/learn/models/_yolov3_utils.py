@@ -103,7 +103,6 @@ class resblock(nn.Module):
     """
 
     def __init__(self, ch, nblocks=1, shortcut=True):
-
         super().__init__()
         self.shortcut = shortcut
         self.module_list = nn.ModuleList()
@@ -985,7 +984,6 @@ class AveragePrecision(Callback):
         )
 
     def on_batch_end(self, last_output, last_target, **kwargs):
-
         tps, p_scores, clas, self.n_gts = compute_cm(
             self.model, last_output[0], last_target, self.n_gts, self.classes
         )
@@ -1004,7 +1002,6 @@ class AveragePrecision(Callback):
 def compute_class_AP(
     model, dl, n_classes, show_progress, iou_thresh=0.1, detect_thresh=0.1, num_keep=100
 ):
-
     tps, clas, p_scores = [], [], []
     classes, n_gts = LongTensor(range(n_classes)), torch.zeros(n_classes).long()
     model.learn.model.eval()
@@ -1046,7 +1043,6 @@ def compute_cm(
         try:
             bbox_pred, preds, scores = op
             if len(bbox_pred) != 0 and len(tgt_bbox) != 0:
-
                 bbox_pred = bbox_pred.to(model._device)
                 preds = preds.to(model._device)
                 tgt_bbox = tgt_bbox.to(model._device)
@@ -1210,7 +1206,6 @@ def parse_yolo_weights(model, weights_path):
     initflag = False  # whole yolo weights : False, darknet weights : True
 
     for m in model.module_list:
-
         if m._get_name() == "Sequential":
             # normal conv block
             offset, weights = parse_conv_block(m, weights, offset, initflag)

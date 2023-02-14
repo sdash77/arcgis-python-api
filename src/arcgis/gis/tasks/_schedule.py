@@ -5,6 +5,7 @@ from arcgis.gis import GIS, User, Item
 from arcgis._impl.common._isd import InsensitiveDict
 from arcgis._impl.common._utils import local_time_to_online
 
+
 ###########################################################################
 class BaseTask(object):
     """
@@ -54,6 +55,7 @@ class Run(BaseTask):
 
     _gis = None
     _url = None
+
     # ----------------------------------------------------------------------
     def __init__(self, url: str, gis: GIS):
         super(Run, self)

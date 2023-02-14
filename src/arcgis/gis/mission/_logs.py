@@ -6,6 +6,7 @@ from arcgis.gis import GIS
 from arcgis._impl.common._mixins import PropertyMap
 from datetime import datetime as _datetime
 
+
 ########################################################################
 class LogManager(object):
     """
@@ -19,6 +20,7 @@ class LogManager(object):
     _url = None
     _gis = None
     _properties = None
+
     # ----------------------------------------------------------------------
     def __init__(self, url, gis):
         """Constructor"""
@@ -221,7 +223,6 @@ class LogManager(object):
             qFilter["machines"] = machines.split(",")
         params["filter"] = qFilter
         if export is True and out_path is not None:
-
             messages = self._con.get(url, params)
             with open(out_path, mode="wb") as f:
                 hasKeys = False

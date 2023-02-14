@@ -136,7 +136,6 @@ class Backbone(BackboneBase):
         dilation: bool,
         load_backbone: str,
     ):
-
         pretrained = load_backbone == "supervised"
         backbone = getattr(torchvision.models, name)(
             replace_stride_with_dilation=[False, False, dilation],
