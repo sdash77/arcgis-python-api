@@ -76,6 +76,33 @@ class FeatureLayer(Layer):
         self._time_filter = None
 
     @property
+    def field_groups(self) -> dict[str, Any]:
+        """
+        Returns the defined list of field groups for a given layer.
+
+        :returns: dict[str,Any]
+        """
+        url: str = f"{self._url}/fieldGroups"
+        params: dict[str, Any] = {"f": "json"}
+        try:
+            return self._con.get(url, params=params)
+        except:
+            return {}
+
+    @property
+    def contingent_values(self) -> dict[str, Any]:
+        """
+        Returns the define contingent values for the given layer.
+        :returns: Dict[str,Any]
+        """
+        url: str = f"{self._url}/contingentValues"
+        params: dict[str, Any] = {"f": "json"}
+        try:
+            return self._con.get(url, params=params)
+        except:
+            return {}
+
+    @property
     def time_filter(self):
         """
         The ``time_filter`` method is used to set a time filter instead of querying time-enabled map
