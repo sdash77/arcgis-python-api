@@ -471,22 +471,24 @@ def compute_sensor_model(
         image_collection, flight = _get_collection_item(image_collection, gis)
         update_flight_json = True
 
-        context_new = {k.lower(): v for k, v in context.items()}
-        adj_keys = [
-            "computeCandidate",
-            "maxOverlap",
-            "maxLoss",
-            "maxResidual",
-            "initPointResolution",
-            "k",
-            "p",
-            "principalPoint",
-            "focalLength",
-        ]
-        adj_dict = {
-            k: context_new[k.lower()] for k in adj_keys if k.lower() in context_new
-        }
-        adj_dict.update({"locationAccuracy": location_accuracy})
+        adj_dict = {}
+        if isinstance(context, dict):
+            context_new = {k.lower(): v for k, v in context.items()}
+            adj_keys = [
+                "computeCandidate",
+                "maxOverlap",
+                "maxLoss",
+                "maxResidual",
+                "initPointResolution",
+                "k",
+                "p",
+                "principalPoint",
+                "focalLength",
+            ]
+            adj_dict = {
+                k: context_new[k.lower()] for k in adj_keys if k.lower() in context_new
+            }
+            adj_dict.update({"locationAccuracy": location_accuracy})
         adj_dict.update({"mode": mode})
         flight_json_details = {
             "update_flight_json": update_flight_json,
@@ -1668,40 +1670,47 @@ def generate_dem(
                         break
             kwargs.update({"folder": folder})
 
-        context_new = {k.lower(): v for k, v in context.items()}
+        dem_dict = {}
+        if isinstance(context, dict):
+            context_new = {k.lower(): v for k, v in context.items()}
 
-        point_cloud_keys = [
-            "maxObjectSize",
-            "groundSpacing",
-            "minAngle",
-            "maxAngle",
-            "minOverlap",
-            "maxOmegaPhiDif",
-            "maxGSDDif",
-            "numImagePairs",
-            "adjQualityThreshold",
-        ]
-        point_cloud_dict = {
-            "pointCloud": {
-                k: context_new[k.lower()]
-                for k in point_cloud_keys
-                if k.lower() in context_new
+            point_cloud_keys = [
+                "maxObjectSize",
+                "groundSpacing",
+                "minAngle",
+                "maxAngle",
+                "minOverlap",
+                "maxOmegaPhiDif",
+                "maxGSDDif",
+                "numImagePairs",
+                "adjQualityThreshold",
+            ]
+            point_cloud_dict = {
+                "pointCloud": {
+                    k: context_new[k.lower()]
+                    for k in point_cloud_keys
+                    if k.lower() in context_new
+                }
             }
-        }
-        point_cloud_dict["pointCloud"].update({"method": matching_method})
-        interpolation_keys = ["pixelSize", "pixelSizeUnit", "method", "smoothingMethod"]
-        interpolation_dict = {
-            "interpolation": {
-                k: context_new[k.lower()]
-                for k in interpolation_keys
-                if k.lower() in context_new
+            point_cloud_dict["pointCloud"].update({"method": matching_method})
+            interpolation_keys = [
+                "pixelSize",
+                "pixelSizeUnit",
+                "method",
+                "smoothingMethod",
+            ]
+            interpolation_dict = {
+                "interpolation": {
+                    k: context_new[k.lower()]
+                    for k in interpolation_keys
+                    if k.lower() in context_new
+                }
             }
-        }
 
-        apply_to_ortho = context.get("applyToOrtho", False)
-        dem_dict = {"applyToOrtho": apply_to_ortho}
-        dem_dict.update(point_cloud_dict)
-        dem_dict.update(interpolation_dict)
+            apply_to_ortho = context_new.get("applytoortho", False)
+            dem_dict = {"applyToOrtho": apply_to_ortho}
+            dem_dict.update(point_cloud_dict)
+            dem_dict.update(interpolation_dict)
         flight_json_details = {
             "update_flight_json": update_flight_json,
             "flight": flight,
@@ -1942,73 +1951,76 @@ def generate_orthomosaic(
                 }
             }
         )
-        context_new = {k.lower(): v for k, v in context.items()}
-        color_balance_dict["colorBalance"].update(
-            {
-                k: context_new[k.lower()]
-                for k in color_balance_keys
-                if k.lower() in context_new
-            }
-        )
-        if "colorCorrectionMethod" in color_balance_dict["colorBalance"]:
-            color_balance_dict["colorBalance"]["method"] = color_balance_dict[
-                "colorBalance"
-            ].pop("colorCorrectionMethod")
-        if "dodgingSurface" in color_balance_dict["colorBalance"]:
-            color_balance_dict["colorBalance"]["surfaceType"] = color_balance_dict[
-                "colorBalance"
-            ].pop("dodgingSurface")
 
-        seamline_keys = [
-            "computeCandidate",
-            "maxOverlap",
-            "maxLoss",
-            "pixelSize",
-            "blendType",
-            "blendUnit",
-            "requestSizeType",
-            "requestSize",
-            "minThinnessRatio",
-            "maxSliverSize",
-            "seamlinesMethod",
-        ]
-        seamline_dict = {}
-        seamline_dict.update(
-            {
-                "seamline": {
-                    "seamlinesMethod": "DISPARITY",
-                    "minRegionSize": 100,
-                    "pixelSize": "",
-                    "blendType": "Both",
-                    "blendWidth": None,
-                    "blendUnit": "Pixels",
-                    "requestSizeType": "Pixels",
-                    "requestSize": 1000,
-                    "minThinnessRatio": 0.05,
-                    "maxSliverSize": 20,
+        ortho_dict = {}
+        if isinstance(context, dict):
+            context_new = {k.lower(): v for k, v in context.items()}
+            color_balance_dict["colorBalance"].update(
+                {
+                    k: context_new[k.lower()]
+                    for k in color_balance_keys
+                    if k.lower() in context_new
                 }
-            }
-        )
+            )
+            if "colorCorrectionMethod" in color_balance_dict["colorBalance"]:
+                color_balance_dict["colorBalance"]["method"] = color_balance_dict[
+                    "colorBalance"
+                ].pop("colorCorrectionMethod")
+            if "dodgingSurface" in color_balance_dict["colorBalance"]:
+                color_balance_dict["colorBalance"]["surfaceType"] = color_balance_dict[
+                    "colorBalance"
+                ].pop("dodgingSurface")
 
-        seamline_dict["seamline"].update(
-            {
-                k: context_new[k.lower()]
-                for k in seamline_keys
-                if k.lower() in context_new
-            }
-        )
-        if "seamlinesMethod" in seamline_dict["seamline"]:
-            seamline_dict["seamline"]["method"] = seamline_dict["seamline"].pop(
-                "seamlinesMethod"
+            seamline_keys = [
+                "computeCandidate",
+                "maxOverlap",
+                "maxLoss",
+                "pixelSize",
+                "blendType",
+                "blendUnit",
+                "requestSizeType",
+                "requestSize",
+                "minThinnessRatio",
+                "maxSliverSize",
+                "seamlinesMethod",
+            ]
+            seamline_dict = {}
+            seamline_dict.update(
+                {
+                    "seamline": {
+                        "seamlinesMethod": "DISPARITY",
+                        "minRegionSize": 100,
+                        "pixelSize": "",
+                        "blendType": "Both",
+                        "blendWidth": None,
+                        "blendUnit": "Pixels",
+                        "requestSizeType": "Pixels",
+                        "requestSize": 1000,
+                        "minThinnessRatio": 0.05,
+                        "maxSliverSize": 20,
+                    }
+                }
             )
 
-        ortho_mosaic_as_ovr = context.get("orthoMosaicAsOvr", False)
-        ortho_dict = {"ortho": {"orthoMosaicAsOvr": ortho_mosaic_as_ovr}}
+            seamline_dict["seamline"].update(
+                {
+                    k: context_new[k.lower()]
+                    for k in seamline_keys
+                    if k.lower() in context_new
+                }
+            )
+            if "seamlinesMethod" in seamline_dict["seamline"]:
+                seamline_dict["seamline"]["method"] = seamline_dict["seamline"].pop(
+                    "seamlinesMethod"
+                )
 
-        if regen_seamlines:
-            ortho_dict.update(seamline_dict)
-        if recompute_color_correction:
-            ortho_dict.update(color_balance_dict)
+            ortho_mosaic_as_ovr = context.get("orthoMosaicAsOvr", False)
+            ortho_dict = {"ortho": {"orthoMosaicAsOvr": ortho_mosaic_as_ovr}}
+
+            if regen_seamlines:
+                ortho_dict.update(seamline_dict)
+            if recompute_color_correction:
+                ortho_dict.update(color_balance_dict)
 
         flight_json_details = {
             "update_flight_json": update_flight_json,
