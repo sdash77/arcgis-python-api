@@ -256,7 +256,27 @@ def add_flight(project_item,
     'spatialReference': {},
     'adjustSettings': {},
     'processingSettings': {},
-    'mapping': {},
+    'mapping': {
+    "basemap":{
+      "title":"Topographic",
+      "baseMapLayers":[
+        {
+          "layerType":"ArcGISTiledMapServiceLayer",
+          "opacity":1,
+          "visibility":True,
+          "url":"https://services.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer"
+        }
+      ]
+    },
+    "referenceData":[
+      
+    ],
+    "layers":{
+      "visibilities":{
+        "footprint":False
+      }
+    }
+  },
     'projectVersion': 2,
     'createTS': '',
     'oid': oid,
@@ -278,7 +298,48 @@ def add_flight(project_item,
             dict_gps = dict(zip(gps_info_list, ele))
             gps_data.append(dict_gps)
 
-    flight_json.update({"sourceData":{"gps":gps_data}})
+    flight_json.update({"sourceData":{"gps":gps_data, "imageCount": len(image_list)}})
+
+    from datetime import datetime
+    project_id = datetime.now().strftime("%Y%m%d%H%M%S")
+    flight_json.update({"projectId" : project_id})   
+
+    ts = int(datetime.timestamp(datetime.now()))*1000
+    flight_json.update({"createTS" : ts})
+
+ 
+    ## Set extent
+    try:
+        gcs_extent = {}
+        extent_arr = output_collection.extent
+        if extent_arr is not None:
+            gcs_extent = {
+            "xmin":extent_arr[0][0],
+            "ymin":extent_arr[0][1],
+            "xmax":extent_arr[1][0],
+            "ymax":extent_arr[1][1],
+            "spatialReference":{
+            "wkid":4326
+            }
+        }
+    except:
+        gcs_extent = {}
+        
+
+    projected_extent = {}
+    try:
+        projected_extent = dict(output_collection.layers[0].extent)
+    except:
+        projected_extent = {}
+
+    flight_json.update({"gcsExtent" : gcs_extent, "projectedExtent":projected_extent })   
+
+    try:
+       coverage_area =  output_collection.layers[0].query_boundary()["area"]
+       flight_json.update({"coverage" : coverage_area})   
+    except:
+        pass
+
     import  uuid
     fname = "%s.json" % flight_name
 
@@ -1811,7 +1872,7 @@ def generate_orthomosaic(
         "maxSliverSize": 20
     }})
 
-        seamline_dict["seamline"].update({k: context_new[k.lower()] for k in seamline_keys if k.lower() in concontext_newtext})
+        seamline_dict["seamline"].update({k: context_new[k.lower()] for k in seamline_keys if k.lower() in context_new})
         if "seamlinesMethod" in seamline_dict['seamline']:
             seamline_dict["seamline"]["method"]=seamline_dict["seamline"].pop("seamlinesMethod")
 

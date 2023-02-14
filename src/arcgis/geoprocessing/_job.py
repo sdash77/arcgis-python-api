@@ -918,8 +918,8 @@ class OMJob(GPJob):
             rm = project_item.resources
             flight_json = rm.get(resource)  
 
-            start_time = self._gpjob._start_time.isoformat()
-            end_time = self._gpjob._end_time.isoformat()
+            start_time = self._gpjob._start_time.isoformat(timespec='milliseconds')+"Z"
+            end_time = self._gpjob._end_time.isoformat(timespec='milliseconds')+"Z"
 
             flight_json['jobs'].update({item_name:{"messages": job_messages, "checked": True, "progress": 100,"success": True, "startTime":start_time, "completionTime":end_time }})   
             if processing_states is not None:
