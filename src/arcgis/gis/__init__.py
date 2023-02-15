@@ -5292,7 +5292,13 @@ class GroupManager(object):
         """
         grouplist = []
         groups = self._portal.search_groups(
-            query, sort_field, sort_order, max_groups, outside_org, categories, filter
+            query,
+            sort_field,
+            sort_order,
+            max_groups,
+            outside_org,
+            categories,
+            filter,
         )
         for group in groups:
             grouplist.append(Group(self._gis, group["id"], group))
@@ -6472,6 +6478,13 @@ class ContentManager(object):
                                     >>> gis.content.advanced_search(query='owner:USERNAME, type:map')
 
                                 is not.  For more information, please check `Users, groups and items <https://developers.arcgis.com/rest/users-groups-and-items/search-reference.htm>`_.
+        ----------------    ---------------------------------------------------------------
+        return_count        Optional Boolean. When true, the total for the given search is
+                            returned. It will ignore the `max_items` variable.
+        ----------------    ---------------------------------------------------------------
+        max_items           Optional Integer. The total number of items to return up to
+                            10,000. When the value of -1 is given all aviable Items will be
+                            returned up to 10,000.
         ----------------    ---------------------------------------------------------------
         bbox                Optional String/List. This is the xmin,ymin,xmax,ymax bounding
                             box to limit the search in.  Items like documents do not have
