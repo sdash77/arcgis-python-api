@@ -90,9 +90,7 @@ class Datastore(BaseServer):
             params = {
                 "f": "json",
             }
-            res = self._con.post(
-                data_item_manifest_url, params, verify_cert=False
-            )
+            res = self._con.post(data_item_manifest_url, params, verify_cert=False)
         else:
             res = {}
         return res
@@ -293,9 +291,7 @@ class Datastore(BaseServer):
         params = {"f": "json"}
 
         try:
-            res = self._con.post(
-                data_item_manifest_url, params, verify_cert=False
-            )
+            res = self._con.post(data_item_manifest_url, params, verify_cert=False)
             return res["datasets"]
         except:
             return None
@@ -384,9 +380,7 @@ class DataStoreManager(BaseServer):
                 items = self.search(parent_path=item)["items"]
                 for path in items:
                     self._datastores.append(
-                        Datastore(
-                            datastore=self, path=path["path"], datadict=None
-                        )
+                        Datastore(datastore=self, path=path["path"], datadict=None)
                     )
         return self._datastores
 
@@ -654,14 +648,11 @@ class DataStoreManager(BaseServer):
                 sd_url = f"{os.path.dirname(base_url)}/rest/services"
                 d = ServicesDirectory(
                     url=sd_url,
-                    portal_connection=self._con._portal_connection
-                    or self._con,
+                    portal_connection=self._con._portal_connection or self._con,
                 )
             elif isinstance(self._con, Connection):
                 sd_url = f"{os.path.dirname(base_url)}/rest/services"
-                d = ServicesDirectory(
-                    url=sd_url, portal_connection=self._con
-                )
+                d = ServicesDirectory(url=sd_url, portal_connection=self._con)
                 d._con = self._con
 
             try:
@@ -822,9 +813,7 @@ class DataStoreManager(BaseServer):
         return self._con.post(path=url, postdata=params)
 
     # ----------------------------------------------------------------------
-    def make_datastore_machine_primary(
-        self, item_name: str, machine_name: str
-    ) -> bool:
+    def make_datastore_machine_primary(self, item_name: str, machine_name: str) -> bool:
         """
         Promotes a standby machine to the primary Data Store machine. The
         existing primary machine is downgraded to a standby machine.
@@ -1006,21 +995,15 @@ class DataStoreManager(BaseServer):
             A boolean indicating success (True) or failure (False).
 
         """
-        url = (
-            self._url
-            + "/items/enterpriseDatabases/%s/machines/%s/makePrimary"
-            % (
-                datastore_name,
-                machine_name,
-            )
+        url = self._url + "/items/enterpriseDatabases/%s/machines/%s/makePrimary" % (
+            datastore_name,
+            machine_name,
         )
         params = {"f": "json"}
         return self._con.post(path=url, postdata=params)
 
     # ----------------------------------------------------------------------
-    def remove_datastore_machine(
-        self, item_name: str, machine_name: str
-    ) -> bool:
+    def remove_datastore_machine(self, item_name: str, machine_name: str) -> bool:
         """
         Removes a standby machine from the Data Store. This operation is
         not supported on the primary Data Store machine.
@@ -1037,13 +1020,9 @@ class DataStoreManager(BaseServer):
             A boolean indicating success (True) or failure (False).
 
         """
-        url = (
-            self._url
-            + "/items/enterpriseDatabases/%s/machines/%s/remove"
-            % (
-                item_name,
-                machine_name,
-            )
+        url = self._url + "/items/enterpriseDatabases/%s/machines/%s/remove" % (
+            item_name,
+            machine_name,
         )
         params = {"f": "json"}
         return self._con.post(path=url, postdata=params)
@@ -1066,13 +1045,9 @@ class DataStoreManager(BaseServer):
            A boolean indicating success (True) or failure (False).
 
         """
-        url = (
-            self._url
-            + "/items/enterpriseDatabases/%s/machines/%s/start"
-            % (
-                item_name,
-                machine_name,
-            )
+        url = self._url + "/items/enterpriseDatabases/%s/machines/%s/start" % (
+            item_name,
+            machine_name,
         )
         params = {"f": "json"}
         return self._con.post(path=url, postdata=params)
@@ -1096,13 +1071,9 @@ class DataStoreManager(BaseServer):
            A boolean indicating success (True) or failure (False).
 
         """
-        url = (
-            self._url
-            + "/items/enterpriseDatabases/%s/machines/%s/stop"
-            % (
-                item_name,
-                machine_name,
-            )
+        url = self._url + "/items/enterpriseDatabases/%s/machines/%s/stop" % (
+            item_name,
+            machine_name,
         )
         params = {"f": "json"}
         return self._con.post(path=url, postdata=params)
@@ -1152,13 +1123,9 @@ class DataStoreManager(BaseServer):
             A JSON response containing general status information and an overall health report.
 
         """
-        url = (
-            self._url
-            + "/items/enterpriseDatabases/%s/machines/%s/validate"
-            % (
-                data_store_name,
-                name,
-            )
+        url = self._url + "/items/enterpriseDatabases/%s/machines/%s/validate" % (
+            data_store_name,
+            name,
         )
         params = {"f": "json"}
         return self._con.post(path=url, postdata=params)
