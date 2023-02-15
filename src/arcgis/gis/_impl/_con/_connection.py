@@ -207,7 +207,9 @@ class Connection(object):
 
         self._verify_cert = kwargs.pop("verify_cert", False)  # True)
         if self._verify_cert == False:
-            warnings.simplefilter("ignore", _exceptions.InsecureRequestWarning)
+            warnings.simplefilter(
+                "ignore", _exceptions.InsecureRequestWarning
+            )
 
         self._cert_file = kwargs.pop("cert_file", None)
         self._key_file = kwargs.pop("key_file", None)
@@ -230,7 +232,9 @@ class Connection(object):
         if self._is_hosted_nb_home:
             auth_check = [""]
         elif self._key_file is None and self._cert_file is None:
-            auth_check = self._auth_check(baseurl, proxies=self._assemble_proxy())
+            auth_check = self._auth_check(
+                baseurl, proxies=self._assemble_proxy()
+            )
         else:
             auth_check = [""]
         if self._is_hosted_nb_home:
@@ -274,7 +278,9 @@ class Connection(object):
         elif (
             (not username is None and not password is None)
             and len(username.split("\\")) > 1
-            and ("Negotiate" in auth_check or "Negotiate, NTLM" in auth_check)
+            and (
+                "Negotiate" in auth_check or "Negotiate, NTLM" in auth_check
+            )
         ):
             self._auth = "KERBEROS"
         elif (username is None and password is None) and (
@@ -298,15 +304,18 @@ class Connection(object):
         ):
             self._auth = "NTLM"
         elif (not username is None and not password is None) or (
-            self._portal_connection and self._portal_connection._auth == "BUILTIN"
+            self._portal_connection
+            and self._portal_connection._auth == "BUILTIN"
         ):
             self._auth = "BUILTIN"
         elif (not username is None and not password is None) or (
-            self._portal_connection and self._portal_connection._auth == "BASIC_REALM"
+            self._portal_connection
+            and self._portal_connection._auth == "BASIC_REALM"
         ):
             self._auth = "BASIC_REALM"
         elif (not username is None and not password is None) or (
-            self._portal_connection and self._portal_connection._auth == "NTLM"
+            self._portal_connection
+            and self._portal_connection._auth == "NTLM"
         ):
             self._auth = "NTLM"
         elif (
@@ -322,9 +331,13 @@ class Connection(object):
             portal_url = arcpy.GetActivePortalURL()
             if portal_url.lower().find("/sharing/rest") == -1:
                 if arcpy.GetActivePortalURL().endswith("/"):
-                    self._baseurl = arcpy.GetActivePortalURL() + "sharing/rest"
+                    self._baseurl = (
+                        arcpy.GetActivePortalURL() + "sharing/rest"
+                    )
                 else:
-                    self._baseurl = arcpy.GetActivePortalURL() + "/sharing/rest"
+                    self._baseurl = (
+                        arcpy.GetActivePortalURL() + "/sharing/rest"
+                    )
             else:
                 self._baseurl = arcpy.GetActivePortalURL()
         elif self._cert_file or (self._cert_file and self._key_file):
@@ -390,9 +403,7 @@ class Connection(object):
             if self._custom_auth:
                 s.auth = self._custom_auth
             parsed = self._parsed(url)
-            root = (
-                rf"{parsed.scheme}://{parsed.netloc}/{parsed.path[1:].split(r'/')[0]}"
-            )
+            root = rf"{parsed.scheme}://{parsed.netloc}/{parsed.path[1:].split(r'/')[0]}"
             params = {"f": "json"}
             results = []
             for pt in [
@@ -681,7 +692,9 @@ class Connection(object):
                     legacy=False,
                     **self._security_kwargs,
                 )
-        elif self._username and self._password and self._auth.lower() != "iwa":
+        elif (
+            self._username and self._password and self._auth.lower() != "iwa"
+        ):
             self._session.auth = GuessAuth(
                 username=self._username, password=self._password
             )
@@ -772,7 +785,10 @@ class Connection(object):
             self._baseurl += "/"
         url = path
         if url.find("://") == -1:
-            if url.startswith("/") == False and self._baseurl.endswith("/") == False:
+            if (
+                url.startswith("/") == False
+                and self._baseurl.endswith("/") == False
+            ):
                 url = "/" + url
             url = self._baseurl + url
         if kwargs.pop("ssl", False) or self._all_ssl:
@@ -831,10 +847,13 @@ class Connection(object):
                 )
         except requests.exceptions.SSLError as err:
             raise requests.exceptions.SSLError(
-                "Please set verify_cert=False due to encountered SSL error: %s" % err
+                "Please set verify_cert=False due to encountered SSL error: %s"
+                % err
             )
         except requests.exceptions.InvalidURL as errIU:
-            raise requests.exceptions.SSLError("Invalid URL provided: %s" % errIU)
+            raise requests.exceptions.SSLError(
+                "Invalid URL provided: %s" % errIU
+            )
         except requests.exceptions.ConnectionError as errCE:
             raise requests.exceptions.ConnectionError(
                 "A connection error has occurred: %s" % errCE
@@ -851,14 +870,16 @@ class Connection(object):
             )
         except requests.exceptions.RequestException as errRE:
             raise requests.exceptions.RequestException(
-                "A general expection was raised: %s" % errRE
+                "A general exception was raised: %s" % errRE
             )
         except Exception as e:
             raise Exception("A general error occurred: %s" % e)
         except:
             import traceback
 
-            raise Exception("An unknown error occurred: %s" % traceback.format_exc())
+            raise Exception(
+                "An unknown error occurred: %s" % traceback.format_exc()
+            )
         if add_headers:
             self._session.headers.clear()
             self._session.headers.update(original_headers)
@@ -930,11 +951,15 @@ class Connection(object):
             )
         ):
             file_name = (
-                _filename_from_url(url) or _filename_from_headers(resp.headers) or None
+                _filename_from_url(url)
+                or _filename_from_headers(resp.headers)
+                or None
             )
         elif file_name is None and "Content-Disposition" in resp.headers:
             file_name = (
-                _filename_from_url(url) or _filename_from_headers(resp.headers) or None
+                _filename_from_url(url)
+                or _filename_from_headers(resp.headers)
+                or None
             )
 
         if force_bytes:
@@ -1000,7 +1025,9 @@ class Connection(object):
             if "error" in data and ignore_error_key == False:
                 if "messages" in data:
                     return data
-                errorcode = data["error"]["code"] if "code" in data["error"] else 0
+                errorcode = (
+                    data["error"]["code"] if "code" in data["error"] else 0
+                )
                 self._handle_json_error(data["error"], errorcode)
             return data
         else:
@@ -1023,7 +1050,9 @@ class Connection(object):
                         errormessage = errormessage + "\n" + errordetail
                         # _log.error(errordetail)
 
-        errormessage = errormessage + "\n(Error Code: " + str(errorcode) + ")"
+        errormessage = (
+            errormessage + "\n(Error Code: " + str(errorcode) + ")"
+        )
         raise Exception(errormessage)
 
     def post_multipart(
@@ -1142,7 +1171,8 @@ class Connection(object):
                 for key, filePath, fileName in files:
                     if (
                         isinstance(fileName, str)
-                        and isinstance(filePath, (io.StringIO, io.BytesIO)) == False
+                        and isinstance(filePath, (io.StringIO, io.BytesIO))
+                        == False
                     ):
                         fields[key] = (
                             fileName,
@@ -1234,10 +1264,13 @@ class Connection(object):
                 self._session.auth = auth
         except requests.exceptions.SSLError as err:
             raise requests.exceptions.SSLError(
-                "Please set verify_cert=False due to encountered SSL error: %s" % err
+                "Please set verify_cert=False due to encountered SSL error: %s"
+                % err
             )
         except requests.exceptions.InvalidURL as errIU:
-            raise requests.exceptions.SSLError("Invalid URL provided: %s" % errIU)
+            raise requests.exceptions.SSLError(
+                "Invalid URL provided: %s" % errIU
+            )
         except requests.exceptions.ConnectionError as errCE:
             raise requests.exceptions.ConnectionError(
                 "A connection error has occurred: %s" % errCE
@@ -1255,14 +1288,16 @@ class Connection(object):
             )
         except requests.exceptions.RequestException as errRE:
             raise requests.exceptions.RequestException(
-                "A general expection was raised: %s" % errRE
+                "A general exception was raised: %s" % errRE
             )
         except Exception as e:
             raise Exception("A general error occurred: %s" % e)
         except:
             import traceback
 
-            raise Exception("An unknown error occurred: %s" % traceback.format_exc())
+            raise Exception(
+                "An unknown error occurred: %s" % traceback.format_exc()
+            )
         if return_raw_response:
             return resp
         return self._handle_response(
@@ -1393,7 +1428,8 @@ class Connection(object):
 
                     if (
                         isinstance(fileName, str)
-                        and isinstance(filePath, (io.StringIO, io.BytesIO)) == False
+                        and isinstance(filePath, (io.StringIO, io.BytesIO))
+                        == False
                     ):
                         buffer_reader = open(filePath, "rb")
                         fields[key] = (
@@ -1488,10 +1524,13 @@ class Connection(object):
                 self._session.headers.update(original_headers)
         except requests.exceptions.SSLError as err:
             raise requests.exceptions.SSLError(
-                "Please set verify_cert=False due to encountered SSL error: %s" % err
+                "Please set verify_cert=False due to encountered SSL error: %s"
+                % err
             )
         except requests.exceptions.InvalidURL as errIU:
-            raise requests.exceptions.SSLError("Invalid URL provided: %s" % errIU)
+            raise requests.exceptions.SSLError(
+                "Invalid URL provided: %s" % errIU
+            )
         except requests.exceptions.ConnectionError as errCE:
             raise requests.exceptions.ConnectionError(
                 "A connection error has occurred: %s" % errCE
@@ -1509,14 +1548,16 @@ class Connection(object):
             )
         except requests.exceptions.RequestException as errRE:
             raise requests.exceptions.RequestException(
-                "A general expection was raised: %s" % errRE
+                "A general exception was raised: %s" % errRE
             )
         except Exception as e:
             raise Exception("A general error occurred: %s" % e)
         except:
             import traceback
 
-            raise Exception("An unknown error occurred: %s" % traceback.format_exc())
+            raise Exception(
+                "An unknown error occurred: %s" % traceback.format_exc()
+            )
         if buffer_reader:
             buffer_reader.close()
         if return_raw_response:
@@ -1833,10 +1874,14 @@ class Connection(object):
                     **kwargs,
                 )
             else:
-                return fn(url=url, data=data, hooks=hooks, stream=True, **kwargs)
+                return fn(
+                    url=url, data=data, hooks=hooks, stream=True, **kwargs
+                )
         else:
             allowed_verb = ",".join(verbs)
-            raise ValueError(f"Invalid web method only {allowed_verb} as allowed")
+            raise ValueError(
+                f"Invalid web method only {allowed_verb} as allowed"
+            )
         self._session.post(url=url, data=data, json_data=json, stream=True)
 
     # ----------------------------------------------------------------------
@@ -1936,7 +1981,9 @@ class Connection(object):
         if baseurl.lower().find("arcgis.com") > -1:
             parsed = urlparse(self._baseurl)
             self._product = "AGOL"
-            self._token_url = "https://%s/sharing/rest/generateToken" % parsed.netloc
+            self._token_url = (
+                "https://%s/sharing/rest/generateToken" % parsed.netloc
+            )
             return "AGOL"
         elif baseurl.lower().find("/sharing/rest") > -1:
             if baseurl.endswith("/"):
@@ -1965,17 +2012,22 @@ class Connection(object):
                 and "tokenServicesUrl" in res["authInfo"]
                 and res["authInfo"]["isTokenBasedSecurity"]
             ):
-                parsed_from_system = urlparse(res["authInfo"]["tokenServicesUrl"])
+                parsed_from_system = urlparse(
+                    res["authInfo"]["tokenServicesUrl"]
+                )
                 parsed = urlparse(baseurl)
                 if (
-                    parsed.netloc.lower() != parsed_from_system.netloc.lower()
+                    parsed.netloc.lower()
+                    != parsed_from_system.netloc.lower()
                     and parsed.netloc.find(":7443") > -1
                 ):  # WA not being used for token url
                     self._token_url = os.path.join(
                         parsed_from_system.scheme + "://",
                         parsed.netloc
                         + "/arcgis/"
-                        + "/".join(parsed_from_system.path[1:].split("/")[1:]),
+                        + "/".join(
+                            parsed_from_system.path[1:].split("/")[1:]
+                        ),
                     )
                     url_test = self._session.post(
                         self._token_url, {"f": "json"}, allow_redirects=False
@@ -2005,9 +2057,7 @@ class Connection(object):
         else:
             # Brute Force Method
             parsed = urlparse(baseurl)
-            root = (
-                rf"{parsed.scheme}://{parsed.netloc}/{parsed.path[1:].split(r'/')[0]}"
-            )
+            root = rf"{parsed.scheme}://{parsed.netloc}/{parsed.path[1:].split(r'/')[0]}"
             parts = [
                 "/info",
                 "/rest/services",
@@ -2076,9 +2126,9 @@ class Connection(object):
                             from arcgis.gis import GIS
 
                             self._portal_connection = GIS(
-                                url=res["authInfo"]["tokenServicesUrl"].split(
-                                    "/sharing/"
-                                )[0],
+                                url=res["authInfo"][
+                                    "tokenServicesUrl"
+                                ].split("/sharing/")[0],
                                 username=self._username,
                                 password=self._password,
                                 verify_cert=self._verify_cert,
@@ -2144,9 +2194,7 @@ class Connection(object):
                 else:
                     server_url = f'{parsed.scheme}://{parsed.netloc}:{parsed.port}/{parsed.path[1:].split("/")[0]}'
             else:
-                server_url = (
-                    f'{parsed.scheme}://{parsed.netloc}/{parsed.path[1:].split("/")[0]}'
-                )
+                server_url = f'{parsed.scheme}://{parsed.netloc}/{parsed.path[1:].split("/")[0]}'
             postdata = {
                 "request": "getToken",
                 "serverURL": server_url,
