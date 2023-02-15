@@ -58,10 +58,10 @@ class AGOLUsageReports(BasePortalAdmin):
         ===============     ====================================================
         **Parameter**        **Description**
         ---------------     ----------------------------------------------------
-        focus               Required String. The report level. The only 
+        focus               Required String. The report level. The only
                             allowed value is `org`.
         ---------------     ----------------------------------------------------
-        report_type         Required String. The type of report to generate. 
+        report_type         Required String. The type of report to generate.
 
                             Allowed values:
 
@@ -71,15 +71,15 @@ class AGOLUsageReports(BasePortalAdmin):
         ---------------     ----------------------------------------------------
         title               Optional String.  The output report item's title.
         ---------------     ----------------------------------------------------
-        duration            Optional String.  The time frame for which to 
-                            report. 
+        duration            Optional String.  The time frame for which to
+                            report.
 
                             Allowed values:
 
                             - `weekly`
                             - `monthly`.
         ---------------     ----------------------------------------------------
-        start_time          Optional datetime.datetime. The date and time from 
+        start_time          Optional datetime.datetime. The date and time from
                             which to begin the report.
         ---------------     ----------------------------------------------------
         notify              Optional Boolean. The Job will print a message upon
@@ -155,11 +155,11 @@ class AGOLUsageReports(BasePortalAdmin):
         ===============     ====================================================
 
         :return:
-             string path to csv file or Panda's Dataframe (default) that 
+             string path to csv file or Panda's Dataframe (default) that
              records the total number of credits consumed per:
 
              * `hour` if ``time_frame`` is `today`
-             * `day` if ``time_frame`` is `week`, `7days`, `14days`, `30days`, 
+             * `day` if ``time_frame`` is `week`, `7days`, `14days`, `30days`,
                `60days` or `90days`
              * `week` if ``time_frame`` is `6months`
              * `month` if ``time_frame`` is `year`
@@ -251,8 +251,8 @@ class AGOLUsageReports(BasePortalAdmin):
         self, start_time: Optional[datetime.datetime] = None, time_frame: str = "week"
     ):
         """
-        Creates a credit usage report for resources of an ArcGIS Online 
-        organization with results aggregated by specific `username` and user's 
+        Creates a credit usage report for resources of an ArcGIS Online
+        organization with results aggregated by specific `username` and user's
         organization id.
 
         .. note::
@@ -275,7 +275,7 @@ class AGOLUsageReports(BasePortalAdmin):
 
              Results are aggregated by:
                * `hour` if ``time_frame`` is `today`
-               * `day` if ``time_frame`` is `week`, `7days`, `14days`, `30days`, 
+               * `day` if ``time_frame`` is `week`, `7days`, `14days`, `30days`,
                  `60days` or `90days`
                * `week` if ``time_frame`` is `6months`
                * `month` if ``time_frame`` is `year`
@@ -318,7 +318,7 @@ class AGOLUsageReports(BasePortalAdmin):
             'credits': [['1672099200000', '0.0'],
                         ['1672185600000', '0.0'],
                        ...
-                        ['1672617600000', '0.0']]}            
+                        ['1672617600000', '0.0']]}
 
         """
         out_folder = None
@@ -372,7 +372,7 @@ class AGOLUsageReports(BasePortalAdmin):
         given ArcGIS Online organization.
 
         .. note::
-            Output can contain users outside your organization 
+            Output can contain users outside your organization
             that used organization applications
 
         ===============     ====================================================
@@ -387,13 +387,13 @@ class AGOLUsageReports(BasePortalAdmin):
         ===============     ====================================================
 
         :return:
-             dictionary with the number of application logins grouped by 
+             dictionary with the number of application logins grouped by
              application and username.
 
              Results aggregated by:
 
              - `hour` if ``time_frame`` is `today`
-             - `day` if ``time_frame`` is `week`, `7days`, `14days`, `30days`, 
+             - `day` if ``time_frame`` is `week`, `7days`, `14days`, `30days`,
                `60days` or `90days`
              - `week` if ``time_frame`` is `6months`
              - `month` if ``time_frame`` is `year`
@@ -439,7 +439,7 @@ class AGOLUsageReports(BasePortalAdmin):
                              ...
                              ['1672444800000', '62'],
                              ['1672531200000', '10'],
-                             ['1672617600000', '0']]}]}                               
+                             ['1672617600000', '0']]}]}
 
         """
         out_folder = None
