@@ -66,7 +66,7 @@ class EsriWindowsAuth(AuthBase, SupportMultiAuth):
                 self.auth = requests_negotiate_sspi.HttpNegotiateAuth()
             elif WINDOWS == True and HAS_KERBEROS:
                 uname_format = self._split_username(username)
-                prin = uname_format[0] + '@' + uname_format[1]
+                prin = uname_format[0] + "@" + uname_format[1]
                 self.auth = requests_kerberos.HTTPKerberosAuth(
                     principal=f"{prin}:{password}",
                 )
@@ -119,16 +119,16 @@ class EsriWindowsAuth(AuthBase, SupportMultiAuth):
         matches = re.finditer(regex, username, re.IGNORECASE | re.DOTALL)
         tokens = []
         for match in matches:
-            for group in matches.groups():
+            for group in match.groups():
                 tokens.append(group)
-        
-        if tokens[1] in ['//', '\\', '/']:
+
+        if tokens[1] in ["//", "\\", "/"]:
             uname = tokens[2]
             dom = tokens[0]
-        elif tokens[1] == '@':
+        elif tokens[1] == "@":
             uname = tokens[0]
             dom = tokens[2]
-        
+
         return [uname, dom]
 
     def generate_portal_server_token(self, r, **kwargs):
