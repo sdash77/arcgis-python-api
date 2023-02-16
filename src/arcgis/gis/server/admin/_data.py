@@ -10,6 +10,7 @@ specific data item. This operation helps you determine if a
 particular data item can be safely deleted or refreshed.
 """
 from __future__ import absolute_import
+from __future__ import annotations
 import os
 import re
 import json
