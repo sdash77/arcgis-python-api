@@ -8159,9 +8159,8 @@ def vector_field(
 def complex(
     raster: Union[Raster, ImageryLayer],
     imaginary_raster: Optional[Raster] = None,
-    value_type: str = "AMPLITUDE"
+    value_type: str = "AMPLITUDE",
 ):
-
     """
     Complex function computes magnitude from complex values. It is used when
     input raster has complex pixel type. It computes magnitude from complex
@@ -8179,7 +8178,7 @@ def complex(
     imaginary_raster                         The imaginary raster input
     --------------------------------     --------------------------------------------------------------------
     value_type                               Specifies which value type to calculate:
-                                                 
+
                                                  - Amplitude - Produces an output containing the amplitude values. This is the default.
                                                  - Phase - Produces an output containing the phase values.
                                                  - Complex - Produces an output containing the complex values.
@@ -8196,17 +8195,17 @@ def complex(
             "Raster": raster1,
         },
     }
-    
+
     layer2 = None
     if imaginary_raster is not None:
         layer2, raster2, raster_ra2 = _raster_input(raster, imaginary_raster)
         template_dict["rasterFunctionArguments"]["ImaginaryRaster"] = raster2
-    
+
     if layer1 is not None or (layer2 is not None and layer2._datastore_raster is False):
         layer = layer1
     else:
         layer = layer2
-    
+
     value_types = ["AMPLITUDE", "PHASE", "COMPLEX"]
     if value_type is not None:
         if value_type.upper() not in value_types:
@@ -8214,9 +8213,9 @@ def complex(
                 "value_type should be one of the following " + str(value_types)
             )
         template_dict["rasterFunctionArguments"]["ValueType"] = value_type.upper()
-    
+
     if imaginary_raster is not None:
-        return _clone_layer(layer, template_dict, raster_ra1, raster_ra2)    
+        return _clone_layer(layer, template_dict, raster_ra1, raster_ra2)
     return _clone_layer(layer, template_dict, raster_ra1)
 
 
@@ -13128,6 +13127,86 @@ def geometric_median(
         template_dict["rasterFunctionArguments"]["CellsizeType"] = in_cellsize_type
 
     return _clone_layer(layer, template_dict, raster_ra, variable_name="Rasters")
+
+
+def create_color_composite(
+    input_raster: Raster,
+    method: str = "BAND_IDS",
+    red_expression: str = None,
+    green_expression: str = None,
+    blue_expression: str = None,
+):
+    """
+    Creates a three-band raster dataset from a multiband raster dataset.
+
+    The arguments for this function are as follows:
+
+    ================================     ====================================================================
+    **Parameter**                         **Description**
+    --------------------------------     --------------------------------------------------------------------
+    raster                               The input multiband :class:`Raster <arcgis.raster.Raster>` data.
+    --------------------------------     --------------------------------------------------------------------
+    method                               Specifies the method that will be used to extract bands
+    
+                                            - BAND_NAMES - The band name representing the wavelength interval on the \
+                                            electromagnetic spectrum (such as Red, Near Infrared, or Thermal Infrared)\
+                                            or the polarization (such as VH, VV, HH, or HV) will be used.
+                                            
+                                            - BAND_IDS - The band number (such as B1, B2, or B3) will be used. This is the default.
+    --------------------------------     --------------------------------------------------------------------
+    red_expression                       The calculation assigned to the first band.
+
+                                         A band name, band ID, or an algebraic expression using the bands.
+
+                                         The supported operators are unary: plus (+), minus (-), times (*), and divide (/).
+    --------------------------------     --------------------------------------------------------------------
+    green_expression                     The calculation assigned to the second band.
+
+                                         A band name, band ID, or an algebraic expression using the bands.
+
+                                         The supported operators are unary: plus (+), minus (-), times (*), and divide (/).
+    --------------------------------     --------------------------------------------------------------------
+    blue_expression                      The calculation assigned to the third band.
+
+                                         A band name, band ID, or an algebraic expression using the bands.
+
+                                         The supported operators are unary: plus (+), minus (-), times (*), and divide (/).
+    ================================     ====================================================================
+
+    :return: The output three-band raster.
+
+    .. code-block:: python
+
+        # Usage Example 1: Create a color composite using the band names VV, VH, and VV/VH.
+
+        out_raster = create_color_composite(raster, method="BAND_NAMES", red_expression="VV", green_expression="VH", blue_expression="VV/VH")
+    """
+
+    layer, raster, raster_ra = _raster_input(input_raster)
+
+    template_dict = {
+        "rasterFunction": "CreateColorComposite",
+        "rasterFunctionArguments": {"Raster": raster},
+    }
+
+    method_types = {"BAND_NAMES": 0, "BAND_IDS": 2}
+    if method is not None:
+        if method.upper() not in method_types.keys():
+            raise RuntimeError(
+                "method sould be one of the following " + str(method_types.keys())
+            )
+        template_dict["rasterFunctionArguments"]["Method"] = method_types[
+            method.upper()
+        ]
+
+    if red_expression is not None:
+        template_dict["rasterFunctionArguments"]["BandIndexesR"] = red_expression
+    if green_expression is not None:
+        template_dict["rasterFunctionArguments"]["BandIndexesG"] = green_expression
+    if blue_expression is not None:
+        template_dict["rasterFunctionArguments"]["BandIndexesB"] = blue_expression
+
+    return _clone_layer(layer, template_dict, raster_ra)
 
 
 class RFT:
