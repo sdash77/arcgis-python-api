@@ -1390,10 +1390,12 @@ class Map(object):
                                 | 'xmax': 6068184.160383142,
                                 | 'ymax': 6642754.094035632}
         ------------------  ----------------------------------------
-        scale               Optional Scales Value or dict with scale and zoom keys.
-                            Define the scale of the map.
+        scale               Optional Scales enum class value or dict with 'scale' and 'zoom' keys.
 
-                                ** Deprecated **
+                            Scale is a unitless way of describing how any distance on the map translates
+                            to a real-world distance. For example, a map at a 1:24,000 scale communicates that 1 unit
+                            on the screen represents 24,000 of the same unit in the real world.
+                            So one inch on the screen represents 24,000 inches in the real world.
         ==================  ========================================
 
         :return: The current viewpoint dictionary
@@ -1410,6 +1412,8 @@ class Map(object):
                     "scale": -1,
                     "targetGeometry": {},
                 }
+
+        change_made = False
         # set new extent if specified
         if extent:
             if isinstance(extent, dict):
@@ -1441,15 +1445,33 @@ class Map(object):
                     "targetGeometry"
                 ] = self._story._properties["nodes"][self.node]["data"]["center"]
 
-                # Once the update made, remove the original information from resources
-                new_data = {
-                    "itemId": rdata_dict["itemId"],
-                    "itemType": rdata_dict["itemType"],
-                    "type": "minimal",
-                }
-                self._story._properties["resources"][self.resource_node][
-                    "data"
-                ] = new_data
+                change_made = True
+        # set new scale if specified
+        if scale:
+            if isinstance(scale, Scales):
+                self._story._properties["nodes"][self.node]["data"]["viewpoint"][
+                    "scale"
+                ] = scale.value["scale"]
+                self._story._properties["nodes"][self.node]["data"][
+                    "zoom"
+                ] = scale.value["zoom"]
+                change_made = True
+            elif isinstance(scale, dict):
+                self._story._properties["nodes"][self.node]["data"]["viewpoint"][
+                    "scale"
+                ] = scale["scale"]
+                self._story._properties["nodes"][self.node]["data"]["zoom"] = scale[
+                    "zoom"
+                ]
+
+        if change_made:
+            # Once the update made, remove the original information from resources
+            new_data = {
+                "itemId": rdata_dict["itemId"],
+                "itemType": rdata_dict["itemType"],
+                "type": "minimal",
+            }
+            self._story._properties["resources"][self.resource_node]["data"] = new_data
 
         return self._story._properties["nodes"][self.node]["data"]["viewpoint"]
 
