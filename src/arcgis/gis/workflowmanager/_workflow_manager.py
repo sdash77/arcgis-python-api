@@ -20,6 +20,16 @@ def _underscore_to_camelcase(name):
     return "".join(next(c)(x) if x else "_" for x in name.split("_"))
 
 
+def has_license(self, gis):
+    user_url = f"{gis._portal.resturl}community/self"
+    raw_user = self._gis._con.get(user_url, {"returnUserLicenseTypeExtensions": True})
+    try:
+        licenses = raw_user["userLicenseTypeExtensions"]
+        return "workflow" in licenses
+    except:
+        raise ValueError("Could not find the users license type extensions")
+
+
 def initialize(self, gis):
     self._gis = gis
     if self._gis.users.me is None:
@@ -29,13 +39,10 @@ def initialize(self, gis):
     if self._url is None:
         raise ValueError("No WorkflowManager Registered with your Organization")
 
-    # if not any(
-    #     prov.itemid == "50a5f00bcc574358b15eab0e2bdadf39"
-    #     for prov in self._gis.users.me.provisions
-    # ):
-    #     raise ValueError(
-    #         "No Workflow Manager license is available for the current user"
-    #     )
+    if has_license(self, gis) is False:
+        raise ValueError(
+            "No Workflow Manager license is available for the current user"
+        )
 
 
 class WorkflowManagerAdmin:
