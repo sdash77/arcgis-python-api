@@ -50,8 +50,10 @@ def _execute_task(gis, taskname, params):
     return job_values
 
 
-# def _id_generator(size=6, chars=_string.ascii_uppercase + _string.digits):
-# return ''.join(_random.choice(chars) for _ in range(size))
+def _id_generator(size=6, chars=_string.ascii_uppercase + _string.digits):
+    return "".join(_random.choice(chars) for _ in range(size))
+
+
 ###################################################################################################
 ###################################################################################################
 def _set_image_collection_param(gis, params, image_collection):
@@ -180,7 +182,37 @@ def is_supported(gis=None):
         return False
 
 
-def create_project(name, definition, *, gis: Optional[GIS] = None, **kwargs):
+def create_project(name, definition=None, *, gis: Optional[GIS] = None, **kwargs):
+    """
+    Creates a new orthomapping project item on your enterprise.
+    This project item can be specified as input to the orthomapping functions as value to the
+    image_collection parameter.
+
+    The orthomapping project item can be open in Ortho Maker web app.
+    The Project includes all project inputs, ancillary data such as image footprints and block adjustment reports,
+    intermediate products such as image collections, quick block adjustment results, final products,
+    and status at each stage of processing.
+
+    The create_project method also creates a new folder and adds the orthomapping project item to it.
+    All the orthomapping products such as the image collection, orthomosaic products etc will be added in the
+    same folder. The folder name will be same the project name with the prefix "_orthomapping_"
+
+    ==================     ====================================================================
+    **Parameter**           **Description**
+    ------------------     --------------------------------------------------------------------
+    name                   Required string. The name of the project item to be created.
+    ------------------     --------------------------------------------------------------------
+    definition             Optional dictionary.  The project definition dictionary.
+                           the definition contais the template informatios such as adjustSettings,
+                           processingStates, rasterType, information about the flights.
+    ------------------     --------------------------------------------------------------------
+    gis                    Optional :class:`~arcgis.gis.GIS` . The GIS on which this tool runs. If not specified, the active GIS is used.
+    ==================     ====================================================================
+
+    :return:
+        The orthomapping project item
+
+    """
     folder = None
     folderId = None
     if kwargs is not None:
@@ -215,15 +247,153 @@ def create_project(name, definition, *, gis: Optional[GIS] = None, **kwargs):
 
 def add_flight(
     project_item,
-    flight_name,
-    image_collection,
     image_list,
-    raster_type_name,
+    flight_name=None,
+    image_collection=None,
+    raster_type_name=None,
     raster_type_params: Optional[dict[str, Any]] = None,
     *,
     gis: Optional[GIS] = None,
     **kwargs,
 ):
+    """
+    Add flights to the orthomapping project item. You can add imagery from one or more drone flights 
+    to your orthomapping project item.
+
+    ======================               ====================================================================
+    **Parameter**                        **Description**
+    ----------------------               --------------------------------------------------------------------
+    project_item                         Required Item. The orthomapping project item to which the flight has to be added
+    ----------------------               --------------------------------------------------------------------
+    image_list                           Required, the list of input images to be added to
+                                         the image collection being created. This parameter can
+                                         be a list of image paths or a path to a folder containing the images
+
+                                         The function can create hosted imagery layers on enterprise from 
+                                         local raster datasets by uploading the data to the server.    
+    ----------------------               --------------------------------------------------------------------
+    flight_name                          Optional string. The name of the flight.
+    ----------------------               --------------------------------------------------------------------
+    image_collection                     Optional string, the name of the image collection to create.
+                  
+                                         The image collection can be an existing image service, in \
+                                         which the function will create a mosaic dataset and the existing \
+                                         hosted image service will then point to the new mosaic dataset.
+
+                                         If the image collection does not exist, a new multi-tenant \
+                                         service will be created.
+
+                                         This parameter can be the Item representing an existing image_collection \
+                                         or it can be a string representing the name of the image_collection \
+                                         (either existing or to be created.)
+
+                                         The image collection will be created in the same folder as the one created
+                                         by the create_project method
+    ----------------------               --------------------------------------------------------------------
+    raster_type_name                     Optional string. The name of the raster type to use for adding data to \
+                                         the image collection. Default is "UAV/UAS"
+
+                                         Example:
+
+                                            "UAV/UAS"
+    ----------------------               --------------------------------------------------------------------
+    raster_type_params                   Optional dict. Additional ``raster_type`` specific parameters.
+        
+                                         The process of add rasters to the image collection can be \
+                                         controlled by specifying additional raster type arguments.
+
+                                         The raster type parameters argument is a dictionary.
+
+                                         The dictionary can contain productType, processingTemplate, \
+                                         pansharpenType, Filter, pansharpenWeights, ConstantZ, \
+                                         dem, zoffset, CorrectGeoid, ZFactor, StretchType, \
+                                         ScaleFactor, ValidRange
+
+                                         Please check the table below (Supported Raster Types), \
+                                         for more details about the product types, \
+                                         processing templates, pansharpen weights for each raster type. 
+
+                                         - Possible values for pansharpenType - ["Mean", "IHS", "Brovey", "Esri", "Mean", "Gram-Schmidt"]
+                                         - Possible values for filter - [None, "Sharpen", "SharpenMore"]
+                                         - Value for StretchType dictionary can be as follows:
+
+                                           - "None"
+                                           - "MinMax; <min>; <max>"
+                                           - "PercentMinMax; <MinPercent>; <MaxPercent>"
+                                           - "StdDev; <NumberOfStandardDeviation>"
+                                           Example: {"StretchType": "MinMax; <min>; <max>"}
+                                         - Value for ValidRange dictionary can be as follows:
+
+                                           - "<MaskMinValue>, <MaskMaxValue>"
+                                           Example: {"ValidRange": "10, 200"}
+
+                                         Example:
+
+                                            {"productType":"All","processingTemplate":"Pansharpen",
+                                            "pansharpenType":"Gram-Schmidt","filter":"SharpenMore",
+                                            "pansharpenWeights":"0.85 0.7 0.35 1","constantZ":-9999}
+    ----------------------               --------------------------------------------------------------------
+    out_sr                               Optional integer. Additional parameters of the service.
+                            
+                                         The following additional parameters can be specified:
+
+                                         - Spatial reference of the image_collection; The well-known ID of \
+                                         the spatial reference or a spatial reference dictionary object for the \
+                                         input geometries.
+
+                                         If the raster type name is set to "UAV/UAS", the spatial reference of the
+                                         output image collection will be determined by the raster type parameters defined.
+    ----------------------               --------------------------------------------------------------------
+    context                              Optional dict. The context parameter is used to provide additional input parameters.
+    
+                                         Syntax: {"image_collection_properties": {"imageCollectionType":"Satellite"},"byref":True}
+                                        
+                                         Use ``image_collection_properties`` key to set value for imageCollectionType.
+
+                                         .. note::
+
+                                            The "imageCollectionType" property is important for image collection that will later on be adjusted by orthomapping system service. 
+                                            Based on the image collection type, the orthomapping system service will choose different algorithm for adjustment. 
+                                            Therefore, if the image collection is created by reference, the requester should set this 
+                                            property based on the type of images in the image collection using the following keywords. 
+                                            If the imageCollectionType is not set, it defaults to "UAV/UAS"
+
+                                         If ``byref`` is set to 'True', the data will not be uploaded. If it is not set, the default is 'False'
+
+                                         The context parameter can also be used to specify whether to build overviews, \
+                                         build footprints, to specify pixel value that represents the NoData etc.
+
+
+                                         Example:
+
+                                            | {"buildFootprints":True,                                            
+                                            | "footprintsArguments":{"method":"RADIOMETRY","minValue":1,"maxValue":5,
+                                            | "shrinkDistance":50,"skipOverviews":True,"updateBoundary":True,
+                                            | "maintainEdge":False,"simplification":None,"numVertices":20,
+                                            | "minThinnessRatio":0.05,"maxSliverSize":20,"requestSize":2000,
+                                            | "minRegionSize":100},
+                                            | "defineNodata":True,                                            
+                                            | "noDataArguments":{"noDataValues":[500],"numberOfBand":99,"compositeValue":True},                                            
+                                            | "buildOverview":True}
+
+                                         The context parameter can be used to add new fields when creating \
+                                         the image collection.
+
+
+                                         Example:
+
+                                            | {"fields": [{"name": "cloud_cover", "type": "Long"},
+                                            | {"name": "cloud_shadow_count", "type": "Long"}]}
+    ----------------------               --------------------------------------------------------------------
+    gis                                  Keyword only parameter. Optional :class:`~arcgis.gis.GIS` object. The GIS on which this tool runs. If not specified, the active GIS is used.
+    ----------------------               --------------------------------------------------------------------
+    future                               Keyword only parameter. Optional boolean. If True, the result will be a GPJob object and 
+                                         results will be returned asynchronously.
+    ======================               ====================================================================
+
+    :return: The imagery layer item
+
+    """
     resource_manager = project_item.resources
     resources_list = resource_manager.list()
     oid = len(resources_list)
@@ -234,6 +404,12 @@ def add_flight(
             break
 
     from arcgis.raster.analytics import create_image_collection
+
+    if image_collection is None:
+        image_collection = "image_collection" + "_" + _id_generator()
+
+    if raster_type_name is None:
+        raster_type_name = "UAV/UAS"
 
     output_collection = create_image_collection(
         image_collection=image_collection,
@@ -359,6 +535,8 @@ def add_flight(
 
     import uuid
 
+    if flight_name is None:
+        flight_name = "flight" + "_" + _id_generator()
     fname = "%s.json" % flight_name
 
     try:
@@ -415,6 +593,9 @@ def compute_sensor_model(
                            The image_collection can be a portal Item or an image service URL or a URI
 
                            The image_collection must exist.
+
+                           Project item could also be specified. The image collection of the last flight will be used if the project item
+                           is specified.
     ------------------     --------------------------------------------------------------------
     mode                   Optional string.  the mode to be used for bundle block adjustment
                            Only the following modes are supported:
@@ -564,6 +745,9 @@ def alter_processing_states(
                            The image_collection can be a portal Item or an image service URL or URI
 
                            The image_collection must exist.
+
+                           Project item could also be specified. The image collection of the last flight will be used if the project item
+                           is specified.
     ------------------     --------------------------------------------------------------------
     new_states             Required dictionary. The state to set on the image_collection
 
@@ -642,6 +826,9 @@ def get_processing_states(
                            The image_collection can be a portal Item or an image service URL or URI
 
                            The image_collection must exist.
+
+                           Project item could also be specified. The image collection of the last flight will be used if the project item
+                           is specified.
     ------------------     --------------------------------------------------------------------
     gis                    Optional :class:`~arcgis.gis.GIS` . The GIS on which this tool runs. If not specified, the active GIS is used.
     ==================     ====================================================================
@@ -778,6 +965,9 @@ def match_control_points(
                            The image_collection can be a portal Item or an image service URL or a URI
                             
                            The image_collection must exist.
+                           
+                           Project item could also be specified. The image collection of the last flight will be used if the project item 
+                           is specified.
     ------------------     --------------------------------------------------------------------
     control_points         Required, a list of control point sets objects.
 
@@ -967,6 +1157,9 @@ def color_correction(
                                              The image_collection can be a portal Item or an image service URL or a URI
                             
                                              The image_collection must exist.
+                                             
+                                             Project item could also be specified. The image collection of the last flight will be used if the project item 
+                                             is specified.
     ------------------------------------     --------------------------------------------------------------------
     color_correction_method                  Required string. This is the method that will be used for color
                                              correction computation. The available options are:
@@ -1148,6 +1341,9 @@ def compute_control_points(
                                             The image_collection can be a portal Item or an image service URL or a URI
                             
                                             The image_collection must exist.
+                                            
+                                            Project item could also be specified. The image collection of the last flight will be used if the project item 
+                                            is specified.
     ------------------------------------    --------------------------------------------------------------------
     reference_image                         This is the reference image service that can be used to generate ground control 
                                             points set with the image service. 
@@ -1304,6 +1500,10 @@ def compute_seamlines(
     image_collection       Required, the input image collection that will be adjusted.
                            The image_collection can be a portal Item or an image service URL or a URI
                            The image_collection must exist.
+
+                           
+                           Project item could also be specified. The image collection of the last flight will be used if the project item 
+                           is specified.
     ------------------     --------------------------------------------------------------------
     seamlines_method       Required string. These are supported methods for generated seamlines for the image collection.
     
@@ -1426,6 +1626,9 @@ def edit_control_points(
     image_collection       Required.
                            The image_collection can be a portal Item or an image service URL or a URI
                            The image_collection must exist.
+
+                           Project item could also be specified. The image collection of the last flight will be used if the project item
+                           is specified.
     ------------------     --------------------------------------------------------------------
     control_points         Required, a list of control point sets objects.
 
@@ -1571,6 +1774,10 @@ def generate_dem(
                            to generate the DEM from.
                            The image_collection can be a portal Item or an image service URL or a URI
                            The image_collection must exist.
+
+                           
+                           Project item could also be specified. The image collection of the last flight will be used if the project item 
+                           is specified. Also the dem will be created in the project's folder.
     ------------------     --------------------------------------------------------------------
     out_dem                This is the output digital elevation model.
                            It can be a url, uri, portal item, or string representing the name of output dem 
@@ -1835,6 +2042,9 @@ def generate_orthomosaic(
                                            to generate the ortho-mosaic from.
                                            The image_collection can be a portal Item or an image service URL or a URI
                                            The image_collection must exist.
+
+                                           Project item could also be specified. The image collection of the last flight will be used if the project item
+                                           is specified. Also the orthomosaic will be created in the project's folder.
     -----------------------------------    --------------------------------------------------------------------
     out_ortho                               Required. This is the ortho-mosaicked image converted from the image
                                             collection after the block adjustment.
@@ -2134,6 +2344,9 @@ def generate_report(
                            used to generate a report from.
                            The image_collection can be a portal Item or an image service URL or a URI
                            The image_collection must exist.
+
+                           Project item could also be specified. The image collection of the last flight will be used if the project item
+                           is specified.
     -------------------    --------------------------------------------------------------------
     report_format          Type of the format to be generated. Possible PDF, HTML. Default - PDF
     -------------------    --------------------------------------------------------------------
@@ -2275,6 +2488,9 @@ def query_control_points(
                            The image_collection can be a portal Item or an image service URL or a URI.
 
                            The image_collection must exist.
+
+                           Project item could also be specified. The image collection of the last flight will be used if the project item
+                           is specified.
     ------------------     --------------------------------------------------------------------
     query                  Required string. a SQL statement used for querying the point;
 
@@ -2359,6 +2575,9 @@ def reset_image_collection(
                            The image_collection can be a portal Item or an image service URL or a URI.
 
                            The image_collection must exist.
+
+                           Project item could also be specified. The image collection of the last flight will be used if the project item
+                           is specified.
     ------------------     --------------------------------------------------------------------
     gis                    Optional :class:`~arcgis.gis.GIS` . The GIS on which this tool runs. If not specified, the active GIS is used.
     ==================     ====================================================================
