@@ -3,13 +3,13 @@ from enum import Enum
 from typing import Optional, Union
 import uuid
 from arcgis.auth.tools import LazyLoader
+from PIL import Image as PImage
 
 arcgis = LazyLoader("arcgis")
 urllib3 = LazyLoader("urllib3")
 requests = LazyLoader("requests")
 mimetypes = LazyLoader("mimetypes")
 os = LazyLoader("os")
-_Image = LazyLoader("PIL.Image")
 _io = LazyLoader("io")
 _parse = LazyLoader("urllib.parse")
 
@@ -271,7 +271,7 @@ class Image(object):
         # Create resource node. Different if file path or url
         if self._url is False:
             # Get image properties and create the resourceId that corresponds to the resource added
-            im = _Image.open(self._path)
+            im = PImage.open(self._path)
             w, h = im.size
             self._story._properties["resources"][self.resource_node] = {
                 "type": "image",
@@ -285,7 +285,7 @@ class Image(object):
         else:
             # Get image properties and assign the image src
             data = requests.get(self._path).content
-            im = _Image.open(_io.BytesIO(data))
+            im = PImage.open(_io.BytesIO(data))
             w, h = im.size
             self._story._properties["resources"][self.resource_node] = {
                 "type": "image",
@@ -305,7 +305,7 @@ class Image(object):
             self._url = True
             # Update the height and width for the image
             data = requests.get(new_image).content
-            im = _Image.open(_io.BytesIO(data))
+            im = PImage.open(_io.BytesIO(data))
             w, h = im.size
             self._story._properties["resources"][self.resource_node]["data"][
                 "height"
@@ -334,7 +334,7 @@ class Image(object):
         else:
             # Update the height and width for the image
             self._url = False
-            im = _Image.open(new_image)
+            im = PImage.open(new_image)
             w, h = im.size
             self._story._properties["resources"][self.resource_node]["data"][
                 "height"
@@ -2022,7 +2022,7 @@ class Gallery(object):
         # Create a gallery and add to story before adding images to it.
         >>> gallery = Gallery()
         >>> my_story.add(gallery)
-        >>> gallery.add([image1, image2, image3])
+        >>> gallery.add_images([image1, image2, image3])
     """
 
     def __init__(self, **kwargs):
