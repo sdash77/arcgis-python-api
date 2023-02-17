@@ -2952,7 +2952,7 @@ class Timeline(object):
 
     # ----------------------------------------------------------------------
     def _add_item_story(self, content):
-        if content.node in self.story._properties["nodes"]:
+        if content.node in self._story._properties["nodes"]:
             content.node = "n-" + uuid.uuid4().hex[0:6]
         if isinstance(content, Image):
             content._add_image(story=self._story)
