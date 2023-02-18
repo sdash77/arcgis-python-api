@@ -23,11 +23,11 @@ def _underscore_to_camelcase(name):
 def has_license(self, gis):
     user_url = f"{gis._portal.resturl}community/self"
     raw_user = self._gis._con.get(user_url, {"returnUserLicenseTypeExtensions": True})
-    try:
+    if "userLicenseTypeExtensions" in raw_user:
         licenses = raw_user["userLicenseTypeExtensions"]
         return "workflow" in licenses
-    except:
-        raise ValueError("Could not find the users license type extensions")
+    else:
+        return False
 
 
 def initialize(self, gis):
