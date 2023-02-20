@@ -13,6 +13,8 @@ import json
 from arcgis.gis import GIS, Item
 import collections
 from ._util import _set_context
+import string as _string
+import random as _random
 
 from arcgis.geoprocessing._support import (
     _analysis_job,
@@ -420,149 +422,156 @@ def add_flight(
         folder=folder,
     )
 
-    job_info = output_collection.properties
-    job_response = {}
-    if "jobUrl" in job_info:
-        # Get the url of the Analysis job to track the status.
+    try:
+        job_info = output_collection.properties
+        job_response = {}
+        if "jobUrl" in job_info:
+            # Get the url of the Analysis job to track the status.
 
-        job_url = job_info.get("jobUrl")
-        params = {"f": "json"}
-        job_response = gis._con.post(job_url, params)
+            job_url = job_info.get("jobUrl")
+            params = {"f": "json"}
+            job_response = gis._con.post(job_url, params)
 
-    flight_json = {
-        "items": {"imageCollection": {}},
-        "jobs": {
-            "imageCollection": {"checked": True, "progress": 100, "success": True},
-            "adjustment": {"checked": False, "mode": "Quick"},
-            "ortho": {"checked": False},
-            "matchControlPoint": {"checked": False},
-            "queryControlPoints": {"checked": False},
-            "computeControlPoints": {"checked": False},
-            "appendControlPoints": {"checked": False},
-        },
-        "rasterType": "UAV/UAS",
-        "cameraInfo": {},
-        "sourceData": {},
-        "spatialReference": {},
-        "adjustSettings": {},
-        "processingSettings": {},
-        "mapping": {
-            "basemap": {
-                "title": "Topographic",
-                "baseMapLayers": [
-                    {
-                        "layerType": "ArcGISTiledMapServiceLayer",
-                        "opacity": 1,
-                        "visibility": True,
-                        "url": "https://services.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer",
-                    }
-                ],
+        flight_json = {
+            "items": {"imageCollection": {}},
+            "jobs": {
+                "imageCollection": {"checked": True, "progress": 100, "success": True},
+                "adjustment": {"checked": False, "mode": "Quick"},
+                "ortho": {"checked": False},
+                "matchControlPoint": {"checked": False},
+                "queryControlPoints": {"checked": False},
+                "computeControlPoints": {"checked": False},
+                "appendControlPoints": {"checked": False},
             },
-            "referenceData": [],
-            "layers": {"visibilities": {"footprint": False}},
-        },
-        "projectVersion": 2,
-        "createTS": "",
-        "oid": oid,
-        "gcsExtent": {},
-    }
+            "rasterType": "UAV/UAS",
+            "cameraInfo": {},
+            "sourceData": {},
+            "spatialReference": {},
+            "adjustSettings": {},
+            "processingSettings": {},
+            "mapping": {
+                "basemap": {
+                    "title": "Topographic",
+                    "baseMapLayers": [
+                        {
+                            "layerType": "ArcGISTiledMapServiceLayer",
+                            "opacity": 1,
+                            "visibility": True,
+                            "url": "https://services.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer",
+                        }
+                    ],
+                },
+                "referenceData": [],
+                "layers": {"visibilities": {"footprint": False}},
+            },
+            "projectVersion": 2,
+            "createTS": "",
+            "oid": oid,
+            "gcsExtent": {},
+        }
 
-    flight_json.update(
-        {
-            "items": {
-                "imageCollection": {
-                    "itemId": output_collection.itemid,
-                    "url": output_collection.url,
+        flight_json.update(
+            {
+                "items": {
+                    "imageCollection": {
+                        "itemId": output_collection.itemid,
+                        "url": output_collection.url,
+                    }
                 }
             }
-        }
-    )
+        )
 
-    flight_json["jobs"]["imageCollection"].update(
-        {"messages": job_response["messages"]}
-    )
+        flight_json["jobs"]["imageCollection"].update(
+            {"messages": job_response["messages"]}
+        )
 
-    flight_json.update({"rasterType": raster_type_name})
+        flight_json.update({"rasterType": raster_type_name})
 
-    flight_json.update({"cameraInfo": raster_type_params["cameraProperties"]})
+        flight_json.update({"cameraInfo": raster_type_params["cameraProperties"]})
 
-    gps_data = []
-    gps_info_list = ["name", "lat", "long", "alt"]
+        gps_data = []
+        gps_info_list = ["name", "lat", "long", "alt"]
 
-    if "gps" in raster_type_params:
-        for ele in raster_type_params["gps"]:
-            dict_gps = dict(zip(gps_info_list, ele))
-            gps_data.append(dict_gps)
+        if "gps" in raster_type_params:
+            for ele in raster_type_params["gps"]:
+                dict_gps = dict(zip(gps_info_list, ele))
+                gps_data.append(dict_gps)
 
-    flight_json.update({"sourceData": {"gps": gps_data, "imageCount": len(image_list)}})
+        flight_json.update(
+            {"sourceData": {"gps": gps_data, "imageCount": len(image_list)}}
+        )
 
-    from datetime import datetime
+        from datetime import datetime
 
-    project_id = datetime.now().strftime("%Y%m%d%H%M%S")
-    flight_json.update({"projectId": project_id})
+        project_id = datetime.now().strftime("%Y%m%d%H%M%S")
+        flight_json.update({"projectId": project_id})
 
-    ts = int(datetime.timestamp(datetime.now())) * 1000
-    flight_json.update({"createTS": ts})
+        ts = int(datetime.timestamp(datetime.now())) * 1000
+        flight_json.update({"createTS": ts})
 
-    ## Set extent
-    try:
-        gcs_extent = {}
-        extent_arr = output_collection.extent
-        if extent_arr is not None:
-            gcs_extent = {
-                "xmin": extent_arr[0][0],
-                "ymin": extent_arr[0][1],
-                "xmax": extent_arr[1][0],
-                "ymax": extent_arr[1][1],
-                "spatialReference": {"wkid": 4326},
-            }
-    except:
-        gcs_extent = {}
+        ## Set extent
+        try:
+            gcs_extent = {}
+            extent_arr = output_collection.extent
+            if extent_arr is not None:
+                gcs_extent = {
+                    "xmin": extent_arr[0][0],
+                    "ymin": extent_arr[0][1],
+                    "xmax": extent_arr[1][0],
+                    "ymax": extent_arr[1][1],
+                    "spatialReference": {"wkid": 4326},
+                }
+        except:
+            gcs_extent = {}
 
-    projected_extent = {}
-    try:
-        projected_extent = dict(output_collection.layers[0].extent)
-    except:
         projected_extent = {}
+        try:
+            projected_extent = dict(output_collection.layers[0].extent)
+        except:
+            projected_extent = {}
 
-    flight_json.update({"gcsExtent": gcs_extent, "projectedExtent": projected_extent})
-
-    try:
-        coverage_area = output_collection.layers[0].query_boundary()["area"]
-        flight_json.update({"coverage": coverage_area})
-    except:
-        pass
-
-    import uuid
-
-    if flight_name is None:
-        flight_name = "flight" + "_" + _id_generator()
-    fname = "%s.json" % flight_name
-
-    try:
-        resource_manager.add(
-            file_name=fname,
-            text=flight_json,
-            folder_name="flights",
-            properties={
-                "oid": oid,
-                "imageCount": len(image_list),
-                "items": [
-                    {
-                        "product": "imageCollection",
-                        "id": output_collection.id,
-                        "created": True,
-                    }
-                ],
-                "gcpItems": [],
-                "baStatus": "succeeded",
-            },
+        flight_json.update(
+            {"gcsExtent": gcs_extent, "projectedExtent": projected_extent}
         )
-        project_item.update(
-            data=json.dumps({"projectVersion": 2, "rasterType": raster_type_name})
-        )
+
+        try:
+            coverage_area = output_collection.layers[0].query_boundary()["area"]
+            flight_json.update({"coverage": coverage_area})
+        except:
+            pass
+
+        import uuid
+
+        if flight_name is None:
+            flight_name = "flight" + "_" + _id_generator()
+        fname = "%s.json" % flight_name
+
+        try:
+            resource_manager.add(
+                file_name=fname,
+                text=flight_json,
+                folder_name="flights",
+                properties={
+                    "oid": oid,
+                    "imageCount": len(image_list),
+                    "items": [
+                        {
+                            "product": "imageCollection",
+                            "id": output_collection.id,
+                            "created": True,
+                        }
+                    ],
+                    "gcpItems": [],
+                    "baStatus": "succeeded",
+                },
+            )
+            project_item.update(
+                data=json.dumps({"projectVersion": 2, "rasterType": raster_type_name})
+            )
+        except:
+            raise RuntimeError("Error adding the flight")
     except:
-        raise RuntimeError("Error adding the flight")
+        raise RuntimeError("Error updating the flight JSON")
     return output_collection
 
 
