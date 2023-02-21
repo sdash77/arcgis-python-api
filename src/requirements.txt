@@ -1,6 +1,5 @@
 urllib3
 cachetools
-six
 lxml
 cryptography
 ipywidgets ~=7

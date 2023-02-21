@@ -67,7 +67,6 @@ else:
         "urllib3",
         "gssapi",
         "cachetools",
-        "six",
         "lxml",
         "notebook",
         "cryptography",
