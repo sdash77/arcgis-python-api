@@ -851,7 +851,7 @@ class Connection(object):
             )
         except requests.exceptions.RequestException as errRE:
             raise requests.exceptions.RequestException(
-                "A general expection was raised: %s" % errRE
+                "A general exception was raised: %s" % errRE
             )
         except Exception as e:
             raise Exception("A general error occurred: %s" % e)
@@ -1255,7 +1255,7 @@ class Connection(object):
             )
         except requests.exceptions.RequestException as errRE:
             raise requests.exceptions.RequestException(
-                "A general expection was raised: %s" % errRE
+                "A general exception was raised: %s" % errRE
             )
         except Exception as e:
             raise Exception("A general error occurred: %s" % e)
@@ -1509,7 +1509,7 @@ class Connection(object):
             )
         except requests.exceptions.RequestException as errRE:
             raise requests.exceptions.RequestException(
-                "A general expection was raised: %s" % errRE
+                "A general exception was raised: %s" % errRE
             )
         except Exception as e:
             raise Exception("A general error occurred: %s" % e)

@@ -396,7 +396,7 @@ class StoryMap(object):
         ===============     ====================================================================
         **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
-        node_id             Optional string. The node id for the node that should be returned.
+        node                Optional string. The node id for the node that should be returned.
                             This will return the class of the node if of type story content.
         ---------------     --------------------------------------------------------------------
         type                Optional string. The type of nodes that user wants returned.
