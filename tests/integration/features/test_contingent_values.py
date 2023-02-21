@@ -3,7 +3,7 @@ import os
 
 #
 #  Update the Path to set the test area
-#  sys.path.insert(0, r"C:\SVN\geosaurus_issue_9564\src")
+sys.path.insert(0, r"C:\SVN\geosaurus_issue_9564\src")
 import logging
 import unittest
 from arcgis.auth.tools._util import detect_proxy
@@ -27,7 +27,9 @@ profiles = ['your_enterprise_profile']
 PROXIES = detect_proxy(True)  # Handles Fiddler when True
 enable_verbose_logging(__logger__)
 
-FILE_PATH = r"\\qalab_server\pydata\v109\geosaurus\ContingentValues\SDs\CV_SimpleSubtypesFromSD.sd"
+FILE_PATH = (
+    r"\\qalab_server\pydata\v109\geosaurus\ContingentValues\CV_Gas.zip"
+)
 
 
 @unittest.skipIf(os.path.isfile(FILE_PATH) == False, "Missing Test Data")
@@ -35,36 +37,50 @@ class TestContingentValues(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         """sets up the class"""
-
-        url: str = "https://rqawinbi01pt.ags.esri.com/gis"
-        username: str = "PAPIadmin"
-        password: str = "PAPIletmein01"
-
         gis = GIS(
-            url=url,
-            username=username,
-            password=password,
+            profile='your_online_profile',
             verify_cert=False,
-            use_gen_token=True,
+            # use_gen_token=True,
         )
-        user: User = gis.users.me
-        user.update(security_question=1, security_answer="Redlands")
-        cls.gis = GIS(
-            url=url, username=username, password=password, verify_cert=False
+        # user: User = gis.users.me
+        # user.update(security_question=1, security_answer="Redlands")
+        cls.gis = (
+            gis  # GIS(profile='your_online_profile', verify_cert=False)
         )
-        items: list[Item] = gis.content.search("CV_SimpleSubtypesFromSD")
+        items: list[Item] = gis.content.search("CV_Gas")
         [item.delete() for item in items]
+        items: list[Item] = gis.content.search("CV_Gas")
         if len(items) == 0:
             cm: ContentManager = gis.content
-            cls.sditem_ent = cm.add(item_properties={}, data=FILE_PATH)
-            cls.pitem_ent = cls.sditem_ent.publish()
+            cls.sditem_ent = cm.add(
+                item_properties={
+                    "title": "CV_Gas",
+                    "type": "File Geodatabase",
+                    "tags": "gas",
+                },
+                data=FILE_PATH,
+            )
+            cls.pitem_ent = cls.sditem_ent.publish(
+                publish_parameters={
+                    "name": "CV_Gas",
+                    'capabilities': "Create,Delete,Query,Update,Editing,Extract",
+                }
+            )
 
-    def test_continegent_values_field_group_enterprise(self):
+    def test_continegent_values_public(self):
         gis: GIS = self.gis
 
         fl: FeatureLayer = self.pitem_ent.layers[0]
         assert isinstance(fl.contingent_values, dict)
         assert isinstance(fl.field_groups, dict)
+
+    def test_continegent_values_manager(self):
+        gis: GIS = self.gis
+
+        fl: FeatureLayer = self.pitem_ent.layers[0]
+        mgr = fl.manager
+        assert mgr.contingent_values
+        assert mgr.field_groups
 
     @classmethod
     def tearDownClass(cls):
