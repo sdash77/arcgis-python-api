@@ -277,7 +277,7 @@ class WebExperience(object):
             return self._item.update(item_properties=item_properties)
 
     # ----------------------------------------------------------------------
-    def reset_save(self):
+    def reset(self):
         """
         Resets any changes that the user has made to the last saved state. Note that
         this only applies to changes made through a Python API object, and not the GUI.
@@ -326,7 +326,7 @@ class WebExperience(object):
             return False
 
     # ----------------------------------------------------------------------
-    def delete_experience(self):
+    def delete(self):
         """
         Deletes the experience and its associated item from the portal.
 
