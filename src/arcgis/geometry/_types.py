@@ -12,7 +12,6 @@ try:
     import numpy as np
 except ImportError as e:
     pass
-from six import add_metaclass
 from functools import partial, lru_cache
 
 _number_type = (int, float)
@@ -297,8 +296,7 @@ class GeometryFactory(type):
         return type.__call__(cls, iterable, **kwargs)
 
 
-@add_metaclass(GeometryFactory)
-class Geometry(BaseGeometry):
+class Geometry(BaseGeometry, metaclass=GeometryFactory):
     """
     The base class for all geometries.
 
@@ -2595,7 +2593,6 @@ class Geometry(BaseGeometry):
             >>> geom2.type
                 arcgis.geometry.Geometry
         """
-        from six import string_types, integer_types
 
         HASARCPY, HASSHAPELY = _check_geometry_engine()
 
@@ -2606,9 +2603,9 @@ class Geometry(BaseGeometry):
                 spatial_reference = SpatialReference(spatial_reference).as_arcpy
             elif isinstance(spatial_reference, arcpy.SpatialReference):
                 spatial_reference = spatial_reference
-            elif isinstance(spatial_reference, integer_types):
+            elif isinstance(spatial_reference, int):
                 spatial_reference = arcpy.SpatialReference(spatial_reference)
-            elif isinstance(spatial_reference, string_types):
+            elif isinstance(spatial_reference, str):
                 spatial_reference = arcpy.SpatialReference(text=spatial_reference)
             else:
                 raise ValueError("Invalid spatial reference object.")
@@ -2643,9 +2640,9 @@ class Geometry(BaseGeometry):
             ):
                 out_srid = spatial_reference.get("wkid", None)
                 out_srid = spatial_reference.get("latestWkid", out_srid)
-            elif isinstance(spatial_reference, integer_types):
+            elif isinstance(spatial_reference, int):
                 out_srid = spatial_reference
-            elif isinstance(spatial_reference, string_types):
+            elif isinstance(spatial_reference, str):
                 out_srid = spatial_reference
             else:
                 raise ValueError("Invalid spatial reference object.")
