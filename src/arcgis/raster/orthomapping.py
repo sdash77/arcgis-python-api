@@ -184,7 +184,13 @@ def is_supported(gis=None):
         return False
 
 
-def create_project(name, definition=None, *, gis: Optional[GIS] = None, **kwargs):
+def create_project(
+    name: str,
+    definition: Optional[dict[str, Any]] = None,
+    *,
+    gis: Optional[GIS] = None,
+    **kwargs,
+):
     """
     Creates a new orthomapping project item on your enterprise.
     This project item can be specified as input to the orthomapping functions as value to the
@@ -215,6 +221,8 @@ def create_project(name, definition=None, *, gis: Optional[GIS] = None, **kwargs
         The orthomapping project item
 
     """
+
+    gis = arcgis.env.active_gis if gis is None else gis
     folder = None
     folderId = None
     if kwargs is not None:
@@ -241,6 +249,8 @@ def create_project(name, definition=None, *, gis: Optional[GIS] = None, **kwargs
         "type": "Ortho Mapping Project",
         "properties": {"flightCount": 1, "status": "inProgress"},
     }
+    if definition is None:
+        definition = {}
 
     item_properties["text"] = json.dumps(definition)
     item = gis.content.add(item_properties, folder=folder)
@@ -249,10 +259,10 @@ def create_project(name, definition=None, *, gis: Optional[GIS] = None, **kwargs
 
 def add_flight(
     project_item,
-    image_list,
-    flight_name=None,
-    image_collection=None,
-    raster_type_name=None,
+    image_list: list,
+    flight_name: Optional[str] = None,
+    image_collection: Optional[str] = None,
+    raster_type_name: Optional[str] = None,
     raster_type_params: Optional[dict[str, Any]] = None,
     *,
     gis: Optional[GIS] = None,
@@ -396,6 +406,7 @@ def add_flight(
     :return: The imagery layer item
 
     """
+    gis = arcgis.env.active_gis if gis is None else gis
     resource_manager = project_item.resources
     resources_list = resource_manager.list()
     oid = len(resources_list)
