@@ -37,6 +37,25 @@ except:
 requests = LazyLoader("requests")
 
 
+@lru_cache(maxsize=255)
+def _split_username(username: str) -> list[str]:
+    regex = r"(\S*)?(@|#|//|\\\\|(?<!/)/(?!/)|\\)(\S*)"
+    matches = re.finditer(regex, username, re.IGNORECASE | re.DOTALL)
+    tokens = []
+    for match in matches:
+        for group in match.groups():
+            tokens.append(group)
+
+    if tokens[1] in ["//", "\\", "/"]:
+        uname = tokens[2]
+        dom = tokens[0]
+    elif tokens[1] == "@":
+        uname = tokens[0]
+        dom = tokens[2]
+
+    return [uname, dom]
+
+
 class EsriWindowsAuth(AuthBase, SupportMultiAuth):
     _token_url = None
     _server_log = None
@@ -65,7 +84,7 @@ class EsriWindowsAuth(AuthBase, SupportMultiAuth):
             if not username and not password and HAS_SSPI:
                 self.auth = requests_negotiate_sspi.HttpNegotiateAuth()
             elif WINDOWS == True and HAS_KERBEROS:
-                uname_format = self._split_username(username)
+                uname_format = _split_username(username)
                 prin = uname_format[0] + "@" + uname_format[1]
                 self.auth = requests_kerberos.HTTPKerberosAuth(
                     principal=f"{prin}:{password}",
@@ -112,24 +131,6 @@ class EsriWindowsAuth(AuthBase, SupportMultiAuth):
     # ----------------------------------------------------------------------
     def __repr__(self):
         return f"<{self.__class__.__name__}>"
-
-    @lru_cache(maxsize=255)
-    def _split_username(self, username: str) -> list[str]:
-        regex = r"(\S*)?(@|#|//|\\\\|(?<!/)/(?!/)|\\)(\S*)"
-        matches = re.finditer(regex, username, re.IGNORECASE | re.DOTALL)
-        tokens = []
-        for match in matches:
-            for group in match.groups():
-                tokens.append(group)
-
-        if tokens[1] in ["//", "\\", "/"]:
-            uname = tokens[2]
-            dom = tokens[0]
-        elif tokens[1] == "@":
-            uname = tokens[0]
-            dom = tokens[2]
-
-        return [uname, dom]
 
     def generate_portal_server_token(self, r, **kwargs):
         """generates a server token using Portal token"""
@@ -261,10 +262,11 @@ class EsriKerberosAuth(AuthBase, SupportMultiAuth):
 
         try:
             if username and password:
-                domain, username = username.split("\\")
+                uname_format = _split_username(username)
+                prin = uname_format[0] + "@" + uname_format[1]
                 self.auth = requests_kerberos.HTTPKerberosAuth(
                     mutual_authentication=mutual_auth,
-                    principal=f"{username}@{domain}:{password}",
+                    principal=f"{prin}:{password}",
                     **kwargs,
                 )
             else:
