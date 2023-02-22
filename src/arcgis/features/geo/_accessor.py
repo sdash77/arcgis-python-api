@@ -2473,6 +2473,9 @@ class GeoAccessor(object):
         This method creates a feature layer from the spatially enabled dataframe and adds (inserts)
         it to an existing feature service.
 
+        .. note::
+            Inserting table data in Enterprise is not currently supported.
+
         ============================    ====================================================================
         **Parameter**                   **Description**
         ----------------------------    --------------------------------------------------------------------
@@ -2800,6 +2803,8 @@ class GeoAccessor(object):
         ---------------------------     --------------------------------------------------------------------
         overwrite                       Optional boolean. If True, the specified layer in the `service` parameter
                                         will be overwritten.
+                                        .. note::
+                                            Overwriting table data in Enterprise is not currently supported.
         ---------------------------     --------------------------------------------------------------------
         service                         Dictionary that is required if `overwrite = True`. Dictionary with two
                                         keys: "FeatureServiceId" and "layers".
