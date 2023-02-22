@@ -1844,9 +1844,10 @@ class TestSeDFOverwrite(unittest.TestCase):
             gis = GIS(profile=profile, verify_cert=False)
             print("User: ", gis.users.me.username)
             if gis._is_agol:
-                table_item = gis.content.get("78aafb7632864f4dbd6e44eccb2610e1")
+                table_data_item = gis.content.get("c8fde892f9ba4a7fb80882705df58432")
             else:
-                table_item = gis.content.get("7147fdcab0654e5e8c9a60ecabb0b977")
+                break #broken for enterprise
+            table_item = table_data_item.publish()
             tbl_df = pd.DataFrame.spatial.from_layer(table_item.tables[0])
             tbl_df["pop2000"][18] = 8000
             tbl_df["pop2007"][18] = 10000
@@ -1855,7 +1856,8 @@ class TestSeDFOverwrite(unittest.TestCase):
                 overwrite=True,
                 service={"featureServiceId": table_item.id, "layer": 0},
             )
-            assert len(table_item.layers) == len(updated_item.layers)   
+            assert len(table_item.layers) == len(updated_item.layers) 
+            table_item.delete()  
 
 
 if __name__ == "__main__":

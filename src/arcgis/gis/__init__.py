@@ -7561,6 +7561,8 @@ class ContentManager(object):
                     "If overwite or append is True, then the feature service id needs to be specified in the `service` parameter."
                 )
             fs_id = fs_dict["featureServiceId"]
+            if isinstance(fs_id, Item):
+                fs_id = fs_id.itemid
 
             fl_index = fs_dict["layer"]
 
@@ -7725,7 +7727,7 @@ class ContentManager(object):
                 geocode_url = locators[0]
             postdata = {
                 "f": "pjson",
-                "text": df.to_csv(index_label="OBJECTID"),
+                "text": df.to_csv(),
                 "filetype": "csv",
                 "analyzeParameters": {
                     "enableGlobalGeocoding": "true",
@@ -7745,7 +7747,7 @@ class ContentManager(object):
             path = "content/features/generate"
             postdata = {
                 "f": "pjson",
-                "text": df.to_csv(index_label="OBJECTID"),
+                "text": df.to_csv(),
                 "filetype": "csv",
                 "publishParameters": json.dumps(res["publishParameters"]),
             }
