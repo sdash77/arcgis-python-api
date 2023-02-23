@@ -1835,6 +1835,10 @@ class GroupMigrationManager(object):
             params = {
                 "f": "json",
                 "itemId": item,
+                "itemIdList": "",
+                "folderId": "",
+                "folderOwnerUsername": "",
+                "token": self._con.token,
             }
             if item_id_list:
                 params["itemIdList"] = item_id_list

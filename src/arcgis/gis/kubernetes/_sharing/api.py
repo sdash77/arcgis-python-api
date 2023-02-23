@@ -280,6 +280,7 @@ class KbertnetesPy(object):
         sortfield="",
         sortorder="asc",
         categories=None,
+        filter=None,
     ):
         _log.info(
             "Searching groups (q="
@@ -302,6 +303,8 @@ class KbertnetesPy(object):
         )
         if categories is not None:
             postdata["categoryFilters"] = categories
+        if filter is not None:
+            postdata["filter"] = filter
         return self.con.post("community/groups", postdata)
 
     # ----------------------------------------------------------------------
@@ -872,6 +875,7 @@ class KbertnetesPy(object):
         max_groups: int = 1000,
         outside_org: bool = False,
         categories: Optional[int] = None,
+        filter: Optional[str] = None,
     ):
         """Searches for portal groups.
 
@@ -902,6 +906,10 @@ class KbertnetesPy(object):
         max_groups        optional int, maximum number of groups returned
         ----------------  --------------------------------------------------------
         outside_org       optional boolean, controls whether to search outside your org
+        ----------------  --------------------------------------------------------
+        categories        optional string.
+        ----------------  --------------------------------------------------------
+        filter            optional string.
         ================  ========================================================
 
         :return:
@@ -952,7 +960,13 @@ class KbertnetesPy(object):
         # Execute the search and get back the results
         count = 0
         resp = self._groups_page(
-            q, 1, min(max_groups, 100), sort_field, sort_order, categories
+            q,
+            1,
+            min(max_groups, 100),
+            sort_field,
+            sort_order,
+            categories,
+            filter,
         )
         results = resp.get("results")
         count += int(resp["num"])
@@ -965,6 +979,7 @@ class KbertnetesPy(object):
                 sort_field,
                 sort_order,
                 categories,
+                filter,
             )
             resp_users = resp.get("results")
             results.extend(resp_users)
@@ -1049,11 +1064,14 @@ class KbertnetesPy(object):
         is_view_only: Optional[bool] = None,
         thumbnail: Optional[str] = None,
         max_file_size: Optional[int] = None,
-        users_update_items: Optional[bool] = None,
+        users_update_items: Optional[str] = None,
         clear_empty_fields: bool = False,
         display_settings: Optional[str] = None,
         is_open_data: bool = False,
         leaving_disallowed: bool = False,
+        hidden_members: bool = False,
+        membership_access: Optional[str] = None,
+        autojoin: bool = False,
     ):
         """Updates a group.
 
@@ -1101,23 +1119,23 @@ class KbertnetesPy(object):
 
         properties = dict()
         postdata = self._postdata()
-        if title:
+        if not title is None:
             properties["title"] = title
-        if tags:
+        if not tags is None:
             properties["tags"] = tags
-        if description:
+        if not description is None:
             properties["description"] = description
-        if snippet:
+        if not snippet is None:
             properties["snippet"] = snippet
-        if access:
+        if not access is None:
             properties["access"] = access
-        if sort_field:
+        if not sort_field is None:
             properties["sortField"] = sort_field
-        if sort_order:
+        if not sort_order is None:
             properties["sortOrder"] = sort_order
-        if is_view_only:
+        if not is_view_only is None:
             properties["isViewOnly"] = is_view_only
-        if max_file_size:
+        if not max_file_size is None:
             properties["MAX_FILE_SIZE"] = max_file_size
         elif max_file_size is None:
             properties["MAX_FILE_SIZE"] = 1024000
@@ -1136,12 +1154,12 @@ class KbertnetesPy(object):
         if display_settings:
             properties["displaySettings"] = display_settings
         postdata.update(properties)
-        if True:
+        if clear_empty_fields == True:
             postdata["clearEmptyFields"] = True
         files = []
         if thumbnail:
             if _is_http_url(thumbnail):
-                thumbnail = urlretrieve(thumbnail)[0]
+                thumbnail = request.urlretrieve(thumbnail)[0]
                 file_ext = os.path.splitext(thumbnail)[1]
                 if not file_ext:
                     file_ext = imghdr.what(thumbnail)
@@ -1150,6 +1168,13 @@ class KbertnetesPy(object):
                         os.rename(thumbnail, new_thumbnail)
                         thumbnail = new_thumbnail
             files.append(("thumbnail", thumbnail, os.path.basename(thumbnail)))
+
+        if hidden_members in [True, False]:
+            postdata["hiddenMembers"] = hidden_members
+        if membership_access in ["org", "collaboration", None]:
+            postdata["membershipAccess"] = membership_access
+        if autojoin in [True, False]:
+            postdata["autoJoin"] = autojoin
 
         resp = self.con.post(
             "community/groups/" + group_id + "/update", postdata, files
