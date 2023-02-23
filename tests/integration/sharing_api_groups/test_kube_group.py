@@ -222,12 +222,11 @@ class TestImport2Group(unittest.TestCase):
             assert all([i.delete() for i in res.result()["itemsImported"]])
             print("loading done")
             print("clean up")
-            [i.delete() for i in group_dest.content()]
+            # [i.delete() for i in group_dest.content()]
             group_dest.delete()
             new_group.delete()
 
     # ----------------------------------------------------------------------
-    @unittest.skip("said so")
     def test_group_import(self):
         """tests importing the group items from an epk"""
         for profile in profiles:
@@ -264,7 +263,6 @@ class TestImport2Group(unittest.TestCase):
             new_group.delete()
 
     # ----------------------------------------------------------------------
-    @unittest.skip("said so")
     def test_inspect_package(self):
         """
         tests the `inspect` package call on Portal
