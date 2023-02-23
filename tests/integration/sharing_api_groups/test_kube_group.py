@@ -1,8 +1,8 @@
 import sys, os
 
-sys.path.insert(0, r"c:\SVN\geosaurus_master\src")
-sys.path.insert(1, r"c:\SVN\geosaurus_master\tests")
-sys.path.insert(2, r"c:\SVN\geosaurus_master\tests\integration")
+sys.path.insert(0, r"C:\SVN\geosaurus_issue_9202\src")
+sys.path.insert(1, r"C:\SVN\geosaurus_issue_9202\tests")
+sys.path.insert(2, r"C:\SVN\geosaurus_issue_9202\tests\integration")
 
 import unittest
 import unittest.mock
@@ -34,19 +34,27 @@ profiles = ["your_kubernetes_profile"]
 dest_profile = "your_dest_ent_profile"
 VERIFY_CERT = False  # Boolean T/F
 
-if "your_dest_ent_profile" not in ProfileManager().list():
-    username = "PAPIadmin"
-    password = "PAPIletmein01"
-    GIS(
-        url="https://rqawinbi01pt.ags.esri.com/gis",
-        username=username,
-        password=password,
-        profile="your_dest_ent_profile",
-        verify_cert=False,
-        trust_env=True,
-        use_gen_token=True,
-        proxy=detect_proxy(),
-    ).users.me.update(security_question=1, security_answer="Redlands")
+# if "your_dest_ent_profile" not in ProfileManager().list():
+username = "PAPIadmin"
+password = "PAPIletmein01"
+GIS(
+    url="https://rqawinbi01pt.ags.esri.com/gis",
+    username=username,
+    password=password,
+    profile="your_dest_ent_profile",
+    verify_cert=False,
+    trust_env=True,
+    use_gen_token=True,
+    proxy=detect_proxy(),
+).users.me.update(security_question=1, security_answer="Redlands")
+
+GIS(
+    profile="your_kubernetes_profile",
+    verify_cert=False,
+    trust_env=True,
+    use_gen_token=True,
+    proxy=detect_proxy(),
+).users.me.update(security_question=1, security_answer="Redlands")
 
 try:
     from utils import NOTEBOOK_TESTS_DIR
@@ -59,7 +67,7 @@ except:
 
 
 ###########################################################################
-@unittest.skip('said so')
+# @unittest.skip('verified')
 class TestGroupImportExport(unittest.TestCase):
     """Tests the Group Import/Export Methods on a Group Object"""
 
@@ -162,9 +170,11 @@ class TestImport2Group(unittest.TestCase):
             epk_file = new_group.migration.create(
                 items=[pitem], future=False
             )  # SHould Return an Item
-            export_package_file = epk_file.download()
+            export_package_file = r"C:\Users\andr5624\AppData\Local\Temp\1\export_test_group_2023223_025646.epk"  # epk_file.download()
             assert isinstance(epk_file, Item)
             assert pitem.delete()
+
+            # export_package_file = r"C:\Users\andr5624\AppData\Local\Temp\1\export_test_group_2023223_025646.epk"  # epk_file.download()
             gis_dest = GIS(
                 profile="your_dest_ent_profile",
                 verify_cert=False,
@@ -181,6 +191,12 @@ class TestImport2Group(unittest.TestCase):
 
             import uuid
 
+            [
+                i.delete()
+                for i in gis_dest.content.search(
+                    f"test_import owner:{gis_dest.users.me.username}"
+                )
+            ]
             new_item = gis_dest.content.add(
                 {
                     "title": f"test_import_{uuid.uuid4().hex[:6]}",
@@ -198,7 +214,7 @@ class TestImport2Group(unittest.TestCase):
             print("inspecting done")
             assert isinstance(m, GroupMigrationManager)
             print("loading")
-            res = m.load(epk_file)
+            res = m.load(new_item)
 
             assert res
             assert isinstance(res, StatusJob)
@@ -207,6 +223,7 @@ class TestImport2Group(unittest.TestCase):
             print("loading done")
             print("clean up")
             [i.delete() for i in group_dest.content()]
+            group_dest.delete()
             new_group.delete()
 
     # ----------------------------------------------------------------------
@@ -312,7 +329,7 @@ class TestImport2Group(unittest.TestCase):
 
 
 ###########################################################################
-@unittest.skip('verified')
+# @unittest.skip('verified')
 class TestGroup(unittest.TestCase):
     """
     Tests the `Group` class operations
@@ -433,7 +450,7 @@ class TestGroup(unittest.TestCase):
 
 
 ###########################################################################
-@unittest.skip('verified')
+# @unittest.skip('verified')
 class TestGroupApplication(unittest.TestCase):
     """
     Tests the `GroupApplication` class operations
@@ -533,7 +550,7 @@ class TestGroupApplication(unittest.TestCase):
 
 
 ###########################################################################
-@unittest.skip('verified')
+# @unittest.skip('verified')
 class TestGroupManager(unittest.TestCase):
     """
     Tests the `GroupManager` class operations
