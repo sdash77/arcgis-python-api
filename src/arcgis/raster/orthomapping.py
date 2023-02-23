@@ -247,7 +247,7 @@ def create_project(
     item_properties = {
         "title": name,
         "type": "Ortho Mapping Project",
-        "properties": {"flightCount": 1, "status": "inProgress"},
+        "properties": {"flightCount": 0, "status": "inProgress"},
     }
     if definition is None:
         definition = {}
@@ -508,11 +508,26 @@ def add_flight(
                 dict_gps = dict(zip(gps_info_list, ele))
                 gps_data.append(dict_gps)
 
+        from datetime import datetime
+
+        try:
+            lyr = output_collection.layers[0]
+            query_output = lyr.query(where="OBJECTID=1", out_fields="AcquisitionDate", return_all_records=False, return_geometry=False)
+            acq_date = query_output['features'][0]["attributes"]["AcquisitionDate"]
+            from datetime import datetime
+            ts = int(acq_date)/1000
+            flight_date = datetime.utcfromtimestamp(ts).strftime('%Y-%m-%d')
+        except:
+            dt  = datetime.now()
+            flight_date = dt.strftime('%Y-%m-%d')
+
+        image_count = output_collection.layers[0].query(return_count_only=True)
+
         flight_json.update(
-            {"sourceData": {"gps": gps_data, "imageCount": len(image_list)}}
+            {"sourceData": {"gps": gps_data, "imageCount": image_count, "flightDate": flight_date}}
         )
 
-        from datetime import datetime
+
 
         project_id = datetime.now().strftime("%Y%m%d%H%M%S")
         flight_json.update({"projectId": project_id})
@@ -564,7 +579,8 @@ def add_flight(
                 folder_name="flights",
                 properties={
                     "oid": oid,
-                    "imageCount": len(image_list),
+                    "imageCount": image_count,
+                    "createTS":ts,
                     "items": [
                         {
                             "product": "imageCollection",
@@ -576,9 +592,24 @@ def add_flight(
                     "baStatus": "succeeded",
                 },
             )
-            project_item.update(
-                data=json.dumps({"projectVersion": 2, "rasterType": raster_type_name})
-            )
+            prj_data = project_item.get_data()
+            flights_list = prj_data.get("flights",[])
+            flights_list.append({"oid":oid , "createTS":ts})
+            prj_data.update({"flights": flights_list})
+            prj_data.update({"projectVersion": 2, "rasterType": raster_type_name})
+
+            project_properties = project_item.properties
+            flight_count = project_properties.get("flightCount", 0)
+            flight_count = flight_count +1
+
+            image_count_ex = project_properties.get("imageCount", 0)
+            image_count_ex = image_count +image_count_ex
+
+            project_properties.update({"flightCount":flight_count ,"imageCount": image_count})
+            project_item.update(item_properties={"properties":project_properties}, data=json.dumps(prj_data))
+
+
+            #project_item.update(data=json.dumps(prj_data))
         except:
             raise RuntimeError("Error adding the flight")
     except:
