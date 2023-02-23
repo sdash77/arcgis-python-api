@@ -271,10 +271,8 @@ class Connection(object):
             self._auth = "ANON"
         elif self._client_id:
             self._auth = "OAUTH"
-        elif (
-            (not username is None and not password is None)
-            and len(username.split("\\")) > 1
-            and ("Negotiate" in auth_check or "Negotiate, NTLM" in auth_check)
+        elif (not username is None and not password is None) and (
+            "Negotiate" in auth_check or "Negotiate, NTLM" in auth_check
         ):
             self._auth = "KERBEROS"
         elif (username is None and password is None) and (
