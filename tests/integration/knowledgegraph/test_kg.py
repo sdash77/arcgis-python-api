@@ -3,7 +3,7 @@ Tests the functionality of the knowledge graph
 """
 import sys
 
-sys.path.insert(0, r"C:\Users\noa12726\GitHub\geosaurus\src")
+sys.path.insert(0, r"YOUR PATH HERE")
 import unittest
 from arcgis.gis import GIS
 
