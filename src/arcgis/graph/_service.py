@@ -262,7 +262,7 @@ class KnowledgeGraph:
             {
                 "_objectType": "entity",
                 "_typeName": "Person",
-                "_id": "{ABCDEFGH-1234-5678-XXXX-XXXXXXXXXXXXX}"
+                "_id": "{XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXXX}"
                 "_properties": {
                     "name": "PythonAPILover",
                     "hometown": "Redlands",
@@ -273,7 +273,7 @@ class KnowledgeGraph:
             {
                 "_objectType": "entity",
                 "_typeName": "Person",
-                "_id": "{ABCDEFGH-1234-5678-XXXX-XXXXXXXXXXXXX}"
+                "_id": "{XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXXX}"
                 "_properties": {
                     "hometown": "Lisbon",
                 }
@@ -283,7 +283,7 @@ class KnowledgeGraph:
             {
                 "_objectType": "entity",
                 "_typeName": "Person",
-                "_ids": ["{ABCDEFGH-1234-5678-XXXX-XXXXXXXXXXXXX}"]
+                "_ids": ["{XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXXX}"]
             }
 
         :return: A `dict` showing the results of the edits.
