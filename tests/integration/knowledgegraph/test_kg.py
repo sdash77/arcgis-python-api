@@ -58,15 +58,48 @@ class TestKGMethods(unittest.TestCase):
         kg._validate_import()
 
     def test_apply_edits(self):
+        import time
         with self.subTest(msg="Add test"):
             add_dict = {
                 "_objectType": "entity",
                 "_typeName": "Person",
-                "_id": "{c8e9e562-c810-41a0-8b65-7D2965123456}".upper(),
+                "_id": "{3e16d8fe-7f68-45ef-805a-a54d78995472}".upper(),
                 "_properties": {
                     "name": "Pikachu",
                 }
             }
+
+            res = kg.apply_edits(adds = [add_dict])
+            assert isinstance(res, dict)
+            time.sleep(1)
+            assert len(kg.search("Pikachu")) > 0
+
+        with self.subTest(msg="Update test"):
+            update_dict = {
+                "_objectType": "entity",
+                "_typeName": "Person",
+                "_id": "{3e16d8fe-7f68-45ef-805a-a54d78995472}".upper(),
+                "_properties": {
+                    "name": "Raichu",
+                }
+            }
+
+            res = kg.apply_edits(updates = [update_dict])
+            assert isinstance(res, dict)
+            time.sleep(1)
+            assert len(kg.search("Raichu")) > 0
+        
+        with self.subTest(msg="Delete test"):
+            delete_dict = {
+                "_objectType": "entity",
+                "_typeName": "Person",
+                "_ids": ["{3e16d8fe-7f68-45ef-805a-a54d78995472}".upper()]
+            }
+
+            res = kg.apply_edits(deletes = [delete_dict])
+            assert isinstance(res, dict)
+            time.sleep(1)
+            assert len(kg.search("Raichu")) == 0
 
 
 @unittest.skipIf(SKIP, "Cannot login or get service")
