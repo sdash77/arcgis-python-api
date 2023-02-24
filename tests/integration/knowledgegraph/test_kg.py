@@ -3,7 +3,7 @@ Tests the functionality of the knowledge graph
 """
 import sys
 
-# sys.path.insert(0, r"C:\SVN\geosaurus_master\src")
+sys.path.insert(0, r"C:\Users\noa12726\GitHub\geosaurus\src")
 import unittest
 from arcgis.gis import GIS
 
@@ -11,9 +11,11 @@ from arcgis.gis import GIS
 try:
     from arcgis.graph import KnowledgeGraph
 
-    url = "https://dev0018783.esri.com/server/rest/services/Hosted/KGS_PanamaPapers/KnowledgeGraphServer"
+    # url = "https://dev0018783.esri.com/server/rest/services/Hosted/KGS_PanamaPapers/KnowledgeGraphServer"
+    url = "https://dev0022980.esri.com/server/rest/services/Hosted/python_testing/KnowledgeGraphServer"
     gis = GIS(
-        "https://dev0018783.esri.com/portal/",
+        # "https://dev0018783.esri.com/portal/",
+        "https://dev0022980.esri.com/portal",
         "publisher2",
         "esri.agp123",
         verify_cert=False,
@@ -54,6 +56,17 @@ class TestKGMethods(unittest.TestCase):
 
     def test_validate_import(self):
         kg._validate_import()
+
+    def test_apply_edits(self):
+        with self.subTest(msg="Add test"):
+            add_dict = {
+                "_objectType": "entity",
+                "_typeName": "Person",
+                "_id": "{c8e9e562-c810-41a0-8b65-7D2965123456}".upper(),
+                "_properties": {
+                    "name": "Pikachu",
+                }
+            }
 
 
 @unittest.skipIf(SKIP, "Cannot login or get service")
