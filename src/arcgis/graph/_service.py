@@ -218,29 +218,29 @@ class KnowledgeGraph:
         return dm.to_value_object()
 
     def apply_edits(
-        self, 
-        adds : list[dict[str, any]] = [],
+        self,
+        adds: list[dict[str, any]] = [],
         updates: list[dict[str, any]] = [],
         deletes: list[dict[str, any]] = [],
         input_params: dict = None,
         cascade_delete: bool = False,
-        ) -> dict:
+    ) -> dict:
         """
-        Allows users to add new graph entities/relationships, update existing 
-        entities/relationships, or delete existing entities/relationships. For details on how the 
-        dictionaries for each of these operations should be structured, please refer to the samples 
+        Allows users to add new graph entities/relationships, update existing
+        entities/relationships, or delete existing entities/relationships. For details on how the
+        dictionaries for each of these operations should be structured, please refer to the samples
         further below.
 
         ================    ===============================================================
         **Parameter**        **Description**
         ----------------    ---------------------------------------------------------------
-        adds                Optional list of dicts. The list of objects to add to the 
+        adds                Optional list of dicts. The list of objects to add to the
                             graph, represented in dictionary format.
         ----------------    ---------------------------------------------------------------
-        updates             Optional list of dicts. The list of existent graph objects that 
+        updates             Optional list of dicts. The list of existent graph objects that
                             are to be updated, represented in dictionary format.
         ----------------    ---------------------------------------------------------------
-        deletes             Optional list of dicts. The list of existent objects to remove 
+        deletes             Optional list of dicts. The list of existent objects to remove
                             from the graph, represented in dictionary format.
         ----------------    ---------------------------------------------------------------
         input_params        Optional dict. Allows a user to specify custom quantization
@@ -287,14 +287,13 @@ class KnowledgeGraph:
             }
 
         :return: A `dict` showing the results of the edits.
-        
+
         """
 
         url = self._url + "/graph/applyEdits"
 
         # internal helper to get quant params
         def _getInputQuantParams(inputQuantParams: dict):
-
             clientCoreQuantParams = _kgparser.InputQuantizationParameters()
             clientCoreQuantParams.xy_resolution = inputQuantParams["xyResolution"]
             clientCoreQuantParams.x_false_origin = inputQuantParams["xFalseOrigin"]
@@ -309,13 +308,13 @@ class KnowledgeGraph:
             core_params = _getInputQuantParams(input_params)
         else:
             core_params = _kgparser.InputQuantizationParameters.WGS84_lossless()
-    
+
         # now, make our encoder, and specify the edits to it
         enc = _kgparser.GraphApplyEditsEncoder(
-            _kgparser.SpatialReference.WGS84(), 
+            _kgparser.SpatialReference.WGS84(),
             core_params,
-            )
-        
+        )
+
         for edit in adds:
             enc.add(edit)
         for edit in updates:
@@ -330,21 +329,21 @@ class KnowledgeGraph:
 
         if res.error.error_code != 0:
             print(res.error.error_message)
-        
+
         pbf_params = {
-            'f': 'pbf',
-            'token': self._gis._con.token,
+            "f": "pbf",
+            "token": self._gis._con.token,
         }
-        headers = {'Content-Type': 'application/octet-stream'}
+        headers = {"Content-Type": "application/octet-stream"}
 
         # post and decode the response
         request_response = requests.post(
             url,
-            params = pbf_params,
-            headers = headers,
-            data = res.byte_buffer,
-            stream = True,
-            )
+            params=pbf_params,
+            headers=headers,
+            data=res.byte_buffer,
+            stream=True,
+        )
         apply_edits_response = request_response.content
 
         dec = _kgparser.GraphApplyEditsDecoder()
@@ -352,13 +351,3 @@ class KnowledgeGraph:
         results_dict = dec.get_results()
 
         return results_dict
-
-
-
-
-
-        
-        
-
-        
-
