@@ -18,7 +18,7 @@ try:
         "https://dev0022980.esri.com/portal",
         "publisher2",
         "esri.agp123",
-        verify_cert=False,
+        # verify_cert=False,
         trust_env=True,
     )
     kg = KnowledgeGraph(url, gis=gis)

@@ -1,3 +1,4 @@
+from __future__ import annotations
 import datetime as _dt
 from arcgis.auth.tools import LazyLoader
 
@@ -11,7 +12,7 @@ except ImportError as e:
 _gis = LazyLoader("arcgis.gis")
 _isd = LazyLoader("arcgis._impl.common._isd")
 requests = LazyLoader("requests")
-from typing import List
+from typing import List, Any
 import platform
 
 
@@ -219,10 +220,10 @@ class KnowledgeGraph:
 
     def apply_edits(
         self,
-        adds: list[dict[str, any]] = [],
-        updates: list[dict[str, any]] = [],
-        deletes: list[dict[str, any]] = [],
-        input_params: dict = None,
+        adds: list[dict[str, Any]] = [],
+        updates: list[dict[str, Any]] = [],
+        deletes: list[dict[str, Any]] = [],
+        input_params: dict[str, Any] = None,
         cascade_delete: bool = False,
     ) -> dict:
         """
@@ -255,8 +256,6 @@ class KnowledgeGraph:
         ================    ===============================================================
 
         .. code-block:: python
-
-            # note that object id's should be capitalized UUID format
 
             # example of an add dictionary- include all properties
             {
@@ -337,7 +336,8 @@ class KnowledgeGraph:
         headers = {"Content-Type": "application/octet-stream"}
 
         # post and decode the response
-        request_response = requests.post(
+        session = self._gis._con._session
+        request_response = session.post(
             url,
             params=pbf_params,
             headers=headers,
