@@ -80,6 +80,10 @@ class StoryMap(object):
         if item and isinstance(item, str):
             # get item using the item id
             item = gis.content.get(item)
+            if item is None:
+                raise ValueError(
+                    "Cannot find storymap associated with this item id in your portal. Please check it is correct."
+                )
         if item and isinstance(item, arcgis.gis.Item) and item.type == "StoryMap":
             # set item properties
             self._item = item
@@ -450,7 +454,7 @@ class StoryMap(object):
             # return all nodes of a certain type
             all_nodes = self._create_node_dict()
             for node in all_nodes:
-                keyword = list(node.values())[0]
+                keyword = list(node.values())[0].lower()
                 if isinstance(keyword, str):
                     # Not a type of story content (i.e. navigation)
                     if type.lower() in keyword:
@@ -509,7 +513,7 @@ class StoryMap(object):
         dict_node = self.nodes[0]
 
         # get the node id
-        for key, value in dict_node.items():
+        for key, _ in dict_node.items():
             story_cover_node = key
 
         # get original data of story cover
@@ -795,6 +799,8 @@ class StoryMap(object):
                             :class:`~arcgis.apps.storymap.story_content.Button`,
                             :class:`~arcgis.apps.storymap.story_content.Timeline`,
                             :class:`~arcgis.apps.storymap.story_content.Sidecar`
+                            :class:`~arcgis.apps.storymap.story_content.Swipe`
+
 
                             If none is provided, a separator is added.
         ---------------     --------------------------------------------------------------------
@@ -812,6 +818,9 @@ class StoryMap(object):
 
                             For Embed:
                             Values: "card" | "inline"
+
+                            For Swipe:
+                            Values: "small" | "medium" | "large"
         ---------------     --------------------------------------------------------------------
         position            Optional Integer. Indicates the position in which the content will be
                             added. To see all node positions use the ``node`` property.
@@ -825,11 +834,11 @@ class StoryMap(object):
 
             # Example with Image
             >>> image1 = Image("<image-path>.jpg/jpeg/png/gif ")
-            >>> new_node = new_story.add(image1, "my caption", "my alt-text", "float", 2)
+            >>> new_node = new_story.add(image1, position = 2)
 
             # Example with Map
             >>> my_map = Map(<item-id of type webmap>)
-            >>> new_node = new_story.add(my_map, "A map caption", "A new map alt-text", "wide")
+            >>> new_node = new_story.add(my_map, "A map caption", "A new map alt-text")
 
             # Example to add a Separator
             >>> new_node = new_story.add()
@@ -864,6 +873,8 @@ class StoryMap(object):
             content._add_timeline(self)
         elif isinstance(content, Content.Sidecar):
             content._add_sidecar(self)
+        elif isinstance(content, Content.Swipe):
+            content._add_swipe(caption, alt_text, display, self)
         else:
             # If no content passed, separator is added
             self._properties["nodes"][node_id] = {"type": "separator"}
@@ -1504,7 +1515,7 @@ class StoryMap(object):
         elif node_type == "button":
             node = Content.Button(story=self, node_id=node_id)
         elif node_type == "swipe":
-            node = Content.Swipe(story=self, node=node_id)
+            node = Content.Swipe(story=self, node_id=node_id)
         elif node_type == "gallery":
             node = Content.Gallery(story=self, node_id=node_id)
         elif node_type == "timeline":
