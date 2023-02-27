@@ -773,7 +773,7 @@ def add_proximity_to_enrich_feature(
 
     # if some other iterable was used for input, make sure a list
     if not isinstance(proximity_value, list):
-        proximity_value = list(proximity_value)
+        proximity_value = proximity_value.split()
 
     # put the scalar proximity value(s) in the payload
     feature["bufferRadii"] = proximity_value
