@@ -1665,7 +1665,8 @@ class Geometry(BaseGeometry, metaclass=GeometryFactory):
                 )
             )
         elif HASSHAPELY:
-            return self.centroid
+            centroid_tuple = self.centroid
+            return Point({"x": centroid_tuple[0], "y": centroid_tuple[1], "spatialReference": self.spatial_reference})
         elif isinstance(self, Point):
             return self
         return

@@ -308,7 +308,7 @@ class Geocoder(_GISResource):
         """
         params = {"f": "json"}
         url = self.url + "/reverseGeocode"
-        if isinstance(location, list):
+        if isinstance(location, list) or isinstance(location, tuple):
             params["location"] = "%s,%s" % (location[0], location[1])
         elif isinstance(location, dict):
             params["location"] = location
