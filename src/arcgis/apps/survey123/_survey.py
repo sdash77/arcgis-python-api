@@ -210,7 +210,7 @@ class Survey:
                     view_url = ssi_layer._url[:-1]
                     self.parent_fl_url = self._find_parent(view_url) + f"/{str(_idx)}"
             except KeyError:
-                self.parent_fl_url = self._ssi_layers[_idx]._url
+                self.parent_fl_url = ssi_layer._url
 
     # ----------------------------------------------------------------------
     @property
