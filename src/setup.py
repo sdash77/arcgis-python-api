@@ -76,7 +76,7 @@ else:
         "pandas >=1.3.5",
         "numpy >=1.16.2",
         "matplotlib",
-        "keyring >=23.3.*",
+        "keyring >=23.3.0",
         "lerc",
         "ujson >=3",
         "jupyterlab",
