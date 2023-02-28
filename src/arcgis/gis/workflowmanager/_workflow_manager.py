@@ -20,7 +20,7 @@ def _underscore_to_camelcase(name):
     return "".join(next(c)(x) if x else "_" for x in name.split("_"))
 
 
-def check_license(gis):
+def _check_license(gis):
     user_url = f"{gis._portal.resturl}community/self"
     raw_user = gis._con.get(user_url, {"returnUserLicenseTypeExtensions": True})
     if "userLicenseTypeExtensions" in raw_user:
@@ -35,13 +35,13 @@ def check_license(gis):
         )
 
 
-def initialize(self, gis):
-    self._gis = gis
-    if self._gis.users.me is None:
+def _initialize(instance, gis):
+    instance._gis = gis
+    if instance._gis.users.me is None:
         raise ValueError("An authenticated `GIS` is required.")
 
-    self._url = self._wmx_server_url[0]
-    if self._url is None:
+    instance._url = instance._wmx_server_url[0]
+    if instance._url is None:
         raise ValueError("No WorkflowManager Registered with your Organization")
 
 
@@ -57,8 +57,8 @@ class WorkflowManagerAdmin:
     """
 
     def __init__(self, gis):
-        initialize(self, gis)
-        check_license(gis)
+        _initialize(self, gis)
+        _check_license(gis)
 
     @property
     def _wmx_server_url(self):
@@ -346,7 +346,7 @@ class JobManager:
         if item is None:
             raise ValueError("Item cannot be None")
         self._item = item
-        initialize(self, item._gis)
+        _initialize(self, item._gis)
 
     def _handle_error(self, info):
         """Basic error handler - separated into a function to allow for expansion in future releases"""
@@ -914,8 +914,8 @@ class WorkflowManager:
         if item is None:
             raise ValueError("Item cannot be None")
         self._item = item
-        initialize(self, item._gis)
-        check_license(item._gis)
+        _initialize(self, item._gis)
+        _check_license(item._gis)
 
         self.job_manager = JobManager(item)
         self.saved_searches_manager = SavedSearchesManager(item)
@@ -1985,7 +1985,7 @@ class SavedSearchesManager:
         if item is None:
             raise ValueError("Item cannot be None")
         self._item = item
-        initialize(self, item._gis)
+        _initialize(self, item._gis)
 
     def _handle_error(self, info):
         """Basic error handler - separated into a function to allow for expansion in future releases"""
