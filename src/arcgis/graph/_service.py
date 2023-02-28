@@ -11,7 +11,6 @@ except ImportError as e:
     HAS_KG = False
 _gis = LazyLoader("arcgis.gis")
 _isd = LazyLoader("arcgis._impl.common._isd")
-requests = LazyLoader("requests")
 from typing import List, Any
 import platform
 
