@@ -20,9 +20,9 @@ def _underscore_to_camelcase(name):
     return "".join(next(c)(x) if x else "_" for x in name.split("_"))
 
 
-def has_license(self, gis):
+def _has_license(instance, gis):
     user_url = f"{gis._portal.resturl}community/self"
-    raw_user = self._gis._con.get(user_url, {"returnUserLicenseTypeExtensions": True})
+    raw_user = instance._gis._con.get(user_url, {"returnUserLicenseTypeExtensions": True})
     try:
         licenses = raw_user["userLicenseTypeExtensions"]
         return "workflow" in licenses
@@ -30,16 +30,16 @@ def has_license(self, gis):
         raise ValueError("Could not find the users license type extensions")
 
 
-def initialize(self, gis):
-    self._gis = gis
-    if self._gis.users.me is None:
+def _initialize(instance, gis):
+    instance._gis = gis
+    if instance._gis.users.me is None:
         raise ValueError("An authenticated `GIS` is required.")
 
-    self._url = self._wmx_server_url[0]
-    if self._url is None:
+    instance._url = instance._wmx_server_url[0]
+    if instance._url is None:
         raise ValueError("No WorkflowManager Registered with your Organization")
 
-    if has_license(self, gis) is False:
+    if _has_license(instance, gis) is False:
         raise ValueError(
             "No Workflow Manager license is available for the current user"
         )
@@ -57,7 +57,7 @@ class WorkflowManagerAdmin:
     """
 
     def __init__(self, gis):
-        initialize(self, gis)
+        _initialize(self, gis)
 
     @property
     def _wmx_server_url(self):
@@ -345,7 +345,7 @@ class JobManager:
         if item is None:
             raise ValueError("Item cannot be None")
         self._item = item
-        initialize(self, item._gis)
+        _initialize(self, item._gis)
 
     def _handle_error(self, info):
         """Basic error handler - separated into a function to allow for expansion in future releases"""
@@ -913,7 +913,7 @@ class WorkflowManager:
         if item is None:
             raise ValueError("Item cannot be None")
         self._item = item
-        initialize(self, item._gis)
+        _initialize(self, item._gis)
 
         self.job_manager = JobManager(item)
         self.saved_searches_manager = SavedSearchesManager(item)
@@ -1983,7 +1983,7 @@ class SavedSearchesManager:
         if item is None:
             raise ValueError("Item cannot be None")
         self._item = item
-        initialize(self, item._gis)
+        _initialize(self, item._gis)
 
     def _handle_error(self, info):
         """Basic error handler - separated into a function to allow for expansion in future releases"""
