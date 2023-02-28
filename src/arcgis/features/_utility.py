@@ -516,7 +516,7 @@ class UtilityNetworkManager(object):
         return self._con.post(url, params)
 
     # ----------------------------------------------------------------------
-    @deprecated(deprecated_in="2.1.0", removed_in=None, current_version="2.1.0")
+    @deprecated(deprecated_in="2.1.0", removed_in=None, current_version="2.2.0")
     def query_overrides(
         self,
         attribute_ids: Optional[list[str]] = None,
@@ -776,7 +776,7 @@ class UtilityNetworkManager(object):
         return self._con.post(url, params)
 
     # ----------------------------------------------------------------------
-    @deprecated(deprecated_in="2.1.0", removed_in=None, current_version="2.1.0")
+    @deprecated(deprecated_in="2.1.0", removed_in=None, current_version="2.2.0")
     def apply_overrides(
         self,
         adds: Optional[Union[list, dict[str, Any]]] = None,
