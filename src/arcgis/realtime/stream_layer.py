@@ -7,7 +7,6 @@ to subscribe to the streamed feature data or to broadcast updates and alerts.
 from arcgis.gis import *
 from arcgis.features import *
 
-import six
 from urllib.parse import urlencode
 
 
