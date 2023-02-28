@@ -258,12 +258,14 @@ def _clone_layer_raster(
         if (layer._engine != _ArcpyRaster) and (
             layer.tiles_only or (not allow_raster_function and allow_analysis)
         ):
+            service_url = layer.url
             newlyr = Raster(
                 function_chain_ra,
                 is_multidimensional=layer._is_multidimensional,
                 engine=layer._engine,
                 gis=layer._gis,
             )
+            newlyr._engine_obj._service_url = service_url
         else:
             newlyr = Raster(
                 layer._url,
