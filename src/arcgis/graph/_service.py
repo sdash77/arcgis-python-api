@@ -361,15 +361,15 @@ class KnowledgeGraph:
 
         `Learn more about adding named types to a knowledge graph <https://developers.arcgis.com/rest/services-reference/enterprise/kgs-datamodel-edit-namedtypes-add.htm>`_
 
-        ================    ===============================================================
+        ==================  ===============================================================
         **Parameter**        **Description**
-        ----------------    ---------------------------------------------------------------
+        ------------------  ---------------------------------------------------------------
         entity_types        Optional list of dicts. The list of entity types to add to the
                             data model, represented in dictionary format.
-        ----------------    ---------------------------------------------------------------
+        ------------------  ---------------------------------------------------------------
         relationship_types  Optional list of dicts. The list of relationship types to add
                             to the data model, represented in dictionary format.
-        ================    ===============================================================
+        ==================  ===============================================================
 
         .. code-block:: python
 
@@ -424,17 +424,17 @@ class KnowledgeGraph:
 
         `Learn more about updating named types in a knowledge graph <https://developers.arcgis.com/rest/services-reference/enterprise/kgs-datamodel-edit-namedtypes-type-update.htm>`_
 
-        ================    ===============================================================
+        =================   ===============================================================
         **Parameter**        **Description**
-        ----------------    ---------------------------------------------------------------
+        -----------------   ---------------------------------------------------------------
         type_name           Required string. The named type to be updated.
-        ----------------    ---------------------------------------------------------------
+        -----------------   ---------------------------------------------------------------
         named_type_update   Required dict. The entity or relationship type to be updated,
                             represented in dictionary format.
-        ----------------    ---------------------------------------------------------------
+        -----------------   ---------------------------------------------------------------
         mask                Required dict. A dictionary representing the properties of the
                             named type to be updated.
-        ================    ===============================================================
+        =================   ===============================================================
 
         .. code-block:: python
 
