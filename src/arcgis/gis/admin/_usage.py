@@ -127,8 +127,17 @@ class AGOLUsageReports(BasePortalAdmin):
                     "Duration set to 'daily' can only be used with report type 'activity'."
                 )
             elif duration == "yearly" and report_type != "itemUsages":
-                raise ValueError("")
+                raise ValueError(
+                    "Duration set to 'yearly' can only be used with report type 'itemUsages'."
+                )
             params["timeDuration"] = duration
+        if (
+            report_type in ["credits", "activity", "serviceUsages", "itemUsages"]
+            and duration is None
+        ):
+            raise ValueError(
+                "For the report type specified, a duration must also be specified."
+            )
 
         # Assign parameters
         if not start_time is None and isinstance(start_time, datetime.datetime):
