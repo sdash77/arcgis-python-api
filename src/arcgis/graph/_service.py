@@ -309,7 +309,7 @@ class KnowledgeGraph:
 
         # now, make our encoder, and specify the edits to it
         enc = _kgparser.GraphApplyEditsEncoder(
-            _kgparser.SpatialReference.WGS84(),
+            self._datamodel.spatial_reference,
             core_params,
         )
 
