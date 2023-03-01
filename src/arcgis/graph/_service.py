@@ -51,7 +51,7 @@ class KnowledgeGraph:
         if HAS_KG == False:
             raise ImportError(
                 "An error occured with importing the Knowledge Graph libraries. Please ensure you "
-                "are using Python 3.7, 3.8, or 3.9 on Windows or Linux platforms."
+                "are using Python 3.7, 3.8, 3.9, or 3.10 on Windows or Linux platforms."
             )
 
     @classmethod
