@@ -58,29 +58,44 @@ class AGOLUsageReports(BasePortalAdmin):
         ===============     ====================================================
         **Parameter**        **Description**
         ---------------     ----------------------------------------------------
-        focus               Required String. The report level. The only
-                            allowed value is `org`.
+        focus               Optional String. The report type. Currently, only
+                            the organization (`org`) report type is supported.
         ---------------     ----------------------------------------------------
         report_type         Required String. The type of report to generate.
 
-                            Allowed values:
-
-                            - `users`
-                            - `content`
-                            - `credits`
+                            Values:
+                                - 'content'
+                                - 'users'
+                                - 'activity'
+                                - 'credits'
+                                - 'serviceUsages'
+                                - 'itemUsages'
         ---------------     ----------------------------------------------------
-        title               Optional String.  The output report item's title.
+        title               *deprecated* Optional String.  The output report item's title.
         ---------------     ----------------------------------------------------
-        duration            Optional String.  The time frame for which to
-                            report.
+        duration            Optional String. Specifies the time duration for the
+                            reports. This parameter is required when `report_type`
+                            is set to `credits`, `activity`, `serviceUsages`, or `itemUsages`.
 
-                            Allowed values:
+                            .. note::
+                                The `daily` value is only available when `report_type` is
+                                set to `activity`.
+                                The `yearly` value is only available when `report_type`
+                                is set to `itemUsages`.
 
-                            - `weekly`
-                            - `monthly`.
+                            Values:
+                                - 'daily'
+                                - 'weekly'
+                                - 'monthly'
+                                - 'quarterly'
+                                - 'yearly'
         ---------------     ----------------------------------------------------
-        start_time          Optional datetime.datetime. The date and time from
-                            which to begin the report.
+        start_time          Optional datetime.datetime. The start time of the
+                            time duration. The time format is Unix time with millisecond
+                            precision. If `duration = 'weekly'`, the start_time
+                            value must be a time on Sunday or Monday GMT.
+                            If `duration = 'monthly`, the start_time value must
+                            be on the first day of the month.
         ---------------     ----------------------------------------------------
         notify              Optional Boolean. The Job will print a message upon
                             task completion.
@@ -95,12 +110,27 @@ class AGOLUsageReports(BasePortalAdmin):
         """
         url = f"{self._gis._portal.resturl}community/users/{self._gis.users.me.username}/report"
         params = {"f": "json", "reportType": focus, "reportSubType": report_type}
-        if title:
-            params["title"] = title
-        if duration and duration.lower() in ["weekly", "monthly", None]:
-            params["timeDuration"] = duration
-        elif duration and not duration.lower() in ["weekly", "monthly", None]:
+
+        # Perform Checks
+        if duration and duration.lower() not in [
+            "daily",
+            "weekly",
+            "monthly",
+            "quarterly",
+            "yearly",
+        ]:
             raise ValueError("Invalid `duration` value %s" % duration)
+        if duration:
+            duration = duration.lower()
+            if duration == "daily" and report_type != "activity":
+                raise ValueError(
+                    "Duration set to 'daily' can only be used with report type 'activity'."
+                )
+            elif duration == "yearly" and report_type != "itemUsages":
+                raise ValueError("")
+            params["timeDuration"] = duration
+
+        # Assign parameters
         if not start_time is None and isinstance(start_time, datetime.datetime):
             params["startTime"] = local_time_to_online(start_time)
         elif not start_time is None and isinstance(start_time, int):
