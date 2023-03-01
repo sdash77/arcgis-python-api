@@ -23,6 +23,7 @@ class CreditManager(object):
     _gis = None
     _con = None
     _portal = None
+
     # ----------------------------------------------------------------------
     def __init__(self, gis):
         """Constructor"""
@@ -89,7 +90,7 @@ class CreditManager(object):
         organizational users in ArcGIS Online
 
         ===========================     ====================================================================
-        **Argument**                    **Description**
+        **Parameter**                    **Description**
         ---------------------------     --------------------------------------------------------------------
         username                        Required string.The name of the user to assign credits to.
         ---------------------------     --------------------------------------------------------------------
@@ -122,7 +123,7 @@ class CreditManager(object):
         organizational users in ArcGIS Online
 
         ===========================     ====================================================================
-        **Argument**                    **Description**
+        **Parameter**                    **Description**
         ---------------------------     --------------------------------------------------------------------
         username                        Required string.The name of the user to set to unlimited credits.
         ===========================     ====================================================================

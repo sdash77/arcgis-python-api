@@ -12,7 +12,7 @@ class Track(FeatureModel):
     only.
 
     ==================     ====================================================================
-    **Argument**           **Description**
+    **Parameter**           **Description**
     ------------------     --------------------------------------------------------------------
     feature                Optional :class:`~arcgis.features.Feature`.
                            A feature containing the assignments attributes. Mostly intended for
@@ -47,7 +47,7 @@ class Track(FeatureModel):
         Updates the track point on the server
 
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
         geometry               Optional :class:`Dict`.
                                A dictionary containing the assignment geometry

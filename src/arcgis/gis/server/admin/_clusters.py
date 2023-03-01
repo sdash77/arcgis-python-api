@@ -11,6 +11,7 @@ from .parameters import ClusterProtocol
 from arcgis.gis import GIS
 from typing import Optional
 
+
 ########################################################################
 class Clusters(BaseServer):
     """
@@ -19,7 +20,7 @@ class Clusters(BaseServer):
     configuration.
 
     ===============     ====================================================================
-    **Argument**        **Description**
+    **Parameter**        **Description**
     ---------------     --------------------------------------------------------------------
     url                 Required string. The administration URL for the ArcGIS Server.
     ---------------     --------------------------------------------------------------------
@@ -34,6 +35,7 @@ class Clusters(BaseServer):
     _json_dict = None
     _json = None
     _url = None
+
     # ----------------------------------------------------------------------
     def __init__(self, url: str, gis: GIS, initialize: bool = False):
         """Constructor"""
@@ -67,7 +69,7 @@ class Clusters(BaseServer):
         the compute power) dynamically.
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         cluster_name        Require string. The name of the cluster. This must be a unique name
                             within a site
@@ -127,7 +129,7 @@ class Cluster(BaseServer):
     machines from a cluster and re-assign them to another cluster.
 
     ===============     ====================================================================
-    **Argument**        **Description**
+    **Parameter**        **Description**
     ---------------     --------------------------------------------------------------------
     url                 Required string. The administration URL for the ArcGIS Server.
     ---------------     --------------------------------------------------------------------
@@ -143,6 +145,7 @@ class Cluster(BaseServer):
     _json_dict = None
     _json = None
     _url = None
+
     # ----------------------------------------------------------------------
     def __init__(self, url: str, gis: GIS, initialize: bool = False):
         """Constructor"""
@@ -246,7 +249,7 @@ class Cluster(BaseServer):
         services that were deployed to cluster and prepares to run them.
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         names               Required string. A comma-separated list of machine names. The
                             machines must be registered prior to completing this operation.
@@ -266,7 +269,7 @@ class Cluster(BaseServer):
         returned back to the pool of registered server machines.
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         names               Required string. A comma-separated list of machine names. The
                             machines must be registered prior to completing this operation.
@@ -288,7 +291,7 @@ class Cluster(BaseServer):
         restarted with updated protocol configuration.
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         cpo                 Required ClusterProtocal object (CPO). The CPO is a configuration
                             object used to assist users in configuring protocols on ArcGIS Server.

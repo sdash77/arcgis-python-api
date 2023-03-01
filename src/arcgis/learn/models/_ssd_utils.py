@@ -127,7 +127,6 @@ class SSDHead(nn.Module):
         self.sconvs.append(StdConv(num_channels, 256, stride=1, drop=drop))
 
         for i in range(len(grids)):
-
             if i == 0:
                 stride, pad, filter_size = conv_params(num_features, grids[i])
             else:
@@ -182,7 +181,6 @@ class SSDHeadv2(nn.Module):
         self.sconvs.append(StdConvv2(num_channels, 256, stride=1, drop=drop))
 
         for i in range(len(grids)):
-
             upsample = False
 
             if i == 0 and num_features >= grids[i]:
@@ -378,8 +376,10 @@ class AveragePrecision(Callback):
         )
 
     def on_batch_end(self, last_output, last_target, **kwargs):
-
-        if getattr(self.model, "_is_fasterrcnn", False):
+        if (
+            getattr(self.model, "_is_fasterrcnn", False)
+            or "MMDetection" in self.model.__str__()
+        ):
             last_output = last_output[0]
 
         tps, p_scores, clas, self.n_gts = compute_cm(
@@ -415,7 +415,6 @@ def compute_class_AP(
     classes, n_gts = LongTensor(range(n_classes)), torch.zeros(n_classes).long()
     with torch.no_grad():
         for input, target in progress_bar(dl, display=show_progress):
-
             if getattr(model, "_is_model_extension", False):
                 try:
                     if model._is_multispectral:
@@ -429,7 +428,6 @@ def compute_class_AP(
                             model._model_conf.transform_input(input, **transform_kwargs)
                         )
                 except Exception as e:
-
                     if getattr(model, "_is_fasterrcnn", False):
                         output = []
                         for _ in range(input.shape[0]):
@@ -542,11 +540,9 @@ def compute_ap(precision, recall):
 
 
 def iou(ann, centroids):
-
     similarities = []
 
     for centroid in centroids:
-
         inter = np.prod(np.minimum(ann, centroid))
         union = np.prod(ann) + np.prod(centroid) - inter
         similarities.append(inter / union)
@@ -555,7 +551,6 @@ def iou(ann, centroids):
 
 
 def avg_iou(bboxes, centroids):
-
     sum = 0.0
 
     for bbox in bboxes:

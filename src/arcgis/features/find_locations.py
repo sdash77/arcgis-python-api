@@ -27,6 +27,8 @@ import arcgis.network as network
 from .._impl.common._utils import inspect_function_inputs
 
 _logger = logging.getLogger()
+
+
 # --------------------------------------------------------------------------
 def find_existing_locations(
     input_layers: Union[
@@ -59,7 +61,7 @@ def find_existing_locations(
     An example of a spatial expression is that the parcel must also be within a certain distance of a river (Parcels within a distance of 0.75 Miles from Rivers).
 
     ====================================    ======================================================================================================
-    **Argument**                            **Description**
+    **Parameter**                            **Description**
     ------------------------------------    ------------------------------------------------------------------------------------------------------
     input_layers                            Required list of feature layers. A list of layers that will be used in the expressions parameter. Each layer in the list can be:
 
@@ -301,10 +303,18 @@ def find_existing_locations(
     """
 
     if input_layers is None:
-        input_layers = []
+        raise TypeError(
+            "find_existing_locations missing 1 required positional argument: 'input_layers'"
+        )
     if expressions is None:
-        expressions = []
+        raise TypeError(
+            "find_existing_locations missing 1 required positional argument: 'expressions'"
+        )
     gis = _arcgis.env.active_gis if gis is None else gis
+    if gis is None:
+        raise TypeError(
+            "Please make sure you are logged into an instance of ArcGIS Online or ArcGIS Enterprise"
+        )
     kwargs = {
         "input_layers": input_layers,
         "expressions": expressions,
@@ -359,7 +369,7 @@ def derive_new_locations(
       the parcel that is within the flood zone.
 
     =====================================    ======================================================================================================
-    **Argument**                             **Description**
+    **Parameter**                             **Description**
     -------------------------------------    ------------------------------------------------------------------------------------------------------
     input_layers                             Required list of feature layers. A list of layers that will be used in the expressions parameter.
                                              Each layer in the list can be:
@@ -592,8 +602,20 @@ def derive_new_locations(
 
 
     """
+    if input_layers is None:
+        raise TypeError(
+            "derive_new_locations missing 1 required positional argument: 'input_layers'"
+        )
+    if expressions is None:
+        raise TypeError(
+            "derive_new_locations missing 1 required positional argument: 'input_layer'"
+        )
 
     gis = _arcgis.env.active_gis if gis is None else gis
+    if gis is None:
+        raise TypeError(
+            "Please make sure you are logged into an instance of ArcGIS Online or ArcGIS Enterprise"
+        )
     kwargs = {
         "input_layers": input_layers,
         "expressions": expressions,
@@ -655,7 +677,7 @@ def find_similar_locations(
     candidate locations by how closely they match your reference locations across all of the fields you have selected.
 
     =======================     ===========================================================================================
-    **Argument**                **Description**
+    **Parameter**                **Description**
     -----------------------     -------------------------------------------------------------------------------------------
     input_layer                 Required feature layer. The ``input_layer`` contains one or more
                                 reference locations against which features in the ``search_layer``
@@ -748,6 +770,10 @@ def find_similar_locations(
     """
 
     gis = _arcgis.env.active_gis if gis is None else gis
+    if gis is None:
+        raise TypeError(
+            "Please make sure you are logged into an instance of ArcGIS Online or ArcGIS Enterprise"
+        )
     kwargs = {
         "input_layer": input_layer,
         "search_layer": search_layer,
@@ -794,7 +820,7 @@ def find_centroids(
     For example, polygon features that contain demographic data can be converted to centroids that can be used in network analysis.
 
     ================    ===============================================================
-    **Argument**        **Description**
+    **Parameter**        **Description**
     ----------------    ---------------------------------------------------------------
     input_layer         Required feature layer. The multipoint, line, or polygon features that will be used to generate centroid point features. See :ref:`Feature Input<FeatureInput>`.
     ----------------    ---------------------------------------------------------------
@@ -843,6 +869,10 @@ def find_centroids(
                                   output_name='find centroids')
     """
     gis = _arcgis.env.active_gis if gis is None else gis
+    if gis is None:
+        raise TypeError(
+            "Please make sure you are logged into an instance of ArcGIS Online or ArcGIS Enterprise"
+        )
     if gis._portal.is_arcgisonline == False and gis.version < [7, 3]:
         raise Exception(
             "find_centroids is only available on ArcGIS Online and ArcGIS Enterprise 10.8.0+"
@@ -962,7 +992,7 @@ def choose_best_facilities(
     with each location representing a given amount of demand.
 
     =====================================    =========================================================
-    **Argument**                             **Description**
+    **Parameter**                             **Description**
     -------------------------------------    ---------------------------------------------------------
     goal                                     Optional string. Specify the goal that must be satisfied when allocating
                                              demand locations to facilities.
@@ -1204,7 +1234,16 @@ def choose_best_facilities(
                                     candidate_count=1,
                                     output_name="choose best facilities")
     """
+    if demand_locations_layer is None:
+        raise TypeError(
+            "choose_best_facilities missing 1 required positional argument: 'demand_locations_layer'"
+        )
+
     gis = _arcgis.env.active_gis if gis is None else gis
+    if gis is None:
+        raise TypeError(
+            "Please make sure you are logged into an instance of ArcGIS Online or ArcGIS Enterprise"
+        )
     kwargs = {
         "goal": goal,
         "demand_locations_layer": demand_locations_layer,
@@ -1285,7 +1324,7 @@ def create_viewshed(
     The results are areas where the observers can see the observed objects (and the observed objects can see the observers).
 
     =========================    =========================================================
-    **Argument**                 **Description**
+    **Parameter**                 **Description**
     -------------------------    ---------------------------------------------------------
     input_layer                  Required point feature layer. The features to use as the observer locations. See :ref:`Feature Input<FeatureInput>`.
     -------------------------    ---------------------------------------------------------
@@ -1406,6 +1445,10 @@ def create_viewshed(
     """
 
     gis = _arcgis.env.active_gis if gis is None else gis
+    if gis is None:
+        raise TypeError(
+            "Please make sure you are logged into an instance of ArcGIS Online or ArcGIS Enterprise"
+        )
     kwargs = {
         "input_layer": input_layer,
         "dem_resolution": dem_resolution,
@@ -1459,7 +1502,7 @@ def create_watersheds(
 
 
     =========================    =========================================================
-    **Argument**                 **Description**
+    **Parameter**                 **Description**
     -------------------------    ---------------------------------------------------------
     input_layer                  Required point feature layer. The point features used for calculating watersheds.
                                  These are referred to as pour points, because it is the location at which water pours out of the watershed.
@@ -1547,6 +1590,10 @@ def create_watersheds(
     """
 
     gis = _arcgis.env.active_gis if gis is None else gis
+    if gis is None:
+        raise TypeError(
+            "Please make sure you are logged into an instance of ArcGIS Online or ArcGIS Enterprise"
+        )
     kwargs = {
         "input_layer": input_layer,
         "search_distance": search_distance,
@@ -1610,7 +1657,7 @@ def trace_downstream(
     cases, if the total length of the trace path is returned, it will be from the source all the way to the ocean.
 
     =====================================   =========================================================
-    **Argument**                            **Description**
+    **Parameter**                            **Description**
     -------------------------------------   ---------------------------------------------------------
     input_layer                             Required feature layer. The point features used for the starting location of a downstream trace.
                                             See :ref:`Feature Input<FeatureInput>`.
@@ -1699,6 +1746,10 @@ def trace_downstream(
     """
 
     gis = _arcgis.env.active_gis if gis is None else gis
+    if gis is None:
+        raise TypeError(
+            "Please make sure you are logged into an instance of ArcGIS Online or ArcGIS Enterprise"
+        )
     kwargs = {
         "input_layer": input_layer,
         "split_distance": split_distance,

@@ -3,6 +3,7 @@ from arcgis.gis import GIS
 from arcgis._impl.common._mixins import PropertyMap
 from typing import List, Dict, Any, Optional
 
+
 ########################################################################
 class ContainerNotebook(object):
     """
@@ -58,6 +59,7 @@ class DirectoryManager(object):
     _con = None
     _gis = None
     _properties = None
+
     # ----------------------------------------------------------------------
     def __init__(self, url: str, gis: GIS):
         """Constructor"""
@@ -190,6 +192,7 @@ class WebAdaptor(object):
     _con = None
     _gis = None
     _properties = None
+
     # ----------------------------------------------------------------------
     def __init__(self, url, gis):
         """Constructor"""
@@ -243,6 +246,7 @@ class WebAdaptorManager(object):
     _con = None
     _gis = None
     _properties = None
+
     # ----------------------------------------------------------------------
     def __init__(self, url: str, gis: GIS):
         """Constructor"""
@@ -293,7 +297,7 @@ class WebAdaptorManager(object):
         Registers a new :class:`web adapter <arcgis.gis.nb.WebAdaptor>`.
 
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
         name                   Required String. The name of the web adapter
         ------------------     --------------------------------------------------------------------
@@ -337,7 +341,7 @@ class WebAdaptorManager(object):
         in the request.
 
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
         config                 Required dict. The configuration items to be updated for this web
                                adaptor. Always include the web adaptor's sharedkey attribute.
@@ -391,6 +395,7 @@ class Container(object):
     _con = None
     _gis = None
     _properties = None
+
     # ----------------------------------------------------------------------
     def __init__(self, url, gis):
         """Constructor"""
@@ -543,6 +548,7 @@ class SystemManager(object):
     _dir = None
     _wam = None
     _properties = None
+
     # ----------------------------------------------------------------------
     def __init__(self, url: str, gis: GIS):
         """Constructor"""
@@ -587,7 +593,7 @@ class SystemManager(object):
         objects and extensions through the server environment interface.
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         value               Required property.
         ===============     ====================================================================
@@ -746,7 +752,7 @@ class SystemManager(object):
         and messages. This is used for Notebook Server 10.9+
 
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
         details                Optional Bool.  For 10.9+ Notebook Servers, to get the expanded
                                details of a Job, set the details to `True`. `False` will provide
@@ -786,7 +792,7 @@ class SystemManager(object):
         periodically querying the job.
 
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
         job_id                 Required String. The unique identifier of the job.
         ==================     ====================================================================

@@ -330,7 +330,6 @@ def _get_model_state(model_path, model=None):
 
 
 def load_for_prediction(model_path, num_classes, backbone, model):
-
     model_state = _get_model_state(model_path, model)
     model = get_model(num_classes, backbone, reid=True)
     if model_state is not None:
@@ -362,7 +361,6 @@ def _check_data_shape(data, img_shape):
     with warnings.catch_warnings():
         warnings.simplefilter("ignore", UserWarning)
         if data is not None and isinstance(data, ImageDataBunch):
-
             is_valid = True
             if data.train_dl is not None:
                 is_valid = is_valid and _check_shape(data.train_dl, img_shape)
@@ -443,7 +441,6 @@ def _get_metrics():
 
 
 def get_learner(data=None, num_classes=None, backbone=None, device=torch.device("cpu")):
-
     learn = None
     if num_classes is None:
         num_classes = _get_num_classes(data)

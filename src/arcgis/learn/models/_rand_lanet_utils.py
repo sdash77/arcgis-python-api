@@ -38,7 +38,6 @@ knn_search = partial(knn_search, omp=True)
 
 
 def input_dict(input_list, cfg, is_sqn=False):
-
     num_layers = cfg["num_layers"]
     inputs = {}
     inputs["xyz"] = []
@@ -72,12 +71,13 @@ def batch_preprocess_dict(batch_pc, cfg, is_sqn=False):
     input_up_samples = []
     # need to handule points with extra fetures
     batch_pc = batch_pc[:, :, :3]  # take x,y,z only
+    min_layer_point = 512
     for i in range(cfg["num_layers"]):
+        layer_num_point = batch_pc.shape[1] // cfg["sub_sampling_ratio"][i]
+        layer_num_point = max(layer_num_point, min_layer_point // (2**i))
         neighbour_idx = knn_search(batch_pc, batch_pc, cfg["k_n"])
-        sub_points = batch_pc[:, : batch_pc.shape[1] // cfg["sub_sampling_ratio"][i], :]
-        pool_i = neighbour_idx[
-            :, : batch_pc.shape[1] // cfg["sub_sampling_ratio"][i], :
-        ]
+        sub_points = batch_pc[:, :layer_num_point, :]
+        pool_i = neighbour_idx[:, :layer_num_point, :]
         if is_sqn:
             input_points.append(sub_points)
         else:
@@ -102,7 +102,6 @@ def batch_preprocess_dict(batch_pc, cfg, is_sqn=False):
 
 
 def transform_data(input, target, sample_point_num, cfg, **kwargs):
-
     (
         input,
         point_nums,
@@ -165,13 +164,14 @@ class RandLANetSeg(nn.Module):
         self.decoder_0 = Conv2d(d_in, d_out, kernel_size=(1, 1), bn=True)
 
         self.decoder_blocks = nn.ModuleList()
+        num_of_layers = self.config["num_layers"] - 1
         for j in range(self.config["num_layers"]):
-            if j < 3:
+            if j < num_of_layers:
                 d_in = d_out + 2 * self.config["out_channels"][-j - 2]
                 d_out = 2 * self.config["out_channels"][-j - 2]
             else:
-                d_in = 4 * self.config["out_channels"][-4]
-                d_out = 2 * self.config["out_channels"][-4]
+                d_in = 4 * self.config["out_channels"][0]
+                d_out = 2 * self.config["out_channels"][0]
             self.decoder_blocks.append(Conv2d(d_in, d_out, kernel_size=(1, 1), bn=True))
 
         self.fc1 = Conv2d(d_out, 64, kernel_size=(1, 1), bn=True)
@@ -377,7 +377,6 @@ class Att_pooling(nn.Module):
         self.mlp = Conv2d(d_in, d_out, kernel_size=(1, 1), bn=True)
 
     def forward(self, feature_set):
-
         att_activation = self.fc(feature_set)
         att_scores = F.softmax(att_activation, dim=3)
         f_agg = feature_set * att_scores

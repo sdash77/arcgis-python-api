@@ -182,7 +182,6 @@ def run_python_script(
         "context": context,
     }
     for idx, lyr in enumerate(params["input_layers"]):
-
         if hasattr(lyr, "_lyr_dict"):
             params["input_layers"][idx] = lyr._lyr_dict
         elif hasattr(lyr, "_lyr_json"):
@@ -266,7 +265,7 @@ def dissolve_boundaries(
         Only available at ArcGIS Enterprise 10.7 and later.
 
     ================  ===============================================================
-    **Argument**      **Description**
+    **Parameter**      **Description**
     ----------------  ---------------------------------------------------------------
     input_layer       Required layer. The layer containing polygon features that will be dissolved. See :ref:`Feature Input<gaxFeatureInput>`.
     ----------------  ---------------------------------------------------------------
@@ -461,7 +460,7 @@ def merge_layers(
         Only available at **ArcGIS Enterprise 10.7** and later.
 
     ================  ===============================================================
-    **Argument**      **Description**
+    **Parameter**      **Description**
     ----------------  ---------------------------------------------------------------
     input_layer       Required layer. The table, point, line, or polygon features to
                       merge with the ``merge_layer`` parameter. All fields in ``input_layer``
@@ -643,7 +642,7 @@ def clip_layer(
     Only available at **ArcGIS Enterprise 10.7** and later.
 
     ================    ===============================================================
-    **Argument**        **Description**
+    **Parameter**        **Description**
     ----------------    ---------------------------------------------------------------
     input_layer         Required feature layer. The point, line, or polygon features
                         that will be clipped to the areas of ``clip_layer`` features.
@@ -789,7 +788,7 @@ def overlay_data(
         Only available at ArcGIS Enterprise 10.6.1 and later.
 
     ======================  ===============================================================================
-    **Argument**            **Description**
+    **Parameter**            **Description**
     ----------------------  -------------------------------------------------------------------------------
     input_layer             Required layer. The point, line, or polygon features that will be overlaid with the ``overlay_layer`` features. See :ref:`Feature Input<gaxFeatureInput>`.
     ----------------------  -------------------------------------------------------------------------------
@@ -975,7 +974,7 @@ def append_data(
     rows to the input layer. No new output layer is created.
 
     ================  ===============================================================
-    **Argument**      **Description**
+    **Parameter**      **Description**
     ----------------  ---------------------------------------------------------------
     input_layer       Required :class:`~arcgis.features.FeatureLayer`. The table, point,
                       line or polygon features.
@@ -1102,7 +1101,7 @@ def calculate_fields(
     input features, with the additional field added.
 
     =================================================   ===============================================================
-    **Argument**                                        **Description**
+    **Parameter**                                        **Description**
     -------------------------------------------------   ---------------------------------------------------------------
     input_layer                                         Required layer. The input features that will have a field added and calculated.
                                                         See :ref:`Feature Input<gaxFeatureInput>`.
@@ -1294,7 +1293,7 @@ def copy_to_data_store(
     feature service with only those features that were within the specified map extent.
 
     ==========================   ===============================================================
-    **Argument**                 **Description**
+    **Parameter**                 **Description**
     --------------------------   ---------------------------------------------------------------
     input_layer                  Required layer. The table, point, line, or polygon features that will be copied. See :ref:`Feature Input<gaxFeatureInput>`.
     --------------------------   ---------------------------------------------------------------

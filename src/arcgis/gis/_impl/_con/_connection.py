@@ -82,7 +82,7 @@ except ImportError:
 
 from arcgis.auth import EsriBasicAuth
 
-__version__ = "2.1.0"
+__version__ = "2.1.1"
 
 _DEFAULT_TOKEN = uuid.uuid4()
 _log = logging.getLogger(__name__)
@@ -117,6 +117,7 @@ class Connection(object):
     _custom_adapter = None
     legacy = None
     _server_log = None
+
     # ----------------------------------------------------------------------
     def __init__(
         self,
@@ -270,10 +271,8 @@ class Connection(object):
             self._auth = "ANON"
         elif self._client_id:
             self._auth = "OAUTH"
-        elif (
-            (not username is None and not password is None)
-            and len(username.split("\\")) > 1
-            and ("Negotiate" in auth_check or "Negotiate, NTLM" in auth_check)
+        elif (not username is None and not password is None) and (
+            "Negotiate" in auth_check or "Negotiate, NTLM" in auth_check
         ):
             self._auth = "KERBEROS"
         elif (username is None and password is None) and (
@@ -321,7 +320,6 @@ class Connection(object):
             portal_url = arcpy.GetActivePortalURL()
             if portal_url.lower().find("/sharing/rest") == -1:
                 if arcpy.GetActivePortalURL().endswith("/"):
-
                     self._baseurl = arcpy.GetActivePortalURL() + "sharing/rest"
                 else:
                     self._baseurl = arcpy.GetActivePortalURL() + "/sharing/rest"
@@ -402,7 +400,6 @@ class Connection(object):
                 "/rest/services",
             ]:
                 try:
-
                     www_auth = s.get(
                         root + pt,
                         params=params,
@@ -516,7 +513,6 @@ class Connection(object):
         from urllib3.util import Retry
 
         if self._custom_adapter is None:
-
             a = requests.adapters.HTTPAdapter(
                 max_retries=Retry(
                     total=2,
@@ -696,12 +692,10 @@ class Connection(object):
                 proxies=self._proxy,
             )
         elif self._auth.lower() == "pro":
-
             self._session.auth = (
                 GuessAuth(None, None, legacy=False) + ArcGISProAuth()
             )  # GuessAuth(None, None, legacy=False)
         elif not self._cert_file and not self._key_file:
-
             # else:
 
             if HAS_SSPI:
@@ -855,7 +849,7 @@ class Connection(object):
             )
         except requests.exceptions.RequestException as errRE:
             raise requests.exceptions.RequestException(
-                "A general expection was raised: %s" % errRE
+                "A general exception was raised: %s" % errRE
             )
         except Exception as e:
             raise Exception("A general error occurred: %s" % e)
@@ -1037,7 +1031,7 @@ class Connection(object):
         sends a MultiPart Form POST request.
 
         ===========================   =====================================================
-        **Parameters**                **Description**
+        **Parameter**                **Description**
         ---------------------------   -----------------------------------------------------
         path                          optional string.  URL or part of the url resource
                                       to call.
@@ -1132,7 +1126,6 @@ class Connection(object):
             params["f"] = "json"
         fields = {}
         if files:
-
             if isinstance(files, dict):
                 for k, v in files.items():
                     if isinstance(v, (list, tuple)):
@@ -1196,13 +1189,13 @@ class Connection(object):
                 auth = None
             if post_json:  # edge case workflow
                 if timeout:
-
                     resp = self._session.post(
                         url=url,
                         json=params,
                         cert=cert,
                         files=files,
                         allow_redirects=allow_redirects,
+                        verify=self._verify_cert,
                         timeout=timeout,
                     )
                 else:
@@ -1211,6 +1204,7 @@ class Connection(object):
                         json=params,
                         cert=cert,
                         allow_redirects=allow_redirects,
+                        verify=self._verify_cert,
                         files=files,
                     )
             else:
@@ -1223,6 +1217,7 @@ class Connection(object):
                         allow_redirects=allow_redirects,
                         timeout=timeout,
                         headers={"Content-Type": mp_encoder.content_type},
+                        verify=self._verify_cert,
                     )
                 else:
                     resp = self._session.post(
@@ -1231,6 +1226,7 @@ class Connection(object):
                         cert=cert,
                         allow_redirects=allow_redirects,
                         headers={"Content-Type": mp_encoder.content_type},
+                        verify=self._verify_cert,
                     )
             if auth and drop_auth:
                 self._session.auth = auth
@@ -1257,7 +1253,7 @@ class Connection(object):
             )
         except requests.exceptions.RequestException as errRE:
             raise requests.exceptions.RequestException(
-                "A general expection was raised: %s" % errRE
+                "A general exception was raised: %s" % errRE
             )
         except Exception as e:
             raise Exception("A general error occurred: %s" % e)
@@ -1283,7 +1279,7 @@ class Connection(object):
         sends a POST request.
 
         ===========================   =====================================================
-        **Parameters**                **Description**
+        **Parameter**                **Description**
         ---------------------------   -----------------------------------------------------
         path                          optional string.  URL or part of the url resource
                                       to call.
@@ -1353,6 +1349,7 @@ class Connection(object):
         return_raw_response = kwargs.pop("return_raw_response", False)
         json_encode = kwargs.pop("json_encode", True)
         add_headers = kwargs.pop("add_headers", {})
+        buffer_reader = None
 
         if self._baseurl.endswith("/") == False:
             self._baseurl += "/"
@@ -1382,9 +1379,10 @@ class Connection(object):
                     if isinstance(v, (list, tuple)):
                         fields[k] = v
                     else:
+                        buffer_reader = open(v, "rb")
                         fields[k] = (
                             os.path.basename(v),
-                            open(v, "rb"),
+                            buffer_reader,
                             mimetypes.guess_type(v)[0],
                         )
             elif isinstance(files, (list, tuple)):
@@ -1395,9 +1393,10 @@ class Connection(object):
                         isinstance(fileName, str)
                         and isinstance(filePath, (io.StringIO, io.BytesIO)) == False
                     ):
+                        buffer_reader = open(filePath, "rb")
                         fields[key] = (
                             fileName,
-                            open(filePath, "rb"),
+                            buffer_reader,
                             mimetypes.guess_type(filePath)[0],
                         )
                     elif isinstance(fileName, str) and isinstance(
@@ -1440,7 +1439,6 @@ class Connection(object):
             else:
                 auth = None
             if post_json:  # edge case workflow
-
                 if timeout:
                     resp = self._session.post(
                         url=url,
@@ -1463,7 +1461,6 @@ class Connection(object):
 
             else:
                 if timeout:
-
                     resp = self._session.post(
                         url=url,
                         data=params,
@@ -1510,7 +1507,7 @@ class Connection(object):
             )
         except requests.exceptions.RequestException as errRE:
             raise requests.exceptions.RequestException(
-                "A general expection was raised: %s" % errRE
+                "A general exception was raised: %s" % errRE
             )
         except Exception as e:
             raise Exception("A general error occurred: %s" % e)
@@ -1518,6 +1515,8 @@ class Connection(object):
             import traceback
 
             raise Exception("An unknown error occurred: %s" % traceback.format_exc())
+        if buffer_reader:
+            buffer_reader.close()
         if return_raw_response:
             return resp
         return self._handle_response(
@@ -1705,7 +1704,7 @@ class Connection(object):
         sends a PUT request
 
         ===========================   =====================================================
-        **Parameters**                **Description**
+        **Parameter**                **Description**
         ---------------------------   -----------------------------------------------------
         url                           Optional String. The web endpoint.
         ---------------------------   -----------------------------------------------------
@@ -1792,7 +1791,7 @@ class Connection(object):
         Performs streaming web requests.
 
         =======================     ===========================================================
-        **Parameters**              **Description**
+        **Parameter**              **Description**
         -----------------------     -----------------------------------------------------------
         url                         Required String. The web resource location.
         -----------------------     -----------------------------------------------------------
@@ -2016,7 +2015,6 @@ class Connection(object):
             params = {"f": "json"}
             for pt in parts:
                 try:
-
                     res = self.get(
                         root + pt,
                         params=params,

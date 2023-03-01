@@ -11,7 +11,7 @@ class Velocity:
     Provides access to real-time analytics, big data analytics, and feeds in ArcGIS Velocity.
 
     ==================     ====================================================================
-    **Argument**           **Description**
+    **Parameter**           **Description**
     ------------------     --------------------------------------------------------------------
     url                    URL of the ArcGIS Velocity organization.
     ------------------     --------------------------------------------------------------------

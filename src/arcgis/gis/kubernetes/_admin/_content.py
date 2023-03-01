@@ -3,6 +3,7 @@ from arcgis.gis.kubernetes._admin._base import _BaseKube
 from arcgis.gis import GIS
 from typing import Dict
 
+
 ###########################################################################
 class LanguageManager(_BaseKube):
     """
@@ -73,12 +74,12 @@ class LanguageManager(_BaseKube):
                 else:
                     removes[k] = False
         if adds:
-            url = "{self._url}/add"
+            url = f"{self._url}/add"
             params = {"f": "json", "languages": ",".join(list(adds.keys()))}
             res = self._con.post(url, params)
             del res
         if removes:
-            url = "{self._url}/remove"
+            url = f"{self._url}/remove"
             params = {"f": "json", "languages": ",".join(list(adds.keys()))}
             res = self._con.post(url, params)
             del res

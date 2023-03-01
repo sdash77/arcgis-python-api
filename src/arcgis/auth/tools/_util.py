@@ -29,7 +29,7 @@ def detect_proxy(replace_https: bool = True) -> typing.Optional[typing.Dict]:
          page for a full explination of the code.
 
     ===============     ====================================================================
-    **Argument**        **Description**
+    **Parameter**        **Description**
     ---------------     --------------------------------------------------------------------
     replace_https       Optional Boolean.  The autodetect method from `urllib.requests.getproxies`
                         assumes there is an `http` and `https` version of the proxy.  Many

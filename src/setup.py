@@ -67,17 +67,16 @@ else:
         "urllib3",
         "gssapi",
         "cachetools",
-        "six",
         "lxml",
         "notebook",
         "cryptography",
-        "ipywidgets >=7",
+        "ipywidgets >=7,<8",
         "widgetsnbextension >=3",
         "jupyter-client <=6.1.12",
         "pandas >=1.3.5",
         "numpy >=1.16.2",
         "matplotlib",
-        "keyring >=23.3.*",
+        "keyring >=23.3.0",
         "lerc",
         "ujson >=3",
         "jupyterlab",
@@ -118,7 +117,6 @@ def _post_install():
 
         activate_map_widget = True
     except Exception as e:
-
         log.exception(
             "arcgis/notebook packages don't appear to be installed: "
             "map widget not activated, may not work. The rest of "
@@ -131,7 +129,6 @@ def _post_install():
         log.warning("Attempting to activate map widget...")
         print("Attempting to activate map widget...")
         try:
-
             log.warning(
                 nbext.install_nbextension_python("arcgis", sys_prefix=True, logger=log)
             )
@@ -200,7 +197,6 @@ class egg_info(_egg_info):
 
 # Read the description.md file
 try:
-
     description_md_file = open("pypi_long_description.md", "r")
     long_description = description_md_file.read()
     description_md_file.close()

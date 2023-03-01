@@ -73,7 +73,7 @@ def simplify_graph(graph, max_distance=1):
     """
     all_segments = []
     # Iterate over Graph Edges
-    for (s, e) in graph.edges():
+    for s, e in graph.edges():
         for _, val in graph[s][e].items():
             # get all pixel points i.e. (x,y) between the edge
             ps = val["pts"]

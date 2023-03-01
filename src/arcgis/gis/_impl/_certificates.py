@@ -1,6 +1,7 @@
 from typing import Optional
 from arcgis._impl.common._mixins import PropertyMap
 
+
 ###########################################################################
 class CertificateManager(object):
     """

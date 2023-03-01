@@ -41,6 +41,7 @@ from .tools import LazyLoader
 
 urllib3 = LazyLoader("urllib3")
 
+
 ###########################################################################
 class EsriSession:
     """
@@ -76,7 +77,7 @@ class EsriSession:
     can caused unintended failures.
 
     ==================     ====================================================================
-    **Argument**           **Description**
+    **Parameter**           **Description**
     ------------------     --------------------------------------------------------------------
     auth                   Optional AuthBase. This is a security handler that performs some sort
                            of security check.
@@ -102,7 +103,7 @@ class EsriSession:
     **Optional Arguments**
 
     ==================     ====================================================================
-    **Argument**           **Description**
+    **Parameter**           **Description**
     ------------------     --------------------------------------------------------------------
     trust_env              Optional Bool. The default is `True`. If `False` proxies will cause
                            an error to be raised if set by **.netrc** files.
@@ -145,6 +146,7 @@ class EsriSession:
     _baseurl = None  # if partial url given, try the base url
     _referer = None
     allow_redirects = None
+
     # ----------------------------------------------------------------------
     def __init__(
         self,

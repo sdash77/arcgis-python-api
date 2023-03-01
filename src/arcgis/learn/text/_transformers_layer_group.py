@@ -24,7 +24,7 @@ def split_into_layer_groups(model, architecture, task="classification"):
     transformer model into different layer groups
 
     =====================   =================================================
-    **Argument**            **Description**
+    **Parameter**            **Description**
     ---------------------   -------------------------------------------------
     model                   Required ModelObject. The transformer model for
                             which we want to get the layer groups
@@ -58,7 +58,7 @@ def get_layer_group_splitter_for_ner(architecture):
     then be used to split the transformer model into layer groups
 
     =====================   =================================================
-    **Argument**            **Description**
+    **Parameter**            **Description**
     ---------------------   -------------------------------------------------
     architecture            Required string. The transformer architecture for
                             which we wish to get the layer groups. This param
@@ -86,7 +86,7 @@ def get_layer_group_splitter_for_classification(architecture):
     then be used to split the transformer model into layer groups
 
     =====================   =================================================
-    **Argument**            **Description**
+    **Parameter**            **Description**
     ---------------------   -------------------------------------------------
     architecture            Required string. The transformer architecture for
                             which we wish to get the layer groups. This param
@@ -112,7 +112,7 @@ def get_layer_group_splitter_for_sequence_translation(architecture):
     then be used to split the transformer model into layer groups
 
     =====================   =================================================
-    **Argument**            **Description**
+    **Parameter**            **Description**
     ---------------------   -------------------------------------------------
     architecture            Required string. The transformer architecture for
                             which we wish to get the layer groups. This param

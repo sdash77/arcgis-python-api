@@ -33,7 +33,7 @@ class RandLANet(PointCNN):
     Creates RandLANet point cloud segmentation model.
 
     =====================   ===========================================
-    **Argument**            **Description**
+    **Parameter**            **Description**
     ---------------------   -------------------------------------------
     data                    Required fastai Databunch. Returned data object from
                             `prepare_data` function.
@@ -45,7 +45,7 @@ class RandLANet(PointCNN):
     **kwargs**
 
     =====================   ===========================================
-    **Argument**            **Description**
+    **Parameter**            **Description**
     ---------------------   -------------------------------------------
     encoder_params          Optional dictionary. The keys of the dictionary are
                             `out_channels`, `sub_sampling_ratio`, `k_n`.
@@ -81,15 +81,16 @@ class RandLANet(PointCNN):
         self._backbone = None
         self.sample_point_num = data.max_point
 
-        self.encoder_params = kwargs.get("encoder_params", None)
-        if self.encoder_params is None:
-            self.encoder_params = {
-                "out_channels": [16, 64, 128, 256],
-                "sub_sampling_ratio": [4, 4, 4, 4],
-                "k_n": 16,
-            }
-        self.encoder_params["num_classes"] = data.c
+        self.encoder_params = kwargs.get("encoder_params", {})
+        self.encoder_params["out_channels"] = self.encoder_params.get(
+            "out_channels", [16, 64, 128, 256]
+        )
         self.encoder_params["num_layers"] = len(self.encoder_params["out_channels"])
+        self.encoder_params["sub_sampling_ratio"] = self.encoder_params.get(
+            "sub_sampling_ratio", [4] * self.encoder_params["num_layers"]
+        )
+        self.encoder_params["k_n"] = self.encoder_params.get("k_n", 16)
+        self.encoder_params["num_classes"] = data.c
         if not isinstance(data, _EmptyData):
             data = prepare_data_dict(data, self.sample_point_num, self.encoder_params)
         self.learn = Learner(
@@ -116,13 +117,12 @@ class RandLANet(PointCNN):
 
     @classmethod
     def from_model(cls, emd_path, data=None):
-
         """
         Creates an RandLANet model object from a Deep Learning Package(DLPK)
         or Esri Model Definition (EMD) file.
 
         =====================   ===========================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ---------------------   -------------------------------------------
         emd_path                Required string. Path to Deep Learning Package
                                 (DLPK) or Esri Model Definition(EMD) file.
@@ -199,7 +199,6 @@ class RandLANet(PointCNN):
         super().unfreeze()
 
     def predict_las(self, path, output_path=None, print_metrics=False, **kwargs):
-
         """
         Predicts and writes the resulting las file on the disk.
         The block size which was used for training will be used for prediction.
@@ -216,7 +215,7 @@ class RandLANet(PointCNN):
 
 
         =====================   ===========================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ---------------------   -------------------------------------------
         path                    Required string. The path to folder where the las
                                 files which needs to be predicted are present.
@@ -233,7 +232,7 @@ class RandLANet(PointCNN):
         **kwargs**
 
         =====================   ===========================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ---------------------   -------------------------------------------
         remap_classes           Optional dictionary {int:int}. Mapping from
                                 class values to user defined values. Please query

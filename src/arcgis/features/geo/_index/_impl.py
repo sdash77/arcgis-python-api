@@ -61,6 +61,7 @@ class SpatialIndex:
     _bbox = None
     _index = None
     _df = None
+
     # ----------------------------------------------------------------------
     def __init__(self, stype, bbox=None, **kwargs):
         """initializer"""
@@ -107,7 +108,6 @@ class SpatialIndex:
                 ("Could not insert into a spatial index because " "it does not exist.")
             )
         if self._stype == "rtree" and HASRTREE and isinstance(self._index, RIndex):
-
             r = self._index.insert(id=oid, coordinates=bbox, obj=None)
             self.flush()
             return r

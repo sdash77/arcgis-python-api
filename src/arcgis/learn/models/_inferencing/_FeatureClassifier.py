@@ -90,7 +90,6 @@ class ChildObjectDetector:
         return required_parameters
 
     def getConfiguration(self, **scalars):
-
         if "BatchSize" not in self.emd and "batch_size" not in scalars:
             self.batch_size = 1
         elif "BatchSize" not in self.emd and "batch_size" in scalars:
@@ -159,7 +158,6 @@ class ChildObjectDetector:
         return torch.stack(tta_pred_combined).mean(0)
 
     def vectorize(self, **pixelBlocks):
-
         # Get pixel blocks - tuple of 3-d rasters: ([bands,height,width],[bands,height.width],...)
         # Convert tuple to 4-d numpy array
         batch_images = np.asarray(pixelBlocks["rasters_pixels"])
@@ -205,7 +203,6 @@ class ChildObjectDetector:
             and self.emd["MetaDataMode"] == "MultiLabeled_Tiles"
         ):
             for pred in predictions:
-
                 # Select the class labels >= threshold and convert them to a comma separated string
                 class_idxs = np.where(pred >= self.thresh)[0]
                 lbls = [class_map[idx] for idx in class_idxs]

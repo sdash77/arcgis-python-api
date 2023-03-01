@@ -48,6 +48,8 @@ except ImportError:
 
 
 _log = logging.getLogger(__name__)
+
+
 ###########################################################################
 @contextmanager
 def _tempinput(data):
@@ -126,7 +128,7 @@ class WebMap(HasTraits, collections.OrderedDict):
         `Web Map Specification <https://developers.arcgis.com/web-map-specification/>`_ page
 
     ==================     ====================================================================
-    **Argument**           **Description**
+    **Parameter**           **Description**
     ------------------     --------------------------------------------------------------------
     webmapitem             Optional :class:`~arcgis.gis.Item` object whose Item.type is ``Web Map``.
 
@@ -330,7 +332,7 @@ class WebMap(HasTraits, collections.OrderedDict):
         Adds the given Table to the ``WebMap``.
 
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
         table                  Required object. You can add:
 
@@ -373,7 +375,7 @@ class WebMap(HasTraits, collections.OrderedDict):
         * Vector Tile Layer
 
         =====================       ===================================================================
-        **Argument**                **Definition**
+        **Parameter**                **Definition**
         ---------------------       -------------------------------------------------------------------
         layer                       Required Dictionary. The layer dictionary that will be sent to
                                     basemap layers. This dictionary is found when calling the `layers`
@@ -422,7 +424,7 @@ class WebMap(HasTraits, collections.OrderedDict):
         `move_to_basemap`.
 
         =====================       ===================================================================
-        **Argument**                **Definition**
+        **Parameter**                **Definition**
         ---------------------       -------------------------------------------------------------------
         layer                       Required Dictionary. The layer dictionary that will be sent to
                                     operational layers. This dictionary is found when calling the `definition`
@@ -478,7 +480,7 @@ class WebMap(HasTraits, collections.OrderedDict):
         Adds the given layer to the ``WebMap`` object.
 
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
         layer                  Required object. You can add:
 
@@ -1006,7 +1008,7 @@ class WebMap(HasTraits, collections.OrderedDict):
             In order to save changes made through this method, call ``WebMap.update()`` or ``WebMap.save()``.
 
         ==================      ====================================================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ------------------      --------------------------------------------------------------------
         layer                   Required :class:`~arcgis.features.FeatureLayer` or Feature Layer
                                 dictionary. The existing WebMap layer to be changed.
@@ -1115,7 +1117,7 @@ class WebMap(HasTraits, collections.OrderedDict):
         or any other part of the Feature Layer properties.
 
         ==================      ====================================================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ------------------      --------------------------------------------------------------------
         layer                   Required :class:`~arcgis.features.FeatureLayer` or Feature Layer dictionary.
                                 The existing webmap layer with updated properties.
@@ -1261,7 +1263,7 @@ class WebMap(HasTraits, collections.OrderedDict):
             :attr:`~arcgis.mapping.WebMap.update` method instead.
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         item_properties     Required dictionary. See table below for the keys and values.
         ---------------     --------------------------------------------------------------------
@@ -1397,7 +1399,7 @@ class WebMap(HasTraits, collections.OrderedDict):
         item's description, then only provide the description argument in ``item_properties``.
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         item_properties     Optional dictionary. See table below for the keys and values.
         ---------------     --------------------------------------------------------------------
@@ -1664,7 +1666,7 @@ class WebMap(HasTraits, collections.OrderedDict):
         Get/Set the base map layers in the ``WebMap``.
 
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
         value                  Required string. What basemap you would like to apply to the map
                                ('topo', 'national-geographic', etc.).
@@ -1915,7 +1917,7 @@ class WebMap(HasTraits, collections.OrderedDict):
             and pass one of those tables to this method for removal from the map.
 
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
         table                  Required object. Pass the :class:`~arcgis.features.Table`
                                that needs to be removed from the map. You can get the
@@ -1934,7 +1936,7 @@ class WebMap(HasTraits, collections.OrderedDict):
             and pass one of those layers to this method for removal from the map.
 
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
         layer                  Required object. Pass the :class:`~arcgis.features.FeatureLayer`
                                that needs to be removed from the map. You can get the
@@ -1959,7 +1961,7 @@ class WebMap(HasTraits, collections.OrderedDict):
             Pass one of the three parameters into the method to return the layer.
 
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
         item_id                Optional string. Pass the item_id for the operational layer you are trying
                                to reference in the ``WebMap``. Note: Not recommended if using multiple
@@ -2013,7 +2015,7 @@ class WebMap(HasTraits, collections.OrderedDict):
             Pass one of the three parameters into the method to return the table.
 
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
         item_id                Optional string. Pass the item_id for the table you are trying
                                to reference in the ``WebMap``.
@@ -2059,7 +2061,7 @@ class WebMap(HasTraits, collections.OrderedDict):
         Get/Set whether pop ups are enabled for the viewer widget.
 
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
         value                  Required bool. True to enable, False to disable
         ==================     ====================================================================
@@ -2087,7 +2089,7 @@ class WebMap(HasTraits, collections.OrderedDict):
             on the Portal Web Map Viewer.
 
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
         layer_title            Required string. The name of the layer.
         ------------------     --------------------------------------------------------------------
@@ -2113,7 +2115,7 @@ class WebMap(HasTraits, collections.OrderedDict):
         Get/Set whether bookmarks are enabled for the viewer widget.
 
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
         value                  Required list of dictionaries. The new bookmarks to be used.
                                This will replace current bookmarks with the ones passed into the list.
@@ -2190,7 +2192,7 @@ class WebMap(HasTraits, collections.OrderedDict):
         Get/Set whether bookmarks are enabled for the dashboard widget.
 
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
         value                  Required bool. True to enable, False to disable
         ==================     ====================================================================
@@ -2214,7 +2216,7 @@ class WebMap(HasTraits, collections.OrderedDict):
         Get/Set whether legend visibility is enabled for the viewer widget.
 
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
         value                  Required bool. True to enable, False to disable
         ==================     ====================================================================
@@ -2238,7 +2240,7 @@ class WebMap(HasTraits, collections.OrderedDict):
         Get/Set whether layer visibility is enabled for the viewer widget.
 
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
         value                  Required bool. True to enable, False to disable
         ==================     ====================================================================
@@ -2262,7 +2264,7 @@ class WebMap(HasTraits, collections.OrderedDict):
         Get/Set whether the basemap of the ``WebMap`` can be switched.
 
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
         value                  Required bool. True to enable, False to disable
         ==================     ====================================================================
@@ -2287,7 +2289,7 @@ class WebMap(HasTraits, collections.OrderedDict):
         Get/Set whether search is enabled for the viewer widget.
 
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
         value                  Required bool. True to enable, False to disable
         ==================     ====================================================================
@@ -2311,7 +2313,7 @@ class WebMap(HasTraits, collections.OrderedDict):
         Get/Set whether zoom is enabled for the viewer widget.
 
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
         value                  Required bool. True to enable, False to disable
         ==================     ====================================================================
@@ -2335,7 +2337,7 @@ class WebMap(HasTraits, collections.OrderedDict):
         Get/Set whether navigation is enabled for the viewer widget.
 
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
         value                  Required bool. True to enable, False to disable
         ==================     ====================================================================
@@ -2359,7 +2361,7 @@ class WebMap(HasTraits, collections.OrderedDict):
         Get/Set the scale bar type for the viewer widget.
 
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
         value                  Required string.
                                Values: 'none' (disable) | 'line' | 'ruler'
@@ -2384,7 +2386,7 @@ class WebMap(HasTraits, collections.OrderedDict):
         Get/Set the height of the widget.
 
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
         value                  Required float between 0 and 1. (e.g. 0.75)
         ==================     ====================================================================
@@ -2414,7 +2416,7 @@ class WebMap(HasTraits, collections.OrderedDict):
         Get/Set the width of the viewer widget.
 
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
         value                  Required float between 0 and 1. (e.g. 0.75)
         ==================     ====================================================================
@@ -2512,7 +2514,7 @@ class WebMap(HasTraits, collections.OrderedDict):
         in raster or vector format.
 
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
         file_format            Required String. Specifies the output file format. Valid types:
 
@@ -2683,7 +2685,7 @@ class PackagingJob(object):
 
 
     ================  ===============================================================
-    **Argument**      **Description**
+    **Parameter**      **Description**
     ----------------  ---------------------------------------------------------------
     future            Required `Future <https://docs.python.org/3/library/concurrent.futures.html>`_ object. The async object created by
                       the ``geoprocessing`` :class:`~arcgis.geoprocessing.GPTask`.
@@ -2849,6 +2851,7 @@ class OfflineMapAreaManager(object):
     _item = None
     _portal = None
     _web_map = None
+
     # ----------------------------------------------------------------------
     def __init__(self, item, gis):
         self._gis = gis
@@ -2856,7 +2859,6 @@ class OfflineMapAreaManager(object):
         self._item = item
         self._web_map = WebMap(self._item)
         try:
-
             self._url = self._gis.properties.helperServices.packaging.url
             self._pm = self._gis._tools.packaging
 
@@ -2873,7 +2875,7 @@ class OfflineMapAreaManager(object):
         behave in the web map application.
 
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
         values                 Required Dict.  The key/value object that defines the offline
                                application properties.
@@ -3111,7 +3113,7 @@ class OfflineMapAreaManager(object):
             - You need to be the owner of the web map or an administrator of your :class:`~arcgis.gis.GIS`.
 
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
         area                   Required object.  Bookmark or extent. Specify as either:
 
@@ -3353,7 +3355,7 @@ class OfflineMapAreaManager(object):
             - You need to be the owner of the web map or an administrator of your GIS.
 
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
         area                   Required object. You can specify the name of a web map bookmark or a
                                desired extent.
@@ -3654,7 +3656,6 @@ class OfflineMapAreaManager(object):
         # pkg_tb = Toolbox(url=self._url, gis=self._gis)
         pkg_tb = self._gis._tools.packaging
         if self._gis.version >= [7, 2]:
-
             if _extent:
                 area = _extent
                 area_type = "ENVELOPE"
@@ -3837,7 +3838,6 @@ class OfflineMapAreaManager(object):
                 feature_services = {}
                 for l in self._web_map.layers:
                     if os.path.dirname(l["url"]) not in feature_services:
-
                         feature_services[os.path.dirname(l["url"])] = {
                             "url": os.path.dirname(l["url"]),
                             "layers": [int(os.path.basename(l["url"]))],
@@ -3880,7 +3880,7 @@ class OfflineMapAreaManager(object):
         The ``modify_refresh_schedule`` method modifies an existing offline package's refresh schedule.
 
         ============================     ====================================================================
-        **Argument**                     **Description**
+        **Parameter**                     **Description**
         ----------------------------     --------------------------------------------------------------------
         item                             Required :class:`~arcgis.gis.Item` object.
                                          This is the Offline Package to update the refresh schedule.
@@ -4088,7 +4088,7 @@ class OfflineMapAreaManager(object):
             - You need to be the owner of the web map or an administrator of your :class:`~arcgis.gis.GIS`.
 
         ============================     ====================================================================
-        **Argument**                     **Description**
+        **Parameter**                     **Description**
         ----------------------------     --------------------------------------------------------------------
         offline_map_area_items           Optional list. Specify one or more Map Area items for which the packages need
                                          to be refreshed. If not specified, this method updates all the packages
@@ -4257,7 +4257,7 @@ class EnterpriseVectorTileLayerManager(arcgis.gis._GISResource):
             in the JSON representation. Any other properties that are left out are not persisted by the server.
 
         ===================     ====================================================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         -------------------     --------------------------------------------------------------------
         service_dictionary      Required dict. The JSON representation of the service and the
                                 properties that have been updated or added.
@@ -4312,7 +4312,7 @@ class EnterpriseVectorTileLayerManager(arcgis.gis._GISResource):
         Services with ArcObjects or SDS as their provider cannot change their instance type.
 
         ======================      =======================================================
-        **Argument**                **Description**
+        **Parameter**                **Description**
         ----------------------      -------------------------------------------------------
         provider                    Optional String. Specifies the service instance as either
                                     a shared ("DMaps") or dedicated ("ArcObjects11") instance
@@ -4358,7 +4358,7 @@ class EnterpriseVectorTileLayerManager(arcgis.gis._GISResource):
         done rebuilding.
 
         ======================      =======================================================
-        **Argument**                **Description**
+        **Parameter**                **Description**
         ----------------------      -------------------------------------------------------
         min_scale                   Optional Float. Represents the minimum scale of the tiles.
                                     If nothing is provided, default value is used.
@@ -4415,7 +4415,7 @@ class VectorTileLayerManager(arcgis.gis._GISResource):
         the source_item_id which can be found by looking at the Vector Tile Layer's related items.
 
         ======================      =======================================================
-        **Argument**                **Description**
+        **Parameter**                **Description**
         ----------------------      -------------------------------------------------------
         source_item_id              Optional String. The Source Item ID is the GeoWarehouse
                                     Item ID of the tile service.
@@ -4521,7 +4521,7 @@ class VectorTileLayerManager(arcgis.gis._GISResource):
         published through a Feature Layer since edits require regeneration of the tiles.
 
         ===============     ====================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     ----------------------------------------------------
         merge_bundle        Optional bool. Default is False. This parameter will
                             only be set if the Vector Tile Layer has been published
@@ -4649,7 +4649,7 @@ class VectorTileLayerManager(arcgis.gis._GISResource):
         indicating success or failure with error code and description.
 
         ===============     ====================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     ----------------------------------------------------
         code                required string, parameter used to re-run a given
                             jobs with a specific error
@@ -4675,7 +4675,7 @@ class VectorTileLayerManager(arcgis.gis._GISResource):
             Tile Layer published from a service directory.
 
         ====================        ====================================================
-        **Argument**                **Description**
+        **Parameter**                **Description**
         --------------------        ----------------------------------------------------
         target_service_name         Required string. Name of service you want to swap with.
         ====================        ====================================================
@@ -4747,7 +4747,6 @@ class SymbolService:
     def properties(self) -> dict[str, Any]:
         """returns the service's properties"""
         if self._properties is None:
-
             self._properties = arcgis._impl.common._isd.InsensitiveDict(
                 self._gis._con.get(self._url, {"f": "json"})
             )
@@ -4776,7 +4775,7 @@ class SymbolService:
         Returns a single symbol based on a web style item.
 
         ============================    ===================================================================================================================
-        **Argument**                    **Description**
+        **Parameter**                    **Description**
         ----------------------------    -------------------------------------------------------------------------------------------------------------------
         item                            Required Item. The web style ArcGIS Enterprise portal item ID. The web style must belong to the same organization
                                         the ArcGIS Server is federated to.
@@ -4815,7 +4814,6 @@ class SymbolService:
         save_file_name: str = None
         save_folder: str = None
         if file_path:
-
             save_folder, save_file_name = os.path.dirname(file_path), os.path.basename(
                 file_path
             )
@@ -4962,7 +4960,7 @@ class VectorTileLayer(arcgis.gis.Layer):
         `protocol buffer format. <https://developers.google.com/protocol-buffers/>`_
 
         ============================    ===================================================================================================================
-        **Argument**                    **Description**
+        **Parameter**                    **Description**
         ----------------------------    -------------------------------------------------------------------------------------------------------------------
         fontstack                       Required string.
 
@@ -4993,7 +4991,7 @@ class VectorTileLayer(arcgis.gis.Layer):
             returned in PBF format. If a tile is not found, an error is returned.
 
         ============================    ================================================
-        **Argument**                    **Description**
+        **Parameter**                    **Description**
         ----------------------------    ------------------------------------------------
         level                           Required string. A level number as a string.
         ----------------------------    ------------------------------------------------
@@ -5019,7 +5017,7 @@ class VectorTileLayer(arcgis.gis.Layer):
         The ``tile_sprite`` resource retrieves sprite images and metadata.
 
         ============================    ================================================
-        **Argument**                    **Description**
+        **Parameter**                    **Description**
         ----------------------------    ------------------------------------------------
         out_format                      Optional string. Default is "sprite.json".
 
@@ -5044,7 +5042,7 @@ class VectorTileLayer(arcgis.gis.Layer):
         Export vector tile layer
 
         =====================       =======================================================
-        **Argument**                **Description**
+        **Parameter**                **Description**
         ---------------------       -------------------------------------------------------
         levels                      Required string.Specifies the tiled service levels to export.
                                     The values should correspond to Level IDs. The values
@@ -5153,7 +5151,6 @@ class VectorTileLayer(arcgis.gis.Layer):
             raise Exception("No job results.")
 
         if "results" in job_response:
-
             allResults = job_response["results"]
 
             for k, v in allResults.items():
@@ -5226,7 +5223,7 @@ class EnterpriseMapImageLayerManager(arcgis.gis._GISResource):
         restarted with updated properties.
 
         ===================     ====================================================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         -------------------     --------------------------------------------------------------------
         service_dictionary      Required dict. The service JSON as a dictionary.
         ===================     ====================================================================
@@ -5321,7 +5318,7 @@ class MapImageLayerManager(arcgis.gis._GISResource):
         code and description.
 
         ===============     ====================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     ----------------------------------------------------
         job_id               Required String. The job id to cancel.
         ===============     ====================================================
@@ -5361,7 +5358,7 @@ class MapImageLayerManager(arcgis.gis._GISResource):
 
 
         ===============     ====================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     ----------------------------------------------------
         item                Required ItemId or :class:`~arcgis.gis.Item` object. The TPK file's item id.
                             This TPK file contains to-be-extracted bundle files
@@ -5447,7 +5444,7 @@ class MapImageLayerManager(arcgis.gis._GISResource):
             The ``update_tiles`` operation is for ArcGIS Online only.
 
         ===============     ====================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     ----------------------------------------------------
         levels              Optional String / List of integers, The level of details
                             to update. Example: "1,2,10,20" or [1,2,10,20]
@@ -5531,7 +5528,7 @@ class MapImageLayerManager(arcgis.gis._GISResource):
         indicating success or failure with error code and description.
 
         ===============     ====================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     ----------------------------------------------------
         job_id              required string, job to reprocess
         ---------------     ----------------------------------------------------
@@ -5561,7 +5558,7 @@ class MapImageLayerManager(arcgis.gis._GISResource):
         The ``edit_tile_service`` operation updates a Tile Service's properties.
 
         =====================     ======================================================
-        **Argument**              **Description**
+        **Parameter**              **Description**
         ---------------------     ------------------------------------------------------
         service_definition        Required String. Updates a service definition.
         ---------------------     ------------------------------------------------------
@@ -5628,7 +5625,7 @@ class MapImageLayerManager(arcgis.gis._GISResource):
         The ``delete_tiles`` method deletes tiles from the current cache.
 
         ===============     ====================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     ----------------------------------------------------
         levels              Required string, The level to delete.
                             Example, 0-5,10,11-20 or 1,2,3 or 0-5
@@ -5822,7 +5819,7 @@ class MapImageLayer(arcgis.gis.Layer):
         the map image layer properties.
 
         =================     ====================================================================
-        **Argument**          **Description**
+        **Parameter**          **Description**
         -----------------     --------------------------------------------------------------------
         layer                 Required dict.  Dynamic layer/table source definition.
 
@@ -6021,7 +6018,6 @@ class MapImageLayer(arcgis.gis.Layer):
         layer_parameters: Optional[list[dict[str, Any]]] = None,
         **kwargs,
     ):
-
         """
         The ``identify`` operation is performed on a map service resource
         to discover features at a geographic location. The result of this
@@ -6032,7 +6028,7 @@ class MapImageLayer(arcgis.gis.Layer):
             ``geometry type``, and other attributes of that result as name-value pairs.
 
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
         geometry               Required :class:`~arcgis.geometry.Geometry` or list. The geometry
                                to identify on. The type of the geometry is specified by the
@@ -6279,7 +6275,7 @@ class MapImageLayer(arcgis.gis.Layer):
         The ``find`` method performs the map service ``find`` operation.
 
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
         search_text            Required string.The search string. This is the text that is searched
                                across the layers and fields the user specifies.
@@ -6462,7 +6458,7 @@ class MapImageLayer(arcgis.gis.Layer):
             endpoint with properties and parameters you specify.
 
         =================     ====================================================================
-        **Argument**          **Description**
+        **Parameter**          **Description**
         -----------------     --------------------------------------------------------------------
         save_location         Required string. Save folder.
         -----------------     --------------------------------------------------------------------
@@ -6533,7 +6529,7 @@ class MapImageLayer(arcgis.gis.Layer):
         as its URL, its width and height, extent and scale.
 
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
         bbox                   Required string. The extent (bounding box) of the exported image.
                                Unless the bbox_sr parameter has been specified, the bbox is assumed
@@ -6741,7 +6737,7 @@ class MapImageLayer(arcgis.gis.Layer):
         be exported.
 
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
         export_by              Required string. The criteria that will be used to select the tile
                                service levels to export. The values can be Level IDs, cache scales
@@ -6881,7 +6877,7 @@ class MapImageLayer(arcgis.gis.Layer):
 
 
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
         levels                 Required string. Specifies the tiled service levels to export. The
                                values should correspond to Level IDs, cache scales. or the
@@ -7010,7 +7006,6 @@ class MapImageLayer(arcgis.gis.Layer):
                 raise Exception("No job results.")
 
             if "results" in job_response:
-
                 allResults = job_response["results"]
 
                 for k, v in allResults.items():
@@ -7088,7 +7083,6 @@ class Events(object):
         return self._actions
 
     def sync_widget(self, widgets):
-
         if self.enable == False:
             raise Exception("Please enable events")
 

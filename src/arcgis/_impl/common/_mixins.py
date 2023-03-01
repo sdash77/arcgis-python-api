@@ -9,13 +9,11 @@ from abc import ABCMeta, abstractmethod
 from collections.abc import Mapping, MutableMapping, Sequence
 import re
 import json
-import six
 
 __all__ = ["Attr", "MutableAttr"]
 
 
-@six.add_metaclass(ABCMeta)
-class Attr(Mapping):
+class Attr(Mapping, metaclass=ABCMeta):
     """
     A mixin class for a mapping that allows for attribute-style access
     of values.
@@ -134,9 +132,7 @@ class Attr(Mapping):
         """
         if isinstance(obj, Mapping):
             obj = self._constructor(obj, self._configuration())
-        elif isinstance(obj, Sequence) and not isinstance(
-            obj, (six.string_types, six.binary_type)
-        ):
+        elif isinstance(obj, Sequence) and not isinstance(obj, (str, bytes)):
             sequence_type = getattr(self, "_sequence_type", None)
 
             if sequence_type:
@@ -157,14 +153,13 @@ class Attr(Mapping):
             'register').
         """
         return (
-            isinstance(key, six.string_types)
+            isinstance(key, str)
             and re.match("^[A-Za-z][A-Za-z0-9_]*$", key)
             and not hasattr(cls, key)
         )
 
 
-@six.add_metaclass(ABCMeta)
-class MutableAttr(Attr, MutableMapping):
+class MutableAttr(Attr, MutableMapping, metaclass=ABCMeta):
     """
     A mixin class for a mapping that allows for attribute-style access
     of values.
@@ -253,7 +248,7 @@ class AttrDict(dict, MutableAttr):
         self._setattr("_allow_invalid_attributes", allow_invalid_attributes)
 
     def __repr__(self):
-        return six.u("{contents}").format(contents=super(AttrDict, self).__repr__())
+        return ("{contents}").format(contents=super(AttrDict, self).__repr__())
 
     @classmethod
     def _constructor(cls, mapping, configuration):

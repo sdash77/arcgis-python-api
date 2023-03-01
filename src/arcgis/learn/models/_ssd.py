@@ -250,7 +250,7 @@ class SingleShotDetector(ArcGISModel):
     and aspect ratios. Based on Fast.ai MOOC Version2 Lesson 9.
 
     =====================   ===========================================
-    **Argument**            **Description**
+    **Parameter**            **Description**
     ---------------------   -------------------------------------------
     data                    Required fastai Databunch. Returned data object from
                             :meth:`~arcgis.learn.prepare_data` function.
@@ -316,7 +316,6 @@ class SingleShotDetector(ArcGISModel):
         *args,
         **kwargs,
     ):
-
         super().__init__(data, backbone, pretrained_path=pretrained_path, **kwargs)
         data = self._data
 
@@ -339,7 +338,6 @@ class SingleShotDetector(ArcGISModel):
                 location_loss_factor,
             )
         else:
-
             self._check_dataset_support(self._data)
             if not (self._check_backbone_support(getattr(self, "_backbone", backbone))):
                 raise Exception(
@@ -361,7 +359,6 @@ class SingleShotDetector(ArcGISModel):
             self.ssd_version = ssd_version
 
             if "timm" in self._backbone.__module__:
-
                 timm_meta = timm_config(self._backbone)
                 backbone_cut = timm_meta["cut"]
                 backbone_split = timm_meta["split"]
@@ -398,7 +395,6 @@ class SingleShotDetector(ArcGISModel):
                     num_channels=num_channels,
                 )
             elif ssd_version == 2:
-
                 # find bounding boxes height and width
 
                 if grids is None:
@@ -523,7 +519,6 @@ class SingleShotDetector(ArcGISModel):
 
     @staticmethod
     def _supported_backbones():
-
         timm_models = filter_timm_models(["*repvgg*", "*tresnet*"])
         timm_backbones = list(map(lambda m: "timm:" + m, timm_models))
 
@@ -549,14 +544,13 @@ class SingleShotDetector(ArcGISModel):
 
     @classmethod
     def from_model(cls, emd_path, data=None):
-
         """
         Creates a Single Shot Detector from an Esri Model Definition (EMD) file.
 
         Note: Only supported for Pytorch models.
 
         =====================   ===========================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ---------------------   -------------------------------------------
         emd_path                Required string. Path to Deep Learning Package
                                 (DLPK) or Esri Model Definition(EMD) file.
@@ -573,12 +567,11 @@ class SingleShotDetector(ArcGISModel):
 
     @classmethod
     def from_emd(cls, data, emd_path):
-
         """
         Creates a Single Shot Detector from an Esri Model Definition (EMD) file.
 
         =====================   ===========================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ---------------------   -------------------------------------------
         data                    Required fastai Databunch or None. Returned data
                                 object from :meth:`~arcgis.learn.prepare_data` function or None for
@@ -667,7 +660,6 @@ class SingleShotDetector(ArcGISModel):
         return ssd
 
     def _create_anchors(self, anc_grids, anc_zooms, anc_ratios):
-
         self.grids = anc_grids
         self.zooms = anc_zooms
         self.ratios = anc_ratios
@@ -987,12 +979,11 @@ class SingleShotDetector(ArcGISModel):
         return {"ModelConfiguration": "_SSDTensorflow"}
 
     def show_results(self, rows=5, thresh=0.5, nms_overlap=0.1):
-
         """
         Displays the results of a trained model on a part of the validation set.
 
         =====================   ===========================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ---------------------   -------------------------------------------
         rows                    Optional int. Number of rows of results
                                 to be displayed.
@@ -1023,7 +1014,7 @@ class SingleShotDetector(ArcGISModel):
         Displays the results of a trained model on a part of the validation set.
 
         =====================   ===========================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ---------------------   -------------------------------------------
         rows                    Optional int. Number of rows of results
                                 to be displayed.
@@ -1081,13 +1072,12 @@ class SingleShotDetector(ArcGISModel):
         },
         resize=False,
     ):
-
         """
         Runs prediction on a video and appends the output VMTI predictions in the metadata file.
         This method is only supported for RGB images.
 
         =====================   ===========================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ---------------------   -------------------------------------------
         input_video_path        Required. Path to the video file to make the
                                 predictions on.
@@ -1220,12 +1210,11 @@ class SingleShotDetector(ArcGISModel):
         resize=False,
         batch_size=1,
     ):
-
         """
         Runs prediction on an Image.
 
         =====================   ===========================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ---------------------   -------------------------------------------
         image_path              Required. Path to the image file to make the
                                 predictions on.
@@ -1269,7 +1258,6 @@ class SingleShotDetector(ArcGISModel):
             )
 
         if isinstance(image_path, str):
-            #
             if self._data._is_multispectral:
                 resize_to = None
                 if resize:
@@ -1283,6 +1271,8 @@ class SingleShotDetector(ArcGISModel):
         else:
             image = image_path
 
+        if image is None:
+            raise Exception(str("No such file or directory: %s" % (image_path)))
         orig_height, orig_width, _ = image.shape
         orig_frame = image.copy()
         tytx = self._data.chip_size
@@ -1473,12 +1463,11 @@ class SingleShotDetector(ArcGISModel):
     def average_precision_score(
         self, detect_thresh=0.2, iou_thresh=0.1, mean=False, show_progress=True
     ):
-
         """
         Computes average precision on the validation set for each class.
 
         =====================   ===========================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ---------------------   -------------------------------------------
         detect_thresh           Optional float. The probability above which
                                 a detection will be considered for computing

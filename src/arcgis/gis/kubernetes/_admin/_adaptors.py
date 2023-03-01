@@ -2,6 +2,7 @@ from __future__ import annotations
 from arcgis.gis.kubernetes._admin._base import _BaseKube
 from arcgis.gis import GIS
 
+
 ###########################################################################
 class WebAdaptorManager(_BaseKube):
     """
@@ -26,7 +27,7 @@ class WebAdaptorManager(_BaseKube):
         This resource returns the properties of an individual web adaptor, such as the HTTP and HTTPS ports.
 
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
         adaptor_id             Required string. The specific web adaptor to get.
         ==================     ====================================================================
@@ -46,7 +47,7 @@ class WebAdaptorManager(_BaseKube):
         one needs to be updated.
 
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
         adaptor_id             Required string. The web adaptor to unregister.
         ==================     ====================================================================
@@ -79,7 +80,7 @@ class WebAdaptorManager(_BaseKube):
         every update must include all necessary properties.
 
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
         configs                Required dictionary. The new configs for the web adaptors
         ==================     ====================================================================

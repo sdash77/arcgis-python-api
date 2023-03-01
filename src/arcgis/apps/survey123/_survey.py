@@ -13,6 +13,8 @@ import xml.etree.ElementTree as ET
 from .exceptions import ServerError
 
 ########################################################################
+
+
 class SurveyManager:
     """
     Survey Manager allows users and administrators of Survey 123 to
@@ -26,6 +28,7 @@ class SurveyManager:
     _url = None
     _properties = None
     # ----------------------------------------------------------------------
+
     def __init__(self, gis, baseurl=None):
         """Constructor"""
         if baseurl is None:
@@ -159,6 +162,7 @@ class Survey:
     _ssi = None
     _baseurl = None
     # ----------------------------------------------------------------------
+
     def __init__(self, item, sm, baseurl: Optional[str] = None):
         """Constructor"""
         if baseurl is None:
@@ -224,7 +228,7 @@ class Survey:
         Exports the Survey's data to other format
 
         ================  ===============================================================
-        **Argument**      **Description**
+        **Parameter**      **Description**
         ----------------  ---------------------------------------------------------------
         export_format     Required String. This is the acceptable export format that a
                           user can export the survey data to. The following formats are
@@ -265,7 +269,7 @@ class Survey:
         webmap_item: Optional[Item] = None,
         map_scale: Optional[float] = None,
         locale: str = "en",
-        save_folder: Optional[str] = tempfile.gettempdir(),
+        save_folder: Optional[str] = None,
     ) -> str:
         """
         Creates an MS Word Report or PDF.  The `generate_report` method allows users to either save the
@@ -276,7 +280,7 @@ class Survey:
         For additional information on parameters, see `Create Report <https://developers.arcgis.com/survey123/api-reference/rest/report/#create-report>`_.
 
         ================  ===============================================================
-        **Argument**      **Description**
+        **Parameter**      **Description**
         ----------------  ---------------------------------------------------------------
         report_template   Required :class:`~arcgis.gis.Item` .  The report template Item.
         ----------------  ---------------------------------------------------------------
@@ -422,7 +426,7 @@ class Survey:
         self,
         template_type: Optional[str] = "individual",
         template_name: Optional[str] = None,
-        save_folder: Optional[str] = tempfile.gettempdir(),
+        save_folder: Optional[str] = None,
     ):
         """
         The `create_report_template` creates a simple default template that
@@ -430,7 +434,7 @@ class Survey:
         template.
 
         ================  ===============================================================
-        **Argument**      **Description**
+        **Parameter**      **Description**
         ----------------  ---------------------------------------------------------------
         template_type     Optional String. Specify which sections to include in the template.
                           Acceptable types are `individual`, `summary`, and `summaryIndividual`.
@@ -492,7 +496,7 @@ class Survey:
         when generating reports in the given feature.
 
         ================  ===============================================================
-        **Argument**      **Description**
+        **Parameter**      **Description**
         ----------------  ---------------------------------------------------------------
         template_file     Required String. The report template file which syntax to be checked.
         ================  ===============================================================
@@ -537,7 +541,7 @@ class Survey:
         and associates it with the survey.
 
         ================  ===============================================================
-        **Argument**      **Description**
+        **Parameter**      **Description**
         ----------------  ---------------------------------------------------------------
         template_file     Required String. The report template file which syntax to be checked, and uploaded.
         ----------------  ---------------------------------------------------------------
@@ -589,7 +593,7 @@ class Survey:
         when generating reports in the given feature and updates existing Report template Org item.
 
         ================  ===============================================================
-        **Argument**      **Description**
+        **Parameter**      **Description**
         ----------------  ---------------------------------------------------------------
         template_file     Required String. The report template file which syntax to be checked, and uploaded.
                           The updated template name must match the name of the existing template item.
@@ -620,7 +624,7 @@ class Survey:
         with the given parameters.
 
         ================  ===============================================================
-        **Argument**      **Description**
+        **Parameter**      **Description**
         ----------------  ---------------------------------------------------------------
         report_template   Required :class:`~arcgis.gis.Item` .  The report template Item.
         ----------------  ---------------------------------------------------------------
@@ -679,15 +683,14 @@ class Survey:
         webmap_item: Optional[Item] = None,
         map_scale: Optional[float] = None,
         locale: str = "en",
-        save_folder: Optional[str] = tempfile.gettempdir(),
+        save_folder: Optional[str] = None,
     ) -> str:
-
         """
         Similar task to generate_report for creating test sample report, and refining
         a report template before generating any formal report.
 
         ================  ===============================================================
-        **Argument**      **Description**
+        **Parameter**      **Description**
         ----------------  ---------------------------------------------------------------
         report_template   Required :class:`~arcgis.gis.Item`  .  The report template Item.
         ----------------  ---------------------------------------------------------------

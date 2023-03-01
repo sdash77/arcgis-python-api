@@ -127,7 +127,6 @@ class TransformerNERLoss(nn.Module):
 
 
 class TransformerForEntityRecognition(ArcGISTransformer):
-
     _supported_backbones = transformer_architectures
 
     def __init__(
@@ -174,7 +173,7 @@ class TransformerForEntityRecognition(ArcGISTransformer):
         Provides a list of available models for a given transformer architecture
 
         =====================   =================================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ---------------------   -------------------------------------------------
         architecture            Required string. The transformer architecture for
                                 which we wish to get the available models
@@ -358,7 +357,6 @@ class TransformerForEntityRecognition(ArcGISTransformer):
 
 
 class _TransformerEntityRecognizer(ArcGISModel):
-
     supported_backbones = transformer_architectures
 
     def __init__(self, data, backbone="bert-base-cased", **kwargs):
@@ -421,7 +419,6 @@ class _TransformerEntityRecognizer(ArcGISModel):
         seq_len=transformer_seq_length,
         config=None,
     ):
-
         model_type = infer_model_type(backbone, transformer_architectures)
         self.logger.info(f"Inferred Backbone: {model_type}")
         pretrained_model_name = backbone
@@ -594,7 +591,7 @@ class _TransformerEntityRecognizer(ArcGISModel):
         Loads a saved EntityRecognizer model from disk.
 
         =====================   ===========================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ---------------------   -------------------------------------------
         name_or_path            Required string. Path to Deep Learning Package
                                 (DLPK) or Esri Model Definition(EMD) file.
@@ -804,7 +801,7 @@ class _TransformerEntityRecognizer(ArcGISModel):
         Runs entity extraction on a random batch from the mentioned ds_type.
 
         =====================   ===========================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ---------------------   -------------------------------------------
         ds_type                 Optional string, defaults to valid.
         =====================   ===========================================
@@ -940,7 +937,7 @@ class _TransformerEntityRecognizer(ArcGISModel):
         Plot training and validation losses.
 
         =====================   ===========================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ---------------------   -------------------------------------------
         show                    Optional bool. Defaults to True
                                 If set to False, figure will not be plotted

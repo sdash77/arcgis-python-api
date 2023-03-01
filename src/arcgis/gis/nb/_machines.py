@@ -4,6 +4,7 @@ from typing import Optional
 from arcgis.gis import GIS
 from arcgis._impl.common._mixins import PropertyMap
 
+
 ########################################################################
 class MachineManager(object):
     """
@@ -17,6 +18,7 @@ class MachineManager(object):
     _url = None
     _gis = None
     _properties = None
+
     # ----------------------------------------------------------------------
     def __init__(self, url, gis):
         """Constructor"""
@@ -76,6 +78,7 @@ class Machine(object):
     _url = None
     _gis = None
     _properties = None
+
     # ----------------------------------------------------------------------
     def __init__(self, url, gis):
         """Constructor"""
@@ -194,7 +197,7 @@ class Machine(object):
 
 
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
         alias                  Required String. A unique name that easily identifies the certificate.
         ------------------     --------------------------------------------------------------------
@@ -332,7 +335,7 @@ class Machine(object):
             or development servers.
 
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
         certificate            Required string. The name of the certificate in the key store to
                                grab information from.
@@ -352,7 +355,7 @@ class Machine(object):
         Deletes a SSL certificate using the certificate alias.
 
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
         certificate            Required string. The name of the certificate to delete
         ==================     ====================================================================
@@ -377,7 +380,7 @@ class Machine(object):
 
 
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
         certificate            Required string. The name of the certificate in the key store.
         ==================     ====================================================================
@@ -399,7 +402,7 @@ class Machine(object):
         object that was created with method ssl_certificate.
 
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
         certificate            Required string. The name of the certificate in the key store.
         ==================     ====================================================================
@@ -420,7 +423,7 @@ class Machine(object):
 
 
         ======================     ====================================================================
-        **Argument**               **Description**
+        **Parameter**               **Description**
         ----------------------     --------------------------------------------------------------------
         certificate                Required string. The name of the certificate in the key store.
         ----------------------     --------------------------------------------------------------------
@@ -451,7 +454,7 @@ class Machine(object):
         importRootCertificate operation.
 
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
         alias                  Required string. A unique name for the certificate that easily
                                identifies it.
@@ -485,7 +488,7 @@ class Machine(object):
         CA or specific intermediate certificates.
 
         ===================     ====================================================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         -------------------     --------------------------------------------------------------------
         alias                   Required string. The name of the certificate.
         -------------------     --------------------------------------------------------------------

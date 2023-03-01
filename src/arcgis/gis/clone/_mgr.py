@@ -7,6 +7,7 @@ from ._base import (
 
 _CLONE_REGISTRY = {}
 
+
 ###########################################################################
 def register(
     item_type: str,
@@ -18,7 +19,7 @@ def register(
     Loads a custom cloner class into the clone registry
 
     ================    ===============================================================
-    **Argument**        **Description**
+    **Parameter**        **Description**
     ----------------    ---------------------------------------------------------------
     item_type           Required String. The name of the item type to clone.
     ----------------    ---------------------------------------------------------------
@@ -45,7 +46,7 @@ def unregister(item_type: str) -> bool:
     Loads a custom cloner class into the clone registry
 
     ================    ===============================================================
-    **Argument**        **Description**
+    **Parameter**        **Description**
     ----------------    ---------------------------------------------------------------
     item_type           Required String. The name of the item type to delete from the clone registry
     ================    ===============================================================

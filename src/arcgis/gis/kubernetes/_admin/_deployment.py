@@ -33,7 +33,7 @@ class Deployment:
         deployment.
 
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
         props                  Required Dict[str, Any]. he microservice properties, represented as a dictionary.
         ==================     ====================================================================
@@ -91,7 +91,7 @@ class DeploymentProperty:
         Gets a default template based on an ID
 
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
         template_id            Required String.  The unique ID of the property template.
         ==================     ====================================================================
@@ -113,7 +113,7 @@ class DeploymentProperty:
         individually updated using the edit operation.
 
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
         template_id            Required String.  The unique ID of the property template.
         ------------------     --------------------------------------------------------------------
@@ -178,7 +178,7 @@ class DeploymentManager(_BaseKube):
         all microservices are returned by the operation.
 
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
         name                   Optional String. The name of the microservice.
         ------------------     --------------------------------------------------------------------

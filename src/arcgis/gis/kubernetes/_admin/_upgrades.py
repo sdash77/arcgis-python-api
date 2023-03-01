@@ -83,7 +83,7 @@ class UpgradeManager(_BaseKube):
         updates.
 
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
         version                Required Dict[str, str]. The version of the deployment the operation
                                will rollback towards. This value can be retrieved from the
@@ -139,7 +139,7 @@ class UpgradeManager(_BaseKube):
         upgrade.
 
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
         version_manifest       Optional Dict[str, str]. The unique ID associated with a patch or
                                release. You can get the version manifest ID for a patch or release
@@ -182,7 +182,7 @@ class UpgradeManager(_BaseKube):
         connection.
 
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
         manifest               Required String. The file containing the version manifest (.dat
                                file), used to discover available updates or releases for an ArcGIS

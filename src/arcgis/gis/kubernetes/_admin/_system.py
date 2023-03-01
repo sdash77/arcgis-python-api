@@ -84,6 +84,7 @@ class ServerManager(_BaseKube):
     _gis = None
     _con = None
     _properties = None
+
     # ----------------------------------------------------------------------
     @property
     def list(self):
@@ -160,7 +161,7 @@ class Indexer(_BaseKube):
         The operation allows you to generate or update the indexes for content, such as users, groups, and items stored in the database store.
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         mode                Required String. The mode in which the indexer should run.
                             Values: USER_MODE, GROUP_MODE, SEARCH_MODE, or FULL_MODE
@@ -205,7 +206,7 @@ class Container:
         Allows certain container registry properties to be updated after your organization has been configured.
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         value               Required dict. A dictionary of registry properties.
         ===============     ====================================================================
@@ -233,13 +234,14 @@ class SystemManager(_BaseKube):
     _deployments = None
     _upgrades = None
     _license = None
+
     # ----------------------------------------------------------------------
     def __init__(self, url, gis, initialize=False):
         """Constructor
 
 
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
         url                    Required string. The machine URL.
         ------------------     --------------------------------------------------------------------
@@ -399,7 +401,6 @@ class SystemManager(_BaseKube):
         :return: `Indexer`
         """
         if self._indexer is None:
-
             url = f"{self._url}/indexer"
             self._indexer = Indexer(url=url, gis=self._gis)
         return self._indexer

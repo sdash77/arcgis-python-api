@@ -55,7 +55,7 @@ class DeepSort(ArcGISModel):
     Creates a :class:`~arcgis.learn.DeepSort` object.
 
     =====================   ===========================================
-    **Argument**            **Description**
+    **Parameter**            **Description**
     ---------------------   -------------------------------------------
     data                    Fastai Databunch. Returned data object from
                             :meth:`~arcgis.learn.prepare_data` function with `dataset_type=Imagenet`.
@@ -69,7 +69,6 @@ class DeepSort(ArcGISModel):
     # TODO: kwargs description
 
     def __init__(self, data, **kwargs):
-
         if not HAS_FASTAI:
             raise_fastai_import_error(import_exception=import_exception)
 
@@ -175,7 +174,7 @@ class DeepSort(ArcGISModel):
         Displays the results of a trained model on a part of the validation set.
 
         =====================   ===========================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ---------------------   -------------------------------------------
         rows                    Optional int. Number of rows of results
                                 to be displayed.
@@ -254,7 +253,7 @@ class DeepSort(ArcGISModel):
         Creates a DeepSort Object tracker from an Esri Model Definition (EMD) file.
 
         =====================   ===========================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ---------------------   -------------------------------------------
         emd_path                Required string. Path to Deep Learning Package
                                 (DLPK) or Esri Model Definition(EMD) file.
@@ -330,7 +329,7 @@ class DeepSort(ArcGISModel):
         Updates the :class:`~arcgis.learn.DeepSort` tracker.
 
         =====================   ===========================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ---------------------   -------------------------------------------
         frame                   Required numpy array. Frame is used to
                                 update the tracker.
@@ -418,7 +417,7 @@ class DeepSort(ArcGISModel):
         Initializes the :class:`~arcgis.learn.DeepSort` tracker for inference.
 
         =====================   ===========================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ---------------------   -------------------------------------------
         frame                   Required numpy array. Frame is used to
                                 initialize the tracker.
@@ -471,7 +470,7 @@ class DeepSort(ArcGISModel):
         Removes the tracks from the track list using track_ids.
 
         =====================   ===========================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ---------------------   -------------------------------------------
         track_ids               Required list. list of track ids to be removed
                                 from the track list.

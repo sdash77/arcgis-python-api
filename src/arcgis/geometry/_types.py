@@ -12,7 +12,6 @@ try:
     import numpy as np
 except ImportError as e:
     pass
-from six import add_metaclass
 from functools import partial, lru_cache
 
 _number_type = (int, float)
@@ -87,7 +86,6 @@ def _is_valid(value):
 
 
 def _is_polygon(coords):
-
     for coord in coords:
         if len(coord) < 4:
             return False
@@ -298,8 +296,7 @@ class GeometryFactory(type):
         return type.__call__(cls, iterable, **kwargs)
 
 
-@add_metaclass(GeometryFactory)
-class Geometry(BaseGeometry):
+class Geometry(BaseGeometry, metaclass=GeometryFactory):
     """
     The base class for all geometries.
 
@@ -473,7 +470,6 @@ class Geometry(BaseGeometry):
         if self.is_empty:
             return svg_top + "/>"
         else:
-
             # Establish SVG canvas that will fit all the data + small space
             xmin, ymin, xmax, ymax = self.extent
             # Expand bounds by a fraction of the data ranges
@@ -702,7 +698,7 @@ class Geometry(BaseGeometry):
         Creates a skew transform along one or both axes.
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         x_angle             optional Float. Angle to skew in the x coordinate
         ---------------     --------------------------------------------------------------------
@@ -730,7 +726,7 @@ class Geometry(BaseGeometry):
 
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         theta               Required Float. The rotation angle.
         ---------------     --------------------------------------------------------------------
@@ -756,7 +752,7 @@ class Geometry(BaseGeometry):
 
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         x_scale             Optional Float. The x-scale factor.
         ---------------     --------------------------------------------------------------------
@@ -800,7 +796,7 @@ class Geometry(BaseGeometry):
 
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         x_offset            Optional Float. Translation x offset
         ---------------     --------------------------------------------------------------------
@@ -905,7 +901,7 @@ class Geometry(BaseGeometry):
             Must have shapely installed
 
         =================   ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         -----------------   --------------------------------------------------------------------
         shapely_geometry    Required Shapely Geometry
                             Single instance of Shapely Geometry to be converted to ArcGIS
@@ -1137,7 +1133,6 @@ class Geometry(BaseGeometry):
             except:
                 return None
         if HASARCPY:
-
             if isinstance(self, Point):
                 return tuple(self)
             else:
@@ -1241,7 +1236,6 @@ class Geometry(BaseGeometry):
             except:
                 return None
         elif HASARCPY:
-
             return Geometry(
                 _ujson.loads(
                     arcpy.PointGeometry(
@@ -1397,7 +1391,6 @@ class Geometry(BaseGeometry):
         if HASARCPY and isinstance(self, Envelope):
             return getattr(self.polygon.as_arcpy, "labelPoint", None)
         elif HASARCPY:
-
             return Geometry(
                 arcpy.PointGeometry(
                     getattr(self.as_arcpy, "labelPoint", None), self.spatial_reference
@@ -1436,7 +1429,6 @@ class Geometry(BaseGeometry):
                 }
             )
         elif HASARCPY:
-
             return Geometry(
                 arcpy.PointGeometry(
                     getattr(self.as_arcpy, "lastPoint", None), self.spatial_reference
@@ -1673,7 +1665,14 @@ class Geometry(BaseGeometry):
                 )
             )
         elif HASSHAPELY:
-            return self.centroid
+            centroid_tuple = self.centroid
+            return Point(
+                {
+                    "x": centroid_tuple[0],
+                    "y": centroid_tuple[1],
+                    "spatialReference": self.spatial_reference,
+                }
+            )
         elif isinstance(self, Point):
             return self
         return
@@ -1726,7 +1725,7 @@ class Geometry(BaseGeometry):
 
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         second_geometry     Required Geometry. An :class:`~arcgis.geometry.Geometry` object.
         ---------------     --------------------------------------------------------------------
@@ -1790,7 +1789,7 @@ class Geometry(BaseGeometry):
             The ``buffer`` method requires ArcPy
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         distance            Required float. The buffer distance. The buffer distance is in the
                             same units as the geometry that is being buffered.
@@ -1819,7 +1818,7 @@ class Geometry(BaseGeometry):
             The ``clip`` method requires `ArcPy`. If `ArcPy` is not installed, none is returned.
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         envelope            Required tuple. The tuple must have (XMin, YMin, XMax, YMax) each value
                             represents the lower left bound and upper right bound of the extent.
@@ -1858,7 +1857,7 @@ class Geometry(BaseGeometry):
             The ``contain`` method requires ArcPy/Shapely
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         second_geometry     Required :class:`~arcgis.geometry.Geometry` object. A second geometry
         ---------------     --------------------------------------------------------------------
@@ -1982,7 +1981,7 @@ class Geometry(BaseGeometry):
             The ``crosses`` method requires ArcPy/Shapely
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         second_geometry     Required :class:`~arcgis.geometry.Geometry` object. A second geometry
         ===============     ====================================================================
@@ -2012,7 +2011,7 @@ class Geometry(BaseGeometry):
             The ``cut`` method requires ArcPy
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         cutter              Required :class:`~arcgis.geometry.Polyline`. The cutting polyline geometry
         ===============     ====================================================================
@@ -2036,7 +2035,7 @@ class Geometry(BaseGeometry):
             The ``densify`` method requires ArcPy
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         method              Required String. The type of densification: ``DISTANCE``, ``ANGLE``, or ``GEODESIC``
         ---------------     --------------------------------------------------------------------
@@ -2090,7 +2089,7 @@ class Geometry(BaseGeometry):
             The ``difference`` method requires ArcPy/Shapely
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         second_geometry     Required :class:`~arcgis.geometry.Geometry` object. A second geometry
         ===============     ====================================================================
@@ -2123,7 +2122,7 @@ class Geometry(BaseGeometry):
             The ``disjoint`` method requires ArcPy/Shapely
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         second_geometry     Required :class:`~arcgis.geometry.Geometry` object. A second geometry
         ===============     ====================================================================
@@ -2157,7 +2156,7 @@ class Geometry(BaseGeometry):
             The ``distance_to`` method requires ArcPy/Shapely
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         second_geometry     Required :class:`~arcgis.geometry.Geometry` object. A second geometry
         ===============     ====================================================================
@@ -2189,7 +2188,7 @@ class Geometry(BaseGeometry):
             The ``equals`` method requires ArcPy or Shapely
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         second_geometry     Required :class:`~arcgis.geometry.Geometry`. A second geometry
         ===============     ====================================================================
@@ -2219,7 +2218,7 @@ class Geometry(BaseGeometry):
             The ``generalize`` method requires ArcPy or Shapely**
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         max_offset          Required float. The maximum offset tolerance.
         ===============     ====================================================================
@@ -2244,7 +2243,7 @@ class Geometry(BaseGeometry):
             The ``get_area`` method requires ArcPy or Shapely**
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         method              Required String. `PLANAR` measurements reflect the projection of
                             geographic data onto the 2D surface (in other words, they will not
@@ -2277,7 +2276,7 @@ class Geometry(BaseGeometry):
             The ``get_length`` method requires ArcPy or Shapely
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         method              Required String. `PLANAR` measurements reflect the projection of
                             geographic data onto the 2D surface (in other words, they will not
@@ -2311,7 +2310,7 @@ class Geometry(BaseGeometry):
             The ``get_part`` method requires ArcPy
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         index               Required Integer. The index position of the :class:`~arcgis.geometry.Geometry` object.
         ===============     ====================================================================
@@ -2338,7 +2337,7 @@ class Geometry(BaseGeometry):
             The ``intersect`` method requires ArcPy or Shapely
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         second_geometry     Required :class:`~arcgis.geometry.Geometry` object. A second geometry
         ---------------     --------------------------------------------------------------------
@@ -2405,7 +2404,7 @@ class Geometry(BaseGeometry):
             The ``measure_on_line`` method requires ArcPy
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         second_geometry     Required :class:`~arcgis.geometry.Geometry` object. A second geometry
         ---------------     --------------------------------------------------------------------
@@ -2449,7 +2448,7 @@ class Geometry(BaseGeometry):
             The ``overlaps`` method requires ArcPy or Shapely
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         second_geometry     Required :class:`~arcgis.geometry.Geometry` object. A second geometry
         ===============     ====================================================================
@@ -2481,7 +2480,7 @@ class Geometry(BaseGeometry):
             The ``point_from_angle_and_distance`` method requires ArcPy
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         angle               Required Float. The angle in degrees to the returned point.
         ---------------     --------------------------------------------------------------------
@@ -2530,7 +2529,7 @@ class Geometry(BaseGeometry):
             The ``position_along_line`` method requires ArcPy or Shapely
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         value               Required Float. The distance along the line.
         ---------------     --------------------------------------------------------------------
@@ -2577,7 +2576,7 @@ class Geometry(BaseGeometry):
             The ``project_as`` method requires ArcPy or pyproj>=1.9 and PROJ.4
 
         ====================     ====================================================================
-        **Argument**             **Description**
+        **Parameter**             **Description**
         --------------------     --------------------------------------------------------------------
         spatial_reference        Required SpatialReference. The new spatial reference. This can be a
                                  :class:`~arcgis.geometry.SpatialReference` object or the coordinate system name.
@@ -2601,7 +2600,6 @@ class Geometry(BaseGeometry):
             >>> geom2.type
                 arcgis.geometry.Geometry
         """
-        from six import string_types, integer_types
 
         HASARCPY, HASSHAPELY = _check_geometry_engine()
 
@@ -2612,9 +2610,9 @@ class Geometry(BaseGeometry):
                 spatial_reference = SpatialReference(spatial_reference).as_arcpy
             elif isinstance(spatial_reference, arcpy.SpatialReference):
                 spatial_reference = spatial_reference
-            elif isinstance(spatial_reference, integer_types):
+            elif isinstance(spatial_reference, int):
                 spatial_reference = arcpy.SpatialReference(spatial_reference)
-            elif isinstance(spatial_reference, string_types):
+            elif isinstance(spatial_reference, str):
                 spatial_reference = arcpy.SpatialReference(text=spatial_reference)
             else:
                 raise ValueError("Invalid spatial reference object.")
@@ -2635,7 +2633,6 @@ class Geometry(BaseGeometry):
 
         # Project using Proj4 (pyproj)
         if HASPROJ:
-
             esri_projections = {102100: 3857, 102113: 3857}
 
             # Get the input spatial reference
@@ -2650,9 +2647,9 @@ class Geometry(BaseGeometry):
             ):
                 out_srid = spatial_reference.get("wkid", None)
                 out_srid = spatial_reference.get("latestWkid", out_srid)
-            elif isinstance(spatial_reference, integer_types):
+            elif isinstance(spatial_reference, int):
                 out_srid = spatial_reference
-            elif isinstance(spatial_reference, string_types):
+            elif isinstance(spatial_reference, str):
                 out_srid = spatial_reference
             else:
                 raise ValueError("Invalid spatial reference object.")
@@ -2705,7 +2702,7 @@ class Geometry(BaseGeometry):
             The ``query_point_and_distance`` method only is valid for Polyline geometries.
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         second_geometry     Required :class:`~arcgis.geometry.Point` object. A second geometry
         ---------------     --------------------------------------------------------------------
@@ -2744,7 +2741,7 @@ class Geometry(BaseGeometry):
             The ``segment_along_line`` method requires ArcPy
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         start_measure       Required Float. The starting distance from the beginning of the line.
         ---------------     --------------------------------------------------------------------
@@ -2797,7 +2794,7 @@ class Geometry(BaseGeometry):
             The ``snap_to_line`` method requires ArcPy
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         second_geometry     Required :class:`~arcgis.geometry.Geometry` - A second geometry
         ===============     ====================================================================
@@ -2826,7 +2823,7 @@ class Geometry(BaseGeometry):
             The ``symmetric_difference`` method requires ArcPy or Shapely
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         second_geometry     Required :class:`~arcgis.geometry.Geometry` object. A second geometry
         ===============     ====================================================================
@@ -2862,7 +2859,7 @@ class Geometry(BaseGeometry):
             The ``touches`` method requires ArcPy or Shapely
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         second_geometry     Required :class:`~arcgis.geometry.Geometry` object. A second geometry
         ===============     ====================================================================
@@ -2893,7 +2890,7 @@ class Geometry(BaseGeometry):
             The ``union`` method requires ArcPy or Shapely
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         second_geometry     Required :class:`~arcgis.geometry.Geometry` object. A second geometry
         ===============     ====================================================================
@@ -2924,7 +2921,7 @@ class Geometry(BaseGeometry):
             The ``within`` method requires ArcPy or Shapely
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         second_geometry     Required :class:`~arcgis.geometry.Geometry` object. A second geometry
         ---------------     --------------------------------------------------------------------
@@ -3107,6 +3104,7 @@ class Point(Geometry):
 
     _typ = "Point"
     _type = "Point"
+
     # ----------------------------------------------------------------------
     def __init__(self, iterable=None):
         """Constructor"""
@@ -3743,6 +3741,7 @@ class SpatialReference(BaseGeometry):
 
     # ----------------------------------------------------------------------
     _repr_svg_ = None
+
     # ----------------------------------------------------------------------
     def svg(self, scale_factor: float = 1, fill_color: Optional[str] = None):
         """
@@ -3787,7 +3786,6 @@ class SpatialReference(BaseGeometry):
         """
         HASARCPY, HASSHAPELY = _check_geometry_engine()
         if HASARCPY:
-
             if "wkid" in self:
                 return arcpy.SpatialReference(self["wkid"])
             elif "wkt" in self:

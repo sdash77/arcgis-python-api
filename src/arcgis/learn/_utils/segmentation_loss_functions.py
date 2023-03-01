@@ -241,7 +241,7 @@ def dice(
     """
     Calculates dice coefficient over a batch.
     =====================   ===========================================
-    **Argument**            **Description**
+    **Parameter**            **Description**
     ---------------------   -------------------------------------------
     preds                   Required torch.tensor.
                             Predictions form a segmentation model.
@@ -419,7 +419,6 @@ class MixUpCallback(LearnerCallback):
                 out_shape
             )
         if self.stack_y:
-
             new_lambd = torch.distributions.utils.broadcast_all(
                 lambd[:, None, None, None], last_target
             )[0]

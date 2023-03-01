@@ -28,7 +28,7 @@ class ChangeDetector(ArcGISModel):
     https://www.mdpi.com/2072-4292/12/10/1662
 
     =====================   ===========================================
-    **Argument**            **Description**
+    **Parameter**            **Description**
     ---------------------   -------------------------------------------
     data                    Required fastai Databunch. Returned data object
                             from :meth:`~arcgis.learn.prepare_data`  function.
@@ -53,7 +53,6 @@ class ChangeDetector(ArcGISModel):
     def __init__(
         self, data, backbone=None, attention_type="PAM", pretrained_path=None, **kwargs
     ):
-
         if not HAS_FASTAI:
             raise_fastai_import_error(
                 import_exception=import_exception, message="", installation_steps=" "
@@ -106,13 +105,12 @@ class ChangeDetector(ArcGISModel):
 
     @classmethod
     def from_model(cls, emd_path, data=None):
-
         """
         Creates a ChangeDetector model from an Esri Model Definition (EMD)
         file.
 
         =====================   ===========================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ---------------------   -------------------------------------------
         emd_path                Required string. Path to Deep Learning Package
                                 (DLPK) or Esri Model Definition(EMD) file.
@@ -269,7 +267,7 @@ class ChangeDetector(ArcGISModel):
         Predict on a pair of images.
 
         =====================   ===========================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ---------------------   -------------------------------------------
         before_image            Required string. Path to image from before.
         ---------------------   -------------------------------------------
@@ -279,7 +277,7 @@ class ChangeDetector(ArcGISModel):
         **Kwargs**
 
         =====================   ===========================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ---------------------   -------------------------------------------
         crop_predict            Optional Boolean. If True, It will predict
                                 using a sliding window strategy. Typically, used

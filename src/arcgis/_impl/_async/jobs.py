@@ -23,9 +23,16 @@ class Job(object):
     _start_time = None
     _end_time = None
     _verbose = None
+
     # ----------------------------------------------------------------------
     def __init__(
-        self, future, task_name, jobid=None, task_url=None, notify=False, gis=None
+        self,
+        future,
+        task_name,
+        jobid=None,
+        task_url=None,
+        notify=False,
+        gis=None,
     ):
         self._start_time = datetime.datetime.now()
         self._task_name = task_name
@@ -153,11 +160,13 @@ class GeometryJob(Job):
         """returns the job result"""
         from arcgis.geometry import Geometry
 
-        if self._wkid:  # set the output sr to that wkid integer
+        if self._task_name == "lengths":
+            res = self._future.result()
+            return res.get("lengths", [])
+        elif self._wkid:  # set the output sr to that wkid integer
             sr = {"spatialReference": {"wkid": self._wkid}}
             res = self._future.result()
             if isinstance(res, (list, tuple)):
-
                 [g.update(sr) for g in res if not "spatialReference" in g]
                 return [Geometry(g) for g in res]
             elif isinstance(res, dict) and not "spatialReference" in res:
@@ -178,11 +187,17 @@ class ItemStatusJob(Job):
     _start_time = None
     _end_time = None
     _verbose = None
+
     # ----------------------------------------------------------------------
     def __init__(
-        self, item, task_name, jobid=None, job_type=None, notify=False, gis=None
+        self,
+        item,
+        task_name,
+        jobid=None,
+        job_type=None,
+        notify=False,
+        gis=None,
     ):
-
         executor = concurrent.futures.ThreadPoolExecutor(1)
         future = executor.submit(self._status, *(item, jobid, job_type))
         executor.shutdown(False)

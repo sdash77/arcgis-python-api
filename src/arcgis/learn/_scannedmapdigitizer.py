@@ -32,7 +32,7 @@ def generate_kernel(k_size, k_type):
     """
     Generates kernel for morphological operations.
     =====================   ===========================================
-    **Argument**            **Description**
+    **Parameter**            **Description**
     ---------------------   -------------------------------------------
     k_size                  List that determines the size of the kernel.
 
@@ -71,7 +71,7 @@ def fill_mask_pixels(image, masked_path, land_color):
     """
     Fill the extracted mask region with the color of land region.
     =====================   ===========================================
-    **Argument**            **Description**
+    **Parameter**            **Description**
     ---------------------   -------------------------------------------
     image                   Input image.
 
@@ -103,7 +103,7 @@ def detect_template(template, search_img, start_scale, end_scale, num_scales):
     Performs multi-scale template matching to locate the template on the
     bigger search region
     =====================   ===========================================
-    **Argument**            **Description**
+    **Parameter**            **Description**
     ---------------------   -------------------------------------------
     template                Template image which needs to be matched on
                             the bigger search region image
@@ -199,7 +199,7 @@ def compute_reference_homography(
     Computes the homography transform using matched location of scanned map on
     search region
         =====================   ===========================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ---------------------   -------------------------------------------
         bb_start_x              Bounding box left x co-ordinate
 
@@ -250,7 +250,7 @@ def apply_homography(query_img, search_region, homography_matrix):
     """
     Creates warped scanned map on search region using estimated homography
     =====================   ===========================================
-    **Argument**            **Description**
+    **Parameter**            **Description**
     ---------------------   -------------------------------------------
     query_img               Image to be processed
 
@@ -279,7 +279,7 @@ def check_bb_boundary(bb_start_x, bb_start_y, bb_end_x, bb_end_y, height, width)
     """
     Checks the boundary and modifies the values if necessary
         =====================   ===========================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ---------------------   -------------------------------------------
         bb_start_x              X co-ordinate of left top corner of bounding
                                 box
@@ -325,7 +325,7 @@ def detect_contours(input_img):
     """
     Detects contours in the input image
     =====================   ===========================================
-    **Argument**            **Description**
+    **Parameter**            **Description**
     ---------------------   -------------------------------------------
     input_img               Input image for which contours need to be
                             computed
@@ -356,7 +356,7 @@ def calculate_diagonal_length(length, height):
     """
     Find the length of diagonal of a rectangle
     =====================   ===========================================
-    **Argument**            **Description**
+    **Parameter**            **Description**
     ---------------------   -------------------------------------------
     length                  Length of rectangle
     ---------------------   -------------------------------------------
@@ -376,7 +376,7 @@ def calculate_nonzero_ratio(input_img):
     """
     Calculates the ratio of non-zero pixels area w.r.t entire area of image
     =====================   ===========================================
-    **Argument**            **Description**
+    **Parameter**            **Description**
     ---------------------   -------------------------------------------
     input_img               Image for which ratio needs to be computed
 
@@ -400,7 +400,7 @@ def calculate_distance_ratios(
     """
     Calculates the distance ratio w.r.t X and Y co-ordinate of a point
     =====================   ===========================================
-    **Argument**            **Description**
+    **Parameter**            **Description**
     ---------------------   -------------------------------------------
     bb_start_x              X co-ordinate of left top corner of bounding
                             box
@@ -444,7 +444,7 @@ def find_distance(point1_x, point1_y, point2_x, point2_y):
     """
     Find distance between two points
         =====================   ===========================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ---------------------   -------------------------------------------
         point1_x                X co-ordinate of first point
         ---------------------   -------------------------------------------
@@ -468,7 +468,7 @@ def find_nearest_contour_point(input_contour, pt_x, pt_y):
     """
     Find point on contour which is nearest to the given point
         =====================   ===========================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ---------------------   -------------------------------------------
         input_contour            Contour on which points need to be
                                  evaluated for nearness
@@ -506,7 +506,7 @@ def create_random_color_list(size):
     """
     Generate a list of specified size with random color values
         =====================   ==================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ---------------------   ----------------------------------
          size                    Size of the list which needs to
                                  be returned
@@ -530,7 +530,7 @@ def annotate_control_pts(query_image, search_region, control_pts):
     """
     Annotate control points on search region and scanned map
         =====================   ===========================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ---------------------   -------------------------------------------
         query_image             Input image
         ---------------------   -------------------------------------------
@@ -568,7 +568,7 @@ def compute_refined_homography_outlier_mask(control_pts):
     Computes refined homography and outlier mask by applying RANSAC
      on mapped control points
         =====================   ===========================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ---------------------   -------------------------------------------
         control_pts             List of control points in both scanned map
                                 and search region
@@ -604,7 +604,7 @@ def filter_control_pts(control_pts, outlier_mask):
     """
     Filter outliers from control points using outlier mask
         =====================   ===========================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ---------------------   -------------------------------------------
         control_pts             List of control points in scanned map and
                                 corresponding control points in search
@@ -642,7 +642,7 @@ def estimate_control_points(
     in processed search region image ROI
 
         =========================   ====================================
-        **Argument**                **Description**
+        **Parameter**                **Description**
         -------------------------   -----------------------------------
         search_reg_roi               Transformed search region image ROI
         -------------------------    -----------------------------------
@@ -846,7 +846,7 @@ def calculate_iou_binary_images(image1, image2):
     """
     Calculate iou using two binary images
         =====================   ===========================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ---------------------   -------------------------------------------
         image1                  First binary image
         ---------------------   -------------------------------------------
@@ -872,7 +872,7 @@ def compare_homography_matrices(reference_img, refined_img, template, control_pt
     Compares and selects the best homography transform between reference homography
     and refined homography
         =====================   ===========================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ---------------------   -------------------------------------------
         reference_img           Image for computed reference homography
         ---------------------   -------------------------------------------
@@ -951,7 +951,7 @@ def map_species_region(
     Maps the species region masks on the search region using the computed
     homography matrices
     =====================   ===================================================
-    **Argument**            **Description**
+    **Parameter**            **Description**
     ---------------------   ----------------------------------------------------
     region_mask_img          Species region mask depicting species distribution
     ---------------------   ----------------------------------------------------
@@ -1041,7 +1041,7 @@ def process_contour(input_contour):
          the start point and reverses the direction of
          the contour
         =====================   ================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ---------------------   --------------------------------
         input_contour            contour to be processed
 
@@ -1080,7 +1080,7 @@ def combine_shapefiles(output_dir, file_name, data, extent):
     """
     Combines shapefile outputs in a particular folder
     =====================   ==================================================
-    **Argument**            **Description**
+    **Parameter**            **Description**
     ---------------------   --------------------------------------------------
     output_dir               Output directory where combined shapefile needs
                              to be dumped
@@ -1119,7 +1119,7 @@ def write_shapefile(
     """
     Creates data frame using input contours for feature layer creation
     =====================   ===================================================
-    **Argument**            **Description**
+    **Parameter**            **Description**
     ---------------------   ----------------------------------------------------
     input_contours           Contours which need to be transformed to lat-long
                              co-ordinates
@@ -1189,7 +1189,7 @@ def calculate_contour_lat_long(
     Calculates latitude and longitude co-ordinates for x and y image
     co-ordinates of contour points
     =====================   =============================================
-    **Argument**            **Description**
+    **Parameter**            **Description**
     ---------------------   ---------------------------------------------
     input_contours           Contours which need to be transformed
                              to lat-long co-ordinates
@@ -1225,7 +1225,7 @@ def write_georeference_xml_file(control_point, path, image_name, extent):
     """
     Writes XML file used to geo-reference the image on the search image
     =====================   ===================================================
-    **Argument**            **Description**
+    **Parameter**            **Description**
     ---------------------   ----------------------------------------------------
     control_point            Calculated control points for corresponding scanned
                              map
@@ -1337,7 +1337,7 @@ def convert_to_xy(lat_val, long_val, extent, degree_per_pixel_x, degree_per_pixe
     """
     Converts latitude and longitude to image x and y co-ordinates
         =====================   ====================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ---------------------   ------------------------------------
         lat_val                  Latitude value of the search
                                  region image point
@@ -1369,7 +1369,7 @@ def calculate_contour_xy(list_lat_long, extent, degree_per_pixel_x, degree_per_p
         Calculates image x and y co-ordinates for all points corresponding to
         latitude and longitude co-ordinates
         =====================   =======================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ---------------------   ---------------------------------------
         list_lat_long            List of all lat-long pairs
                                  corresponding to points
@@ -1406,7 +1406,7 @@ def make_world_map_from_shapefile(
     """
         Creates search image using shapefile
         =====================   =========================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ---------------------   -----------------------------------------
         image_path               Path of the scanned map
         ---------------------   -----------------------------------------
@@ -1460,7 +1460,7 @@ def generate_search_template(search_image, process_folder, x1, y1, x2, y2):
         Crops search template from the bigger image using a given extent and converts to
         binary image
         =====================   ==========================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ---------------------   ------------------------------------------
         search_image             Search Image
         ---------------------   ------------------------------------------
@@ -1525,7 +1525,7 @@ def generate_search_coordinate(
     """
         Generates co-ordinate for search region
         =====================   ============================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ---------------------   --------------------------------------------
         extent                   Selected extent for search region
         ---------------------   --------------------------------------------
@@ -1567,7 +1567,7 @@ def plot_image(*images):
     """
         Displays output
         =====================   ============================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ---------------------   --------------------------------------------
         images                   List of images and their descriptions
         =====================   ============================================
@@ -1592,7 +1592,7 @@ def display_progress_bar(i, max_images, postText):
     """
         Displays progress bar
         =====================   =======================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ---------------------   ---------------------------------------
         i                        Index of the image inside the loop
         ---------------------   ---------------------------------------
@@ -1616,7 +1616,7 @@ class ScannedMapDigitizer:
     Creates the object for :class:`~arcgis.learn.ScannedMapDigitizer` class
 
     =====================   ============================================
-    **Argument**            **Description**
+    **Parameter**            **Description**
     ---------------------   --------------------------------------------
     input_folder             Path to the folder that contains extracted
                              maps
@@ -1665,12 +1665,11 @@ class ScannedMapDigitizer:
 
     @classmethod
     def set_search_region_extent(cls, extent):
-
         """
         Creates the object for :class:`~arcgis.learn.ScannedMapDigitizer` class
 
         =====================   ============================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ---------------------   --------------------------------------------
         extent                  Extent defines the extreme longitude/latitude
                                 of the search region.
@@ -1705,7 +1704,7 @@ class ScannedMapDigitizer:
         Generates the binary masked images
 
         =====================   ===========================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ---------------------   -------------------------------------------
         color_list              A list containing different color inputs
                                 in list/tuple format [(r, g, b)].
@@ -1809,7 +1808,7 @@ class ScannedMapDigitizer:
         are used in the subsequent step of template matching.
 
         =====================   ===============================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ---------------------   -----------------------------------------------
         color                   A list containing r, g, b value representing land color.
                                 The color parameter is required for extracting
@@ -1882,7 +1881,7 @@ class ScannedMapDigitizer:
         to be searched.
 
         =====================   ==================================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ---------------------   --------------------------------------------------
         search_image            Path to the bigger image/shapefile.
         ---------------------   --------------------------------------------------
@@ -1987,7 +1986,7 @@ class ScannedMapDigitizer:
         larger image.
 
         =====================   ============================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ---------------------   --------------------------------------------
         min_scale               An integer representing the minimum scale
                                 at which template matching is performed.
@@ -2101,14 +2100,13 @@ class ScannedMapDigitizer:
 
     @classmethod
     def georeference_image(cls, padding_param, show_result=True):
-
         """
         This method estimates the control point pairs by traversing the
         contours of template image and finding the corresponding matches
         on the search region ROI image
 
         =====================   ========================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ---------------------   ----------------------------------------
         padding_param           A tuple that contains x-padding
                                 and y-padding at 0th and 1st index
@@ -2293,7 +2291,6 @@ class ScannedMapDigitizer:
 
     @classmethod
     def digitize_image(cls, show_result=True):
-
         """
         This method is the final step in the pipeline that maps the
         species regions on the search image using the computed
@@ -2302,7 +2299,7 @@ class ScannedMapDigitizer:
         visualized using ArcGIS Pro and further edited.
 
         =====================   =============================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ---------------------   ---------------------------------------------
         show_result             A Boolean value. Set to "True" to visualize
                                 results and set to "False" otherwise.

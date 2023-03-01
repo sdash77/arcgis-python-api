@@ -30,6 +30,8 @@ from ._util import (
 _log = _logging.getLogger(__name__)
 
 _use_async = True
+
+
 # --------------------------------------------------------------------------
 def forest(
     input_layer: Union[
@@ -100,7 +102,7 @@ def forest(
         Forest Based Classification and Regression is available at ArcGIS Enterprise 10.7.
 
     =========================================================================   ===========================================================================
-    **Argument**                                                                **Description**
+    **Parameter**                                                                **Description**
     -------------------------------------------------------------------------   ---------------------------------------------------------------------------
     input_layer                                                                 Required layer. The features that will be used to train the dataset.
                                                                                 This layer must include fields representing the variable to predict
@@ -411,7 +413,7 @@ def gwr(
        characteristic most important?
 
     =========================================================================   ===========================================================================
-    **Argument**                                                                **Description**
+    **Parameter**                                                                **Description**
     -------------------------------------------------------------------------   ---------------------------------------------------------------------------
     input_layer                                                                 Required layer. The features that will be used to train the dataset.
                                                                                 This layer must include fields representing the variable to predict
@@ -635,7 +637,7 @@ def glr(
         + What variables affect low birth rates?
 
     ==========================   ===============================================================
-    **Argument**                 **Description**
+    **Parameter**                 **Description**
     --------------------------   ---------------------------------------------------------------
     input_layer                  Required layer. The layer containing the dependent and
                                  independent variables. See :ref:`Feature Input<gaxFeatureInput>`.
@@ -882,7 +884,7 @@ def find_point_clusters(
     infested households to help pinpoint an area to begin treatment and extermination of pests.
 
     ==========================   ===============================================================
-    **Argument**                 **Description**
+    **Parameter**                 **Description**
     --------------------------   ---------------------------------------------------------------
     input_layer                  The point features for which clusters will be found.
 
@@ -1021,7 +1023,6 @@ def find_point_clusters(
         params["future"] = True
         gpjob = tbx.find_point_clusters(**params)
         if future:
-
             return GAJob(gpjob=gpjob, return_service=output_service)
         gpjob.result()
         return output_service
@@ -1082,7 +1083,7 @@ def calculate_density(
     * Locating communities that are far from major highways in order to plan where new roads should be constructed.
 
     =================================================     ========================================================================
-    **Argument**                                          **Description**
+    **Parameter**                                          **Description**
     -------------------------------------------------     ------------------------------------------------------------------------
     input_layer                                           Required point feature layer. The point layer on which the density will be calculated.
 
@@ -1360,7 +1361,7 @@ def find_hot_spots(
     processes and random chance.
 
     ==============================================================================================  ===============================================================
-    **Argument**                                                                                    **Description**
+    **Parameter**                                                                                    **Description**
     ----------------------------------------------------------------------------------------------  ---------------------------------------------------------------
     point_layer                                                                                     Required feature layer. The point feature layer for which hot spots will be calculated.
                                                                                                     See :ref:`Feature Input<gaxFeatureInput>`.
@@ -1537,7 +1538,6 @@ def find_hot_spots(
         params["future"] = True
         gpjob = tbx.find_hot_spots(**params)
         if future:
-
             return GAJob(gpjob=gpjob, return_service=output_service)
         gpjob.result()
         return output_service
@@ -1582,7 +1582,7 @@ def create_space_time_cube(
     such as emerging hot and cold spots.
 
     ============================================================================     ===================================================================================================
-    **Argument**                                                                     **Description**
+    **Parameter**                                                                     **Description**
     ----------------------------------------------------------------------------     ---------------------------------------------------------------------------------------------------
     point_layer                                                                      Required point feature layer. The point features that will be
                                                                                      aggregated into the bins specified in geographical size by the ``bin_size``

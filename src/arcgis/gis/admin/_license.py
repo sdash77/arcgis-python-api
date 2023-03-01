@@ -8,6 +8,7 @@ from ..._impl.common._mixins import PropertyMap
 from ...gis import GIS, User
 from ._base import BasePortalAdmin
 
+
 ########################################################################
 class LicenseManager(BasePortalAdmin):
     """
@@ -15,7 +16,7 @@ class LicenseManager(BasePortalAdmin):
     ArcGIS Enterprise (Portal)
 
     ===============     ====================================================
-    **Argument**        **Description**
+    **Parameter**        **Description**
     ---------------     ----------------------------------------------------
     url                 required string, the web address of the site to
                         manage licenses.
@@ -102,7 +103,7 @@ class LicenseManager(BasePortalAdmin):
         Retrieves a license by it's name (title)
 
         ===============     ====================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     ----------------------------------------------------
         name                required string, name of the entitlement to locate
                             on the organization.
@@ -194,7 +195,7 @@ class LicenseManager(BasePortalAdmin):
         for ArcGIS Pro.
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         value               Required bool.
                             Value: True | False
@@ -242,6 +243,7 @@ class Bundle(object):
     _properties = None
     _gis = None
     _id = None
+
     # ----------------------------------------------------------------------
     def __init__(self, url, properties=None, gis=None):
         """Constructor"""
@@ -342,7 +344,7 @@ class Bundle(object):
         Assigns the current application bundle to a list of users
 
         ===============     ====================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     ----------------------------------------------------
         users               Required List. A list of user names or User objects
                             to assign the current application bundle to.
@@ -378,7 +380,7 @@ class Bundle(object):
         Revokes the current application bundle to a list of users
 
         ===============     ====================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     ----------------------------------------------------
         users               Required List. A list of user names or User objects
                             to remove the current application bundle to.
@@ -416,7 +418,7 @@ class License(object):
 
 
     ===============     ====================================================
-    **Argument**        **Description**
+    **Parameter**        **Description**
     ---------------     ----------------------------------------------------
     gis                 Required GIS, the gis connection object
     ---------------     ----------------------------------------------------
@@ -433,6 +435,7 @@ class License(object):
     _properties = None
     _gis = None
     _con = None
+
     # ----------------------------------------------------------------------
     def __init__(self, gis, info):
         """Constructor"""
@@ -554,7 +557,7 @@ class License(object):
         Checks if the entitlement is assigned or not.
 
         ===============     ====================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     ----------------------------------------------------
         user                Required string, the name of the user you want to
                             examine the entitlements for.
@@ -592,7 +595,7 @@ class License(object):
         Checks if a user has the entitlement assigned to them
 
         ===============     ====================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     ----------------------------------------------------
         username            Required string, the name of the user you want to
                             examine the entitlements for.
@@ -636,7 +639,7 @@ class License(object):
         grants a user an entitlement.
 
         ===============     ====================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     ----------------------------------------------------
         username            Required string, the name of the user you wish to
                             assign an entitlement to.
@@ -690,7 +693,7 @@ class License(object):
         removes a specific license from a given entitlement
 
         ===============     ====================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     ----------------------------------------------------
         username            Required string, the name of the user you wish to
                             assign an entitlement to.

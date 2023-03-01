@@ -8,13 +8,15 @@ from . import MultiPoint, Geometry
 
 GEOM_TYPES = (Point, Polygon, Polyline, MultiPoint)
 __all__ = ["scale", "rotate", "skew", "translate"]
+
+
 # -------------------------------------------------------------------------
 def scale(geom: Geometry, *scale_factor: int):
     """
     Create a scaling transform from a scalar value (float)
 
     ===============     ====================================================================
-    **Argument**        **Description**
+    **Parameter**        **Description**
     ---------------     --------------------------------------------------------------------
     geom                Required class:`~arcgis.geometry.Geometry object or dictionary.
     ---------------     --------------------------------------------------------------------
@@ -76,7 +78,7 @@ def rotate(geom: Geometry, theta: float):
     Rotates a geometry counter-clockwise by some degree theta
 
     ===============     ====================================================================
-    **Argument**        **Description**
+    **Parameter**        **Description**
     ---------------     --------------------------------------------------------------------
     geom                Required class:`~arcgis.geometry.Geometry object or dictionary.
     ---------------     --------------------------------------------------------------------
@@ -133,7 +135,7 @@ def skew(geom: Geometry, x_angle: float = 0, y_angle: float = 0):
     Create a skew transform along one or both axes.
 
     ===============     ====================================================================
-    **Argument**        **Description**
+    **Parameter**        **Description**
     ---------------     --------------------------------------------------------------------
     geom                Required class:`~arcgis.geometry.Geometry object or dictionary.
     ---------------     --------------------------------------------------------------------
@@ -199,7 +201,7 @@ def translate(geom: Geometry, x_offset: float, y_offset: float):
     Moves a geometry by some distance
 
     ===============     ====================================================================
-    **Argument**        **Description**
+    **Parameter**        **Description**
     ---------------     --------------------------------------------------------------------
     geom                Required class:`~arcgis.geometry.Geometry object or dictionary.
     ---------------     --------------------------------------------------------------------

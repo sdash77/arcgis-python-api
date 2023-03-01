@@ -105,6 +105,7 @@ class GeoDaskSpatialAccessor:
     _name = None
     _sindex = None
     _renderer = None
+
     # ----------------------------------------------------------------------
     def __init__(self, obj):
         self._data = obj
@@ -428,7 +429,7 @@ class GeoDaskSpatialAccessor:
         operations' requirements.
 
         =========================    =========================================================
-        **Argument**                 **Description**
+        **Parameter**                 **Description**
         -------------------------    ---------------------------------------------------------
         other                        Required Spatially Enabled DataFrame. The geometry to
                                      perform the operation from.
@@ -497,7 +498,7 @@ class GeoDaskSpatialAccessor:
         **requires ArcPy or Shapely**
 
         =========================    =========================================================
-        **Argument**                 **Description**
+        **Parameter**                 **Description**
         -------------------------    ---------------------------------------------------------
         sdf                          Required Spatially Enabled DataFrame. The geometry to
                                      perform the operation from.
@@ -558,7 +559,7 @@ class GeoDaskSpatialAccessor:
 
 
         ======================    =========================================================
-        **Argument**              **Description**
+        **Parameter**              **Description**
         ----------------------    ---------------------------------------------------------
         right_df                  Required pd.DataFrame. Spatially enabled dataframe to join.
         ----------------------    ---------------------------------------------------------
@@ -661,7 +662,7 @@ class GeoDaskSpatialAccessor:
         **This requires ArcPy or pyproj v4**
 
         ====================     ====================================================================
-        **Argument**             **Description**
+        **Parameter**             **Description**
         --------------------     --------------------------------------------------------------------
         spatial_reference        Required SpatialReference. The new spatial reference. This can be a
                                  SpatialReference object or the coordinate system name.
@@ -742,7 +743,6 @@ class GeoDaskSpatialAccessor:
         if reset:
             self._sindex = None
         if self._sindex is None:
-
             results = (
                 self._data.map_partitions(
                     lambda part: self._fn_method(
@@ -793,7 +793,7 @@ class GeoDaskSpatialAccessor:
         """Assigns the geometry column by name or by list
 
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
         col                    Required string, Pandas Series, GeoArray, list or tuple. If a string, this
                                is the name of the column containing the geometry. If a Pandas Series
@@ -838,7 +838,7 @@ class GeoDaskSpatialAccessor:
         Returns a Spatially enabled `pandas.DataFrame` from a feature class.
 
         ===========================     ====================================================================
-        **Argument**                    **Description**
+        **Parameter**                    **Description**
         ---------------------------     --------------------------------------------------------------------
         location                        Required string or pathlib.Path. Full path to the feature class
         ---------------------------     --------------------------------------------------------------------
@@ -883,7 +883,7 @@ class GeoDaskSpatialAccessor:
         Exports a dask dataframe to a feature class.
 
         ===========================     ====================================================================
-        **Argument**                    **Description**
+        **Parameter**                    **Description**
         ---------------------------     --------------------------------------------------------------------
         location                        Required string. The output of the table.
         ---------------------------     --------------------------------------------------------------------
@@ -955,7 +955,6 @@ class GeoDaskSpatialAccessor:
     # ----------------------------------------------------------------------
     @staticmethod
     def from_parquet(folder: str, ext: str = None):
-
         dfs = []
         from ._io._arrow import _read_parquet
 
@@ -1028,6 +1027,7 @@ class GeoDaskSeriesAccessor:
     _data = None
     _index = None
     _name = None
+
     # ----------------------------------------------------------------------
     def __init__(self, series: Series, *args, **kwargs):
         """initializer"""
@@ -1360,7 +1360,7 @@ class GeoDaskSeriesAccessor:
         Converts the Geometry to `numpy array` where the following holds true:
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         normalize           Optional Boolean.  If **True**, the values are normalized using a Min/Max Scalar.
         ===============     ====================================================================
@@ -1404,7 +1404,7 @@ class GeoDaskSeriesAccessor:
         measurement type.
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         second_geometry     Required Geometry.  A arcgis.Geometry object.
         ---------------     --------------------------------------------------------------------
@@ -1442,7 +1442,7 @@ class GeoDaskSeriesAccessor:
         Constructs a polygon at a specified distance from the geometry.
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         distance            Required float. The buffer distance. The buffer distance is in the
                             same units as the geometry that is being buffered.
@@ -1461,7 +1461,7 @@ class GeoDaskSeriesAccessor:
         Constructs the intersection of the geometry and the specified extent.
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         envelope            required tuple. The tuple must have (XMin, YMin, XMax, YMax) each value
                             represents the lower left bound and upper right bound of the extent.
@@ -1480,7 +1480,7 @@ class GeoDaskSeriesAccessor:
         Indicates if the base geometry contains the comparison geometry.
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         second_geometry     Required arcgis.geometry.Geometry. A second geometry
         ---------------     --------------------------------------------------------------------
@@ -1518,7 +1518,7 @@ class GeoDaskSeriesAccessor:
         shape type.
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         second_geometry     Required arcgis.geometry.Geometry. A second geometry
         ===============     ====================================================================
@@ -1539,7 +1539,7 @@ class GeoDaskSeriesAccessor:
         a part right of it.
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         cutter              Required Polyline. The cuttin polyline geometry
         ===============     ====================================================================
@@ -1557,7 +1557,7 @@ class GeoDaskSeriesAccessor:
         Creates a new geometry with added vertices
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         method              Required String. The type of densification, DISTANCE, ANGLE, or GEODESIC
         ---------------     --------------------------------------------------------------------
@@ -1600,7 +1600,7 @@ class GeoDaskSeriesAccessor:
         source geometry.
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         second_geometry     Required arcgis.geometry.Geometry. A second geometry
         ===============     ====================================================================
@@ -1623,7 +1623,7 @@ class GeoDaskSeriesAccessor:
         common.
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         second_geometry     Required arcgis.geometry.Geometry. A second geometry
         ===============     ====================================================================
@@ -1645,7 +1645,7 @@ class GeoDaskSeriesAccessor:
         Both geometries must have the same projection.
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         second_geometry     Required arcgis.geometry.Geometry. A second geometry
         ===============     ====================================================================
@@ -1669,7 +1669,7 @@ class GeoDaskSeriesAccessor:
         a 2D comparison only; M and Z values are ignored.
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         second_geometry     Required arcgis.geometry.Geometry. A second geometry
         ===============     ====================================================================
@@ -1691,7 +1691,7 @@ class GeoDaskSeriesAccessor:
         tolerance.  This only works on Polylines and Polygons.
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         max_offset          Required float. The maximum offset tolerance.
         ===============     ====================================================================
@@ -1711,7 +1711,7 @@ class GeoDaskSeriesAccessor:
         Returns the area of the feature using a measurement type.
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         method              Required String. PLANAR measurements reflect the projection of
                             geographic data onto the 2D surface (in other words, they will not
@@ -1740,7 +1740,7 @@ class GeoDaskSeriesAccessor:
         Returns the length of the feature using a measurement type.
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         method              Required String. PLANAR measurements reflect the projection of
                             geographic data onto the 2D surface (in other words, they will not
@@ -1771,7 +1771,7 @@ class GeoDaskSeriesAccessor:
         **requires arcpy**
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         index               Required Integer. The index position of the geometry.
         ===============     ====================================================================
@@ -1793,7 +1793,7 @@ class GeoDaskSeriesAccessor:
         between the original geometries.
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         second_geometry     Required arcgis.geometry.Geometry. A second geometry
         ---------------     --------------------------------------------------------------------
@@ -1826,7 +1826,7 @@ class GeoDaskSeriesAccessor:
         Returns a measure from the start point of this line to the in_point.
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         second_geometry     Required arcgis.geometry.Geometry. A second geometry
         ---------------     --------------------------------------------------------------------
@@ -1856,7 +1856,7 @@ class GeoDaskSeriesAccessor:
         either of the input geometries.
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         second_geometry     Required arcgis.geometry.Geometry. A second geometry
         ===============     ====================================================================
@@ -1879,7 +1879,7 @@ class GeoDaskSeriesAccessor:
         using the specified measurement type.
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         angle               Required Float. The angle in degrees to the returned point.
         ---------------     --------------------------------------------------------------------
@@ -1911,7 +1911,7 @@ class GeoDaskSeriesAccessor:
         of the line.
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         value               Required Float. The distance along the line.
         ---------------     --------------------------------------------------------------------
@@ -1943,7 +1943,7 @@ class GeoDaskSeriesAccessor:
         Projects a geometry and optionally applies a geotransformation.
 
         ====================     ====================================================================
-        **Argument**             **Description**
+        **Parameter**             **Description**
         --------------------     --------------------------------------------------------------------
         spatial_reference        Required SpatialReference. The new spatial reference. This can be a
                                  SpatialReference object or the coordinate system name.
@@ -1975,7 +1975,7 @@ class GeoDaskSeriesAccessor:
         the line where the nearest point occurs.
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         second_geometry     Required arcgis.geometry.Geometry. A second geometry
         ---------------     --------------------------------------------------------------------
@@ -2010,7 +2010,7 @@ class GeoDaskSeriesAccessor:
         two points on the polyline instead of a single point.
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         start_measure       Required Float. The starting distance from the beginning of the line.
         ---------------     --------------------------------------------------------------------
@@ -2045,7 +2045,7 @@ class GeoDaskSeriesAccessor:
         Returns a new point based on in_point snapped to this geometry.
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         second_geometry     Required arcgis.geometry.Geometry. A second geometry
         ===============     ====================================================================
@@ -2070,7 +2070,7 @@ class GeoDaskSeriesAccessor:
         The two input geometries must be the same shape type.
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         second_geometry     Required arcgis.geometry.Geometry. A second geometry
         ===============     ====================================================================
@@ -2092,7 +2092,7 @@ class GeoDaskSeriesAccessor:
 
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         second_geometry     Required arcgis.geometry.Geometry. A second geometry
         ===============     ====================================================================
@@ -2113,7 +2113,7 @@ class GeoDaskSeriesAccessor:
 
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         second_geometry     Required arcgis.geometry.Geometry. A second geometry
         ===============     ====================================================================
@@ -2132,7 +2132,7 @@ class GeoDaskSeriesAccessor:
         Indicates if the base geometry is within the comparison geometry.
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         second_geometry     Required arcgis.geometry.Geometry. A second geometry
         ---------------     --------------------------------------------------------------------

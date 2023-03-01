@@ -10,13 +10,14 @@ from arcgis import env as _env
 from arcgis._impl.common._mixins import PropertyMap
 from ._base import BaseOGC
 
+
 ###########################################################################
 class WMSLayer(BaseOGC):
     """
     Represents a Web Map Service, which is an OGC web service endpoint.
 
     ===============     ====================================================================
-    **Argument**        **Description**
+    **Parameter**        **Description**
     ---------------     --------------------------------------------------------------------
     url                 Required string. The administration URL for the ArcGIS Server.
     ---------------     --------------------------------------------------------------------
@@ -42,6 +43,7 @@ class WMSLayer(BaseOGC):
     _cap_reader = None
     _properties = None
     _type = "WMS"
+
     # ----------------------------------------------------------------------
     def __init__(self, url, version="1.3.0", gis=None, **kwargs):
         super(WMSLayer, self)
@@ -73,7 +75,6 @@ class WMSLayer(BaseOGC):
         :return: PropertyMap
         """
         if self._properties is None:
-
             if self._add_token:
                 url = self._capabilities_url(
                     service_url=self._url, vendor_kwargs={"token": self._con.token}

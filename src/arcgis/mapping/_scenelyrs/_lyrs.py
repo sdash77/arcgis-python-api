@@ -56,7 +56,7 @@ class SceneLayerManager(_GISResource):
             The ``swap`` operation is for ArcGIS Online only.
 
         ====================        ====================================================
-        **Argument**                **Description**
+        **Parameter**                **Description**
         --------------------        ----------------------------------------------------
         target_service_name         Required string. Name of service you want to swap with.
         ====================        ====================================================
@@ -94,7 +94,7 @@ class SceneLayerManager(_GISResource):
         code and description.
 
         ===============     ====================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     ----------------------------------------------------
         job_id              Required String. The job id to cancel.
         ===============     ====================================================
@@ -126,7 +126,7 @@ class SceneLayerManager(_GISResource):
         indicating success or failure with error code and description.
 
         ===============     ====================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     ----------------------------------------------------
         code                Required string, parameter used to re-run a given
                             jobs with a specific error
@@ -150,7 +150,7 @@ class SceneLayerManager(_GISResource):
         The ``import`` method imports from an :class:`~arcgis.gis.Item` object.
 
         ===============     ====================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     ----------------------------------------------------
         item                Required ItemId or :class:`~arcgis.gis.Item` object. The TPK file's item id.
                             This TPK file contains to-be-extracted bundle files
@@ -199,7 +199,7 @@ class SceneLayerManager(_GISResource):
         The ``edit`` method edits from an :class:`~arcgis.gis.Item` object.
 
         ===============     ====================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     ----------------------------------------------------
         item                Required ItemId or :class:`~arcgis.gis.Item` object. The TPK file's item id.
                             This TPK file contains to-be-extracted bundle files
@@ -235,7 +235,7 @@ class SceneLayerManager(_GISResource):
         redirects you to the Job Statistics page, or failure.
 
         =====================       ====================================================
-        **Argument**                **Description**
+        **Parameter**                **Description**
         ---------------------       ----------------------------------------------------
         layers                      Required int or list of int. Comma seperated values indicating
                                     the id of the layers to rebuild in the cache.
@@ -259,7 +259,7 @@ class SceneLayerManager(_GISResource):
         redirects you to the Job Statistics page, or failure.
 
         =====================       ====================================================
-        **Argument**                **Description**
+        **Parameter**                **Description**
         ---------------------       ----------------------------------------------------
         layers                      Required int or list of int. Comma seperated values indicating
                                     the id of the layers to update in the cache.
@@ -282,7 +282,7 @@ class SceneLayerManager(_GISResource):
         redirects you to the Job Statistics page, or failure.
 
         =====================       ====================================================
-        **Argument**                **Description**
+        **Parameter**                **Description**
         ---------------------       ----------------------------------------------------
         layers                      Required int or list of int. Comma seperated values indicating
                                     the id of the layers to update in the cache.
@@ -323,7 +323,7 @@ class EnterpriseSceneLayerManager(_GISResource):
         restarted with updated properties.
 
         ===================     ====================================================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         -------------------     --------------------------------------------------------------------
         service_dictionairy     Required dict. The service JSON as a dictionary.
         ===================     ====================================================================
@@ -396,7 +396,7 @@ class EnterpriseSceneLayerManager(_GISResource):
         done rebuilding.
 
         ===============================     ====================================================================
-        **Argument**                        **Description**
+        **Parameter**                        **Description**
         -------------------------------     --------------------------------------------------------------------
         layer                               Optional list of integers. The list of layers to cook.
         -------------------------------     --------------------------------------------------------------------
@@ -478,7 +478,7 @@ class EnterpriseSceneLayerManager(_GISResource):
         done updating.
 
         ===============================     ====================================================================
-        **Argument**                        **Description**
+        **Parameter**                        **Description**
         -------------------------------     --------------------------------------------------------------------
         layer                               Optional list of integers. The list of layers to cook.
         -------------------------------     --------------------------------------------------------------------
@@ -559,7 +559,7 @@ class EnterpriseSceneLayerManager(_GISResource):
         done updating.
 
         ===============================     ====================================================================
-        **Argument**                        **Description**
+        **Parameter**                        **Description**
         -------------------------------     --------------------------------------------------------------------
         layer                               Optional list of integers. The list of layers to cook.
         -------------------------------     --------------------------------------------------------------------
@@ -636,7 +636,7 @@ class Object3DLayer(Layer):
         See the :class:`~arcgis.mapping.SceneLayer` class for more information.
 
     ==================     ====================================================================
-    **Argument**           **Description**
+    **Parameter**           **Description**
     ------------------     --------------------------------------------------------------------
     url                    Required string, specify the url ending in /SceneServer/
     ------------------     --------------------------------------------------------------------
@@ -747,7 +747,7 @@ class IntegratedMeshLayer(Layer):
         See the :class:`~arcgis.mapping.SceneLayer` class for more information.
 
     ==================     ====================================================================
-    **Argument**           **Description**
+    **Parameter**           **Description**
     ------------------     --------------------------------------------------------------------
     url                    Required string, specify the url ending in /SceneServer/
     ------------------     --------------------------------------------------------------------
@@ -856,17 +856,18 @@ class VoxelLayer(Layer):
     The ``VoxelLayer`` class represents a Web Scene Voxel layer.
 
     .. note::
-        Web scene layers are cached web layers that are optimized for displaying a large amount of 2D and 3D features.
-        See the :class:`~arcgis.mapping.SceneLayer` class for more information.
+        Web scene layers are cached web layers that are optimized for displaying
+        a large amount of 2D and 3D features. See the
+        :class:`~arcgis.mapping.SceneLayer` class for more information.
 
-    ==================     ====================================================================
-    **Argument**           **Description**
-    ------------------     --------------------------------------------------------------------
-    url                    Required string, specify the url ending in /SceneServer/
-    ------------------     --------------------------------------------------------------------
-    gis                    Optional GIS object. If not specified, the active GIS connection is
-                           used.
-    ==================     ====================================================================
+    ==================     =============================================================
+    **Parameter**           **Description**
+    ------------------     -------------------------------------------------------------
+    url                    Required string, specify the url ending in ``/SceneServer/``
+    ------------------     -------------------------------------------------------------
+    gis                    Optional :class:`~arcgis.gis.GIS` object. If not specified,
+                           the active GIS connection is used.
+    ==================     =============================================================
 
     .. code-block:: python
 
@@ -921,12 +922,13 @@ class VoxelLayer(Layer):
     # ----------------------------------------------------------------------
     @property
     def manager(self):
+        """
+        The ``manager`` property returns an instance of
+        :class:`~arcgis.mapping.SceneLayerManager` class
+        or :class:`~arcgis.mapping.EnterpriseSceneLayerManager` class
+        which provides methods and properties for administering this service.
+        """
         if self._admin is None:
-            """
-            The ``manager`` property returns an instance of :class:`~arcgis.mapping.SceneLayerManager` class
-            or :class:`~arcgis.mapping.EnterpriseSceneLayerManager` class
-            which provides methods and properties for administering this service.
-            """
             if self._gis._portal.is_arcgisonline:
                 rd = {"/rest/services/": "/rest/admin/services/"}
                 adminURL = self._str_replace(self._url, rd)
@@ -971,7 +973,7 @@ class Point3DLayer(Layer):
         See the :class:`~arcgis.mapping.SceneLayer` class for more information.
 
     ==================     ====================================================================
-    **Argument**           **Description**
+    **Parameter**           **Description**
     ------------------     --------------------------------------------------------------------
     url                    Required string, specify the url ending in /SceneServer/
     ------------------     --------------------------------------------------------------------
@@ -1083,7 +1085,7 @@ class PointCloudLayer(Layer):
         See the :class:`~arcgis.mapping.SceneLayer` class for more information.
 
     ==================     ====================================================================
-    **Argument**           **Description**
+    **Parameter**           **Description**
     ------------------     --------------------------------------------------------------------
     url                    Required string, specify the url ending in /SceneServer/
     ------------------     --------------------------------------------------------------------
@@ -1194,7 +1196,7 @@ class BuildingLayer(Layer):
         See the :class:`~arcgis.mapping.SceneLayer` class for more information.
 
     ==================     ====================================================================
-    **Argument**           **Description**
+    **Parameter**           **Description**
     ------------------     --------------------------------------------------------------------
     url                    Required string, specify the url ending in /SceneServer/
     ------------------     --------------------------------------------------------------------
@@ -1301,7 +1303,7 @@ class _SceneLayerFactory(type):
     Factory that generates the Scene Layers
 
     ==================     ====================================================================
-    **Argument**           **Description**
+    **Parameter**           **Description**
     ------------------     --------------------------------------------------------------------
     url                    Required string, specify the url ending in /SceneServer/
     ------------------     --------------------------------------------------------------------
@@ -1360,7 +1362,7 @@ class SceneLayer(Layer, metaclass=_SceneLayerFactory):
         integrated mesh layers.
 
     ==================     ====================================================================
-    **Argument**           **Description**
+    **Parameter**           **Description**
     ------------------     --------------------------------------------------------------------
     url                    Required string, specify the url ending in /SceneServer/
     ------------------     --------------------------------------------------------------------

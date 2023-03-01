@@ -23,7 +23,7 @@ def create_snapshot(
     Creates a Snapshot of a Given Item.
 
     ==================     ====================================================================
-    **Argument**           **Description**
+    **Parameter**           **Description**
     ------------------     --------------------------------------------------------------------
     item                   Required Item. The 'Notebook' typed item to create a snapshot for.
     ------------------     --------------------------------------------------------------------
@@ -46,6 +46,10 @@ def create_snapshot(
     gis = item._gis
 
     mgrs = gis.notebook_server
+    if len(mgrs) == 0:
+        raise Exception(
+            "The user or organization does not have a notebook server configured."
+        )
     if gis._portal.is_arcgisonline:
         mgr = mgrs[0]
         sm = mgr.snaphots

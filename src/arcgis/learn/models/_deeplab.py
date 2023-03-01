@@ -116,7 +116,6 @@ class _DeepLabOverride(DeepLabV3):
             )  # backbone_features_channel 256
 
     def forward(self, x):
-
         if self.pointrend:
             result = self.modified_forward(x)
             if self.training:
@@ -131,7 +130,6 @@ class _DeepLabOverride(DeepLabV3):
                 return result["out"]
 
     def modified_forward(self, x):
-
         input_shape = x.shape[-2:]
         features = self.backbone(x)
         result = OrderedDict()
@@ -188,7 +186,7 @@ class DeepLab(ArcGISModel):
     based on https://github.com/pytorch/vision/tree/master/torchvision/models/segmentation.
 
     =====================   ===========================================
-    **Argument**            **Description**
+    **Parameter**            **Description**
     ---------------------   -------------------------------------------
     data                    Required fastai Databunch. Returned data object from function.
     ---------------------   -------------------------------------------
@@ -212,7 +210,7 @@ class DeepLab(ArcGISModel):
     **kwargs**
 
     =====================   ===========================================
-    **Argument**            **Description**
+    **Parameter**            **Description**
     ---------------------   -------------------------------------------
     class_balancing         Optional boolean. If True, it will balance the
                             cross-entropy loss inverse to the frequency
@@ -450,7 +448,7 @@ class DeepLab(ArcGISModel):
         Creates a :class:`~arcgis.learn.DeepLab` semantic segmentation object from an Esri Model Definition (EMD) file.
 
         =====================   ===========================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ---------------------   -------------------------------------------
         emd_path                Required string. Path to Deep Learning Package
                                 (DLPK) or Esri Model Definition(EMD) file.
@@ -623,7 +621,7 @@ class DeepLab(ArcGISModel):
         Displays the results of a trained model on a part of the validation set.
 
         =====================   ===========================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ---------------------   -------------------------------------------
         rows                    Optional int. Number of rows of results
                                 to be displayed.
@@ -648,7 +646,7 @@ class DeepLab(ArcGISModel):
         **kwargs**
 
         =====================   ===========================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ---------------------   -------------------------------------------
         rows                    Number of rows of data to be displayed, if
                                 batch size is smaller, then the rows will
@@ -667,12 +665,11 @@ class DeepLab(ArcGISModel):
             return fig
 
     def mIOU(self, mean=False, show_progress=True):
-
         """
         Computes mean IOU on the validation set for each class.
 
         =====================   ===========================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ---------------------   -------------------------------------------
         mean                    Optional bool. If False returns class-wise
                                 mean IOU, otherwise returns mean iou of all
@@ -715,7 +712,7 @@ class DeepLab(ArcGISModel):
         Computer per class precision, recall and f1-score on validation set.
 
         =====================   ===========================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ---------------------   -------------------------------------------
         self                    segmentation model object -> [PSPNetClassifier | UnetClassifier | DeepLab]
         ---------------------   -------------------------------------------

@@ -69,7 +69,6 @@ def _id_generator(size=6, chars=_string.ascii_uppercase + _string.digits):
 
 
 def _gbl_clone_layer(layer, function_chain, function_chain_ra, **kwargs):
-
     _set_multidimensional_rules(function_chain)
 
     if isinstance(layer, Raster) or isinstance(layer, RasterCollection):
@@ -154,7 +153,6 @@ def _feature_gbl_clone_layer(layer, function_chain, function_chain_ra, **kwargs)
 
 
 def _gbl_clone_layer_raster(layer, function_chain, function_chain_ra, **kwargs):
-
     if layer._datastore_raster:
         if isinstance(layer._uri, dict) or isinstance(layer._uri, bytes):
             newlyr = Raster(
@@ -282,7 +280,7 @@ def euclidean_distance(
     `Euclidean Distance function <https://pro.arcgis.com/en/pro-app/help/data/imagery/euclidean-distance-global-function.htm>`_
 
     ===============================     ================================================================================
-    **Argument**                        **Description**
+    **Parameter**                        **Description**
     -------------------------------     --------------------------------------------------------------------------------
     in_source_data                      Required. The input raster that identifies the pixels or locations to
                                         which the Euclidean distance for every output pixel location is calculated.
@@ -377,14 +375,13 @@ def euclidean_allocation(
     distance_method="PLANAR",
     in_barrier_data=None,
 ):
-
     """
     Calculates, for each cell, the nearest source based on Euclidean distance.
     For more information, see
     `Euclidean Allocation function <https://pro.arcgis.com/en/pro-app/help/data/imagery/euclidean-allocation-global-function.htm>`_
 
     ===============================     ================================================================================
-    **Argument**                        **Description**
+    **Parameter**                        **Description**
     -------------------------------     --------------------------------------------------------------------------------
     in_source_data                      Required; The input raster that identifies the pixels or locations to which
                                         the Euclidean distance for every output pixel location is calculated.
@@ -511,7 +508,7 @@ def cost_distance(
 
 
     ===============================     ===================================================================================================================
-    **Argument**                        **Description**
+    **Parameter**                        **Description**
     -------------------------------     -------------------------------------------------------------------------------------------------------------------
     in_source_data                      Required. The input raster that identifies the pixels or locations to which the
                                         least accumulated cost distance for every output pixel location is
@@ -649,7 +646,7 @@ def cost_allocation(
 
 
     ===============================     ===================================================================================================================
-    **Argument**                        **Description**
+    **Parameter**                        **Description**
     -------------------------------     -------------------------------------------------------------------------------------------------------------------
     in_source_data                      Required. The input raster that identifies the pixels or locations to which the least accumulated cost
                                         distance for every output pixel location is calculated. The Source Raster can be an integer or a floating-point value.
@@ -798,7 +795,6 @@ def zonal_statistics(
     circular_calculation: bool = False,
     circular_wrap_value: float = 360,
 ):
-
     """
     Calculates statistics on values of a raster within the zones of another dataset.
     For more information see,
@@ -806,7 +802,7 @@ def zonal_statistics(
 
 
     ===============================     ===================================================================================================================
-    **Argument**                        **Description**
+    **Parameter**                        **Description**
     -------------------------------     -------------------------------------------------------------------------------------------------------------------
     in_zone_data                        Required raster layer. Dataset that defines the zones. The zones can be defined by an integer raster
     -------------------------------     -------------------------------------------------------------------------------------------------------------------
@@ -1029,7 +1025,7 @@ def least_cost_path(
 
 
     ===============================     ===================================================================================================================
-    **Argument**                        **Description**
+    **Parameter**                        **Description**
     -------------------------------     -------------------------------------------------------------------------------------------------------------------
     in_source_data                      Required. The input raster that identifies the pixels or locations to which the
                                         least accumulated cost distance for every output pixel location is
@@ -1197,7 +1193,6 @@ def flow_distance(
     flow_direction_type: str = "D8",
     statistics_type: str = "MINIMUM",
 ):
-
     """
     This function computes, for each cell, the minimum downslope
     horizontal or vertical distance to cell(s) on a stream or
@@ -1206,7 +1201,7 @@ def flow_distance(
     limited to those defined by the input flow direction raster.
 
     ===============================     ===================================================================================================================
-    **Argument**                        **Description**
+    **Parameter**                        **Description**
     -------------------------------     -------------------------------------------------------------------------------------------------------------------
     input_stream_raster                 Required.  An input raster that represents a linear stream network
     -------------------------------     -------------------------------------------------------------------------------------------------------------------
@@ -1314,13 +1309,12 @@ def flow_accumulation(
     data_type: str = "FLOAT",
     flow_direction_type: str = "D8",
 ):
-
     """
     Replaces cells of a raster corresponding to a mask
     with the values of the nearest neighbors.
 
     ===============================     ===================================================================================================================
-    **Argument**                        **Description**
+    **Parameter**                        **Description**
     -------------------------------     -------------------------------------------------------------------------------------------------------------------
     input_flow_direction_raster         Required. The input raster that shows the direction of flow out of each cell.
     -------------------------------     -------------------------------------------------------------------------------------------------------------------
@@ -1457,7 +1451,7 @@ def flow_direction(
     degrees going counter-clockwise from 0 (due east) to 360 (also due east).
 
     ================================     ====================================================================
-    **Argument**                         **Description**
+    **Parameter**                         **Description**
     --------------------------------     --------------------------------------------------------------------
     input_surface_raster                 Required. The input raster representing a continuous surface.
     --------------------------------     --------------------------------------------------------------------
@@ -1556,7 +1550,7 @@ def fill(input_surface_raster: Raster, zlimit: Optional[float] = None):
     Fills sinks in a surface raster to remove small imperfections in the data
 
     ===============================     ===================================================================================================================
-    **Argument**                        **Description**
+    **Parameter**                        **Description**
     -------------------------------     -------------------------------------------------------------------------------------------------------------------
     input_surface_raster                Required. The input raster representing a continuous surface.
     -------------------------------     -------------------------------------------------------------------------------------------------------------------
@@ -1603,7 +1597,7 @@ def nibble(
     with the values of the nearest neighbors.
 
     ===============================     ===================================================================================================================
-    **Argument**                        **Description**
+    **Parameter**                        **Description**
     -------------------------------     -------------------------------------------------------------------------------------------------------------------
     input_raster                        Required. The input rater to nibble. The input raster can be either integer or floating point type.
     -------------------------------     -------------------------------------------------------------------------------------------------------------------
@@ -1673,7 +1667,7 @@ def stream_link(input_raster: Raster, input_flow_direction_raster: Raster):
     Assigns unique values to sections of a raster linear network between intersections
 
     ===============================     ===================================================================================================================
-    **Argument**                        **Description**
+    **Parameter**                        **Description**
     -------------------------------     -------------------------------------------------------------------------------------------------------------------
     input_raster                        Required. An input raster that represents a linear stream network.
     -------------------------------     -------------------------------------------------------------------------------------------------------------------
@@ -1719,7 +1713,7 @@ def watershed(
     with the values of the nearest neighbors.
 
     ===============================     ===================================================================================================================
-    **Argument**                        **Description**
+    **Parameter**                        **Description**
     -------------------------------     -------------------------------------------------------------------------------------------------------------------
     input_flow_direction_raster         Required raster layer. The input raster that shows the direction of flow out of each cell.
     -------------------------------     -------------------------------------------------------------------------------------------------------------------
@@ -1788,7 +1782,7 @@ def calculate_travel_cost(
     """
 
     ===============================     ===================================================================================================================
-    **Argument**                        **Description**
+    **Parameter**                        **Description**
     -------------------------------     -------------------------------------------------------------------------------------------------------------------
     in_source_data                      Required. The layer that defines the sources to calculate the distance too. The layer
                                         can be raster or feature.
@@ -2020,7 +2014,7 @@ def kernel_density(
     `Kernel Density function <https://pro.arcgis.com/en/pro-app/help/data/imagery/kernel-density-global-function.htm>`_
 
     ===============================     ===================================================================================================================
-    **Argument**                        **Description**
+    **Parameter**                        **Description**
     -------------------------------     -------------------------------------------------------------------------------------------------------------------
     in_features                         Required. The input point or line features for which to calculate the density
     -------------------------------     -------------------------------------------------------------------------------------------------------------------
@@ -2174,7 +2168,7 @@ def cost_path(
 
 
     ===============================     ===================================================================================================================
-    **Argument**                        **Description**
+    **Parameter**                        **Description**
     -------------------------------     -------------------------------------------------------------------------------------------------------------------
     in_destination_data                 Required raster layer. A raster that identifies those cells from which the least-cost
                                         path is determined to the least costly source. The input raster layer
@@ -2273,7 +2267,7 @@ def euclidean_direction(
     Calculates, for each cell, the Euclidean distance to the closest source.
 
     ===============================     ===================================================================================================================
-    **Argument**                        **Description**
+    **Parameter**                        **Description**
     -------------------------------     -------------------------------------------------------------------------------------------------------------------
     in_source_data                      Required raster layer. The input source locations. This is a raster that
                                         identifies the cells or locations to which the Euclidean distance for
@@ -2376,7 +2370,7 @@ def cost_backlink(
     source over a cost surface.
 
     ===============================     ===================================================================================================================
-    **Argument**                        **Description**
+    **Parameter**                        **Description**
     -------------------------------     -------------------------------------------------------------------------------------------------------------------
     in_source_data Required             The input raster that identifies the pixels or locations to which the
                                         least accumulated cost distance for every output pixel location is
@@ -2501,7 +2495,7 @@ def region_group(
     belongs. A unique number is assigned to each region.
 
     ===============================     ===================================================================================================================
-    **Argument**                        **Description**
+    **Parameter**                        **Description**
     -------------------------------     -------------------------------------------------------------------------------------------------------------------
     in_raster                           Required. The input raster for which unique connected regions of
                                         cells will be identified. It must be of integer type.
@@ -2621,7 +2615,7 @@ def corridor(in_distance_raster1: Raster, in_distance_raster2: Raster):
     Calculates the sum of accumulative costs for two input accumulative cost rasters.
 
     ===============================     ===================================================================================================================
-    **Argument**                        **Description**
+    **Parameter**                        **Description**
     -------------------------------     -------------------------------------------------------------------------------------------------------------------
     in_distance_raster1                 Required. The first input distance raster.
                                         It should be an accumulated cost distance output from a distance function
@@ -2680,7 +2674,7 @@ def path_distance(
     while accounting for surface distance along with horizontal and vertical cost factors
 
     ===============================     ===================================================================================================================
-    **Argument**                        **Description**
+    **Parameter**                        **Description**
     -------------------------------     -------------------------------------------------------------------------------------------------------------------
     in_source_data                      Required. The input source locations.
                                         This is a raster that identifies the cells or locations from or to which the
@@ -2887,13 +2881,12 @@ def path_distance_allocation(
     source_capacity=None,
     source_direction=None,
 ):
-
     """
     Calculates the least-cost source for each cell based on the least accumulative cost over a cost surface,
     while accounting for surface distance along with horizontal and vertical cost factors.
 
     ===============================     ===================================================================================================================
-    **Argument**                        **Description**
+    **Parameter**                        **Description**
     -------------------------------     -------------------------------------------------------------------------------------------------------------------
     in_source_data                      Required. The input source locations.
                                         This is a raster that identifies the cells or locations from or to which
@@ -3115,7 +3108,7 @@ def path_distance_back_link(
     while accounting for surface distance along with horizontal and vertical cost factors.
 
     ===============================     ===================================================================================================================
-    **Argument**                        **Description**
+    **Parameter**                        **Description**
     -------------------------------     -------------------------------------------------------------------------------------------------------------------
     in_source_data                      Required. The input source locations.
 
@@ -3322,13 +3315,12 @@ def calculate_distance(
     in_barrier_data=None,
     distance_method="PLANAR",
 ):
-
     """
 
     Calculates the Euclidean distance, direction, and allocation from a single source or set of sources.
 
     ===========================================     ===============================================================================
-    **Argument**                                    **Description**
+    **Parameter**                                    **Description**
     -------------------------------------------     -------------------------------------------------------------------------------
     in_source_data                                  Required. The layer that defines the sources to calculate the distance to.
                                                     The layer can be raster or feature. To use a raster input, it must
@@ -3531,7 +3523,7 @@ def euclidean_back_direction(
 
 
     ================================     ===============================================================================
-    **Argument**                         **Description**
+    **Parameter**                         **Description**
     --------------------------------     -------------------------------------------------------------------------------
     in_source_data                       Required; The input raster that identifies the pixels or locations to
                                          which the Euclidean direction for every output cell location is calculated.
@@ -3631,7 +3623,7 @@ def flow_length(
     see `Flow Length function <https://pro.arcgis.com/en/pro-app/help/data/imagery/flow-length-function.htm>`_
 
     ================================     ===============================================================================
-    **Argument**                         **Description**
+    **Parameter**                         **Description**
     --------------------------------     -------------------------------------------------------------------------------
     input_flow_direction_raster          Required. The input raster that shows the direction of flow out of each cell.
                                          The flow direction raster can be created by running the Flow Direction function.
@@ -3703,7 +3695,7 @@ def sink(input_flow_direction_raster: Raster):
     see `Sink function <https://pro.arcgis.com/en/pro-app/help/data/imagery/sink-function.htm>`_
 
     ================================     ===============================================================================
-    **Argument**                         **Description**
+    **Parameter**                         **Description**
     --------------------------------     -------------------------------------------------------------------------------
     input_flow_direction_raster          Required. The input raster that shows the direction
                                          of flow out of each cell.
@@ -3748,7 +3740,7 @@ def snap_pour_point(
     see `Snap Pour Point function <https://pro.arcgis.com/en/pro-app/help/data/imagery/snap-pour-point-function.htm>`_
 
     ================================     ===============================================================================
-    **Argument**                         **Description**
+    **Parameter**                         **Description**
     --------------------------------     -------------------------------------------------------------------------------
     in_pour_point_data                   Required. The input pour point locations that are to be snapped.
                                          For an input raster layer, all cells that are not
@@ -3816,7 +3808,7 @@ def stream_order(
     `Stream Order function <https://pro.arcgis.com/en/pro-app/help/data/imagery/stream-order-function.htm>`_
 
     ================================     ===============================================================================
-    **Argument**                         **Description**
+    **Parameter**                         **Description**
     --------------------------------     -------------------------------------------------------------------------------
     input_stream_raster                  Required. An input stream raster that represents a linear stream network.
     --------------------------------     -------------------------------------------------------------------------------
@@ -3886,7 +3878,7 @@ def expand(input_raster: Raster, number_of_cells: int, zone_values: Union[list, 
 
 
     ================================     ===============================================================================
-    **Argument**                         **Description**
+    **Parameter**                         **Description**
     --------------------------------     -------------------------------------------------------------------------------
     input_raster                         Required. The input raster for which the identified zones are to
                                          be expanded.
@@ -3940,7 +3932,7 @@ def shrink(input_raster: Raster, number_of_cells: int, zone_values: Union[list, 
     See `Shrink function <https://pro.arcgis.com/en/pro-app/help/data/imagery/shrink-function.htm>`_
 
     ===============================     ================================================================================
-    **Argument**                         **Description**
+    **Parameter**                         **Description**
     -------------------------------     --------------------------------------------------------------------------------
     input_raster                        Required. The input raster for which the identified zones are to be shrunk.
                                         It must be of integer type.
@@ -4008,7 +4000,7 @@ def distance_accumulation(
     least-cost source over a cost surface, preserving euclidean distance metric
 
     =====================================       ============================================================================================================
-    **Argument**                                **Description**
+    **Parameter**                                **Description**
     -------------------------------------       ------------------------------------------------------------------------------------------------------------
     in_source_data                              Required. The input source locations.
 
@@ -4295,7 +4287,7 @@ def distance_allocation(
     avoiding network distance distortion.
 
     =====================================       ============================================================================================================
-    **Argument**                                **Description**
+    **Parameter**                                **Description**
     -------------------------------------       ------------------------------------------------------------------------------------------------------------
     in_source_data                              Required. The input source locations.
 
@@ -4571,7 +4563,7 @@ def optimal_path_as_raster(
     avoiding network distance distortion.
 
     ===============================     ================================================================================
-    **Argument**                         **Description**
+    **Parameter**                         **Description**
     -------------------------------     --------------------------------------------------------------------------------
     in_destination_data                 Required layer. A layer that identifies locations from which the optimal
                                         path is determined to the least costly source.
@@ -4704,7 +4696,7 @@ def boundary_clean(
     Function available in ArcGIS Image Server 10.9 and higher.
 
     ================================     ====================================================================
-    **Argument**                         **Description**
+    **Parameter**                         **Description**
     --------------------------------     --------------------------------------------------------------------
     input_raster                         Required. The input raster for which the boundary between zones will
                                          be smoothed. It must be of integer type.
@@ -4813,7 +4805,7 @@ def viewshed(
     Determines the raster surface locations visible to a set of observer features using geodesic methods.
 
     ================================     ====================================================================
-    **Argument**                         **Description**
+    **Parameter**                         **Description**
     --------------------------------     --------------------------------------------------------------------
     input_raster                         Required. The input surface raster. It can be an integer or a
                                          floating-point raster.

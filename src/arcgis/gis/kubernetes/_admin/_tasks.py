@@ -6,6 +6,7 @@ from arcgis.gis import GIS, Item
 from arcgis.gis.tasks._schedule import TaskManager, Task
 from arcgis._impl.common._utils import local_time_to_online
 
+
 ###########################################################################
 class TaskManager(_BaseKube):
     """
@@ -30,7 +31,7 @@ class TaskManager(_BaseKube):
         This operation returns information on a specific task, such as the task's title, parameters, and schedule.
 
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
         task_id                Required String. The specific task to get.
         ==================     ====================================================================
@@ -58,7 +59,7 @@ class TaskManager(_BaseKube):
         Updates that have been made to a task will go into effect during its next scheduled execution.
 
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
         task_id                Required String. The task to edit.
         ------------------     --------------------------------------------------------------------
@@ -173,7 +174,7 @@ class TaskManager(_BaseKube):
         resources are deleted as well.
 
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
         task_id                Required string. The task to delete
         ==================     ====================================================================
@@ -189,7 +190,7 @@ class TaskManager(_BaseKube):
         setting its taskState to active.
 
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
         task_id                Required string. The task to enable
         ==================     ====================================================================
@@ -205,7 +206,7 @@ class TaskManager(_BaseKube):
         upcoming runs scheduled for the task.
 
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
         task_id                Required string. The task to disable
         ==================     ====================================================================
@@ -221,7 +222,7 @@ class TaskManager(_BaseKube):
         specific task.
 
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
         task_id                Required string.
         ==================     ====================================================================
@@ -236,7 +237,7 @@ class TaskManager(_BaseKube):
         This resource returns information on a specific run for a task.
 
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
         task_id                Required string. The task to get the run from.
         ------------------     --------------------------------------------------------------------
@@ -253,7 +254,7 @@ class TaskManager(_BaseKube):
         This operation updates an existing run for a scheduled task.
 
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
         task_id                Required string. The task to edit the run on.
         ------------------     --------------------------------------------------------------------
@@ -278,7 +279,7 @@ class TaskManager(_BaseKube):
         Deleting a run also deletes corresponding resource files associated with the run.
 
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
         task_id                Required string. The task to delete the run on.
         ------------------     --------------------------------------------------------------------
@@ -308,7 +309,7 @@ class TaskManager(_BaseKube):
         and deleted through other operations in the ArcGIS Enterprise Administrator API.
 
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
         item                   Required Item. The item to schedule a task on.
         ------------------     --------------------------------------------------------------------

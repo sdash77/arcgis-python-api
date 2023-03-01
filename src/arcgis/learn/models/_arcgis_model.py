@@ -116,7 +116,6 @@ def nostdout():
 
 
 def _get_device():
-
     if getattr(arcgis.env, "_processorType", "") == "GPU" and torch.cuda.is_available():
         device = torch.device("cuda")
     elif getattr(arcgis.env, "_processorType", "") == "CPU":
@@ -590,7 +589,6 @@ class ArcGISModel(object):
             data.path = Path(os.path.abspath("."))
 
         if getattr(self, "_is_edge_detection", False):
-
             if len(data.classes) > 2:
                 raise Exception(
                     "Found multi-labels in the data, This is a binary segmentation model and hence please export the data with binary labels."
@@ -717,7 +715,7 @@ class ArcGISModel(object):
         optimum learning rate for training the model.
 
         =====================   ===========================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ---------------------   -------------------------------------------
         allow_plot              Optional boolean. Display the plot of losses
                                 against the learning rates and mark the optimal
@@ -864,7 +862,7 @@ class ArcGISModel(object):
         specified learning rates
 
         =====================   ===========================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ---------------------   -------------------------------------------
         epochs                  Required integer. Number of cycles of training
                                 on the data. Increase it if underfitting.
@@ -959,8 +957,8 @@ class ArcGISModel(object):
                         learn=self.learn, monitor=monitor, min_delta=0.001, patience=5
                     )
                 )
+            self._is_checkpointed = checkpoint
             if checkpoint:
-                self._is_checkpointed = checkpoint
                 from datetime import datetime
 
                 now = datetime.now()
@@ -1039,7 +1037,6 @@ class ArcGISModel(object):
     def _create_emd_template(
         self, path, compute_metrics=True, save_inference_file=True
     ):
-
         _emd_template = {}
 
         # For old models - add lr, ModelName
@@ -1305,7 +1302,6 @@ class ArcGISModel(object):
             """
 
         if emd_template.get("ModelParameters", {}).get("model_name", False):
-
             HTML_TEMPLATE = f"""        
                 <p><b> {emd_template.get("ModelName").replace('>', '').replace('<', '')} </b></p>
                 <p><b>Model Name:</b> {emd_template.get('ModelParameters', {}).get('model_name')}</p>
@@ -1314,7 +1310,6 @@ class ArcGISModel(object):
             """
 
         else:
-
             HTML_TEMPLATE = f"""        
                     <p><b> {emd_template.get("ModelName").replace('>', '').replace('<', '')} </b></p>
                     <p><b>Backbone:</b> {emd_template.get('ModelParameters', {}).get('backbone')}</p>
@@ -1425,11 +1420,15 @@ class ArcGISModel(object):
         save_inference_file=True,
         **kwargs,
     ):
+        if (type(self).__name__) == "EfficientDet":
+            framework = "tflite"
+
         save_format = kwargs.get("save_format", "default")  # 'default', 'tflite'
         post_processed = kwargs.get("post_processed", True)  # True, False
         quantized = kwargs.get("quantized", False)  # True, False
         temp = self.learn.path
         temp1 = self.learn.model_dir
+        self._framework = framework
         if "\\" in name_or_path or "/" in name_or_path:
             path = Path(name_or_path)
             name = path.parts[-1]
@@ -1501,14 +1500,18 @@ class ArcGISModel(object):
         except Exception as e:
             raise e
         finally:
-
             self.learn.path = temp
             self.framework = framework
             self.learn.model_dir = temp1
 
-        _emd_template = self._create_emd_template(
-            saved_path.with_suffix(".pth"), compute_metrics, save_inference_file
-        )
+        if (type(self).__name__) == "EfficientDet":
+            _emd_template = self._create_emd_template(
+                saved_path.with_suffix(".tflite"), compute_metrics, save_inference_file
+            )
+        else:
+            _emd_template = self._create_emd_template(
+                saved_path.with_suffix(".pth"), compute_metrics, save_inference_file
+            )
 
         if framework.lower() == "tf-onnx":
             batch_size = kwargs.get("batch_size", 16)
@@ -1739,7 +1742,6 @@ class ArcGISModel(object):
         return get_post_processed_model(self, input_normalization=input_normalization)
 
     def _save_model_characteristics(self, model_characteristics_dir):
-
         import shutil
         import matplotlib.pyplot as plt
 
@@ -1915,7 +1917,7 @@ class ArcGISModel(object):
         Learning Package zip for deployment to Image Server or ArcGIS Pro.
 
         =====================   ===========================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ---------------------   -------------------------------------------
         name_or_path            Required string. Name of the model to save. It
                                 stores it at the pre-defined location. If path
@@ -1985,7 +1987,7 @@ class ArcGISModel(object):
         Loads a compatible saved model for inferencing or fine tuning from the disk.
 
         =====================   ===========================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ---------------------   -------------------------------------------
         name_or_path            Required string. Name or Path to
                                 Deep Learning Package (DLPK) or

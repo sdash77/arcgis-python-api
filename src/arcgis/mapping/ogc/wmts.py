@@ -10,6 +10,7 @@ from arcgis._impl.common._mixins import PropertyMap
 
 from ._base import BaseOGC
 
+
 ###########################################################################
 class WMTSLayer(BaseOGC):
     """
@@ -17,7 +18,7 @@ class WMTSLayer(BaseOGC):
 
 
     ===============     ====================================================================
-    **Argument**        **Description**
+    **Parameter**        **Description**
     ---------------     --------------------------------------------------------------------
     url                 Required string. The web address of the endpoint.
     ---------------     --------------------------------------------------------------------
@@ -44,6 +45,7 @@ class WMTSLayer(BaseOGC):
     _reader = None
     _cap_reader = None
     _properties = None
+
     # ----------------------------------------------------------------------
     def __init__(self, url, version="1.0.0", gis=None, **kwargs):
         super(WMTSLayer, self)

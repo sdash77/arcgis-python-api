@@ -66,7 +66,7 @@ class AGOLServicesDirectory:
     a site.
 
     ==================     ====================================================================
-    **Argument**           **Description**
+    **Parameter**           **Description**
     ------------------     --------------------------------------------------------------------
     url                    Required String. The url string to the ArcGIS Online Server
     ------------------     --------------------------------------------------------------------
@@ -78,6 +78,7 @@ class AGOLServicesDirectory:
     _gis = None
     _url = None
     _properties = None
+
     # ---------------------------------------------------------------------
     def __init__(self, url: str, gis: GIS):
         """initializer"""

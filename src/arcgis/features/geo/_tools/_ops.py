@@ -16,6 +16,7 @@ from arcgis.features.geo._array import GeoArray
 
 _HASARCPY, _HASSHAPELY = None, None
 
+
 # ----------------------------------------------------------------------
 def _check_geometry_engine():
     """checks if the geometry engine exists"""
@@ -46,7 +47,7 @@ def contains(sdf, other, relation="CLEMENTINI"):
     `contains` is the opposite of `within`.
 
     =========================    =========================================================
-    **Argument**                 **Description**
+    **Parameter**                 **Description**
     -------------------------    ---------------------------------------------------------
     sdf                          Required Spatially Enabled DataFrame. The dataframe to have the operation performed on.
     -------------------------    ---------------------------------------------------------
@@ -115,7 +116,7 @@ def crosses(sdf, other):
     interior of the polygon which is not equivalent to the entire polyline.
 
     =========================    =========================================================
-    **Argument**                 **Description**
+    **Parameter**                 **Description**
     -------------------------    ---------------------------------------------------------
     sdf                          Required Spatially Enabled DataFrame. The dataframe to have the operation performed on.
     -------------------------    ---------------------------------------------------------
@@ -170,7 +171,7 @@ def disjoint(sdf, other):
     **Two geometries intersect if `disjoint` returns False.**
 
     =========================    =========================================================
-    **Argument**                 **Description**
+    **Parameter**                 **Description**
     -------------------------    ---------------------------------------------------------
     sdf                          Required Spatially Enabled DataFrame. The dataframe to have the operation performed on.
     -------------------------    ---------------------------------------------------------
@@ -226,7 +227,7 @@ def equals(sdf, other):
     comparison only; M and Z values are ignored.
 
     =========================    =========================================================
-    **Argument**                 **Description**
+    **Parameter**                 **Description**
     -------------------------    ---------------------------------------------------------
     sdf                          Required Spatially Enabled DataFrame. The dataframe to have the operation performed on.
     -------------------------    ---------------------------------------------------------
@@ -282,7 +283,7 @@ def overlaps(sdf, other):
     the input geometries.
 
     =========================    =========================================================
-    **Argument**                 **Description**
+    **Parameter**                 **Description**
     -------------------------    ---------------------------------------------------------
     sdf                          Required Spatially Enabled DataFrame. The dataframe to have the operation performed on.
     -------------------------    ---------------------------------------------------------
@@ -341,7 +342,7 @@ def touches(sdf, other):
     the polyline end points.
 
     =========================    =========================================================
-    **Argument**                 **Description**
+    **Parameter**                 **Description**
     -------------------------    ---------------------------------------------------------
     sdf                          Required Spatially Enabled DataFrame. The dataframe to have the operation performed on.
     -------------------------    ---------------------------------------------------------
@@ -397,7 +398,7 @@ def within(sdf, other, relation="CLEMENTINI"):
     `within` is the opposite operator of `contains`.
 
     =========================    =========================================================
-    **Argument**                 **Description**
+    **Parameter**                 **Description**
     -------------------------    ---------------------------------------------------------
     sdf                          Required Spatially Enabled DataFrame. The dataframe to have the operation performed on.
     -------------------------    ---------------------------------------------------------

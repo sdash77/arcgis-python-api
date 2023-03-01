@@ -73,6 +73,12 @@ def normalize_batch(image_batch, model_info=None, normalization_stats=None):
     return img_normed
 
 
+def ts_normalization(x, m, s):
+    x = np.rollaxis(x, 2)  # TxCxS -> SxTxC
+    x = (x - m) / s
+    return torch.tensor(x[None, :, :, :, None])
+
+
 def rescale_batch(
     image_batch, model_info, normalization_stats=None, break_extract_bands=False
 ):
@@ -268,7 +274,6 @@ except:
 
 
 def get_nms_preds(b_clas, b_bb, idx, anchors, grid_sizes, classes, nms_overlap, thres):
-
     a_ic = actn_to_bb(b_bb[idx], anchors, grid_sizes)
     clas_pr, clas_ids = b_clas[idx].max(1)
     clas_pr = clas_pr.sigmoid()
@@ -510,6 +515,69 @@ def pixel_classify_cyclegan_image(model, tiles, device, direction, model_info):
                 rescale_batch(cyclegan_predictions, model_info, norm_stats_b)
             )[:, :num_channel_tar, :, :]
     return cyclegan_predictions
+
+
+def pixel_classify_ts_image(model, tiles, device, model_info):
+    tiles = torch.tensor(tiles)
+    tile_height, tile_width, nch = tiles.shape[2], tiles.shape[3], tiles.shape[1]
+    means = np.array((model_info.get("mean_norm_stats", None))["mean_stats"])
+    stds = np.array((model_info.get("std_norm_stats", None))["std_stats"])
+    tile_stack = lambda lst: torch.cat(lst, axis=0)
+    img_arr = tile_stack([tile.permute(1, 2, 0)[None, :, :, :] for tile in tiles])
+    timeseries_arr = tile_stack(
+        [
+            torch.reshape(tile_arr, (1, tile_height * tile_width, nch))
+            for tile_arr in img_arr
+        ]
+    )
+    ntemp = int(model_info.get("n_temporal", None))
+    nchannel = int(model_info.get("n_channel", None))
+    class_dict = model_info.get("Class_mapping", None)
+    num_class_dict = model_info.get("Num_class_mapping", None)
+
+    if num_class_dict:
+        pixel_num_class_mapping = num_class_dict
+    else:
+        pixel_num_class_mapping = class_dict
+    final = tile_stack(
+        [
+            torch.reshape(time_arr, (1, time_arr.shape[0], ntemp, nchannel))
+            for time_arr in timeseries_arr
+        ]
+    )
+
+    def ts_normalization(x, m, s):
+        x = np.rollaxis(x, 2)  # TxCxS -> SxTxC
+        x = (x - m) / s
+        return torch.tensor(x[None, :, :, :, None])
+
+    normalized_ts = tile_stack(
+        [
+            ts_normalization(np.rollaxis(tile.numpy(), 0, 3), means, stds)
+            for tile in final
+        ]
+    )
+    model = model.to(device)
+    pred_list = []
+    for i in normalized_ts:
+        sim = torch.ones(i.shape[0], i.shape[1], 1).cuda()
+        model.eval()
+        with torch.no_grad():
+            prediction = model(i.float().cuda(), sim)
+
+        pred_out = prediction.argmax(dim=1).cpu()
+        pred_list.append(pred_out)
+
+    remap_pred_list = [
+        torch.tensor(
+            [pixel_num_class_mapping.get(str(item.numpy())) for item in tile_pred_list]
+        )
+        for tile_pred_list in pred_list
+    ]
+    tile_rshp = tile_stack(
+        [torch.reshape(i, (1, 1, tile_height, tile_width)) for i in remap_pred_list]
+    )
+    return tile_rshp
 
 
 def pixel_classify_pix2pix_image(model, tiles, device, model_info):

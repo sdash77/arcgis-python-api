@@ -6,6 +6,7 @@ from arcgis.gis._impl._con import Connection
 from arcgis._impl.common._mixins import PropertyMap
 from typing import Dict, Any, List, Tuple, Optional
 
+
 ###########################################################################
 class Overview(_BaseKube):
     """ """
@@ -13,6 +14,7 @@ class Overview(_BaseKube):
     _con = None
     _gis = None
     _url = None
+
     # ---------------------------------------------------------------------
     def __init__(self, url: str, gis: GIS) -> None:
         """initializer"""
@@ -59,7 +61,7 @@ class Overview(_BaseKube):
         interval can me modified through the update operation.
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         resource            Optional String.  Specifies the resource type (criticalLogs,
                             dataStores, systemServices, utilityServices) that will have their
@@ -88,7 +90,7 @@ class Overview(_BaseKube):
 
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         resource            Required Dictionary. A dictionary object containing the `id`, `type`,
                             and `updateIntervalMin` for an overview resource type, returned by

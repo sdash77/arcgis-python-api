@@ -13,7 +13,7 @@ class Integration(FeatureModel):
     Represents an integration in a project. Version 2 Workforce projects only.
 
     ==================     ====================================================================
-    **Argument**           **Description**
+    **Parameter**           **Description**
     ------------------     --------------------------------------------------------------------
     project                Required :class:`~arcgis.apps.workforce.Project`. The project that
                            the dispatcher belongs to.
@@ -81,7 +81,7 @@ class Integration(FeatureModel):
         Updates the dispatcher on the server
 
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
         integration_id         Optional :class:`String`. The id for the integration
         ------------------     --------------------------------------------------------------------

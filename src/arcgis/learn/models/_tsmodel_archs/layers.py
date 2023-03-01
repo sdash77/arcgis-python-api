@@ -5,7 +5,6 @@ from fastai.torch_core import Module
 from functools import partial
 from . import *
 
-
 device = "cuda" if torch.cuda.is_available() else "cpu"
 
 
@@ -83,7 +82,7 @@ def convlayer(
     zero_bn=False,
     bn_before=True,
     act_fn="relu",
-    **kwargs
+    **kwargs,
 ):
     """conv layer (padding="same") + bn + act"""
     if ks % 2 == 1 and padding == "same":
@@ -201,3 +200,46 @@ class AFN(nn.Module):
         x.mul_(self.weight)
         x.add_(self.bias)
         return x
+
+
+class Permute(Module):
+    def __init__(self, *dims):
+        self.dims = dims
+
+    def forward(self, x):
+        return x.permute(self.dims)
+
+    def __repr__(self):
+        return (
+            f"{self.__class__.__name__}(dims={', '.join([str(d) for d in self.dims])})"
+        )
+
+
+class Max(Module):
+    def __init__(self, dim=None, keepdim=False):
+        self.dim, self.keepdim = dim, keepdim
+
+    def forward(self, x):
+        return x.max(self.dim, keepdim=self.keepdim)[0]
+
+    def __repr__(self):
+        return f"{self.__class__.__name__}(dim={self.dim}, keepdim={self.keepdim})"
+
+
+class Transpose(Module):
+    def __init__(self, *dims, contiguous=False):
+        self.dims, self.contiguous = dims, contiguous
+
+    def forward(self, x):
+        if self.contiguous:
+            return x.transpose(*self.dims).contiguous()
+        else:
+            return x.transpose(*self.dims)
+
+    def __repr__(self):
+        if self.contiguous:
+            return f"{self.__class__.__name__}(dims={', '.join([str(d) for d in self.dims])}).contiguous()"
+        else:
+            return (
+                f"{self.__class__.__name__}({', '.join([str(d) for d in self.dims])})"
+            )

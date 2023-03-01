@@ -3,13 +3,13 @@ from enum import Enum
 from typing import Optional, Union
 import uuid
 from arcgis.auth.tools import LazyLoader
+from PIL import Image as PImage
 
 arcgis = LazyLoader("arcgis")
 urllib3 = LazyLoader("urllib3")
 requests = LazyLoader("requests")
 mimetypes = LazyLoader("mimetypes")
 os = LazyLoader("os")
-_Image = LazyLoader("PIL.Image")
 _io = LazyLoader("io")
 _parse = LazyLoader("urllib.parse")
 
@@ -67,7 +67,7 @@ class Image(object):
         Image must be smaller than 10 MB to avoid having issues when saving or publishing.
 
     ==================      ====================================================================
-    **Argument**            **Description**
+    **Parameter**            **Description**
     ------------------      --------------------------------------------------------------------
     path                    Required String. The file path to the image that will be added.
     ==================      ====================================================================
@@ -147,7 +147,7 @@ class Image(object):
         Get/Set the image property.
 
         ==================  ========================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ------------------  ----------------------------------------
         image               String. The new image path or url for the Image.
         ==================  ========================================
@@ -179,7 +179,7 @@ class Image(object):
         Get/Set the caption property for the image.
 
         ==================  ========================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ------------------  ----------------------------------------
         caption             String. The new caption for the Image.
         ==================  ========================================
@@ -205,7 +205,7 @@ class Image(object):
         Get/Set the alternte text property for the image.
 
         ==================  ========================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ------------------  ----------------------------------------
         alt_text            String. The new alt_text for the Image.
         ==================  ========================================
@@ -271,7 +271,7 @@ class Image(object):
         # Create resource node. Different if file path or url
         if self._url is False:
             # Get image properties and create the resourceId that corresponds to the resource added
-            im = _Image.open(self._path)
+            im = PImage.open(self._path)
             w, h = im.size
             self._story._properties["resources"][self.resource_node] = {
                 "type": "image",
@@ -285,7 +285,7 @@ class Image(object):
         else:
             # Get image properties and assign the image src
             data = requests.get(self._path).content
-            im = _Image.open(_io.BytesIO(data))
+            im = PImage.open(_io.BytesIO(data))
             w, h = im.size
             self._story._properties["resources"][self.resource_node] = {
                 "type": "image",
@@ -305,7 +305,7 @@ class Image(object):
             self._url = True
             # Update the height and width for the image
             data = requests.get(new_image).content
-            im = _Image.open(_io.BytesIO(data))
+            im = PImage.open(_io.BytesIO(data))
             w, h = im.size
             self._story._properties["resources"][self.resource_node]["data"][
                 "height"
@@ -334,7 +334,7 @@ class Image(object):
         else:
             # Update the height and width for the image
             self._url = False
-            im = _Image.open(new_image)
+            im = PImage.open(new_image)
             w, h = im.size
             self._story._properties["resources"][self.resource_node]["data"][
                 "height"
@@ -392,7 +392,7 @@ class Video(object):
     Class representing a `video` from a url or file
 
     ==================      ====================================================================
-    **Argument**            **Description**
+    **Parameter**            **Description**
     ------------------      --------------------------------------------------------------------
     path                    Required String. The file path or embed url to the video that will
                             be added.
@@ -474,7 +474,7 @@ class Video(object):
         Get/Set the video property.
 
         ==================  ========================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ------------------  ----------------------------------------
         video               String. The new video path for the Video.
         ==================  ========================================
@@ -506,7 +506,7 @@ class Video(object):
         Get/Set the caption property for the video.
 
         ==================  ========================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ------------------  ----------------------------------------
         caption             String. The new caption for the Video.
         ==================  ========================================
@@ -532,7 +532,7 @@ class Video(object):
         Get/Set the alternte text property for the video.
 
         ==================  ========================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ------------------  ----------------------------------------
         alt_text            String. The new alt_text for the Video.
         ==================  ========================================
@@ -701,7 +701,7 @@ class Audio(object):
     a file path and added to the story.
 
     ==================      ====================================================================
-    **Argument**            **Description**
+    **Parameter**            **Description**
     ------------------      --------------------------------------------------------------------
     path                    Required String. The file path to the audio that will be added.
     ==================      ====================================================================
@@ -769,7 +769,7 @@ class Audio(object):
         Get/Set the audio path.
 
         ==================  ========================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ------------------  ----------------------------------------
         audio               String. The new audio path for the Audio.
         ==================  ========================================
@@ -800,7 +800,7 @@ class Audio(object):
         Get/Set the caption property for the audio.
 
         ==================  ========================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ------------------  ----------------------------------------
         caption             String. The new caption for the Audio.
         ==================  ========================================
@@ -826,7 +826,7 @@ class Audio(object):
         Get/Set the alternte text property for the audio.
 
         ==================  ========================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ------------------  ----------------------------------------
         alt_text            String. The new alt_text for the Audio.
         ==================  ========================================
@@ -936,7 +936,7 @@ class Embed(object):
     Embed will show as a card in the story.
 
     ==================      ====================================================================
-    **Argument**            **Description**
+    **Parameter**            **Description**
     ------------------      --------------------------------------------------------------------
     path                    Required String. The url that will be added as a webpage, video, or
                             audio embed into the story.
@@ -988,7 +988,7 @@ class Embed(object):
         Get/Set the link property.
 
         ==================  ========================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ------------------  ----------------------------------------
         link                String. The new url for the Embed.
         ==================  ========================================
@@ -1013,7 +1013,7 @@ class Embed(object):
         Get/Set the caption property for the webpage.
 
         ==================  ========================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ------------------  ----------------------------------------
         caption             String. The new caption for the Embed.
         ==================  ========================================
@@ -1039,7 +1039,7 @@ class Embed(object):
         Get/Set the alternte text property for the embed.
 
         ==================  ========================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ------------------  ----------------------------------------
         alt_text            String. The new alt_text for the Embed.
         ==================  ========================================
@@ -1131,7 +1131,7 @@ class Map(object):
     Class representing a `webmap` or `webscene` for the story
 
     =================       ====================================================================
-    **Argument**            **Description**
+    **Parameter**            **Description**
     -----------------       --------------------------------------------------------------------
     item                    An Item of type :class:`~arcgis.mapping.WebMap` or
                             :class:`~arcgis.mapping.WebScene` or a String representing the item
@@ -1298,7 +1298,7 @@ class Map(object):
         Get/Set the map property.
 
         ==================  ========================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ------------------  ----------------------------------------
         map                 One of three choices:
 
@@ -1348,7 +1348,7 @@ class Map(object):
         node.
 
         ==================  ========================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ------------------  ----------------------------------------
         extent              Optional dictionary representing the extent of
                             the map. This will update the extent, center and viewpoint
@@ -1490,7 +1490,7 @@ class Map(object):
         Get/Set the caption property for the map.
 
         ==================  ========================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ------------------  ----------------------------------------
         caption             String. The new caption for the Map.
         ==================  ========================================
@@ -1516,7 +1516,7 @@ class Map(object):
         Get/Set the alternte text property for the map.
 
         ==================  ========================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ------------------  ----------------------------------------
         alt_text            String. The new alt_text for the Map.
         ==================  ========================================
@@ -1686,7 +1686,7 @@ class Text(object):
     Class representing a `text` and a style of text.
 
     ==================      ====================================================================
-    **Argument**            **Description**
+    **Parameter**            **Description**
     ------------------      --------------------------------------------------------------------
     text                    Required String. The text that will be shown in the story.
 
@@ -1821,7 +1821,7 @@ class Text(object):
         Get/Set the text itself for the text node.
 
         ==================  ==================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ------------------  --------------------------------------------------
         text                Optional String. The new text to be displayed.
         ==================  ==================================================
@@ -1881,7 +1881,7 @@ class Button(object):
     Class representing a `button`.
 
     ==================      ====================================================================
-    **Argument**            **Description**
+    **Parameter**            **Description**
     ------------------      --------------------------------------------------------------------
     link                    Required String. When user clicks on button, they will be brought to
                             the link.
@@ -1933,7 +1933,7 @@ class Button(object):
         Get/Set the text for the button.
 
         ==================  ==================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ------------------  --------------------------------------------------
         text                Optional String. The new text to be displayed.
         ==================  ==================================================
@@ -1959,7 +1959,7 @@ class Button(object):
         Get/Set the link for the button.
 
         ==================  ==================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ------------------  --------------------------------------------------
         link                Optional String. The new path for the button.
         ==================  ==================================================
@@ -2022,7 +2022,7 @@ class Gallery(object):
         # Create a gallery and add to story before adding images to it.
         >>> gallery = Gallery()
         >>> my_story.add(gallery)
-        >>> gallery.add([image1, image2, image3])
+        >>> gallery.add_images([image1, image2, image3])
     """
 
     def __init__(self, **kwargs):
@@ -2067,7 +2067,7 @@ class Gallery(object):
         to be reordered.
 
         ==================      ====================================================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ------------------      --------------------------------------------------------------------
         node_list               List of node ids for the images in the gallery. Nodes must already be
                                 in the gallery and this list will adjust the order of the images.
@@ -2106,7 +2106,7 @@ class Gallery(object):
         Get/Set the caption property for the swipe.
 
         ==================  ========================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ------------------  ----------------------------------------
         caption             String. The new caption for the Gallery.
         ==================  ========================================
@@ -2130,7 +2130,7 @@ class Gallery(object):
         Get/Set the alternte text property for the swipe.
 
         ==================  ========================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ------------------  ----------------------------------------
         alt_text            String. The new alt_text for the Gallery.
         ==================  ========================================
@@ -2168,7 +2168,7 @@ class Gallery(object):
     def add_images(self, images: list[Image]):
         """
         ==================      ====================================================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ------------------      --------------------------------------------------------------------
         images                  Required list of images of type Image.
         ==================      ====================================================================
@@ -2195,7 +2195,7 @@ class Gallery(object):
         used in the gallery, use the :meth:`~arcgis.apps.storymap.story_content.Gallery.images` property.
 
         ==================      ====================================================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ------------------      --------------------------------------------------------------------
         image                   Required String. The node id for the image to be removed from the gallery.
         ==================      ====================================================================
@@ -2239,7 +2239,7 @@ class Swipe(object):
     Create an Swipe object from a pre-existing ``swipe`` node.
 
     ===============     ====================================================================
-    **Argument**        **Description**
+    **Parameter**        **Description**
     ---------------     --------------------------------------------------------------------
     node                Required String. The node id for the swipe type.
     ---------------     --------------------------------------------------------------------
@@ -2304,7 +2304,7 @@ class Swipe(object):
         Get/Set the caption property for the swipe.
 
         ==================  ========================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ------------------  ----------------------------------------
         caption             String. The new caption for the Swipe.
         ==================  ========================================
@@ -2328,7 +2328,7 @@ class Swipe(object):
         Get/Set the alternte text property for the swipe.
 
         ==================  ========================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ------------------  ----------------------------------------
         alt_text            String. The new alt_text for the Swipe.
         ==================  ========================================
@@ -2355,7 +2355,7 @@ class Swipe(object):
         in the StoryMap's builder, make sure to save the story.
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         content             Required story content of type: :class:`~arcgis.apps.storymap.story_content.Image` or :class:`~arcgis.apps.storymap.story_content.Map` . Must be the same media
                             on both panels.
@@ -2420,7 +2420,7 @@ class Sidecar(object):
     The narrative panel can contain mulitple types of content including Image, Video, Embed, Button, Text, Map, and more.
 
     ===============     ====================================================================
-    **Argument**        **Description**
+    **Parameter**        **Description**
     ---------------     --------------------------------------------------------------------
     node_id             Required String. The node id for the sidecar type.
     ---------------     --------------------------------------------------------------------
@@ -2516,7 +2516,7 @@ class Sidecar(object):
 
 
         ==================      =======================================================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ------------------      -----------------------------------------------------------------------
         content                 Required item that is a story content item.
                                 Item type for the media node can be: :class:`~arcgis.apps.storymap.story_content.Image`,
@@ -2567,7 +2567,7 @@ class Sidecar(object):
         find all nodes associated with the sidecar.
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         node_id             Required String. The node id for the content that will be returned.
         ===============     ====================================================================
@@ -2602,7 +2602,7 @@ class Sidecar(object):
         content of the narrative panel and the media of the slide.
 
         =======================     ====================================================================
-        **Argument**                **Description**
+        **Parameter**                **Description**
         -----------------------     --------------------------------------------------------------------
         contents                    Required list of story content item(s). The instances of story content that
                                     will be added to the narrative panel such as Text, Image, Embed, etc.
@@ -2691,7 +2691,7 @@ class Sidecar(object):
         Remove a slide from the sidecar.
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         slide               Required String. The node id for the slide that will be removed.
         ===============     ====================================================================
@@ -2757,7 +2757,7 @@ class Timeline(object):
     Events are composed of maximum three nodes: an image, a sub-heading text, and a paragraph text.
 
     ===============     ====================================================================
-    **Argument**        **Description**
+    **Parameter**        **Description**
     ---------------     --------------------------------------------------------------------
     node_id             Required String. The node id for the timeline type.
     ---------------     --------------------------------------------------------------------
@@ -2838,7 +2838,7 @@ class Timeline(object):
         Edit event text or image content.
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         content             Required content to replace current content.
                             Item type can be :class:`~arcgis.apps.storymap.story_content.Image` or :class:`~arcgis.apps.storymap.story_content.Text` .
@@ -2892,7 +2892,7 @@ class Timeline(object):
         Remove an event from the timeline.
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         event               Required String. The node id for the timeline event that will be removed.
         ===============     ====================================================================
@@ -2952,7 +2952,7 @@ class Timeline(object):
 
     # ----------------------------------------------------------------------
     def _add_item_story(self, content):
-        if content.node in self.story._properties["nodes"]:
+        if content.node in self._story._properties["nodes"]:
             content.node = "n-" + uuid.uuid4().hex[0:6]
         if isinstance(content, Image):
             content._add_image(story=self._story)
@@ -2966,7 +2966,7 @@ class MapTour(object):
     Create a MapTour object from a pre-existing `maptour` node.
 
     ===============     ====================================================================
-    **Argument**        **Description**
+    **Parameter**        **Description**
     ---------------     --------------------------------------------------------------------
     node_id             Required String. The node id for the map tour type.
     ---------------     --------------------------------------------------------------------
@@ -3040,7 +3040,7 @@ class MapTour(object):
         find all nodes associated with the sidecar.
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         node_id             Required String. The node id for the content that will be returned.
         ===============     ====================================================================

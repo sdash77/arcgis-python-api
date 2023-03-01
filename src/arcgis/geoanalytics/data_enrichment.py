@@ -78,7 +78,7 @@ def calculate_motion_statistics(
         Only available at ArcGIS Enterprise 10.9 and later.
 
     ======================  ===============================================================
-    **Argument**            **Description**
+    **Parameter**            **Description**
     ----------------------  ---------------------------------------------------------------
     input_layer             Required layer. The time-enabled point features that will be
                             grouped into tracks and analyzed. The input layer must be of
@@ -348,7 +348,7 @@ def enrich_from_grid(
         Only available at ArcGIS Enterprise 10.7 and later.
 
     ======================  ===============================================================
-    **Argument**            **Description**
+    **Parameter**            **Description**
     ----------------------  ---------------------------------------------------------------
     input_layer             Required layer. The point features that will be enriched
                             by the multi-variable grid. See :ref:`Feature Input<gaxFeatureInput>`.
