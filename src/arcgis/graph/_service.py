@@ -378,7 +378,29 @@ class KnowledgeGraph:
                 "name": "Person",
                 "alias": "Person",
                 "role": "esriGraphNamedObjectRegular",
-                "strict": False
+                "strict": False,
+                "properties": {
+                    "Name": {
+                        "name": "Name",
+                        "alias": "Name",
+                        "fieldType": "esriFieldTypeString",
+                        "editable": True,
+                        "visible": True,
+                        "required": False,
+                        "isSystemMaintained": False,
+                        "role": "esriGraphPropertyRegular"
+                    },
+                    "Nickname": {
+                        "name": "Nickname",
+                        "alias": "Nickname",
+                        "fieldType": "esriFieldTypeString",
+                        "editable": True,
+                        "visible": True,
+                        "required": False,
+                        "isSystemMaintained": False,
+                        "role": "esriGraphPropertyRegular"
+                    }
+                }
             }
 
 
@@ -586,7 +608,8 @@ class KnowledgeGraph:
                 "visible": True,
                 "required": False,
                 "isSystemMaintained": False,
-                "role": "esriGraphPropertyRegular"
+                "role": "esriGraphPropertyRegular",
+                "domain": "MyIntegerDomain"
             }
 
 
@@ -680,7 +703,8 @@ class KnowledgeGraph:
                 "update_visible": False,
                 "update_required": False,
                 "update_has_z": False,
-                "update_has_m": False
+                "update_has_m": False,
+                "update_domain:" False
             }
 
 
