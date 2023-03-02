@@ -79,6 +79,7 @@ class _DeepCloner:
         group_mapping=None,
         owner=None,
         preserve_item_id=False,
+        from_dash=False,
     ):
         self._preserve_item_id = preserve_item_id
         self._graph = {}
@@ -104,9 +105,61 @@ class _DeepCloner:
         if group_mapping is not None:
             self._clone_mapping["Group IDs"] = group_mapping
         self._temp_dir = tempfile.TemporaryDirectory()
+
+        self._cloned_items = []
+        for index, item in enumerate(self._items):
+            if item["type"] == "Dashboard" and not from_dash:
+                if len(self._items) > 1:
+                    self._items.pop(index)
+                dash_list = self._clone_dashboard(item)
+                for cloned_item in dash_list:
+                    self._cloned_items.append(cloned_item)
+
         # parse the config and get values
         self._create_graph()
-        self._cloned_items = []
+
+    def _clone_dashboard(self, dashboard_item):
+        widgets = dashboard_item.get_data()["desktopView"]["widgets"]
+        item_list = []
+        cloned_item_list = []
+        map_dict = {}
+        for widget in widgets:
+            for k, v in widget.items():
+                if k == "itemId" and v not in item_list:
+                    item_list.append(v)
+                if k == "datasets":
+                    for dataset in v:
+                        if dataset["dataSource"]["itemId"] not in item_list:
+                            item_list.append(dataset["dataSource"]["itemId"])
+
+        for item_id in item_list:
+            item = dashboard_item._gis.content.get(item_id)
+            clone_result = self.target.content.clone_items([item])
+            if len(clone_result) > 0:
+                for cloned_item in clone_result:
+                    cloned_item_list.append(cloned_item)
+            new_item = self.target.content.search(item.title)[0]
+            map_dict[item_id] = new_item.itemid
+
+        cloned_db = self.target.content.clone_items([dashboard_item], from_dash=True)[0]
+        cloned_item_list.append(cloned_db)
+        cloned_widgets = cloned_db.get_data()["desktopView"]["widgets"]
+
+        for widget in cloned_widgets:
+            for k, v in widget.items():
+                if k == "itemId":
+                    widget["itemId"] = map_dict[v]
+                if k == "datasets":
+                    for dataset in v:
+                        dataset["dataSource"]["itemId"] = map_dict[
+                            dataset["dataSource"]["itemId"]
+                        ]
+
+        new_data = cloned_db.get_data()
+        new_data["desktopView"]["widgets"] = cloned_widgets
+        cloned_db.update(item_properties={}, data=new_data)
+
+        return cloned_item_list
 
     def _create_graph(self):
         """
@@ -164,6 +217,8 @@ class _DeepCloner:
         """
         created_items = []
         processed_nodes = []
+        for item in self._cloned_items:
+            created_items.append(item)
         while len(processed_nodes) < len(self._graph.values()):
             for node in [
                 x

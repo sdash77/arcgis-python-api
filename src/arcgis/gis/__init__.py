@@ -7816,6 +7816,7 @@ class ContentManager(object):
         group_mapping: Optional[dict[str, str]] = None,
         owner: Optional[str] = None,
         preserve_item_id: bool = False,
+        **kwargs,
     ):
         """
         The ``clone_items`` method is used to clone content to the GIS by creating new :class:`~arcgis.gis.Item`
@@ -7922,6 +7923,7 @@ class ContentManager(object):
             group_mapping,
             owner_name,
             preserve_item_id=preserve_item_id,
+            from_dash=kwargs.pop("from_dash", False),
         )
         return deep_cloner.clone()
 
