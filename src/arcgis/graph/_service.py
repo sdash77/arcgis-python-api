@@ -222,7 +222,7 @@ class KnowledgeGraph:
         adds: list[dict[str, Any]] = [],
         updates: list[dict[str, Any]] = [],
         deletes: list[dict[str, Any]] = [],
-        input_params: dict[str, Any] = None,
+        input_transform: dict[str, Any] = None,
         cascade_delete: bool = False,
     ) -> dict:
         """
@@ -243,7 +243,7 @@ class KnowledgeGraph:
         deletes             Optional list of dicts. The list of existent objects to remove
                             from the graph, represented in dictionary format.
         ----------------    ---------------------------------------------------------------
-        input_params        Optional dict. Allows a user to specify custom quantization
+        input_transform     Optional dict. Allows a user to specify custom quantization
                             parameters for input geometry, which dictate how geometries are
                             compressed and transferred to the server. Defaults to lossless
                             WGS84 quantization.
@@ -302,15 +302,15 @@ class KnowledgeGraph:
             clientCoreQuantParams.m_false_origin = inputQuantParams["mFalseOrigin"]
             return clientCoreQuantParams
 
-        if input_params:
-            core_params = _getInputQuantParams(input_params)
+        if input_transform:
+            quant_params = _getInputQuantParams(input_transform)
         else:
-            core_params = _kgparser.InputQuantizationParameters.WGS84_lossless()
+            quant_params = _kgparser.InputQuantizationParameters.WGS84_lossless()
 
         # now, make our encoder, and specify the edits to it
         enc = _kgparser.GraphApplyEditsEncoder(
             self._datamodel.spatial_reference,
-            core_params,
+            quant_params,
         )
 
         for edit in adds:
@@ -354,7 +354,7 @@ class KnowledgeGraph:
     def named_object_type_adds(
         self,
         entity_types: list[dict[str, Any]] = [],
-        relationship_types: list[dict[str, Any]] = []
+        relationship_types: list[dict[str, Any]] = [],
     ) -> dict:
         """
         Adds entity and relationship types to the data model
@@ -436,10 +436,7 @@ class KnowledgeGraph:
         return results_dict
 
     def named_object_type_update(
-        self,
-        type_name: str,
-        named_type_update: dict[str, Any],
-        mask: dict[str, Any]
+        self, type_name: str, named_type_update: dict[str, Any], mask: dict[str, Any]
     ) -> dict:
         """
         Updates an entity or relationship type in the data model
@@ -467,7 +464,7 @@ class KnowledgeGraph:
                 "role": "esriGraphNamedObjectRegular",
                 "strict": False
             }
-        
+
             # update the named type's alias:
             {
                 "update_alias": True
@@ -516,10 +513,7 @@ class KnowledgeGraph:
 
         return results_dict
 
-    def named_object_type_delete(
-        self,
-        type_name: str
-    ) -> dict:
+    def named_object_type_delete(self, type_name: str) -> dict:
         """
         Deletes an entity or relationship type in the data model
 
@@ -560,9 +554,7 @@ class KnowledgeGraph:
         return results_dict
 
     def graph_property_adds(
-        self,
-        type_name: str,
-        graph_properties: list[dict[str, Any]]
+        self, type_name: str, graph_properties: list[dict[str, Any]]
     ) -> dict:
         """
         Adds properties to a named type in the data model
@@ -647,7 +639,7 @@ class KnowledgeGraph:
         type_name: str,
         property_name: str,
         graph_property: dict[str, Any],
-        mask: dict[str, Any]
+        mask: dict[str, Any],
     ) -> dict:
         """
         Updates a property for a named type in the data model
@@ -686,7 +678,7 @@ class KnowledgeGraph:
                 "isSystemMaintained": False,
                 "role": "esriGraphPropertyRegular"
             }
-        
+
             # example: update the property's alias
             {
                 "update_alias": True
@@ -738,11 +730,7 @@ class KnowledgeGraph:
 
         return results_dict
 
-    def graph_property_delete(
-        self,
-        type_name: str,
-        property_name: str
-    ) -> dict:
+    def graph_property_delete(self, type_name: str, property_name: str) -> dict:
         """
         Delete a property for a named type in the data model
 
