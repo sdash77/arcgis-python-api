@@ -1998,6 +1998,13 @@ def clip(
         geom_dict = template_dict["rasterFunctionArguments"]["ClippingGeometry"]
 
         template_dict["rasterFunctionArguments"]["Extent"] = extent_envelope
+        if (geom_dict) and not isinstance(
+            Geometry(geom_dict), Envelope
+        ):  # Setting extent to extent envelope will only work for services on or after 11.0
+            if [
+                int(v) for v in str(dict(layer.properties)["currentVersion"]).split(".")
+            ] < [11, 0]:
+                template_dict["rasterFunctionArguments"]["Extent"] = None
 
     except:
         pass
