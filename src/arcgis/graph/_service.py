@@ -51,7 +51,7 @@ class KnowledgeGraph:
         if HAS_KG == False:
             raise ImportError(
                 "An error occured with importing the Knowledge Graph libraries. Please ensure you "
-                "are using Python 3.7, 3.8, or 3.9 on Windows or Linux platforms."
+                "are using Python 3.7, 3.8, 3.9, or 3.10 on Windows or Linux platforms."
             )
 
     @classmethod
@@ -348,5 +348,445 @@ class KnowledgeGraph:
         dec = _kgparser.GraphApplyEditsDecoder()
         dec.decode(apply_edits_response)
         results_dict = dec.get_results()
+
+        return results_dict
+
+    def named_object_type_adds(
+        self,
+        entity_types: list[dict[str, Any]] = [],
+        relationship_types: list[dict[str, Any]] = []
+    ) -> dict:
+        """
+        Adds entity and relationship types to the data model
+
+        `Learn more about adding named types to a knowledge graph <https://developers.arcgis.com/rest/services-reference/enterprise/kgs-datamodel-edit-namedtypes-add.htm>`_
+
+        ==================  ===============================================================
+        **Parameter**        **Description**
+        ------------------  ---------------------------------------------------------------
+        entity_types        Optional list of dicts. The list of entity types to add to the
+                            data model, represented in dictionary format.
+        ------------------  ---------------------------------------------------------------
+        relationship_types  Optional list of dicts. The list of relationship types to add
+                            to the data model, represented in dictionary format.
+        ==================  ===============================================================
+
+        .. code-block:: python
+
+            # example of a named type to be added to the data model
+            {
+                "name": "Person",
+                "alias": "Person",
+                "role": "esriGraphNamedObjectRegular",
+                "strict": False,
+                "properties": {
+                    "Name": {
+                        "name": "Name",
+                        "alias": "Name",
+                        "fieldType": "esriFieldTypeString",
+                        "editable": True,
+                        "visible": True,
+                        "required": False,
+                        "isSystemMaintained": False,
+                        "role": "esriGraphPropertyRegular"
+                    },
+                    "Nickname": {
+                        "name": "Nickname",
+                        "alias": "Nickname",
+                        "fieldType": "esriFieldTypeString",
+                        "editable": True,
+                        "visible": True,
+                        "required": False,
+                        "isSystemMaintained": False,
+                        "role": "esriGraphPropertyRegular"
+                    }
+                }
+            }
+
+
+        :return: A `dict` showing the results of the named type adds.
+
+        """
+        self._validate_import()
+        url = f"{self._url}/dataModel/edit/namedTypes/add"
+
+        r_enc = _kgparser.GraphNamedObjectTypeAddsRequestEncoder()
+        for entity_type in entity_types:
+            r_enc.add_entity_type(entity_type)
+        for relationship_type in relationship_types:
+            r_enc.add_relationship_type(relationship_type)
+
+        r_enc.encode()
+        assert r_enc.get_encoding_result().error.error_code == 0
+        r_dec = _kgparser.GraphNamedObjectTypeAddsResponseDecoder()
+
+        session = self._gis._con._session
+        response = session.post(
+            url=url,
+            params={"f": "pbf"},
+            data=r_enc.get_encoding_result().byte_buffer,
+            stream=True,
+            headers={"Content-Type": "application/octet-stream"},
+        )
+        r_response = response.content
+
+        r_dec.decode(r_response)
+        results_dict = r_dec.get_results()
+
+        return results_dict
+
+    def named_object_type_update(
+        self,
+        type_name: str,
+        named_type_update: dict[str, Any],
+        mask: dict[str, Any]
+    ) -> dict:
+        """
+        Updates an entity or relationship type in the data model
+
+        `Learn more about updating named types in a knowledge graph <https://developers.arcgis.com/rest/services-reference/enterprise/kgs-datamodel-edit-namedtypes-type-update.htm>`_
+
+        =================   ===============================================================
+        **Parameter**        **Description**
+        -----------------   ---------------------------------------------------------------
+        type_name           Required string. The named type to be updated.
+        -----------------   ---------------------------------------------------------------
+        named_type_update   Required dict. The entity or relationship type to be updated,
+                            represented in dictionary format.
+        -----------------   ---------------------------------------------------------------
+        mask                Required dict. A dictionary representing the properties of the
+                            named type to be updated.
+        =================   ===============================================================
+
+        .. code-block:: python
+
+            # example of a named type to be updated
+            {
+                "name": "Person",
+                "alias": "Person",
+                "role": "esriGraphNamedObjectRegular",
+                "strict": False
+            }
+        
+            # update the named type's alias:
+            {
+                "update_alias": True
+            }
+            # OR
+            {
+                "update_name": False,
+                "update_alias": True,
+                "update_role": False,
+                "update_strict": False
+            }
+
+
+        :return: A `dict` showing the results of the named type update.
+
+        """
+        self._validate_import()
+        url = f"{self._url}/dataModel/edit/namedTypes/{type_name}/update"
+
+        data_model = self._datamodel
+        entity_type = data_model.query_entity_type(type_name)
+        relationship_type = data_model.query_relationship_type(type_name)
+
+        r_enc = _kgparser.GraphNamedObjectTypeUpdateRequestEncoder()
+        if entity_type is not None:
+            r_enc.update_entity_type(named_type_update, mask)
+        elif relationship_type is not None:
+            r_enc.update_relationship_type(named_type_update, mask)
+
+        r_enc.encode()
+        assert r_enc.get_encoding_result().error.error_code == 0
+        r_dec = _kgparser.GraphNamedObjectTypeUpdateResponseDecoder()
+
+        session = self._gis._con._session
+        response = session.post(
+            url=url,
+            params={"f": "pbf"},
+            data=r_enc.get_encoding_result().byte_buffer,
+            stream=True,
+            headers={"Content-Type": "application/octet-stream"},
+        )
+        r_response = response.content
+
+        r_dec.decode(r_response)
+        results_dict = r_dec.get_results()
+
+        return results_dict
+
+    def named_object_type_delete(
+        self,
+        type_name: str
+    ) -> dict:
+        """
+        Deletes an entity or relationship type in the data model
+
+        `Learn more about deleting named types in a knowledge graph <https://developers.arcgis.com/rest/services-reference/enterprise/kgs-datamodel-edit-namedtypes-type-delete.htm>`_
+
+        ================    ===============================================================
+        **Parameter**        **Description**
+        ----------------    ---------------------------------------------------------------
+        type_name           Required string. The named type to be deleted.
+        ================    ===============================================================
+
+        .. code-block:: python
+
+            # Delete a named type in the data model
+            delete_result = knowledge_graph.named_object_type_delete("Person")
+
+
+        :return: A `dict` showing the results of the named type delete.
+
+        """
+        self._validate_import()
+        url = f"{self._url}/dataModel/edit/namedTypes/{type_name}/delete"
+
+        r_dec = _kgparser.GraphNamedObjectTypeUpdateResponseDecoder()
+
+        session = self._gis._con._session
+        response = session.post(
+            url=url,
+            params={"f": "pbf"},
+            stream=True,
+            headers={"Content-Type": "application/octet-stream"},
+        )
+        r_response = response.content
+
+        r_dec.decode(r_response)
+        results_dict = r_dec.get_results()
+
+        return results_dict
+
+    def graph_property_adds(
+        self,
+        type_name: str,
+        graph_properties: list[dict[str, Any]]
+    ) -> dict:
+        """
+        Adds properties to a named type in the data model
+
+        `Learn more about adding properties in a knowledge graph <https://developers.arcgis.com/rest/services-reference/enterprise/kgs-datamodel-edit-namedtypes-type-fields-add.htm>`_
+
+        ================    ===============================================================
+        **Parameter**        **Description**
+        ----------------    ---------------------------------------------------------------
+        type_name           Required string. The entity or relationship type to which the
+                            properties will be added.
+        ----------------    ---------------------------------------------------------------
+        graph_properties    Required list of dicts. The list of properties to add
+                            to the named type, represented in dictionary format.
+        ================    ===============================================================
+
+        .. code-block:: python
+
+            # example of a shape property to be added to a named type
+            {
+                "name": "MyPointGeometry",
+                "alias": "MyPointGeometry",
+                "fieldType": "esriFieldTypeGeometry",
+                "geometryType": "esriGeometryPoint",
+                "hasZ": False,
+                "hasM": False,
+                "nullable": True,
+                "editable": True,
+                "visible": True,
+                "required": False,
+                "isSystemMaintained": False,
+                "role": "esriGraphPropertyRegular"
+            }
+
+            # example of an integer property to be added to a named type
+            {
+                "name": "MyInt",
+                "alias": "MyInt",
+                "fieldType": "esriFieldTypeInteger",
+                "nullable": True,
+                "editable": True,
+                "defaultValue": 123,
+                "visible": True,
+                "required": False,
+                "isSystemMaintained": False,
+                "role": "esriGraphPropertyRegular",
+                "domain": "MyIntegerDomain"
+            }
+
+
+        :return: A `dict` showing the results of the property adds.
+
+        """
+        self._validate_import()
+        url = f"{self._url}/dataModel/edit/namedTypes/{type_name}/fields/add"
+
+        r_enc = _kgparser.GraphPropertyAddsRequestEncoder()
+        for prop in graph_properties:
+            r_enc.add_property(prop)
+
+        r_enc.encode()
+        assert r_enc.get_encoding_result().error.error_code == 0
+        r_dec = _kgparser.GraphPropertyAddsResponseDecoder()
+
+        session = self._gis._con._session
+        response = session.post(
+            url=url,
+            params={"f": "pbf"},
+            data=r_enc.get_encoding_result().byte_buffer,
+            stream=True,
+            headers={"Content-Type": "application/octet-stream"},
+        )
+        r_response = response.content
+
+        r_dec.decode(r_response)
+        results_dict = r_dec.get_results()
+
+        return results_dict
+
+    def graph_property_update(
+        self,
+        type_name: str,
+        property_name: str,
+        graph_property: dict[str, Any],
+        mask: dict[str, Any]
+    ) -> dict:
+        """
+        Updates a property for a named type in the data model
+
+        `Learn more about updating properties in a knowledge graph <https://developers.arcgis.com/rest/services-reference/enterprise/kgs-datamodel-edit-namedtypes-type-fields-update.htm>`_
+
+        ================    ===============================================================
+        **Parameter**        **Description**
+        ----------------    ---------------------------------------------------------------
+        type_name           Required string. The entity or relationship type containing
+                            the property to be updated.
+        ----------------    ---------------------------------------------------------------
+        property_name       Required string. The property to be updated.
+        ----------------    ---------------------------------------------------------------
+        graph_property      Required dict. The graph property to be updated,
+                            represented in dictionary format.
+        ----------------    ---------------------------------------------------------------
+        mask                Required dict. A dictionary representing the properties of the
+                            field to be updated.
+        ================    ===============================================================
+
+        .. code-block:: python
+
+            # example of a shape property to be updated
+            {
+                "name": "MyPointGeometry",
+                "alias": "MyPointGeometry",
+                "fieldType": "esriFieldTypeGeometry",
+                "geometryType": "esriGeometryPoint",
+                "hasZ": False,
+                "hasM": False,
+                "nullable": True,
+                "editable": True,
+                "visible": True,
+                "required": False,
+                "isSystemMaintained": False,
+                "role": "esriGraphPropertyRegular"
+            }
+        
+            # example: update the property's alias
+            {
+                "update_alias": True
+            }
+            # OR
+            {
+                "update_name": False,
+                "update_alias": True,
+                "update_field_type": False,
+                "update_geometry_type": False,
+                "update_default_value": False,
+                "update_nullable": False,
+                "update_editable": False,
+                "update_visible": False,
+                "update_required": False,
+                "update_has_z": False,
+                "update_has_m": False,
+                "update_domain:" False
+            }
+
+
+        :return: A `dict` showing the results of the property update.
+
+        """
+        self._validate_import()
+        url = f"{self._url}/dataModel/edit/namedTypes/{type_name}/fields/update"
+
+        r_enc = _kgparser.GraphPropertyUpdateRequestEncoder()
+        r_enc.update_property(graph_property, mask)
+        r_enc.name = property_name
+
+        r_enc.encode()
+        if r_enc.get_encoding_result().error.error_code != 0:
+            print(r_enc.get_encoding_result().error.error_message)
+        r_dec = _kgparser.GraphPropertyUpdateResponseDecoder()
+
+        session = self._gis._con._session
+        response = session.post(
+            url=url,
+            params={"f": "pbf"},
+            data=r_enc.get_encoding_result().byte_buffer,
+            stream=True,
+            headers={"Content-Type": "application/octet-stream"},
+        )
+        r_response = response.content
+
+        r_dec.decode(r_response)
+        results_dict = r_dec.get_results()
+
+        return results_dict
+
+    def graph_property_delete(
+        self,
+        type_name: str,
+        property_name: str
+    ) -> dict:
+        """
+        Delete a property for a named type in the data model
+
+        `Learn more about deleting properties in a knowledge graph <https://developers.arcgis.com/rest/services-reference/enterprise/kgs-datamodel-edit-namedtypes-type-fields-delete.htm>`_
+
+        ================    ===============================================================
+        **Parameter**        **Description**
+        ----------------    ---------------------------------------------------------------
+        type_name           Required string. The entity or relationship type containing
+                            the property to be deleted.
+        ----------------    ---------------------------------------------------------------
+        property_name       Required string. The property to be deleted.
+        ================    ===============================================================
+
+        .. code-block:: python
+
+            # Delete a named type's property in the data model
+            delete_result = knowledge_graph.graph_property_delete("Person", "Address")
+
+
+        :return: A `dict` showing the results of the property delete.
+
+        """
+        self._validate_import()
+        url = f"{self._url}/dataModel/edit/namedTypes/{type_name}/fields/delete"
+
+        r_enc = _kgparser.GraphPropertyDeleteRequestEncoder()
+        r_enc.name = property_name
+
+        r_enc.encode()
+        assert r_enc.get_encoding_result().error.error_code == 0
+        r_dec = _kgparser.GraphPropertyDeleteResponseDecoder()
+
+        session = self._gis._con._session
+        response = session.post(
+            url=url,
+            params={"f": "pbf"},
+            data=r_enc.get_encoding_result().byte_buffer,
+            stream=True,
+            headers={"Content-Type": "application/octet-stream"},
+        )
+        r_response = response.content
+
+        r_dec.decode(r_response)
+        results_dict = r_dec.get_results()
 
         return results_dict
