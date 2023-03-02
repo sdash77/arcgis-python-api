@@ -380,27 +380,27 @@ class KnowledgeGraph:
                 "role": "esriGraphNamedObjectRegular",
                 "strict": False,
                 "properties": {
-                    "Name": {
-                        "name": "Name",
-                        "alias": "Name",
-                        "fieldType": "esriFieldTypeString",
-                        "editable": True,
-                        "visible": True,
-                        "required": False,
-                        "isSystemMaintained": False,
-                        "role": "esriGraphPropertyRegular"
-                    },
-                    "Nickname": {
-                        "name": "Nickname",
-                        "alias": "Nickname",
-                        "fieldType": "esriFieldTypeString",
-                        "editable": True,
-                        "visible": True,
-                        "required": False,
-                        "isSystemMaintained": False,
-                        "role": "esriGraphPropertyRegular"
-                    }
-                }
+                    "Name": {
+                        "name": "Name",
+                        "alias": "Name",
+                        "fieldType": "esriFieldTypeString",
+                        "editable": True,
+                        "visible": True,
+                        "required": False,
+                        "isSystemMaintained": False,
+                        "role": "esriGraphPropertyRegular"
+                    },
+                    "Nickname": {
+                        "name": "Nickname",
+                        "alias": "Nickname",
+                        "fieldType": "esriFieldTypeString",
+                        "editable": True,
+                        "visible": True,
+                        "required": False,
+                        "isSystemMaintained": False,
+                        "role": "esriGraphPropertyRegular"
+                    }
+                }
             }
 
 
