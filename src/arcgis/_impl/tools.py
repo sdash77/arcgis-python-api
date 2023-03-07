@@ -17403,6 +17403,14 @@ class _RasterAnalysisTools(BaseAnalytics):
                     force_flow = False
                 elif force_flow == "FORCE":
                     force_flow = True
+                else:
+                    raise RuntimeError(
+                        "force_flow can only be one of the following: ['NORMAL', 'FORCE']"
+                    )
+            else:
+                raise RuntimeError(
+                    "Invalid datatype given for force_flow. force_flow can only be one of the following: ['NORMAL', 'FORCE']"
+                )
 
         (
             output_accumulation_raster,

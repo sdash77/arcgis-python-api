@@ -13014,9 +13014,9 @@ def surface_parameters(
     raster: Union[Raster, ImageryLayer],
     parameter_type: str = "SLOPE",
     local_surface_type: str = "QUADRATIC",
-    neighborhood_distance_with_units: str = "1 Meters",
+    neighborhood_distance_with_units: str = None,
     use_adaptive_neighborhood: bool = False,
-    z_unit: str = "METER",
+    z_unit: str = None,
     slope_type: Optional[str] = "DEGREE",
     project_geodesic_azimuths: Optional[str] = "GEODESIC_AZIMUTHS",
     use_equatorial_aspect: Optional[str] = "NORTH_POLE_ASPECT",
@@ -13092,8 +13092,7 @@ def surface_parameters(
                                          If a vertical coordinate system does not exist, the z-unit should be defined\
                                          from the unit list to ensure correct geodesic computation. 
                                          
-                                         If the input raster has a defined VCS its unit will be the default. Otherwise,\
-                                         the default is 'METER'. 
+                                         If the input raster has a defined VCS its unit will be the default.
                                         
                                             - INCH - The linear unit will be inches. 
                                             
@@ -13207,7 +13206,8 @@ def surface_parameters(
             template_dict["rasterFunctionArguments"][
                 "UseAdaptiveScale"
             ] = use_adaptive_neighborhood
-        raise RuntimeError("use_adaptive_neighborhood should be of type: boolean")
+        else:
+            raise RuntimeError("use_adaptive_neighborhood should be of type: boolean")
 
     z_unit_types = [
         "METER",
