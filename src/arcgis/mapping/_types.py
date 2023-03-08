@@ -651,7 +651,10 @@ class WebMap(HasTraits, collections.OrderedDict):
                     else:
                         layer_type = "ArcGISFeatureLayer"
                 elif isinstance(layer, arcgis.raster.ImageryLayer):
-                    layer_type = "ArcGISImageServiceLayer"
+                    if layer.tiles_only:
+                        layer_type = "ArcGISTiledImageServiceLayer"
+                    else:
+                        layer_type = "ArcGISImageServiceLayer"
                     # todo : get renderer info
 
                 elif isinstance(layer, _arcgis_mapping.MapImageLayer):
