@@ -100,6 +100,19 @@ class TestPortalAdminManager(unittest.TestCase):
         assert history
         os.remove(history)
 
+    def test_agol_usage_report(self):
+        usage_reports = admin.usage_reports
+        reports = [
+            "content",
+            "users",
+            "activity",
+            "credits",
+            "serviceUsages",
+            "itemUsages",
+        ]
+        for report in reports:
+            generated = usage_reports.generate_report(focus="org", report_type=report, duration="quarterly")
+            assert generated
 
 if __name__ == "__main__":
     unittest.main()
