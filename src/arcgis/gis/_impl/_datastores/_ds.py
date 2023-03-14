@@ -669,9 +669,7 @@ class PortalDataStore(object):
         if "servers" in res:
             return res["servers"]
         return res
-    
-    def _status(self, )
-    
+
     # ----------------------------------------------------------------------
     def publish_layers(
         self,

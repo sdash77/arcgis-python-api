@@ -561,8 +561,8 @@ class AveragePrecision(LearnerCallback):
         self.model.rpn.train_val = False
         self.model.train_val = False
         self.model.transform.train_val = False
-        if self.aps==[]:
-            self.aps.append(0.)
+        if self.aps == []:
+            self.aps.append(0.0)
         self.aps = torch.mean(torch.tensor(self.aps))
         return add_metrics(last_metrics, self.aps)
 
