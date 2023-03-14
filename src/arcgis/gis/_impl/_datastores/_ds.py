@@ -669,7 +669,9 @@ class PortalDataStore(object):
         if "servers" in res:
             return res["servers"]
         return res
-
+    
+    def _status(self, )
+    
     # ----------------------------------------------------------------------
     def publish_layers(
         self,
@@ -681,7 +683,6 @@ class PortalDataStore(object):
         server_folder: str | None = None,
         sync_metadata: bool | None = None,
         use_config: bool | None = None,
-        future: bool = False,
     ):
         """
         The ``publish_layers`` operation publishes, or syncs, the datasets from a
@@ -733,9 +734,6 @@ class PortalDataStore(object):
         ------------------     --------------------------------------------------------------------
         use_config             Optional bool. When true, the new `srv_config` will be applied to
                                all layers.
-        ------------------     --------------------------------------------------------------------
-        future                 Optional Boolean.  If False, the value is returned, else a
-                               `StatusJob` is returned.
         ==================     ====================================================================
 
         :return:
@@ -768,16 +766,9 @@ class PortalDataStore(object):
             >>>                                             srv_config = service_template,
             >>>                                             server_id = host_id,
             >>>                                             folder = portal_folderid,
-            >>>                                             server_folder="bulk_egdb_layers",
-            >>>                                             future=True)
-            >>>
-            >>> while bulk_publish_job.status == "processing":
-            >>>     continue
-            >>> if bulk_publish_job.status == "succeeded":
-            >>>     bulk_publish_res = bulk_publish_job.result()
-            >>> else:
-            >>>     print(f"Job Status: {bulk_publish_job.status}")
-            >>>     print(f"Job Messages: {bulk_publish_job.messages}")
+            >>>                                             server_folder="bulk_egdb_layers")
+            >>> bulk_publish_job
+            True
 
         """
         if server_folder is None:
