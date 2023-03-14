@@ -38,16 +38,13 @@ try:
         ClassificationInterpretation,
         cnn_config,
     )
-    from ._arcgis_model import _set_multigpu_callback, _resnet_family
+    from ._arcgis_model import _set_multigpu_callback, _resnet_family, _get_device
     from fastai.vision.transform import (
         crop,
         rotate,
         dihedral_affine,
         brightness,
         contrast,
-        skew,
-        rand_zoom,
-        get_transforms,
     )
     import torch.nn.functional as functional
     import glob
@@ -596,6 +593,7 @@ class FeatureClassifier(ArcGISModel):
             data.emd_path = emd_path
             data.emd = emd
             data = get_multispectral_data_params_from_emd(data, emd)
+            data.device = _get_device()
 
         resize_to = emd.get("resize_to")
         data.resize_to = resize_to
