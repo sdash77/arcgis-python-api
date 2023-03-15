@@ -1,7 +1,7 @@
 pipeline {
     agent {
         docker {
-            image "ghcr.io/jtroe/cicd-container-images/sphinx-rtd:5.3.0"
+            image "ghcr.io/jtroe/cicd-container-images/sphinx-rtd:3.2.1"
             alwaysPull true
             args "-u 0 -v /media/crdata_apiref:/media/crdata_apiref -v /media/geosaurus_public:/media/geosaurus_public"
             customWorkspace "workspace/$JOB_NAME/$BUILD_NUMBER"
