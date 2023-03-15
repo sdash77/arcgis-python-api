@@ -20,10 +20,8 @@ pipeline {
                 }
                 stage('Deploy') {
                     steps {
-                        dir('docs/api_ref/build/html') {
-                            sh 'zip -r ../html.zip *'
-                        }
                         dir('docs/api_ref/build') {
+                            sh 'zip -r html.zip html'
                             sh 'cp html.zip /media/geosaurus_public/docs/python-api/master'
                         }
                         dir('docs/api_ref/build/html') {
@@ -54,10 +52,8 @@ pipeline {
                 }
                 stage('Deploy') {
                     steps {
-                        dir('docs/api_ref/build/json') {
-                            sh 'zip -r ../json.zip *'
-                        }
                         dir('docs/api_ref/build') {
+                            sh 'zip -r json.zip json'
                             sh 'cp json.zip /media/geosaurus_public/docs/python-api/master'
                         }
                         dir('docs/api_ref/build/json') {
