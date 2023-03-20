@@ -105,7 +105,9 @@ class CSVLayer(BaseOpenData):
     # ----------------------------------------------------------------------
     @latitude.setter
     def latitude(self, value):
-        if value != self._latitude and value in [f["name"] for f in self.fields]:
+        if value != self._latitude and value in [
+            f["name"] for f in self.fields
+        ]:
             self._latitude = value
 
     # ----------------------------------------------------------------------
@@ -137,7 +139,9 @@ class CSVLayer(BaseOpenData):
     # ----------------------------------------------------------------------
     @longitude.setter
     def longitude(self, value):
-        if value != self._longitude and value in [f["name"] for f in self.fields]:
+        if value != self._longitude and value in [
+            f["name"] for f in self.fields
+        ]:
             self._longitude = value
 
     # ----------------------------------------------------------------------
@@ -238,7 +242,9 @@ class CSVLayer(BaseOpenData):
                 except:
                     col_val = ""
                 if isinstance(col_val, (str, str)):
-                    fields.append({"name": col, "type": "string", "alias": col})
+                    fields.append(
+                        {"name": col, "type": "string", "alias": col}
+                    )
                 elif isinstance(
                     col_val,
                     (
@@ -247,15 +253,25 @@ class CSVLayer(BaseOpenData):
                         np.datetime64,
                     ),
                 ):
-                    fields.append({"name": col, "type": "date", "alias": col})
+                    fields.append(
+                        {"name": col, "type": "date", "alias": col}
+                    )
                 elif isinstance(col_val, (np.int32, np.int16, np.int8)):
-                    fields.append({"name": col, "type": "long", "alias": col})
-                elif isinstance(col_val, (int, np.int, np.int64)):
-                    fields.append({"name": col, "type": "integer", "alias": col})
+                    fields.append(
+                        {"name": col, "type": "long", "alias": col}
+                    )
+                elif isinstance(col_val, (int, np.int64)):
+                    fields.append(
+                        {"name": col, "type": "integer", "alias": col}
+                    )
                 elif isinstance(col_val, (float, np.float64)):
-                    fields.append({"name": col, "type": "double", "alias": col})
+                    fields.append(
+                        {"name": col, "type": "double", "alias": col}
+                    )
                 elif isinstance(col_val, (np.float32)):
-                    fields.append({"name": col, "type": "single", "alias": col})
+                    fields.append(
+                        {"name": col, "type": "single", "alias": col}
+                    )
             self._fields = fields
         return self._fields
 

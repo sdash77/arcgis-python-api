@@ -107,7 +107,9 @@ class GeoSeriesAccessor:
         :return:
             An arcpy.geometry as a series
         """
-        return pd.Series(self._data.as_arcpy, name="as_arcpy", index=self._index)
+        return pd.Series(
+            self._data.as_arcpy, name="as_arcpy", index=self._index
+        )
 
     # ----------------------------------------------------------------------
     @property
@@ -118,7 +120,9 @@ class GeoSeriesAccessor:
         :return:
             shapely.Geometry objects in a series
         """
-        return pd.Series(self._data.as_shapely, name="as_shapely", index=self._index)
+        return pd.Series(
+            self._data.as_shapely, name="as_shapely", index=self._index
+        )
 
     # ----------------------------------------------------------------------
     @property
@@ -128,7 +132,9 @@ class GeoSeriesAccessor:
 
         :return: tuple (x,y) in series
         """
-        return pd.Series(self._data.centroid, name="centroid", index=self._index)
+        return pd.Series(
+            self._data.centroid, name="centroid", index=self._index
+        )
 
     # ----------------------------------------------------------------------
     @property
@@ -150,7 +156,9 @@ class GeoSeriesAccessor:
         :return:
             A :class:`~arcgis.geometry.Point` object
         """
-        return pd.Series(self._data.first_point, name="first_point", index=self._index)
+        return pd.Series(
+            self._data.first_point, name="first_point", index=self._index
+        )
 
     # ----------------------------------------------------------------------
     @property
@@ -163,7 +171,9 @@ class GeoSeriesAccessor:
         """
         # res = self._data.geoextent
         # res.index = self._index
-        return pd.Series(self._data.geoextent, name="geoextent", index=self._index)
+        return pd.Series(
+            self._data.geoextent, name="geoextent", index=self._index
+        )
 
     # ----------------------------------------------------------------------
     @property
@@ -224,7 +234,9 @@ class GeoSeriesAccessor:
         :return:
             A Series of Booleans
         """
-        return pd.Series(self._data.is_empty, name="is_empty", index=self._index)
+        return pd.Series(
+            self._data.is_empty, name="is_empty", index=self._index
+        )
 
     # ----------------------------------------------------------------------
     @property
@@ -248,7 +260,9 @@ class GeoSeriesAccessor:
         :return:
             A Series of Booleans
         """
-        return pd.Series(self._data.is_valid, name="is_valid", index=self._index)
+        return pd.Series(
+            self._data.is_valid, name="is_valid", index=self._index
+        )
 
     # ----------------------------------------------------------------------
     @property
@@ -269,7 +283,9 @@ class GeoSeriesAccessor:
         :return:
             A Series of :class:`~arcgis.geometry.Geometry` object
         """
-        return pd.Series(self._data.label_point, name="label_point", index=self._index)
+        return pd.Series(
+            self._data.label_point, name="label_point", index=self._index
+        )
 
     # ----------------------------------------------------------------------
     @property
@@ -280,7 +296,9 @@ class GeoSeriesAccessor:
         :return:
             A Series of :class:`~arcgis.geometry.Geometry` objects
         """
-        return pd.Series(self._data.last_point, name="last_point", index=self._index)
+        return pd.Series(
+            self._data.last_point, name="last_point", index=self._index
+        )
 
     # ----------------------------------------------------------------------
     @property
@@ -302,7 +320,9 @@ class GeoSeriesAccessor:
         :return:
             A Series of floats
         """
-        return pd.Series(self._data.length3D, name="length3D", index=self._index)
+        return pd.Series(
+            self._data.length3D, name="length3D", index=self._index
+        )
 
     # ----------------------------------------------------------------------
     @property
@@ -313,7 +333,9 @@ class GeoSeriesAccessor:
         :return:
             A Series of Integers
         """
-        return pd.Series(self._data.part_count, name="part_count", index=self._index)
+        return pd.Series(
+            self._data.part_count, name="part_count", index=self._index
+        )
 
     # ----------------------------------------------------------------------
     @property
@@ -325,7 +347,9 @@ class GeoSeriesAccessor:
         :return:
             A Series of Integers
         """
-        return pd.Series(self._data.part_count, name="point_count", index=self._index)
+        return pd.Series(
+            self._data.part_count, name="point_count", index=self._index
+        )
 
     # ----------------------------------------------------------------------
     @property
@@ -413,7 +437,9 @@ class GeoSeriesAccessor:
         :return:
            A Pandas Series of :class:`~arcgis.geometry.Polyline` objects
         """
-        return pd.Series(self._data.boundary(), index=self._index, name="boundary")
+        return pd.Series(
+            self._data.boundary(), index=self._index, name="boundary"
+        )
 
     # ----------------------------------------------------------------------
     def buffer(self, distance):
@@ -864,7 +890,9 @@ class GeoSeriesAccessor:
         )
 
     # ----------------------------------------------------------------------
-    def point_from_angle_and_distance(self, angle, distance, method="GEODESCIC"):
+    def point_from_angle_and_distance(
+        self, angle, distance, method="GEODESCIC"
+    ):
         """
         The ``point_from_angle_and_distance`` retrieves a :class:`~arcgis.geometry.Point` at a given angle and distance
         in degrees and meters using the specified measurement type.
@@ -891,7 +919,9 @@ class GeoSeriesAccessor:
         res = self._data.point_from_angle_and_distance(
             **{"angle": angle, "distance": distance, "method": method}
         )
-        return pd.Series(res, index=self._index, name="point_from_angle_and_distance")
+        return pd.Series(
+            res, index=self._index, name="point_from_angle_and_distance"
+        )
 
     # ----------------------------------------------------------------------
     def position_along_line(self, value, use_percentage=False):
@@ -948,7 +978,9 @@ class GeoSeriesAccessor:
         return pd.Series(res, index=self._index, name="project_as")
 
     # ----------------------------------------------------------------------
-    def query_point_and_distance(self, second_geometry, use_percentage=False):
+    def query_point_and_distance(
+        self, second_geometry, use_percentage=False
+    ):
         """
         The ``query_point_and_distance`` finds the :class:`~arcgis.geometry.Point` on the
         :class:`~arcgis.geometry.Polyline` nearest to the ``in_point`` and the
@@ -978,10 +1010,14 @@ class GeoSeriesAccessor:
                 "use_percentage": use_percentage,
             }
         )
-        return pd.Series(res, index=self._index, name="query_point_and_distance")
+        return pd.Series(
+            res, index=self._index, name="query_point_and_distance"
+        )
 
     # ----------------------------------------------------------------------
-    def segment_along_line(self, start_measure, end_measure, use_percentage=False):
+    def segment_along_line(
+        self, start_measure, end_measure, use_percentage=False
+    ):
         """
         The ``segment_along_line`` method retrieves a :class:`~arcgis.geometry.Polyline` between start and end measures.
         Similar to :attr:`~arcgis.geometry.Polyline.positionAlongLine` but will return a polyline segment between
@@ -1052,7 +1088,9 @@ class GeoSeriesAccessor:
         :return:
             A Pandas Series of :class:`~arcgis.geometry.Geometry` objects
         """
-        res = self._data.symmetric_difference(**{"second_geometry": second_geometry})
+        res = self._data.symmetric_difference(
+            **{"second_geometry": second_geometry}
+        )
         return pd.Series(res, index=self._index, name="symmetric_difference")
 
     # ----------------------------------------------------------------------
@@ -1364,7 +1402,9 @@ class GeoAccessor(object):
 
     # ----------------------------------------------------------------------
     @staticmethod
-    def from_parquet(path: str, columns: list = None, **kwargs) -> pd.DataFrame:
+    def from_parquet(
+        path: str, columns: list = None, **kwargs
+    ) -> pd.DataFrame:
         """
         Load a Parquet object from the file path, returning a Spatially Enabled DataFrame.
 
@@ -1418,7 +1458,9 @@ class GeoAccessor(object):
         return _read_parquet(path=path, columns=columns, **kwargs)
 
     @staticmethod
-    def from_feather(path, spatial_column="SHAPE", columns=None, use_threads=True):
+    def from_feather(
+        path, spatial_column="SHAPE", columns=None, use_threads=True
+    ):
         """
         The ``from-feather`` method loads a feather-format object from the file path.
 
@@ -1502,7 +1544,9 @@ class GeoAccessor(object):
                             _geometry.Geometry(g["spatialReference"])
                         )
                     else:
-                        self._sr = _geometry.SpatialReference(g["spatialReference"])
+                        self._sr = _geometry.SpatialReference(
+                            g["spatialReference"]
+                        )
                 except:
                     self._sr = _geometry.SpatialReference({"wkid": 4326})
             self._name = col
@@ -1552,14 +1596,22 @@ class GeoAccessor(object):
         if self._name is None:
             try:
                 if any(self._data.dtypes == "geometry"):
-                    name = self._data.dtypes[self._data.dtypes == "geometry"].index[0]
+                    name = self._data.dtypes[
+                        self._data.dtypes == "geometry"
+                    ].index[0]
                     self.set_geometry(name)
-                elif "shape" in [str(c).lower() for c in self._data.columns.tolist()]:
-                    cols = [str(c).lower() for c in self._data.columns.tolist()]
+                elif "shape" in [
+                    str(c).lower() for c in self._data.columns.tolist()
+                ]:
+                    cols = [
+                        str(c).lower() for c in self._data.columns.tolist()
+                    ]
                     idx = cols.index("shape")
                     self.set_geometry(self._data.columns[idx])
             except:
-                raise Exception("Spatial column not defined, please use `set_geometry`")
+                raise Exception(
+                    "Spatial column not defined, please use `set_geometry`"
+                )
         return self._name
 
     # ----------------------------------------------------------------------
@@ -1640,7 +1692,8 @@ class GeoAccessor(object):
             )
         if op not in allowed_ops:
             raise ValueError(
-                "`how` is an invalid inputs of %s, but should be %s" % (op, allowed_ops)
+                "`how` is an invalid inputs of %s, but should be %s"
+                % (op, allowed_ops)
             )
         same_sr = False
         if self.sr == right_df.spatial.sr:
@@ -1651,7 +1704,9 @@ class GeoAccessor(object):
                 if value in right_df.spatial.sr.values():
                     same_sr = True
         if same_sr is False:
-            raise Exception("Difference Spatial References, aborting operation")
+            raise Exception(
+                "Difference Spatial References, aborting operation"
+            )
         index_left = "index_{}".format(left_tag)
         index_right = "index_{}".format(right_tag)
         if any(self._data.columns.isin([index_left, index_right])) or any(
@@ -1691,7 +1746,9 @@ class GeoAccessor(object):
         if idxmatch.shape[0] > 0:
             # if output from join has overlapping geometries
             r_idx = np.concatenate(idxmatch.values)
-            l_idx = np.concatenate([[i] * len(v) for i, v in idxmatch.items()])
+            l_idx = np.concatenate(
+                [[i] * len(v) for i, v in idxmatch.items()]
+            )
 
             # Vectorize predicate operations
             def find_intersects(a1, a2):
@@ -1727,7 +1784,9 @@ class GeoAccessor(object):
             )
         else:
             # when output from the join has no overlapping geometries
-            result = pd.DataFrame(columns=["_key_left", "_key_right"], dtype=float)
+            result = pd.DataFrame(
+                columns=["_key_left", "_key_right"], dtype=float
+            )
         if op == "within":
             # within implemented as the inverse of contains; swap names
             left_df, right_df = right_df, left_df
@@ -1740,13 +1799,17 @@ class GeoAccessor(object):
 
         if how == "inner":
             result = result.set_index("_key_left")
-            joined = left_df.merge(result, left_index=True, right_index=True).merge(
+            joined = left_df.merge(
+                result, left_index=True, right_index=True
+            ).merge(
                 right_df.drop(right_df.spatial.name, axis=1),
                 left_on="_key_right",
                 right_index=True,
                 suffixes=("_%s" % left_tag, "_%s" % right_tag),
             )
-            joined = joined.set_index(index_left).drop(["_key_right"], axis=1)
+            joined = joined.set_index(index_left).drop(
+                ["_key_right"], axis=1
+            )
             joined.index.name = None
         elif how == "left":
             result = result.set_index("_key_left")
@@ -1759,7 +1822,9 @@ class GeoAccessor(object):
                 right_index=True,
                 suffixes=("_%s" % left_tag, "_%s" % right_tag),
             )
-            joined = joined.set_index(index_left).drop(["_key_right"], axis=1)
+            joined = joined.set_index(index_left).drop(
+                ["_key_right"], axis=1
+            )
             joined.index.name = None
         else:  # 'right join'
             joined = (
@@ -2422,7 +2487,9 @@ class GeoAccessor(object):
         # if the map widget is explicitly defined
         if map_widget:
             orig_col = copy.deepcopy(self._data.columns)
-            self._data.columns = [c.replace(" ", "_") for c in self._data.columns]
+            self._data.columns = [
+                c.replace(" ", "_") for c in self._data.columns
+            ]
             # plot and be merry
             _plot_map_widget(map_widget)
             self._data.columns = orig_col
@@ -2443,7 +2510,9 @@ class GeoAccessor(object):
 
             # plot the data in the map widget
             orig_col = copy.deepcopy(self._data.columns)
-            self._data.columns = [c.replace(" ", "_") for c in self._data.columns]
+            self._data.columns = [
+                c.replace(" ", "_") for c in self._data.columns
+            ]
             _plot_map_widget(map_widget)
             self._data.columns = orig_col
             # zoom the map widget to the extent of the data
@@ -2513,7 +2582,9 @@ class GeoAccessor(object):
                     "First character of service_name cannot be an integer."
                 )
             if (
-                content.is_service_name_available(service_name, "featureService")
+                content.is_service_name_available(
+                    service_name, "featureService"
+                )
                 is False
             ):
                 raise ValueError(
@@ -2834,7 +2905,9 @@ class GeoAccessor(object):
                     "First character of service_name cannot be an integer."
                 )
             if (
-                content.is_service_name_available(service_name, "featureService")
+                content.is_service_name_available(
+                    service_name, "featureService"
+                )
                 is False
             ):
                 raise ValueError(
@@ -2935,7 +3008,9 @@ class GeoAccessor(object):
                     geom["spatialReference"] = {"wkid": 4326}
                 return geom
 
-            series = df[geometry_column].apply(Geometry).apply(_set_default_sr)
+            series = (
+                df[geometry_column].apply(Geometry).apply(_set_default_sr)
+            )
             df[geometry_column] = GeoArray(series)
             df.spatial.set_geometry(geometry_column)
             df.spatial.project(sr)
@@ -2945,9 +3020,12 @@ class GeoAccessor(object):
                 geocoder = arcgis.env.active_gis._tools.geocoders[0]
             sr = dict(geocoder.properties.spatialReference)
             if address_column in df.columns:
-                batch_size = geocoder.properties.locatorProperties.MaxBatchSize
+                batch_size = (
+                    geocoder.properties.locatorProperties.MaxBatchSize
+                )
                 pieces = [
-                    df.iloc[i : i + batch_size] for i in range(0, len(df), batch_size)
+                    df.iloc[i : i + batch_size]
+                    for i in range(0, len(df), batch_size)
                 ]
                 data = []
                 for df in pieces:
@@ -2960,7 +3038,9 @@ class GeoAccessor(object):
                     piece_df["ResultID"] = df.index.tolist()
                     data.append(piece_df)
                 if len(data) == 1:
-                    merged = df.merge(data[0], left_index=True, right_on="ResultID")
+                    merged = df.merge(
+                        data[0], left_index=True, right_on="ResultID"
+                    )
                 else:
                     merged = df.merge(
                         pd.concat(data), left_index=True, right_on="ResultID"
@@ -3258,7 +3338,10 @@ class GeoAccessor(object):
             return self._sindex
         else:
             raise ValueError(
-                ("The Spatial Column must " "be set, call df.spatial.set_geometry.")
+                (
+                    "The Spatial Column must "
+                    "be set, call df.spatial.set_geometry."
+                )
             )
 
     # ----------------------------------------------------------------------
@@ -3295,22 +3378,35 @@ class GeoAccessor(object):
             sr = {"wkid": 4326}
         else:
             sr = self.sr
+        if self.name is None:
+            geom_type = "esriGeometryPoint"
+        else:
+            geom_type = _geom_types[
+                type(
+                    self._data[self.name][
+                        self._data[self.name].first_valid_index()
+                    ]
+                )
+            ]
+
         fs = {
             "objectIdFieldName": "",
             "globalIdFieldName": "",
             "displayFieldName": "",
-            "geometryType": _geom_types[
-                type(self._data[self.name][self._data[self.name].first_valid_index()])
-            ],
+            "geometryType": geom_type,
             "spatialReference": sr,
             "fields": [],
             "features": [],
         }
         # Ensure all number values are 0 so errors do not occur.
         df = self._data.where(pd.notnull(self._data), None)
-        date_fields = [col for col in df.columns if df[col].dtype == "datetime64[ns]"]
+        date_fields = [
+            col for col in df.columns if df[col].dtype == "datetime64[ns]"
+        ]
         time_delta_fields = [
-            col for col in df.columns if df[col].dtype in ["<m8[ns]", "timedelta64[ns]"]
+            col
+            for col in df.columns
+            if df[col].dtype in ["<m8[ns]", "timedelta64[ns]"]
         ]
         cols_norm = [col for col in df.columns]
         cols_lower = [col.lower() for col in df.columns]
@@ -3494,18 +3590,22 @@ class GeoAccessor(object):
         value                   Spatial Reference
         ==================      ====================================================================
         """
-        data = [
-            getattr(g, "spatialReference", None) or g["spatialReference"]
-            for g in self._data[self.name]
-            if g not in [None, np.NaN, np.nan, "", {}] and isinstance(g, dict)
-        ]
-        srs = [
-            _geometry.SpatialReference(sr)
-            for sr in pd.DataFrame(data).drop_duplicates().to_dict("records")
-        ]
-        if len(srs) == 1:
-            return srs[0]
-        return srs
+        if self.name:
+            data = [
+                getattr(g, "spatialReference", None) or g["spatialReference"]
+                for g in self._data[self.name]
+                if g not in [None, np.NaN, np.nan, "", {}]
+                and isinstance(g, dict)
+            ]
+            srs = [
+                _geometry.SpatialReference(sr)
+                for sr in pd.DataFrame(data)
+                .drop_duplicates()
+                .to_dict("records")
+            ]
+            if len(srs) == 1:
+                return srs[0]
+            return srs
 
     # ----------------------------------------------------------------------
     @sr.setter
@@ -3526,21 +3626,34 @@ class GeoAccessor(object):
             if sr and "wkt" in sr:
                 wkt = sr["wkt"]
 
-            if isinstance(ref, (dict, _geometry.SpatialReference)) and sr is None:
-                self._data[self.name] = self._data[self.name].geom.project_as(ref)
+            if (
+                isinstance(ref, (dict, _geometry.SpatialReference))
+                and sr is None
+            ):
+                self._data[self.name] = self._data[
+                    self.name
+                ].geom.project_as(ref)
             elif isinstance(ref, _geometry.SpatialReference):
                 if ref != sr:
-                    self._data[self.name] = self._data[self.name].geom.project_as(ref)
+                    self._data[self.name] = self._data[
+                        self.name
+                    ].geom.project_as(ref)
             elif isinstance(ref, int):
                 if ref != wkid:
-                    self._data[self.name] = self._data[self.name].geom.project_as(ref)
+                    self._data[self.name] = self._data[
+                        self.name
+                    ].geom.project_as(ref)
             elif isinstance(ref, str):
                 if ref != wkt:
-                    self._data[self.name] = self._data[self.name].geom.project_as(ref)
+                    self._data[self.name] = self._data[
+                        self.name
+                    ].geom.project_as(ref)
             elif isinstance(ref, dict):
                 nsr = _geometry.SpatialReference(ref)
                 if sr != nsr:
-                    self._data[self.name] = self._data[self.name].geom.project_as(ref)
+                    self._data[self.name] = self._data[
+                        self.name
+                    ].geom.project_as(ref)
         else:
             if ref:
                 if isinstance(ref, str):
@@ -3565,7 +3678,8 @@ class GeoAccessor(object):
         """
         from arcgis.features import FeatureSet
 
-        return FeatureSet.from_dict(self.__feature_set__)
+        d = self.__feature_set__
+        return FeatureSet.from_dict(d)
 
     # ----------------------------------------------------------------------
     def to_feature_collection(
@@ -3815,7 +3929,9 @@ class GeoAccessor(object):
         def _converter(g):
             if g is not None:
                 # return ags_geometry(shp_mapping(g))
-                return ags_geometry.from_shapely(g, spatial_reference=spatial_reference)
+                return ags_geometry.from_shapely(
+                    g, spatial_reference=spatial_reference
+                )
             else:
                 return None
 
@@ -4294,7 +4410,10 @@ class GeoAccessor(object):
                 )
                 self._data[self.name] = vals
                 return True
-            elif isinstance(spatial_reference, _geometry.SpatialReference) and HASARCPY:
+            elif (
+                isinstance(spatial_reference, _geometry.SpatialReference)
+                and HASARCPY
+            ):
                 vals = self._data[self.name].values.project_as(
                     **{
                         "spatial_reference": spatial_reference.as_arcpy,
