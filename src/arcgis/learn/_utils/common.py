@@ -63,9 +63,7 @@ def read_image(path, resize_to: int = None, keep_raw=False):
     gdal_error = None
     try:
         if not HAS_GDAL:
-            gdal_error = (
-                f"""{gdal_import_exception} \n\n{GDAL_INSTALL_MESSAGE}"""
-            )
+            gdal_error = f"""{gdal_import_exception} \n\n{GDAL_INSTALL_MESSAGE}"""
         else:
             from osgeo import gdal
 
@@ -105,8 +103,7 @@ def read_image(path, resize_to: int = None, keep_raw=False):
 
     if resize_to is not None:
         raise Exception(
-            f"`resize_to` parameter is only supported using gdal. \n"
-            + message
+            f"`resize_to` parameter is only supported using gdal. \n" + message
         )
 
     try:
@@ -145,12 +142,8 @@ class ArcGISMSImage(Image):
         im_shape = symbology_data.shape
         min_vals = symbology_data.view(im_shape[0], -1).min(dim=1)[0]
         max_vals = symbology_data.view(im_shape[0], -1).max(dim=1)[0]
-        strechted_data = (
-            symbology_data - min_vals.view(im_shape[0], 1, 1)
-        ) / (
-            max_vals.view(im_shape[0], 1, 1)
-            - min_vals.view(im_shape[0], 1, 1)
-            + 0.001
+        strechted_data = (symbology_data - min_vals.view(im_shape[0], 1, 1)) / (
+            max_vals.view(im_shape[0], 1, 1) - min_vals.view(im_shape[0], 1, 1) + 0.001
         )
         data_to_plot = strechted_data.permute(1, 2, 0)
         if not show_axis:
@@ -281,9 +274,7 @@ class ArcGISImageList(ImageList):
     _imagery_type = None
 
     def open(self, fn):
-        return ArcGISMSImage.open(
-            fn, div=self._div, imagery_type=self._imagery_type
-        )
+        return ArcGISMSImage.open(fn, div=self._div, imagery_type=self._imagery_type)
 
     def check_class_imbalance(
         self, func: Callable, stratify=False, class_imbalance_pct=0.01
@@ -295,13 +286,9 @@ class ArcGISImageList(ImageList):
             else:
                 total_sample = np.array(labelval)
             unique_sample = set(total_sample)
-            check_imbalance(
-                total_sample, unique_sample, class_imbalance_pct, stratify
-            )
+            check_imbalance(total_sample, unique_sample, class_imbalance_pct, stratify)
         except Exception as e:
-            warnings.warn(
-                f"Unable to check for class imbalance [reason : {e}]"
-            )
+            warnings.warn(f"Unable to check for class imbalance [reason : {e}]")
         return self
 
     def label_list_from_func(self, func: Callable, val_split_pct):
@@ -314,9 +301,7 @@ class ArcGISImageList(ImageList):
         ]
         label_series = pd.Series(self._list_of_labels)
         single_instance_labels = list(
-            label_series.value_counts()[
-                label_series.value_counts() == 1
-            ].index
+            label_series.value_counts()[label_series.value_counts() == 1].index
         )
         req_instances_per_class = int(0.8 / val_split_pct)
         classes_below_req_intances = list(
@@ -334,17 +319,11 @@ class(es) {",".join(classes_below_req_intances)} in your data does not meet the 
         }
         for (
             label
-        ) in (
-            single_instance_labels
-        ):  # adding duplicate instance of unique labels
-            self._idx_label_tuple_list.append(
-                (self._label_idx_mapping[label], label)
-            )
+        ) in single_instance_labels:  # adding duplicate instance of unique labels
+            self._idx_label_tuple_list.append((self._label_idx_mapping[label], label))
         return self
 
-    def stratified_split_by_pct(
-        self, valid_pct: float = 0.2, seed: int = None
-    ):
+    def stratified_split_by_pct(self, valid_pct: float = 0.2, seed: int = None):
         try:
             "Split the items in a stratified manner by putting `valid_pct` in the validation set, optional `seed` can be passed."
             from sklearn.model_selection import train_test_split
@@ -355,14 +334,11 @@ class(es) {",".join(classes_below_req_intances)} in your data does not meet the 
             if seed is not None:
                 np.random.seed(seed)
             if (
-                len(set(self._list_of_labels))
-                > len(self._list_of_labels) * valid_pct
+                len(set(self._list_of_labels)) > len(self._list_of_labels) * valid_pct
             ):  # if validation samples length is less than unique labels
                 classes = len(set(self._list_of_labels))
                 xlen = len(self._list_of_labels)
-                sample_shortage = math.ceil(
-                    (classes - xlen * valid_pct) / valid_pct
-                )
+                sample_shortage = math.ceil((classes - xlen * valid_pct) / valid_pct)
                 extra_samples = random.choices(
                     self._idx_label_tuple_list, k=sample_shortage
                 )
@@ -398,9 +374,7 @@ def get_multispectral_data_params_from_emd(data, emd):
         )  # Copy the normalization stats so that self._data.emd has no tensors other wise it will raise error while creating emd
         for _stat in normalization_stats:
             if normalization_stats[_stat] is not None:
-                normalization_stats[_stat] = torch.tensor(
-                    normalization_stats[_stat]
-                )
+                normalization_stats[_stat] = torch.tensor(normalization_stats[_stat])
             setattr(data, ("_" + _stat), normalization_stats[_stat])
         data._do_normalize = emd.get("DoNormalize")
     return data
@@ -420,9 +394,7 @@ def get_color_array(color_mapping: dict, alpha=0.7):
     color_array = np.concatenate(
         [
             color_array,
-            np.repeat([alpha], color_array.shape[0]).reshape(
-                color_array.shape[0], 1
-            ),
+            np.repeat([alpha], color_array.shape[0]).reshape(color_array.shape[0], 1),
         ],
         axis=-1,
     )
@@ -554,15 +526,11 @@ def predict_batch(self, imagetensor_batch):
     if self._backend == "pytorch":
         if getattr(self, "_is_model_extension", False):
             if self._is_multispectral:
-                imagetensor_batch = (
-                    self._model_conf.transform_input_multispectral(
-                        imagetensor_batch
-                    )
-                )
-            else:
-                imagetensor_batch = self._model_conf.transform_input(
+                imagetensor_batch = self._model_conf.transform_input_multispectral(
                     imagetensor_batch
                 )
+            else:
+                imagetensor_batch = self._model_conf.transform_input(imagetensor_batch)
             predictions = self.learn.model.eval()(imagetensor_batch)
         else:
             predictions = self.learn.model.eval()(
@@ -594,15 +562,11 @@ def get_band_percent_minmax(values, min_clip, max_clip):
 
 def get_percent_minmax(imagetensor_batch, min_clip=0.0025, max_clip=0.005):
     shp = imagetensor_batch.shape
-    _imagetensor_batch = imagetensor_batch.transpose(1, 0).reshape(
-        shp[1], -1
-    )
+    _imagetensor_batch = imagetensor_batch.transpose(1, 0).reshape(shp[1], -1)
     min_vals = []
     max_vals = []
     for i in range(shp[1]):
-        v = get_band_percent_minmax(
-            _imagetensor_batch[i].unique(), min_clip, max_clip
-        )
+        v = get_band_percent_minmax(_imagetensor_batch[i].unique(), min_clip, max_clip)
         min_vals.append(v[0])
         max_vals.append(v[1])
     return (
@@ -625,12 +589,8 @@ def image_batch_stretcher(
     shp = imagetensor_batch.shape
     if statistics_type == "DRA":
         if stretch_type == "minmax":
-            min_vals = imagetensor_batch.view(shp[0], shp[1], -1).min(dim=2)[
-                0
-            ]
-            max_vals = imagetensor_batch.view(shp[0], shp[1], -1).max(dim=2)[
-                0
-            ]
+            min_vals = imagetensor_batch.view(shp[0], shp[1], -1).min(dim=2)[0]
+            max_vals = imagetensor_batch.view(shp[0], shp[1], -1).max(dim=2)[0]
         elif stretch_type == "percentclip":
             min_vals = []
             max_vals = []
@@ -647,14 +607,10 @@ def image_batch_stretcher(
     else:
         if stretch_type == "minmax":
             min_vals = (
-                imagetensor_batch.transpose(1, 0)
-                .reshape(shp[1], -1)
-                .min(dim=1)[0]
+                imagetensor_batch.transpose(1, 0).reshape(shp[1], -1).min(dim=1)[0]
             )
             max_vals = (
-                imagetensor_batch.transpose(1, 0)
-                .reshape(shp[1], -1)
-                .max(dim=1)[0]
+                imagetensor_batch.transpose(1, 0).reshape(shp[1], -1).max(dim=1)[0]
             )
         elif stretch_type == "percentclip":
             min_vals, max_vals = get_percent_minmax(imagetensor_batch)
@@ -663,9 +619,7 @@ def image_batch_stretcher(
         min_vals = min_vals.view(1, shp[1], 1, 1)
         max_vals = max_vals.view(1, shp[1], 1, 1)
     #
-    imagetensor_batch = (imagetensor_batch - min_vals) / (
-        max_vals - min_vals + 0.001
-    )
+    imagetensor_batch = (imagetensor_batch - min_vals) / (max_vals - min_vals + 0.001)
     imagetensor_batch = imagetensor_batch.clamp(0, 1)
     return imagetensor_batch
 
@@ -674,9 +628,7 @@ def dynamic_range_adjustment(imagetensor_batch):
     shp = imagetensor_batch.shape
     min_vals = imagetensor_batch.view(shp[0], shp[1], -1).min(dim=2)[0]
     max_vals = imagetensor_batch.view(shp[0], shp[1], -1).max(dim=2)[0]
-    imagetensor_batch = (
-        imagetensor_batch - min_vals.view(shp[0], shp[1], 1, 1)
-    ) / (
+    imagetensor_batch = (imagetensor_batch - min_vals.view(shp[0], shp[1], 1, 1)) / (
         max_vals.view(shp[0], shp[1], 1, 1)
         - min_vals.view(shp[0], shp[1], 1, 1)
         + 0.001
@@ -769,10 +721,7 @@ def _get_device_id():
     if move_to_cpu:
         arcgis.env._processorType = "CPU"
 
-    if (
-        getattr(arcgis.env, "_processorType", "") == "GPU"
-        and torch.cuda.is_available()
-    ):
+    if getattr(arcgis.env, "_processorType", "") == "GPU" and torch.cuda.is_available():
         device = _get_gpu_device_id()
     elif getattr(arcgis.env, "_processorType", "") == "CPU":
         device = -1
