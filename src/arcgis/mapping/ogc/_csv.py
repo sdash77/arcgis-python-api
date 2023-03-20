@@ -250,7 +250,7 @@ class CSVLayer(BaseOpenData):
                     fields.append({"name": col, "type": "date", "alias": col})
                 elif isinstance(col_val, (np.int32, np.int16, np.int8)):
                     fields.append({"name": col, "type": "long", "alias": col})
-                elif isinstance(col_val, (int, np.int, np.int64)):
+                elif isinstance(col_val, (int, np.int64)):
                     fields.append({"name": col, "type": "integer", "alias": col})
                 elif isinstance(col_val, (float, np.float64)):
                     fields.append({"name": col, "type": "double", "alias": col})
