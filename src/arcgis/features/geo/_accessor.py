@@ -1404,11 +1404,11 @@ class GeoAccessor(object):
 
         Examples
         --------
-        >>> df = pd.DataFrame.spatial.read_parquet("data.parquet")  # doctest: +SKIP
+        >>> df = pd.DataFrame.spatial.from_parquet("data.parquet")  # doctest: +SKIP
 
         Specifying columns to read:
 
-        >>> df = pd.DataFrame.spatial.read_parquet(
+        >>> df = pd.DataFrame.spatial.from_parquet(
         ...     "data.parquet",
         ...     columns=["SHAPE", "pop_est"]
         ... )  # doctest: +SKIP
