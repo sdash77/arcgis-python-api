@@ -1096,7 +1096,18 @@ def to_featureclass(
 
                 q = df[df.spatial.name].isna()
                 df.loc[q, "SHAPE"] = null_geom  # set null values to proper JSON
-                np.apply_along_axis(_insert_row, 1, df[dfcols].values)
+                replace_mappings = {
+                    pd.NA: None,
+                    np.nan: None,
+                    np.NaN: None,
+                    np.NAN: None,
+                    pd.NaT: None,
+                }
+                np.apply_along_axis(
+                    _insert_row,
+                    1,
+                    df.replace(replace_mappings)[dfcols].values,
+                )
 
                 df.loc[q, "SHAPE"] = None  # reset null values
         except ValueError as ve:

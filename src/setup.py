@@ -220,7 +220,7 @@ data_files = [
 def get_version():
     """gets the version from environment variable or sets via manually setting"""
     MAJOR = "2"
-    MINOR = "1"
+    MINOR = "2"
     try:
         import os
 
@@ -308,7 +308,11 @@ kwargs = {
     # These classes will execute code after 'pip install' finishes
     # In this case, it will activate the 'arcgis' ipywidget
     # See the top of this setup.py file
-    "cmdclass": {"develop": develop, "install": install, "egg_info": egg_info},
+    "cmdclass": {
+        "develop": develop,
+        "install": install,
+        "egg_info": egg_info,
+    },
     # List additional groups of dependencies here (e.g. development
     # dependencies). You can install these using the following syntax,
     # for example:
