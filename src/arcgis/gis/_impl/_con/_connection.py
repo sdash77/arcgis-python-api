@@ -53,6 +53,7 @@ from requests_toolbelt.multipart.encoder import MultipartEncoder
 from json import JSONDecodeError
 from ._helpers import _filename_from_headers, _filename_from_url
 from ._authguess import GuessAuth
+from arcgis._impl.common._utils import _date_handler
 from arcgis._impl.common._mixins import PropertyMap
 from arcgis._impl.common._isd import InsensitiveDict
 from arcgis.auth import EsriSession
@@ -795,9 +796,9 @@ class Connection(object):
             if params and json_encode:
                 for k, v in copy.copy(params).items():
                     if isinstance(v, (tuple, dict, list, bool)):
-                        params[k] = json.dumps(v)
+                        params[k] = json.dumps(v, default=_date_handler)
                     elif isinstance(v, PropertyMap):
-                        params[k] = json.dumps(dict(v))
+                        params[k] = json.dumps(dict(v), default=_date_handler)
                     elif isinstance(v, InsensitiveDict):
                         params[k] = v.json
         if add_headers:
@@ -1173,9 +1174,9 @@ class Connection(object):
             if json_encode:
                 for k, v in params.items():
                     if isinstance(v, (dict, list, tuple, bool)):
-                        params[k] = json.dumps(v)
+                        params[k] = json.dumps(v, default=_date_handler)
                     elif isinstance(v, PropertyMap):
-                        params[k] = json.dumps(dict(v))
+                        params[k] = json.dumps(dict(v), default=_date_handler)
                     elif isinstance(v, InsensitiveDict):
                         params[k] = v.json
             # When data and files are present, they need to be combined
@@ -1428,9 +1429,9 @@ class Connection(object):
             if json_encode:
                 for k, v in params.items():
                     if isinstance(v, (dict, list, tuple, bool)):
-                        params[k] = json.dumps(v)
+                        params[k] = json.dumps(v, default=_date_handler)
                     elif isinstance(v, PropertyMap):
-                        params[k] = json.dumps(dict(v))
+                        params[k] = json.dumps(dict(v), default=_date_handler)
                     elif isinstance(v, InsensitiveDict):
                         params[k] = v.json
             if self._session.auth and drop_auth:
@@ -1660,9 +1661,9 @@ class Connection(object):
         if json_encode:
             for k, v in params.items():
                 if isinstance(v, (dict, list, tuple, bool)):
-                    params[k] = json.dumps(v)
+                    params[k] = json.dumps(v, default=_date_handler)
                 elif isinstance(v, PropertyMap):
-                    params[k] = json.dumps(dict(v))
+                    params[k] = json.dumps(dict(v), default=_date_handler)
                 elif isinstance(v, InsensitiveDict):
                     params[k] = v.json
         if self._session.auth and drop_auth:
