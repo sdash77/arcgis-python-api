@@ -53,6 +53,9 @@ try:
     from ._pointcnn_utils import AverageMetric
     from fastai.core import camel2snake
     import timm
+    from .._utils.evaluate_batchsize import estimate_batch_size
+    from .._utils.evaluate_batchsize import unsupported_models
+    from .._data import prepare_data
 
     # EarlyStoppingCallback should run as one
     # of the first callback so that stop training flag is set
@@ -605,6 +608,16 @@ class ArcGISModel(object):
         self._slice_lr = True
         self._pretrained_path = kwargs.get("pretrained_path", None)
         self._check_data_support_with_pretrained_path()
+        self._model_kwargs = kwargs
+        if self.__class__.__name__ not in unsupported_models:
+            if not getattr(data, "_is_empty", False) and data._estimate_batch:
+                try:
+                    data._estimate_batch = False
+                    batch_size = estimate_batch_size(self, mode="none")
+                    self._data.train_dl.batch_size = batch_size.recommended_batchsize
+                    self._data.valid_dl.batch_size = batch_size.recommended_batchsize
+                except Exception as e:
+                    data._estimate_batch = True
 
     def _check_data_support_with_pretrained_path(self):
         if self._data is not None and self._pretrained_path is not None:
