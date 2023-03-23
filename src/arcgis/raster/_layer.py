@@ -60,11 +60,7 @@ def _get_rendering_service_layer(layer):
 
 def _find_and_replace_mosaic_rule(fnarg_ra, mosaic_rule, url):
     for key, value in fnarg_ra.items():
-        if (
-            key == "Raster"
-            and isinstance(value, dict)
-            and not (value.keys() & {"url"})
-        ):
+        if key == "Raster" and isinstance(value, dict) and not (value.keys() & {"url"}):
             return _find_and_replace_mosaic_rule(
                 value["rasterFunctionArguments"], fnarg_ra
             )
@@ -452,9 +448,7 @@ class ImageryLayerCacheManager(_GISResource):
         return res
 
     # ----------------------------------------------------------------------
-    def delete_tiles(
-        self, levels: str, extent: Optional[dict[str, Any]] = None
-    ):
+    def delete_tiles(self, levels: str, extent: Optional[dict[str, Any]] = None):
         """
         The ``delete_tiles`` method deletes tiles for the current cache.
 
@@ -517,9 +511,9 @@ class _RasterRenderingService(Layer):
         url = None
         if gis is not None:
             if gis._con._product == "AGOL":
-                ra_url = gis.properties.helperServices.get(
-                    "rasterAnalytics", {}
-                ).get("url", "")
+                ra_url = gis.properties.helperServices.get("rasterAnalytics", {}).get(
+                    "url", ""
+                )
                 url = (
                     ra_url.replace("rasteranalysis", "rasterutils")
                     .replace("RasterAnalysisTools", "RasterRendering")
@@ -540,9 +534,9 @@ class _RasterRenderingService(Layer):
                         "serverFunction" in ds._server.keys()
                     ) and "RasterAnalytics" in ds._server["serverFunction"]:
                         raster_analytics_server_url = ds._server["url"]
-                    elif (
-                        "serverFunction" in ds._server.keys()
-                    ) and ds._server["serverFunction"] == "":
+                    elif ("serverFunction" in ds._server.keys()) and ds._server[
+                        "serverFunction"
+                    ] == "":
                         hosting_server_url = ds._server["url"]
                 if image_hosting_server_url:
                     url = (
@@ -645,11 +639,7 @@ class ImageryLayer(Layer):
             import ast
 
             url = ast.literal_eval(url)
-        if (
-            isinstance(url, str)
-            or isinstance(url, dict)
-            or isinstance(url, bytes)
-        ):
+        if isinstance(url, str) or isinstance(url, dict) or isinstance(url, bytes):
             if (
                 "/fileShares/" in url
                 or "/rasterStores/" in url
@@ -674,32 +664,22 @@ class ImageryLayer(Layer):
                 if gis is not None:
                     if ImageryLayer._rendering_service_object is None or (
                         (
-                            (
-                                ImageryLayer._rendering_service_object
-                                is not None
-                            )
-                            and ImageryLayer._rendering_service_object.gis
-                            is not None
+                            (ImageryLayer._rendering_service_object is not None)
+                            and ImageryLayer._rendering_service_object.gis is not None
                         )
-                        and ImageryLayer._rendering_service_object.gis.url
-                        != gis.url
+                        and ImageryLayer._rendering_service_object.gis.url != gis.url
                     ):
                         ImageryLayer._rendering_service_object = (
                             _RasterRenderingService(gis)
                         )
                         url = ImageryLayer._rendering_service_object.url
                     else:
-                        if (
-                            ImageryLayer._rendering_service_object.gis
-                            is not None
-                        ):
+                        if ImageryLayer._rendering_service_object.gis is not None:
                             if (
                                 ImageryLayer._rendering_service_object.gis.url
                                 == gis.url
                             ):
-                                url = (
-                                    ImageryLayer._rendering_service_object.url
-                                )
+                                url = ImageryLayer._rendering_service_object.url
                                 self._lazy_token = (
                                     ImageryLayer._rendering_service_object.token
                                 )
@@ -722,9 +702,7 @@ class ImageryLayer(Layer):
         self._rendering_rule_from_item = False
         self._rendering_service_layer = None
 
-    def refresh_service(
-        self, options: str = None, future: bool = True
-    ) -> str:
+    def refresh_service(self, options: str = None, future: bool = True) -> str:
         """
         Refresh Service is a task in the existing out-of-the-box
         Publishing Tools geoprocessing service used by the service publisher
@@ -830,10 +808,7 @@ class ImageryLayer(Layer):
             raise RuntimeError(
                 "This operation cannot be performed on a datastore raster"
             )
-        if (
-            str(self.properties["capabilities"]).lower().find("catalog")
-            == -1
-        ):
+        if str(self.properties["capabilities"]).lower().find("catalog") == -1:
             return None
         return RasterCatalogItem(url="%s/%s" % (self._url, id), imglyr=self)
 
@@ -853,22 +828,16 @@ class ImageryLayer(Layer):
             lyr_dict.update({"capabilities": "dynamic"})
         if self._fn is not None or self._mosaic_rule is not None:
             if self._fn is not None:
-                options_dict["imageServiceParameters"][
-                    "renderingRule"
-                ] = self._fn
+                options_dict["imageServiceParameters"]["renderingRule"] = self._fn
 
             if self._mosaic_rule is not None:
-                options_dict["imageServiceParameters"][
-                    "mosaicRule"
-                ] = self._mosaic_rule
+                options_dict["imageServiceParameters"]["mosaicRule"] = self._mosaic_rule
 
         if self._datastore_raster:
             options_dict["imageServiceParameters"]["raster"] = self._uri
             if isinstance(self._uri, bytes):
                 if "renderingRule" in options_dict["imageServiceParameters"]:
-                    del options_dict["imageServiceParameters"][
-                        "renderingRule"
-                    ]
+                    del options_dict["imageServiceParameters"]["renderingRule"]
                 options_dict["imageServiceParameters"]["raster"] = self._fn
 
         if options_dict["imageServiceParameters"] != {}:
@@ -885,9 +854,7 @@ class ImageryLayer(Layer):
             An :class:`~arcgis.raster.ImageryLayer` object
         """
         if not item.type == "Image Service":
-            raise TypeError(
-                "item must be a type of Image Service, not " + item.type
-            )
+            raise TypeError("item must be a type of Image Service, not " + item.type)
 
         return cls(item.url, item._gis)
 
@@ -1037,9 +1004,7 @@ class ImageryLayer(Layer):
             params = {"f": "json"}
             if self._datastore_raster:
                 params["Raster"] = self._uri
-            hist_return = self._con.post(
-                url, params, token=self._token, timeout=None
-            )
+            hist_return = self._con.post(url, params, token=self._token, timeout=None)
 
             # process this into a dict
             return hist_return["histograms"]
@@ -1057,29 +1022,19 @@ class ImageryLayer(Layer):
         if self._raster_info != {}:
             return self._raster_info
         if "extent" in self.properties:
-            self._raster_info.update(
-                {"extent": dict(self.properties.extent)}
-            )
+            self._raster_info.update({"extent": dict(self.properties.extent)})
 
         if "bandCount" in self.properties:
-            self._raster_info.update(
-                {"bandCount": self.properties.bandCount}
-            )
+            self._raster_info.update({"bandCount": self.properties.bandCount})
 
         if "pixelType" in self.properties:
-            self._raster_info.update(
-                {"pixelType": self.properties.pixelType}
-            )
+            self._raster_info.update({"pixelType": self.properties.pixelType})
 
         if "pixelSizeX" in self.properties:
-            self._raster_info.update(
-                {"pixelSizeX": self.properties.pixelSizeX}
-            )
+            self._raster_info.update({"pixelSizeX": self.properties.pixelSizeX})
 
         if "pixelSizeY" in self.properties:
-            self._raster_info.update(
-                {"pixelSizeY": self.properties.pixelSizeY}
-            )
+            self._raster_info.update({"pixelSizeY": self.properties.pixelSizeY})
 
         if "compressionType" in self.properties:
             self._raster_info.update(
@@ -1087,19 +1042,13 @@ class ImageryLayer(Layer):
             )
 
         if "blockHeight" in self.properties:
-            self._raster_info.update(
-                {"blockHeight": self.properties.blockHeight}
-            )
+            self._raster_info.update({"blockHeight": self.properties.blockHeight})
 
         if "blockWidth" in self.properties:
-            self._raster_info.update(
-                {"blockWidth": self.properties.blockWidth}
-            )
+            self._raster_info.update({"blockWidth": self.properties.blockWidth})
 
         if "noDataValues" in self.properties:
-            self._raster_info.update(
-                {"noDataValues": self.properties.noDataValues}
-            )
+            self._raster_info.update({"noDataValues": self.properties.noDataValues})
 
         return self._raster_info
 
@@ -1147,10 +1096,7 @@ class ImageryLayer(Layer):
 
             if self._datastore_raster:
                 params["Raster"] = self._uri
-                if (
-                    isinstance(self._uri, bytes)
-                    and "renderingRule" in params.keys()
-                ):
+                if isinstance(self._uri, bytes) and "renderingRule" in params.keys():
                     del params["renderingRule"]
                     params["Raster"] = self._uri
 
@@ -1164,9 +1110,7 @@ class ImageryLayer(Layer):
                     if "attributes" in df1.columns:
                         attributes_list = df1["attributes"].tolist()
                         rat_df = pd.DataFrame(attributes_list)
-                        rat_df = rat_df.style.set_properties(
-                            **{"text-align": "left"}
-                        )
+                        rat_df = rat_df.style.set_properties(**{"text-align": "left"})
                         rat_df = rat_df.set_table_styles(
                             [
                                 dict(
@@ -1304,15 +1248,11 @@ class ImageryLayer(Layer):
     # ----------------------------------------------------------------------
     def identify(
         self,
-        geometry: Union[
-            dict[str, Any], Polygon, Point, MultiPoint, Envelope
-        ],
+        geometry: Union[dict[str, Any], Polygon, Point, MultiPoint, Envelope],
         mosaic_rule: Optional[Union[str, dict]] = None,
         rendering_rules: Optional[Union[list[str], dict[str, Any]]] = None,
         pixel_size: Optional[Union[str, dict[str, int]]] = None,
-        time_extent: Optional[
-            Union[list[datetime.datetime], datetime.datetime]
-        ] = None,
+        time_extent: Optional[Union[list[datetime.datetime], datetime.datetime]] = None,
         return_geometry: bool = False,
         return_catalog_items: bool = True,
         return_pixel_values: bool = True,
@@ -1536,10 +1476,7 @@ class ImageryLayer(Layer):
 
         if self._datastore_raster:
             params["Raster"] = self._uri
-            if (
-                isinstance(self._uri, bytes)
-                and "renderingRule" in params.keys()
-            ):
+            if isinstance(self._uri, bytes) and "renderingRule" in params.keys():
                 del params["renderingRule"]
                 params["Raster"] = self._uri
 
@@ -1732,9 +1669,7 @@ class ImageryLayer(Layer):
         self,
         where: Optional[str] = None,
         geometry: Optional[dict] = None,
-        time: Optional[
-            Union[datetime.datetime, datetime.date, list[int], str]
-        ] = None,
+        time: Optional[Union[datetime.datetime, datetime.date, list[int], str]] = None,
         lock_rasters: bool = False,
         clear_filters: bool = False,
     ):
@@ -1818,9 +1753,7 @@ class ImageryLayer(Layer):
         self,
         where: Optional[str] = None,
         geometry: Optional[dict] = None,
-        time: Optional[
-            Union[datetime.datetime, datetime.date, list[int], str]
-        ] = None,
+        time: Optional[Union[datetime.datetime, datetime.date, list[int], str]] = None,
         lock_rasters: bool = True,
     ):
         """
@@ -1896,10 +1829,7 @@ class ImageryLayer(Layer):
         return newlyr
 
     def _clone_layer(self):
-        if (
-            type(self).__name__ == "Raster"
-            or type(self).__name__ == "RasterCollection"
-        ):
+        if type(self).__name__ == "Raster" or type(self).__name__ == "RasterCollection":
             newlyr = Raster(
                 self._url,
                 is_multidimensional=self._is_multidimensional,
@@ -1953,16 +1883,10 @@ class ImageryLayer(Layer):
     def export_image(
         self,
         bbox: Optional[Union[dict[str, float], str]] = None,
-        image_sr: Optional[
-            Union[int, dict[str, Any], SpatialReference]
-        ] = None,
-        bbox_sr: Optional[
-            Union[int, dict[str, Any], SpatialReference]
-        ] = None,
+        image_sr: Optional[Union[int, dict[str, Any], SpatialReference]] = None,
+        bbox_sr: Optional[Union[int, dict[str, Any], SpatialReference]] = None,
         size: Optional[list[int]] = None,
-        time: Optional[
-            Union[datetime.date, datetime.datetime, list[int], str]
-        ] = None,
+        time: Optional[Union[datetime.date, datetime.datetime, list[int], str]] = None,
         export_format: str = "jpgpng",
         pixel_type: Optional[str] = None,
         no_data: Optional[float] = None,
@@ -2319,16 +2243,11 @@ class ImageryLayer(Layer):
 
         if self._datastore_raster:
             params["Raster"] = self._uri
-            if (
-                isinstance(self._uri, bytes)
-                and "renderingRule" in params.keys()
-            ):
+            if isinstance(self._uri, bytes) and "renderingRule" in params.keys():
                 del params["renderingRule"]
                 params["Raster"] = self._uri
         if f == "json":
-            return self._con.post(
-                url, params, token=self._token, timeout=None
-            )
+            return self._con.post(url, params, token=self._token, timeout=None)
         elif f == "image":
             if save_folder is not None and save_file is not None:
                 return self._con.post(
@@ -2382,27 +2301,19 @@ class ImageryLayer(Layer):
                 raise RuntimeError(res)
             result, data, valid_mask = lerc.decode(res)
             if result != 0:
-                raise RuntimeError(
-                    "decoding bytes from imagery service failed."
-                )
+                raise RuntimeError("decoding bytes from imagery service failed.")
 
             # transpose
             if "hasMultidimensions" in self.properties:
                 is_multidimensional = self.properties.hasMultidimensions
             if is_multidimensional:
                 if len(data.shape) == 2:
-                    data = np.expand_dims(
-                        np.expand_dims(data, axis=2), axis=0
-                    )
+                    data = np.expand_dims(np.expand_dims(data, axis=2), axis=0)
                 elif len(data) == 3:
                     if len(self.slices) == 1:
-                        data = np.expand_dims(
-                            np.transpose(data, [1, 2, 0]), axis=0
-                        )
+                        data = np.expand_dims(np.transpose(data, [1, 2, 0]), axis=0)
                     else:
-                        data = np.expand_dims(
-                            np.transpose(data, [2, 0, 1]), axis=3
-                        )
+                        data = np.expand_dims(np.transpose(data, [2, 0, 1]), axis=3)
                 else:
                     assert len(data.shape) == 4
                     data = np.transpose(data, [3, 1, 2, 0])
@@ -2433,12 +2344,8 @@ class ImageryLayer(Layer):
         order_by_fields: Optional[str] = None,
         return_distinct_values: Optional[bool] = None,
         out_statistics: Optional[Union[dict[str, Any], str]] = None,
-        group_by_fields_for_statistics: Optional[
-            Union[str, dict[str, Any]]
-        ] = None,
-        out_sr: Optional[
-            Union[dict[str, Any], int, SpatialReference]
-        ] = None,
+        group_by_fields_for_statistics: Optional[Union[str, dict[str, Any]]] = None,
+        out_sr: Optional[Union[dict[str, Any], int, SpatialReference]] = None,
         return_all_records: bool = False,
         object_ids: Optional[str] = None,
         multi_dimensional_def: Optional[dict[str, Any]] = None,
@@ -2624,9 +2531,7 @@ class ImageryLayer(Layer):
             params["where"] = "1=1"
 
         if not group_by_fields_for_statistics is None:
-            params[
-                "groupByFieldsForStatistics"
-            ] = group_by_fields_for_statistics
+            params["groupByFieldsForStatistics"] = group_by_fields_for_statistics
         if not out_statistics is None:
             params["outStatistics"] = out_statistics
 
@@ -2744,9 +2649,7 @@ class ImageryLayer(Layer):
                 if "features" in result:
                     import pandas as pd
 
-                    rows = [
-                        _feat_to_row(feat) for feat in result["features"]
-                    ]
+                    rows = [_feat_to_row(feat) for feat in result["features"]]
                     df = pd.DataFrame(rows)
                     df.spatial.name
                     return df
@@ -3041,10 +2944,7 @@ class ImageryLayer(Layer):
 
         if self._datastore_raster:
             params["Raster"] = self._uri
-            if (
-                isinstance(self._uri, bytes)
-                and "renderingRule" in params.keys()
-            ):
+            if isinstance(self._uri, bytes) and "renderingRule" in params.keys():
                 del params["renderingRule"]
                 params["Raster"] = self._uri
 
@@ -3113,15 +3013,10 @@ class ImageryLayer(Layer):
 
             if self._datastore_raster:
                 params["Raster"] = self._uri
-                if (
-                    isinstance(self._uri, bytes)
-                    and "renderingRule" in params.keys()
-                ):
+                if isinstance(self._uri, bytes) and "renderingRule" in params.keys():
                     del params["renderingRule"]
                     params["Raster"] = self._uri
-            hist_return = self._con.post(
-                url, params, token=self._token, timeout=None
-            )
+            hist_return = self._con.post(url, params, token=self._token, timeout=None)
 
             # process this into a dict
             return hist_return["histograms"]
@@ -3276,9 +3171,7 @@ class ImageryLayer(Layer):
         if isinstance(item_ids, (list, tuple)):
             item_ids = ",".join(item_ids)
 
-        params[
-            "geodataTransformApplyMethod"
-        ] = geodata_transform_apply_method
+        params["geodataTransformApplyMethod"] = geodata_transform_apply_method
         params["rasterType"] = raster_type
         params["buildPyramids"] = build_pyramids
         params["buildThumbnail"] = build_thumbnail
@@ -3451,9 +3344,7 @@ class ImageryLayer(Layer):
         if description:
             params["description"] = description
         files = {"file": fp}
-        res = self._con.post(
-            path=url, postdata=params, files=files, timeout=None
-        )
+        res = self._con.post(path=url, postdata=params, files=files, timeout=None)
         if "success" in res and res["success"]:
             return res["item"]["itemID"]
         return None
@@ -3465,9 +3356,7 @@ class ImageryLayer(Layer):
         mosaic_rule: Optional[dict[str, str]] = None,
         rendering_rule: Optional[dict[str, str]] = None,
         pixel_size: Optional[Union[dict[str, float], str]] = None,
-        time: Optional[
-            Union[str, list[int], datetime.date, datetime.datetime]
-        ] = None,
+        time: Optional[Union[str, list[int], datetime.date, datetime.datetime]] = None,
         process_as_multidimensional: bool = False,
     ):
         """
@@ -3617,18 +3506,13 @@ class ImageryLayer(Layer):
 
         if self._datastore_raster:
             params["Raster"] = self._uri
-            if (
-                isinstance(self._uri, bytes)
-                and "renderingRule" in params.keys()
-            ):
+            if isinstance(self._uri, bytes) and "renderingRule" in params.keys():
                 del params["renderingRule"]
 
         return self._con.post(path=url, postdata=params, timeout=None)
 
     # ----------------------------------------------------------------------
-    def compute_tie_points(
-        self, raster_id: int, geodata_transforms: dict[str, Any]
-    ):
+    def compute_tie_points(self, raster_id: int, geodata_transforms: dict[str, Any]):
         """
         The ``compute_tie_points`` method retrieves tie points that can be used
         to match the source image to the reference image. The reference
@@ -3727,10 +3611,7 @@ class ImageryLayer(Layer):
 
         if self._datastore_raster:
             params["Raster"] = self._uri
-            if (
-                isinstance(self._uri, bytes)
-                and "renderingRule" in params.keys()
-            ):
+            if isinstance(self._uri, bytes) and "renderingRule" in params.keys():
                 del params["renderingRule"]
 
         legend = self._con.post(path=url, postdata=params, timeout=None)
@@ -3740,15 +3621,17 @@ class ImageryLayer(Layer):
                 table_and_cell_style = (
                     "border:none!important; background-color: #ffffff;"
                 )
-                legend_table = f"<table style='{table_and_cell_style} border-collapse: collapse;'>"
+                legend_table = (
+                    f"<table style='{table_and_cell_style} border-collapse: collapse;'>"
+                )
                 img_td_style = "text-align:left; vertical-align: top; position: relative; top: 10px; padding: 0px;"
-                label_td_style = "text-align:left; padding: 0; position: relative; left: 7px; "
+                label_td_style = (
+                    "text-align:left; padding: 0; position: relative; left: 7px; "
+                )
             else:
                 legend_table = "<table>"
 
-            for idx, legend_element in enumerate(
-                legend["layers"][0]["legend"]
-            ):
+            for idx, legend_element in enumerate(legend["layers"][0]["legend"]):
                 thumbnail = "data:{0};base64,{1}".format(
                     legend_element["contentType"],
                     legend_element["imageData"],
@@ -3954,10 +3837,7 @@ class ImageryLayer(Layer):
 
         if self._datastore_raster:
             params["Raster"] = self._uri
-            if (
-                isinstance(self._uri, bytes)
-                and "renderingRule" in params.keys()
-            ):
+            if isinstance(self._uri, bytes) and "renderingRule" in params.keys():
                 del params["renderingRule"]
 
         return self._con.post(path=url, postdata=params, timeout=None)
@@ -3969,9 +3849,7 @@ class ImageryLayer(Layer):
         mosaic_rule: Optional[str] = None,
         rendering_rule: Optional[dict[str, Any]] = None,
         pixel_size: Optional[Union[dict[str, float], str]] = None,
-        time: Optional[
-            Union[str, list[int], datetime.date, datetime.datetime]
-        ] = None,
+        time: Optional[Union[str, list[int], datetime.date, datetime.datetime]] = None,
         process_as_multidimensional: bool = False,
     ):
         """
@@ -4136,10 +4014,7 @@ class ImageryLayer(Layer):
 
         if self._datastore_raster:
             params["Raster"] = self._uri
-            if (
-                isinstance(self._uri, bytes)
-                and "renderingRule" in params.keys()
-            ):
+            if isinstance(self._uri, bytes) and "renderingRule" in params.keys():
                 del params["renderingRule"]
 
         return self._con.post(url, params, token=self._token, timeout=None)
@@ -4148,9 +4023,7 @@ class ImageryLayer(Layer):
 
     def get_samples(
         self,
-        geometry: Union[
-            Geometry, Point, MultiPoint, Polyline, Polygon, Envelope
-        ],
+        geometry: Union[Geometry, Point, MultiPoint, Polyline, Polygon, Envelope],
         geometry_type: Optional[str] = None,
         sample_distance: Optional[float] = None,
         sample_count: Optional[int] = None,
@@ -4291,9 +4164,7 @@ class ImageryLayer(Layer):
         if geometry_type is None:
             geometry_type = "esriGeometry" + geometry.type
         elif geometry_type.lower() in geometry_type_value_list:
-            geometry_type = (
-                "esriGeometry" + geometry_type.lower().capitalize()
-            )
+            geometry_type = "esriGeometry" + geometry_type.lower().capitalize()
 
         url = self._url + "/getSamples"
         params = {
@@ -4339,9 +4210,7 @@ class ImageryLayer(Layer):
         try:
             for element in new_sample_data:
                 if "value" in element and isinstance(element["value"], str):
-                    pix_values_numbers = [
-                        float(s) for s in element["value"].split(" ")
-                    ]
+                    pix_values_numbers = [float(s) for s in element["value"].split(" ")]
                     element["values"] = pix_values_numbers
             sample_data = new_sample_data
         except:
@@ -4350,9 +4219,7 @@ class ImageryLayer(Layer):
         # endregion
         return sample_data
 
-    def key_properties(
-        self, rendering_rule: Optional[dict[str, Any]] = None
-    ):
+    def key_properties(self, rendering_rule: Optional[dict[str, Any]] = None):
         """
         The ``key_properties`` method retrieves the key properties of the :class:`~arcgis.raster.ImageryLayer`,
         such as band properties.
@@ -4377,10 +4244,7 @@ class ImageryLayer(Layer):
 
         if self._datastore_raster:
             params["Raster"] = self._uri
-            if (
-                isinstance(self._uri, bytes)
-                and "renderingRule" in params.keys()
-            ):
+            if isinstance(self._uri, bytes) and "renderingRule" in params.keys():
                 del params["renderingRule"]
 
         return self._con.post(
@@ -4524,9 +4388,7 @@ class ImageryLayer(Layer):
             mosaic_rule["itemRenderingRule"] = item_rendering_rule
 
         if self._fnra is not None:
-            self._fnra[
-                "rasterFunctionArguments"
-            ] = _find_and_replace_mosaic_rule(
+            self._fnra["rasterFunctionArguments"] = _find_and_replace_mosaic_rule(
                 self._fnra["rasterFunctionArguments"], mosaic_rule, self._url
             )
         self._mosaic_rule = mosaic_rule
@@ -4564,10 +4426,7 @@ class ImageryLayer(Layer):
 
         if self._datastore_raster:
             params["Raster"] = self._uri
-            if (
-                isinstance(self._uri, bytes)
-                and "renderingRule" in params.keys()
-            ):
+            if isinstance(self._uri, bytes) and "renderingRule" in params.keys():
                 del params["renderingRule"]
 
         return self._con.post(path=url, postdata=params, timeout=None)
@@ -4749,10 +4608,7 @@ class ImageryLayer(Layer):
                     "Failed to perform calculate volume operation on the TilesOnly service"
                 )
 
-        if (
-            self.properties.serviceDataType
-            == "esriImageServiceDataTypeElevation"
-        ):
+        if self.properties.serviceDataType == "esriImageServiceDataTypeElevation":
             url = "%s/calculateVolume" % self._url
             from arcgis.geometry import Polygon
 
@@ -4795,9 +4651,7 @@ class ImageryLayer(Layer):
 
     def query_boundary(
         self,
-        out_sr: Optional[
-            Union[int, dict[str, Any], SpatialReference]
-        ] = None,
+        out_sr: Optional[Union[int, dict[str, Any], SpatialReference]] = None,
     ):
         """
         The ``query_boundary`` operation is supported by image services based on mosaic datasets
@@ -5217,10 +5071,7 @@ class ImageryLayer(Layer):
         gr_output = None
 
         if for_viz:
-            if (
-                g._con._auth.lower() != "ANON".lower()
-                and g._con._auth is not None
-            ):
+            if g._con._auth.lower() != "ANON".lower() and g._con._auth is not None:
                 text_data = {
                     "id": "resultLayer",
                     "visibility": True,
@@ -5250,9 +5101,7 @@ class ImageryLayer(Layer):
 
                 return g.content.add(item_properties)
             else:
-                raise RuntimeError(
-                    "You need to be signed in to a GIS to create Items"
-                )
+                raise RuntimeError("You need to be signed in to a GIS to create Items")
         else:
             from .analytics import is_supported, generate_raster, _save_ra
 
@@ -5267,10 +5116,7 @@ class ImageryLayer(Layer):
                     self._fnra = identity_layer._fnra
 
             if is_supported(g):
-                if (
-                    self._extent is not None
-                    and _arcgis.env.analysis_extent is None
-                ):
+                if self._extent is not None and _arcgis.env.analysis_extent is None:
                     _arcgis.env.analysis_extent = dict(self._extent)
                     layer_extent_set = True
                 try:
@@ -5309,9 +5155,7 @@ class ImageryLayer(Layer):
                 if gr_output is not None:
                     return gr_output
             else:
-                raise RuntimeError(
-                    "This GIS does not support raster analysis."
-                )
+                raise RuntimeError("This GIS does not support raster analysis.")
 
     def to_features(
         self,
@@ -5558,21 +5402,15 @@ class ImageryLayer(Layer):
                     subString = slice_string
                 return subString
 
-            def _raster_function_graph(
-                rfa_value, rfa_key, connect, **kwargs
-            ):
+            def _raster_function_graph(rfa_value, rfa_key, connect, **kwargs):
                 global nodenumber
                 if isinstance(rfa_value, dict):
                     if "rasterFunction" in rfa_value.keys():
-                        _function_graph(
-                            rfa_value, rfa_key, connect, **kwargs
-                        )
+                        _function_graph(rfa_value, rfa_key, connect, **kwargs)
 
                     if "url" in rfa_value.keys():
                         nodenumber += 1
-                        rastername = _raster_slicestring(
-                            str(rfa_value["url"])
-                        )
+                        rastername = _raster_slicestring(str(rfa_value["url"]))
                         if rastername is not None:
                             G.node(
                                 str(nodenumber),
@@ -5593,9 +5431,7 @@ class ImageryLayer(Layer):
 
                     if "uri" in rfa_value.keys():
                         nodenumber += 1
-                        rastername = _raster_slicestring(
-                            str(rfa_value["uri"])
-                        )
+                        rastername = _raster_slicestring(str(rfa_value["uri"]))
                         if rastername is not None:
                             G.node(
                                 str(nodenumber),
@@ -5615,16 +5451,12 @@ class ImageryLayer(Layer):
                             )
 
                     elif "function" in rfa_value.keys():
-                        _rft_draw_graph(
-                            G, rfa_value, rfa_key, connect, show_attributes
-                        )
+                        _rft_draw_graph(G, rfa_value, rfa_key, connect, show_attributes)
 
                 elif isinstance(rfa_value, list):
                     for rfa_value_search_dict in rfa_value:
                         if isinstance(rfa_value_search_dict, dict):
-                            for (
-                                rfa_value_search_key
-                            ) in rfa_value_search_dict.keys():
+                            for rfa_value_search_key in rfa_value_search_dict.keys():
                                 if rfa_value_search_key == "rasterFunction":
                                     _function_graph(
                                         rfa_value_search_dict,
@@ -5633,9 +5465,7 @@ class ImageryLayer(Layer):
                                         **kwargs,
                                     )
 
-                        elif isinstance(
-                            rfa_value_search_dict, numbers.Number
-                        ):
+                        elif isinstance(rfa_value_search_dict, numbers.Number):
                             nodenumber += 1
                             rastername = str(rfa_value_search_dict)
                             G.node(
@@ -5658,9 +5488,7 @@ class ImageryLayer(Layer):
                             )
                         else:
                             nodenumber += 1
-                            rastername = _raster_slicestring(
-                                str(rfa_value_search_dict)
-                            )
+                            rastername = _raster_slicestring(str(rfa_value_search_dict))
                             G.node(
                                 str(nodenumber),
                                 rastername,
@@ -5678,9 +5506,7 @@ class ImageryLayer(Layer):
                                 penwidth="1",
                             )
 
-                elif isinstance(rfa_value, int) or isinstance(
-                    rfa_value, float
-                ):
+                elif isinstance(rfa_value, int) or isinstance(rfa_value, float):
                     nodenumber += 1
                     rastername = str(rfa_value)
                     G.node(
@@ -5705,9 +5531,7 @@ class ImageryLayer(Layer):
                 elif isinstance(rfa_value, str):
                     nodenumber += 1
                     if "url" in kwargs.keys():
-                        rastername = _raster_slicestring(
-                            rfa_value, url=kwargs["url"]
-                        )
+                        rastername = _raster_slicestring(rfa_value, url=kwargs["url"])
                     else:
                         rastername = _raster_slicestring(rfa_value)
                     if rastername is not None:
@@ -5753,32 +5577,27 @@ class ImageryLayer(Layer):
                 global nodenumber, root
                 if isinstance(dictionary, dict):
                     for dkey, dvalue in dictionary.items():
-                        if (
-                            dkey == "rasterFunction"
-                            and dvalue != "GPAdapter"
-                        ):
+                        if dkey == "rasterFunction" and dvalue != "GPAdapter":
                             if (
                                 dvalue == "Identity"
                                 and "renderingRule"
-                                in dictionary["rasterFunctionArguments"][
-                                    "Raster"
-                                ]
+                                in dictionary["rasterFunctionArguments"]["Raster"]
                             ):
                                 if (
                                     "rasterFunction"
-                                    in dictionary["rasterFunctionArguments"][
-                                        "Raster"
-                                    ]["renderingRule"]
+                                    in dictionary["rasterFunctionArguments"]["Raster"][
+                                        "renderingRule"
+                                    ]
                                 ):
                                     _function_graph(
-                                        dictionary[
-                                            "rasterFunctionArguments"
-                                        ]["Raster"]["renderingRule"],
+                                        dictionary["rasterFunctionArguments"]["Raster"][
+                                            "renderingRule"
+                                        ],
                                         "Raster",
                                         connect,
-                                        url=dictionary[
-                                            "rasterFunctionArguments"
-                                        ]["Raster"]["url"],
+                                        url=dictionary["rasterFunctionArguments"][
+                                            "Raster"
+                                        ]["url"],
                                     )
 
                             else:
@@ -5829,8 +5648,7 @@ class ImageryLayer(Layer):
                                                 )
 
                         elif (
-                            dkey == "rasterFunction"
-                            and dvalue == "GPAdapter"
+                            dkey == "rasterFunction" and dvalue == "GPAdapter"
                         ):  # To handle global function arguments
                             for rf_key, rf_value in dictionary.items():
                                 if rf_key == "rasterFunctionArguments":
@@ -5839,9 +5657,7 @@ class ImageryLayer(Layer):
                                         gbl_value,
                                     ) in rf_value.items():
                                         if gbl_key == "toolName":
-                                            toolname = _toolname_slicestring(
-                                                gbl_value
-                                            )
+                                            toolname = _toolname_slicestring(gbl_value)
                                             nodenumber += 1
                                             G.node(
                                                 str(nodenumber),
@@ -5874,10 +5690,8 @@ class ImageryLayer(Layer):
 
                                         elif (
                                             show_attributes == True
-                                            and gbl_key
-                                            != "PrimaryInputParameterName"
-                                            and gbl_key
-                                            != "OutputRasterParameterName"
+                                            and gbl_key != "PrimaryInputParameterName"
+                                            and gbl_key != "OutputRasterParameterName"
                                         ):
                                             _attribute_function_graph(
                                                 gbl_value, gbl_key, connect
@@ -5900,25 +5714,23 @@ class ImageryLayer(Layer):
                     if (
                         dvalue == "Identity"
                         and "renderingRule"
-                        in function_dictionary["rasterFunctionArguments"][
-                            "Raster"
-                        ]
+                        in function_dictionary["rasterFunctionArguments"]["Raster"]
                     ):
                         if (
                             "rasterFunction"
-                            in function_dictionary[
-                                "rasterFunctionArguments"
-                            ]["Raster"]["renderingRule"]
+                            in function_dictionary["rasterFunctionArguments"]["Raster"][
+                                "renderingRule"
+                            ]
                         ):  # if the first raster function is a rendering rule applied on an image service
                             _function_graph(
-                                function_dictionary[
-                                    "rasterFunctionArguments"
-                                ]["Raster"]["renderingRule"],
+                                function_dictionary["rasterFunctionArguments"][
+                                    "Raster"
+                                ]["renderingRule"],
                                 None,
                                 root,
-                                url=function_dictionary[
-                                    "rasterFunctionArguments"
-                                ]["Raster"]["url"],
+                                url=function_dictionary["rasterFunctionArguments"][
+                                    "Raster"
+                                ]["url"],
                             )
                         else:
                             return "No raster function applied"
@@ -5951,9 +5763,7 @@ class ImageryLayer(Layer):
                                     if (
                                         rfa_key == "rasterFunction"
                                     ):  # To check if rasterFunctionArguments has another rasterFunction chain in it
-                                        _function_graph(
-                                            rfa_value, rfa_key, nodenumber
-                                        )
+                                        _function_graph(rfa_value, rfa_key, nodenumber)
                                     elif (
                                         rfa_key == "Raster"
                                         or rfa_key == "Raster2"
@@ -5962,9 +5772,7 @@ class ImageryLayer(Layer):
                                         or rfa_key == "MSImage"
                                     ):  # To check if rasterFunctionArguments includes raster inputs in it
                                         temproot = root
-                                        _raster_function_graph(
-                                            rfa_value, rfa_key, root
-                                        )
+                                        _raster_function_graph(rfa_value, rfa_key, root)
                                     elif show_attributes == True:
                                         temproot = root
                                         _attribute_function_graph(
@@ -5978,9 +5786,7 @@ class ImageryLayer(Layer):
                         if rf_key == "rasterFunctionArguments":
                             for gbl_key, gbl_value in rf_value.items():
                                 if gbl_key == "toolName":
-                                    toolname = _toolname_slicestring(
-                                        gbl_value
-                                    )
+                                    toolname = _toolname_slicestring(gbl_value)
                                     # To check if rasterFunctionArguments has another rasterFunction chain in it
                                     root += 1
                                     G.node(
@@ -6007,19 +5813,13 @@ class ImageryLayer(Layer):
                                     or gbl_key.endswith("_data")
                                     or gbl_key.endswith("_features")
                                 ):  # To check if rasterFunctionArguments includes raster inputs in it
-                                    _raster_function_graph(
-                                        gbl_value, gbl_key, root
-                                    )
+                                    _raster_function_graph(gbl_value, gbl_key, root)
                                 elif (
                                     show_attributes == True
-                                    and gbl_key
-                                    != "PrimaryInputParameterName"
-                                    and gbl_key
-                                    != "OutputRasterParameterName"
+                                    and gbl_key != "PrimaryInputParameterName"
+                                    and gbl_key != "OutputRasterParameterName"
                                 ):
-                                    _attribute_function_graph(
-                                        gbl_value, gbl_key, root
-                                    )
+                                    _attribute_function_graph(gbl_value, gbl_key, root)
                 elif dkey == "function":
                     _rft_draw_graph(
                         G,
@@ -6093,9 +5893,7 @@ class ImageryLayer(Layer):
                     dict_arg.update(dict_temp_arg)
                     if "isDataset" in value["arguments"].keys():
                         if value["arguments"]["isDataset"] == False:
-                            for arg_element in value["arguments"]["value"][
-                                "elements"
-                            ]:
+                            for arg_element in value["arguments"]["value"]["elements"]:
                                 _rft_raster_function_graph(
                                     arg_element, connect, **kwargs
                                 )
@@ -6104,9 +5902,7 @@ class ImageryLayer(Layer):
                                 value["arguments"], connect, **kwargs
                             )  # Rf which only have 1 parameter
 
-                    _rft_function_graph(
-                        value["arguments"], connect, **kwargs
-                    )
+                    _rft_function_graph(value["arguments"], connect, **kwargs)
 
             def _rft_raster_function_graph(
                 raster_dict, childnode, **kwargs
@@ -6127,9 +5923,7 @@ class ImageryLayer(Layer):
                             isinstance(raster_dict["value"], numbers.Number)
                             or "value" in raster_dict["value"]
                         ):  # ***Handling Scalar rasters***
-                            if isinstance(
-                                raster_dict["value"], numbers.Number
-                            ):
+                            if isinstance(raster_dict["value"], numbers.Number):
                                 nodenumber += 1
                                 G.node(
                                     str(nodenumber),
@@ -6187,18 +5981,11 @@ class ImageryLayer(Layer):
                                     elif (
                                         "url" in e.keys()
                                         or "uri" in e.keys()
-                                        or (
-                                            "type" in e
-                                            and e["type"] == "Scalar"
-                                        )
+                                        or ("type" in e and e["type"] == "Scalar")
                                     ):
-                                        _rft_raster_function_graph(
-                                            e, childnode
-                                        )
+                                        _rft_raster_function_graph(e, childnode)
                                     else:  # if raster dataset inside raster array
-                                        _rft_raster_function_graph(
-                                            e, childnode
-                                        )
+                                        _rft_raster_function_graph(e, childnode)
                                 else:
                                     nodenumber += 1
                                     G.node(
@@ -6319,11 +6106,7 @@ class ImageryLayer(Layer):
                                 nodenumber += 1
                                 G.node(
                                     str(nodenumber),
-                                    str(
-                                        raster_dict["value"]["datasetName"][
-                                            "name"
-                                        ]
-                                    ),
+                                    str(raster_dict["value"]["datasetName"]["name"]),
                                     style=("filled"),
                                     shape="note",
                                     color="darkseagreen2",
@@ -6369,14 +6152,8 @@ class ImageryLayer(Layer):
                                     if (
                                         "url" in x
                                         or "uri" in x
-                                        or (
-                                            "type" in x
-                                            and x["type"] == "Scalar"
-                                        )
-                                        or (
-                                            "isDataset" in x
-                                            and x["isDataset"] == True
-                                        )
+                                        or ("type" in x and x["type"] == "Scalar")
+                                        or ("isDataset" in x and x["isDataset"] == True)
                                         or (
                                             "value" in x
                                             and isinstance(x["value"], dict)
@@ -6386,9 +6163,7 @@ class ImageryLayer(Layer):
                                             x, childnode, **kwargs
                                         )
                                     else:
-                                        _rft_function_graph(
-                                            x, childnode, **kwargs
-                                        )
+                                        _rft_function_graph(x, childnode, **kwargs)
 
                 elif "url" in raster_dict.keys():  # Handling Raster
                     nodenumber += 1
@@ -6507,9 +6282,7 @@ class ImageryLayer(Layer):
                                                         + str(value["value"])
                                                     )
                                             else:
-                                                atrr_name = str(
-                                                    value["name"]
-                                                )
+                                                atrr_name = str(value["name"])
                                                 G.node(
                                                     str(nodenumber),
                                                     atrr_name,
@@ -6529,13 +6302,10 @@ class ImageryLayer(Layer):
                                     else:
                                         if (
                                             "name" in value
-                                            and value["name"]
-                                            not in hidden_inputs
+                                            and value["name"] not in hidden_inputs
                                         ):
                                             nodenumber += 1
-                                            if value[
-                                                "value"
-                                            ] is not None or isinstance(
+                                            if value["value"] is not None or isinstance(
                                                 value["value"], bool
                                             ):
                                                 atrr_name = (
@@ -6544,9 +6314,7 @@ class ImageryLayer(Layer):
                                                     + str(value["value"])
                                                 )
                                             else:
-                                                atrr_name = str(
-                                                    value["name"]
-                                                )
+                                                atrr_name = str(value["name"])
 
                                             G.node(
                                                 str(nodenumber),
@@ -6588,9 +6356,7 @@ class ImageryLayer(Layer):
                             _rft_raster_function_graph(value, childnode)
                         elif "url" in value.keys():
                             _rft_raster_function_graph(value, childnode)
-                        elif (
-                            "function" in value.keys()
-                        ):  # Function Chain inside Raster
+                        elif "function" in value.keys():  # Function Chain inside Raster
                             _rft_function_create(value, childnode)
                         elif "rasterFunction" in value.keys():
                             _draw_graph(
@@ -6628,24 +6394,16 @@ class ImageryLayer(Layer):
                         if "value" in gdict["arguments"]:
                             if "elements" in gdict["arguments"]["value"]:
                                 if gdict["arguments"]["value"]["elements"]:
-                                    for arg_element in gdict["arguments"][
-                                        "value"
-                                    ]["elements"]:
-                                        _rft_function_graph(
-                                            arg_element, root, **kwargs
-                                        )
+                                    for arg_element in gdict["arguments"]["value"][
+                                        "elements"
+                                    ]:
+                                        _rft_function_graph(arg_element, root, **kwargs)
                             else:
-                                _rft_raster_function_graph(
-                                    gdict["arguments"], root
-                                )
+                                _rft_raster_function_graph(gdict["arguments"], root)
                         else:
-                            _rft_raster_function_graph(
-                                gdict["arguments"], root
-                            )
+                            _rft_raster_function_graph(gdict["arguments"], root)
                     else:
-                        _rft_function_graph(
-                            gdict["arguments"]["value"], root, **kwargs
-                        )
+                        _rft_function_graph(gdict["arguments"]["value"], root, **kwargs)
                 elif "datasetName" in gdict.keys():
                     _rft_raster_function_graph(gdict, root)
 
@@ -6811,9 +6569,7 @@ class ImageryLayer(Layer):
             import math
 
             colStart = math.floor(
-                (dataSourceExtent["xmin"] - origin["x"])
-                / resolution["x"]
-                / tw
+                (dataSourceExtent["xmin"] - origin["x"]) / resolution["x"] / tw
             )
             colEnd = math.ceil(
                 (dataSourceExtent["xmax"] - origin["x"] - resolution["x"])
@@ -6821,9 +6577,7 @@ class ImageryLayer(Layer):
                 / tw
             )
             rowStart = math.floor(
-                (origin["y"] - dataSourceExtent["ymax"])
-                / resolution["y"]
-                / th
+                (origin["y"] - dataSourceExtent["ymax"]) / resolution["y"] / th
             )
             rowEnd = math.ceil(
                 (origin["y"] - dataSourceExtent["ymin"] - resolution["y"])
@@ -6850,9 +6604,7 @@ class ImageryLayer(Layer):
                     if mask_array is None:
                         mask_array = valid_mask
                     else:
-                        mask_array = np.concatenate(
-                            (mask_array, valid_mask), axis=1
-                        )
+                        mask_array = np.concatenate((mask_array, valid_mask), axis=1)
                 numpylist.append(numarray)
                 masklist.append(mask_array)
                 numarray = None
@@ -6894,9 +6646,7 @@ class ImageryLayer(Layer):
                         p005 = np.percentile(band_arr, 0.5)
                         p995 = np.percentile(band_arr, 99.5)
                         r = 255.0 / (p995 - p005 + 2)
-                        out = np.round(r * (band_arr - p005 + 1)).astype(
-                            "uint8"
-                        )
+                        out = np.round(r * (band_arr - p005 + 1)).astype("uint8")
                         out[band_arr < p005] = 0
                         out[band_arr > p995] = 255
                         band_arr_list.append(out)
@@ -6923,9 +6673,7 @@ class ImageryLayer(Layer):
 
                         cmap_np = np.array(colormap_list)
                         colors = cmap_np[:, 1:] / 255
-                        custom_cmap = matplotlib.colors.ListedColormap(
-                            colors
-                        )
+                        custom_cmap = matplotlib.colors.ListedColormap(colors)
 
             if numarray.mask.ndim == 2:
                 mask = numarray.mask == False
@@ -6953,9 +6701,7 @@ class ImageryLayer(Layer):
             plt.close(imgnew.figure)
             return imgnew.figure
 
-    def _read_tilesonly_layer(
-        self, level, row, column, slice_id=None, as_numpy=False
-    ):
+    def _read_tilesonly_layer(self, level, row, column, slice_id=None, as_numpy=False):
         import tempfile, uuid
 
         fname = "%s.jpg" % uuid.uuid4().hex
@@ -6980,9 +6726,7 @@ class ImageryLayer(Layer):
                 raise RuntimeError(res)
             result, data, valid_mask = lerc.decode(res)
             if result != 0:
-                raise RuntimeError(
-                    "decoding bytes from imagery service failed."
-                )
+                raise RuntimeError("decoding bytes from imagery service failed.")
             data, valid_mask = np.broadcast_arrays(data, valid_mask)
             data.setflags(write=True)
             valid_mask = valid_mask == False
@@ -7011,10 +6755,7 @@ class ImageryLayer(Layer):
 
             if self._datastore_raster:
                 params["Raster"] = self._uri
-                if (
-                    isinstance(self._uri, bytes)
-                    and "renderingRule" in params.keys()
-                ):
+                if isinstance(self._uri, bytes) and "renderingRule" in params.keys():
                     del params["renderingRule"]
 
             dictdata = {}
@@ -7024,8 +6765,7 @@ class ImageryLayer(Layer):
             except Exception as e:
                 try:
                     if (
-                        (hasattr(self, "_lazy_token"))
-                        and self._lazy_token is None
+                        (hasattr(self, "_lazy_token")) and self._lazy_token is None
                     ) or not hasattr(self, "_lazy_token"):
                         from .functions.utility import _generate_layer_token
 
@@ -7040,9 +6780,7 @@ class ImageryLayer(Layer):
                     )
                 except Exception as e:
                     if hasattr(e, "msg") and e.msg == "Method Not Allowed":
-                        dictdata = self._con.get(
-                            self.url, params, token=token
-                        )
+                        dictdata = self._con.get(self.url, params, token=token)
                     elif str(e).lower().find("token required") > -1:
                         dictdata = self._con.get(self.url, params)
                     elif str(e).lower().find("invalid token") > -1:
@@ -7059,15 +6797,11 @@ class ImageryLayer(Layer):
         self,
         geometry: Optional[Union[Geometry, Polygon, Envelope]] = None,
         pixel_size: Optional[Union[str, dict[str, Any]]] = None,
-        time: Optional[
-            Union[datetime.date, datetime.datetime, str, list[int]]
-        ] = None,
+        time: Optional[Union[datetime.date, datetime.datetime, str, list[int]]] = None,
         bands: list[int] = [],
         display_stats: bool = True,
         plot_properties: Optional[dict[str, Any]] = None,
-        subplot_properties: Optional[
-            list[dict[str, Any], dict[str, Any]]
-        ] = None,
+        subplot_properties: Optional[list[dict[str, Any], dict[str, Any]]] = None,
     ):
         """
         The ``plot_histograms`` method is used to plot the histograms for the :class:`~arcgis.raster.ImageryLayer`.
@@ -7756,9 +7490,7 @@ class Raster:
     def __setitem__(self, idx, value):
         return self._engine_obj.__setitem__(idx, value)
 
-    def refresh_service(
-        self, options: str = None, future: bool = True
-    ) -> str:
+    def refresh_service(self, options: str = None, future: bool = True) -> str:
         """
         Refresh Service is a task in the existing out-of-the-box
         Publishing Tools geoprocessing service used by the service publisher
@@ -8330,21 +8062,14 @@ class Raster:
             if request_params is None:
                 request_params = {}
             if not isinstance(request_params, dict):
-                raise RuntimeError(
-                    "request_params should be of type dictionary"
-                )
-            if any(
-                key in request_params
-                for key in ["url", "params", "data", "json"]
-            ):
+                raise RuntimeError("request_params should be of type dictionary")
+            if any(key in request_params for key in ["url", "params", "data", "json"]):
                 raise RuntimeError(
                     "request_params cannot contain these keys : url, params, data or json"
                 )
 
             data = _requests.get(stac_item, **request_params)
-            if data.status_code != 200 or data.headers.get(
-                "content-type"
-            ) not in [
+            if data.status_code != 200 or data.headers.get("content-type") not in [
                 "application/json",
                 "application/geo+json",
                 "application/json;charset=utf-8",
@@ -8364,9 +8089,7 @@ class Raster:
                     "pystac not found, parameter stac_item accepts either a STAC Item URL or a pystac.Item object"
                 )
             except Exception:
-                raise RuntimeError(
-                    f"Invalid/Unsupported STAC Item-\n{stac_item}"
-                )
+                raise RuntimeError(f"Invalid/Unsupported STAC Item-\n{stac_item}")
 
         if "type" not in json_data or json_data["type"] != "Feature":
             raise RuntimeError(f"Invalid STAC Item-\n{json_data}")
@@ -8381,9 +8104,7 @@ class Raster:
         ras = Raster(metadata_file, engine=engine, gis=gis)
         return ras
 
-    def get_raster_bands(
-        self, band_ids_or_names: Optional[list[str]] = None
-    ):
+    def get_raster_bands(self, band_ids_or_names: Optional[list[str]] = None):
         """
         The ``get_raster_bands`` method returns a :class:`~arcgis.raster.Raster` object for each band specified in a
         multiband raster.
@@ -8489,9 +8210,7 @@ class Raster:
             variable_name, dimension_name, return_as_datetime_object
         )
 
-    def get_dimension_attributes(
-        self, variable_name: str, dimension_name: str
-    ):
+    def get_dimension_attributes(self, variable_name: str, dimension_name: str):
         """
          The ``get_dimension_attributes`` method retrieves the attribute information of a dimension within a variable,
          such as min value, max value, unit, etc.
@@ -8515,13 +8234,9 @@ class Raster:
                                              dimension_name="dimension_name")
 
         """
-        return self._engine_obj.get_dimension_attributes(
-            variable_name, dimension_name
-        )
+        return self._engine_obj.get_dimension_attributes(variable_name, dimension_name)
 
-    def rename_variable(
-        self, current_variable_name: str, new_variable_name: str
-    ):
+    def rename_variable(self, current_variable_name: str, new_variable_name: str):
         """
         The ``rename_variable`` method renames the given variable name.
 
@@ -9162,9 +8877,7 @@ class Raster:
             mean_of_first_band = stats[0]["mean"]
 
         """
-        return self._engine_obj.summarize(
-            geometry=geometry, pixel_size=pixel_size
-        )
+        return self._engine_obj.summarize(geometry=geometry, pixel_size=pixel_size)
 
     @property
     def _lyr_json(self):
@@ -9290,9 +9003,7 @@ class Raster:
         self,
         geometry: Optional[Union[Geometry, Polygon, Envelope]] = None,
         pixel_size: Optional[Union[str, dict[str, float]]] = None,
-        time: Optional[
-            Union[datetime.date, datetime.datetime, str, list[int]]
-        ] = None,
+        time: Optional[Union[datetime.date, datetime.datetime, str, list[int]]] = None,
         bands: list[int] = [],
         display_stats: bool = True,
         plot_properties: Optional[dict[str, Any]] = None,
@@ -9430,9 +9141,7 @@ class Raster:
         image_sr: Optional[Union[str, SpatialReference]] = None,
         bbox_sr: Optional[Union[str, SpatialReference]] = None,
         size: Optional[list[int]] = None,
-        time: Optional[
-            Union[datetime.date, datetime.datetime, str, list[int]]
-        ] = None,
+        time: Optional[Union[datetime.date, datetime.datetime, str, list[int]]] = None,
         export_format: str = "jpgpng",
         pixel_type: Optional[str] = None,
         no_data: Optional[float] = None,
@@ -10097,9 +9806,7 @@ class _ImageServerRaster(ImageryLayer, Raster):
     def multidimensional_info(self):
         mdinfo = super().multidimensional_info
         if mdinfo is not None:
-            for index, ele in enumerate(
-                mdinfo["multidimensionalInfo"]["variables"]
-            ):
+            for index, ele in enumerate(mdinfo["multidimensionalInfo"]["variables"]):
                 # if (ele['name'] == variable_name):
                 for index_dim, ele_dim in enumerate(ele["dimensions"]):
                     if (
@@ -10109,9 +9816,7 @@ class _ImageServerRaster(ImageryLayer, Raster):
                         or ele_dim["name"].lower() == "acquisitiondate"
                         or ele_dim["unit"] == "ISO8601"
                     ):
-                        if ("recurring" in ele_dim.keys()) and ele_dim[
-                            "recurring"
-                        ]:
+                        if ("recurring" in ele_dim.keys()) and ele_dim["recurring"]:
                             continue
                         val = ele_dim["values"]
                         # if (('unit' in ele_dim.keys()) and ele_dim['unit'] == 'ISO8601'):
@@ -10183,9 +9888,7 @@ class _ImageServerRaster(ImageryLayer, Raster):
     def variables(self):
         if "hasMultidimensions" in super().properties:
             variable_list = []
-            for ele in self.multidimensional_info["multidimensionalInfo"][
-                "variables"
-            ]:
+            for ele in self.multidimensional_info["multidimensionalInfo"]["variables"]:
                 if "dimensions" in ele.keys() and "name" in ele.keys():
                     for dim_ele in ele["dimensions"]:
                         variable_list.append(
@@ -10241,11 +9944,7 @@ class _ImageServerRaster(ImageryLayer, Raster):
             slice_list = []
             for slice in mdim_slices["slices"]:
                 slice_list.append(
-                    {
-                        "variable": slice["multidimensionalDefinition"][0][
-                            "variableName"
-                        ]
-                    }
+                    {"variable": slice["multidimensionalDefinition"][0]["variableName"]}
                 )
             i = 0
             for slice in mdim_slices["slices"]:
@@ -10269,23 +9968,15 @@ class _ImageServerRaster(ImageryLayer, Raster):
                         for j in range(0, len(values)):
                             values[j] = _epoch_to_iso(values[j])
                         if (isinstance(values, list)) and len(values) == 1:
-                            slice_list[i].update(
-                                {ele["dimensionName"]: (values[0],)}
-                            )
+                            slice_list[i].update({ele["dimensionName"]: (values[0],)})
                         else:
-                            slice_list[i].update(
-                                {ele["dimensionName"]: tuple(values)}
-                            )
+                            slice_list[i].update({ele["dimensionName"]: tuple(values)})
                     else:
                         values = ele["values"]
                         if (isinstance(values, list)) and len(values) == 1:
-                            slice_list[i].update(
-                                {ele["dimensionName"]: (values[0],)}
-                            )
+                            slice_list[i].update({ele["dimensionName"]: (values[0],)})
                         else:
-                            slice_list[i].update(
-                                {ele["dimensionName"]: tuple(values)}
-                            )
+                            slice_list[i].update({ele["dimensionName"]: tuple(values)})
 
                 i = i + 1
             return slice_list
@@ -10392,8 +10083,7 @@ class _ImageServerRaster(ImageryLayer, Raster):
 
     def get_raster_bands(self, band_ids_or_names=None):
         if band_ids_or_names is None or (
-            isinstance(band_ids_or_names, list)
-            and len(band_ids_or_names) == 0
+            isinstance(band_ids_or_names, list) and len(band_ids_or_names) == 0
         ):
             band_count = super().band_count
             band_ids_or_names = [i + 1 for i in range(band_count)]
@@ -10413,14 +10103,10 @@ class _ImageServerRaster(ImageryLayer, Raster):
 
     def get_variable_attributes(self, variable_name):
         attribute_info = {}
-        for ele in self.multidimensional_info["multidimensionalInfo"][
-            "variables"
-        ]:
+        for ele in self.multidimensional_info["multidimensionalInfo"]["variables"]:
             if ele["name"] == variable_name:
                 if "description" in ele.keys():
-                    attribute_info.update(
-                        {"Description": ele["description"]}
-                    )
+                    attribute_info.update({"Description": ele["description"]})
                 if "unit" in ele.keys():
                     attribute_info.update({"Unit": ele["unit"]})
                 # attribute_info.update({"Unit": ele['unit'], "Description": ele['description']})
@@ -10429,9 +10115,7 @@ class _ImageServerRaster(ImageryLayer, Raster):
 
     def get_dimension_names(self, variable_name):
         dim_list = []
-        for ele in self.multidimensional_info["multidimensionalInfo"][
-            "variables"
-        ]:
+        for ele in self.multidimensional_info["multidimensionalInfo"]["variables"]:
             if ele["name"] == variable_name:
                 for ele_dim in ele["dimensions"]:
                     dim_list.append(ele_dim["name"])
@@ -10494,9 +10178,7 @@ class _ImageServerRaster(ImageryLayer, Raster):
                         else:
                             attribute_info["Interval"] = ""
                         if "intervalUnit" in ele_dim.keys():
-                            attribute_info["IntervalUnit"] = ele_dim[
-                                "intervalUnit"
-                            ]
+                            attribute_info["IntervalUnit"] = ele_dim["intervalUnit"]
                         else:
                             attribute_info["IntervalUnit"] = ""
                         if "hasRegularIntervals" in ele_dim.keys():
@@ -10506,9 +10188,7 @@ class _ImageServerRaster(ImageryLayer, Raster):
                         else:
                             attribute_info["HasRegularIntervals"] = ""
                         if "hasRanges" in ele_dim.keys():
-                            attribute_info["HasRanges"] = ele_dim[
-                                "hasRanges"
-                            ]
+                            attribute_info["HasRanges"] = ele_dim["hasRanges"]
                         else:
                             attribute_info["HasRanges"] = ""
                         if "extent" in ele_dim.keys():
@@ -10660,13 +10340,9 @@ class _ImageServerRaster(ImageryLayer, Raster):
                 data = np.expand_dims(np.expand_dims(data, axis=2), axis=0)
             elif len(data) == 3:
                 if len(self.slices) == 1:
-                    data = np.expand_dims(
-                        np.transpose(data, [1, 2, 0]), axis=0
-                    )
+                    data = np.expand_dims(np.transpose(data, [1, 2, 0]), axis=0)
                 else:
-                    data = np.expand_dims(
-                        np.transpose(data, [2, 0, 1]), axis=3
-                    )
+                    data = np.expand_dims(np.transpose(data, [2, 0, 1]), axis=3)
             else:
                 assert len(data.shape) == 4
                 data = np.transpose(data, [3, 1, 2, 0])
@@ -10723,9 +10399,7 @@ class _ImageServerRaster(ImageryLayer, Raster):
 
     def get_statistics(self, variable_name=None):
         statistics = super().statistics(variable_name)
-        if (
-            isinstance(statistics, dict)
-        ) and "statistics" in statistics.keys():
+        if (isinstance(statistics, dict)) and "statistics" in statistics.keys():
             return statistics["statistics"]
         else:
             return statistics
@@ -10811,15 +10485,11 @@ class _ImageServerRaster(ImageryLayer, Raster):
         self,
         geometry: Optional[Union[Polygon, Envelope]] = None,
         pixel_size: Optional[Union[str, dict[str, float]]] = None,
-        time: Optional[
-            Union[datetime.date, datetime.datetime, str, list[int]]
-        ] = None,
+        time: Optional[Union[datetime.date, datetime.datetime, str, list[int]]] = None,
         bands: list[int] = [],
         display_stats: bool = True,
         plot_properties: Optional[dict[str, Any]] = None,
-        subplot_properties: Optional[
-            Union[list[dict], dict[str, Any]]
-        ] = None,
+        subplot_properties: Optional[Union[list[dict], dict[str, Any]]] = None,
     ):
         """
         Image histograms visually summarize the distribution of a continuous numeric variable by measuring 
@@ -10938,9 +10608,7 @@ class _ImageServerRaster(ImageryLayer, Raster):
         image_sr: Optional[Union[str, SpatialReference]] = None,
         bbox_sr: Optional[Union[str, SpatialReference]] = None,
         size: Optional[list[int]] = None,
-        time: Optional[
-            Union[datetime.date, datetime.datetime, str, list[int]]
-        ] = None,
+        time: Optional[Union[datetime.date, datetime.datetime, str, list[int]]] = None,
         export_format: str = "jpgpng",
         pixel_type: Optional[str] = None,
         no_data: Optional[float] = None,
@@ -11217,14 +10885,12 @@ class _ArcpyRaster(Raster, ImageryLayer):
             ri = arcpy.RasterInfo()
             rinfo = path.to_dict()
             if "geodataXform" not in rinfo.keys():
-                if (
-                    "extent" in rinfo.keys()
-                ) and "spatialReference" in rinfo["extent"].keys():
-                    if (
-                        "wkid" in rinfo["extent"]["spatialReference"].keys()
-                    ) and rinfo["extent"]["spatialReference"][
-                        "wkid"
-                    ] is not None:
+                if ("extent" in rinfo.keys()) and "spatialReference" in rinfo[
+                    "extent"
+                ].keys():
+                    if ("wkid" in rinfo["extent"]["spatialReference"].keys()) and rinfo[
+                        "extent"
+                    ]["spatialReference"]["wkid"] is not None:
                         rinfo.update(
                             {
                                 "geodataXform": {
@@ -11236,9 +10902,7 @@ class _ArcpyRaster(Raster, ImageryLayer):
                             }
                         )
                     else:
-                        rinfo.update(
-                            {"geodataXform": {"type": "IdentityXform"}}
-                        )
+                        rinfo.update({"geodataXform": {"type": "IdentityXform"}})
             ri.fromJSONString(json.dumps(rinfo))
             self._raster = arcpy.ia.Raster(ri, is_multidimensional)
             self._uri = str(self._raster)
@@ -11254,9 +10918,7 @@ class _ArcpyRaster(Raster, ImageryLayer):
                             is_multidimensional,
                         )
                     else:
-                        self._raster = arcpy.ia.Raster(
-                            path, is_multidimensional
-                        )
+                        self._raster = arcpy.ia.Raster(path, is_multidimensional)
                 else:
                     self._raster = arcpy.ia.Raster(path, is_multidimensional)
             else:
@@ -11480,19 +11142,13 @@ class _ArcpyRaster(Raster, ImageryLayer):
                 self._raster_info.update({"pixelType": self.pixel_type})
 
             if self.mean_cell_width is not None:
-                self._raster_info.update(
-                    {"pixelSizeX": self.mean_cell_width}
-                )
+                self._raster_info.update({"pixelSizeX": self.mean_cell_width})
 
             if self.mean_cell_height is not None:
-                self._raster_info.update(
-                    {"pixelSizeY": self.mean_cell_height}
-                )
+                self._raster_info.update({"pixelSizeY": self.mean_cell_height})
 
             if self.compression_type is not None:
-                self._raster_info.update(
-                    {"compressionType": self.compression_type}
-                )
+                self._raster_info.update({"compressionType": self.compression_type})
 
             if self.block_size is not None:
                 self._raster_info.update({"blockHeight": self.block_size[1]})
@@ -11501,16 +11157,13 @@ class _ArcpyRaster(Raster, ImageryLayer):
                 self._raster_info.update({"blockWidth": self.block_size[0]})
 
             if self.no_data_values is not None:
-                self._raster_info.update(
-                    {"noDataValues": self.no_data_values}
-                )
+                self._raster_info.update({"noDataValues": self.no_data_values})
 
         return self._raster_info
 
     def get_raster_bands(self, band_ids_or_names=None):
         if band_ids_or_names is None or (
-            isinstance(band_ids_or_names, list)
-            and len(band_ids_or_names) == 0
+            isinstance(band_ids_or_names, list) and len(band_ids_or_names) == 0
         ):
             band_count = self.band_count
             band_ids_or_names = [i + 1 for i in range(band_count)]
@@ -11564,14 +11217,10 @@ class _ArcpyRaster(Raster, ImageryLayer):
             return val
 
     def get_dimension_attributes(self, variable_name, dimension_name):
-        return self._raster.getDimensionAttributes(
-            variable_name, dimension_name
-        )
+        return self._raster.getDimensionAttributes(variable_name, dimension_name)
 
     def rename_variable(self, current_variable_name, new_variable_name):
-        return self._raster.renameVariable(
-            current_variable_name, new_variable_name
-        )
+        return self._raster.renameVariable(current_variable_name, new_variable_name)
 
     def set_property(self, property_name, property_value):
         return self._raster.setProperty(property_name, property_value)
@@ -11764,15 +11413,11 @@ class _ArcpyRaster(Raster, ImageryLayer):
         self,
         geometry: Optional[Union[Polygon, Envelope]] = None,
         pixel_size: Optional[Union[str, dict[str, float]]] = None,
-        time: Optional[
-            Union[datetime.date, datetime.datetime, str, list[int]]
-        ] = None,
+        time: Optional[Union[datetime.date, datetime.datetime, str, list[int]]] = None,
         bands: list[int] = [],
         display_stats: bool = True,
         plot_properties: Optional[dict[str, Any]] = None,
-        subplot_properties: Optional[
-            Union[list[dict], dict[str, Any]]
-        ] = None,
+        subplot_properties: Optional[Union[list[dict], dict[str, Any]]] = None,
     ):
         """
         Image histograms visually summarize the distribution of a continuous numeric variable by measuring 
@@ -12095,18 +11740,14 @@ class _ArcpyRaster(Raster, ImageryLayer):
                 )
             elif isinstance(bbox, str):
                 xmin, ymin, xmax, ymax = tuple(map(float, bbox.split(",")))
-                extent = arcpy.Extent(
-                    xmin, ymin, xmax, ymax, spatial_reference=bbox_sr
-                )
+                extent = arcpy.Extent(xmin, ymin, xmax, ymax, spatial_reference=bbox_sr)
             else:
                 raise TypeError("invalid bbox type")
 
         if image_sr is not None and not isinstance(
             image_sr, _arcgis.geometry.SpatialReference
         ):
-            spatial_reference = _arcgis.geometry.SpatialReference(
-                image_sr
-            ).as_arcpy
+            spatial_reference = _arcgis.geometry.SpatialReference(image_sr).as_arcpy
 
         return self._raster.exportImage(
             width,
@@ -12121,9 +11762,7 @@ class _ArcpyRaster(Raster, ImageryLayer):
         return self._raster.appendSlices(md_raster._engine_obj._raster)
 
     def set_variable_attributes(self, variable_name, variable_attributes):
-        return self._raster.setVariableAttributes(
-            variable_name, variable_attributes
-        )
+        return self._raster.setVariableAttributes(variable_name, variable_attributes)
 
     def get_colormap(self, variable_name=None):
         if variable_name is None:
@@ -12804,26 +12443,19 @@ class RasterCollection:
         if not isinstance(stac_api, str):
             raise RuntimeError(f"Invalid STAC API URL-\n{stac_api}")
         api_search_endpoint = (
-            stac_api + "search"
-            if stac_api.endswith("/")
-            else stac_api + "/search"
+            stac_api + "search" if stac_api.endswith("/") else stac_api + "/search"
         )
 
         if request_params is None:
             request_params = {}
         if not isinstance(request_params, dict):
             raise RuntimeError("request_params should be of type dictionary")
-        if any(
-            key in request_params
-            for key in ["url", "params", "data", "json"]
-        ):
+        if any(key in request_params for key in ["url", "params", "data", "json"]):
             raise RuntimeError(
                 "request_params cannot contain these keys : url, params, data or json"
             )
 
-        if not isinstance(
-            request_method, str
-        ) or request_method.upper() not in [
+        if not isinstance(request_method, str) or request_method.upper() not in [
             "GET",
             "POST",
         ]:
@@ -12834,9 +12466,7 @@ class RasterCollection:
         new_query = None
         if query is not None:
             if not isinstance(query, dict):
-                raise RuntimeError(
-                    "parameter query should be of type dictionary"
-                )
+                raise RuntimeError("parameter query should be of type dictionary")
             new_query = copy.deepcopy(query)
             if "bbox" in new_query:
                 query_extent = new_query["bbox"]
@@ -12876,13 +12506,9 @@ class RasterCollection:
                 api_search_endpoint, params=new_query, **request_params
             )
         else:
-            data = _requests.post(
-                api_search_endpoint, json=new_query, **request_params
-            )
+            data = _requests.post(api_search_endpoint, json=new_query, **request_params)
 
-        if data.status_code != 200 or data.headers.get(
-            "content-type"
-        ) not in [
+        if data.status_code != 200 or data.headers.get("content-type") not in [
             "application/json",
             "application/geo+json",
             "application/json;charset=utf-8",
@@ -12892,10 +12518,7 @@ class RasterCollection:
             )
 
         json_data = data.json()
-        if (
-            "type" not in json_data
-            or json_data["type"] != "FeatureCollection"
-        ):
+        if "type" not in json_data or json_data["type"] != "FeatureCollection":
             raise RuntimeError(
                 f"Invalid JSON Response from the STAC API: Please verify that the STAC API URL and the specified query are correct-\n{json_data}"
             )
@@ -13046,21 +12669,14 @@ class RasterCollection:
             if request_params is None:
                 request_params = {}
             if not isinstance(request_params, dict):
-                raise RuntimeError(
-                    "request_params should be of type dictionary"
-                )
-            if any(
-                key in request_params
-                for key in ["url", "params", "data", "json"]
-            ):
+                raise RuntimeError("request_params should be of type dictionary")
+            if any(key in request_params for key in ["url", "params", "data", "json"]):
                 raise RuntimeError(
                     "request_params cannot contain these keys : url, params, data or json"
                 )
 
             data = _requests.get(stac_catalog, **request_params)
-            if data.status_code != 200 or data.headers.get(
-                "content-type"
-            ) not in [
+            if data.status_code != 200 or data.headers.get("content-type") not in [
                 "application/json",
                 "application/geo+json",
                 "application/json;charset=utf-8",
@@ -13073,9 +12689,9 @@ class RasterCollection:
 
             from ._util import _get_stac_links, _get_all_stac_catalog_items
 
-            if not _get_stac_links(
-                json_data, "item"
-            ) and not _get_stac_links(json_data, "child"):
+            if not _get_stac_links(json_data, "item") and not _get_stac_links(
+                json_data, "child"
+            ):
                 raise RuntimeError(f"Invalid STAC catalog-\n{stac_catalog}")
 
             items = _get_all_stac_catalog_items(json_data, request_params)
@@ -13090,9 +12706,7 @@ class RasterCollection:
                     "pystac not found, parameter stac_catalog accepts either a Static STAC URL or a pystac.Catalog object"
                 )
             except Exception:
-                raise RuntimeError(
-                    f"Invalid/Unsupported STAC Catalog-\n{stac_catalog}"
-                )
+                raise RuntimeError(f"Invalid/Unsupported STAC Catalog-\n{stac_catalog}")
 
         rc_attribute_dict = {}
         attribute_dict = {} if attribute_dict is None else attribute_dict
@@ -13118,9 +12732,7 @@ class RasterCollection:
                     pass
                 else:
                     if attribute_dict[key] in item_dict:
-                        rc_attribute_dict[key].append(
-                            item_dict[attribute_dict[key]]
-                        )
+                        rc_attribute_dict[key].append(item_dict[attribute_dict[key]])
                     elif attribute_dict[key] in item_dict["properties"]:
                         rc_attribute_dict[key].append(
                             item_dict["properties"][attribute_dict[key]]
@@ -14252,9 +13864,7 @@ class RasterCollection:
             band_ids_or_names=band_ids_or_names, context=context
         )
 
-    def map(
-        self, func: dict[str, Any], context: Optional[dict[str, Any]] = None
-    ):
+    def map(self, func: dict[str, Any], context: Optional[dict[str, Any]] = None):
         """
         The ``map`` method maps a Python function over a raster collection.
 
@@ -14347,9 +13957,7 @@ class RasterCollection:
         """
         if func_args is None:
             func_args = {}
-        return self._ras_coll_engine_obj.reduce(
-            func=func, func_args=func_args
-        )
+        return self._ras_coll_engine_obj.reduce(func=func, func_args=func_args)
 
     def merge(self, collection2):
         """
@@ -14373,9 +13981,7 @@ class RasterCollection:
 
         """
 
-        return self._ras_coll_engine_obj.merge(
-            collection2._ras_coll_engine_obj
-        )
+        return self._ras_coll_engine_obj.merge(collection2._ras_coll_engine_obj)
 
     def summarize_field(self, field_name, summary_type="ALL"):
         """
@@ -14422,13 +14028,9 @@ class RasterCollection:
         from operator import is_not
         from functools import partial
 
-        property_values_not_none = list(
-            filter(partial(is_not, None), property_values)
-        )
+        property_values_not_none = list(filter(partial(is_not, None), property_values))
 
-        all_num = all(
-            isinstance(x, numbers.Number) for x in property_values_not_none
-        )
+        all_num = all(isinstance(x, numbers.Number) for x in property_values_not_none)
         if not all_num:
             raise RuntimeError("Only numeric fields can be summarized")
         try:
@@ -14533,9 +14135,7 @@ class RasterCollection:
             field_name, field_values, context=context
         )
 
-    def group_by(
-        self, field_name: str, context: Optional[dict[str, Any]] = None
-    ):
+    def group_by(self, field_name: str, context: Optional[dict[str, Any]] = None):
         """
         group_by method can be used to group the raster collection based on a field.
 
@@ -14580,9 +14180,7 @@ class RasterCollection:
 
         """
 
-        return self._ras_coll_engine_obj.group_by(
-            field_name, context=context
-        )
+        return self._ras_coll_engine_obj.group_by(field_name, context=context)
 
     def _as_df(
         self,
@@ -14740,9 +14338,7 @@ class _ArcpyRasterCollection(RasterCollection, ImageryLayer):
 
             if arcpy_rasters_list != []:
                 rasters = arcpy_rasters_list
-        self._raster_collection = arcpy.ia.RasterCollection(
-            rasters, attribute_dict
-        )
+        self._raster_collection = arcpy.ia.RasterCollection(rasters, attribute_dict)
         self._df = self._as_df()
 
     @property
@@ -14759,9 +14355,7 @@ class _ArcpyRasterCollection(RasterCollection, ImageryLayer):
     def _rasters_list(self):
         value_rasters = []
         for i in range(0, len(self)):
-            value_rasters.append(
-                Raster(self._raster_collection[i]["Raster"])
-            )
+            value_rasters.append(Raster(self._raster_collection[i]["Raster"]))
         return value_rasters
 
     def __iter__(self):
@@ -14912,9 +14506,7 @@ class _ArcpyRasterCollection(RasterCollection, ImageryLayer):
         )
         return newcollection
 
-    def filter_by_attribute(
-        self, field_name, operator, field_values, context=None
-    ):
+    def filter_by_attribute(self, field_name, operator, field_values, context=None):
         if context is None:
             context = self._context
         newcollection = self._clone_raster_collection(context=context)
@@ -14953,9 +14545,7 @@ class _ArcpyRasterCollection(RasterCollection, ImageryLayer):
             context = self._context
         newcollection = self._clone_raster_collection(context=context)
         newcollection._ras_coll_engine_obj._raster_collection = (
-            self._raster_collection.sort(
-                field_name=field_name, ascending=ascending
-            )
+            self._raster_collection.sort(field_name=field_name, ascending=ascending)
         )
         newcollection._ras_coll_engine_obj._df = (
             newcollection._ras_coll_engine_obj._as_df()
@@ -14969,9 +14559,7 @@ class _ArcpyRasterCollection(RasterCollection, ImageryLayer):
         else:
             return df[field_name].tolist()
 
-    def to_multidimensional_raster(
-        self, variable_field_name, dimension_field_names
-    ):
+    def to_multidimensional_raster(self, variable_field_name, dimension_field_names):
         return Raster(
             self._raster_collection.toMultidimensionalRaster(
                 variable_field_name=variable_field_name,
@@ -15078,9 +14666,7 @@ class _ArcpyRasterCollection(RasterCollection, ImageryLayer):
         )
 
     def mosaic(self, mosaic_method):
-        return Raster(
-            self._raster_collection.mosaic(mosaic_method=mosaic_method)
-        )
+        return Raster(self._raster_collection.mosaic(mosaic_method=mosaic_method))
 
     def quality_mosaic(self, quality_rc_or_list, statistic_type=None):
         return Raster(
@@ -15144,9 +14730,7 @@ class _ArcpyRasterCollection(RasterCollection, ImageryLayer):
             context = self._context
 
         if field_name in self.fields:
-            raise RuntimeError(
-                "Cannot add the field. The field name already exists."
-            )
+            raise RuntimeError("Cannot add the field. The field name already exists.")
 
         newcollection = self._clone_raster_collection(context=context)
         newcollection._ras_coll_engine_obj._raster_collection = (
@@ -15175,9 +14759,7 @@ class _ArcpyRasterCollection(RasterCollection, ImageryLayer):
             )
             new_grouped_output = {}
             for item, value in grouped_output_arcpy.items():
-                newcollection = self._clone_raster_collection(
-                    context=context
-                )
+                newcollection = self._clone_raster_collection(context=context)
                 newcollection._ras_coll_engine_obj._raster_collection = value
                 newcollection._ras_coll_engine_obj._df = (
                     newcollection._ras_coll_engine_obj._as_df()
@@ -15186,9 +14768,7 @@ class _ArcpyRasterCollection(RasterCollection, ImageryLayer):
             return new_grouped_output
 
         except:
-            raise RuntimeError(
-                "group_by failed with the field_name - " + field_name
-            )
+            raise RuntimeError("group_by failed with the field_name - " + field_name)
 
     def _as_df(
         self,
@@ -15215,9 +14795,7 @@ class _ArcpyRasterCollection(RasterCollection, ImageryLayer):
                         value_geometries.append(Geometry(ele.JSON))
                     data["Shape"] = value_geometries
                 else:
-                    data[field] = self._raster_collection.getFieldValues(
-                        field
-                    )
+                    data[field] = self._raster_collection.getFieldValues(field)
             except:
                 continue
         return pd.DataFrame(data=data)
@@ -15298,10 +14876,7 @@ class _ImageServerRasterCollection(ImageryLayer, RasterCollection):
         else:
             self._context = context
 
-        if (
-            str(self.properties["capabilities"]).lower().find("catalog")
-            == -1
-        ):
+        if str(self.properties["capabilities"]).lower().find("catalog") == -1:
             raise RuntimeError(
                 "Image Service should have 'Catalog' capability to create a RasterCollection object."
             )
@@ -15383,9 +14958,7 @@ class _ImageServerRasterCollection(ImageryLayer, RasterCollection):
 
         geometry_filter = None
         if query_geometry_or_extent is not None:
-            query_geometry_or_extent = _get_geometry(
-                query_geometry_or_extent
-            )
+            query_geometry_or_extent = _get_geometry(query_geometry_or_extent)
             geometry_filter = intersects(query_geometry_or_extent)
         else:
             geometry_filter = self._spatial_filter
@@ -15442,14 +15015,10 @@ class _ImageServerRasterCollection(ImageryLayer, RasterCollection):
             )
 
         sql_query1 = (
-            time_field_name + " >= timestamp '" + start_time + "'"
-            if start_time
-            else ""
+            time_field_name + " >= timestamp '" + start_time + "'" if start_time else ""
         )
         sql_query2 = (
-            time_field_name + " <= timestamp '" + end_time + "'"
-            if end_time
-            else ""
+            time_field_name + " <= timestamp '" + end_time + "'" if end_time else ""
         )
 
         if sql_query1 and sql_query2:
@@ -15634,17 +15203,13 @@ class _ImageServerRasterCollection(ImageryLayer, RasterCollection):
             context=context,
         )
 
-    def filter_by_attribute(
-        self, field_name, operator, field_values, context=None
-    ):
+    def filter_by_attribute(self, field_name, operator, field_values, context=None):
         if not isinstance(field_name, str):
             raise TypeError("field_name should be string")
 
         from arcgis.raster._util import build_query_string
 
-        query_string = build_query_string(
-            field_name, operator.lower(), field_values
-        )
+        query_string = build_query_string(field_name, operator.lower(), field_values)
         return self.filter_by(query_string, context=context)
 
     def filter_by_raster_property(
@@ -15667,9 +15232,7 @@ class _ImageServerRasterCollection(ImageryLayer, RasterCollection):
         else:
             order_by_fields_string = str(field_name) + " " + "DESC"
         newcollection = self._clone_raster_collection(context=context)
-        newcollection._ras_coll_engine_obj._order_by_fields = (
-            order_by_fields_string
-        )
+        newcollection._ras_coll_engine_obj._order_by_fields = order_by_fields_string
         newcollection._ras_coll_engine_obj._df = newcollection._as_df()
 
         return newcollection
@@ -15684,9 +15247,7 @@ class _ImageServerRasterCollection(ImageryLayer, RasterCollection):
         else:
             return df[field_name].tolist()
 
-    def to_multidimensional_raster(
-        self, variable_field_name, dimension_field_names
-    ):
+    def to_multidimensional_raster(self, variable_field_name, dimension_field_names):
         md_info = super()._compute_multidimensional_info(
             where=self._where_clause,
             geometry_filter=self._spatial_filter,
@@ -15816,9 +15377,7 @@ class _ImageServerRasterCollection(ImageryLayer, RasterCollection):
     def quality_mosaic(self, quality_rc_or_list, statistic_type=None):
         from arcgis.raster.functions import arg_statistics, _pick
 
-        if not isinstance(
-            statistic_type, str
-        ) or statistic_type.upper() not in [
+        if not isinstance(statistic_type, str) or statistic_type.upper() not in [
             "MAX",
             "MIN",
             "MEDIAN",
@@ -15848,9 +15407,7 @@ class _ImageServerRasterCollection(ImageryLayer, RasterCollection):
         else:
             raise ValueError("invalid quality_rc parameter")
 
-        arg_statistics_result = arg_statistics(
-            rasters, stat_type=statistic_type
-        )
+        arg_statistics_result = arg_statistics(rasters, stat_type=statistic_type)
         arg_statistics_result = (
             arg_statistics_result + 1
         )  # the index in argstatistics output counts from 0, but Pick counts from 1
@@ -15913,33 +15470,25 @@ class _ImageServerRasterCollection(ImageryLayer, RasterCollection):
 
         if by_bandID_or_bandName == 1:
             new_rasters = [
-                extract_band(raster, band_ids=band_ids_or_names)
-                for raster in rasters
+                extract_band(raster, band_ids=band_ids_or_names) for raster in rasters
             ]
         elif by_bandID_or_bandName == 2:
             new_rasters = [
-                extract_band(raster, band_names=band_ids_or_names)
-                for raster in rasters
+                extract_band(raster, band_names=band_ids_or_names) for raster in rasters
             ]
 
         in_raster_collection_dict = {}
         for field_name in self.fields:
             if field_name == "Raster" or field_name == "Path":
                 continue
-            in_raster_collection_dict[field_name] = self.get_field_values(
-                field_name
-            )
+            in_raster_collection_dict[field_name] = self.get_field_values(field_name)
 
-        return RasterCollection(
-            new_rasters, in_raster_collection_dict, context=context
-        )
+        return RasterCollection(new_rasters, in_raster_collection_dict, context=context)
 
     def map(self, func, context=None):
         if context is None:
             context = self._context
-        if isinstance(func, _arcgis.raster.functions.RFT) or isinstance(
-            func, dict
-        ):
+        if isinstance(func, _arcgis.raster.functions.RFT) or isinstance(func, dict):
             from arcgis.raster.functions import raster_collection_function
 
             layer = raster_collection_function(self, item_function=func)
@@ -15989,9 +15538,7 @@ class _ImageServerRasterCollection(ImageryLayer, RasterCollection):
             context = self._context
 
         if field_name in self.fields:
-            raise RuntimeError(
-                "Cannot add the field. The field name already exists."
-            )
+            raise RuntimeError("Cannot add the field. The field name already exists.")
 
         df = self._as_df()
         new_df = df.copy()
@@ -16010,9 +15557,7 @@ class _ImageServerRasterCollection(ImageryLayer, RasterCollection):
         try:
             new_df[field_name] = field_values
         except:
-            raise RuntimeError(
-                "Failed to add the field to the raster collection"
-            )
+            raise RuntimeError("Failed to add the field to the raster collection")
 
         return RasterCollection(new_df, context=context)
 
@@ -16041,9 +15586,7 @@ class _ImageServerRasterCollection(ImageryLayer, RasterCollection):
                 )
             return groups
         except:
-            raise RuntimeError(
-                "groupBy failed with the field_name - " + field_name
-            )
+            raise RuntimeError("groupBy failed with the field_name - " + field_name)
 
     def _generate_raster_item_rft(self, raster_id):
         template_dict = {
@@ -16056,8 +15599,7 @@ class _ImageServerRasterCollection(ImageryLayer, RasterCollection):
 
             try:
                 if (
-                    (hasattr(self, "_lazy_token"))
-                    and self._lazy_token is None
+                    (hasattr(self, "_lazy_token")) and self._lazy_token is None
                 ) or not hasattr(self, "_lazy_token"):
                     from .functions.utility import _generate_layer_token
 
@@ -16101,9 +15643,7 @@ class _ImageServerRasterCollection(ImageryLayer, RasterCollection):
         date_field_names = []
         if len(df.index) > 0:
             for ele in self.properties.fields:
-                if ("type" in ele.keys()) and ele[
-                    "type"
-                ] == "esriFieldTypeDate":
+                if ("type" in ele.keys()) and ele["type"] == "esriFieldTypeDate":
                     if "name" in ele.keys():
                         date_field_names.append(ele["name"])
             for ele in date_field_names:
@@ -16120,9 +15660,7 @@ class _ImageServerRasterCollection(ImageryLayer, RasterCollection):
             oid_name = self._object_id_name()
             for i in range(0, len(df.index)):
                 # self._do_not_hydrate=True
-                rft = self._generate_raster_item_rft(
-                    int(df[oid_name].loc[i])
-                )
+                rft = self._generate_raster_item_rft(int(df[oid_name].loc[i]))
                 df.loc[i, "Raster"] = Raster(rft)
                 df.loc[i, "Raster"]._engine_obj._fn = rft
                 df.loc[i, "Raster"]._engine_obj._fnra = rft
@@ -16277,12 +15815,9 @@ class _LocalRasterCollection(ImageryLayer, RasterCollection):
                         max_workers=len(rasters)
                     ) as executor:
                         future_to_url = (
-                            executor.submit(_get_shape, ele)
-                            for ele in arcgis_rasters
+                            executor.submit(_get_shape, ele) for ele in arcgis_rasters
                         )
-                        for future in concurrent.futures.as_completed(
-                            future_to_url
-                        ):
+                        for future in concurrent.futures.as_completed(future_to_url):
                             shapes.append(future.result())
 
                 if shapes != []:
@@ -16333,9 +15868,7 @@ class _LocalRasterCollection(ImageryLayer, RasterCollection):
                 raise RuntimeError(
                     "Local RasterCollection does not support LIKE or NOT LIKE in where_clause."
                 )
-            newcollection._ras_coll_engine_obj._df = self._df.query(
-                where_clause
-            )
+            newcollection._ras_coll_engine_obj._df = self._df.query(where_clause)
         if query_geometry_or_extent is not None:
             newcollection._ras_coll_engine_obj._df = (
                 newcollection._ras_coll_engine_obj.filter_by_geometry(
@@ -16369,9 +15902,7 @@ class _LocalRasterCollection(ImageryLayer, RasterCollection):
                         if key not in ["Raster", "Path"]:
                             attribute_dict[key].append(value)
             newcollection = (
-                RasterCollection(
-                    filtered_rasters, attribute_dict, context=context
-                )
+                RasterCollection(filtered_rasters, attribute_dict, context=context)
                 if filtered_rasters
                 else None
             )
@@ -16389,22 +15920,14 @@ class _LocalRasterCollection(ImageryLayer, RasterCollection):
             context = self._context
         if date_time_format is None:
             if start_time:
-                start_time = datetime.datetime.strptime(
-                    start_time, "%Y-%m-%dT%H:%M:%S"
-                )
+                start_time = datetime.datetime.strptime(start_time, "%Y-%m-%dT%H:%M:%S")
             if end_time:
-                end_time = datetime.datetime.strptime(
-                    end_time, "%Y-%m-%dT%H:%M:%S"
-                )
+                end_time = datetime.datetime.strptime(end_time, "%Y-%m-%dT%H:%M:%S")
         else:
             if start_time:
-                start_time = datetime.datetime.strptime(
-                    start_time, date_time_format
-                )
+                start_time = datetime.datetime.strptime(start_time, date_time_format)
             if end_time:
-                end_time = datetime.datetime.strptime(
-                    end_time, date_time_format
-                )
+                end_time = datetime.datetime.strptime(end_time, date_time_format)
 
         filtered_rasters = []
         attribute_dict = defaultdict(list)
@@ -16437,9 +15960,7 @@ class _LocalRasterCollection(ImageryLayer, RasterCollection):
             )
 
         return (
-            RasterCollection(
-                filtered_rasters, attribute_dict, context=context
-            )
+            RasterCollection(filtered_rasters, attribute_dict, context=context)
             if filtered_rasters
             else None
         )
@@ -16554,9 +16075,7 @@ class _LocalRasterCollection(ImageryLayer, RasterCollection):
             )
 
         return (
-            RasterCollection(
-                filtered_rasters, attribute_dict, context=context
-            )
+            RasterCollection(filtered_rasters, attribute_dict, context=context)
             if filtered_rasters
             else None
         )
@@ -16572,13 +16091,9 @@ class _LocalRasterCollection(ImageryLayer, RasterCollection):
 
             field_value = item["SHAPE"]
             if query_geometry_or_extent is not None:
-                query_geometry_or_extent = _get_geometry(
-                    query_geometry_or_extent
-                )
+                query_geometry_or_extent = _get_geometry(query_geometry_or_extent)
             selected = False
-            selected = query_geometry_or_extent.contains(
-                field_value, "BOUNDARY"
-            )
+            selected = query_geometry_or_extent.contains(field_value, "BOUNDARY")
 
             if selected and isinstance(selected, bool):
                 filtered_rasters.append(raster)
@@ -16591,9 +16106,7 @@ class _LocalRasterCollection(ImageryLayer, RasterCollection):
                 "Warning: the output is None because no items have raster properties satisfying the query"
             )
         return (
-            RasterCollection(
-                filtered_rasters, attribute_dict, context=context
-            )
+            RasterCollection(filtered_rasters, attribute_dict, context=context)
             if filtered_rasters
             else None
         )
@@ -16610,9 +16123,7 @@ class _LocalRasterCollection(ImageryLayer, RasterCollection):
         if isinstance(values, list):
             for v in values:
                 if not isinstance(v, str):
-                    raise TypeError(
-                        "values must be string of list of string"
-                    )
+                    raise TypeError("values must be string of list of string")
 
         filtered_rasters = []
         attribute_dict = defaultdict(list)
@@ -16677,16 +16188,12 @@ class _LocalRasterCollection(ImageryLayer, RasterCollection):
                 "Warning: the output is None because no items have raster properties satisfying the query"
             )
         return (
-            RasterCollection(
-                filtered_rasters, attribute_dict, context=context
-            )
+            RasterCollection(filtered_rasters, attribute_dict, context=context)
             if filtered_rasters
             else None
         )
 
-    def filter_by_attribute(
-        self, field_name, operator, field_values, context=None
-    ):
+    def filter_by_attribute(self, field_name, operator, field_values, context=None):
         if context is None:
             context = self._context
         filtered_rasters = []
@@ -16749,9 +16256,7 @@ class _LocalRasterCollection(ImageryLayer, RasterCollection):
                 "Warning: the output is None because no items have raster properties satisfying the query"
             )
         return (
-            RasterCollection(
-                filtered_rasters, attribute_dict, context=context
-            )
+            RasterCollection(filtered_rasters, attribute_dict, context=context)
             if filtered_rasters
             else None
         )
@@ -16773,24 +16278,18 @@ class _LocalRasterCollection(ImageryLayer, RasterCollection):
         df = self._df
         return df[field_name].tolist()[0:max_count]
 
-    def to_multidimensional_raster(
-        self, variable_field_name, dimension_field_names
-    ):
+    def to_multidimensional_raster(self, variable_field_name, dimension_field_names):
         if variable_field_name not in self.fields:
             raise ValueError("variable_field_name does not exist")
 
         if isinstance(dimension_field_names, list):
             for dimension_field_name in dimension_field_names:
                 if dimension_field_name not in self.fields:
-                    raise ValueError(
-                        "the given dimension_field_name does not exist"
-                    )
+                    raise ValueError("the given dimension_field_name does not exist")
             dimension_field_names = ",".join(dimension_field_names)
         else:
             if dimension_field_names not in self.fields:
-                raise ValueError(
-                    "the given dimension_field_names does not exist"
-                )
+                raise ValueError("the given dimension_field_names does not exist")
         from arcgis.raster.functions import _simple_collection
 
         lyr = _simple_collection(self._rasters_list)
@@ -16816,15 +16315,15 @@ class _LocalRasterCollection(ImageryLayer, RasterCollection):
             lyr._engine_obj._fn["rasterFunctionArguments"]["Raster"].update(
                 {"dimensions": dimension_field_names}
             )
-            lyr._engine_obj._fnra["rasterFunctionArguments"][
-                "Raster"
-            ].update({ele_field: []})
-            lyr._engine_obj._fnra["rasterFunctionArguments"][
-                "Raster"
-            ].update({"variable": variable_field_name})
-            lyr._engine_obj._fnra["rasterFunctionArguments"][
-                "Raster"
-            ].update({"dimensions": dimension_field_names})
+            lyr._engine_obj._fnra["rasterFunctionArguments"]["Raster"].update(
+                {ele_field: []}
+            )
+            lyr._engine_obj._fnra["rasterFunctionArguments"]["Raster"].update(
+                {"variable": variable_field_name}
+            )
+            lyr._engine_obj._fnra["rasterFunctionArguments"]["Raster"].update(
+                {"dimensions": dimension_field_names}
+            )
             for ele in self[0 : self.count]:
                 lyr._engine_obj._fn["rasterFunctionArguments"]["Raster"][
                     ele_field
@@ -16834,12 +16333,8 @@ class _LocalRasterCollection(ImageryLayer, RasterCollection):
                 ].append(ele[ele_field])
         fn = lyr._engine_obj._fn["rasterFunctionArguments"]["Raster"]
         fnra = lyr._engine_obj._fnra["rasterFunctionArguments"]["Raster"]
-        lyr._engine_obj._fn["rasterFunctionArguments"][
-            "Raster"
-        ] = json.dumps(fn)
-        lyr._engine_obj._fnra["rasterFunctionArguments"][
-            "Raster"
-        ] = json.dumps(fnra)
+        lyr._engine_obj._fn["rasterFunctionArguments"]["Raster"] = json.dumps(fn)
+        lyr._engine_obj._fnra["rasterFunctionArguments"]["Raster"] = json.dumps(fnra)
         return lyr
 
     def max(
@@ -16948,16 +16443,12 @@ class _LocalRasterCollection(ImageryLayer, RasterCollection):
         )
 
     def mosaic(self, mosaic_method):
-        raise RuntimeError(
-            "Local RasterCollection does not support mosaic function"
-        )
+        raise RuntimeError("Local RasterCollection does not support mosaic function")
 
     def quality_mosaic(self, quality_rc_or_list, statistic_type=None):
         from arcgis.raster.functions import arg_statistics, _pick
 
-        if not isinstance(
-            statistic_type, str
-        ) or statistic_type.upper() not in [
+        if not isinstance(statistic_type, str) or statistic_type.upper() not in [
             "MAX",
             "MIN",
             "MEDIAN",
@@ -16987,9 +16478,7 @@ class _LocalRasterCollection(ImageryLayer, RasterCollection):
         else:
             raise ValueError("invalid quality_rc parameter")
 
-        arg_statistics_result = arg_statistics(
-            rasters, stat_type=statistic_type
-        )
+        arg_statistics_result = arg_statistics(rasters, stat_type=statistic_type)
         arg_statistics_result = (
             arg_statistics_result + 1
         )  # the index in argstatistics output counts from 0, but Pick counts from 1
@@ -17048,26 +16537,20 @@ class _LocalRasterCollection(ImageryLayer, RasterCollection):
 
         if by_bandID_or_bandName == 1:
             new_rasters = [
-                extract_band(raster, band_ids=band_ids_or_names)
-                for raster in rasters
+                extract_band(raster, band_ids=band_ids_or_names) for raster in rasters
             ]
         elif by_bandID_or_bandName == 2:
             new_rasters = [
-                extract_band(raster, band_names=band_ids_or_names)
-                for raster in rasters
+                extract_band(raster, band_names=band_ids_or_names) for raster in rasters
             ]
 
         in_raster_collection_dict = {}
         for field_name in self.fields:
             if field_name == "Raster" or field_name == "Path":
                 continue
-            in_raster_collection_dict[field_name] = self.get_field_values(
-                field_name
-            )
+            in_raster_collection_dict[field_name] = self.get_field_values(field_name)
 
-        return RasterCollection(
-            new_rasters, in_raster_collection_dict, context=context
-        )
+        return RasterCollection(new_rasters, in_raster_collection_dict, context=context)
 
     def map(self, func, context=None):
         if context is None:
@@ -17113,9 +16596,7 @@ class _LocalRasterCollection(ImageryLayer, RasterCollection):
             context = self._context
 
         if field_name in self.fields:
-            raise RuntimeError(
-                "Cannot add the field. The field name already exists."
-            )
+            raise RuntimeError("Cannot add the field. The field name already exists.")
 
         df = self._as_df()
         new_df = df.copy()
@@ -17134,9 +16615,7 @@ class _LocalRasterCollection(ImageryLayer, RasterCollection):
         try:
             new_df[field_name] = field_values
         except:
-            raise RuntimeError(
-                "Failed to add the field to the raster collection"
-            )
+            raise RuntimeError("Failed to add the field to the raster collection")
 
         return RasterCollection(new_df, context=context)
 
@@ -17165,9 +16644,7 @@ class _LocalRasterCollection(ImageryLayer, RasterCollection):
                 )
             return groups
         except:
-            raise RuntimeError(
-                "groupBy failed with the field_name - " + field_name
-            )
+            raise RuntimeError("groupBy failed with the field_name - " + field_name)
 
     def _as_df(
         self,
@@ -17397,9 +16874,7 @@ class ImageryTileManager(object):
                     sid,
                     res["results"]["out_service_url"]["paramUrl"],
                 )
-                result_url = self._con.get(path=rurl, params={"f": "json"})[
-                    "value"
-                ]
+                result_url = self._con.get(path=rurl, params={"f": "json"})["value"]
                 dl_res = self._con.get(path=result_url, params={"f": "json"})
                 if "files" in dl_res:
                     import tempfile
@@ -17536,9 +17011,7 @@ class ImageryTileManager(object):
                     sid,
                     res["results"]["out_service_url"]["paramUrl"],
                 )
-                result_url = self._con.get(path=rurl, params={"f": "json"})[
-                    "value"
-                ]
+                result_url = self._con.get(path=rurl, params={"f": "json"})["value"]
                 return result_url
             else:
                 return res
@@ -17618,9 +17091,7 @@ class ImageryTileManager(object):
         return self._con.get(url, params)
 
     # ----------------------------------------------------------------------
-    def image_tile(
-        self, level: int, row: int, column: int, blank_tile: bool = False
-    ):
+    def image_tile(self, level: int, row: int, column: int, blank_tile: bool = False):
         """
         For cached image services, the ``image_tile`` method represents a single cached
         tile for the image. The image bytes for the tile at the specified
@@ -17755,8 +17226,7 @@ class RasterCatalogItem(object):
                 if k.lower() == name.lower():
                     return v
             raise AttributeError(
-                "'%s' object has no attribute '%s'"
-                % (type(self).__name__, name)
+                "'%s' object has no attribute '%s'" % (type(self).__name__, name)
             )
 
     # ----------------------------------------------------------------------
@@ -17769,13 +17239,11 @@ class RasterCatalogItem(object):
                 if k.lower() == key.lower():
                     return v
             raise AttributeError(
-                "'%s' object has no attribute '%s'"
-                % (type(self).__name__, key)
+                "'%s' object has no attribute '%s'" % (type(self).__name__, key)
             )
         except:
             raise AttributeError(
-                "'%s' object has no attribute '%s'"
-                % (type(self).__name__, key)
+                "'%s' object has no attribute '%s'" % (type(self).__name__, key)
             )
 
     # ----------------------------------------------------------------------
