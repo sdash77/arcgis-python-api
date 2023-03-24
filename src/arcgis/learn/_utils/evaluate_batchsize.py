@@ -51,6 +51,7 @@ unsupported_models = [
     "ZeroShotClassifier",
     "_SpacyEntityRecognizer",
     "_TransformerEntityRecognizer",
+    "TextClassifier",
 ]
 
 
