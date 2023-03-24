@@ -168,9 +168,7 @@ def _geometry_to_geojson(geom):
 
 
 # --------------------------------------------------------------------------
-def _from_xy(
-    df, x_column, y_column, sr=None, z_column=None, m_column=None, **kwargs
-):
+def _from_xy(df, x_column, y_column, sr=None, z_column=None, m_column=None, **kwargs):
     """
     Takes an X/Y Column and Creates a Point Geometry from it. Can handle Z
     and M Columns as well.
@@ -188,9 +186,7 @@ def _from_xy(
     def _xy_to_geometry(x, y, sr, z=None, m=None):
         """converts x/y coordinates to Point object"""
         if z and m:
-            return Point(
-                {"spatialReference": sr, "x": x, "y": y, "z": z, "m": m}
-            )
+            return Point({"spatialReference": sr, "x": x, "y": y, "z": z, "m": m})
         elif z and not m:
             return Point({"spatialReference": sr, "x": x, "y": y, "z": z})
         elif m and not z:
@@ -303,28 +299,18 @@ def from_url(url: str) -> list:
                 shx = None
                 if datasets[key].get("shx", None):
                     shx = io.BytesIO()
-                    shx.write(
-                        archive.read(datasets[key].get("shx", None).filename)
-                    )
+                    shx.write(archive.read(datasets[key].get("shx", None).filename))
 
                 shp = io.BytesIO()  #
-                shp.write(
-                    archive.read(datasets[key].get("shp", None).filename)
-                )
+                shp.write(archive.read(datasets[key].get("shp", None).filename))
                 dbf = io.BytesIO()
-                dbf.write(
-                    archive.read(datasets[key].get("dbf", None).filename)
-                )
+                dbf.write(archive.read(datasets[key].get("dbf", None).filename))
                 readers.append(shapefile.Reader(shp=shp, shx=shx, dbf=dbf))
         # construct SeDF from URL based datasets
         sdfs = []
         for reader in readers:
             records = []
-            fields = [
-                field[0]
-                for field in reader.fields
-                if field[0] != "DeletionFlag"
-            ]
+            fields = [field[0] for field in reader.fields if field[0] != "DeletionFlag"]
             for idx, r in enumerate(reader.shapeRecords()):
                 atr = dict(zip(fields, r.record))
                 g = r.shape.__geo_interface__
@@ -380,9 +366,7 @@ def read_feather(
     -------
     type of object stored in file
     """
-    sdf = pd.read_feather(
-        path=path, columns=columns, use_threads=use_threads
-    )
+    sdf = pd.read_feather(path=path, columns=columns, use_threads=use_threads)
     if spatial_column and spatial_column in sdf.columns:
         sdf.spatial.set_geometry(spatial_column)
         sdf.spatial.name
@@ -474,9 +458,7 @@ def from_table(filename, **kwargs):
 
         with open(filename, "rb") as f:
             reader = shapefile.Reader(dbf=f)
-            return pd.DataFrame(
-                [record.as_dict() for record in reader.iterRecords()]
-            )
+            return pd.DataFrame([record.as_dict() for record in reader.iterRecords()])
     elif filename.lower().find(".csv") > -1:
         return pd.read_csv(filename)
 
@@ -547,16 +529,13 @@ def to_table(geo, location, overwrite=True, sanitize_columns=False):
             raise ValueError(
                 ("overwrite set to False, Cannot " "overwrite the table. ")
             )
-        fc = arcpy.CreateTable_management(
-            out_path=out_location, out_name=fc_name
-        )[0]
+        fc = arcpy.CreateTable_management(out_path=out_location, out_name=fc_name)[0]
         # 2. Add the Fields and Data Types
         #
         oidfld = arcpy.da.Describe(fc)["OIDFieldName"]
         for col in columns[:]:
             if (col.lower() == oidfld.lower()) or (
-                col.lower() in ["fid", "oid", "objectid"]
-                and location.endswith(".dbf")
+                col.lower() in ["fid", "oid", "objectid"] and location.endswith(".dbf")
             ):
                 pass
             elif col.lower() in ["fid", "oid", "objectid"]:
@@ -600,23 +579,19 @@ def to_table(geo, location, overwrite=True, sanitize_columns=False):
                 dtypes.append((col, df[col].dtype.type))
 
         array = np.array([], np.dtype(dtypes))
-        arcpy.da.ExtendTable(
-            fc, oidfld, array, join_dummy, append_only=False
-        )
+        arcpy.da.ExtendTable(fc, oidfld, array, join_dummy, append_only=False)
         # 3. Insert the Data
         #
         fields = arcpy.ListFields(fc)
         icols = [
             fld.name
             for fld in fields
-            if fld.type not in ["OID", "Geometry", "FID"]
-            and fld.name in df.columns
+            if fld.type not in ["OID", "Geometry", "FID"] and fld.name in df.columns
         ]
         dfcols = [
             fld.name
             for fld in fields
-            if fld.type not in ["OID", "Geometry", "FID"]
-            and fld.name in df.columns
+            if fld.type not in ["OID", "Geometry", "FID"] and fld.name in df.columns
         ]
         with arcpy.da.InsertCursor(fc, icols) as irows:
             dt_fld_idx = [
@@ -807,17 +782,11 @@ def from_featureclass(filename, **kwargs):
             return df.astype(pandas_dtypes)
         except:
             return df
-    elif (
-        HASARCPY == False
-        and HASPYSHP == True
-        and filename.lower().find(".shp") > -1
-    ):
+    elif HASARCPY == False and HASPYSHP == True and filename.lower().find(".shp") > -1:
         geoms = []
         records = []
         reader = shapefile.Reader(filename)
-        fields = [
-            field[0] for field in reader.fields if field[0] != "DeletionFlag"
-        ]
+        fields = [field[0] for field in reader.fields if field[0] != "DeletionFlag"]
         for r in reader.shapeRecords():
             atr = dict(zip(fields, r.record))
             g = r.shape.__geo_interface__
@@ -902,9 +871,7 @@ def from_featureclass(filename, **kwargs):
             \nPlease switch to Arcpy for full support or install fiona by this command `conda install fiona`
             """.strip()
             print(message)
-            raise Exception(
-                "Failed to import Feature Class from Geodatabase specified"
-            )
+            raise Exception("Failed to import Feature Class from Geodatabase specified")
         else:
             raise Exception(
                 "Unsupported Data Format or Invalid Feature Class specified"
@@ -969,10 +936,7 @@ def to_featureclass(
         raise ValueError("DataFrame must have geometry set.")
     if validate and geo.validate(strict=True) == False:
         raise ValueError(
-            (
-                "Mixed geometry types detected, "
-                "cannot export to feature class."
-            )
+            ("Mixed geometry types detected, " "cannot export to feature class.")
         )
     # deep copy of original columns to reassign them in finally of arcpy statement
     original_columns = copy.deepcopy(df.columns.tolist())
@@ -1011,10 +975,7 @@ def to_featureclass(
                 arcpy.Delete_management(location)
             elif overwrite == False and arcpy.Exists(location):
                 raise ValueError(
-                    (
-                        "overwrite set to False, Cannot "
-                        "overwrite the table. "
-                    )
+                    ("overwrite set to False, Cannot " "overwrite the table. ")
                 )
 
             notnull = df[df.spatial.name].notnull()
@@ -1025,15 +986,9 @@ def to_featureclass(
                 "point": pd.io.json.dumps(
                     {"x": None, "y": None, "spatialReference": sr}
                 ),
-                "polyline": pd.io.json.dumps(
-                    {"paths": [], "spatialReference": sr}
-                ),
-                "polygon": pd.io.json.dumps(
-                    {"rings": [], "spatialReference": sr}
-                ),
-                "multipoint": pd.io.json.dumps(
-                    {"points": [], "spatialReference": sr}
-                ),
+                "polyline": pd.io.json.dumps({"paths": [], "spatialReference": sr}),
+                "polygon": pd.io.json.dumps({"rings": [], "spatialReference": sr}),
+                "multipoint": pd.io.json.dumps({"points": [], "spatialReference": sr}),
             }
             sr = df[df.spatial.name][idx].spatial_reference.as_arcpy
             null_geom = null_geom[gt.lower()]
@@ -1097,12 +1052,8 @@ def to_featureclass(
                         dtypes.append((col, df[col].dtype.type))
             from arcgis._impl.common._utils import chunks as _chunks
 
-            smaller_dtypes = [
-                [dtypes[0]] + flds for flds in _chunks(dtypes[1:], 10)
-            ]
-            smaller_array = [
-                np.array([], np.dtype(d)) for d in smaller_dtypes
-            ]
+            smaller_dtypes = [[dtypes[0]] + flds for flds in _chunks(dtypes[1:], 10)]
+            smaller_array = [np.array([], np.dtype(d)) for d in smaller_dtypes]
             for array in smaller_array:
                 try:
                     arcpy.da.ExtendTable(
@@ -1116,14 +1067,12 @@ def to_featureclass(
             icols = [
                 fld.name
                 for fld in fields
-                if fld.type not in ["OID", "Geometry"]
-                and fld.name in df.columns
+                if fld.type not in ["OID", "Geometry"] and fld.name in df.columns
             ] + ["SHAPE@JSON"]
             dfcols = [
                 fld.name
                 for fld in fields
-                if fld.type not in ["OID", "Geometry"]
-                and fld.name in df.columns
+                if fld.type not in ["OID", "Geometry"] and fld.name in df.columns
             ] + [df.spatial.name]
 
             with arcpy.da.InsertCursor(fc, icols) as irows:
@@ -1146,9 +1095,7 @@ def to_featureclass(
                         )
 
                 q = df[df.spatial.name].isna()
-                df.loc[
-                    q, "SHAPE"
-                ] = null_geom  # set null values to proper JSON
+                df.loc[q, "SHAPE"] = null_geom  # set null values to proper JSON
                 replace_mappings = {
                     pd.NA: None,
                     np.nan: None,
@@ -1181,9 +1128,7 @@ def to_featureclass(
         if fc_name.endswith(".shp") == False:
             fc_name = "%s.shp" % fc_name
         if SHPVERSION < [2]:
-            res = _pyshp_to_shapefile(
-                df=df, out_path=out_location, out_name=fc_name
-            )
+            res = _pyshp_to_shapefile(df=df, out_path=out_location, out_name=fc_name)
             df.set_index(old_idx)
             return res
         else:
@@ -1255,12 +1200,8 @@ def _pyshp_to_shapefile(df, out_path, out_name):
                             shpfile.field(name=c, fieldType="N", size=5)
                         elif isinstance(df[c].loc[idx], (int, np.int32)):
                             shpfile.field(name=c, fieldType="N", size=10)
-                        elif isinstance(
-                            df[c].loc[idx], (float, np.float64, np.int64)
-                        ):
-                            shpfile.field(
-                                name=c, fieldType="F", size=19, decimal=11
-                            )
+                        elif isinstance(df[c].loc[idx], (float, np.float64, np.int64)):
+                            shpfile.field(name=c, fieldType="F", size=19, decimal=11)
                         elif (
                             isinstance(
                                 df[c].loc[idx],
@@ -1288,9 +1229,7 @@ def _pyshp_to_shapefile(df, out_path, out_name):
                 for fld in dfields:
                     idx = df[cfields].columns.tolist().index(fld)
                     if row[idx]:
-                        if isinstance(
-                            row[idx].to_pydatetime(), (type(pd.NaT))
-                        ):
+                        if isinstance(row[idx].to_pydatetime(), (type(pd.NaT))):
                             row[idx] = None
                         else:
                             row[idx] = row[idx].to_pydatetime()
@@ -1379,9 +1318,7 @@ def _pyshp2(df, out_path, out_name):
                     geom_field = (c, "GEOMETRY")
                     geom_column = c
                     # Since geometry is present, handle None type geometry occurrence
-                    query_index = _handle_none_type_geometry(
-                        df, geom_type, geom_column
-                    )
+                    query_index = _handle_none_type_geometry(df, geom_type, geom_column)
                 else:
                     cfields.append(c)
                     if isinstance(df[c].loc[idx], (str)):
@@ -1390,12 +1327,8 @@ def _pyshp2(df, out_path, out_name):
                         shpfile.field(name=c, fieldType="N", size=5)
                     elif isinstance(df[c].loc[idx], np.int32):
                         shpfile.field(name=c, fieldType="N", size=10)
-                    elif isinstance(
-                        df[c].loc[idx], (float, np.float64, np.int64)
-                    ):
-                        shpfile.field(
-                            name=c, fieldType="F", size=19, decimal=11
-                        )
+                    elif isinstance(df[c].loc[idx], (float, np.float64, np.int64)):
+                        shpfile.field(name=c, fieldType="F", size=19, decimal=11)
                     elif (
                         isinstance(
                             df[c].loc[idx],
@@ -1561,9 +1494,7 @@ def _sanitize_column_names(
                 pass
             if new_col_names.count(val) > 1:
                 counter = 1
-                new_name = val + str(
-                    counter
-                )  # adds a integer suffix to column name
+                new_name = val + str(counter)  # adds a integer suffix to column name
                 while new_col_names.count(new_name) > 0:
                     counter += 1
                     new_name = val + str(
