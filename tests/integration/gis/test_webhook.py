@@ -1,17 +1,13 @@
 import sys
-
-# sys.path.insert(0, r"c:\SVN\geosaurus_master\src")
 import unittest
 import urllib.request
 import uuid
-
-
 import arcgis
 from arcgis.gis import GIS
 from arcgis.gis.admin._wh import WebhookManager
 
 
-PROFILES = ["your_enterprise_profile"]
+PROFILES = ["your_ent_admin_profile"]
 proxies = urllib.request.getproxies()
 key = uuid.uuid4().hex[:5]
 
