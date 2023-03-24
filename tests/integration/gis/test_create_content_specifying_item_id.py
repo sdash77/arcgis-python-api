@@ -220,7 +220,7 @@ class TestItemByItemId(unittest.TestCase):
     def setUpClass(cls):
         cls._gis = GIS(
             profile="your_enterprise_profile",
-            verif_cert=False,
+            verify_cert=False,
         )
 
     # ----------------------------------------------------------------------
