@@ -823,7 +823,7 @@ class ImageryLayer(Layer):
             if isinstance(self._uri, bytes):
                 if "renderingRule" in options_dict["imageServiceParameters"]:
                     del options_dict["imageServiceParameters"]["renderingRule"]
-                options_dict["imageServiceParameters"]["raster"] = self._fn
+                options_dict["imageServiceParameters"]["raster"] = self._fnra
 
         if options_dict["imageServiceParameters"] != {}:
             lyr_dict.update({"options": json.dumps(options_dict)})
