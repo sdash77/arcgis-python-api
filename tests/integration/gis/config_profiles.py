@@ -34,7 +34,7 @@ def get_kube_credentials(
     # variables for your AVWORLD username & password, or enter them
     # in via the command line every time you run the methods
 
-    if platform.system() is "Windows":
+    if platform.system() is "Windows" and os.environ.get("userdomain") == "AVWORLD":
         from requests_negotiate_sspi import HttpNegotiateAuth
 
         page = requests.get(site, auth=HttpNegotiateAuth())
