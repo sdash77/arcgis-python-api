@@ -7,6 +7,7 @@ Reference: https://github.com/ArcGIS/geosaurus/pull/8683
 import requests
 import platform
 import lxml
+import os
 from arcgis.gis import GIS
 from arcgis.gis import ProfileManager
 
@@ -40,7 +41,6 @@ def get_kube_credentials(
         page = requests.get(site, auth=HttpNegotiateAuth())
     else:
         from requests_ntlm2 import HttpNtlmAuth
-        import os
 
         env_dict = os.environ
 
