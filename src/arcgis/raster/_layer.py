@@ -7503,7 +7503,9 @@ class Raster:
             )
 
         except:
-            raise ValueError("Unsupported Raster type.")
+            raise ValueError(
+                "Unsupported Raster type. refresh_service method is only available on Raster objects created from an image service."
+            )
 
     def set_engine(self, engine):
         """
