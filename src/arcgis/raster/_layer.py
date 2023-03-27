@@ -688,7 +688,9 @@ class ImageryLayer(Layer):
         self._fn = None
         self._fnra = None
         self._filtered = False
-        self._mosaic_rule = None
+        self._mosaic_rule = self._set_mosaic_rule()
+        if self._mosaic_rule:
+            self._using_default_mosaic_rule  = True
         self._extent = None
         self._uses_gbl_function = False
         self._other_outputs = {}
@@ -6925,6 +6927,34 @@ class ImageryLayer(Layer):
             return svg_graph
         else:
             return None
+
+    def _set_mosaic_rule(self):
+        mosaic_method_mapping = {"none":"esriMosaicNone",
+            "center":"esriMosaicCenter",
+            "northwest":"esriMosaicNorthwest",
+            "nadir": "esriMosaicNadir",
+            "viewpoint":"esriMosaicViewpoint",
+            "byattribute":"esriMosaicAttribute",
+            "lockraster":"esriMosaicLockRaster",
+            "seamline":"esriMosaicSeamline"}
+
+
+
+        mosaic_rule = {}
+        if ("defaultMosaicMethod" in self.properties.keys()) and self.properties['defaultMosaicMethod']!=None:
+            if self.properties['defaultMosaicMethod'].lower() in mosaic_method_mapping.keys():
+                mosaic_rule.update({"mosaicMethod":mosaic_method_mapping[self.properties['defaultMosaicMethod'].lower()]})
+        if ("sortField" in self.properties.keys()) and self.properties['sortField']!=None:
+            mosaic_rule.update({"sortField":self.properties['sortField']})
+        if ("sortValue" in self.properties.keys()) and self.properties['sortValue']!=None:
+            mosaic_rule.update({"sortValue":self.properties['sortValue']})
+        if ("mosaicOperator" in self.properties.keys()) and self.properties['mosaicOperator']!=None:
+            mosaic_rule.update({"mosaicOperation":'MT_' + self.properties['mosaicOperator'].upper()})
+        if ("sortAscending" in self.properties.keys()) and self.properties['sortAscending']!=None:
+            mosaic_rule.update({"ascending": self.properties['sortAscending']})
+
+        return mosaic_rule
+
 
     def __sub__(self, other):
         from arcgis.raster.functions import minus
