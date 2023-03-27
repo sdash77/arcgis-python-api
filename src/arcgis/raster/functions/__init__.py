@@ -13155,7 +13155,7 @@ def surface_parameters(
     layer, raster, raster_ra = _raster_input(raster)
 
     template_dict = {
-        "rasterFunction": "SurfaceParameters",
+        "rasterFunction": "SurfaceParam",
         "rasterFunctionArguments": {"Raster": raster},
     }
 
