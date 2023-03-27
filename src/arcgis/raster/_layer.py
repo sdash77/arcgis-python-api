@@ -9579,6 +9579,7 @@ class _ImageServerRaster(ImageryLayer, Raster):
         self._mdinfo = None
         self._extent = None
         self._extent_set = False
+        self._service_url = self._path
 
     @property
     def extent(self):
@@ -9629,9 +9630,13 @@ class _ImageServerRaster(ImageryLayer, Raster):
         if self._datastore_raster:
             path = self._uri
             path = (
-                path.rpartition("\\")[0]
-                if "\\" in path and not os.path.exists(path)
-                else path
+                (
+                    path.rpartition("\\")[0]
+                    if "\\" in path and not os.path.exists(path)
+                    else path
+                )
+                if isinstance(path, str)
+                else self._service_url
             )
             return path
         return self._url

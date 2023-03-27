@@ -17,7 +17,7 @@ from ..._impl.common._utils import _to_utf8
 from urllib import request
 from urllib.parse import urlparse
 
-__version__ = "2.1.1"
+__version__ = "2.2.0"
 
 _log = logging.getLogger(__name__)
 
@@ -2036,7 +2036,13 @@ class Portal(object):
         # Execute the search and get back the results
         count = 0
         resp = self._groups_page(
-            q, 1, min(max_groups, 100), sort_field, sort_order, categories, filter
+            q,
+            1,
+            min(max_groups, 100),
+            sort_field,
+            sort_order,
+            categories,
+            filter,
         )
         results = resp.get("results")
         count += int(resp["num"])

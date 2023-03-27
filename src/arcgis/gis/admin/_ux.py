@@ -661,7 +661,7 @@ class UX(object):
 
     # ----------------------------------------------------------------------
     @property
-    @deprecated(deprecated_in="2.1.0", removed_in="3.0.0", current_version="2.1.0")
+    @deprecated(deprecated_in="2.1.0", removed_in="3.0.0", current_version="2.2.0")
     def enable_comments(self):
         """
         Get/Set item commenting and comments.
@@ -679,7 +679,7 @@ class UX(object):
 
     # ----------------------------------------------------------------------
     @enable_comments.setter
-    @deprecated(deprecated_in="2.1.0", removed_in="3.0.0", current_version="2.1.0")
+    @deprecated(deprecated_in="2.1.0", removed_in="3.0.0", current_version="2.2.0")
     def enable_comments(self, enable: bool = False):
         """
         See main ``enable_comments`` property docstring.
@@ -687,7 +687,7 @@ class UX(object):
         self.item_settings.enable_comments = enable
 
     # ----------------------------------------------------------------------
-    @deprecated(deprecated_in="2.1.0", removed_in="3.0.0", current_version="2.1.0")
+    @deprecated(deprecated_in="2.1.0", removed_in="3.0.0", current_version="2.2.0")
     def set_background(
         self, background_file: str | None = None, is_built_in: bool = True
     ):
@@ -718,7 +718,7 @@ class UX(object):
         )
 
     # ----------------------------------------------------------------------
-    @deprecated(deprecated_in="2.1.0", removed_in="3.0.0", current_version="2.1.0")
+    @deprecated(deprecated_in="2.1.0", removed_in="3.0.0", current_version="2.2.0")
     def get_background(self, download_path: str):
         """
         Get your organization's home page background image. You can use the `set_background()` method to set an image
@@ -737,7 +737,7 @@ class UX(object):
         return self.homepage_settings.get_background(download_path=download_path)
 
     # ----------------------------------------------------------------------
-    @deprecated(deprecated_in="2.1.0", removed_in="3.0.0", current_version="2.1.0")
+    @deprecated(deprecated_in="2.1.0", removed_in="3.0.0", current_version="2.2.0")
     def set_banner(
         self,
         banner_file: str | None = None,
@@ -859,7 +859,7 @@ class UX(object):
         return update_result
 
     # ----------------------------------------------------------------------
-    @deprecated(deprecated_in="2.1.0", removed_in="3.0.0", current_version="2.1.0")
+    @deprecated(deprecated_in="2.1.0", removed_in="3.0.0", current_version="2.2.0")
     def get_banner(self, download_path: str):
         """
         Get your organization's home page banner image. You can use the `set_banner()` method to set an image or custom HTML
@@ -897,7 +897,7 @@ class UX(object):
 
     # ----------------------------------------------------------------------
     @property
-    @deprecated(deprecated_in="2.1.0", removed_in="3.0.0", current_version="2.1.0")
+    @deprecated(deprecated_in="2.1.0", removed_in="3.0.0", current_version="2.2.0")
     def default_extent(self):
         """
         Get/Set the site's default extent
@@ -921,7 +921,7 @@ class UX(object):
 
     # ----------------------------------------------------------------------
     @default_extent.setter
-    @deprecated(deprecated_in="2.1.0", removed_in="3.0.0", current_version="2.1.0")
+    @deprecated(deprecated_in="2.1.0", removed_in="3.0.0", current_version="2.2.0")
     def default_extent(self, extent: dict):
         """
         See main ``default_extent`` property docstring
@@ -930,7 +930,7 @@ class UX(object):
 
     # ----------------------------------------------------------------------
     @property
-    @deprecated(deprecated_in="2.1.0", removed_in="3.0.0", current_version="2.1.0")
+    @deprecated(deprecated_in="2.1.0", removed_in="3.0.0", current_version="2.2.0")
     def default_basemap(self):
         """
         Get/Set the site's default basemap.
@@ -953,7 +953,7 @@ class UX(object):
 
     # ----------------------------------------------------------------------
     @default_basemap.setter
-    @deprecated(deprecated_in="2.1.0", removed_in="3.0.0", current_version="2.1.0")
+    @deprecated(deprecated_in="2.1.0", removed_in="3.0.0", current_version="2.2.0")
     def default_basemap(self, value: str):
         """
         See main ``default_basemap`` property docstring
@@ -962,7 +962,7 @@ class UX(object):
 
     # ----------------------------------------------------------------------
     @property
-    @deprecated(deprecated_in="2.1.0", removed_in="3.0.0", current_version="2.1.0")
+    @deprecated(deprecated_in="2.1.0", removed_in="3.0.0", current_version="2.2.0")
     def vector_basemap(self):
         """
         Get/Set the default vector basemap
@@ -980,7 +980,7 @@ class UX(object):
 
     # ----------------------------------------------------------------------
     @vector_basemap.setter
-    @deprecated(deprecated_in="2.1.0", removed_in="3.0.0", current_version="2.1.0")
+    @deprecated(deprecated_in="2.1.0", removed_in="3.0.0", current_version="2.2.0")
     def vector_basemap(self, basemap: dict):
         """
         See main ``vector_basemap`` property docstring

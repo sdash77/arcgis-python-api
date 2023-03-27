@@ -53,6 +53,7 @@ from requests_toolbelt.multipart.encoder import MultipartEncoder
 from json import JSONDecodeError
 from ._helpers import _filename_from_headers, _filename_from_url
 from ._authguess import GuessAuth
+from arcgis._impl.common._utils import _date_handler
 from arcgis._impl.common._mixins import PropertyMap
 from arcgis._impl.common._isd import InsensitiveDict
 from arcgis.auth import EsriSession
@@ -82,7 +83,7 @@ except ImportError:
 
 from arcgis.auth import EsriBasicAuth
 
-__version__ = "2.1.1"
+__version__ = "2.2.0"
 
 _DEFAULT_TOKEN = uuid.uuid4()
 _log = logging.getLogger(__name__)
@@ -271,10 +272,8 @@ class Connection(object):
             self._auth = "ANON"
         elif self._client_id:
             self._auth = "OAUTH"
-        elif (
-            (not username is None and not password is None)
-            and len(username.split("\\")) > 1
-            and ("Negotiate" in auth_check or "Negotiate, NTLM" in auth_check)
+        elif (not username is None and not password is None) and (
+            "Negotiate" in auth_check or "Negotiate, NTLM" in auth_check
         ):
             self._auth = "KERBEROS"
         elif (username is None and password is None) and (
@@ -797,9 +796,9 @@ class Connection(object):
             if params and json_encode:
                 for k, v in copy.copy(params).items():
                     if isinstance(v, (tuple, dict, list, bool)):
-                        params[k] = json.dumps(v)
+                        params[k] = json.dumps(v, default=_date_handler)
                     elif isinstance(v, PropertyMap):
-                        params[k] = json.dumps(dict(v))
+                        params[k] = json.dumps(dict(v), default=_date_handler)
                     elif isinstance(v, InsensitiveDict):
                         params[k] = v.json
         if add_headers:
@@ -851,7 +850,7 @@ class Connection(object):
             )
         except requests.exceptions.RequestException as errRE:
             raise requests.exceptions.RequestException(
-                "A general expection was raised: %s" % errRE
+                "A general exception was raised: %s" % errRE
             )
         except Exception as e:
             raise Exception("A general error occurred: %s" % e)
@@ -1175,9 +1174,9 @@ class Connection(object):
             if json_encode:
                 for k, v in params.items():
                     if isinstance(v, (dict, list, tuple, bool)):
-                        params[k] = json.dumps(v)
+                        params[k] = json.dumps(v, default=_date_handler)
                     elif isinstance(v, PropertyMap):
-                        params[k] = json.dumps(dict(v))
+                        params[k] = json.dumps(dict(v), default=_date_handler)
                     elif isinstance(v, InsensitiveDict):
                         params[k] = v.json
             # When data and files are present, they need to be combined
@@ -1255,7 +1254,7 @@ class Connection(object):
             )
         except requests.exceptions.RequestException as errRE:
             raise requests.exceptions.RequestException(
-                "A general expection was raised: %s" % errRE
+                "A general exception was raised: %s" % errRE
             )
         except Exception as e:
             raise Exception("A general error occurred: %s" % e)
@@ -1430,9 +1429,9 @@ class Connection(object):
             if json_encode:
                 for k, v in params.items():
                     if isinstance(v, (dict, list, tuple, bool)):
-                        params[k] = json.dumps(v)
+                        params[k] = json.dumps(v, default=_date_handler)
                     elif isinstance(v, PropertyMap):
-                        params[k] = json.dumps(dict(v))
+                        params[k] = json.dumps(dict(v), default=_date_handler)
                     elif isinstance(v, InsensitiveDict):
                         params[k] = v.json
             if self._session.auth and drop_auth:
@@ -1509,7 +1508,7 @@ class Connection(object):
             )
         except requests.exceptions.RequestException as errRE:
             raise requests.exceptions.RequestException(
-                "A general expection was raised: %s" % errRE
+                "A general exception was raised: %s" % errRE
             )
         except Exception as e:
             raise Exception("A general error occurred: %s" % e)
@@ -1662,9 +1661,9 @@ class Connection(object):
         if json_encode:
             for k, v in params.items():
                 if isinstance(v, (dict, list, tuple, bool)):
-                    params[k] = json.dumps(v)
+                    params[k] = json.dumps(v, default=_date_handler)
                 elif isinstance(v, PropertyMap):
-                    params[k] = json.dumps(dict(v))
+                    params[k] = json.dumps(dict(v), default=_date_handler)
                 elif isinstance(v, InsensitiveDict):
                     params[k] = v.json
         if self._session.auth and drop_auth:

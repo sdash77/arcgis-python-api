@@ -1096,7 +1096,18 @@ def to_featureclass(
 
                 q = df[df.spatial.name].isna()
                 df.loc[q, "SHAPE"] = null_geom  # set null values to proper JSON
-                np.apply_along_axis(_insert_row, 1, df[dfcols].values)
+                replace_mappings = {
+                    pd.NA: None,
+                    np.nan: None,
+                    np.NaN: None,
+                    np.NAN: None,
+                    pd.NaT: None,
+                }
+                np.apply_along_axis(
+                    _insert_row,
+                    1,
+                    df.replace(replace_mappings)[dfcols].values,
+                )
 
                 df.loc[q, "SHAPE"] = None  # reset null values
         except ValueError as ve:
@@ -1187,11 +1198,9 @@ def _pyshp_to_shapefile(df, out_path, out_name):
                             shpfile.field(name=c, size=255)
                         elif isinstance(df[c].loc[idx], (int)):
                             shpfile.field(name=c, fieldType="N", size=5)
-                        elif isinstance(df[c].loc[idx], (np.int, np.int32)):
+                        elif isinstance(df[c].loc[idx], (int, np.int32)):
                             shpfile.field(name=c, fieldType="N", size=10)
-                        elif isinstance(
-                            df[c].loc[idx], (np.float, np.float64, np.int64)
-                        ):
+                        elif isinstance(df[c].loc[idx], (float, np.float64, np.int64)):
                             shpfile.field(name=c, fieldType="F", size=19, decimal=11)
                         elif (
                             isinstance(
@@ -1316,9 +1325,9 @@ def _pyshp2(df, out_path, out_name):
                         shpfile.field(name=c, size=255)
                     elif isinstance(df[c].loc[idx], (int)):
                         shpfile.field(name=c, fieldType="N", size=5)
-                    elif isinstance(df[c].loc[idx], (np.int, np.int32)):
+                    elif isinstance(df[c].loc[idx], np.int32):
                         shpfile.field(name=c, fieldType="N", size=10)
-                    elif isinstance(df[c].loc[idx], (np.float, np.float64, np.int64)):
+                    elif isinstance(df[c].loc[idx], (float, np.float64, np.int64)):
                         shpfile.field(name=c, fieldType="F", size=19, decimal=11)
                     elif (
                         isinstance(

@@ -258,12 +258,14 @@ def _clone_layer_raster(
         if (layer._engine != _ArcpyRaster) and (
             layer.tiles_only or (not allow_raster_function and allow_analysis)
         ):
+            service_url = layer.url
             newlyr = Raster(
                 function_chain_ra,
                 is_multidimensional=layer._is_multidimensional,
                 engine=layer._engine,
                 gis=layer._gis,
             )
+            newlyr._engine_obj._service_url = service_url
         else:
             newlyr = Raster(
                 layer._url,
@@ -383,12 +385,14 @@ def _clone_layer_raster_without_copy(layer, function_chain, function_chain_ra):
             if (layer._engine != _ArcpyRaster) and (
                 layer.tiles_only or (not allow_raster_function and allow_analysis)
             ):
+                service_url = layer.url
                 newlyr = Raster(
                     function_chain_ra,
                     is_multidimensional=layer._is_multidimensional,
                     engine=layer._engine,
                     gis=layer._gis,
                 )
+                newlyr._engine_obj._service_url = service_url
             else:
                 newlyr = Raster(
                     layer._url,
@@ -1998,6 +2002,13 @@ def clip(
         geom_dict = template_dict["rasterFunctionArguments"]["ClippingGeometry"]
 
         template_dict["rasterFunctionArguments"]["Extent"] = extent_envelope
+        if (geom_dict) and not isinstance(
+            Geometry(geom_dict), Envelope
+        ):  # Setting extent to extent envelope will only work for services on or after 11.0
+            if [
+                int(v) for v in str(dict(layer.properties)["currentVersion"]).split(".")
+            ] < [11, 0]:
+                template_dict["rasterFunctionArguments"]["Extent"] = None
 
     except:
         pass

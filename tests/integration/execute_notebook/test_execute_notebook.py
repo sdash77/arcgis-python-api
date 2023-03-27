@@ -2,7 +2,7 @@ import sys
 
 #
 #  Update the Path to set the test area
-sys.path.insert(0, r"C:\SVN\geosaurus_master_issue_8882\src")
+sys.path.insert(0, r"c:\SVN\geosaurus_master\src")
 import json
 import os, uuid
 import tempfile
@@ -38,7 +38,8 @@ notebook_json = {
         {
             "cell_type": "markdown",
             "metadata": {},
-            "source": "#### Run this cell to connect to your GIS and get " "started:",
+            "source": "#### Run this cell to connect to your GIS and get "
+            "started:",
         },
         {
             "cell_type": "code",
@@ -67,7 +68,11 @@ notebook_json = {
             "execution_count": 2,
             "metadata": {"trusted": True},
             "outputs": [
-                {"name": "stdout", "output_type": "stream", "text": "portaladmin\n"}
+                {
+                    "name": "stdout",
+                    "output_type": "stream",
+                    "text": "portaladmin\n",
+                }
             ],
             "source": "print(gis.users.me.username)",
         },
@@ -111,7 +116,9 @@ class TestAGOLNotebookManager(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls._gis = GIS(profile='your_online_profile', verify_cert=False, proxy=PROXIES)
+        cls._gis = GIS(
+            profile='your_online_profile', verify_cert=False, proxy=PROXIES
+        )
 
         d = tempfile.gettempdir()
         fp = os.path.join(d, f"test_nbs{uuid.uuid4().hex[:4]}.ipynb")
@@ -131,6 +138,7 @@ class TestAGOLNotebookManager(unittest.TestCase):
             data=fp,
         )
 
+    # @unittest.skip("I work")
     def test_execute_notebook_agol(self):
         """tests the AGOL execute notebook method"""
         gis = self._gis
@@ -149,6 +157,45 @@ class TestAGOLNotebookManager(unittest.TestCase):
         assert isinstance(res, dict)
         assert "jobUrl" in res
 
+    # @unittest.skip("said so")
+    def test_open_notebook_agol_future(self):
+        from arcgis._impl._async.jobs import Job
+
+        gis = self._gis
+        mgr = gis.notebook_server[0]
+        print(mgr)
+        nbm = mgr.notebooksmanager
+        open_result = nbm.open_notebook(
+            itemid=self._item,
+            templateid=None,
+            nb_runtimeid=None,
+            template_nb=None,
+            instance_type=None,
+            future=True,
+        )
+        assert isinstance(open_result, Job)
+        assert open_result.result()
+
+    # @unittest.skip("said so")
+    def test_open_notebook_agol(self):
+        from arcgis._impl._async.jobs import Job
+
+        gis = self._gis
+        mgr = gis.notebook_server[0]
+        print(mgr)
+        nbm = mgr.notebooksmanager
+        open_result = nbm.open_notebook(
+            itemid=self._item,
+            templateid=None,
+            nb_runtimeid=None,
+            template_nb=None,
+            instance_type=None,
+            future=False,
+        )
+
+        assert open_result
+
+    # @unittest.skip("said so")
     def test_execute_notebook_agol_future(self):
         """tests the AGOL execute notebook method"""
         from arcgis._impl._async.jobs import Job
@@ -167,6 +214,7 @@ class TestAGOLNotebookManager(unittest.TestCase):
             future=True,
         )
         assert isinstance(res, Job)
+        # res = res.result()
         assert res.result()
 
 
@@ -207,7 +255,44 @@ class Test_ExecuteNotebookMethod(unittest.TestCase):
             },
             data=fp,
         )
+        cls._item.update(
+            {
+                "notebookRuntimeName": "ArcGIS Notebook Python 3 Advanced",
+                "notebookRuntimeVersion": "8.0",
+            }
+        )
+        # print('stop')
 
+    def test_open_notebook_ent_future(self):
+        from arcgis._impl._async.jobs import Job
+
+        gis = self._gis
+        mgr = gis.notebook_server[0]
+        print(mgr)
+        nbm = mgr.notebooks
+        open_result = nbm.open_notebook(
+            itemid=self._item.id,
+            future=True,
+        )
+        assert isinstance(open_result, Job)
+        assert open_result.result()
+
+    def test_open_notebook_ent(self):
+        from arcgis._impl._async.jobs import Job
+
+        gis = self._gis
+        mgr = gis.notebook_server[0]
+        nbm = mgr.notebooks
+        open_result = nbm.open_notebook(
+            itemid=self._item.id,
+            future=True,
+        )
+
+        assert open_result
+        assert open_result.result()
+        print('stop')
+
+    # @unittest.skip("i work")
     def test_execute_notebook_ent(self):
         """tests the AGOL execute notebook method"""
         gis = self._gis
