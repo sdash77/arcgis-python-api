@@ -788,7 +788,7 @@ class Pix2PixHDLoss(nn.Module):
         lambda_feat=10.0,
         l1_loss=True,
         lambda_l1=100.0,
-        gpu_ids=[]
+        gpu_ids=[],
     ):
         super().__init__()
         self.gpu_ids = gpu_ids

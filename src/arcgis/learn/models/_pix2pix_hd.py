@@ -111,11 +111,13 @@ class Pix2PixHD(ArcGISModel):
             l1_loss = True
         elif self._data.label_nc:
             self.input_nc = label_nc
-        if self._device.type=='cuda':
+        if self._device.type == "cuda":
             gpu_ids = [torch.cuda.current_device()]
         else:
             gpu_ids = []
-        pix2pix_hd = Pix2PixHDModel(label_nc, self.input_nc, self.output_nc, gpu_ids, **kwargs)
+        pix2pix_hd = Pix2PixHDModel(
+            label_nc, self.input_nc, self.output_nc, gpu_ids, **kwargs
+        )
 
         self.learn = Learner(
             data,
