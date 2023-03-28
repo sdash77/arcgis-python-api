@@ -46,6 +46,7 @@ class GPJob(object):
     _is_fa = False
     _is_ra = False
     _is_ortho = False
+    _is_reality = False
     _start_time = None
     _end_time = None
     _item_properties = None
@@ -233,6 +234,8 @@ class GPJob(object):
         elif self._is_ra:
             return self._process_ra(self._future.result())
         elif self._is_ortho:
+            return self._process_ortho(self._future.result())
+        elif self._is_reality:
             return self._process_ortho(self._future.result())
         return self._future.result()
 
@@ -584,6 +587,115 @@ class GPJob(object):
             return value
         return result
 
+    def _process_reality(self, result):
+        """handles the reality mapping response"""
+        import arcgis
+
+        if hasattr(result, "_fields"):
+            r = {}
+            iids = []
+            for key in result._fields:
+                value = getattr(result, key)
+                if isinstance(value, dict) and "featureSet" in value:
+                    r[key] = arcgis.features.FeatureCollection(value)
+                elif (
+                    isinstance(value, dict)
+                    and "url" in value
+                    and value["url"].lower().find("imageserver")
+                ):
+                    return value["url"]
+                elif (
+                    isinstance(value, dict)
+                    and "url" in value
+                    and value["url"].lower().find("featureserver")
+                ):
+                    return arcgis.features.FeatureLayerCollection(
+                        url=value["url"], gis=self._gis
+                    )
+                elif (
+                    isinstance(value, dict)
+                    and "itemId" in value
+                    and len(value["itemId"]) > 0
+                ):
+                    if not value["itemId"] in iids:
+                        r[key] = arcgis.gis.Item(self._gis, value["itemId"])
+                        iids.append(value["itemId"])
+                elif len(str(value)) > 0 and value:
+                    r[key] = value
+            if len(r) == 1:
+                return r[list(r.keys())[0]]
+
+            return r
+        else:
+            value = result
+            if self.task == "AlterProcessingStates":
+                if isinstance(value, dict):
+                    return value
+                elif isinstance(value, str):
+                    processing_states = value.replace("'", '"')
+                    processing_states = json.loads(processing_states.replace('u"', '"'))
+                    return processing_states
+
+            if isinstance(value, DataFile):
+                return self._gis._con.post(value.to_dict()["url"], {})
+            if isinstance(value, (RasterData, LinearUnit)):
+                return value
+            elif isinstance(value, str) and value.lower().find("imageserver") > -1:
+                return value
+            elif isinstance(value, (dict, tuple, list)) == False:
+                return value
+            elif "itemId" in value and len(value["itemId"]) > 0:
+                itemid = value["itemId"]
+                item = arcgis.gis.Item(gis=self._gis, itemid=itemid)
+                if self._item_properties:
+                    _item_properties = {
+                        "properties": {
+                            "jobUrl": self._url + "/jobs/" + self._jobid,
+                            "jobType": "GPServer",
+                            "jobId": self._jobid,
+                            "jobStatus": "completed",
+                        }
+                    }
+                    item.update(item_properties=_item_properties)
+                return item
+            elif isinstance(value, dict) and "items" in value:
+                itemid = list(value["items"].keys())[0]
+                item = arcgis.gis.Item(gis=self._gis, itemid=itemid)
+                if self._item_properties:
+                    _item_properties = {
+                        "properties": {
+                            "jobUrl": self._url + "/jobs/" + self._jobid,
+                            "jobType": "GPServer",
+                            "jobId": self._jobid,
+                            "jobStatus": "completed",
+                        }
+                    }
+                    item.update(item_properties=_item_properties)
+                return item
+            elif self.task == "QueryCameraInfo":
+                import pandas as pd
+
+                columns = value["schema"]
+                data = value["content"]
+                return pd.DataFrame(data, columns=columns)
+            elif (
+                isinstance(value, dict)
+                and "url" in value
+                and value["url"].lower().find("imageserver")
+            ):
+                return value["url"]
+            elif (
+                isinstance(value, dict)
+                and "url" in value
+                and value["url"].lower().find("featureserver")
+            ):
+                return arcgis.features.FeatureLayerCollection(
+                    url=value["url"], gis=self._gis
+                )
+            elif isinstance(value, dict) and "featureSet" in value:
+                return arcgis.features.FeatureCollection(value)
+            return value
+
 
 class RAJob(GPJob):
     """
@@ -720,6 +832,139 @@ class RAJob(GPJob):
         """
         Return True if the call was successfully cancelled or finished running.
 
+        :return: boolean
+        """
+        return self._gpjob.done()
+
+
+class RMJob(GPJob):
+    """
+    Represents a Single Raster realitymapping job. The `RAJob` class allows for the asynchronous operation
+    of any geoprocessing task.  To request a GPJob task, the code must be called with `future=True`
+    or else the operation will occur synchronously.  This class is not intended for users to call
+    directly.
+
+
+    ================  ===============================================================
+    **Parameter**      **Description**
+    ----------------  ---------------------------------------------------------------
+    gpjob
+    ----------------  ---------------------------------------------------------------
+    item
+    ================  ===============================================================
+
+    """
+
+    # ----------------------------------------------------------------------
+    def __init__(self, gpjob: GPJob, item: "Item" = None):
+        """
+        initializer
+        """
+        self._gpjob = gpjob
+        self._item = item
+
+    # ----------------------------------------------------------------------
+    def __str__(self):
+        return "<%s Realitymapping Job: %s>" % (self.task, self._jobid)
+
+    # ----------------------------------------------------------------------
+    def __repr__(self):
+        return "<%s Realitymapping Job: %s>" % (self.task, self._jobid)
+
+    # ----------------------------------------------------------------------
+    @property
+    def task(self):
+        """Returns the task name.
+        :return: string
+        """
+        return self._gpjob.task
+
+    # ----------------------------------------------------------------------
+    @property
+    def messages(self):
+        """
+        Returns the service's messages
+
+        :return: List
+        """
+        return self._gpjob.messages
+
+    # ----------------------------------------------------------------------
+    @property
+    def status(self):
+        """
+        returns the GP status
+
+        :return: String
+        """
+        return self._gpjob.status
+
+    # ----------------------------------------------------------------------
+    @property
+    def elapse_time(self):
+        """
+        Returns the Ellapse Time for the Job
+        """
+        return self._gpjob.ellapse_time
+
+    # ----------------------------------------------------------------------
+    def result(self):
+        """
+        Return the value returned by the call. If the call hasn't yet completed
+        then this method will wait.
+        :return: object
+        """
+        try:
+            op = self._gpjob.result()
+            return op
+        except Exception as e:
+            from arcgis.gis import Item
+
+            if isinstance(self._item, Item):
+                self._item.delete()
+            elif isinstance(self._item, (tuple, list)):
+                [i.delete() for i in self._item if isinstance(i, Item)]
+            raise e
+
+    # ----------------------------------------------------------------------
+    def cancel(self):
+        """
+        Attempt to cancel the call. If the call is currently being executed
+        or finished running and cannot be cancelled then the method will
+        return False, otherwise the call will be cancelled and the method
+        will return True.
+        :return: boolean
+        """
+        res = self._gpjob.cancel()
+        if self.cancelled():
+            from arcgis.gis import Item
+
+            if isinstance(self._item, Item):
+                self._item.delete()
+            elif isinstance(self._item, (tuple, list)):
+                [i.delete() for i in self._item if isinstance(i, Item)]
+        return res
+
+    # ----------------------------------------------------------------------
+    def cancelled(self):
+        """
+        Return True if the call was successfully cancelled.
+        :return: boolean
+        """
+        return self._gpjob.cancelled()
+
+    # ----------------------------------------------------------------------
+    def running(self):
+        """
+        Return True if the call is currently being executed and cannot be cancelled.
+        :return: boolean
+        """
+        return self._gpjob.running()
+
+    # ----------------------------------------------------------------------
+    def done(self):
+        """
+        Return True if the call was successfully cancelled or finished running.
         :return: boolean
         """
         return self._gpjob.done()
