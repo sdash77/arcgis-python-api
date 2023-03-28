@@ -28,7 +28,7 @@ from arcgis.geoprocessing import import_toolbox
 from ._async.jobs import GeometryJob
 from arcgis.raster._util import _set_context as _set_raster_context
 from arcgis._impl.common._utils import inspect_function_inputs
-from arcgis.geoprocessing._job import RAJob
+from arcgis.geoprocessing._job import RAJob, RMJob
 from functools import lru_cache
 
 _log = logging.getLogger(__name__)
@@ -7473,18 +7473,23 @@ class _OrthoMappingTools:
     _gis = None
     _properties = None
     _return_item = None
+    _is_ortho = None
 
     # ----------------------------------------------------------------------
     def __init__(self, url, gis, verbose=False):
         """initializer"""
         if gis is None:
             gis = arcgis.env.active_gis
-        if url is None:
-            url = gis.properties.helperServices["orthoMapping"]["url"]
+        # if url is None:
+        #     url = gis.properties.helperServices["orthoMapping"]["url"]
         self._url = url
         self._gis = gis
         self._con = gis._con
         self._verbose = verbose
+        if "orthomapping" in self._url.lower():
+            self._is_ortho = True
+        else:
+            self._is_ortho = False
 
     # ----------------------------------------------------------------------
     def _refresh(self):
@@ -7722,10 +7727,17 @@ class _OrthoMappingTools:
             gis=gis,
             future=True,
         )
-        job._is_ortho = True
+
+        final_job = None
+        if self._is_ortho:
+            job._is_ortho = True
+            final_job = job
+        else:
+            job._is_reality = True
+            final_job = RMJob(job)
         if future:
-            return job
-        return job.result()
+            return final_job
+        return final_job.result()
 
     # ----------------------------------------------------------------------
     def compute_color_correction(
@@ -7842,10 +7854,17 @@ class _OrthoMappingTools:
             gis=gis,
             future=True,
         )
-        job._is_ortho = True
+
+        final_job = None
+        if self._is_ortho:
+            job._is_ortho = True
+            final_job = job
+        else:
+            job._is_reality = True
+            final_job = RMJob(job)
         if future:
-            return job
-        return job.result()
+            return final_job
+        return final_job.result()
 
     # ----------------------------------------------------------------------
     def compute_control_points(
@@ -7935,10 +7954,17 @@ class _OrthoMappingTools:
             gis=gis,
             future=True,
         )
-        job._is_ortho = True
+
+        final_job = None
+        if self._is_ortho:
+            job._is_ortho = True
+            final_job = job
+        else:
+            job._is_reality = True
+            final_job = RMJob(job)
         if future:
-            return job
-        return job.result()
+            return final_job
+        return final_job.result()
 
     # ----------------------------------------------------------------------
     def compute_seamlines(
@@ -8029,10 +8055,16 @@ class _OrthoMappingTools:
             future=True,
         )
 
-        job._is_ortho = True
+        final_job = None
+        if self._is_ortho:
+            job._is_ortho = True
+            final_job = job
+        else:
+            job._is_reality = True
+            final_job = RMJob(job)
         if future:
-            return job
-        return job.result()
+            return final_job
+        return final_job.result()
 
     # ----------------------------------------------------------------------
     def compute_sensor_model(
@@ -8124,10 +8156,16 @@ class _OrthoMappingTools:
             future=True,
         )
 
-        job._is_ortho = True
+        final_job = None
+        if self._is_ortho:
+            job._is_ortho = True
+            final_job = job
+        else:
+            job._is_reality = True
+            final_job = RMJob(job)
         if future:
-            return job
-        return job.result()
+            return final_job
+        return final_job.result()
 
     # ----------------------------------------------------------------------
     def edit_control_points(
@@ -8197,10 +8235,16 @@ class _OrthoMappingTools:
             future=True,
         )
 
-        job._is_ortho = True
+        final_job = None
+        if self._is_ortho:
+            job._is_ortho = True
+            final_job = job
+        else:
+            job._is_reality = True
+            final_job = RMJob(job)
         if future:
-            return job
-        return job.result()
+            return final_job
+        return final_job.result()
 
     # ----------------------------------------------------------------------
     def generate_dem(
@@ -8344,10 +8388,16 @@ class _OrthoMappingTools:
             future=True,
         )
 
-        job._is_ortho = True
+        final_job = None
+        if self._is_ortho:
+            job._is_ortho = True
+            final_job = job
+        else:
+            job._is_reality = True
+            final_job = RMJob(job)
         if future:
-            return job
-        return job.result()
+            return final_job
+        return final_job.result()
 
     # ----------------------------------------------------------------------
     def generate_orthomosaic(
@@ -8460,10 +8510,17 @@ class _OrthoMappingTools:
             gis=gis,
             future=True,
         )
-        job._is_ortho = True
+
+        final_job = None
+        if self._is_ortho:
+            job._is_ortho = True
+            final_job = job
+        else:
+            job._is_reality = True
+            final_job = RMJob(job)
         if future:
-            return job
-        return job.result()
+            return final_job
+        return final_job.result()
 
     # ----------------------------------------------------------------------
     def generate_report(
@@ -8555,10 +8612,17 @@ class _OrthoMappingTools:
                 image_collection=image_collection
             )
         job = tool(image_collection=image_collection, gis=gis, future=True)
-        job._is_ortho = True
+
+        final_job = None
+        if self._is_ortho:
+            job._is_ortho = True
+            final_job = job
+        else:
+            job._is_reality = True
+            final_job = RMJob(job)
         if future:
-            return job
-        return job.result()
+            return final_job
+        return final_job.result()
 
     # ----------------------------------------------------------------------
     def match_control_points(
@@ -8634,10 +8698,17 @@ class _OrthoMappingTools:
             gis=gis,
             future=True,
         )
-        job._is_ortho = True
+
+        final_job = None
+        if self._is_ortho:
+            job._is_ortho = True
+            final_job = job
+        else:
+            job._is_reality = True
+            final_job = RMJob(job)
         if future:
-            return job
-        return job.result()
+            return final_job
+        return final_job.result()
 
     # ----------------------------------------------------------------------
     def query_camera_info(self, camera_query=None, gis=None, future=False, **kwargs):
@@ -8665,10 +8736,17 @@ class _OrthoMappingTools:
                 raise TypeError("The 'camera_query' parameter must be of type string")
 
         job = self._tbx.query_camera_info(query=camera_query, gis=gis, future=True)
-        job._is_ortho = True
+        
+        final_job = None
+        if self._is_ortho:
+            job._is_ortho = True
+            final_job = job
+        else:
+            job._is_reality = True
+            final_job = RMJob(job)
         if future:
-            return job
-        return job.result()
+            return final_job
+        return final_job.result()
 
     # ----------------------------------------------------------------------
     def query_control_points(
@@ -8703,10 +8781,17 @@ class _OrthoMappingTools:
         job = self._tbx.query_control_points(
             image_collection=image_collection, where=where, gis=gis, future=True
         )
-        job._is_ortho = True
+        
+        final_job = None
+        if self._is_ortho:
+            job._is_ortho = True
+            final_job = job
+        else:
+            job._is_reality = True
+            final_job = RMJob(job)
         if future:
-            return job
-        return job.result()
+            return final_job
+        return final_job.result()
 
     # ----------------------------------------------------------------------
     def reset_image_collection(
@@ -8740,10 +8825,17 @@ class _OrthoMappingTools:
         job = self._tbx.reset_image_collection(
             image_collection=image_collection, gis=gis, future=True
         )
-        job._is_ortho = True
+        
+        final_job = None
+        if self._is_ortho:
+            job._is_ortho = True
+            final_job = job
+        else:
+            job._is_reality = True
+            final_job = RMJob(job)
         if future:
-            return job
-        return job.result()
+            return final_job
+        return final_job.result()
 
 
 ###########################################################################
@@ -20498,6 +20590,7 @@ class _Tools(object):
         self._raster_analysis = None
         self._geoanalytics = None
         self._orthomapping = None
+        self._realitymapping = None
         self._packaging = None
         self._symbolservice = None
 
@@ -20684,5 +20777,31 @@ class _Tools(object):
 
             self._orthomapping = _OrthoMappingTools(svcurl, self._gis)
             return self._orthomapping
+        except KeyError:
+            return None
+
+    @property
+    @lru_cache(maxsize=255)
+    def realitymapping(self):
+        """the portal's Reality Mapping tools, if available and configured"""
+        if self._analysis is not None:
+            return self._analysis
+        try:
+            try:
+                # svcurl = self._gis.properties.helperServices["realityMapping"]["url"]
+                svcurl = "https://svrcluster-sha.esri.com/server/rest/services/System/RealitymappingTools/GPServer"
+                if self._gis._is_hosted_nb_home:
+                    svcurl = self._validate_url(svcurl)
+            except:
+                if self._gis._con.token is None:
+                    raise RuntimeError(
+                        "You need to be signed in to use Reality Mapping Tools."
+                    )
+                else:
+                    raise RuntimeError("This GIS does not support Reality Mapping Tools.")
+                return None
+
+            self._realitymapping = _OrthoMappingTools(svcurl, self._gis)
+            return self._realitymapping
         except KeyError:
             return None
