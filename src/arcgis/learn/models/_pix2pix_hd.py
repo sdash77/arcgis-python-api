@@ -111,13 +111,17 @@ class Pix2PixHD(ArcGISModel):
             l1_loss = True
         elif self._data.label_nc:
             self.input_nc = label_nc
-        pix2pix_hd = Pix2PixHDModel(label_nc, self.input_nc, self.output_nc, **kwargs)
+        if self._device.type=='cuda':
+            gpu_ids = [torch.cuda.current_device()]
+        else:
+            gpu_ids = []
+        pix2pix_hd = Pix2PixHDModel(label_nc, self.input_nc, self.output_nc, gpu_ids, **kwargs)
 
         self.learn = Learner(
             data,
             pix2pix_hd,
             loss_func=Pix2PixHDLoss(
-                pix2pix_hd, vgg_loss, lambda_feat, l1_loss, lambda_l1
+                pix2pix_hd, vgg_loss, lambda_feat, l1_loss, lambda_l1, gpu_ids
             ),
             callback_fns=[Pix2PixHDTrainer],
             opt_func=partial(optim.Adam, betas=(0.5, 0.99)),
