@@ -950,8 +950,10 @@ class Connection(object):
                 max_length = int(resp.headers["Content-Length"])
                 if max_length > stream_size * 2 and max_length < 1024 * 1024:
                     stream_size = 1024 * 2
-                elif max_length > 5 * (1024 * 1024):
+                elif max_length > 5 * (1024 * 1024) and max_length < 10 * (1024 * 1024):
                     stream_size = 5 * (1024 * 1024)  # 5 mb
+                elif max_length >= 10 * (1024 * 1024):
+                    stream_size = 10 * (1024 * 1024)  # 10 mb
                 elif max_length > (1024 * 1024):
                     stream_size = 1024 * 1024  # 1 mb
                 else:
