@@ -953,7 +953,7 @@ class Connection(object):
                 elif max_length > 5 * (1024 * 1024) and max_length < 10 * (1024 * 1024):
                     stream_size = 5 * (1024 * 1024)  # 5 mb
                 elif max_length >= 10 * (1024 * 1024):
-                    stream_size = 10 * (1024 * 1024)  # 5 mb
+                    stream_size = 10 * (1024 * 1024)  # 10 mb
                 elif max_length > (1024 * 1024):
                     stream_size = 1024 * 1024  # 1 mb
                 else:
