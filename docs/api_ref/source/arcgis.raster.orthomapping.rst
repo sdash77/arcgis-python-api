@@ -82,3 +82,8 @@ compute_spatial_reference_factory_code
 ------------
 .. autofunction:: arcgis.raster.orthomapping.compute_spatial_reference_factory_code
 
+
+query_exif_info
+------------
+.. autofunction:: arcgis.raster.orthomapping.query_exif_info
+

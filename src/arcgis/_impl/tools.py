@@ -7465,7 +7465,7 @@ class _HydrologyTool:
 
 
 ###########################################################################
-class _OrthoMappingTools:
+class _OrthoRealityMappingTools:
     """Exposes the Orthmapping Geoprocessing tools"""
 
     _gptbx = None
@@ -8824,6 +8824,52 @@ class _OrthoMappingTools:
         )
         job = self._tbx.reset_image_collection(
             image_collection=image_collection, gis=gis, future=True
+        )
+        
+        final_job = None
+        if self._is_ortho:
+            job._is_ortho = True
+            final_job = job
+        else:
+            job._is_reality = True
+            final_job = RMJob(job)
+        if future:
+            return final_job
+        return final_job.result()
+
+    # ----------------------------------------------------------------------
+    def query_exif_info(
+        self, input_images, gis=None, future=False, **kwargs
+    ):
+        """
+        The `query_exif_info` reads the Exif header metadata from single or
+        multiple images in shared data store. The Exif metadata is usually stored
+        in drone image files. Some common Exif metadata information are GPS
+        locations, camera model, focal length, and more.
+
+        =========================================================================   ===========================================================================
+        **Parameter**                                                                **Description**
+        -------------------------------------------------------------------------   ---------------------------------------------------------------------------
+        input_images                                                                Required String/list of Strings. The input images could be a single image path, list of image paths,
+                                                                                    or a folder path, or a list of folder paths. The image file paths can also be server data store path.
+                                                                                    Eg: 
+                                                                                    - "\\servername\drone\imagefolder\image_file.jpg"
+                                                                                    - "/cloudStores/S3DataStore/yvwd13"
+                                                                                    - "/fileShares/drones/SampleEXIF/YUN_0040.jpg"
+                                                                                    - ["/fileShares/drones/SampleEXIF/DJI_0002.JPG", "/fileShares/drones/SampleEXIF/YUN_0040.jpg"]
+                                                                                    - ["/cloudStores/S3DataStore/yvwd13", "/cloudStores/S3DataStore/BogotaFarm"]
+        -------------------------------------------------------------------------   ---------------------------------------------------------------------------
+        gis                                                                         Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
+        -------------------------------------------------------------------------   ---------------------------------------------------------------------------
+        future                                                                      Optional boolean. If True, the result will be a GPJob object and results will be returned asynchronously.
+        =========================================================================   ===========================================================================
+
+        :return: Dictionary
+
+        """
+        gis = self._gis
+        job = self._tbx.query_exif_info(
+            input_images=input_images, gis=gis, future=True
         )
         
         final_job = None
@@ -20775,7 +20821,7 @@ class _Tools(object):
                     raise RuntimeError("This GIS does not support Ortho Mapping Tools.")
                 return None
 
-            self._orthomapping = _OrthoMappingTools(svcurl, self._gis)
+            self._orthomapping = _OrthoRealityMappingTools(svcurl, self._gis)
             return self._orthomapping
         except KeyError:
             return None
@@ -20801,7 +20847,7 @@ class _Tools(object):
                     raise RuntimeError("This GIS does not support Reality Mapping Tools.")
                 return None
 
-            self._realitymapping = _OrthoMappingTools(svcurl, self._gis)
+            self._realitymapping = _OrthoRealityMappingTools(svcurl, self._gis)
             return self._realitymapping
         except KeyError:
             return None

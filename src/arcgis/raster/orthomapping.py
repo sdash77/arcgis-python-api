@@ -1830,3 +1830,41 @@ def compute_spatial_reference_factory_code(latitude: float, longitude: float):
     factory_code = srid + zone - 1
 
     return factory_code
+
+
+###################################################################################################
+## Query Exif Info
+###################################################################################################
+def query_exif_info(
+    input_images, *, gis: Optional[GIS] = None, future: bool = False, **kwargs
+):
+    """
+    The `query_exif_info` reads the Exif header metadata from single or
+    multiple images in shared data store. The Exif metadata is usually stored
+    in drone image files. Some common Exif metadata information are GPS
+    locations, camera model, focal length, and more.
+
+    ==================     ====================================================================
+    **Parameter**           **Description**
+    ------------------     --------------------------------------------------------------------
+    input_images           Required String/list of Strings.  The input images could be a single image path, list of image paths,
+                           or a folder path, or a list of folder paths. The image file paths can also be server data store path.
+                           Eg: 
+                           - "\\servername\drone\imagefolder\image_file.jpg"
+                           - "/cloudStores/S3DataStore/yvwd13"
+                           - "/fileShares/drones/SampleEXIF/YUN_0040.jpg"
+                           - ["/fileShares/drones/SampleEXIF/DJI_0002.JPG", "/fileShares/drones/SampleEXIF/YUN_0040.jpg"]
+                           - ["/cloudStores/S3DataStore/yvwd13", "/cloudStores/S3DataStore/BogotaFarm"]
+    ------------------     --------------------------------------------------------------------
+    gis                    Optional :class:`~arcgis.gis.GIS` . The GIS on which this tool runs. If not specified, the active GIS is used.
+    ==================     ====================================================================
+
+    :return:
+        A dictionary object
+
+    """
+    gis = arcgis.env.active_gis if gis is None else gis
+
+    return gis._tools.orthomapping.query_exif_info(
+        input_images=input_images, future=future, **kwargs
+    )
