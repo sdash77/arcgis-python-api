@@ -13108,6 +13108,59 @@ def geometric_median(
     return _clone_layer(layer, template_dict, raster_ra, variable_name="Rasters")
 
 
+def region_pixel_count(raster, max_region_size=100, pixel_neighborhood=4):
+    """
+    The region_pixel_count function returns an image where each pixel contains the number of pixels within a connected region.
+
+    The arguments for this function are as follows:
+
+    ================================     ====================================================================
+    **Parameter**                         **Description**
+    --------------------------------     --------------------------------------------------------------------
+    rasters                              Required list of :class:`Raster <arcgis.raster.Raster>` /  :class:`ImageryLayer <arcgis.raster.ImageryLayer>` objects.
+    --------------------------------     --------------------------------------------------------------------
+    max_region_size                      Optional integer. The maximum number of pixels a region can contain. The default is 100.
+    --------------------------------     --------------------------------------------------------------------
+    pixel_neighborhood                   Optional integer. The number of neighborhoods to be used (4 or 8) when assessing pixel connectivity. The default is 4.
+    ================================     ====================================================================
+
+    :return: The output raster with the function applied.
+
+    .. code-block:: python
+
+        # Usage Example 1: Generate the raster  where each pixel contains the number of pixels within a connected region of the input raster.
+
+        op_lyr = region_pixel_count(raster=img_lyr, max_region_size=100, pixel_neighborhood=4)
+    """
+    layer, raster, raster_ra = _raster_input(raster)
+
+    template_dict = {
+            "rasterFunction": "RegionPixelCount",
+            "rasterFunctionArguments": {
+                "Raster": raster,
+            },
+        }
+
+
+    pixel_neighborhood_types = {
+        4: 0,
+        8: 1
+    }
+    
+    if isinstance(pixel_neighborhood, int) and pixel_neighborhood in pixel_neighborhood_types:
+        in_pixel_neighborhood = pixel_neighborhood_types[pixel_neighborhood]
+    else:
+        raise ValueError("Invalid pixel_neighborhood. pixel_neighborhood should be 4 or 8")
+
+
+    if max_region_size is not None:
+        template_dict["rasterFunctionArguments"]['MaxRegionSize'] = max_region_size
+
+    if pixel_neighborhood is not None:
+        template_dict["rasterFunctionArguments"]['PixelNeighborhood'] = in_pixel_neighborhood
+
+    return _clone_layer(layer, template_dict, raster_ra)
+
 class RFT:
     def __init__(self, raster_function_template, gis=None):
         try:
