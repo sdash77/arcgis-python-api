@@ -229,7 +229,6 @@ def remove_bounding_boxes_in_padding(
 
 class ChildObjectDetector:
     def initialize(self, model, model_as_file):
-
         if not HAS_TORCH:
             raise Exception(
                 "PyTorch is not installed. Install it using conda install -c pytorch pytorch torchvision"

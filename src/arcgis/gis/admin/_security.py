@@ -7,6 +7,7 @@ from .. import GIS
 from ._base import BasePortalAdmin
 from arcgis._impl.common._deprecate import deprecated
 
+
 ########################################################################
 class PasswordPolicy(BasePortalAdmin):
     """
@@ -17,6 +18,7 @@ class PasswordPolicy(BasePortalAdmin):
     _gis = None
     _con = None
     _url = None
+
     # ----------------------------------------------------------------------
     def __init__(self, url, gis=None, **kwargs):
         """Constructor"""
@@ -102,6 +104,7 @@ class Security(BasePortalAdmin):
     _eu = None
     _eg = None
     _ssl = None
+
     # ----------------------------------------------------------------------
     def __init__(self, url, gis=None, **kwargs):
         """Constructor"""
@@ -173,10 +176,9 @@ class Security(BasePortalAdmin):
         """
         See main ``tokens`` property docsring
         """
-        import six
 
         params = {"f": "json", "tokenConfig": None}
-        if isinstance(value, six.string_types):
+        if isinstance(value, str):
             params["tokenConfig"] = {"sharedKey": value}
         elif isinstance(value, dict) and "sharedKey" in value:
             params["tokenConfig"] = value
@@ -358,7 +360,7 @@ class Security(BasePortalAdmin):
 
     # ----------------------------------------------------------------------
     @property
-    @deprecated(deprecated_in="2.1.0", removed_in="3.0.0", current_version="2.1.0")
+    @deprecated(deprecated_in="2.1.0", removed_in="3.0.0", current_version="2.2.0")
     def ssl(self):
         """
         .. note::
@@ -389,6 +391,7 @@ class OAuth(BasePortalAdmin):
     _gis = None
     _con = None
     _url = None
+
     # ----------------------------------------------------------------------
     def __init__(self, url, gis=None, **kwargs):
         """Constructor"""
@@ -469,6 +472,7 @@ class SSLCertificates(BasePortalAdmin):
     _gis = None
     _con = None
     _url = None
+
     # ----------------------------------------------------------------------
     def __init__(self, url, gis=None, **kwargs):
         """Constructor"""
@@ -846,6 +850,7 @@ class SSLCertificate(BasePortalAdmin):
     _con = None
     _url = None
     _mgr = None
+
     # ----------------------------------------------------------------------
     def __init__(self, url, gis=None, **kwargs):
         """Constructor"""
@@ -954,6 +959,7 @@ class EnterpriseGroups(BasePortalAdmin):
     _gis = None
     _con = None
     _url = None
+
     # ----------------------------------------------------------------------
     def __init__(self, url, gis=None, **kwargs):
         """Constructor"""
@@ -1085,6 +1091,7 @@ class EnterpriseUsers(BasePortalAdmin):
     _gis = None
     _con = None
     _url = None
+
     # ----------------------------------------------------------------------
     def __init__(self, url, gis=None, **kwargs):
         """Constructor"""

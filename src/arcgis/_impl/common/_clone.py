@@ -79,6 +79,7 @@ class _DeepCloner:
         group_mapping=None,
         owner=None,
         preserve_item_id=False,
+        from_dash=False,
     ):
         self._preserve_item_id = preserve_item_id
         self._graph = {}
@@ -104,9 +105,61 @@ class _DeepCloner:
         if group_mapping is not None:
             self._clone_mapping["Group IDs"] = group_mapping
         self._temp_dir = tempfile.TemporaryDirectory()
+
+        self._cloned_items = []
+        for index, item in enumerate(self._items):
+            if item["type"] == "Dashboard" and not from_dash:
+                if len(self._items) > 1:
+                    self._items.pop(index)
+                dash_list = self._clone_dashboard(item)
+                for cloned_item in dash_list:
+                    self._cloned_items.append(cloned_item)
+
         # parse the config and get values
         self._create_graph()
-        self._cloned_items = []
+
+    def _clone_dashboard(self, dashboard_item):
+        widgets = dashboard_item.get_data()["desktopView"]["widgets"]
+        item_list = []
+        cloned_item_list = []
+        map_dict = {}
+        for widget in widgets:
+            for k, v in widget.items():
+                if k == "itemId" and v not in item_list:
+                    item_list.append(v)
+                if k == "datasets":
+                    for dataset in v:
+                        if dataset["dataSource"]["itemId"] not in item_list:
+                            item_list.append(dataset["dataSource"]["itemId"])
+
+        for item_id in item_list:
+            item = dashboard_item._gis.content.get(item_id)
+            clone_result = self.target.content.clone_items([item])
+            if len(clone_result) > 0:
+                for cloned_item in clone_result:
+                    cloned_item_list.append(cloned_item)
+            new_item = self.target.content.search(item.title)[0]
+            map_dict[item_id] = new_item.itemid
+
+        cloned_db = self.target.content.clone_items([dashboard_item], from_dash=True)[0]
+        cloned_item_list.append(cloned_db)
+        cloned_widgets = cloned_db.get_data()["desktopView"]["widgets"]
+
+        for widget in cloned_widgets:
+            for k, v in widget.items():
+                if k == "itemId":
+                    widget["itemId"] = map_dict[v]
+                if k == "datasets":
+                    for dataset in v:
+                        dataset["dataSource"]["itemId"] = map_dict[
+                            dataset["dataSource"]["itemId"]
+                        ]
+
+        new_data = cloned_db.get_data()
+        new_data["desktopView"]["widgets"] = cloned_widgets
+        cloned_db.update(item_properties={}, data=new_data)
+
+        return cloned_item_list
 
     def _create_graph(self):
         """
@@ -164,6 +217,8 @@ class _DeepCloner:
         """
         created_items = []
         processed_nodes = []
+        for item in self._cloned_items:
+            created_items.append(item)
         while len(processed_nodes) < len(self._graph.values()):
             for node in [
                 x
@@ -415,7 +470,6 @@ class _DeepCloner:
                     getattr(item, "groupDesignations", "notlivingatlas")
                     != "livingatlas"
                 ):
-
                     service_url = os.path.dirname(layer["url"])
                     feature_service = next(
                         (
@@ -1213,7 +1267,6 @@ class _DeepCloner:
         # elif len([node for node in self._graph.values() if isinstance(node, _StoryMapDefinition)]) > 0:
         #    return self._clone_synchronous()
         else:
-
             with concurrent.futures.ThreadPoolExecutor(max_workers=20) as executor:
                 results = executor.submit(self._clone, executor).result()
                 return results
@@ -1760,7 +1813,6 @@ class _ExcelHelper:
         namespaces,
         shared_string: dict,
     ):
-
         # We need the positions of the "system columns" because they are replaced differently.
         for row in element.iterfind("./xmlns:sheetData/xmlns:row", namespaces):
             row_num = row.attrib["r"]
@@ -1791,7 +1843,6 @@ class _ExcelHelper:
 
     @staticmethod
     def _add_attributes(xml: ElementTree.Element, namespaces: dict):
-
         # https://docs.microsoft.com/en-us/dotnet/framework/wpf/advanced/mc-ignorable-attribute
         # These attributes can be ignored by some applications, but Excel requires them.
         markup_compatibility = namespaces.get("mc", None)
@@ -1812,14 +1863,12 @@ class _ExcelHelper:
             xml.set(f"xmlns:{prefix}", uri)
 
     def save_xml(self, xml: ElementTree.Element, namespaces: dict, file: pathlib.Path):
-
         self._add_attributes(xml, namespaces)
 
         with file.open("wb") as writer:
             writer.write(ElementTree.tostring(xml, encoding="ASCII"))
 
     def main(self):
-
         shared_file = self.folder / "xl" / "sharedStrings.xml"
         shared_xml, shared_ns = self.read_file(shared_file)
         shared_string = {
@@ -2122,7 +2171,6 @@ class _ItemDefinition(CloneNode):
             if self._search_existing:
                 new_item = _search_org_for_existing_item(self.target, self.portal_item)
             if not new_item:
-
                 # Get the item properties from the original item to be applied when the new item is created
                 item_properties = self._get_item_properties(self.item_extent)
                 data = self._get_item_data()
@@ -2798,7 +2846,6 @@ class _FeatureServiceDefinition(_TextItemDefinition):
                     ) = _compare_service(new_item, self.portal_item, currentVersion)
 
             if not new_item:
-
                 # Get the definition of the original feature service
                 service_definition = self.service_definition
 
@@ -3926,7 +3973,6 @@ class _WebMapDefinition(_TextItemDefinition):
             if self._search_existing:
                 new_item = _search_org_for_existing_item(self.target, self.portal_item)
             if not new_item:
-
                 # Get the item properties from the original web map which will be applied when the new item is created
                 item_properties = self._get_item_properties(self.item_extent)
 
@@ -4010,7 +4056,6 @@ class _WebMapDefinition(_TextItemDefinition):
                         and vector_tile["itemId"] is not None
                         and vector_tile["itemId"] in self._clone_mapping["Item IDs"]
                     ):
-
                         new_id = self._clone_mapping["Item IDs"][vector_tile["itemId"]]
                         portal_url = "http://www.arcgis.com/"
                         if self.target.properties.isPortal:
@@ -4126,7 +4171,6 @@ class _OperationViewDefintion(_TextItemDefinition):
             if self._search_existing:
                 new_item = _search_org_for_existing_item(self.target, self.portal_item)
             if not new_item:
-
                 # Get the item properties from the original application which will be applied when the new item is created
                 item_properties = self._get_item_properties(self.item_extent)
 
@@ -4251,7 +4295,6 @@ class _DashboardDefinition(_TextItemDefinition):
             if self._search_existing:
                 new_item = _search_org_for_existing_item(self.target, self.portal_item)
             if not new_item:
-
                 # Get the item properties from the original application which will be applied when the new item is created
                 item_properties = self._get_item_properties(self.item_extent)
 
@@ -5002,7 +5045,6 @@ class _FormDefinition(_ItemDefinition):
             if self._search_existing:
                 new_item = _search_org_for_existing_item(self.target, self.portal_item)
             if not new_item:
-
                 # Get the item properties from the original item to be applied when the new item is created
                 item_properties = self._get_item_properties(self.item_extent)
 
@@ -5316,7 +5358,6 @@ class _QuickCaptureDefinition(_ItemDefinition):
             if self._search_existing:
                 new_item = _search_org_for_existing_item(self.target, self.portal_item)
             if not new_item:
-
                 # Get the item properties from the original item to be applied when the new item is created
                 item_properties = self._get_item_properties(self.item_extent)
                 data = self._get_item_data()
@@ -5490,7 +5531,6 @@ class _NotebookDefinition(_ItemDefinition):
             if self._search_existing:
                 new_item = _search_org_for_existing_item(self.target, self.portal_item)
             if not new_item:
-
                 # Get the item properties from the original item to be applied when the new item is created
                 item_properties = self._get_item_properties(self.item_extent)
 
@@ -5556,7 +5596,6 @@ class _WorkforceProjectDefinition(_TextItemDefinition):
             if self._search_existing:
                 new_item = _search_org_for_existing_item(self.target, self.portal_item)
             if not new_item:
-
                 # Get the item properties from the original application which will be applied when the new item is created
                 item_properties = self._get_item_properties(self.item_extent)
                 workforce_json = self.data
@@ -6219,7 +6258,8 @@ def _search_org_for_existing_item(target, item):
     This is used to determine if the item has already been cloned in the folder.
     Keyword arguments:
     target - The portal that items will be cloned to.
-    item - The original item used to determine if it has already been cloned to the specified folder."""
+    item - The original item used to determine if it has already been cloned to the specified folder.
+    """
 
     search_query = "typekeywords:source-{0} type:{1}".format(item["id"], item["type"])
     items = target.content.search(search_query, max_items=100, outside_org=False)
@@ -6236,7 +6276,8 @@ def _search_for_existing_group(user, group):
     This is used to determine if the group has already been created and if new maps and apps that belong to the same group should be shared to the same group.
     Keyword arguments:
     user - The gis.User to search through their group membership.
-    group - The original group used to determine if it has already been cloned in the organization."""
+    group - The original group used to determine if it has already been cloned in the organization.
+    """
 
     existing_group = None
     if "groups" in user and user["groups"] is not None:
@@ -6253,7 +6294,8 @@ def _share_item_with_groups(item, sharing, group_mapping):
     Keyword arguments:
     item - The item to share
     sharing - the sharing properties of the original item
-    group_mapping - A dictionary containing the id of the original group and the id of the new group"""
+    group_mapping - A dictionary containing the id of the original group and the id of the new group
+    """
 
     if sharing:
         groups = []
@@ -6304,7 +6346,8 @@ def _get_version_management_server(target, feature_service):
     """Gets the url of the portal/org
     Keyword arguments:
     target - The portal/org to get the url for.
-    feature_service - The url to the feature_service in the portal to retrieve the Version Manager info."""
+    feature_service - The url to the feature_service in the portal to retrieve the Version Manager info.
+    """
 
     postdata = {"f": "json"}
     path = os.path.dirname(feature_service)
@@ -6355,7 +6398,8 @@ def _find_and_replace_fields_json(obj, field_mapping, patterns=[], ignore_keys=[
     """Perform a find and replace for field names in a json objects.
     Keyword arguments:
     obj - The obj to recursively search and replace fields names in text values
-    field_mapping -  A dictionary containing the pairs of original field names and new field names"""
+    field_mapping -  A dictionary containing the pairs of original field names and new field names
+    """
 
     if isinstance(obj, list):
         loop = enumerate(obj)
@@ -6377,7 +6421,8 @@ def _find_and_replace_fields(text, field_mapping, patterns=[]):
     """Perform a find and replace for field names in a text strings.
     Keyword arguments:
     text - The text string to search and replace fields names
-    field_mapping -  A dictionary containing the pairs of original field names and new field names"""
+    field_mapping -  A dictionary containing the pairs of original field names and new field names
+    """
 
     exact_match = field_mapping.get(text, None)
     if exact_match is not None:
@@ -6396,7 +6441,8 @@ def _find_and_replace_fields_sql(text, field_mapping):
     """Perform a find and replace within sql expressions.
     Keyword arguments:
     text - The text string to search and replace fields names
-    field_mapping -  A dictionary containing the pairs of original field names and new field names"""
+    field_mapping -  A dictionary containing the pairs of original field names and new field names
+    """
 
     for field in field_mapping:
         replace = field_mapping[field]
@@ -6423,7 +6469,8 @@ def _find_and_replace_fields_arcade(text, field_mapping):
     """Perform a find and replace for field names in an arcade expression.
     Keyword arguments:
     text - The arcade expression to search and replace fields names
-    field_mapping -  A dictionary containing the pairs of original field names and new field names"""
+    field_mapping -  A dictionary containing the pairs of original field names and new field names
+    """
 
     for field in field_mapping:
         replace = field_mapping[field]
@@ -6441,7 +6488,8 @@ def _update_feature_attributes(feature, field_mapping):
     """Perform a find and replace for field names in a feature attribute definition.
     Keyword arguments:
     feature - The feature to search and replace fields names
-    field_mapping -  A dictionary containing the pairs of original field names and new field names"""
+    field_mapping -  A dictionary containing the pairs of original field names and new field names
+    """
 
     if "attributes" in feature and feature["attributes"] is not None:
         for attribute in [att for att in feature["attributes"]]:
@@ -6458,7 +6506,8 @@ def _update_layer_fields(layer, field_mapping, layer_field_mapping):
     """Perform a find and replace for field names in a layer.
     Keyword arguments:
     layer - The layer to search and replace fields names
-    field_mapping -  A dictionary containing the pairs of original field names and new field names"""
+    field_mapping -  A dictionary containing the pairs of original field names and new field names
+    """
 
     if "layerDefinition" in layer and layer["layerDefinition"] is not None:
         layer_definition = layer["layerDefinition"]
@@ -6585,7 +6634,8 @@ def _update_layer_definition_fields(layer_definition, field_mapping):
     """Perform a find and replace for field names in a layer definition.
     Keyword arguments:
     layer_definition - The layer_definition to search and replace fields names
-    field_mapping -  A dictionary containing the pairs of original field names and new field names"""
+    field_mapping -  A dictionary containing the pairs of original field names and new field names
+    """
 
     if (
         "definitionExpression" in layer_definition
@@ -6661,7 +6711,8 @@ def _update_layer_related_fields(layer, relationship_field_mapping):
     """Perform a find and replace for field names in a layer definition.
     Keyword arguments:
     layer - The layer to search and replace fields names
-    field_mapping -  A dictionary containing the pairs of original field names and new field names"""
+    field_mapping -  A dictionary containing the pairs of original field names and new field names
+    """
 
     for id, field_mapping in relationship_field_mapping.items():
         field_prefix = "relationships/{0}/".format(id)

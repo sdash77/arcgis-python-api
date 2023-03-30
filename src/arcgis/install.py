@@ -56,7 +56,6 @@ def uninstall():
 
 
 if __name__ == "__main__":
-
     parser = argparse.ArgumentParser(description="Installs the ArcGIS IPython widgets")
     parser.add_argument(
         "-u",

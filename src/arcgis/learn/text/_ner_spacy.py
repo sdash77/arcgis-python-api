@@ -88,7 +88,6 @@ class _SpacyEntityRecognizer(ArcGISModel):
             self.load(pretrained_path)
 
     def lr_find(self, allow_plot=True):
-
         """
         Runs the Learning Rate Finder, and displays the graph of it's output.
         Helps in choosing the optimum learning rate for training the model.
@@ -176,7 +175,6 @@ class _SpacyEntityRecognizer(ArcGISModel):
         checkpoint=True,
         **kwargs,
     ):
-
         """
         Trains an EntityRecognition model for 'n' number of epochs..
 
@@ -423,7 +421,6 @@ class _SpacyEntityRecognizer(ArcGISModel):
         return self._save(name_or_path, **kwargs)
 
     def _save_model_characteristics(self, model_characteristics_dir):
-
         if not os.path.exists(model_characteristics_dir):
             os.makedirs(model_characteristics_dir)
 
@@ -811,9 +808,7 @@ class _SpacyEntityRecognizer(ArcGISModel):
             return logging.warning("This model has not been trained")
 
     def metrics_per_label(self):
-
         if self._trained:  # for saving old(before metrics were implemented) models.
-
             if not len(self.recorder.metrics["metrics_per_label"]):
                 return None
 

@@ -1,7 +1,8 @@
 pipeline {
     agent {
         docker {
-            image "ghcr.io/jtroe/cicd-container-images/sphinx-rtd:5.3.0"
+            image "ghcr.io/jtroe/cicd-container-images/sphinx-rtd:3.2.1"
+            alwaysPull true
             args "-u 0 -v /media/crdata_apiref:/media/crdata_apiref -v /media/geosaurus_public:/media/geosaurus_public"
             customWorkspace "workspace/$JOB_NAME/$BUILD_NUMBER"
         }
@@ -19,6 +20,10 @@ pipeline {
                 }
                 stage('Deploy') {
                     steps {
+                        dir('docs/api_ref/build') {
+                            sh 'zip -r html.zip html'
+                            sh 'cp html.zip /media/geosaurus_public/docs/python-api/master'
+                        }
                         dir('docs/api_ref/build/html') {
                             // clean and deploy to crdata share
                             sh 'rm -rf /media/crdata_apiref/*'
@@ -47,6 +52,10 @@ pipeline {
                 }
                 stage('Deploy') {
                     steps {
+                        dir('docs/api_ref/build') {
+                            sh 'zip -r json.zip json'
+                            sh 'cp json.zip /media/geosaurus_public/docs/python-api/master'
+                        }
                         dir('docs/api_ref/build/json') {
                             // clean and deploy to geosaurus share (master)
                             sh 'rm -rf /media/geosaurus_public/docs/python-api/master/json/*'

@@ -784,7 +784,6 @@ class AutoML(object):
 
         rasters = explanatory_rasters if explanatory_rasters else []
         if prediction_type in ["features", "dataframe"]:
-
             if input_features is None:
                 raise Exception("Feature Layer required for predict_features=True")
 
@@ -1082,7 +1081,6 @@ class AutoML(object):
     def _predict_rasters(
         self, output_folder_path, rasters, match_field_names=None, confidence=False
     ):
-
         if not os.path.exists(os.path.dirname(output_folder_path)):
             raise Exception("Output directory doesn't exist")
 

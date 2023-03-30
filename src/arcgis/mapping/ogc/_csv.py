@@ -9,6 +9,8 @@ import pandas as pd
 from ._base import BaseOpenData
 
 _PD_LESS_THAN1 = [int(v) for v in pd.__version__.split(".")] < [1, 0, 0]
+
+
 ###########################################################################
 class CSVLayer(BaseOpenData):
     r"""
@@ -49,6 +51,7 @@ class CSVLayer(BaseOpenData):
     _latitude = None
     _longitude = None
     _type = "CSV"
+
     # ----------------------------------------------------------------------
     def __init__(self, url_or_item, gis=None, **kwargs):
         """initializer"""
@@ -247,7 +250,7 @@ class CSVLayer(BaseOpenData):
                     fields.append({"name": col, "type": "date", "alias": col})
                 elif isinstance(col_val, (np.int32, np.int16, np.int8)):
                     fields.append({"name": col, "type": "long", "alias": col})
-                elif isinstance(col_val, (int, np.int, np.int64)):
+                elif isinstance(col_val, (int, np.int64)):
                     fields.append({"name": col, "type": "integer", "alias": col})
                 elif isinstance(col_val, (float, np.float64)):
                     fields.append({"name": col, "type": "double", "alias": col})

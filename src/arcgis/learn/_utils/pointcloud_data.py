@@ -542,7 +542,6 @@ class PointCloudDataset(Dataset):
         return xyzs, labels, xyzs_scaled
 
     def __getitem__(self, i, return_scaled=False, add_centers=False):
-
         tile_index = i
         tile = self.tiles[i]
         read_file = self.h5files[tile[0]]
@@ -595,9 +594,7 @@ class PointCloudDataset(Dataset):
             ]
 
         if getattr(self, "_get_metainfo_h5", False):
-
             if self._api_model_h5:
-
                 point_feature, point_num = pad_tensor(
                     torch.tensor(rescaled_xyz).float(), self.max_point, to_float=True
                 )
@@ -644,7 +641,6 @@ def class_string(label_array, prefix="", class_mapping=None):
 
 
 def mask_classes(labels, mask_class, classes, class2idx=None, remap_classes=None):
-
     if not set(mask_class).issubset(set(classes)):
         raise Exception(f"`mask_class` {mask_class} must be a subset of {classes}")
     if remap_classes is not None:
@@ -674,7 +670,6 @@ def get_max_display_points(self, kwargs):
 
 
 def show_point_cloud_batch(self, rows=2, figsize=(6, 12), color_mapping=None, **kwargs):
-
     """
     It will plot 3d point cloud data you exported in the notebook.
     Visualization of data, exported in a geographic coordinate system
@@ -846,7 +841,6 @@ def recenter(pc):
 
 
 def show_point_cloud_batch_TF(self, rows=2, color_mapping=None, **kwargs):
-
     """
     It will plot 3d point cloud data you exported in the notebook.
     Visualization of data, exported in a geographic coordinate system
@@ -1519,7 +1513,6 @@ def filter_files(fname, meta, classes_to_check, min_points):
 
 
 def raise_class_mismatch_warning(train_classes, valid_classes, remap_classes):
-
     train_classes_mapped = list(set([remap_classes.get(c, c) for c in train_classes]))
     valid_classes_mapped = list(set([remap_classes.get(c, c) for c in valid_classes]))
 
@@ -2270,7 +2263,6 @@ def inference_las(
             merged_confidence = None
 
             for pred_file in pred_list:
-
                 with h5py.File(os.path.join(out_path, pred_file), mode="r") as data:
                     labels_seg = data["label_seg"][...].astype(np.int64)
                     indices = data["indices_split_to_full"][...].astype(np.int64)
@@ -2460,7 +2452,6 @@ def get_title_text(idx, save_html, max_display_point):
 
 
 def show_results(self, rows, color_mapping=None, **kwargs):
-
     """
     It will plot results from your trained model with ground truth on the
     left and predictions on the right.
@@ -2963,7 +2954,6 @@ def convert_extra_features(attributes, features_to_keep):
 
 
 def model_predictions(model, data, point_nums):
-
     model.learn.model.eval()
     with torch.no_grad():
         if getattr(model, "_is_ModelInputDict", False):
@@ -2998,7 +2988,6 @@ def model_predictions(model, data, point_nums):
 
 
 def get_batch_predictions(model, data, point_nums, point_batch_size):
-
     if model._data.max_point == model.sample_point_num:
         return model_predictions(model, data, point_nums)
 
@@ -3044,7 +3033,6 @@ def get_batch_predictions(model, data, point_nums, point_batch_size):
 
 
 def split_prediction(model, predictions, point_nums):
-
     label = []
     confidance = []
     per_cls_conf = []
@@ -3059,12 +3047,10 @@ def split_prediction(model, predictions, point_nums):
 
 
 def predict_batch_h5(self, dl, output_path, progressor):
-
     current_file_name = ""
     point_batch_size = 1 * math.ceil(self._data.max_point / self.sample_point_num)
 
     for (data, point_num), tile_index in progress_bar(dl):
-
         pred = get_batch_predictions(self, data, point_num, point_batch_size)
 
         tile = dl.dataset.tiles[tile_index]
@@ -3078,7 +3064,6 @@ def predict_batch_h5(self, dl, output_path, progressor):
         # add batch_size for spliting prediction till last batch number
         unique_index = list(np.sort(unique_index)) + [dl.batch_size]
         for i, ufname in enumerate(fname):
-
             if ufname != current_file_name:
                 current_file_name = ufname
                 h5_file = dl.dataset.h5files[tile[unique_index[i]][0]]
@@ -3172,7 +3157,6 @@ def predict_h5(self, path, output_path, **kwargs):
 
 
 def calculate_per_class_stats(all_pred, all_y, total_classes):
-
     true_positives = [0] * total_classes
     false_positives = [0] * total_classes
     false_negatives = [0] * total_classes
@@ -3188,7 +3172,6 @@ def calculate_per_class_stats(all_pred, all_y, total_classes):
 
 
 def show_results_tool(self, rows, color_mapping=None, **kwargs):
-
     """
     It will plot results from your trained model with ground truth on the
     left and predictions on the right.

@@ -6,6 +6,7 @@ from typing import Optional, Union
 from .. import GIS
 from ._base import BasePortalAdmin
 
+
 ########################################################################
 class Logs(BasePortalAdmin):
     """
@@ -26,6 +27,7 @@ class Logs(BasePortalAdmin):
     _url = None
     _con = None
     _portal = None
+
     # ----------------------------------------------------------------------
     def __init__(self, url, gis):
         """Constructor"""
@@ -199,19 +201,18 @@ class Logs(BasePortalAdmin):
            dictionary of messages
         """
         from datetime import datetime
-        from six import integer_types, string_types
 
         url = "%s/query" % self._url
         if isinstance(start_time, datetime):
             start_time = start_time.strftime("%Y-%m-%dT%H:%M:%S")
-        elif isinstance(start_time, string_types):
+        elif isinstance(start_time, str):
             try:
                 datetime.strptime(start_time, "%Y-%m-%dT%H:%M:%S")
             except:
                 raise Exception(
                     "Invalid start_time string, must be in the format YYYY-MM-DDTHH:MM:SS"
                 )
-        elif isinstance(start_time, tuple(list(integer_types) + [float])):
+        elif isinstance(start_time, tuple(list(int) + [float])):
             start_time = datetime.utcfromtimestamp(start_time).strftime(
                 "%Y-%m-%dT%H:%M:%S"
             )
@@ -219,14 +220,14 @@ class Logs(BasePortalAdmin):
             end_time = datetime.now().strftime("%Y-%m-%dT%H:%M:%S")
         elif isinstance(end_time, datetime):
             end_time = end_time.strftime("%Y-%m-%dT%H:%M:%S")
-        elif isinstance(end_time, string_types):
+        elif isinstance(end_time, str):
             try:
                 datetime.strptime(end_time, "%Y-%m-%dT%H:%M:%S")
             except:
                 raise Exception(
                     "Invalid end_time string, must be in the format YYYY-MM-DDTHH:MM:SS"
                 )
-        elif isinstance(end_time, tuple(list(integer_types) + [float])):
+        elif isinstance(end_time, tuple(list(int) + [float])):
             end_time = datetime.utcfromtimestamp(end_time).strftime("%Y-%m-%dT%H:%M:%S")
         if query_filter == "*":
             query_filter = {"codes": [], "users": [], "source": "*"}

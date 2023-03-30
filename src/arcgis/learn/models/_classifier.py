@@ -38,16 +38,13 @@ try:
         ClassificationInterpretation,
         cnn_config,
     )
-    from ._arcgis_model import _set_multigpu_callback, _resnet_family
+    from ._arcgis_model import _set_multigpu_callback, _resnet_family, _get_device
     from fastai.vision.transform import (
         crop,
         rotate,
         dihedral_affine,
         brightness,
         contrast,
-        skew,
-        rand_zoom,
-        get_transforms,
     )
     import torch.nn.functional as functional
     import glob
@@ -166,7 +163,6 @@ class FeatureClassifier(ArcGISModel):
         *args,
         **kwargs,
     ):
-
         # condition when databunch is from fastai
         # it will not contain class_mapping
         if not hasattr(data, "class_mapping"):
@@ -177,7 +173,6 @@ class FeatureClassifier(ArcGISModel):
             super().__init__(data, None)
             self._intialize_tensorflow(data, backbone, pretrained_path, mixup, kwargs)
         else:
-
             super().__init__(data, backbone, pretrained_path=pretrained_path, **kwargs)
             data = self._data
 
@@ -598,6 +593,7 @@ class FeatureClassifier(ArcGISModel):
             data.emd_path = emd_path
             data.emd = emd
             data = get_multispectral_data_params_from_emd(data, emd)
+            data.device = _get_device()
 
         resize_to = emd.get("resize_to")
         data.resize_to = resize_to
@@ -986,7 +982,6 @@ class FeatureClassifier(ArcGISModel):
         confidence_field=None,
         predict_function=_prediction_function,
     ):
-
         features = feature_layer.query().features
         features_to_update = []
 
@@ -1088,7 +1083,6 @@ class FeatureClassifier(ArcGISModel):
         confidence_field=None,
         predict_function=None,
     ):
-
         """
         Deprecated in ArcGIS version 1.9.1 and later: Use the Classify Objects Using Deep Learning tool or :meth:`~arcgis.learn.classify_objects`
 
@@ -1462,7 +1456,6 @@ class FeatureClassifier(ArcGISModel):
         batch_size,
         overwrite,
     ):
-
         # class values
         class_values = list(self._data.class_mapping.keys())
 

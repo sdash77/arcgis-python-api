@@ -634,7 +634,6 @@ def _get_default_extent(gis):
 
 
 def _v1_create_project(gis, summary, title):
-
     for f in gis.users.me.folders:
         if f["title"].lower() == title.lower():
             raise WorkforceError("A folder named '{}' already exists.".format(title))

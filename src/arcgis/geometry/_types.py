@@ -12,7 +12,6 @@ try:
     import numpy as np
 except ImportError as e:
     pass
-from six import add_metaclass
 from functools import partial, lru_cache
 
 _number_type = (int, float)
@@ -87,7 +86,6 @@ def _is_valid(value):
 
 
 def _is_polygon(coords):
-
     for coord in coords:
         if len(coord) < 4:
             return False
@@ -298,8 +296,7 @@ class GeometryFactory(type):
         return type.__call__(cls, iterable, **kwargs)
 
 
-@add_metaclass(GeometryFactory)
-class Geometry(BaseGeometry):
+class Geometry(BaseGeometry, metaclass=GeometryFactory):
     """
     The base class for all geometries.
 
@@ -473,7 +470,6 @@ class Geometry(BaseGeometry):
         if self.is_empty:
             return svg_top + "/>"
         else:
-
             # Establish SVG canvas that will fit all the data + small space
             xmin, ymin, xmax, ymax = self.extent
             # Expand bounds by a fraction of the data ranges
@@ -1137,7 +1133,6 @@ class Geometry(BaseGeometry):
             except:
                 return None
         if HASARCPY:
-
             if isinstance(self, Point):
                 return tuple(self)
             else:
@@ -1241,7 +1236,6 @@ class Geometry(BaseGeometry):
             except:
                 return None
         elif HASARCPY:
-
             return Geometry(
                 _ujson.loads(
                     arcpy.PointGeometry(
@@ -1397,7 +1391,6 @@ class Geometry(BaseGeometry):
         if HASARCPY and isinstance(self, Envelope):
             return getattr(self.polygon.as_arcpy, "labelPoint", None)
         elif HASARCPY:
-
             return Geometry(
                 arcpy.PointGeometry(
                     getattr(self.as_arcpy, "labelPoint", None), self.spatial_reference
@@ -1436,7 +1429,6 @@ class Geometry(BaseGeometry):
                 }
             )
         elif HASARCPY:
-
             return Geometry(
                 arcpy.PointGeometry(
                     getattr(self.as_arcpy, "lastPoint", None), self.spatial_reference
@@ -1673,7 +1665,14 @@ class Geometry(BaseGeometry):
                 )
             )
         elif HASSHAPELY:
-            return self.centroid
+            centroid_tuple = self.centroid
+            return Point(
+                {
+                    "x": centroid_tuple[0],
+                    "y": centroid_tuple[1],
+                    "spatialReference": self.spatial_reference,
+                }
+            )
         elif isinstance(self, Point):
             return self
         return
@@ -2601,7 +2600,6 @@ class Geometry(BaseGeometry):
             >>> geom2.type
                 arcgis.geometry.Geometry
         """
-        from six import string_types, integer_types
 
         HASARCPY, HASSHAPELY = _check_geometry_engine()
 
@@ -2612,9 +2610,9 @@ class Geometry(BaseGeometry):
                 spatial_reference = SpatialReference(spatial_reference).as_arcpy
             elif isinstance(spatial_reference, arcpy.SpatialReference):
                 spatial_reference = spatial_reference
-            elif isinstance(spatial_reference, integer_types):
+            elif isinstance(spatial_reference, int):
                 spatial_reference = arcpy.SpatialReference(spatial_reference)
-            elif isinstance(spatial_reference, string_types):
+            elif isinstance(spatial_reference, str):
                 spatial_reference = arcpy.SpatialReference(text=spatial_reference)
             else:
                 raise ValueError("Invalid spatial reference object.")
@@ -2635,7 +2633,6 @@ class Geometry(BaseGeometry):
 
         # Project using Proj4 (pyproj)
         if HASPROJ:
-
             esri_projections = {102100: 3857, 102113: 3857}
 
             # Get the input spatial reference
@@ -2650,9 +2647,9 @@ class Geometry(BaseGeometry):
             ):
                 out_srid = spatial_reference.get("wkid", None)
                 out_srid = spatial_reference.get("latestWkid", out_srid)
-            elif isinstance(spatial_reference, integer_types):
+            elif isinstance(spatial_reference, int):
                 out_srid = spatial_reference
-            elif isinstance(spatial_reference, string_types):
+            elif isinstance(spatial_reference, str):
                 out_srid = spatial_reference
             else:
                 raise ValueError("Invalid spatial reference object.")
@@ -3107,6 +3104,7 @@ class Point(Geometry):
 
     _typ = "Point"
     _type = "Point"
+
     # ----------------------------------------------------------------------
     def __init__(self, iterable=None):
         """Constructor"""
@@ -3743,6 +3741,7 @@ class SpatialReference(BaseGeometry):
 
     # ----------------------------------------------------------------------
     _repr_svg_ = None
+
     # ----------------------------------------------------------------------
     def svg(self, scale_factor: float = 1, fill_color: Optional[str] = None):
         """
@@ -3787,7 +3786,6 @@ class SpatialReference(BaseGeometry):
         """
         HASARCPY, HASSHAPELY = _check_geometry_engine()
         if HASARCPY:
-
             if "wkid" in self:
                 return arcpy.SpatialReference(self["wkid"])
             elif "wkt" in self:

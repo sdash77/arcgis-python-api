@@ -8,6 +8,8 @@ from arcgis.gis import GIS
 from functools import lru_cache
 
 _log = logging.getLogger(__name__)
+
+
 ###########################################################################
 class ServerProfileManager(object):
     """
@@ -19,6 +21,7 @@ class ServerProfileManager(object):
     _os = None
     _cfg_file_path = None
     _profile_name = "esri_ags_profile_passwords"
+
     #######################################################################
     def __init__(self):
         self._os = platform.system()
@@ -127,7 +130,6 @@ class ServerProfileManager(object):
             # password will be None if no password is found for the profile
 
             if self._keyring_version() >= [23]:
-
                 password = keyring.get_credential(self._profile_name, profile)
 
                 password = getattr(password, "password", None)
@@ -258,7 +260,6 @@ class ServerProfileManager(object):
             for key in keys:
                 try:
                     if key == "date_modified":
-
                         values[key] = _datetime.datetime.strptime(
                             config.get(profile, key), "%Y-%m-%d %H:%M:%S.%f"
                         )
@@ -549,6 +550,7 @@ class ProfileManager(object):
     _gis = None
     _os = None
     _cfg_file_path = None
+
     #######################################################################
     def __init__(self):
         self._os = platform.system()
@@ -659,7 +661,6 @@ class ProfileManager(object):
             # password will be None if no password is found for the profile
 
             if self._keyring_version() >= [23]:
-
                 password = keyring.get_credential(
                     "arcgis_python_api_profile_passwords", profile
                 )
@@ -807,7 +808,6 @@ class ProfileManager(object):
             for key in keys:
                 try:
                     if key == "date_modified":
-
                         values[key] = _datetime.datetime.strptime(
                             config.get(profile, key), "%Y-%m-%d %H:%M:%S.%f"
                         )

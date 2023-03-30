@@ -9,6 +9,7 @@ from ._resources import PortalResourceManager
 from ._base import BasePortalAdmin
 from ...apps.tracker._location_tracking import LocationTrackingManager
 
+
 ########################################################################
 class PortalAdminManager(BasePortalAdmin):
     """
@@ -51,6 +52,7 @@ class PortalAdminManager(BasePortalAdmin):
     _livingatlas = None
     _category_schema = None
     _whm = None
+
     # ----------------------------------------------------------------------
     def __init__(self, url, gis=None, **kwargs):
         """initializer"""
@@ -183,7 +185,6 @@ class PortalAdminManager(BasePortalAdmin):
         :returns: dict
         """
         if self._gis.version >= [10, 3]:
-
             url = "%s/portaladmin/info" % self._gis._portal.url
             params = {"f": "json"}
             return self._gis._con.get(url, params)

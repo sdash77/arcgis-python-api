@@ -8,7 +8,6 @@ import datetime
 from datetime import date
 import tempfile
 from contextlib import contextmanager
-import six
 import logging
 import decimal
 import functools
@@ -101,7 +100,6 @@ def inspect_function_inputs(fn, **params):
     import inspect
 
     try:
-
         args = list(inspect.signature(fn).parameters.keys()) + ["estimate"]
     except ValueError:
         args = inspect.getfullargspec(func=fn).args
@@ -275,7 +273,7 @@ def zipws(path, outfile, keep=True):
     """
     zipobj = zipfile.ZipFile(outfile, "w", zipfile.ZIP_DEFLATED)
     path = os.path.normpath(path)
-    for (dirpath, dirnames, filenames) in os.walk(path):
+    for dirpath, dirnames, filenames in os.walk(path):
         for file in filenames:
             if not file.endswith(".lock") and not file.endswith(".zip"):
                 try:
@@ -311,9 +309,9 @@ def _to_utf8(data):
         return [_to_utf8(element) for element in data]
     elif isinstance(data, str):
         return data
-    elif isinstance(data, six.text_type):
+    elif isinstance(data, str):
         return data.encode("utf-8")
-    elif isinstance(data, (float, six.integer_types)):
+    elif isinstance(data, (float, int)):
         return data
     else:
         return data

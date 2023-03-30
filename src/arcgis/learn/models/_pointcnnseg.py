@@ -142,7 +142,6 @@ class PointCNN(ArcGISModel):
 
     @classmethod
     def from_model(cls, emd_path, data=None):
-
         """
         Creates an PointCNN model object from a Deep Learning Package(DLPK)
         or Esri Model Definition (EMD) file.
@@ -186,6 +185,7 @@ class PointCNN(ArcGISModel):
                 c=len(class_mapping),
                 chip_size=emd["ImageHeight"],
             )
+            data._is_empty = True
             data.emd_path = emd_path
             data.emd = emd
             for key, value in emd["DataAttributes"].items():
@@ -232,7 +232,6 @@ class PointCNN(ArcGISModel):
         tensorboard=False,
         **kwargs,
     ):
-
         """
         Train the model for the specified number of epochs and using the
         specified learning rates. The precision, recall and f1 scores
@@ -415,7 +414,6 @@ class PointCNN(ArcGISModel):
         return _emd_template
 
     def show_results(self, rows=2, **kwargs):
-
         """
         Displays the results from your model on the validation set
         with ground truth on the left and predictions on the right.
@@ -471,7 +469,6 @@ class PointCNN(ArcGISModel):
             return show_results_tool(self, rows, **kwargs)
 
     def predict_las(self, path, output_path=None, print_metrics=False, **kwargs):
-
         """
         Predicts and writes the resulting las file on the disk.
         The block size which was used for training will be used for prediction.
@@ -543,7 +540,6 @@ class PointCNN(ArcGISModel):
         return inference_las(path, self, output_path, print_metrics, **kwargs)
 
     def compute_precision_recall(self):
-
         """
         Computes precision, recall and f1-score on the validation sets.
         """

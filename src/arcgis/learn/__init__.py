@@ -62,6 +62,7 @@ if not _LAMBDA_TEXT_CLASSIFICATION:
     from ._utils.pointcloud_data import Transform3d
 from ._data import prepare_data, prepare_tabulardata, prepare_textdata
 from ._process_df import process_df, add_datepart
+from ._utils.evaluate_batchsize import estimate_batch_size
 
 
 def _set_param(gis, params, param_name, input_param):
@@ -247,7 +248,6 @@ def detect_objects(
     future=False,
     **kwargs
 ):
-
     """
     Function can be used to generate feature service that contains polygons on detected objects
     found in the imagery data using the designated deep learning model. Note that the deep learning
@@ -439,7 +439,6 @@ def classify_pixels(
     future=False,
     **kwargs
 ):
-
     """
     Function to classify input imagery data using a deep learning model.
     Note that the deep learning library needs to be installed separately,
@@ -591,7 +590,6 @@ def export_training_data(
     future=False,
     **kwargs
 ):
-
     """
     Function is designed to generate training sample image chips from the input imagery data with
     labeled vector data or classified images. The output of this service tool is the data store string
@@ -981,7 +979,6 @@ def classify_objects(
     future=False,
     **kwargs
 ):
-
     """
     Function can be used to output feature service with assigned class label for each feature based on
     information from overlapped imagery data using the designated deep learning model.
@@ -1083,7 +1080,6 @@ def compute_accuracy_for_object_detection(
     future=False,
     **kwargs
 ):
-
     """
     Function can be used to calculate the accuracy of a deep learning model by comparing the detected objects from
     the detect_objects function to ground truth data.
@@ -1232,7 +1228,6 @@ def train_model(
     future=False,
     **kwargs
 ):
-
     """
     Function can be used to train a deep learning model using the output from the
     export_training_data function.
@@ -1540,7 +1535,6 @@ class Model:
             self._model_package = False
 
     def install(self, *, gis=None, future=False, **kwargs):
-
         """
         Function is used to install the uploaded model package (*.dlpk). Optionally after inferencing
         the necessary information using the model, the model can be uninstalled by uninstall_model()
@@ -1666,7 +1660,6 @@ class Model:
         """
 
     def uninstall(self, *, gis=None, future=False, **kwargs):
-
         """
         Function is used to uninstall the uploaded model package that was installed using the install_model()
         This function will delete the named deep learning model from the server but not the portal item.
@@ -1739,7 +1732,6 @@ def export_point_dataset(
     extra_features=[],
     **kwargs
 ):
-
     """
     Exports the las files into h5 blocks.
 

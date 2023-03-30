@@ -3,8 +3,7 @@ name: Draft a release
 about: Use this to create the checklist needed for Python API release
 title: "[RELEASE] "
 labels: release
-assignees: jyaistMap, rwmajor2, achapkowski, AtmaMani, rohitgeo, sandeepgadhwal, mohi9282,
-  priyankatuteja, scdub
+assignees: jyaistMap, rwmajor2, achapkowski, priyankatuteja, scdub, jtroe, CMPeng, rohitgeo, nanaeaubry, nparavicini7, ManushiM
 
 ---
 

@@ -12,6 +12,7 @@ from typing import Dict, Any, Optional, List
 from arcgis.gis import GIS
 import datetime as _dt
 
+
 ###########################################################################
 class GPJobManager:
     """
@@ -25,6 +26,7 @@ class GPJobManager:
     _gis = None
     _url = None
     _properties = None
+
     # ----------------------------------------------------------------------
     def __init__(self, url: str, gis: GIS):
         self._url = url

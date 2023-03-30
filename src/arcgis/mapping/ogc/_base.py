@@ -1,6 +1,7 @@
 import uuid
 from arcgis._impl.common._mixins import PropertyMap
 
+
 ###########################################################################
 class BaseOGC(object):
     """
@@ -35,6 +36,7 @@ class BaseOGC(object):
     _copyright = None
     _min_scale = None
     _max_scale = None
+
     # ----------------------------------------------------------------------
     def __init__(self, url, gis=None, **kwargs):
         self._url = url

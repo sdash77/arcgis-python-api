@@ -10,7 +10,6 @@ from datetime import datetime
 import json
 import os
 from re import S, search
-import six
 import time
 import concurrent.futures
 from typing import Any, Optional, Union
@@ -74,6 +73,33 @@ class FeatureLayer(Layer):
         self._dynamic_layer = dynamic_layer
         self.attachments = AttachmentManager(self)
         self._time_filter = None
+
+    @property
+    def field_groups(self) -> dict[str, Any]:
+        """
+        Returns the defined list of field groups for a given layer.
+
+        :returns: dict[str,Any]
+        """
+        url: str = f"{self._url}/fieldGroups"
+        params: dict[str, Any] = {"f": "json"}
+        try:
+            return self._con.get(url, params=params)
+        except:
+            return {}
+
+    @property
+    def contingent_values(self) -> dict[str, Any]:
+        """
+        Returns the define contingent values for the given layer.
+        :returns: Dict[str,Any]
+        """
+        url: str = f"{self._url}/contingentValues"
+        params: dict[str, Any] = {"f": "json"}
+        try:
+            return self._con.get(url, params=params)
+        except:
+            return {}
 
     @property
     def time_filter(self):
@@ -399,7 +425,6 @@ class FeatureLayer(Layer):
 
         folder = "images"
         for row in dataframe_merged.iterrows():
-
             if label_field is not None:
                 folder = row[1][label_field]
 
@@ -2360,7 +2385,6 @@ class FeatureLayer(Layer):
                     if len(records.features) < max_records:
                         break
                 else:
-
                     df = self._query_df(url, params)
                     count += len(df)
                     dfs.append(df)
@@ -3354,7 +3378,6 @@ class FeatureLayer(Layer):
             else:
                 raise Exception("Could not find ObjectId or FID field.")
         elif deletes is not None and isinstance(deletes, FeatureSet):
-
             field_name = None
             if deletes.object_id_field_name:
                 field_name = deletes.object_id_field_name
@@ -3776,7 +3799,6 @@ class FeatureLayer(Layer):
         if "SHAPE" in featureset_dict:
             df.spatial.set_geometry("SHAPE")
         if len(dfields) > 0:
-
             for fld in [fld for fld in dfields if fld in df.columns]:
                 try:
                     df[fld] = pd.to_datetime(
@@ -3786,7 +3808,6 @@ class FeatureLayer(Layer):
                         unit="s",
                     )
                 except:
-
                     df[fld] = pd.to_datetime(
                         df[fld], errors="coerce", infer_datetime_format=True
                     )
@@ -4256,7 +4277,6 @@ class Table(FeatureLayer):
                     if len(records.features) < max_records:
                         break
                 else:
-
                     df = self._query_df(url, params)
                     count += len(df)
                     dfs.append(df)
@@ -5279,13 +5299,11 @@ class FeatureLayerCollection(_GISResource):
         if out_path is not None and os.path.isdir(out_path):
             dl_url = None
             if "resultUrl" in res:
-
                 dl_url = res["resultUrl"]
             elif "responseUrl" in res:
                 dl_url = res["responseUrl"]
 
             if dl_url is not None:
-
                 return self._con.get(
                     path=dl_url,
                     file_name=dl_url.split("/")[-1],

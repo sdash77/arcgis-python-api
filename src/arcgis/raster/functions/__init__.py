@@ -15,7 +15,13 @@ Functions can be applied to various rasters (or images), including the following
 # Rasters within mosaic datasets
 from __future__ import annotations
 from typing import Optional, Union
-from .._layer import ImageryLayer, Raster, _ArcpyRaster, RasterCollection
+from .._layer import (
+    ImageryLayer,
+    Raster,
+    _ArcpyRaster,
+    RasterCollection,
+    _ArcpyRasterCollection,
+)
 from .utility import (
     _raster_input,
     _get_raster,
@@ -78,10 +84,21 @@ hidden_inputs = ["ToolName", "PrimaryInputParameterName", "OutputRasterParameter
 def _clone_layer(
     layer, function_chain, raster_ra, raster_ra2=None, variable_name="Raster"
 ):
-
     _set_multidimensional_rules(function_chain)
-
     if isinstance(layer, Raster) or isinstance(layer, RasterCollection):
+        if (isinstance(layer, RasterCollection)) and isinstance(
+            layer, _ArcpyRasterCollection
+        ):
+            if "Rasters" in function_chain["rasterFunctionArguments"].keys():
+                if isinstance(
+                    function_chain["rasterFunctionArguments"]["Rasters"],
+                    RasterCollection,
+                ):
+                    function_chain["rasterFunctionArguments"].pop("Rasters")
+
+            return _clone_layer_raster_without_copy(
+                layer, function_chain, function_chain
+            )
         return _clone_layer_raster(
             layer, function_chain, raster_ra, raster_ra2, variable_name
         )
@@ -207,7 +224,6 @@ def _clone_layer_without_copy(layer, function_chain, function_chain_ra):
 def _clone_layer_raster(
     layer, function_chain, raster_ra, raster_ra2=None, variable_name="Raster"
 ):
-
     function_chain_ra = copy.deepcopy(function_chain)
     function_chain_ra["rasterFunctionArguments"][variable_name] = raster_ra
     if raster_ra2 is not None:
@@ -242,12 +258,14 @@ def _clone_layer_raster(
         if (layer._engine != _ArcpyRaster) and (
             layer.tiles_only or (not allow_raster_function and allow_analysis)
         ):
+            service_url = layer.url
             newlyr = Raster(
                 function_chain_ra,
                 is_multidimensional=layer._is_multidimensional,
                 engine=layer._engine,
                 gis=layer._gis,
             )
+            newlyr._engine_obj._service_url = service_url
         else:
             newlyr = Raster(
                 layer._url,
@@ -315,52 +333,76 @@ def _clone_layer_raster(
 
 
 def _clone_layer_raster_without_copy(layer, function_chain, function_chain_ra):
-
-    if layer._datastore_raster:
-        if isinstance(layer._uri, dict) or isinstance(layer._uri, bytes):
-            newlyr = Raster(
-                function_chain_ra,
-                is_multidimensional=layer._is_multidimensional,
-                engine=layer._engine,
-                gis=layer._gis,
-            )
+    if (isinstance(layer, RasterCollection)) and isinstance(
+        layer, _ArcpyRasterCollection
+    ):
+        if hasattr(layer, "_ras_coll_engine_obj"):
+            rc = layer._ras_coll_engine_obj
         else:
-            newlyr = Raster(
-                layer._uri,
-                is_multidimensional=layer._is_multidimensional,
-                engine=layer._engine,
-                gis=layer._gis,
+            rc = layer
+        try:
+            import arcpy, json
+
+            arcpylyr = arcpy.ia.Apply(
+                rc._raster_collection,
+                json.dumps(function_chain_ra),
             )
+            newlyr = Raster(
+                arcpylyr,
+                is_multidimensional=True,
+                engine=rc[0]["Raster"]._engine,
+            )
+            return newlyr
+        except Exception as err:
+            _LOGGER.warning(err)
     else:
-        allow_raster_function = True
-        allow_analysis = True
-        info = layer._get_service_info()
-        if "allowRasterFunction" in info.keys():
-            allow_raster_function = info["allowRasterFunction"]
-        if not allow_raster_function:
-            if "allowAnalysis" in info.keys():
-                allow_analysis = info["allowAnalysis"]
-            if not allow_analysis:
-                raise RuntimeError("Input image service doesnt allow analysis.")
-        if (layer._engine != _ArcpyRaster) and (
-            layer.tiles_only or (not allow_raster_function and allow_analysis)
-        ):
-            newlyr = Raster(
-                function_chain_ra,
-                is_multidimensional=layer._is_multidimensional,
-                engine=layer._engine,
-                gis=layer._gis,
-            )
+        if (hasattr(layer, "_datastore_raster")) and layer._datastore_raster:
+            if isinstance(layer._uri, dict) or isinstance(layer._uri, bytes):
+                newlyr = Raster(
+                    function_chain_ra,
+                    is_multidimensional=layer._is_multidimensional,
+                    engine=layer._engine,
+                    gis=layer._gis,
+                )
+            else:
+                newlyr = Raster(
+                    layer._uri,
+                    is_multidimensional=layer._is_multidimensional,
+                    engine=layer._engine,
+                    gis=layer._gis,
+                )
         else:
-            newlyr = Raster(
-                layer._url,
-                is_multidimensional=layer._is_multidimensional,
-                engine=layer._engine,
-                gis=layer._gis,
-            )
-            newlyr._engine_obj._tiles_only = layer._tiles_only
+            allow_raster_function = True
+            allow_analysis = True
+            info = layer._get_service_info()
+            if "allowRasterFunction" in info.keys():
+                allow_raster_function = info["allowRasterFunction"]
+            if not allow_raster_function:
+                if "allowAnalysis" in info.keys():
+                    allow_analysis = info["allowAnalysis"]
+                if not allow_analysis:
+                    raise RuntimeError("Input image service doesnt allow analysis.")
+            if (layer._engine != _ArcpyRaster) and (
+                layer.tiles_only or (not allow_raster_function and allow_analysis)
+            ):
+                service_url = layer.url
+                newlyr = Raster(
+                    function_chain_ra,
+                    is_multidimensional=layer._is_multidimensional,
+                    engine=layer._engine,
+                    gis=layer._gis,
+                )
+                newlyr._engine_obj._service_url = service_url
+            else:
+                newlyr = Raster(
+                    layer._url,
+                    is_multidimensional=layer._is_multidimensional,
+                    engine=layer._engine,
+                    gis=layer._gis,
+                )
+                newlyr._engine_obj._tiles_only = layer._tiles_only
 
-    if layer._engine == _ArcpyRaster:
+    if (hasattr(layer, "_engine")) and layer._engine == _ArcpyRaster:
         allow_analysis = True  # check only allow  analysis if engine is arcpy as there is no export image case
         info = None
         try:
@@ -487,7 +529,6 @@ def arg_max(
     undefined_class: Optional[int] = None,
     astype: Optional[str] = None,
 ):
-
     """
     In the ArgMax method, all raster bands from every input raster are assigned a 0-based incremental band index,
     which is first ordered by the input raster index, as shown in the table below, and then by the relative band order
@@ -520,7 +561,6 @@ def arg_min(
     undefined_class: Optional[int] = None,
     astype: Optional[str] = None,
 ):
-
     """
     ArgMin is the argument of the minimum, which returns the Band index for which the given pixel attains
     its minimum value.
@@ -553,7 +593,6 @@ def arg_median(
     undefined_class: Optional[int] = None,
     astype: Optional[str] = None,
 ):
-
     """
     The ArgMedian method returns the Band index for which the given pixel attains the median value of values
     from all bands.
@@ -888,7 +927,6 @@ def ndvi(
     band_indexes: Union[str, list] = "4 3",
     astype: Optional[str] = None,
 ):
-
     """
     Normalized Difference Vegetation Index
     NDVI = ((NIR - Red)/(NIR + Red))
@@ -1351,7 +1389,6 @@ def cire(
     band_indexes: Union[str, list] = "7 6",
     astype: Optional[str] = None,
 ):
-
     """
     The Chlorophyll Index - Red-Edge (CIre) is a vegetation index for estimating
     the chlorophyll content in leaves using the ratio of reflectivity in the
@@ -1385,7 +1422,6 @@ def cig(
     band_indexes: Union[str, list] = "7 3",
     astype: Optional[str] = None,
 ):
-
     """
     The Chlorophyll Index - Green (CIg) is a vegetation index for estimating
     the chlorophyll content in leaves using the ratio of reflectivity in
@@ -1548,7 +1584,6 @@ def clay_minerals(
     band_indexes: Union[str, list] = "6 7",
     astype: Optional[str] = None,
 ):
-
     """
     The Clay Minerals (CM) ratio is a geological index for identifying
     mineral features containing clay and alunite using two shortwave
@@ -1616,7 +1651,6 @@ def bai(
     band_indexes: Union[str, list] = "3 4",
     astype: Optional[str] = None,
 ):
-
     """
     The Burn Area Index (BAI) uses the reflectance values in the red and NIR portion of the spectrum to identify
     the areas of the terrain affected by fire.
@@ -1839,7 +1873,6 @@ def classify(
     classifier_definition: Optional[dict] = None,
     astype: Optional[str] = None,
 ):
-
     """
     classifies a segmented raster to a categorical raster.
 
@@ -1901,7 +1934,6 @@ def clip(
     clipping_raster: Optional[Union[Raster, ImageryLayer]] = None,
     use_input_geometry: bool = True,
 ):
-
     """
     Clips a raster using a rectangular shape according to the extents defined or will clip a raster to the shape of an
     input polygon. The shape defining the clip can clip the extent of the raster or clip out an area within the raster.
@@ -1970,6 +2002,13 @@ def clip(
         geom_dict = template_dict["rasterFunctionArguments"]["ClippingGeometry"]
 
         template_dict["rasterFunctionArguments"]["Extent"] = extent_envelope
+        if (geom_dict) and not isinstance(
+            Geometry(geom_dict), Envelope
+        ):  # Setting extent to extent envelope will only work for services on or after 11.0
+            if [
+                int(v) for v in str(dict(layer.properties)["currentVersion"]).split(".")
+            ] < [11, 0]:
+                template_dict["rasterFunctionArguments"]["Extent"] = None
 
     except:
         pass
@@ -2053,7 +2092,6 @@ def colormap(
 
 
 def composite_band(rasters, astype: Optional[str] = None, cellsize_type: str = "MaxOf"):
-
     """
     Combines multiple images to form a multiband image.
 
@@ -6767,7 +6805,6 @@ def percentile(
     astype: Optional[str] = None,
     process_as_multiband: Optional[bool] = None,
 ):
-
     """
     The percentile function calculates the percentile of the inputs.
     The arguments for this function are as follows:
@@ -7982,7 +8019,6 @@ def vector_field_renderer(
 
 
 def apply(raster: Union[Raster, ImageryLayer], fn_name, **kwargs):
-
     """
     Applies a server side raster function template defined by the imagery layer (image service)
     The name of the raster function template is available in the imagery layer properties.rasterFunctionInfos.
@@ -8132,7 +8168,6 @@ def vector_field(
 
 
 def complex(raster: Union[Raster, ImageryLayer]):
-
     """
     Complex function computes magnitude from complex values. It is used when
     input raster has complex pixel type. It computes magnitude from complex
@@ -8164,7 +8199,6 @@ def complex(raster: Union[Raster, ImageryLayer]):
 
 
 def colormap_to_rgb(raster: Union[Raster, ImageryLayer]):
-
     """
     The colormap_to_rgb function is designed to work with single band image service that has
     internal colormap. It will convert the image into a three-band 8-bit RGB
@@ -8322,7 +8356,6 @@ def identity(raster: Union[Raster, ImageryLayer]):
 def colorspace_conversion(
     raster: Union[Raster, ImageryLayer], conversion_type: str = "rgb_to_hsv"
 ):
-
     """
     The ColorspaceConversion function converts the color model of a three-band
     unsigned 8-bit image from either the hue, saturation, and value (HSV)
@@ -8728,7 +8761,6 @@ def weighted_overlay(
     eval_from: int,
     eval_to: int,
 ):
-
     """
     The WeightedOverlay function allows you to overlay several rasters using a common measurement scale and weights each according to its importance. For more information, see
     `Weighted Overlay function <http://desktop.arcgis.com/en/arcmap/latest/manage-data/raster-and-images/weighted-overlay-function.htm>`_
@@ -8776,7 +8808,6 @@ def weighted_overlay(
 def weighted_sum(
     rasters: Union[Raster, ImageryLayer], fields: list[str], weights: list[float]
 ):
-
     """
     The weighted_sum function allows you to overlay several rasters, multiplying each by their given weight and summing them together. For more information, see
     `Weighted Sum function <http://desktop.arcgis.com/en/arcmap/latest/manage-data/raster-and-images/weighted-sum-function.htm>`_
@@ -8979,7 +9010,6 @@ def focal_stats(
 
 
 def lookup(raster: Union[Raster, ImageryLayer], field: Optional[str] = None):
-
     """
     Creates a new raster by looking up values found in another field in the table of the input raster.
     For more information see,
@@ -9367,7 +9397,6 @@ def monitor_vegetation(
 def constant_raster(
     constant: list, raster_info: Union[Raster, ImageryLayer], gis: Optional[GIS] = None
 ):
-
     """
     Creates a virtual raster with a single pixel value.
 
@@ -9654,7 +9683,6 @@ def aggregate_cells(
     extent_handling: bool = False,
     ignore_nodata: bool = False,
 ):
-
     """
     Generates a reduced-resolution version of a raster.
 
@@ -9938,7 +9966,6 @@ def predict_using_trend(
     interval_value: int = 1,
     interval_unit: str = "HOURS",
 ):
-
     """
     Computes a forecasted multidimensional raster layer using the output trend raster from the generate_trend function.
 
@@ -10038,7 +10065,6 @@ def linear_spectral_unmixing(
     non_negative: bool = False,
     sum_to_one: bool = False,
 ):
-
     """
     Performs subpixel classification and calculates the fractional abundance of different land cover types for individual pixels.
 
@@ -10300,7 +10326,6 @@ def s1_radiometric_calibration(
     raster: Union[Raster, ImageryLayer],
     calibration_type: Optional[Union[str, int]] = None,
 ):
-
     """
     Performs different types of radiometric calibration on Sentinel-1 data.
 
@@ -10353,7 +10378,6 @@ def s1_radiometric_calibration(
 
 
 def s1_thermal_noise_removal(raster: Union[Raster, ImageryLayer]):
-
     """
     Removes thermal noise from Sentinel-1 data.
 
@@ -10852,7 +10876,6 @@ def compute_change(
     from_class_name_field_name: Optional[str] = None,
     to_class_name_field_name: Optional[str] = None,
 ):
-
     """
     Produce raster outputs representing of various changes.
     Function available in ArcGIS Image Server 10.8.1 and higher.
@@ -11089,7 +11112,6 @@ def detect_change_using_change_analysis_raster(
     min_end_value: Optional[float] = None,
     max_end_value: Optional[float] = None,
 ):
-
     """
     Function generates a raster containing pixel change information using the
     output change analysis raster from the :meth:`~arcgis.raster.analytics.analyze_changes_using_ccdc` function
@@ -11456,7 +11478,6 @@ def detect_change_using_change_analysis_raster(
 
 
 def trend_to_rgb(raster: Union[Raster, ImageryLayer], model_type: str = 0):
-
     """
     Display the generate trend raster.
     Function available in ArcGIS Image Server 10.8.1 and higher.
@@ -11515,7 +11536,6 @@ def apparent_reflectance(
     scale_factor: Optional[int] = None,
     offset: Optional[int] = None,
 ):
-
     """
     Function calibrates the digital number (DN) values of imagery from some satellite
     sensors. The calibration uses sun elevation, acquisition date, sensor gain and
@@ -11660,7 +11680,6 @@ def apparent_reflectance(
 
 
 def buffered(raster: Union[Raster, ImageryLayer]):
-
     """
     The Buffered function is used to optimize the performance of complex function chains.
     It stores the output from the part of the function chain that comes before it in memory.
@@ -11978,7 +11997,6 @@ def wind_chill(
     wind_speed_units: str = "mph",
     wind_chill_units: str = "Fahrenheit",
 ):
-
     """
     The Wind Chill function is useful for identifying dangerous winter conditions that, depending on exposure times to
     the elements, can result in frostbite or even hypothermia. Wind chill is a way to measure how cold an individual
@@ -12187,7 +12205,6 @@ def ccdc_analysis(
     min_anomaly_observations: int = 6,
     update_frequency: float = 1,
 ):
-
     """
     Function evaluates changes in pixel values over time using the Continuous Change Detection and Classification (CCDC)
     method and generates a change analysis raster containing the model results.
@@ -12312,7 +12329,6 @@ def landtrendr_analysis(
     pvalue_threshold: float = 0.01,
     output_other_bands: bool = False,
 ):
-
     """
     Function evaluates changes in pixel values over time using the Landsat-based detection of trends
     in disturbance and recovery (LandTrendr) method and generates a change analysis raster containing the model results.
@@ -12804,7 +12820,6 @@ def interpolate_raster_by_dimension(
     target_raster: Optional[Union[Raster, ImageryLayer]] = None,
     ignore_nodata: bool = True,
 ):
-
     """
 
     Interpolates a multidimensional raster at a specified dimension value using adjacent values.
@@ -14014,7 +14029,6 @@ class RFT:
     def draw_graph(
         self, show_attributes: bool = False, graph_size: str = "14.25, 15.25"
     ):
-
         """
         Displays a structural representation of the function chain and it's raster input values. If
         show_attributes is set to True, then the draw_graph function also displays the attributes

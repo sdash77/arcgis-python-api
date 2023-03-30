@@ -53,6 +53,9 @@ try:
     from ._pointcnn_utils import AverageMetric
     from fastai.core import camel2snake
     import timm
+    from .._utils.evaluate_batchsize import estimate_batch_size
+    from .._utils.evaluate_batchsize import unsupported_models
+    from .._data import prepare_data
 
     # EarlyStoppingCallback should run as one
     # of the first callback so that stop training flag is set
@@ -116,7 +119,6 @@ def nostdout():
 
 
 def _get_device():
-
     if getattr(arcgis.env, "_processorType", "") == "GPU" and torch.cuda.is_available():
         device = torch.device("cuda")
     elif getattr(arcgis.env, "_processorType", "") == "CPU":
@@ -590,7 +592,6 @@ class ArcGISModel(object):
             data.path = Path(os.path.abspath("."))
 
         if getattr(self, "_is_edge_detection", False):
-
             if len(data.classes) > 2:
                 raise Exception(
                     "Found multi-labels in the data, This is a binary segmentation model and hence please export the data with binary labels."
@@ -607,6 +608,16 @@ class ArcGISModel(object):
         self._slice_lr = True
         self._pretrained_path = kwargs.get("pretrained_path", None)
         self._check_data_support_with_pretrained_path()
+        self._model_kwargs = kwargs
+        if self.__class__.__name__ not in unsupported_models:
+            if not getattr(data, "_is_empty", False) and data._estimate_batch:
+                try:
+                    data._estimate_batch = False
+                    batch_size = estimate_batch_size(self, mode="none")
+                    self._data.train_dl.batch_size = batch_size.recommended_batchsize
+                    self._data.valid_dl.batch_size = batch_size.recommended_batchsize
+                except Exception as e:
+                    data._estimate_batch = True
 
     def _check_data_support_with_pretrained_path(self):
         if self._data is not None and self._pretrained_path is not None:
@@ -1039,7 +1050,6 @@ class ArcGISModel(object):
     def _create_emd_template(
         self, path, compute_metrics=True, save_inference_file=True
     ):
-
         _emd_template = {}
 
         # For old models - add lr, ModelName
@@ -1305,7 +1315,6 @@ class ArcGISModel(object):
             """
 
         if emd_template.get("ModelParameters", {}).get("model_name", False):
-
             HTML_TEMPLATE = f"""        
                 <p><b> {emd_template.get("ModelName").replace('>', '').replace('<', '')} </b></p>
                 <p><b>Model Name:</b> {emd_template.get('ModelParameters', {}).get('model_name')}</p>
@@ -1314,7 +1323,6 @@ class ArcGISModel(object):
             """
 
         else:
-
             HTML_TEMPLATE = f"""        
                     <p><b> {emd_template.get("ModelName").replace('>', '').replace('<', '')} </b></p>
                     <p><b>Backbone:</b> {emd_template.get('ModelParameters', {}).get('backbone')}</p>
@@ -1505,7 +1513,6 @@ class ArcGISModel(object):
         except Exception as e:
             raise e
         finally:
-
             self.learn.path = temp
             self.framework = framework
             self.learn.model_dir = temp1
@@ -1748,7 +1755,6 @@ class ArcGISModel(object):
         return get_post_processed_model(self, input_normalization=input_normalization)
 
     def _save_model_characteristics(self, model_characteristics_dir):
-
         import shutil
         import matplotlib.pyplot as plt
 

@@ -27,6 +27,8 @@ import arcgis.network as network
 from .._impl.common._utils import inspect_function_inputs
 
 _logger = logging.getLogger()
+
+
 # --------------------------------------------------------------------------
 def find_existing_locations(
     input_layers: Union[
@@ -662,7 +664,7 @@ def find_similar_locations(
 
     The ``find_similar_locations`` method measures the similarity of candidate locations to one or more reference locations.
 
-    Based on criteria you specify,``find_similar_locations`` can answer questions such as the following:
+    Based on criteria you specify, ``find_similar_locations`` can answer questions such as the following:
 
     - Which of your stores are most similar to your top performers with regard to customer profiles?
     - Based on characteristics of villages hardest hit by the disease, which other villages are high risk?

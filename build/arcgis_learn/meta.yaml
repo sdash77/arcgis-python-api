@@ -1,5 +1,5 @@
 {% set name = "arcgis_learn" %}
-{% set version = "2.1.1" %}
+{% set version = "2.2.0" %}
 
 package:
   name: {{ name | lower }}
@@ -13,7 +13,7 @@ requirements:
     - python
 
   run:
-    - arcgis>=2.1.1
+    - arcgis>=2.2.0
     - boost=1.73 # [py<39]
     - boost=1.79 # [py>=39]
     - cairo 1.14.12

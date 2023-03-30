@@ -119,7 +119,6 @@ class SQNSeg(PointCNN):
 
     @classmethod
     def from_model(cls, emd_path, data=None):
-
         """
         Creates an SQNSeg model object from a Deep Learning Package(DLPK)
         or Esri Model Definition (EMD) file.
@@ -163,6 +162,7 @@ class SQNSeg(PointCNN):
                 c=len(class_mapping),
                 chip_size=emd["ImageHeight"],
             )
+            data._is_empty = True
             data.emd_path = emd_path
             data.emd = emd
             for key, value in emd["DataAttributes"].items():
@@ -202,7 +202,6 @@ class SQNSeg(PointCNN):
         super().unfreeze()
 
     def predict_las(self, path, output_path=None, print_metrics=False, **kwargs):
-
         """
         Predicts and writes the resulting las file on the disk.
         The block size which was used for training will be used for prediction.

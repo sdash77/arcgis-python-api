@@ -128,7 +128,6 @@ class UnetClassifier(ArcGISModel):
         *args,
         **kwargs,
     ):
-
         if pretrained_path is not None:
             backbone_pretrained = False
         else:
@@ -189,7 +188,6 @@ class UnetClassifier(ArcGISModel):
                 backbone_split = _backbone_meta["split"]
 
             if "timm" in self._backbone.__module__:
-
                 for bckbn in ["densenet", "inception_v4", "vgg"]:
                     if bckbn in self._backbone.__name__:
                         from torch import nn
@@ -561,7 +559,6 @@ class UnetClassifier(ArcGISModel):
         return float(model_accuracy)
 
     def mIOU(self, mean=False, show_progress=True):
-
         """
         Computes mean IOU on the validation set for each class.
 

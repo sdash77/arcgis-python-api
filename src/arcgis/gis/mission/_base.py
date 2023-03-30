@@ -12,6 +12,7 @@ class BaseMissionServer(object):
     _gis = None
     _con = None
     _properties = None
+
     # ----------------------------------------------------------------------
     def __init__(self, url, gis=None):
         self._url = url

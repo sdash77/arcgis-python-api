@@ -292,7 +292,6 @@ class TemporalAttentionEncoder(nn.Module):
         self.dropout = nn.Dropout(dropout)
 
     def forward(self, x):
-
         sz_b, seq_len, d = x.shape
 
         x = self.inlayernorm(x)
@@ -406,10 +405,7 @@ def get_sinusoid_encoding_table(positions, d_hid, T):
     sinusoid_table[:, 0::2] = np.sin(sinusoid_table[:, 0::2])  # dim 2i
     sinusoid_table[:, 1::2] = np.cos(sinusoid_table[:, 1::2])  # dim 2i+1
 
-    if torch.cuda.is_available():
-        return torch.FloatTensor(sinusoid_table).cuda()
-    else:
-        return torch.FloatTensor(sinusoid_table)
+    return torch.FloatTensor(sinusoid_table)
 
 
 class FocalLoss(nn.Module):
@@ -684,16 +680,16 @@ def model_eval(valid_dt, model, class_dict):
             final_img.shape[3],
             1,
         ),
-    )
+    ).to(model._device)
     final_labs = [validarr.shape[3] * [labsarr[l]] for l in range(validarr.shape[0])]
-    final_labs = torch.stack(sum(final_labs, [])).cuda()
+    final_labs = torch.stack(sum(final_labs, [])).to(model._device)
     divided = DataLoader(img_arr, batch_size=batch_size, pin_memory=False)
     prediction = []
     for i in progress_bar(divided):
-        sim = torch.ones(i.shape[0], i.shape[1], 1).cuda()
+        sim = torch.ones(i.shape[0], i.shape[1], 1).to(model._device)
         model.eval()
         with torch.no_grad():
-            pred = model(i.cuda(), sim)
+            pred = model(i, sim)
         prediction.append(pred.argmax(dim=1))
 
     preds = np.array(

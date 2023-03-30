@@ -456,7 +456,6 @@ class MultiTaskRoadExtractor(ArcGISModel):
         return ["valid_loss", "accuracy", "miou", "dice"]
 
     def mIOU(self, mean=False, show_progress=True):
-
         """
         Computes mean IOU on the validation set for each class.
 
@@ -695,6 +694,7 @@ class MultiTaskRoadExtractor(ArcGISModel):
             )
             data.orient_c = orient_c
             data.class_mapping = class_mapping
+            data._is_empty = True
             data = get_multispectral_data_params_from_emd(data, emd)
             data.emd_path = emd_path
             data.emd = emd

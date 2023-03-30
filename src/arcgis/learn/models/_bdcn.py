@@ -59,19 +59,15 @@ class CustomBDCN:
         return model
 
     def on_batch_begin(self, learn, model_input_batch, model_target_batch, **kwargs):
-
         return model_input_batch, model_target_batch
 
     def transform_input(self, xb):
-
         return xb
 
     def transform_input_multispectral(self, xb):
-
         return xb
 
     def loss(self, model_output, *model_target):
-
         final_loss = self.bdcn.bdcn_loss(model_output, *model_target)
 
         return final_loss
@@ -133,7 +129,6 @@ class BDCNEdgeDetector(ModelExtension):
     """
 
     def __init__(self, data, backbone="vgg19", pretrained_path=None):
-
         self._check_dataset_support(data)
         backbone_name = backbone if type(backbone) is str else backbone.__name__
         if backbone_name not in self.supported_backbones:
@@ -267,6 +262,7 @@ class BDCNEdgeDetector(ModelExtension):
             )
             data.class_mapping = class_mapping
             data.color_mapping = color_mapping
+            data._is_empty = True
             data.emd_path = emd_path
             data.emd = emd
             data.classes = ["background"]
@@ -278,7 +274,6 @@ class BDCNEdgeDetector(ModelExtension):
         return cls(data, backbone, pretrained_path=str(model_file))
 
     def compute_precision_recall(self, thresh=0.5, buffer=3, show_progress=True):
-
         """
         Computes precision, recall and f1 score on validation set.
 
@@ -296,7 +291,6 @@ class BDCNEdgeDetector(ModelExtension):
         """
 
     def show_results(self, rows=5, thresh=0.5, thinning=True, **kwargs):
-
         """
         Displays the results of a trained model on a part of the validation set.
         """

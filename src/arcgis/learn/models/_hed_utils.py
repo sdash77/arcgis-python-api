@@ -49,7 +49,6 @@ def modify_layers(backbone, backbone_fn):
 
 
 def get_hooks(backbone, chip_size):
-
     try:
         hookable_modules = flatten_model(backbone)
         feature_sizes = model_sizes(
@@ -110,7 +109,6 @@ def get_hooks(backbone, chip_size):
 
 class _HEDModel(nn.Module):
     def __init__(self, backbone_fn, chip_size=224, pretrained=True):
-
         super().__init__()
         self.backbone = get_backbone(backbone_fn, pretrained)
         modify_layers(self.backbone, backbone_fn)
@@ -194,7 +192,6 @@ def make_bilinear_weights(size, num_channels):
 
 
 def cross_entropy_loss(prediction, label):
-
     label = label.long()
     mask = (label != 0).float()
     num_positive = torch.sum(mask).float()
@@ -251,7 +248,6 @@ def get_confusion_metric(gt, pred, buffer):
 
 
 def f1_score(pred, gt):
-
     gt = gt.byte().squeeze(1).cpu().numpy()
     pred = (pred[-1] >= 0.5).byte().squeeze(1).cpu().numpy()
     tp, predicted_tp, actual_tp = get_confusion_metric(gt, pred, 3)
@@ -262,7 +258,6 @@ def f1_score(pred, gt):
 
 
 def accuracies(model, dl, detect_thresh=0.5, buffer=3, show_progress=True):
-
     precision, recall, f1score = [], [], []
     model.learn.model.eval()
     acc = {}

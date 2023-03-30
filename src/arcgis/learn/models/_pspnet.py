@@ -147,7 +147,6 @@ class PSPNetClassifier(ArcGISModel):
         *args,
         **kwargs,
     ):
-
         # Set default backbone to be 'resnet50'
         if backbone is None:
             backbone = models.resnet50
@@ -396,6 +395,7 @@ class PSPNetClassifier(ArcGISModel):
             data = get_multispectral_data_params_from_emd(data, emd)
             data.emd_path = emd_path
             data.emd = emd
+            data._is_empty = True
 
         return cls(data, **model_params, pretrained_path=str(model_file))
 
@@ -577,7 +577,6 @@ class PSPNetClassifier(ArcGISModel):
         return float(model_accuracy)
 
     def mIOU(self, mean=False, show_progress=True):
-
         """
         Computes mean IOU on the validation set for each class.
 

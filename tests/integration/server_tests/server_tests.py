@@ -525,6 +525,8 @@ class server_logs_test(unittest.TestCase):
                 logs = server.admin.logs
                 results = logs.query()
                 self.assertIsInstance(results, dict)
+                results2 = logs.query(max_records_return=5002)
+                self.assertIsInstance(results2, dict)
 
 
 ############################################################################

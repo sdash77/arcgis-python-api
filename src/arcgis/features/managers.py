@@ -81,7 +81,10 @@ class WebHookScheduleInfo:
         return {
             "name": self.name,
             "startAt": int(self.start_at.timestamp() * 1000),
-            "recurrenceInfo": {"frequency": self.frequency, "interval": self.interval},
+            "recurrenceInfo": {
+                "frequency": self.frequency,
+                "interval": self.interval,
+            },
         }
 
 
@@ -110,7 +113,9 @@ class AttachmentManager(object):
     """
 
     def __init__(
-        self, layer: features.FeatureLayer, version: str | _version.Version = None
+        self,
+        layer: features.FeatureLayer,
+        version: str | _version.Version = None,
     ):
         self._layer = layer
         if isinstance(version, str):
@@ -704,7 +709,11 @@ class AttachmentManager(object):
         )
 
     def update(
-        self, oid: str, attachment_id: str, file_path: str, return_moment: bool = False
+        self,
+        oid: str,
+        attachment_id: str,
+        file_path: str,
+        return_moment: bool = False,
     ) -> bool:
         """
         Updates an existing attachment with a new file
@@ -1677,7 +1686,6 @@ class WebHookServiceManager(object):
             hook_url = self._url + f"/{resp['globalId']}"
             return WebHook(url=hook_url, gis=self._gis)
         else:
-
             return WebHook(url=resp["url"], gis=self._gis)
 
     # ----------------------------------------------------------------------
@@ -1749,7 +1757,6 @@ class FeatureLayerCollectionManager(_GISResource):
         if "layers" in self.properties:
             for table in self.properties.layers:
                 try:
-
                     self._layers.append(
                         FeatureLayerManager(
                             self.url + "/" + str(table["id"]), self._gis
@@ -1771,7 +1778,6 @@ class FeatureLayerCollectionManager(_GISResource):
         if "tables" in self.properties:
             for table in self.properties.tables:
                 try:
-
                     self._tables.append(
                         FeatureLayerManager(
                             self.url + "/" + str(table["id"]), self._gis
@@ -1799,6 +1805,8 @@ class FeatureLayerCollectionManager(_GISResource):
                     url=self._url + "/WebHooks", fc=self._fs, gis=self._gis
                 )
             return self._wh
+        elif self._gis.version >= [8, 2] and self._gis._portal.is_arcgisonline == False:
+            return self._fs.service.webhook_manager
         return None
 
     # ----------------------------------------------------------------------
@@ -2366,13 +2374,11 @@ class FeatureLayerCollectionManager(_GISResource):
         """
         definition = None
         if json_dict is not None:
-
             if isinstance(json_dict, PropertyMap):
                 definition = dict(json_dict)
             if isinstance(json_dict, collections.OrderedDict):
                 definition = json_dict
             else:
-
                 definition = collections.OrderedDict()
                 if "hasStaticData" in json_dict:
                     definition["hasStaticData"] = json_dict["hasStaticData"]
@@ -2603,7 +2609,6 @@ class FeatureLayerCollectionManager(_GISResource):
             "File Geodatabase",
             "Microsoft Excel",
         ]:
-
             path = (
                 "content/items/"
                 + feature_layer_item.itemid
@@ -2793,6 +2798,22 @@ class FeatureLayerManager(_GISResource):
     def __init__(self, url, gis=None):
         super(FeatureLayerManager, self).__init__(url, gis)
         self._hydrate()
+
+    # ----------------------------------------------------------------------
+    @property
+    def contingent_values(self) -> dict[str, Any]:
+        """returns the contingent values for the service endpoint"""
+        url: str = f"{self._url}/contingentValues"
+        params: dict[str, Any] = {"f": "json"}
+        return self._gis._con.get(url, params)
+
+    # ----------------------------------------------------------------------
+    @property
+    def field_groups(self) -> dict[str, Any]:
+        """returns the field groups for the service endpoint"""
+        url: str = f"{self._url}/fieldGroups"
+        params: dict[str, Any] = {"f": "json"}
+        return self._gis._con.get(url, params)
 
     # ----------------------------------------------------------------------
     @classmethod

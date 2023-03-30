@@ -7,6 +7,7 @@ from arcgis.gis import Group, User
 
 _basemap_definitions = LazyLoader("arcgis.mapping._basemap_definitions")
 
+
 ###########################################################################
 class UX(object):
     """Helper class for modifying common org settings. This class is not created by users directly. An instance of
@@ -660,7 +661,7 @@ class UX(object):
 
     # ----------------------------------------------------------------------
     @property
-    @deprecated(deprecated_in="2.1.0", removed_in="3.0.0", current_version="2.1.0")
+    @deprecated(deprecated_in="2.1.0", removed_in="3.0.0", current_version="2.2.0")
     def enable_comments(self):
         """
         Get/Set item commenting and comments.
@@ -678,7 +679,7 @@ class UX(object):
 
     # ----------------------------------------------------------------------
     @enable_comments.setter
-    @deprecated(deprecated_in="2.1.0", removed_in="3.0.0", current_version="2.1.0")
+    @deprecated(deprecated_in="2.1.0", removed_in="3.0.0", current_version="2.2.0")
     def enable_comments(self, enable: bool = False):
         """
         See main ``enable_comments`` property docstring.
@@ -686,7 +687,7 @@ class UX(object):
         self.item_settings.enable_comments = enable
 
     # ----------------------------------------------------------------------
-    @deprecated(deprecated_in="2.1.0", removed_in="3.0.0", current_version="2.1.0")
+    @deprecated(deprecated_in="2.1.0", removed_in="3.0.0", current_version="2.2.0")
     def set_background(
         self, background_file: str | None = None, is_built_in: bool = True
     ):
@@ -717,7 +718,7 @@ class UX(object):
         )
 
     # ----------------------------------------------------------------------
-    @deprecated(deprecated_in="2.1.0", removed_in="3.0.0", current_version="2.1.0")
+    @deprecated(deprecated_in="2.1.0", removed_in="3.0.0", current_version="2.2.0")
     def get_background(self, download_path: str):
         """
         Get your organization's home page background image. You can use the `set_background()` method to set an image
@@ -736,7 +737,7 @@ class UX(object):
         return self.homepage_settings.get_background(download_path=download_path)
 
     # ----------------------------------------------------------------------
-    @deprecated(deprecated_in="2.1.0", removed_in="3.0.0", current_version="2.1.0")
+    @deprecated(deprecated_in="2.1.0", removed_in="3.0.0", current_version="2.2.0")
     def set_banner(
         self,
         banner_file: str | None = None,
@@ -858,7 +859,7 @@ class UX(object):
         return update_result
 
     # ----------------------------------------------------------------------
-    @deprecated(deprecated_in="2.1.0", removed_in="3.0.0", current_version="2.1.0")
+    @deprecated(deprecated_in="2.1.0", removed_in="3.0.0", current_version="2.2.0")
     def get_banner(self, download_path: str):
         """
         Get your organization's home page banner image. You can use the `set_banner()` method to set an image or custom HTML
@@ -887,7 +888,6 @@ class UX(object):
         # loop through and remove existing banner resource file
         banner_path = None
         for banner in e_banner:
-
             try:
                 banner_path = self._portal_resources.get(banner["key"], download_path)
 
@@ -897,7 +897,7 @@ class UX(object):
 
     # ----------------------------------------------------------------------
     @property
-    @deprecated(deprecated_in="2.1.0", removed_in="3.0.0", current_version="2.1.0")
+    @deprecated(deprecated_in="2.1.0", removed_in="3.0.0", current_version="2.2.0")
     def default_extent(self):
         """
         Get/Set the site's default extent
@@ -921,7 +921,7 @@ class UX(object):
 
     # ----------------------------------------------------------------------
     @default_extent.setter
-    @deprecated(deprecated_in="2.1.0", removed_in="3.0.0", current_version="2.1.0")
+    @deprecated(deprecated_in="2.1.0", removed_in="3.0.0", current_version="2.2.0")
     def default_extent(self, extent: dict):
         """
         See main ``default_extent`` property docstring
@@ -930,7 +930,7 @@ class UX(object):
 
     # ----------------------------------------------------------------------
     @property
-    @deprecated(deprecated_in="2.1.0", removed_in="3.0.0", current_version="2.1.0")
+    @deprecated(deprecated_in="2.1.0", removed_in="3.0.0", current_version="2.2.0")
     def default_basemap(self):
         """
         Get/Set the site's default basemap.
@@ -953,7 +953,7 @@ class UX(object):
 
     # ----------------------------------------------------------------------
     @default_basemap.setter
-    @deprecated(deprecated_in="2.1.0", removed_in="3.0.0", current_version="2.1.0")
+    @deprecated(deprecated_in="2.1.0", removed_in="3.0.0", current_version="2.2.0")
     def default_basemap(self, value: str):
         """
         See main ``default_basemap`` property docstring
@@ -962,7 +962,7 @@ class UX(object):
 
     # ----------------------------------------------------------------------
     @property
-    @deprecated(deprecated_in="2.1.0", removed_in="3.0.0", current_version="2.1.0")
+    @deprecated(deprecated_in="2.1.0", removed_in="3.0.0", current_version="2.2.0")
     def vector_basemap(self):
         """
         Get/Set the default vector basemap
@@ -980,7 +980,7 @@ class UX(object):
 
     # ----------------------------------------------------------------------
     @vector_basemap.setter
-    @deprecated(deprecated_in="2.1.0", removed_in="3.0.0", current_version="2.1.0")
+    @deprecated(deprecated_in="2.1.0", removed_in="3.0.0", current_version="2.2.0")
     def vector_basemap(self, basemap: dict):
         """
         See main ``vector_basemap`` property docstring
@@ -1135,7 +1135,6 @@ class HomePageSettings(object):
                 if banner["key"].startswith("background")
             ]
             for background in e_background:
-
                 try:
                     bckgrnd_path = self._portal_resources.get(
                         background["key"], download_path
@@ -1184,7 +1183,6 @@ class HomePageSettings(object):
         key_val = ""
         # find image extension
         if logo_file is not None and os.path.isfile(logo_file):
-
             fpath = Path(logo_file)
             f_splits = fpath.name.split(".")
             if len(f_splits) > 1 and f_splits[1] == "png":
@@ -1557,6 +1555,20 @@ class MapSettings(object):
         )
 
     # ----------------------------------------------------------------------
+    def update_basemap_gallery(self):
+        """
+        Update the basemap gallery group by getting rid of deprecated maps.
+        Returns the updated group.
+        """
+        if self.use_vector_basemap:
+            return self.basemap_gallery_group
+        basemap_group = self.basemap_gallery_group
+        for item in basemap_group.content():
+            if item.content_status == "deprecated" and item.type == "Web Map":
+                item.unshare([basemap_group])
+        return basemap_group
+
+    # ----------------------------------------------------------------------
     @property
     def default_mapviewer(self):
         """
@@ -1766,7 +1778,8 @@ class MapSettings(object):
 #############################################################################
 class ItemSettings(object):
     """Helper class that can be called off of UX class using the 'item_settings' property.
-    Edit org item settings such as the enabling/disabling comments, metadata info, etc."""
+    Edit org item settings such as the enabling/disabling comments, metadata info, etc.
+    """
 
     # ----------------------------------------------------------------------
     def __init__(self, gis):

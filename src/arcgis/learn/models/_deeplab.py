@@ -116,7 +116,6 @@ class _DeepLabOverride(DeepLabV3):
             )  # backbone_features_channel 256
 
     def forward(self, x):
-
         if self.pointrend:
             result = self.modified_forward(x)
             if self.training:
@@ -131,7 +130,6 @@ class _DeepLabOverride(DeepLabV3):
                 return result["out"]
 
     def modified_forward(self, x):
-
         input_shape = x.shape[-2:]
         features = self.backbone(x)
         result = OrderedDict()
@@ -491,6 +489,7 @@ class DeepLab(ArcGISModel):
             )
             empty_data.class_mapping = class_mapping
             empty_data.color_mapping = color_mapping
+            empty_data._is_empty = True
             empty_data = get_multispectral_data_params_from_emd(empty_data, emd)
             empty_data.emd_path = emd_path
             empty_data.emd = emd
@@ -667,7 +666,6 @@ class DeepLab(ArcGISModel):
             return fig
 
     def mIOU(self, mean=False, show_progress=True):
-
         """
         Computes mean IOU on the validation set for each class.
 

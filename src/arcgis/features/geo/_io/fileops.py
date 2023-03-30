@@ -18,7 +18,6 @@ from arcgis.geometry import Geometry
 
 
 try:
-
     arcpy = LazyLoader("arcpy", strict=True)
     HASARCPY = True
 except:
@@ -492,20 +491,20 @@ def to_table(geo, location, overwrite=True, sanitize_columns=False):
 
     :return: String
     """
+    old_column, old_index = None, None
+    if sanitize_columns:
+        old_column = geo._data.columns.tolist()
+        old_index = copy.deepcopy(geo._data.index)
+        _sanitize_column_names(geo, inplace=True)
     out_location = os.path.dirname(location)
     fc_name = os.path.basename(location)
-    df = geo._data.copy()
+    df = geo._data.copy().convert_dtypes()
     df[df.select_dtypes(np.number).columns.tolist()] = df[
         df.select_dtypes(np.number).columns.tolist()
     ].replace({pd.NA: None})
     df[df.select_dtypes(pd.StringDtype()).columns.tolist()] = df[
         df.select_dtypes(pd.StringDtype()).columns.tolist()
     ].replace(pd.NA, "")
-    old_column, old_index = None, None
-    if sanitize_columns:
-        old_column = df.columns.tolist()
-        old_index = copy.deepcopy(df.index)
-        _sanitize_column_names(geo, inplace=True)
 
     if location.lower().find(".csv") > -1:
         geo._data.to_csv(location)
@@ -672,7 +671,6 @@ def from_featureclass(filename, **kwargs):
     ):
         filename = filename
     else:
-
         filename = _ensure_path_string(filename)
         if not isinstance(filename, (str, Path, PurePath)):
             raise ValueError(
@@ -815,7 +813,6 @@ def from_featureclass(filename, **kwargs):
     ):
         is_gdb = os.path.dirname(filename).lower().find(".gdb") > -1
         if is_gdb:
-
             # Remove deprecation warning.
             fiona_env = fiona.drivers
             if hasattr(fiona, "Env"):
@@ -932,7 +929,7 @@ def to_featureclass(
     out_location = os.path.dirname(location)
 
     fc_name = os.path.basename(location)
-    df = geo._data.copy()
+    df = geo._data.copy().convert_dtypes()
     old_idx = df.index
     df.reset_index(drop=True, inplace=True)
     if geo.name is None:
@@ -1059,7 +1056,6 @@ def to_featureclass(
             smaller_array = [np.array([], np.dtype(d)) for d in smaller_dtypes]
             for array in smaller_array:
                 try:
-
                     arcpy.da.ExtendTable(
                         fc, oidfld, array, join_dummy, append_only=False
                     )
@@ -1100,7 +1096,18 @@ def to_featureclass(
 
                 q = df[df.spatial.name].isna()
                 df.loc[q, "SHAPE"] = null_geom  # set null values to proper JSON
-                np.apply_along_axis(_insert_row, 1, df[dfcols].values)
+                replace_mappings = {
+                    pd.NA: None,
+                    np.nan: None,
+                    np.NaN: None,
+                    np.NAN: None,
+                    pd.NaT: None,
+                }
+                np.apply_along_axis(
+                    _insert_row,
+                    1,
+                    df.replace(replace_mappings)[dfcols].values,
+                )
 
                 df.loc[q, "SHAPE"] = None  # reset null values
         except ValueError as ve:
@@ -1191,11 +1198,9 @@ def _pyshp_to_shapefile(df, out_path, out_name):
                             shpfile.field(name=c, size=255)
                         elif isinstance(df[c].loc[idx], (int)):
                             shpfile.field(name=c, fieldType="N", size=5)
-                        elif isinstance(df[c].loc[idx], (np.int, np.int32)):
+                        elif isinstance(df[c].loc[idx], (int, np.int32)):
                             shpfile.field(name=c, fieldType="N", size=10)
-                        elif isinstance(
-                            df[c].loc[idx], (np.float, np.float64, np.int64)
-                        ):
+                        elif isinstance(df[c].loc[idx], (float, np.float64, np.int64)):
                             shpfile.field(name=c, fieldType="F", size=19, decimal=11)
                         elif (
                             isinstance(
@@ -1320,9 +1325,9 @@ def _pyshp2(df, out_path, out_name):
                         shpfile.field(name=c, size=255)
                     elif isinstance(df[c].loc[idx], (int)):
                         shpfile.field(name=c, fieldType="N", size=5)
-                    elif isinstance(df[c].loc[idx], (np.int, np.int32)):
+                    elif isinstance(df[c].loc[idx], np.int32):
                         shpfile.field(name=c, fieldType="N", size=10)
-                    elif isinstance(df[c].loc[idx], (np.float, np.float64, np.int64)):
+                    elif isinstance(df[c].loc[idx], (float, np.float64, np.int64)):
                         shpfile.field(name=c, fieldType="F", size=19, decimal=11)
                     elif (
                         isinstance(

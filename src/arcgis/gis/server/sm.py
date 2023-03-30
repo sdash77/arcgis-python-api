@@ -7,6 +7,8 @@ import logging
 from functools import lru_cache
 
 _log = logging.getLogger(__name__)
+
+
 ###########################################################################
 class ServerManager(object):
     """
@@ -24,6 +26,7 @@ class ServerManager(object):
     _pa = None
     _federation = None
     _properties = None
+
     # ----------------------------------------------------------------------
     def __init__(self, gis):
         self._gis = gis
@@ -81,7 +84,6 @@ class ServerManager(object):
             admin_url = server["adminUrl"]
             public_url = server["url"]
             try:
-
                 if server["serverFunction"] == "NotebookServer":
                     try:
                         from arcgis.gis.nb import NotebookServer
@@ -108,7 +110,6 @@ class ServerManager(object):
                         self._server_list.append(ms)
                 else:
                     try:
-
                         c = ServicesDirectory(
                             url=admin_url, portal_connection=self._gis._portal.con
                         )
