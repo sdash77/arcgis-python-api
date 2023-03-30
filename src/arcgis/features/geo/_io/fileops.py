@@ -491,20 +491,20 @@ def to_table(geo, location, overwrite=True, sanitize_columns=False):
 
     :return: String
     """
+    old_column, old_index = None, None
+    if sanitize_columns:
+        old_column = geo._data.columns.tolist()
+        old_index = copy.deepcopy(geo._data.index)
+        _sanitize_column_names(geo, inplace=True)
     out_location = os.path.dirname(location)
     fc_name = os.path.basename(location)
-    df = geo._data.copy()
+    df = geo._data.copy().convert_dtypes()
     df[df.select_dtypes(np.number).columns.tolist()] = df[
         df.select_dtypes(np.number).columns.tolist()
     ].replace({pd.NA: None})
     df[df.select_dtypes(pd.StringDtype()).columns.tolist()] = df[
         df.select_dtypes(pd.StringDtype()).columns.tolist()
     ].replace(pd.NA, "")
-    old_column, old_index = None, None
-    if sanitize_columns:
-        old_column = df.columns.tolist()
-        old_index = copy.deepcopy(df.index)
-        _sanitize_column_names(geo, inplace=True)
 
     if location.lower().find(".csv") > -1:
         geo._data.to_csv(location)
@@ -929,7 +929,7 @@ def to_featureclass(
     out_location = os.path.dirname(location)
 
     fc_name = os.path.basename(location)
-    df = geo._data.copy()
+    df = geo._data.copy().convert_dtypes()
     old_idx = df.index
     df.reset_index(drop=True, inplace=True)
     if geo.name is None:
