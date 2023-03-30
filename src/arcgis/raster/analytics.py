@@ -9756,19 +9756,6 @@ def derive_continuous_flow(
 
                                                 Example:
                                                     {'cellSize': 11} or {'cellSize': {'url': <image_service_url>}}  or {'cellSize': 'MaxOfIn'}
-
-                                              - Parallel Processing Factor (parallelProcessingFactor): controls
-                                                Raster Processing (CPU) service instances.
-
-                                                Example:
-                                                    Syntax example with a specified number of processing instances:
-
-                                                    {"parallelProcessingFactor": "2"}
-
-                                                    Syntax example with a specified percentage of total
-                                                    processing instances:
-
-                                                    {"parallelProcessingFactor": "60%"}
     ------------------------------------     --------------------------------------------------------------------
     gis                                      Optional GIS. The GIS on which this tool runs. If not specified, the active GIS is used.
     ------------------------------------     --------------------------------------------------------------------
