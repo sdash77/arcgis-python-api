@@ -2748,8 +2748,20 @@ class Sidecar(object):
             else "WebMap_UpdateData",
             "data": {},
         }
-        if extent:
+        if extent and not viewpoint:
             action_dict["data"]["extent"] = extent
+            x_center = (extent["xmin"] + extent["xmax"]) / 2
+            y_center = (extent["ymin"] + extent["ymax"]) / 2
+            viewpoint = {
+                "rotation": 0,
+                "targetGeometry": {
+                    "spatialReference": extent["spatialReference"]
+                    if "spatialReference" in extent
+                    else {"latestWkid": 3857, "wkid": 102100},
+                    "x": x_center,
+                    "y": y_center,
+                },
+            }
         if map_layers:
             action_dict["data"]["mapLayers"] = map_layers
         if viewpoint:
@@ -3297,8 +3309,10 @@ class MapAction:
 
     # ----------------------------------------------------------------------
     @property
-    def data(self) -> dict:
-        return self.properties["data"]
+    def viewpoint(self) -> dict:
+        for action in self._story._properties["actions"]:
+            if action["origin"] == self.node:
+                return action["data"]["viewpoint"]
 
     # ----------------------------------------------------------------------
     @property
@@ -3321,30 +3335,58 @@ class MapAction:
             raise TypeError("Text must be of type string.")
 
     # ----------------------------------------------------------------------
-    @property
-    def extent(self) -> dict:
+    def set_viewpoint(
+        self, target_geometry: dict, scale: Scales, rotation: int | None = None
+    ):
         """
-        Get/Set the map action's extent.
-        The extent dictionary needs to include
-        'spatialReference', 'xmin', 'ymin', 'xmax', and 'ymax' keys.
+        Set the extent and/or scale for the map action in the story.
 
-        Example:
-            extent = {
-                'spatialReference': {'latestWkid': 3857, 'wkid': 102100},
-                'xmin': -19358013.53575059,
-                'ymin': -2062725.667610119,
-                'xmax': 3203751.2291224618,
-                'ymax': 10636827.95979891
-            }
+        To see the current viewpoint call the `viewpoint` property on the Map Action
+        node.
+
+        ==================  ========================================
+        **Parameter**        **Description**
+        ------------------  ----------------------------------------
+        target_geometry     Required dictionary representing the target geometry of the
+                            viewpoint.
+
+                            Example:
+                                | {'spatialReference': {'latestWkid': 3857, 'wkid': 102100},
+                                | 'x': -609354.6306080809,
+                                | 'y': 2885721.2797636474}
+        ------------------  ----------------------------------------
+        scale               Required Scales enum class value or int.
+
+                            Scale is a unitless way of describing how any distance on the map translates
+                            to a real-world distance. For example, a map at a 1:24,000 scale communicates that 1 unit
+                            on the screen represents 24,000 of the same unit in the real world.
+                            So one inch on the screen represents 24,000 inches in the real world.
+        ------------------  ----------------------------------------
+        rotation            Optional float. Determine the rotation for an
+                            action on a 3D map.
+        ==================  ========================================
+
+        :return: The current viewpoint dictionary
         """
-        return self.properties["data"]["extent"]
-
-    # ----------------------------------------------------------------------
-    @extent.setter
-    def extent(self, extent: dict):
-        # get the index of the action in the list
-        action_idx = self._story._properties["actions"].index(self.properties)
-        # set the extent
-        self._story._properties["actions"][action_idx]["data"]["extent"] = extent
-
-    # ----------------------------------------------------------------------
+        for idx, action in enumerate(self._story._properties["actions"]):
+            if action["origin"] == self.node:
+                if rotation is None:
+                    if "viewpoint" in self._story._properties["actions"][idx]["data"]:
+                        rotation = (
+                            self._story._properties["actions"][idx]["data"][
+                                "viewpoint"
+                            ]["rotation"]
+                            if "rotation"
+                            in self._story._properties["actions"][idx]["data"][
+                                "viewpoint"
+                            ]
+                            else 0
+                        )
+                if isinstance(scale, Scales):
+                    scale = scale.value
+                self._story._properties["actions"][idx]["data"]["viewpoint"] = {
+                    "rotation": rotation,
+                    "scale": scale,
+                    "targetGeometry": target_geometry,
+                }
+        return self.viewpoint
