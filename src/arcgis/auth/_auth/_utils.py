@@ -2,7 +2,7 @@ import re
 import urllib.parse as urllib_parse
 from functools import lru_cache
 
-__all__ = ['parse_url', '_split_username']
+__all__ = ["parse_url", "_split_username"]
 
 
 @lru_cache(maxsize=255)

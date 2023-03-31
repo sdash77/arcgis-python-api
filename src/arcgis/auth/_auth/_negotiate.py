@@ -24,7 +24,7 @@ __all__ = ["EsriWindowsAuth"]
 ###########################################################################
 class EsriWindowsAuth(AuthBase):
     _auth_info = None
-    _service = 'HTTP'
+    _service = "HTTP"
     _host = None
     _delegate = False
 
@@ -61,7 +61,7 @@ class EsriWindowsAuth(AuthBase):
          with a domain account.
         """
         if domain is None:
-            domain = '.'
+            domain = "."
 
         if username is not None and password is not None:
             self._auth_info = (username, domain, password)
@@ -92,11 +92,13 @@ class EsriWindowsAuth(AuthBase):
         if parsed.port:
             server_url = f'{parsed.scheme}://{parsed.netloc}:{parsed.port}/{parsed.path[1:].split("/")[0]}'
         else:
-            server_url = f'{parsed.scheme}://{parsed.netloc}/{parsed.path[1:].split("/")[0]}'
+            server_url = (
+                f'{parsed.scheme}://{parsed.netloc}/{parsed.path[1:].split("/")[0]}'
+            )
         token_url: str = None
         if server_url in self._server_log:
             token_url: str = self._server_log[server_url]
-        elif r.text.lower().find('token required') > -1:
+        elif r.text.lower().find("token required") > -1:
             resp = requests.get(
                 f"{server_url}/rest/info",
                 params={"f": "json"},
@@ -105,9 +107,7 @@ class EsriWindowsAuth(AuthBase):
                 verify=self._verify_cert,
                 proxies=self._proxy,
             ).json()
-            self._server_log[parsed.netloc] = resp['authInfo'][
-                "tokenServicesUrl"
-            ]
+            self._server_log[parsed.netloc] = resp["authInfo"]["tokenServicesUrl"]
             token_url: str = self._server_log[parsed.netloc]
 
         if token_url:
@@ -117,8 +117,8 @@ class EsriWindowsAuth(AuthBase):
 
             # this is important for some web applications that store
             # authentication-related info in cookies
-            if r.headers.get('set-cookie'):
-                request.headers['Cookie'] = r.headers.get('set-cookie')
+            if r.headers.get("set-cookie"):
+                request.headers["Cookie"] = r.headers.get("set-cookie")
             postdata = {
                 "request": "getToken",
                 "serverURL": server_url,
@@ -133,7 +133,7 @@ class EsriWindowsAuth(AuthBase):
                 verify=self._verify_cert,
                 proxies=self._proxy,
             ).json()
-            token_str = resp['token']
+            token_str = resp["token"]
             request.headers["X-Esri-Authorization"] = f"Bearer {token_str}"
 
             return request
@@ -142,7 +142,7 @@ class EsriWindowsAuth(AuthBase):
 
     # ----------------------------------------------------------------------
     def _retry_using_http_Negotiate_auth(self, response, scheme, args):
-        if 'Authorization' in response.request.headers:
+        if "Authorization" in response.request.headers:
             return response
 
         if self._host is None:
@@ -154,12 +154,12 @@ class EsriWindowsAuth(AuthBase):
                 )[0][3]
             except socket.gaierror as e:
                 _logger.info(
-                    'Skipping canonicalization of name %s due to error: %s',
+                    "Skipping canonicalization of name %s due to error: %s",
                     self._host,
                     e,
                 )
 
-        targetspn = '{}/{}'.format(self._service, self._host)
+        targetspn = "{}/{}".format(self._service, self._host)
 
         # We request mutual auth by default
         scflags = sspicon.ISC_REQ_MUTUAL_AUTH
@@ -182,15 +182,15 @@ class EsriWindowsAuth(AuthBase):
         # If this is a SSL connection, we need to hash the peer certificate, prepend the RFC5929 channel binding type,
         # and stuff it into a SEC_CHANNEL_BINDINGS structure.
         # This should be sent along in the initial handshake or Kerberos auth will fail.
-        if hasattr(response, 'peercert') and response.peercert is not None:
+        if hasattr(response, "peercert") and response.peercert is not None:
             md = hashlib.sha256()
             md.update(response.peercert)
-            appdata = 'tls-server-end-point:'.encode('ASCII') + md.digest()
+            appdata = "tls-server-end-point:".encode("ASCII") + md.digest()
             cbtbuf = win32security.PySecBufferType(
-                pkg_info['MaxToken'], sspicon.SECBUFFER_CHANNEL_BINDINGS
+                pkg_info["MaxToken"], sspicon.SECBUFFER_CHANNEL_BINDINGS
             )
             cbtbuf.Buffer = struct.pack(
-                'LLLLLLLL{}s'.format(len(appdata)),
+                "LLLLLLLL{}s".format(len(appdata)),
                 0,
                 0,
                 0,
@@ -204,10 +204,10 @@ class EsriWindowsAuth(AuthBase):
             sec_buffer.append(cbtbuf)
 
         content_length = int(
-            response.request.headers.get('Content-Length', '0'), base=10
+            response.request.headers.get("Content-Length", "0"), base=10
         )
 
-        if hasattr(response.request.body, 'seek'):
+        if hasattr(response.request.body, "seek"):
             if content_length > 0:
                 response.request.body.seek(-content_length, 1)
             else:
@@ -221,24 +221,22 @@ class EsriWindowsAuth(AuthBase):
 
         # this is important for some web applications that store
         # authentication-related info in cookies
-        if response.headers.get('set-cookie'):
-            request.headers['Cookie'] = response.headers.get('set-cookie')
+        if response.headers.get("set-cookie"):
+            request.headers["Cookie"] = response.headers.get("set-cookie")
 
         # Send initial challenge auth header
         try:
             error, auth = clientauth.authorize(sec_buffer)
-            request.headers['Authorization'] = '{} {}'.format(
-                scheme, base64.b64encode(auth[0].Buffer).decode('ASCII')
+            request.headers["Authorization"] = "{} {}".format(
+                scheme, base64.b64encode(auth[0].Buffer).decode("ASCII")
             )
             _logger.debug(
-                'Sending Initial Context Token - error={} authenticated={}'.format(
+                "Sending Initial Context Token - error={} authenticated={}".format(
                     error, clientauth.authenticated
                 )
             )
         except pywintypes.error as e:
-            _logger.debug(
-                'Error calling {}: {}'.format(e[1], e[2]), exc_info=e
-            )
+            _logger.debug("Error calling {}: {}".format(e[1], e[2]), exc_info=e)
             return response
 
         # A streaming response breaks authentication.
@@ -253,20 +251,20 @@ class EsriWindowsAuth(AuthBase):
         # Should get another 401 if we are doing challenge-response (NTLM)
         if response2.status_code != 401:
             # Kerberos may have succeeded; if so, finalize our auth context
-            final = response2.headers.get('WWW-Authenticate')
+            final = response2.headers.get("WWW-Authenticate")
             if final is not None:
                 try:
                     # Sometimes Windows seems to forget to prepend 'Negotiate' to the success response,
                     # and we get just a bare chunk of base64 token. Not sure why.
-                    final = final.replace(scheme, '', 1).lstrip()
+                    final = final.replace(scheme, "", 1).lstrip()
                     tokenbuf = win32security.PySecBufferType(
-                        pkg_info['MaxToken'], sspicon.SECBUFFER_TOKEN
+                        pkg_info["MaxToken"], sspicon.SECBUFFER_TOKEN
                     )
-                    tokenbuf.Buffer = base64.b64decode(final.encode('ASCII'))
+                    tokenbuf.Buffer = base64.b64decode(final.encode("ASCII"))
                     sec_buffer.append(tokenbuf)
                     error, auth = clientauth.authorize(sec_buffer)
                     _logger.debug(
-                        'Kerberos Authentication succeeded - error={} authenticated={}'.format(
+                        "Kerberos Authentication succeeded - error={} authenticated={}".format(
                             error, clientauth.authenticated
                         )
                     )
@@ -285,55 +283,47 @@ class EsriWindowsAuth(AuthBase):
         request = response2.request.copy()
 
         # Keep passing the cookies along
-        if response2.headers.get('set-cookie'):
-            request.headers['Cookie'] = response2.headers.get('set-cookie')
+        if response2.headers.get("set-cookie"):
+            request.headers["Cookie"] = response2.headers.get("set-cookie")
 
         # Extract challenge message from server
         challenge = [
             val[len(scheme) + 1 :]
-            for val in response2.headers.get('WWW-Authenticate', '').split(
-                ', '
-            )
+            for val in response2.headers.get("WWW-Authenticate", "").split(", ")
             if scheme in val
         ]
         if len(challenge) != 1:
             raise HTTPError(
-                'Did not get exactly one {} challenge from server.'.format(
-                    scheme
-                )
+                "Did not get exactly one {} challenge from server.".format(scheme)
             )
 
         # Add challenge to security buffer
         tokenbuf = win32security.PySecBufferType(
-            pkg_info['MaxToken'], sspicon.SECBUFFER_TOKEN
+            pkg_info["MaxToken"], sspicon.SECBUFFER_TOKEN
         )
         tokenbuf.Buffer = base64.b64decode(challenge[0])
         sec_buffer.append(tokenbuf)
-        _logger.debug('Got Challenge Token (NTLM)')
+        _logger.debug("Got Challenge Token (NTLM)")
 
         # Perform next authorization step
         try:
             error, auth = clientauth.authorize(sec_buffer)
-            request.headers['Authorization'] = '{} {}'.format(
-                scheme, base64.b64encode(auth[0].Buffer).decode('ASCII')
+            request.headers["Authorization"] = "{} {}".format(
+                scheme, base64.b64encode(auth[0].Buffer).decode("ASCII")
             )
             _logger.debug(
-                'Sending Response - error={} authenticated={}'.format(
+                "Sending Response - error={} authenticated={}".format(
                     error, clientauth.authenticated
                 )
             )
         except pywintypes.error as e:
-            _logger.debug(
-                'Error calling {}: {}'.format(e[1], e[2]), exc_info=e
-            )
+            _logger.debug("Error calling {}: {}".format(e[1], e[2]), exc_info=e)
             return response
 
         response3 = response2.connection.send(request, **args)
 
         if response3.text.lower().find("token required") > -1:
-            request4 = self.generate_token(
-                r=response3, scheme=scheme, args=args
-            )
+            request4 = self.generate_token(r=response3, scheme=scheme, args=args)
             response4 = response3.connection.send(request4, **args)
             if response4.status_code == 401:
                 response4.request.headers.pop("Authorization")
@@ -350,19 +340,14 @@ class EsriWindowsAuth(AuthBase):
     # ----------------------------------------------------------------------
     def _response_hook(self, r, **kwargs):
         if r.status_code == 401:
-            for scheme in ('Negotiate', 'NTLM'):
-                if (
-                    scheme.lower()
-                    in r.headers.get('WWW-Authenticate', '').lower()
-                ):
-                    return self._retry_using_http_Negotiate_auth(
-                        r, scheme, kwargs
-                    )
+            for scheme in ("Negotiate", "NTLM"):
+                if scheme.lower() in r.headers.get("WWW-Authenticate", "").lower():
+                    return self._retry_using_http_Negotiate_auth(r, scheme, kwargs)
         elif r.text.lower().find("token required") > -1:
-            for scheme in ('Negotiate', 'NTLM'):
+            for scheme in ("Negotiate", "NTLM"):
                 if (
                     scheme.lower()
-                    in r.headers.get('WWW-Authenticate', 'Negotiate').lower()
+                    in r.headers.get("WWW-Authenticate", "Negotiate").lower()
                 ):
                     request = self.generate_token(r, "NTLM", kwargs)
                     response4 = r.connection.send(request, **kwargs)
@@ -371,6 +356,6 @@ class EsriWindowsAuth(AuthBase):
 
     # ----------------------------------------------------------------------
     def __call__(self, r):
-        r.headers['Connection'] = 'Keep-Alive'
-        r.register_hook('response', self._response_hook)
+        r.headers["Connection"] = "Keep-Alive"
+        r.register_hook("response", self._response_hook)
         return r

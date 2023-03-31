@@ -58,9 +58,7 @@ class EsriKerberosAuth(AuthBase, SupportMultiAuth):
         self._tokens = {}
         self._token_url = None
         self.verify_cert = verify_cert
-        self._session: requests.Sesssion = kwargs.pop(
-            "session", requests.Session()
-        )
+        self._session: requests.Sesssion = kwargs.pop("session", requests.Session())
         mutual_auth_lu = {
             1: requests_kerberos.REQUIRED,
             2: requests_kerberos.OPTIONAL,
@@ -105,7 +103,9 @@ class EsriKerberosAuth(AuthBase, SupportMultiAuth):
         if parsed.port:
             server_url = f'{parsed.scheme}://{parsed.netloc}:{parsed.port}/{parsed.path[1:].split("/")[0]}'
         else:
-            server_url = f'{parsed.scheme}://{parsed.netloc}/{parsed.path[1:].split("/")[0]}'
+            server_url = (
+                f'{parsed.scheme}://{parsed.netloc}/{parsed.path[1:].split("/")[0]}'
+            )
         if (
             r.text.lower().find("invalid token") > -1
             or r.text.lower().find("token required") > -1
@@ -160,9 +160,7 @@ class EsriKerberosAuth(AuthBase, SupportMultiAuth):
                 data["token"] = token_str
                 r.request.prepare_body(data, None, None)
             else:
-                r.request.headers[
-                    "X-Esri-Authorization"
-                ] = f"Bearer {token_str}"
+                r.request.headers["X-Esri-Authorization"] = f"Bearer {token_str}"
 
             _r = r.connection.send(r.request, **kwargs)
             _r.headers["referer"] = self.referer or "http"
