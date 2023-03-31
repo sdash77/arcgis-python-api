@@ -1,3 +1,4 @@
+from __future__ import annotations
 import re
 import urllib.parse as urllib_parse
 from functools import lru_cache

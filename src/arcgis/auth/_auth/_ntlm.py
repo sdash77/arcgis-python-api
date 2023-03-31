@@ -1,3 +1,4 @@
+from __future__ import annotations
 import warnings
 import base64
 import typing as t
@@ -44,7 +45,9 @@ class EsriHttpNtlmAuth(AuthBase):
     Supports pass-the-hash.
     """
 
-    def __init__(self, username, password, session=None, send_cbt=True, **kwargs):
+    def __init__(
+        self, username, password, session=None, send_cbt=True, **kwargs
+    ):
         """Create an authentication handler for NTLM over HTTP.
 
         :param str username: Username in 'domain\\username' format
@@ -78,9 +81,7 @@ class EsriHttpNtlmAuth(AuthBase):
         if parsed.port:
             server_url = f'{parsed.scheme}://{parsed.netloc}:{parsed.port}/{parsed.path[1:].split("/")[0]}'
         else:
-            server_url = (
-                f'{parsed.scheme}://{parsed.netloc}/{parsed.path[1:].split("/")[0]}'
-            )
+            server_url = f'{parsed.scheme}://{parsed.netloc}/{parsed.path[1:].split("/")[0]}'
         token_url: str = None
         if server_url in self._server_log:
             token_url: str = self._server_log[server_url]
@@ -93,7 +94,9 @@ class EsriHttpNtlmAuth(AuthBase):
                 headers={"referer": self._referer},
                 proxies=self._proxy,
             ).json()
-            self._server_log[parsed.netloc] = resp["authInfo"]["tokenServicesUrl"]
+            self._server_log[parsed.netloc] = resp["authInfo"][
+                "tokenServicesUrl"
+            ]
             token_url: str = self._server_log[parsed.netloc]
 
         if token_url:
@@ -139,7 +142,8 @@ class EsriHttpNtlmAuth(AuthBase):
         cbt = None
         if server_certificate_hash:
             cbt = spnego.channel_bindings.GssChannelBindings(
-                application_data=b"tls-server-end-point:" + server_certificate_hash
+                application_data=b"tls-server-end-point:"
+                + server_certificate_hash
             )
 
         """Attempt to authenticate using HTTP NTLM challenge/response."""
@@ -253,7 +257,9 @@ class EsriHttpNtlmAuth(AuthBase):
                 )
         elif r.status_code == 407:
             # If we didn't have server auth, do proxy auth.
-            proxy_authenticate = r.headers.get("proxy-authenticate", "").lower()
+            proxy_authenticate = r.headers.get(
+                "proxy-authenticate", ""
+            ).lower()
             auth_type = _auth_type_from_header(proxy_authenticate)
             if auth_type is not None:
                 return self.retry_using_http_NTLM_auth(
