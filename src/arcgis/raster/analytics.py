@@ -9728,8 +9728,6 @@ def derive_continuous_flow(
 
                                              This function has the following settings:
 
-                                              - Cell size (cellSize) - Set the output raster cell size, or resolution
-
                                               - Extent (extent): A bounding box that defines the analysis area.
 
                                                 Example:
