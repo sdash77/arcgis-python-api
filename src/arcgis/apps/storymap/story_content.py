@@ -2658,9 +2658,9 @@ class Sidecar(object):
         self,
         slide_number: int,
         text: str,
+        viewpoint: dict,
         extent: dict | None = None,
         map_layers: list[dict] | None = None,
-        viewpoint: dict | None = None,
     ):
         """
         Add a map action button to a slide. You can specify the data of the action.
@@ -2671,6 +2671,23 @@ class Sidecar(object):
         slide_number        Required Integer. The slide that the map action will be added to. First slide is 1.
         ---------------     --------------------------------------------------------------------
         text                Required String. The map action button text
+        ---------------     --------------------------------------------------------------------
+        viewpoint           Required Dictionary. The viewpoint to be set. The minimum keys to include are
+                            an x and y center point in the target geometry.
+
+                            Example:
+                                viewpoint = {
+                                    "rotation": 0,
+                                    "scale": 18055.954822,
+                                    "targetGeometry": {
+                                        "spatialReference": {
+                                            "latestWkid": 3857,
+                                            "wkid": 102100
+                                        },
+                                        "x": -8723429.856341356,
+                                        "y": 4019095.847955684
+                                    }
+                                }
         ---------------     --------------------------------------------------------------------
         extent              Optional Dictionary. The extent of the map that will be shown when
                             the action button is used.
@@ -2698,23 +2715,6 @@ class Sidecar(object):
                                         "visible": true
                                     }
                                 ]
-        ---------------     --------------------------------------------------------------------
-        viewpoint           Optional Dictionary. The viewpoint to be set. The minimum keys to include are
-                            an x and y center point in the target geometry.
-
-                            Example:
-                                viewpoint = {
-                                    "rotation": 0,
-                                    "scale": 18055.954822,
-                                    "targetGeometry": {
-                                        "spatialReference": {
-                                            "latestWkid": 3857,
-                                            "wkid": 102100
-                                        },
-                                        "x": -8723429.856341356,
-                                        "y": 4019095.847955684
-                                    }
-                                }
         ===============     ====================================================================
 
         :return: The node id for the action that was added to the slide
