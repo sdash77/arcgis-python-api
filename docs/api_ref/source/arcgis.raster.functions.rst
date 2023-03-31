@@ -531,6 +531,10 @@ rasterize_features
 _________________
 .. autofunction:: arcgis.raster.functions.rasterize_features
 
+region_pixel_count
+__________________
+.. autofunction:: arcgis.raster.functions.region_pixel_count
+
 remap
 _____
 .. autofunction:: arcgis.raster.functions.remap
