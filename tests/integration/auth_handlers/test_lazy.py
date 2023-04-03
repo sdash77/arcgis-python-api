@@ -22,7 +22,10 @@ class TestLazyLoader(unittest.TestCase):
 
     def test_exists_method(self):
         assert LazyLoader.check_module_exists("json") == True
-        assert LazyLoader.check_module_exists("the_amazing_chester_the_dog") == False
+        assert (
+            LazyLoader.check_module_exists("the_amazing_chester_the_dog")
+            == False
+        )
 
     def test_lazy_import_submodule(self):
         cf = LazyLoader("concurrent", "futures")

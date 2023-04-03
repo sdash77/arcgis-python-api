@@ -2,7 +2,7 @@ import sys
 
 #
 #  Update the Path to set the test area
-sys.path.insert(0, r"C:\SVN\geosaurus_master_issue_8966\src")
+sys.path.insert(0, r"c:\SVN\geosaurus_issue_9708\src")
 import logging
 import unittest
 from arcgis.auth.tools._util import detect_proxy
@@ -40,7 +40,9 @@ class Test_PKCEAuthHandler(unittest.TestCase):
         )
         username, password, url = gis._username, gis._password, gis.url
         auth = EsriPKCEAuth(url, username, password)
-        with EsriSession(auth=auth, proxies=PROXIES, verify_cert=False) as session:
+        with EsriSession(
+            auth=auth, proxies=PROXIES, verify_cert=False
+        ) as session:
             purl = f"{url}/sharing/rest/portals/self?f=json"
             data = session.get(purl).json()
             assert data['user']['username'].lower() == username.lower()

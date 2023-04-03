@@ -1,6 +1,6 @@
 import sys
 
-# sys.path.insert(0, r"c:\SVN\geosaurus_master_issue_4790a\src")
+sys.path.insert(0, r"c:\SVN\geosaurus_issue_9708\src")
 import unittest
 import platform
 
@@ -26,7 +26,9 @@ else:
 
 
 # @unittest.skipIf(SKIPME == True, reason=msg)
-@unittest.skipIf(WINDOWS == False or SKIPME == True, "Operating System is not Windows")
+@unittest.skipIf(
+    WINDOWS == False or SKIPME == True, "Operating System is not Windows"
+)
 class TestStandAloneServer(unittest.TestCase):
     def test_server_login_generateToken(self):
         """tests a basic login of server"""
@@ -60,7 +62,9 @@ class TestStandAloneServer(unittest.TestCase):
             verify_cert=False,
             legacy=True,
         )
-        with EsriSession(auth=builtin, verify_cert=False, trust_env=True) as session:
+        with EsriSession(
+            auth=builtin, verify_cert=False, trust_env=True
+        ) as session:
             resp1 = session.get(
                 f"{url}/rest/services",
                 params={"f": "json"},

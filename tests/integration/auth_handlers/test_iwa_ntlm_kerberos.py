@@ -1,6 +1,6 @@
 import sys
 
-# sys.path.insert(0, r"c:\SVN\geosaurus_master\src")
+sys.path.insert(0, r"c:\SVN\geosaurus_issue_9708\src")
 import platform
 import unittest
 from arcgis.auth import EsriWindowsAuth, EsriKerberosAuth, EsriSession
@@ -56,7 +56,10 @@ class TestWinAuth(unittest.TestCase):
     def test_win_auth(self):
         auth = EsriWindowsAuth(username=iwa_user, password=iwa_pw)
         with EsriSession(auth=auth) as session:
-            resp = session.get(url=iwa_url + "/sharing/rest/portals/self?f=json")
+            resp = session.get(
+                url=iwa_url + "/sharing/rest/portals/self",
+                params={"f": "json"},
+            )
             data = resp.json()
             assert 'creator2' in data["user"]["username"]
 
@@ -74,16 +77,17 @@ class TestWinAuth(unittest.TestCase):
         auth = EsriWindowsAuth()
         with EsriSession(auth=auth) as session:
             resp = session.get(url=url)
-            server_url = [s["url"] for s in resp.json()["servers"] if s["isHosted"]][
-                0
-            ] + "/rest/services/System"
+            server_url = [
+                s["url"] for s in resp.json()["servers"] if s["isHosted"]
+            ][0] + "/rest/services/System"
             resp2 = session.get(server_url + "?f=json")
             data = resp2.json()
             assert data
 
 
 @unittest.skipIf(
-    WINDOWS == False or SKIP_KERBEROS == True, "Operating System is not Windows"
+    WINDOWS == False or SKIP_KERBEROS == True,
+    "Operating System is not Windows",
 )
 class TestKerberos(unittest.TestCase):
     def test_kerberos(self):
@@ -96,9 +100,9 @@ class TestKerberos(unittest.TestCase):
             resp = session.get(url=url)
             data = resp.json()
             assert data
-            server_url = [s["url"] for s in resp.json()["servers"] if s["isHosted"]][
-                0
-            ] + "/rest/services/System"
+            server_url = [
+                s["url"] for s in resp.json()["servers"] if s["isHosted"]
+            ][0] + "/rest/services/System"
             resp2 = session.get(server_url + "?f=json")
             data = resp2.json()
             assert data
@@ -121,9 +125,9 @@ class TestLDAPAuth(unittest.TestCase):
             assert data["user"]
             resp = session.get(url=server_url)
             data = resp.json()
-            server_url = [s["url"] for s in resp.json()["servers"] if s["isHosted"]][
-                0
-            ] + "/rest/services/System"
+            server_url = [
+                s["url"] for s in resp.json()["servers"] if s["isHosted"]
+            ][0] + "/rest/services/System"
             resp = session.get(server_url + "?f=json")
             data = resp.json()
             assert data["services"]

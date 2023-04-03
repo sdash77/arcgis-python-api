@@ -10,6 +10,7 @@ from urllib.parse import urlparse
 import requests
 from requests.auth import AuthBase
 from requests.exceptions import HTTPError
+from ._utils import _split_username
 
 try:
     pywintypes = LazyLoader("pywintypes", strict=True)
@@ -39,7 +40,6 @@ class EsriWindowsAuth(AuthBase):
         self,
         username=None,
         password=None,
-        domain=None,
         service=None,
         host=None,
         delegate=False,
@@ -66,6 +66,11 @@ class EsriWindowsAuth(AuthBase):
          This allows for single-sign-on to domain resources if the user is currently logged on
          with a domain account.
         """
+        domain = None
+        try:
+            username, domain = _split_username(username)
+        except:
+            username, domain = username, None
         if HAS_GSSAPI == False:
             raise Exception(
                 "The system does not have the required dependencies"
