@@ -13135,31 +13135,34 @@ def region_pixel_count(raster, max_region_size=100, pixel_neighborhood=4):
     layer, raster, raster_ra = _raster_input(raster)
 
     template_dict = {
-            "rasterFunction": "RegionPixelCount",
-            "rasterFunctionArguments": {
-                "Raster": raster,
-            },
-        }
-
-
-    pixel_neighborhood_types = {
-        4: 0,
-        8: 1
+        "rasterFunction": "RegionPixelCount",
+        "rasterFunctionArguments": {
+            "Raster": raster,
+        },
     }
-    
-    if isinstance(pixel_neighborhood, int) and pixel_neighborhood in pixel_neighborhood_types:
+
+    pixel_neighborhood_types = {4: 0, 8: 1}
+
+    if (
+        isinstance(pixel_neighborhood, int)
+        and pixel_neighborhood in pixel_neighborhood_types
+    ):
         in_pixel_neighborhood = pixel_neighborhood_types[pixel_neighborhood]
     else:
-        raise ValueError("Invalid pixel_neighborhood. pixel_neighborhood should be 4 or 8")
-
+        raise ValueError(
+            "Invalid pixel_neighborhood. pixel_neighborhood should be 4 or 8"
+        )
 
     if max_region_size is not None:
-        template_dict["rasterFunctionArguments"]['MaxRegionSize'] = max_region_size
+        template_dict["rasterFunctionArguments"]["MaxRegionSize"] = max_region_size
 
     if pixel_neighborhood is not None:
-        template_dict["rasterFunctionArguments"]['PixelNeighborhood'] = in_pixel_neighborhood
+        template_dict["rasterFunctionArguments"][
+            "PixelNeighborhood"
+        ] = in_pixel_neighborhood
 
     return _clone_layer(layer, template_dict, raster_ra)
+
 
 class RFT:
     def __init__(self, raster_function_template, gis=None):
