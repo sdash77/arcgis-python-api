@@ -270,9 +270,24 @@ class EsriOAuth2Auth(AuthBase, SupportMultiAuth):
                 "password": self._password,
                 "oauth_state": oauth_info["oauth_state"],
             }
-            content = self._session.post(
-                "%s/oauth2/signin" % self.baseurl, data=parameters
-            ).text
+            resp = self._session.post(
+                "%s/oauth2/signin" % self.baseurl,
+                data=parameters,
+                verify=False,
+                proxies=self._proxies,
+                allow_redirects=False,
+            )
+            if resp.status_code == 302:
+                url = resp.headers["Location"]
+                if url.find("acceptTermsAndConditions") > -1:
+                    r2 = self._session.post(
+                        url, data={"acceptTermsAndConditions": True}
+                    )
+                    content = r2.text
+                elif url.find("oauth2/approval") > -1:
+                    r2 = self._session.get(url)
+                    content = r2.text
+
             soup = lxml.html.fromstring(content)
             codes = [
                 t[len("SUCCESS code=") :]

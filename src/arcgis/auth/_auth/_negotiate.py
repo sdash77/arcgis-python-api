@@ -1,3 +1,5 @@
+from __future__ import annotations
+from arcgis.auth.tools import LazyLoader
 import base64
 import hashlib
 import logging
@@ -9,11 +11,15 @@ import requests
 from requests.auth import AuthBase
 from requests.exceptions import HTTPError
 
-import pywintypes
-import sspi
-import sspicon
-import win32security
+try:
+    pywintypes = LazyLoader("pywintypes", strict=True)
+    sspi = LazyLoader("sspi", strict=True)
+    sspicon = LazyLoader("sspicon", strict=True)
+    win32security = LazyLoader("win32security", strict=True)
 
+    HAS_GSSAPI = True
+except ImportError:
+    HAS_GSSAPI = False
 from ._utils import parse_url
 
 _logger = logging.getLogger(__name__)
@@ -60,6 +66,11 @@ class EsriWindowsAuth(AuthBase):
          This allows for single-sign-on to domain resources if the user is currently logged on
          with a domain account.
         """
+        if HAS_GSSAPI == False:
+            raise Exception(
+                "The system does not have the required dependencies"
+                " or is not a Windows based operating system."
+            )
         if domain is None:
             domain = "."
 
@@ -88,6 +99,15 @@ class EsriWindowsAuth(AuthBase):
 
     # ----------------------------------------------------------------------
     def generate_token(self, r, scheme, args):
+        """
+        Generates the Server Token
+
+        Args:
+         r: the requests.Response object
+         schema: string. Http or HTTPS
+         args: a list of optional arguments for the requests' send method.
+
+        """
         parsed = parse_url(url=r.url)
         if parsed.port:
             server_url = f'{parsed.scheme}://{parsed.netloc}:{parsed.port}/{parsed.path[1:].split("/")[0]}'
@@ -142,6 +162,7 @@ class EsriWindowsAuth(AuthBase):
 
     # ----------------------------------------------------------------------
     def _retry_using_http_Negotiate_auth(self, response, scheme, args):
+        """performs the NTLM authorization"""
         if "Authorization" in response.request.headers:
             return response
 
@@ -339,6 +360,7 @@ class EsriWindowsAuth(AuthBase):
 
     # ----------------------------------------------------------------------
     def _response_hook(self, r, **kwargs):
+        """hook logic"""
         if r.status_code == 401:
             for scheme in ("Negotiate", "NTLM"):
                 if scheme.lower() in r.headers.get("WWW-Authenticate", "").lower():
@@ -356,6 +378,7 @@ class EsriWindowsAuth(AuthBase):
 
     # ----------------------------------------------------------------------
     def __call__(self, r):
+        """call method used by requests to register the hook."""
         r.headers["Connection"] = "Keep-Alive"
         r.register_hook("response", self._response_hook)
         return r

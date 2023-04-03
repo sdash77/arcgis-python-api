@@ -2,13 +2,20 @@ from __future__ import annotations
 import warnings
 import base64
 import typing as t
+
+from arcgis.auth.tools import LazyLoader
 from cryptography import x509
 from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives import hashes
 from cryptography.exceptions import UnsupportedAlgorithm
 from requests.auth import AuthBase
 from urllib3.response import HTTPResponse
-import spnego
+
+try:
+    spnego = LazyLoader("spnego", strict=True)
+    HAS_SPNEGO = True
+except:
+    HAS_SPNEGO = False
 
 import requests
 from ._utils import parse_url
@@ -53,6 +60,11 @@ class EsriHttpNtlmAuth(AuthBase):
         :param str session: Unused. Kept for backwards-compatibility.
         :param bool send_cbt: Will send the channel bindings over a HTTPS channel (Default: True)
         """
+        if HAS_SPNEGO == False:
+            raise Exception(
+                "In order to use this form of authentication, "
+                "pyspnego must be installed."
+            )
         self.username = username
         self.password = password
         self.send_cbt = send_cbt
@@ -74,7 +86,9 @@ class EsriHttpNtlmAuth(AuthBase):
     def __repr__(self):
         return f"<{self.__class__.__name__}>"
 
+    # ----------------------------------------------------------------------
     def generate_token(self, r, scheme, args):
+        """generates the server token"""
         parsed = parse_url(url=r.url)
         if parsed.port:
             server_url = f'{parsed.scheme}://{parsed.netloc}:{parsed.port}/{parsed.path[1:].split("/")[0]}'
@@ -127,6 +141,7 @@ class EsriHttpNtlmAuth(AuthBase):
         else:
             return r
 
+    # ----------------------------------------------------------------------
     def retry_using_http_NTLM_auth(
         self,
         auth_header_field,
@@ -135,6 +150,7 @@ class EsriHttpNtlmAuth(AuthBase):
         auth_type,
         args,
     ):
+        """Performs the NTLM handshake"""
         # Get the certificate of the server if using HTTPS for CBT
         server_certificate_hash = self._get_server_cert(response)
         cbt = None

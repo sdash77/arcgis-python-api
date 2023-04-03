@@ -7,18 +7,9 @@ from arcgis.auth._auth._schain import SupportMultiAuth
 from arcgis.auth.tools._lazy import LazyLoader
 from arcgis.auth.tools import parse_url
 
-import re
-
-HAS_SSPI = False
-HAS_GSSAPI = False
 HAS_KERBEROS = False
-WINDOWS = False
-
-
 try:
-    # requests_kerberos = LazyLoader("requests_kerberos", strict=True)
-    import requests_kerberos
-
+    requests_kerberos = LazyLoader("requests_kerberos", strict=True)
     HAS_KERBEROS = True
 except:
     HAS_KERBEROS = False

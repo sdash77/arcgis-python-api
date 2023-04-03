@@ -13,11 +13,6 @@ except ImportError:
 except:
     HASARCPY = False
 
-try:
-    requests_gssapi = LazyLoader("requests_gssapi", strict=True)
-    HAS_GSSAPI = True
-except:
-    HAS_GSSAPI = False
 
 import sys
 
@@ -37,7 +32,6 @@ import os
 import copy
 import json
 import uuid
-import datetime
 import mimetypes
 import logging
 import warnings
@@ -69,10 +63,10 @@ from arcgis.auth._auth._notebook import EsriNotebookAuth
 
 try:
     from arcgis.auth import EsriWindowsAuth
-
-    HAS_SSPI = True
+    from arcgis.auth._auth._negotiate import HAS_GSSAPI
 except ImportError:
-    HAS_SSPI = False
+    HAS_GSSAPI = False
+
 
 try:
     from arcgis.auth import EsriKerberosAuth
@@ -664,8 +658,14 @@ class Connection(object):
                     **self._security_kwargs,
                 )
             elif HAS_GSSAPI:
+                from arcgis.auth._auth._utils import _split_username
+
+                domain, username = None, None
+                if self._username and self._password:
+                    username, domain = _split_username(self._username)
                 self._session.auth = EsriWindowsAuth(
-                    username=self._username,
+                    username=username,
+                    domain=domain or None,
                     password=self._password,
                     verify_cert=self._verify_cert,
                     legacy=False,
@@ -684,7 +684,7 @@ class Connection(object):
             self._session.auth = GuessAuth(
                 username=self._username, password=self._password
             )
-        elif self._auth.lower() in ["iwa", "ntlm"] and HAS_SSPI:
+        elif self._auth.lower() in ["iwa", "ntlm"] and HAS_GSSAPI:
             self._session.auth = EsriWindowsAuth(
                 username=self._username,
                 password=self._password,
@@ -699,7 +699,7 @@ class Connection(object):
         elif not self._cert_file and not self._key_file:
             # else:
 
-            if HAS_SSPI:
+            if HAS_GSSAPI:
                 try:
                     self._session.auth = EsriWindowsAuth(
                         verify_cert=self._verify_cert,

@@ -1,5 +1,6 @@
 import sys
 
+# sys.path.insert(0, r"c:\SVN\geosaurus_issue_9708\src")
 # sys.path.insert(0, r"c:\SVN\geosaurus_master\src")
 from arcgis.auth.tools._util import detect_proxy
 
@@ -8,10 +9,18 @@ import unittest
 from arcgis.gis import GIS
 
 try:
-    from _utils import get_config_parser
+    from _utils import get_config_parser, decode_value
 except:
-    from ._utils import get_config_parser
+    from ._utils import get_config_parser, decode_value
 
+
+if "multiiwa" in get_config_parser():
+    SKIP_MULTIIWA = False
+    multiiwa_url = get_config_parser()["multiiwa"]["url"]
+    multiiwa_user = get_config_parser()["multiiwa"]["username"]
+    multiiwa_pw = get_config_parser()["multiiwa"]["password"]
+else:
+    SKIP_MULTIIWA = True
 
 if "iwa" in get_config_parser():
     SKIP_IWA = False
@@ -64,7 +73,19 @@ class TestWinAuth(unittest.TestCase):
 
 
 @unittest.skipIf(
-    WINDOWS == False or SKIP_KERBEROS == True, "Operating System is not Windows"
+    WINDOWS == False or SKIP_IWA == True, "Operating System is not Windows"
+)
+class TestMultiIWAAuth(unittest.TestCase):
+    def test_win_auth(self):
+        gis = GIS(
+            url=multiiwa_url, password=multiiwa_pw, username=multiiwa_user
+        )
+        assert gis.users.me
+
+
+@unittest.skipIf(
+    WINDOWS == False or SKIP_KERBEROS == True,
+    "Operating System is not Windows",
 )
 class TestKerberos(unittest.TestCase):
     def test_kerberos(self):
