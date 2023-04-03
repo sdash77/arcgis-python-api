@@ -35,9 +35,8 @@ def get_kube_credentials(
     # variables for your AVWORLD username & password, or enter them
     # in via the command line every time you run the methods
 
-    if platform.system() is "Windows" and os.environ.get("userdomain") == "AVWORLD":
+    if platform.system() == "Windows" and os.environ.get("userdomain") == "AVWORLD":
         from requests_negotiate_sspi import HttpNegotiateAuth
-
         page = requests.get(site, auth=HttpNegotiateAuth())
     else:
         from requests_ntlm2 import HttpNtlmAuth
@@ -102,67 +101,67 @@ def setup_profiles(
     updated_list = pm.list()
 
     if not online_name in updated_list:
-        print("Creating online profile")
         pm.create(
             online_name,
             url="https://www.arcgis.com",
             username="arcgis_python",
             password="amazing_arcgis_123",
         )
+        print(f"Created profile {online_name}")
 
     if not online_admin_name in updated_list:
-        print("Creating online admin profile")
         pm.create(
             online_admin_name,
             url="https://www.arcgis.com",
             username="arcgispyapibot",
             password="geosaurus_automation123",
         )
+        print(f"Created profile {online_admin_name}")
 
     if not online_api_data_owner_name in updated_list:
-        print("Creating online api data owner profile")
         pm.create(
             online_api_data_owner_name,
             url="https://www.arcgis.com",
             username="api_data_owner",
             password="donot3xposeme",
         )
+        print(f"Created profile {online_api_data_owner_name}")
 
     if not ent_name in updated_list:
-        print("Creating ent profile")
         pm.create(
             ent_name,
             url="https://pythonapi.playground.esri.com/portal/",
             username="arcgis_python",
             password="amazing_arcgis_123",
         )
+        print(f"Created profile {ent_name}")
 
     if not ent_admin_name in updated_list:
-        print("Creating ent admin profile")
         pm.create(
             ent_admin_name,
             url="https://pythonapi.playground.esri.com/portal/",
             username="arcgispyapibot",
             password="geosaurus_automation123",
         )
+        print(f"Created profile {ent_admin_name}")
 
     if not kube_name in updated_list:
-        print("Creating kube profile")
+        kube_credentials = get_kube_credentials()
         pm.create(
             kube_name,
             url=get_kube_server(),
-            username=get_kube_credentials()[0],
-            password=get_kube_credentials()[1],
+            username=kube_credentials[0],
+            password=kube_credentials[1],
         )
+        print(f"Created profile {kube_name}")
 
-    print(pm.get("your_online_profile"))
-    print(pm.get("your_online_admin_profile"))
-    print(pm.get("your_online_api_data_owner_profile"))
-    print(pm.get("your_enterprise_profile"))
-    print(pm.get("your_ent_admin_profile"))
-    print(pm.get("your_kubernetes_profile"))
+    print(pm.get(online_name))
+    print(pm.get(online_admin_name))
+    print(pm.get(online_api_data_owner_name))
+    print(pm.get(ent_name))
+    print(pm.get(ent_admin_name))
+    print(pm.get(kube_name))
 
 
 if __name__ == "__main__":
-
     setup_profiles(reset=True)
