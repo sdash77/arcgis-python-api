@@ -5,12 +5,16 @@ from urllib.parse import parse_qs
 from ._schain import SupportMultiAuth
 from ..tools._lazy import LazyLoader
 from ..tools import parse_url
+from functools import lru_cache
+import re
 
 HAS_SSPI = False
 HAS_GSSAPI = False
 HAS_KERBEROS = False
+WINDOWS = False
 
 if platform.platform().lower().find("windows") > -1:
+    WINDOWS = True
     try:
         requests_negotiate_sspi = LazyLoader("requests_negotiate_sspi", strict=True)
         HAS_SSPI = True
@@ -31,6 +35,25 @@ except:
 
 
 requests = LazyLoader("requests")
+
+
+@lru_cache(maxsize=255)
+def _split_username(username: str) -> list[str]:
+    regex = r"(\S*)?(@|#|//|\\\\|(?<!/)/(?!/)|\\)(\S*)"
+    matches = re.finditer(regex, username, re.IGNORECASE | re.DOTALL)
+    tokens = []
+    for match in matches:
+        for group in match.groups():
+            tokens.append(group)
+
+    if tokens[1] in ["//", "\\", "/"]:
+        uname = tokens[2]
+        dom = tokens[0]
+    elif tokens[1] == "@":
+        uname = tokens[0]
+        dom = tokens[2]
+
+    return [uname, dom]
 
 
 class EsriWindowsAuth(AuthBase, SupportMultiAuth):
@@ -60,6 +83,12 @@ class EsriWindowsAuth(AuthBase, SupportMultiAuth):
         try:
             if not username and not password and HAS_SSPI:
                 self.auth = requests_negotiate_sspi.HttpNegotiateAuth()
+            elif WINDOWS == True and HAS_KERBEROS:
+                uname_format = _split_username(username)
+                prin = uname_format[0] + "@" + uname_format[1]
+                self.auth = requests_kerberos.HTTPKerberosAuth(
+                    principal=f"{prin}:{password}",
+                )
             elif HAS_GSSAPI:
                 if not username or not password:
                     self.auth = requests_gssapi.HTTPSPNEGOAuth()
@@ -233,10 +262,11 @@ class EsriKerberosAuth(AuthBase, SupportMultiAuth):
 
         try:
             if username and password:
-                domain, username = username.split("\\")
+                uname_format = _split_username(username)
+                prin = uname_format[0] + "@" + uname_format[1]
                 self.auth = requests_kerberos.HTTPKerberosAuth(
                     mutual_authentication=mutual_auth,
-                    principal=f"{username}@{domain}:{password}",
+                    principal=f"{prin}:{password}",
                     **kwargs,
                 )
             else:

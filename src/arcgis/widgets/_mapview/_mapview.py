@@ -1788,7 +1788,7 @@ class MapView(widgets.DOMWidget):
             elif is_numpy_array(item):
                 return get_hash_numpy_array(item)
             elif isinstance(item, Raster):
-                return str(hash(item.path))
+                return str(hash(item.catalog_path))
             elif isinstance(item, ImageryLayer):
                 return str(hash(item.url))
             else:
