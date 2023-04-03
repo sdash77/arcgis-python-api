@@ -8548,10 +8548,7 @@ class _OrthoMappingTools:
         report_format=None,
         gis=None,
         future=False,
-<<<<<<< HEAD
         flight_json_details=None,
-=======
->>>>>>> origin/master
         **kwargs,
     ):
         """
