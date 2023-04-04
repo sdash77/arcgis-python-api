@@ -2343,35 +2343,6 @@ class Swipe(object):
             return None
 
     # ----------------------------------------------------------------------
-    def map_properties(
-        self,
-        navigation: bool | None = None,
-        search: bool | None = None,
-        locate: bool | None = None,
-        legend: list[str] | None = None,
-    ):
-        """
-        Change the properties in the swipe settings when the media type is of type
-        map.
-
-        ======================      ========================================
-        **Parameter**               **Description**
-        ----------------------      ----------------------------------------
-        navigation                  Optional boolean. Whether or not to allow
-                                    map navigation.
-        ----------------------      ----------------------------------------
-        search                      Optional boolean. Whether or not to show
-                                    the map search.
-        ----------------------      ----------------------------------------
-        locate                      Optional boolean. Whether or not to show
-                                    current location.
-        ----------------------      ----------------------------------------
-        legend                      Optional list of strings (ids) of map
-                                    block(s) whose legend needs to be shown.
-        ======================      ========================================
-        """
-
-    # ----------------------------------------------------------------------
     @property
     def caption(self):
         """
@@ -2569,8 +2540,8 @@ class Sidecar(object):
         else:
             self.node = kwargs.pop("node_id", None)
         # Check if node exists else create new instance
-        existing = self._check_node()
-        if existing is True:
+        self._existing = self._check_node()
+        if self._existing is True:
             self._style = self._story._properties["nodes"][self.node]["data"]["subtype"]
             self._slides = self._story._properties["nodes"][self.node]["children"]
         else:
@@ -2589,6 +2560,7 @@ class Sidecar(object):
     ):
         # Add the story to the node
         self._story = story
+        self._existing = True
         # Create timeline nodes
         self._story._properties["nodes"][self.node] = {
             "type": "immersive",
@@ -2785,61 +2757,70 @@ class Sidecar(object):
         # Loop to:
         # 1. Add the content to the story if not already added
         # 2. Add the node ids to list to pass as children later
-        np_children = []
-        if contents:
-            for content in contents:
-                self._add_item_story(content)
-                np_children.append(content.node)
-        if media:
-            self._add_item_story(media)
+        if self._existing:
+            np_children = []
+            if contents:
+                for content in contents:
+                    self._add_item_story(content)
+                    np_children.append(content.node)
+            if media:
+                self._add_item_story(media)
 
-        # For reference on some styles, grab first slide to go off of
-        if len(self._slides) > 0:
-            first_slide = self._story.properties["nodes"][self._slides[0]]
-            first_np = self._story.properties["nodes"][first_slide["children"][0]]
-            data = first_np["data"]  # keep same settings as other slide
-        else:
-            if self._style == "slideshow":
-                data = {"position": "start-top", "panelStyle": "themed"}
+            # For reference on some styles, grab first slide to go off of
+            if len(self._slides) > 0:
+                first_slide = self._story.properties["nodes"][self._slides[0]]
+                first_np = self._story.properties["nodes"][first_slide["children"][0]]
+                data = first_np["data"]  # keep same settings as other slide
             else:
-                data = {"position": "start", "size": "small", "panelStyle": "themed"}
+                if self._style == "slideshow":
+                    data = {"position": "start-top", "panelStyle": "themed"}
+                else:
+                    data = {
+                        "position": "start",
+                        "size": "small",
+                        "panelStyle": "themed",
+                    }
 
-        # Create narrative panel node
-        np_node = "n-" + uuid.uuid4().hex[0:6]
-        np_def = {
-            "type": "immersive-narrative-panel",
-            "data": data,
-            "children": np_children,
-        }
-        self._story._properties["nodes"][np_node] = np_def
+            # Create narrative panel node
+            np_node = "n-" + uuid.uuid4().hex[0:6]
+            np_def = {
+                "type": "immersive-narrative-panel",
+                "data": data,
+                "children": np_children,
+            }
+            self._story._properties["nodes"][np_node] = np_def
 
-        # Create slide node and add the other nodes to it
-        slide_node = "n-" + uuid.uuid4().hex[0:6]
-        slide_def = {
-            "type": "immersive-slide",
-            "data": {"transition": "fade"},
-            "children": [np_node],  # First listed node is the Narrative Panel
-        }
-        # If no media given then put a background color instead
-        if media:
-            slide_def["children"].append(media.node)
+            # Create slide node and add the other nodes to it
+            slide_node = "n-" + uuid.uuid4().hex[0:6]
+            slide_def = {
+                "type": "immersive-slide",
+                "data": {"transition": "fade"},
+                "children": [np_node],  # First listed node is the Narrative Panel
+            }
+            # If no media given then put a background color instead
+            if media:
+                slide_def["children"].append(media.node)
+            else:
+                slide_def["data"]["backgroundColor"] = "#FFFFFF"
+            self._story._properties["nodes"][slide_node] = slide_def
+
+            # Add slide node to sidecar node children at position indicated or last.
+            if slide_number is None:
+                # If no slide number then insert slide last
+                slide_number = len(self._slides) + 1
+            else:
+                # Correct for the indexing (user puts position 1, index is 0)
+                slide_number = slide_number - 1
+            self._story._properties["nodes"][self.node]["children"].insert(
+                slide_number, slide_node
+            )
+            # Update slide definition for the class to relect new list
+            self._slides = self._story._properties["nodes"][self.node]["children"]
+            return {"New Slide": slide_node}
         else:
-            slide_def["data"]["backgroundColor"] = "#FFFFFF"
-        self._story._properties["nodes"][slide_node] = slide_def
-
-        # Add slide node to sidecar node children at position indicated or last.
-        if slide_number is None:
-            # If no slide number then insert slide last
-            slide_number = len(self._slides) + 1
-        else:
-            # Correct for the indexing (user puts position 1, index is 0)
-            slide_number = slide_number - 1
-        self._story._properties["nodes"][self.node]["children"].insert(
-            slide_number, slide_node
-        )
-        # Update slide definition for the class to relect new list
-        self._slides = self._story._properties["nodes"][self.node]["children"]
-        return {"New Slide": slide_node}
+            return Exception(
+                "The sidecar must first be added to a story before editing."
+            )
 
     # ----------------------------------------------------------------------
     def remove_slide(self, slide: str):
@@ -2989,6 +2970,7 @@ class Timeline(object):
             },
             "children": [],
         }
+        self._existing = True
 
     # ----------------------------------------------------------------------
     @property
