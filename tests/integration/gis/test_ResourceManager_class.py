@@ -326,7 +326,7 @@ class Test_ResourceManager_portal(unittest.TestCase):
 
         # search for existing vector tile service item by Esri
         vtl_item = _gis.content.get(
-            "92c551c9f07b4147846aae273e822714"
+            "86f556a2d1fd468181855a35e344567f"
         )  # World street map night
 
         if vtl_item is None:
@@ -425,7 +425,7 @@ class Test_ResourceManager_portal(unittest.TestCase):
 
         # search for existing vector tile service item by Esri
         # Existing vector tile service from Esri
-        vtl_item = _gis.content.get("92c551c9f07b4147846aae273e822714")
+        vtl_item = _gis.content.get("86f556a2d1fd468181855a35e344567f")
 
         if vtl_item is None:
             print(
