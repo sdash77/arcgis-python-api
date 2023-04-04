@@ -8883,6 +8883,297 @@ class _OrthoRealityMappingTools:
             return final_job
         return final_job.result()
 
+    # ----------------------------------------------------------------------
+    def reconstruct_surface(
+        self,
+        image_collection,
+        scenario="DEFAULT",
+        forward_overlap=None,
+        sideward_overlap=None,
+        quality="ULTRA",
+        area_of_interest=None,
+        waterbody_features=None,
+        correction_feature=None,
+        reconstruct_options=None,
+        output_dsm_name=None,
+        output_true_ortho_name=None,
+        output_dsm_mesh_name=None,
+        output_point_cloud_name=None,
+        output_mesh_name=None,
+        context=None,
+        gis=None,
+        future=False,
+        **kwargs
+    ):
+        """
+        The `reconstruct_surface` generates a digital surface model (DSM), true
+        orthos, 2.5D meshes, 3D meshes, and point clouds from adjusted imagery.
+
+        =========================================================================   ===========================================================================
+        **Parameter**                                                                **Description**
+        -------------------------------------------------------------------------   ---------------------------------------------------------------------------
+        input_image_collection                                                      Required String/Item. The adjusted input mosaic dataset.
+        -------------------------------------------------------------------------   ---------------------------------------------------------------------------
+        scenario                                                                    Optional String. Specifies the type of imagery that will be used to generate the output products.
+
+                                                                                    - DEFAULT: The input imagery will be defined as having been acquired with drones or terrestrial cameras.
+                                                                                    - AERIAL_NADIR: The input imagery will be defined as having been acquired with large, photogrammetric camera systems.
+                                                                                    - AERIAL_OBLIQUE: The input imagery will be defined as having been acquired with oblique camera systems.
+        -------------------------------------------------------------------------   ---------------------------------------------------------------------------
+        forward_overlap                                                             Optional Integer. The forward (in-strip) overlap percentage that will be used between the images.
+                                                                                    This parameter is enabled when the scenario parameter is set to AERIAL_NADIR. 
+        -------------------------------------------------------------------------   ---------------------------------------------------------------------------
+        sideward_overlap                                                            Optional Integer. The sideward (cross-strip) overlap percentage that will be used between the images.
+                                                                                    This parameter is enabled when the scenario parameter is set to AERIAL_NADIR.
+        -------------------------------------------------------------------------   ---------------------------------------------------------------------------
+        quality                                                                     Optional String. Specifies the quality of the final product.
+
+                                                                                    - ULTRA - Input images will be used at their original (full) resolution.
+                                                                                    - HIGH - Input images will be downsampled two times.
+                                                                                    - MEDIUM - Input images will be downsampled four times.
+                                                                                    - LOW - Input images will be downsampled eight times.
+        -------------------------------------------------------------------------   ---------------------------------------------------------------------------
+        area_of_interest                                                            Optional :class:`~arcgis.features.FeatureLayer`. The area of interest that will
+                                                                                    be used to select images for processing. The area of interest can be computed automatically
+                                                                                    or defined using an input shapefile.
+                                                                                    If the value contains 3D geometries, the z-component will be ignored. If the value includes
+                                                                                    overlapping features, the union of these features will be computed.
+                                                                                    
+                                                                                    - NONE - All images will be used in processing.
+                                                                                    - AUTO - The processing extent will be calculated automatically. This is the default.
+        -------------------------------------------------------------------------   ---------------------------------------------------------------------------
+        waterbody_features                                                          Optional :class:`~arcgis.features.FeatureLayer`. A polygon that will define the extent of large water bodies.
+                                                                                    For the best results, use a 3D feature. 
+        -------------------------------------------------------------------------   ---------------------------------------------------------------------------
+        correction_features                                                         Optional :class:`~arcgis.features.FeatureLayer`. A polygon that will define the extent of all surfaces that are not water bodies.
+                                                                                    The value must be a 3D feature.
+        -------------------------------------------------------------------------   ---------------------------------------------------------------------------
+        output_dsm_name                                                             Optional String. If not provided, an Image Service is created by the method and used as the output raster.
+                                                                                    This output will be created by default when the scenario type is set to "AERIAL_NADIR".
+                                                                                    You can pass in an existing Image Service Item from your GIS to use that instead.
+
+                                                                                    Alternatively, you can pass in the name of the output Image Service that should be created by this method to be
+                                                                                    used as the output for the tool.
+
+                                                                                    A RuntimeError is raised if a service by that name already exists.
+        -------------------------------------------------------------------------   ---------------------------------------------------------------------------
+        output_true_ortho_name                                                      Optional String. If not provided, an Image Service is created by the method and used as the output raster.
+                                                                                    This output will be created by default when the scenario type is set to "AERIAL_NADIR".
+                                                                                    You can pass in an existing Image Service Item from your GIS to use that instead.
+
+                                                                                    Alternatively, you can pass in the name of the output Image Service that should be created by this method to be
+                                                                                    used as the output for the tool.
+
+                                                                                    A RuntimeError is raised if a service by that name already exists.
+        -------------------------------------------------------------------------   ---------------------------------------------------------------------------
+        output_dsm_mesh_name                                                        Optional String. If not provided, an Image Service is created by the method and used as the output raster.
+                                                                                    This output will be created by default when the scenario type is set to "AERIAL_NADIR".
+                                                                                    You can pass in an existing Image Service Item from your GIS to use that instead.
+
+                                                                                    Alternatively, you can pass in the name of the output Image Service that should be created by this method to be
+                                                                                    used as the output for the tool.
+
+                                                                                    A RuntimeError is raised if a service by that name already exists.
+        -------------------------------------------------------------------------   ---------------------------------------------------------------------------
+        output_point_cloud_name                                                     Optional String. If not provided, an Image Service is created by the method and used as the output raster.
+                                                                                    This output will be created by default when the scenario type is set to "DEFAULT" or "AERIAL_OBLIQUE".
+                                                                                    You can pass in an existing Image Service Item from your GIS to use that instead.
+
+                                                                                    Alternatively, you can pass in the name of the output Image Service that should be created by this method to be
+                                                                                    used as the output for the tool.
+
+                                                                                    A RuntimeError is raised if a service by that name already exists.
+        -------------------------------------------------------------------------   ---------------------------------------------------------------------------
+        output_mesh_name                                                            Optional String. If not provided, an Image Service is created by the method and used as the output raster.
+                                                                                    This output will be created by default when the scenario type is set to "DEFAULT" or "AERIAL_OBLIQUE".
+                                                                                    You can pass in an existing Image Service Item from your GIS to use that instead.
+
+                                                                                    Alternatively, you can pass in the name of the output Image Service that should be created by this method to be
+                                                                                    used as the output for the tool.
+
+                                                                                    A RuntimeError is raised if a service by that name already exists.
+        -------------------------------------------------------------------------   ---------------------------------------------------------------------------
+        context                                                                     Context contains additional settings that affect task execution.
+
+                                                                                    context parameter overwrites values set through arcgis.env parameter
+
+                                                                                    This function has the following settings:
+
+                                                                                    - Extent (extent): A bounding box that defines the analysis area.
+
+                                                                                        Example:
+
+                                                                                            | {"extent": {"xmin": -122.68,
+                                                                                            | "ymin": 45.53,
+                                                                                            | "xmax": -122.45,
+                                                                                            | "ymax": 45.6,
+                                                                                            | "spatialReference": {"wkid": 4326}}}
+
+                                                                                    - Cell Size (cellSize): The output raster will have the resolution
+                                                                                    specified by cell size.
+
+                                                                                        Example:
+
+                                                                                            {'cellSize': 11} or {'cellSize': {'url': <image_service_url>}}  or {'cellSize': 'MaxOfIn'}
+
+                                                                                    - Parallel Processing Factor (parallelProcessingFactor): controls
+                                                                                    Raster Processing (CPU) service instances.
+
+                                                                                        Example:
+
+                                                                                        Syntax example with a specified number of processing instances:
+
+                                                                                            {"parallelProcessingFactor": "2"}
+
+                                                                                        Syntax example with a specified percentage of total
+                                                                                        processing instances:
+
+                                                                                            {"parallelProcessingFactor": "60%"}
+        -------------------------------------------------------------------------   ---------------------------------------------------------------------------
+        gis                                                                         Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
+        -------------------------------------------------------------------------   ---------------------------------------------------------------------------
+        future                                                                      Optional boolean. If True, the result will be a GPJob object and results will be returned asynchronously.
+        =========================================================================   ===========================================================================
+
+        :return: Named Tuple
+
+        """
+        task = "ReconstructSurface"
+        gis = self._gis
+
+        context_param = {}
+        _set_raster_context(context_param, context)
+        if "context" in context_param.keys():
+            context = context_param["context"]
+        
+        if scenario is not None:
+            scenario_allowed_values = (
+                self._tbx.choice_list.reconstruct_surface["scenario"]
+            )
+            if [
+                element.lower() for element in scenario_allowed_values
+            ].count(scenario.lower()) <= 0:
+                raise RuntimeError(
+                    "scenario can only be one of the following:"
+                    + str(scenario_allowed_values)
+                )
+            for element in scenario_allowed_values:
+                if scenario.lower() == element.lower():
+                    scenario = element
+
+        if quality is not None:
+            quality_allowed_values = (
+                self._tbx.choice_list.reconstruct_surface["quality"]
+            )
+            if [
+                element.lower() for element in quality_allowed_values
+            ].count(quality.lower()) <= 0:
+                raise RuntimeError(
+                    "quality can only be one of the following:"
+                    + str(quality_allowed_values)
+                )
+            for element in quality_allowed_values:
+                if quality.lower() == element.lower():
+                    quality = element
+
+        if reconstruct_options is not None:
+            if isinstance(reconstruct_options, str):
+                reconstruct_options = {"uri": reconstruct_options}
+
+        if area_of_interest is not None:
+            area_of_interest = _RasterAnalysisTools._feature_input(area_of_interest)
+        if waterbody_features is not None:
+            waterbody_features = _RasterAnalysisTools._feature_input(waterbody_features)
+        if correction_feature is not None:
+            correction_feature = _RasterAnalysisTools._feature_input(correction_feature)
+
+        output_products = {}
+        if scenario in ("DEFAULT", "AERIAL_OBLIQUE"):
+            # Generate Point Cloud and Mesh output by default
+            output_point_cloud_raster, output_point_cloud_service = self._set_output_raster(
+                output_name=output_point_cloud_name, task=task, output_properties=kwargs
+            )
+            output_mesh_raster, output_mesh_service = self._set_output_raster(
+                output_name=output_mesh_name, task=task, output_properties=kwargs
+            )
+            output_products["Point_Cloud"] = output_point_cloud_raster
+            output_products["Mesh"] = output_mesh_raster
+
+            if output_dsm_mesh_name is not None:
+                output_dsm_mesh_raster, output_dsm_mesh_service = self._set_output_raster(
+                    output_name=output_dsm_mesh_name, task=task, output_properties=kwargs
+                )
+                output_products["DSM_Mesh"] = output_dsm_mesh_raster
+            if output_true_ortho_name is not None:
+                output_true_ortho_raster, output_true_ortho_service = self._set_output_raster(
+                    output_name=output_true_ortho_name , task=task, output_properties=kwargs
+                )
+                output_products["True_Ortho"] = output_true_ortho_raster
+            if output_dsm_name is not None:
+                output_dsm_raster, output_dsm_service = self._set_output_raster(
+                    output_name=output_dsm_name, task=task, output_properties=kwargs
+                )
+                output_products["DSM"] = output_dsm_raster
+        else:
+            # scenario is AERIAL_NADIR
+            # set default values for forward_overlap and sideward_overlap if not specified.
+            if forward_overlap is None:
+                forward_overlap = 60
+            if sideward_overlap is None:
+                sideward_overlap = 30
+
+            # Generate DSM, true ortho and DSM Mesh out by default
+            output_dsm_raster, output_dsm_service = self._set_output_raster(
+                output_name=output_dsm_name, task=task, output_properties=kwargs
+            )
+            output_true_ortho_raster, output_true_ortho_service = self._set_output_raster(
+                output_name=output_true_ortho_name , task=task, output_properties=kwargs
+            )
+            output_dsm_mesh_raster, output_dsm_mesh_service = self._set_output_raster(
+                output_name=output_dsm_mesh_name, task=task, output_properties=kwargs
+            )
+            output_products["DSM"] = output_dsm_raster
+            output_products["True_Ortho"] = output_true_ortho_raster
+            output_products["DSM_Mesh"] = output_dsm_mesh_raster
+
+            if output_point_cloud_name is not None:
+                output_point_cloud_raster, output_point_cloud_service = self._set_output_raster(
+                    output_name=output_point_cloud_name, task=task, output_properties=kwargs
+                )
+                output_products["Point_Cloud"] = output_point_cloud_raster
+            if output_mesh_name is not None:
+                output_mesh_raster, output_mesh_service = self._set_output_raster(
+                    output_name=output_mesh_name, task=task, output_properties=kwargs
+                )
+                output_products["Mesh"] = output_mesh_raster
+
+        job = self._tbx.reconstruct_surface(
+            image_collection=image_collection,
+            output_products=output_products,
+            scenario=scenario,
+            forward_overlap=forward_overlap,
+            sideward_overlap=sideward_overlap,
+            quality=quality,
+            area_of_interest=area_of_interest,
+            water_body=waterbody_features,
+            correction_feature=correction_feature,
+            reconstruct_options=reconstruct_options,
+            context=context,
+            gis=gis,
+            future=True
+        )
+
+        final_job = None
+        if self._is_ortho:
+            job._is_ortho = True
+            final_job = job
+        else:
+            job._is_reality = True
+            final_job = RMJob(job)
+        if future:
+            return final_job
+        return final_job.result()
+
 
 ###########################################################################
 class _RasterAnalysisTools(BaseAnalytics):
