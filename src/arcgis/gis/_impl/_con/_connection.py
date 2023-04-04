@@ -648,6 +648,8 @@ class Connection(object):
                 verify_cert=self._verify_cert,
             )
         elif self._auth.lower() in ["kerberos"] and HAS_KERBEROS:
+            global HAS_GSSAPI
+            HAS_GSSAPI = False
             if self._security_kwargs:
                 self._session.auth = EsriKerberosAuth(
                     proxies=self._proxy,
@@ -658,14 +660,9 @@ class Connection(object):
                     **self._security_kwargs,
                 )
             elif HAS_GSSAPI:
-                from arcgis.auth._auth._utils import _split_username
-
-                domain, username = None, None
-                if self._username and self._password:
-                    username, domain = _split_username(self._username)
                 self._session.auth = EsriWindowsAuth(
-                    username=username,
-                    domain=domain or None,
+                    username=self._username,
+                    # domain=domain or None,
                     password=self._password,
                     verify_cert=self._verify_cert,
                     legacy=False,

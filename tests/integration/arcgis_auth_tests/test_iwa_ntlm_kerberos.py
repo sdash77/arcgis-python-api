@@ -1,12 +1,13 @@
 import sys
 
-# sys.path.insert(0, r"c:\SVN\geosaurus_issue_9708\src")
+sys.path.insert(0, r"c:\SVN\geosaurus_issue_9708\src")
 # sys.path.insert(0, r"c:\SVN\geosaurus_master\src")
 from arcgis.auth.tools._util import detect_proxy
 
 import platform
 import unittest
 from arcgis.gis import GIS
+import requests_kerberos
 
 try:
     from _utils import get_config_parser, decode_value
@@ -44,9 +45,9 @@ if "ldap" in get_config_parser():
 else:
     SKIP_LDAP = True
 
-url_iwa = "https://nap1.esri.com/portal"
-username = "networkanalyst"
-password = "geocodingscrum"
+# url_iwa = "https://nap1.esri.com/portal"
+# username = "networkanalyst"
+# password = "geocodingscrum"
 verify_cert = False
 trust_env = True
 
@@ -54,7 +55,7 @@ WINDOWS = platform.platform().lower().find("windows") > -1
 try:
     import requests
 
-    resp = requests.get(url_iwa)
+    resp = requests.get(iwa_url, auth=requests_kerberos.HTTPKerberosAuth())
 except:
     WINDOWS = False
 
@@ -76,10 +77,14 @@ class TestWinAuth(unittest.TestCase):
     WINDOWS == False or SKIP_IWA == True, "Operating System is not Windows"
 )
 class TestMultiIWAAuth(unittest.TestCase):
-    def test_win_auth(self):
+    def test_creds_multiiwa(self):
         gis = GIS(
             url=multiiwa_url, password=multiiwa_pw, username=multiiwa_user
         )
+        assert gis.users.me
+
+    def test_no_creds_multiiwa(self):
+        gis = GIS(url=multiiwa_url)
         assert gis.users.me
 
 
@@ -101,10 +106,10 @@ class TestLDAPAuth(unittest.TestCase):
     """LDAP Test"""
 
     def test_ldap(self):
-        ldap_url = "https://rpubrh8212.ags.esri.com/portal"
-        username = "creator1"
-        password = "portalaccount1"
-        gis = GIS(url=ldap_url, username=username, password=password)
+        # ldap_url = "https://rpubrh8212.ags.esri.com/portal"
+        # username = "creator1"
+        # password = "portalaccount1"
+        gis = GIS(url=ldap_url, username=ldap_user, password=ldap_pw)
         assert gis.users.me
 
 
