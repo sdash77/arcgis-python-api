@@ -3,7 +3,6 @@ import io
 import uuid
 from arcgis.gis import GIS
 import pandas as pd
-from integration.gis.config_profiles import setup_profiles
 
 GUID = uuid.uuid4().hex[:6]
 item_properties = {
