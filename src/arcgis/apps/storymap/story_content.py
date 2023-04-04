@@ -3169,10 +3169,11 @@ class Timeline(object):
     # ----------------------------------------------------------------------
     def _remove_associated(self, event):
         # Remove narrative panel and text associated
-        children = self._story._properties["nodes"][event]["children"]
-        for child in children:
-            self._story._delete(child)
-        self._story._delete(event)
+        if "children" in self._story._properties["nodes"][event]:
+            children = self._story._properties["nodes"][event]["children"]
+            for child in children:
+                self._story._delete(child)
+            self._story._delete(event)
 
     # ----------------------------------------------------------------------
     def _find_position_content(self, content, event_node):
