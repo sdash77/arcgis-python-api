@@ -232,7 +232,7 @@ class EsriKerberosAuth(AuthBase, SupportMultiAuth):
         self._tokens = {}
         self._token_url = None
         self.verify_cert = verify_cert
-        self._session: requests.Sesssion = kwargs.pop("session", requests.Session())
+        self._session: requests.Session = kwargs.pop("session", requests.Session())
         mutual_auth_lu = {
             1: requests_kerberos.REQUIRED,
             2: requests_kerberos.OPTIONAL,
