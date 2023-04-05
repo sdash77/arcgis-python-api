@@ -78,6 +78,8 @@ class EsriWindowsAuth(AuthBase, SupportMultiAuth):
         try:
             if not username and not password and HAS_SSPI:
                 self.auth = EsriHttpNegotiateAuth()
+            elif username and password and HAS_SSPI:
+                self.auth = EsriHttpNegotiateAuth(username=username, password=password)
             elif WINDOWS == True and HAS_KERBEROS:
                 uname_format = _split_username(username)
                 prin = uname_format[0] + "@" + uname_format[1]
@@ -89,24 +91,28 @@ class EsriWindowsAuth(AuthBase, SupportMultiAuth):
                     self.auth = requests_gssapi.HTTPSPNEGOAuth()
                 else:
                     try:
-                        import gssapi
+                        from ._ntlm import EsriHttpNtlmAuth
 
-                        user = gssapi.Name(
-                            base=username, name_type=gssapi.NameType.user
+                        self.auth = EsriHttpNtlmAuth(
+                            username=username, password=password
                         )
-                        bpass = password.encode("utf-8")
-                        creds = gssapi.raw.acquire_cred_with_password(
-                            user, bpass, usage="initiate"
-                        )
-                        creds = creds.creds
-                        self.auth = requests_gssapi.HTTPSPNEGOAuth(
-                            creds=creds,
-                            opportunistic_auth=True,
-                        )
-                    except:
-                        raise Exception("Please ensure gssapi is installed")
-            elif username and password and HAS_SSPI:
-                self.auth = EsriHttpNegotiateAuth(username=user, password=password)
+                        # import gssapi
+
+                        # user = gssapi.Name(
+                        # base=username, name_type=gssapi.NameType.user
+                        # )
+                        # bpass = password.encode("utf-8")
+                        # creds = gssapi.raw.acquire_cred_with_password(
+                        # user, bpass, usage="initiate"
+                        # )
+                        # creds = creds.creds
+                        # self.auth = requests_gssapi.HTTPSPNEGOAuth(
+                        # creds=creds,
+                        # opportunistic_auth=True,
+                        # )
+                    except Exception as ex:
+                        raise ex
+
             else:
                 raise ValueError(
                     "Could not login, please ensure requests_negotiate_sspi and requests_gssapi are installed."
