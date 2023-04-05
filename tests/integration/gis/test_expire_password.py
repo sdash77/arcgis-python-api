@@ -2,7 +2,6 @@ import sys
 import unittest
 from arcgis.gis import GIS, User, UserManager
 from integration.dino_utils.manage_test_profiles import create_test_profiles
-from integration.gis.config_profiles import setup_profiles
 
 PROFILES = ["your_ent_admin_profile", "your_online_admin_profile"]
 

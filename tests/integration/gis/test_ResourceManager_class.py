@@ -7,6 +7,7 @@ import os
 from integration.dino_utils.dino_precondition_checks import PreconditionChecks
 from integration.dino_utils.dino_precondition_checks import PortalUtils
 from integration.dino_utils.dino_configs import DinoConfigs
+from integration.config import QALAB_ROOT_PATH
 from configparser import ConfigParser
 from pathlib import Path
 import datetime
@@ -66,14 +67,10 @@ class Test_ResourceManager_portal(unittest.TestCase):
         _conf_reader = ConfigParser()
         _conf_reader.read(DinoConfigs.portal_list_file, "UTF-8")
 
-        cls.portal_url = _conf_reader["teamportal"]["url"]
-        cls.portal_username = _conf_reader["teamportal"]["publisher1"]
-        cls.portal_password = _conf_reader["teamportal"]["publisher1_password"]
-
         _conf_reader2 = ConfigParser()
         _conf_reader2.read(DinoConfigs.root_init_file, "UTF-8")
 
-        cls.qalab_base_path = _conf_reader2["test_data"]["qalab_base_path"]
+        cls.qalab_base_path = QALAB_ROOT_PATH
         cls.qalab_data_path = (
             cls.qalab_base_path + _conf_reader2["test_data"]["qalab_dataprep"]
         )
@@ -88,11 +85,7 @@ class Test_ResourceManager_portal(unittest.TestCase):
         # endregion
 
         # region precondition checks and sign in
-        r1 = PreconditionChecks.can_ping_portal(cls.portal_url)
-        if not r1:
-            cls.class_skip = True
-
-        cls.gis = GIS(cls.portal_url, cls.portal_username, cls.portal_password)
+        cls.gis = GIS(profile="your_ent_admin_profile", verify_cert=False)
         if cls.gis is None:
             cls.class_skip = True
 
