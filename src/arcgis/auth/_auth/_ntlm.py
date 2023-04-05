@@ -50,6 +50,9 @@ class EsriHttpNtlmAuth(AuthBase):
     HTTP NTLM Authentication Handler for Requests.
 
     Supports pass-the-hash.
+
+    **This is derived from work of Jordan Borean and requests-ntlm/requests-ntlm2**
+
     """
 
     def __init__(self, username, password, session=None, send_cbt=True, **kwargs):

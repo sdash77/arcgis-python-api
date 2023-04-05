@@ -65,7 +65,6 @@ else:
     dependencies = [
         "pillow",
         "urllib3",
-        "gssapi",
         "cachetools",
         "lxml",
         "notebook",
@@ -93,6 +92,7 @@ else:
         "requests-gssapi",
         "gssapi>=1.8.1,<2",
         "dask",
+        "pyspnego>=0.8.0",
     ]
 
 
