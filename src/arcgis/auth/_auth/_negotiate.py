@@ -23,13 +23,44 @@ except ImportError:
     HAS_GSSAPI = False
 from ._utils import parse_url
 
+from ._schain import SupportMultiAuth
+
 _logger = logging.getLogger(__name__)
 
-__all__ = ["EsriWindowsAuth"]
+__all__ = ["EsriHttpNegotiateAuth"]
 
 
 ###########################################################################
-class EsriWindowsAuth(AuthBase):
+class EsriHttpNegotiateAuth(AuthBase, SupportMultiAuth):
+    """
+    This class is dervived from the `requests_negotiate_sspi` package. It
+    extends the `HttpNegotiateAuth` class inorder to handle the Esri security
+    model.
+
+    ================    ===============================================================
+    **Parameter**       **Description**
+    ----------------    ---------------------------------------------------------------
+    username            Optional String. The username account with the domain (DOMAIN\\USERNAME).
+    ----------------    ---------------------------------------------------------------
+    password            Optional String. The username's password.
+    ----------------    ---------------------------------------------------------------
+    service             Optional String. Kerberos Service type for remote Service Principal Name.
+    ----------------    ---------------------------------------------------------------
+    host                Optional String. Host name for Service Principal Name.
+    ----------------    ---------------------------------------------------------------
+    delegate            Optional Boolean.  Indicates that the user's credentials are to be delegated to the server.
+    ----------------    ---------------------------------------------------------------
+    referer             Optional String. The referer for the Esri token.
+    ----------------    ---------------------------------------------------------------
+    verify_cert         Optional Boolean. When false, certificate errors are ignored. The default is True.
+    ================    ===============================================================
+
+    If username and password are not specified, the user's default credentials are used.
+    This allows for single-sign-on to domain resources if the user is currently logged on
+    with a domain account.
+
+    """
+
     _auth_info = None
     _service = "HTTP"
     _host = None

@@ -13,6 +13,11 @@ except ImportError:
 except:
     HASARCPY = False
 
+try:
+    requests_gssapi = LazyLoader("requests_gssapi", strict=True)
+    HAS_GSSAPI = True
+except:
+    HAS_GSSAPI = False
 
 import sys
 
@@ -32,6 +37,7 @@ import os
 import copy
 import json
 import uuid
+import datetime
 import mimetypes
 import logging
 import warnings
@@ -63,10 +69,10 @@ from arcgis.auth._auth._notebook import EsriNotebookAuth
 
 try:
     from arcgis.auth import EsriWindowsAuth
-    from arcgis.auth._auth._negotiate import HAS_GSSAPI
-except ImportError:
-    HAS_GSSAPI = False
 
+    HAS_SSPI = True
+except ImportError:
+    HAS_SSPI = False
 
 try:
     from arcgis.auth import EsriKerberosAuth
@@ -648,8 +654,6 @@ class Connection(object):
                 verify_cert=self._verify_cert,
             )
         elif self._auth.lower() in ["kerberos"] and HAS_KERBEROS:
-            global HAS_GSSAPI
-            HAS_GSSAPI = False
             if self._security_kwargs:
                 self._session.auth = EsriKerberosAuth(
                     proxies=self._proxy,
@@ -662,7 +666,6 @@ class Connection(object):
             elif HAS_GSSAPI:
                 self._session.auth = EsriWindowsAuth(
                     username=self._username,
-                    # domain=domain or None,
                     password=self._password,
                     verify_cert=self._verify_cert,
                     legacy=False,
@@ -681,7 +684,7 @@ class Connection(object):
             self._session.auth = GuessAuth(
                 username=self._username, password=self._password
             )
-        elif self._auth.lower() in ["iwa", "ntlm"] and HAS_GSSAPI:
+        elif self._auth.lower() in ["iwa", "ntlm"] and HAS_SSPI:
             self._session.auth = EsriWindowsAuth(
                 username=self._username,
                 password=self._password,
@@ -696,7 +699,7 @@ class Connection(object):
         elif not self._cert_file and not self._key_file:
             # else:
 
-            if HAS_GSSAPI:
+            if HAS_SSPI:
                 try:
                     self._session.auth = EsriWindowsAuth(
                         verify_cert=self._verify_cert,
@@ -947,8 +950,10 @@ class Connection(object):
                 max_length = int(resp.headers["Content-Length"])
                 if max_length > stream_size * 2 and max_length < 1024 * 1024:
                     stream_size = 1024 * 2
-                elif max_length > 5 * (1024 * 1024):
+                elif max_length > 5 * (1024 * 1024) and max_length < 10 * (1024 * 1024):
                     stream_size = 5 * (1024 * 1024)  # 5 mb
+                elif max_length >= 10 * (1024 * 1024):
+                    stream_size = 10 * (1024 * 1024)  # 10 mb
                 elif max_length > (1024 * 1024):
                     stream_size = 1024 * 1024  # 1 mb
                 else:
