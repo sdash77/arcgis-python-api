@@ -96,31 +96,16 @@ class EsriWindowsAuth(AuthBase, SupportMultiAuth):
                         self.auth = EsriHttpNtlmAuth(
                             username=username, password=password
                         )
-                        # import gssapi
 
-                        # user = gssapi.Name(
-                        # base=username, name_type=gssapi.NameType.user
-                        # )
-                        # bpass = password.encode("utf-8")
-                        # creds = gssapi.raw.acquire_cred_with_password(
-                        # user, bpass, usage="initiate"
-                        # )
-                        # creds = creds.creds
-                        # self.auth = requests_gssapi.HTTPSPNEGOAuth(
-                        # creds=creds,
-                        # opportunistic_auth=True,
-                        # )
                     except Exception as ex:
                         raise ex
 
             else:
                 raise ValueError(
-                    "Could not login, please ensure requests_negotiate_sspi and requests_gssapi are installed."
+                    "Could not login, please ensure pywin32>225 and pyspnego are installed."
                 )
         except ImportError:
-            raise Exception(
-                "NTLM authentication requires requests_negotiate_sspi module."
-            )
+            raise Exception("NTLM authentication requires pyspnego module.")
 
     # ----------------------------------------------------------------------
     def __str__(self):

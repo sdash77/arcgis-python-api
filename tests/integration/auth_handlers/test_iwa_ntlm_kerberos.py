@@ -128,19 +128,10 @@ class TestWinAuth(unittest.TestCase):
             data = resp2.json()
             assert data
 
-    @unittest.skip("not working")
     def test_iwa_no_user_forced_sspi(self):
         url = "https://rqawintest99pt.ags.esri.com/gis"  # multiiwa_url
         url = f"{url}/sharing/rest/portals/self/servers?f=json"
         import copy
-        from arcgis.auth._auth import _winauth
-
-        DEEP_WINDOWS = copy.deepcopy(_winauth.WINDOWS)
-        DEEP_HAS_SSPI = copy.deepcopy(_winauth.HAS_SSPI)
-        if _winauth.WINDOWS == True:
-            _winauth.WINDOWS = False
-        if _winauth.HAS_SSPI == True:
-            _winauth.HAS_SSPI = False
 
         auth = EsriWindowsAuth()
         with EsriSession(auth=auth) as session:
@@ -151,8 +142,6 @@ class TestWinAuth(unittest.TestCase):
             resp2 = session.get(server_url + "?f=json")
             data = resp2.json()
             assert data
-        _winauth.WINDOWS = DEEP_WINDOWS
-        _winauth.HAS_SSPI = DEEP_HAS_SSPI
 
 
 @unittest.skipIf(

@@ -88,11 +88,9 @@ else:
         "requests_toolbelt",
         "pyspnego >=0.8.0",
         "requests-kerberos",
-        'winkerberos;platform_system=="Windows"',
         "requests-gssapi",
         "gssapi>=1.8.1,<2",
         "dask",
-        "pyspnego>=0.8.0",
     ]
 
 
