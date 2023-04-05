@@ -12557,134 +12557,122 @@ def dimensional_moving_statistics(
     circular_wrap_value: int = 360,
 ):
     """
-    Determines parameters of a surface raster such as aspect, slope, and several types of curvatures using geodesic methods. 
-    
-    The arguments for this function are as follows:
-    
-    ================================     ====================================================================
-    **Argument**                         **Description**
-    --------------------------------     --------------------------------------------------------------------
-    raster                               Required :class:`Raster <arcgis.raster.Raster>`. The input surface raster. This can be an integer or a floating-point raster.
-    --------------------------------     --------------------------------------------------------------------
-    parameter_type                       Optional string. Specifies the output surface parameter type that will be computed.
+    The dimensional_moving_statistics function calculates statistics over a moving window
+    on multidimensional data along a specified dimension.
 
-                                            - SLOPE - The rate of change in elevation will be computed. This is the default.
-                                            
-                                            - ASPECT - The downslope direction of the maximum rate of change for\
-                                            each cell will be computed.
-                                            
-                                            - MEAN_CURVATURE - The overall curvature of the surface will be measured.\
-                                            It is computed as the average of the minimum and maximum curvature.\
-                                            This curvature describes the intrinsic convexity or concavity of\
-                                            the surface, independent of direction or gravity influence.
-                                            
-                                            - TANGENTIAL_CURVATURE - The geometric normal curvature perpendicular\
-                                            to the slope line, tangent to the contour line will be measured. This\
-                                            curvature is typically applied to characterize the convergence or divergence\
-                                            of flow across the surface.
-                                            
-                                            - PROFILE_CURVATURE - The geometric normal curvature along the slope\
-                                            line will be measured. This curvature is typically applied to characterize\
-                                            the acceleration and deceleration of flow down the surface.
-                                            
-                                            - CONTOUR_CURVATURE - The curvature along contour lines will be measured.
-                                            
-                                            - CONTOUR_GEODESIC_TORSION - The rate of change in slope angle along\
-                                            contour lines will be measured.
-                                            
-                                            - GAUSSIAN_CURVATURE - The overall curvature of the surface will be\
-                                            measured. It is computed as the product of the minimum and maximum curvature.
-                                            
-                                            - CASORATI_CURVATURE - The general curvature of the surface will be measured.\
-                                            It can be zero or any other positive number.
-    --------------------------------     --------------------------------------------------------------------
-    local_surface_type                   Optional string. Specifies the type of surface function that will be fitted\
-                                         around the target cell. 
-    
-                                            - QUADRATIC - A quadratic surface function will be fitted to the\
-                                            neighborhood cells. This is the default. 
-                                            
-                                            - BIQUADRATIC - A biquadratic surface function will be fitted to\
-                                            the neighborhood cells.
-    --------------------------------     --------------------------------------------------------------------
-    neighborhood_distance_with_units     Optional string. The output will be calculated over this distance from the target cell center. 
-    
-                                         If this parameter is not specified, the neighborhood distance is the\
-                                         input raster cell size, resulting in a 3 by 3 neighborhood size.
-    --------------------------------     --------------------------------------------------------------------
-    use_adaptive_neighborhood            Optional bool. Specifies whether neighborhood distance will vary with landscape\
-                                         changes (adaptive). The maximum distance is determined by the neighborhood\
-                                         scale. The minimum distance is the input raster cell size. 
-                                        
-                                            - False - A single (fixed) neighborhood distance will be used at all locations.\
-                                            This is the default. 
-                                            
-                                            - True - An adaptive neighborhood distance will be used at all locations.
-    --------------------------------     --------------------------------------------------------------------
-    z_unit                               Optional string. The linear unit of vertical z-values. It is defined by a vertical\
-                                         coordinate system if it exists. 
-                                         
-                                         If a vertical coordinate system does not exist, the z-unit should be defined\
-                                         from the unit list to ensure correct geodesic computation. 
-                                         
-                                         If the input raster has a defined VCS its unit will be the default.
-                                        
-                                            - INCH - The linear unit will be inches. 
-                                            
-                                            - FOOT - The linear unit will be feet.
-                                            
-                                            - YARD - The linear unit will be yards.
-                                            
-                                            - MILE_US - The linear unit will be miles.
-                                            
-                                            - NAUTICAL_MILE - The linear unit will be nautical miles.
-                                            
-                                            - MILLIMETER - The linear unit will be millimeters.
-                                            
-                                            - CENTIMETER - The linear unit will be centimeters.
-                                            
-                                            - METER - The linear unit will be meters.
-                                            
-                                            - KILOMETER - The linear unit will be kilometers.
-                                            
-                                            - DECIMETER - The linear unit will be decimeters.
-    --------------------------------     --------------------------------------------------------------------
-    slope_type                           Optional string. The measurement units (degrees or percentages) that will be\
-                                         used for the output slope raster.
-                                         
-                                         This parameter is only applicable when ``parameter_type`` = "SLOPE". 
-                                        
-                                            - DEGREE - The inclination of slope will be calculated in degrees. This is the default.
-                                             
-                                            - PERCENT_RISE - The inclination of slope will be calculated as percent\
-                                            rise, also referred to as the percent slope.
-    --------------------------------     --------------------------------------------------------------------
-    project_geogeodesic_azimuths         Optional string. Specifies whether geodesic azimuths will be projected to correct\
-                                         the angle distortion caused by the output spatial reference.
-                                         
-                                         This parameter is only applicable when ``parameter_type`` = "ASPECT". 
-                                         
-                                            - GEODESIC_AZIMUTHS - Geodesic azimuths will not be projected. This is the default.
-                                            
-                                            - PROJECT_GEODESIC_AZIMUTHS - Geodesic azimuths will be projected.
-    --------------------------------     --------------------------------------------------------------------
-    use_equatorial_aspect                Optional string. Specifies whether aspect will be measured from a point on the\
-                                         equator or from the north pole. 
-                                         
-                                         This parameter is only applicable when ``parameter_type`` = "ASPECT"
-                                         
-                                            - NORTH_POLE_ASPECT - Aspect will be measured from the north pole. This is the default. 
-                                            
-                                            - EQUATORIAL_ASPECT - Aspect will be measured from a point on the equator.
-    ================================     ====================================================================     
+    .. note::
+        This raster function does not support on the fly rendering and can only be used to generate persisted output.
+        To persist the output use the :meth:`~arcgis.raster.ImageryLayer.save` method on the resulting layer.
+
+    The arguments for this function are as follows:
+
+    ================================     ===============================================================================
+    **Parameter**                         **Description**
+    --------------------------------     -------------------------------------------------------------------------------
+    raster                               Required multidimensional :class:`Raster <arcgis.raster.Raster>` /  :class:`ImageryLayer <arcgis.raster.ImageryLayer>` object.
+    --------------------------------     -------------------------------------------------------------------------------
+    dimension                            Optional string. The name of the dimension along which the window will move.
+
+                                         The default value is the first dimension other than x,y found in the
+                                         input multidimensional raster.
+    --------------------------------     -------------------------------------------------------------------------------
+    backward_window                      Optional integer. The value of how many slices before or above to
+                                         be included in the defined window. The value must be a positive integer
+                                         from 1 to 100. The default value is 1.
+
+                                         The unit of this parameter is slice.
+    --------------------------------     -------------------------------------------------------------------------------
+    forward_window                       Optional integer. The value of how many slices after or below to
+                                         be included in the defined window. The value must be a positive integer
+                                         from 1 to 100. The default value is 1.
+
+                                         The unit of this parameter is slice.
+    --------------------------------     -------------------------------------------------------------------------------
+    nodata_handling                      Optional string. Specifies how NoData values will be handled by the
+                                         statistic calculation.
+
+                                         - DATA - NoData values in the value input will be ignored in the \
+                                           results of the defined window that they fall within. This is the \
+                                           default.
+
+                                         - NODATA - Output values will be NoData if any NoData values are \
+                                           found in the input within the defined window.
+
+                                         - FILL_NODATA - NoData cell values will be replaced using the selected \
+                                           statistic on the values within the defined window.
+    --------------------------------     -------------------------------------------------------------------------------
+    statistics_type                      Optional string. Statistic type to be calculated.
+
+                                         - MEAN - The mean (average value) of the cells in the defined \
+                                         window will be calculated. This is the default.
+
+                                         - CIRCULAR_MEAN - The circular mean (average value) of the cells \
+                                         in the window will be calculated. When this statistics type is \
+                                         elected, use the ``circular_wrap_value`` parameter to designate \
+                                         a wrap value to use.
+
+                                         - MAJORITY - The majority (value that occurs most often) of the \
+                                         cells in the defined window will be identified.
+
+                                         - MAXIMUM - The maximum (largest value) of the cells in the \
+                                         defined window will be identified.
+
+                                         - MEDIAN - The median of the cells in the defined window will be \
+                                         identified.
+
+                                         - MINIMUM - The minimum (smallest value) of the cells in the \
+                                         defined window will be identified.
+
+                                         - PERCENTILE - A percentile of the cells in the defined window \
+                                         will be calculated. When this statistics_type is selected, the \
+                                         ``percentile_value`` and ``percentile_interpolation_type`` parameters \
+                                         become available. Use these new parameters to designate the \
+                                         percentile to calculate and choose the interpolation type to \
+                                         use, respectively.
+    --------------------------------     -------------------------------------------------------------------------------
+    percentile_value                     Optional float. The percentile value that will be calculated.
+                                         The default is 90, for the 90th percentile.
+
+                                         The value can range from 0 to 100. The 0th percentile is essentially equivalent
+                                         to the minimum statistic, and the 100th percentile is equivalent to the maximum
+                                         statistic. A value of 50 will produce essentially the same result as the median
+                                         statistic.
+
+                                         This parameter is only supported if the ``statistics_type`` parameter is set to PERCENTILE.
+    --------------------------------     -------------------------------------------------------------------------------
+    percentile_interpolation_type        Optional string. Specifies the method of interpolation to be used when the
+                                         specified percentile value lies between two input cell values.
+
+                                         - AUTO_DETECT - If the input value raster has integer pixel type, the \
+                                         NEAREST method is used. If the input value raster has floating point \
+                                         pixel type, then the LINEAR method is used. This is the default.
+
+                                         - NEAREST - Nearest value to the desired percentile. In this case, the \
+                                         output pixel type is same as that of the input value raster.
+
+                                         - LINEAR - Weighted average of two surrounding values from the desired \
+                                         percentile. In this case, the output pixel type is floating point.
+
+                                         This parameter is only supported if the ``statistics_type`` parameter is
+                                         set to MEDIAN or PERCENTILE.
+    --------------------------------     -------------------------------------------------------------------------------
+    circular_wrap_value                  Optional float. The value that will be used to round a linear value to
+                                         the range of a given circular mean.
+
+                                         Its value must be positive. The default value is 360 degrees.
+
+                                         This parameter is only supported if the ``statistics_type`` parameter is
+                                         set to CIRCULAR_MEAN.
+    ================================     ===============================================================================
 
     :return: The output raster with the function applied.
 
     .. code-block:: python
 
-        # Usage Example: 
+        # Usage Example 1: Calculates MEAN statistics over a moving window on multidimensional data along StdTime dimension.
 
-        surface_parameters_output = surface_parameters(raster, parameter_type="SLOPE", slope_type="PERCENT_RISE")
+        op = dimensional_moving_statistics(raster, dimension="StdTime")
+
     """
     layer, raster, raster_ra = _raster_input(raster)
 
@@ -13052,9 +13040,9 @@ def surface_parameters(
     ================================     ====================================================================
     **Argument**                         **Description**
     --------------------------------     --------------------------------------------------------------------
-    raster                               Required :class:`Raster <arcgis.raster.Raster>`. The input surface raster. This can be an integer or a floating-point raster.
+    raster                               Required :class:`Raster <arcgis.raster.Raster>`/ :class:`ImageryLayer <arcgis.raster.ImageryLayer>` object. The input surface raster. This can be an integer or a floating-point raster.
     --------------------------------     --------------------------------------------------------------------
-    parameter_type                       Optional. Specifies the output surface parameter type that will be computed.
+    parameter_type                       Optional string. Specifies the output surface parameter type that will be computed.
 
                                             - SLOPE - The rate of change in elevation will be computed. This is the default.
                                             
@@ -13086,7 +13074,7 @@ def surface_parameters(
                                             - CASORATI_CURVATURE - The general curvature of the surface will be measured.\
                                             It can be zero or any other positive number.
     --------------------------------     --------------------------------------------------------------------
-    local_surface_type                   Optional. Specifies the type of surface function that will be fitted\
+    local_surface_type                   Optional string. Specifies the type of surface function that will be fitted\
                                          around the target cell. 
     
                                             - QUADRATIC - A quadratic surface function will be fitted to the\
@@ -13095,12 +13083,12 @@ def surface_parameters(
                                             - BIQUADRATIC - A biquadratic surface function will be fitted to\
                                             the neighborhood cells.
     --------------------------------     --------------------------------------------------------------------
-    neighborhood_distance_with_units     Optional. The output will be calculated over this distance from the target cell center. 
+    neighborhood_distance_with_units     Optional string. The output will be calculated over this distance from the target cell center. 
     
                                          If this parameter is not specified, the neighborhood distance is the\
                                          input raster cell size, resulting in a 3 by 3 neighborhood size.
     --------------------------------     --------------------------------------------------------------------
-    use_adaptive_neighborhood            Optional. Specifies whether neighborhood distance will vary with landscape\
+    use_adaptive_neighborhood            Optional bool. Specifies whether neighborhood distance will vary with landscape\
                                          changes (adaptive). The maximum distance is determined by the neighborhood\
                                          scale. The minimum distance is the input raster cell size. 
                                         
@@ -13109,7 +13097,7 @@ def surface_parameters(
                                             
                                             - True - An adaptive neighborhood distance will be used at all locations.
     --------------------------------     --------------------------------------------------------------------
-    z_unit                               Optional. The linear unit of vertical z-values. It is defined by a vertical\
+    z_unit                               Optional string. The linear unit of vertical z-values. It is defined by a vertical\
                                          coordinate system if it exists. 
                                          
                                          If a vertical coordinate system does not exist, the z-unit should be defined\
@@ -13137,7 +13125,7 @@ def surface_parameters(
                                             
                                             - DECIMETER - The linear unit will be decimeters.
     --------------------------------     --------------------------------------------------------------------
-    slope_type                           Optional. The measurement units (degrees or percentages) that will be\
+    slope_type                           Optional string. The measurement units (degrees or percentages) that will be\
                                          used for the output slope raster.
                                          
                                          This parameter is only applicable when ``parameter_type`` = "SLOPE". 
@@ -13147,7 +13135,7 @@ def surface_parameters(
                                             - PERCENT_RISE - The inclination of slope will be calculated as percent\
                                             rise, also referred to as the percent slope.
     --------------------------------     --------------------------------------------------------------------
-    project_geogeodesic_azimuths         Optional. Specifies whether geodesic azimuths will be projected to correct\
+    project_geogeodesic_azimuths         Optional string. Specifies whether geodesic azimuths will be projected to correct\
                                          the angle distortion caused by the output spatial reference.
                                          
                                          This parameter is only applicable when ``parameter_type`` = "ASPECT". 
@@ -13156,7 +13144,7 @@ def surface_parameters(
                                             
                                             - PROJECT_GEODESIC_AZIMUTHS - Geodesic azimuths will be projected.
     --------------------------------     --------------------------------------------------------------------
-    use_equatorial_aspect                Optional. Specifies whether aspect will be measured from a point on the\
+    use_equatorial_aspect                Optional string. Specifies whether aspect will be measured from a point on the\
                                          equator or from the north pole. 
                                          
                                          This parameter is only applicable when ``parameter_type`` = "ASPECT"
