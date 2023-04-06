@@ -99,7 +99,7 @@ def _create_output_image_service(gis, output_name, task):
     return output_service
 
 
-def _get_collection_item(project_item=None, gis=None):
+def _get_collection_item(project_item=None, flight_name=None, gis=None):
     rm = project_item.resources
     res_list = rm.list()
 
@@ -635,10 +635,11 @@ def add_flight(
 ## Compute Sensor model
 ###################################################################################################
 def compute_sensor_model(
-    image_collection,
+    image_collection=None,
     mode: str = "Quick",
     location_accuracy: str = "High",
     context: Optional[dict[str, Any]] = None,
+    project: Optional[Item] = None,
     *,
     gis: Optional[GIS] = None,
     future: bool = False,
@@ -653,14 +654,16 @@ def compute_sensor_model(
     ==================     ====================================================================
     **Parameter**           **Description**
     ------------------     --------------------------------------------------------------------
-    image_collection       Required, the input image collection on which to compute
+    image_collection       Optional, the input image collection on which to compute
                            the sensor model.
                            The image_collection can be a portal Item or an image service URL or a URI
 
                            The image_collection must exist.
 
-                           Project item could also be specified. The image collection of the last flight will be used if the project item
-                           is specified.
+                           If a project item is specified using the project parameter, then the image_collection
+                           parameter can be used to specify the flight name. If the value to the image_collection
+                           parameter is not specified, then the image collection of the last flight in the project 
+                           will be used.
     ------------------     --------------------------------------------------------------------
     mode                   Optional string.  the mode to be used for bundle block adjustment
                            Only the following modes are supported:
@@ -2656,6 +2659,14 @@ def reset_image_collection(
     if image_collection.type == "Ortho Mapping Project":
         project_item = image_collection
         image_collection, flight = _get_collection_item(image_collection, gis)
+        update_flight_json = True
+
+        flight_json_details = {
+            "update_flight_json": update_flight_json,
+            "flight": flight,
+            "project_item": project_item,
+            "item_name": "reset",
+        }
 
     return gis._tools.orthomapping.reset_image_collection(
         image_collection=image_collection, future=future, **kwargs
