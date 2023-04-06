@@ -1,4 +1,5 @@
 from __future__ import annotations
+import platform
 import warnings
 import base64
 import typing as t
@@ -72,7 +73,10 @@ class EsriHttpNtlmAuth(AuthBase):
         try:
             username, domain = _split_username(username)
         except:
-            domain = "."
+            if platform.system().lower() in ["windows", "linux"]:
+                domain = "."
+            else:
+                domain = ""
         username = f"{domain}\\{username}"
         self.username = username
         self.password = password
