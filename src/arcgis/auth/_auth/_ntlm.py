@@ -3,7 +3,8 @@ import warnings
 import base64
 import typing as t
 
-from arcgis.auth.tools import LazyLoader
+import requests
+
 from cryptography import x509
 from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives import hashes
@@ -11,14 +12,14 @@ from cryptography.exceptions import UnsupportedAlgorithm
 from requests.auth import AuthBase
 from urllib3.response import HTTPResponse
 
+from arcgis.auth.tools import LazyLoader
+from ._utils import parse_url, _split_username
+
 try:
     spnego = LazyLoader("spnego", strict=True)
     HAS_SPNEGO = True
 except:
     HAS_SPNEGO = False
-
-import requests
-from ._utils import parse_url
 
 
 class ShimSessionSecurity:
@@ -68,6 +69,11 @@ class EsriHttpNtlmAuth(AuthBase):
                 "In order to use this form of authentication, "
                 "pyspnego must be installed."
             )
+        try:
+            username, domain = _split_username(username)
+        except:
+            domain = "."
+        username = f"{domain}\\{username}"
         self.username = username
         self.password = password
         self.send_cbt = send_cbt
