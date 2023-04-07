@@ -1,5 +1,5 @@
 import sys
-
+import concurrent.futures
 # sys.path.insert(0, r"C:\ipython_workfolder\geosaurus\src")
 import unittest
 import concurrent.futures
@@ -775,6 +775,55 @@ class TestDivideParcels(unittest.TestCase):
                 print(ex)
                 self.fail(f"Divide failed: {ex}")
 
+    def test_equal_width_merge_remainder_left_side_async(self):
+        fq_version_name = pfutils.create_version(self.vms, "api-divide_equal_width")
+        divide_parcel_guid = "{4A336964-922B-4CD5-8CEE-C25E41AE0922}"
+        divide_parcel_type = 15
+        existing_record_guid = "{18F944EA-50E9-4792-9814-FD419644934E}"
+        divide_option = "EqualWidth"
+        number_of_parts = 10
+        divide_part_area_or_width = 10
+        divide_line_bearing = 360
+        divide_left_side = True
+        divide_distribute_remainder = True
+        default_area_unit = 109405
+        divide_cogo_line_bearing = None
+        future = True
+
+        with self.vms.get(fq_version_name, "read") as version:
+            parcel_fabric = ParcelFabricManager(
+                self.service_urls["ParcelFabricServer"],
+                self.gis,
+                version,
+                self.parcel_fabric_flc,
+            )
+            # Divide the parcels
+            try:
+                divide_result = parcel_fabric.divide(
+                    divide_parcel_guid=divide_parcel_guid,
+                    divide_parcel_type=divide_parcel_type,
+                    divide_record=existing_record_guid,
+                    divide_option=divide_option,
+                    divide_number_of_parts=number_of_parts,
+                    divide_part_area=divide_part_area_or_width,
+                    divide_line_bearing=divide_line_bearing,
+                    divide_left_side=divide_left_side,
+                    divide_distribute_remainder=divide_distribute_remainder,
+                    divide_cogo_line_bearing=divide_cogo_line_bearing,
+                    default_area_unit=default_area_unit,
+                    future=future,
+                )
+                assert isinstance(divide_result, concurrent.futures.Future)
+                result = divide_result.result()
+                self.assertEqual(
+                    "esriJobSucceeded",
+                    result["status"],
+                    f"Async job failed:\t{result['status']}",
+                )
+            except Exception as ex:
+                print(ex)
+                self.fail(f"Divide failed: {ex}")
+                
     def test_equal_width_merge_remainder_reconcile_async(self):
         fq_version_name = pfutils.create_version(self.vms)
         divide_parcel_guid = "{4A336964-922B-4CD5-8CEE-C25E41AE0922}"
