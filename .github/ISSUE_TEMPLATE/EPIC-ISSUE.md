@@ -1,8 +1,8 @@
 ---
 name: Epic Template
 about: Template used to create a new Epic
-title: 'Epic Template'
-labels: Epic
+title: '[EPIC] '
+labels: 'EPIC'
 assignees: ''
 
 ---
