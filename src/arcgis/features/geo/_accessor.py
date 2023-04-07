@@ -3312,7 +3312,14 @@ class GeoAccessor(object):
             "features": [],
         }
         # Ensure all number values are 0 so errors do not occur.
-        df = self._data.where(pd.notnull(self._data), None)
+        replace_mappings = {
+            pd.NA: None,
+            np.nan: None,
+            np.NaN: None,
+            np.NAN: None,
+            pd.NaT: None,
+        }
+        df = self._data.replace(replace_mappings)
         date_fields = [col for col in df.columns if df[col].dtype == "datetime64[ns]"]
         time_delta_fields = [
             col for col in df.columns if df[col].dtype in ["<m8[ns]", "timedelta64[ns]"]
