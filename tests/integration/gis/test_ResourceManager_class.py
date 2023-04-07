@@ -369,11 +369,11 @@ class Test_ResourceManager_portal(unittest.TestCase):
 
         # search for existing vector tile service item by Esri
         # World Street Map (with Relief) (Mature Support)
-        vtl_item = _gis.content.get("2e063e709e3446459f8538ed6743f879")
+        vtl_item = _gis.content.get("fdf540eef40344b79ead3c0c49be76a9")
 
         if vtl_item is None:
             print(
-                "Could not find Esri's vector tile service item: 2e063e709e3446459f8538ed6743f879"
+                "Could not find Esri's vector tile service item: fdf540eef40344b79ead3c0c49be76a9"
                 + "Skipping test case."
             )
             raise unittest.SkipTest
@@ -395,7 +395,7 @@ class Test_ResourceManager_portal(unittest.TestCase):
             print("Number of resource files: " + str(len(vtl_resources)))
 
             self.assertGreaterEqual(
-                len(vtl_resources), 10000, "Number of resource files less than usual"
+                len(vtl_resources), 700, "Number of resource files less than usual"
             )
 
         except AssertionError as assertErrorException:
@@ -567,6 +567,7 @@ class Test_ResourceManager_portal(unittest.TestCase):
             )
             fld_json = res_mgr.get(
                 "fld/root_resource_file.json",
+                try_json=False,
                 out_folder=output_folder,
                 out_file_name="as_its_a_type_of_pine.json",
             )
