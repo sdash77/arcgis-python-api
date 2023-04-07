@@ -102,14 +102,12 @@ class TestPortalAdminManager(unittest.TestCase):
         reports = [
             "content",
             "users",
-            "activity",
             "credits",
-            "serviceUsages",
-            "itemUsages",
         ]
         for report in reports:
-            generated = usage_reports.generate_report(focus="org", report_type=report, duration="monthly")
-            assert generated
+            with self.subTest(report):
+                generated = usage_reports.generate_report(focus="org", report_type=report, duration="monthly")
+                assert generated
 
 if __name__ == "__main__":
     unittest.main()

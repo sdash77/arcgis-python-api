@@ -3,6 +3,7 @@ import io
 import uuid
 from arcgis.gis import GIS
 import pandas as pd
+import requests
 
 GUID = uuid.uuid4().hex[:6]
 item_properties = {
@@ -15,11 +16,12 @@ URL = (
 )
 PROFILES = ["your_online_profile", "your_kubernetes_profile"]
 
-
 class TestAddUsingIO(unittest.TestCase):
     def test_add_by_string_io(self):
         """adds the CSV file using stringIO object"""
-        data = pd.read_csv(URL)
+        input = requests.get(URL).text
+        input_io = io.StringIO(input)
+        data = pd.read_csv(input_io)
         output = io.StringIO()
         data.to_csv(output, index=False)
         gis = GIS(profile=PROFILES[0], verify_cert=False, trust_env=True)
@@ -29,7 +31,9 @@ class TestAddUsingIO(unittest.TestCase):
 
     def test_update_by_string_io(self):
         """adds the CSV file using stringIO object"""
-        data = pd.read_csv(URL)
+        input = requests.get(URL).text
+        input_io = io.StringIO(input)
+        data = pd.read_csv(input_io)
         output = io.StringIO()
         data.to_csv(output, index=False)
         gis = GIS(profile=PROFILES[0], verify_cert=False, trust_env=True)
@@ -43,11 +47,12 @@ class TestAddUsingIO(unittest.TestCase):
             if item:
                 assert item.delete()
 
-
 class TestAddUpdateKubeUsingIO(unittest.TestCase):
     def test_add_by_string_io(self):
         """adds the CSV file using stringIO object"""
-        data = pd.read_csv(URL)
+        input = requests.get(URL).text
+        input_io = io.StringIO(input)
+        data = pd.read_csv(input_io)
         output = io.StringIO()
         data.to_csv(output, index=False)
         gis = GIS(
@@ -67,7 +72,9 @@ class TestAddUpdateKubeUsingIO(unittest.TestCase):
 
     def test_update_by_string_io(self):
         """adds the CSV file using stringIO object"""
-        data = pd.read_csv(URL)
+        input = requests.get(URL).text
+        input_io = io.StringIO(input)
+        data = pd.read_csv(input_io)
         output = io.StringIO()
         data.to_csv(output, index=False)
         gis = GIS(
