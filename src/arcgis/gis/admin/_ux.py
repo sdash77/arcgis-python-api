@@ -2479,7 +2479,7 @@ class SecuritySettings(object):
         """
         if self._gis._is_agol is True:
             return None
-        url = self._portal.resturl + "portals/self/emailSettings/update"
+        url = self._portal.resturl + "portals/self/setEmailSettings"
         params = {
             "f": "json",
             "smtpHost": smtp_host,
