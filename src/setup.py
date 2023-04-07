@@ -73,7 +73,7 @@ else:
         "ipywidgets >=7,<8",
         "widgetsnbextension >=3",
         "jupyter-client <=6.1.12",
-        "pandas >=1.3.5",
+        "pandas >=2.0.0",
         "numpy >=1.16.2",
         "matplotlib",
         "keyring >=23.3.0",
