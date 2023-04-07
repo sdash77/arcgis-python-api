@@ -2,7 +2,7 @@ import sys
 
 #
 #  Update the Path to set the test area
-sys.path.insert(0, r"c:\SVN\geosaurus_master\src")
+sys.path.insert(0, r"C:\SVN\geosaurus_issue_9725\src")
 import logging
 import unittest
 from arcgis.auth.tools._util import detect_proxy
@@ -85,8 +85,14 @@ class TestMemberCategories(unittest.TestCase):
                 {"title": "Top Category 2"},
             ]
             gis.users.categories = categories
-            assert gis.users.assign_categories([gis.users.me], ['/amazing'])
-            assert gis.users.me.categories == ['/amazing']
+            assert gis.users.assign_categories(
+                [gis.users.me],
+                ["/Categories/amazing/test/test lower", "amazing"],
+            )
+            assert gis.users.me.categories == [
+                "/Categories/amazing/test/test lower",
+                "/Categories/amazing",
+            ]
 
 
 if __name__ == "__main__":

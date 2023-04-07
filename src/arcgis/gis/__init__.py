@@ -4046,6 +4046,11 @@ class UserManager(object):
         ==================     ====================================================================
         """
         results = []
+        # ensure /Categories is at the start of each string.
+        categories = [
+            cat if cat.lower().find("/categories") > -1 else f"/Categories/{cat}"
+            for cat in categories
+        ]
         for user in users:
             results.append({user.username: user.update(categories=categories)})
         return results
