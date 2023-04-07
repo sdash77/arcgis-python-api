@@ -678,3 +678,4 @@ class KubeSecurity(object):
         if self._certs is None:
             url = self._url + "/certificates"
             self._certs = KubeSecurityCert(url, gis=self._gis)
+        return self._certs

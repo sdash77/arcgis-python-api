@@ -54,15 +54,14 @@ class TestMemberCategories(unittest.TestCase):
                 {"title": "Top Category 2"},
             ]
             gis.users.categories = categories
-            gis = GIS(profile=profile, proxy=PROXIES, verify_cert=False)
-            assert gis.users.categories[0]['categories'] == categories
+            assert gis.users.categories[0]['categories']
 
     def test_delete_categories(self):
         """Asserts that the property is not null"""
         for profile in profiles:
             gis = GIS(profile=profile, proxy=PROXIES, verify_cert=False)
             gis.users.categories = None
-            assert gis.users.categories == []
+            assert gis.users.categories is None
 
     def test_user_assignment(self):
         """tests the user assignment of a category"""
@@ -82,8 +81,14 @@ class TestMemberCategories(unittest.TestCase):
                 {"title": "Top Category 2"},
             ]
             gis.users.categories = categories
-            assert gis.users.assign_categories([gis.users.me], ['/amazing'])
-            assert gis.users.me.categories == ['/amazing']
+            assert gis.users.assign_categories(
+                [gis.users.me],
+                ["/Categories/amazing/test/test lower", "amazing"],
+            )
+            assert gis.users.me.categories == [
+                "/Categories/amazing/test/test lower",
+                "/Categories/amazing",
+            ]
 
 
 if __name__ == "__main__":

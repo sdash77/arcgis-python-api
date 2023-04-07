@@ -339,6 +339,7 @@ class GIS(object):
     _is_agol = None
     _pds = None
     _validate_item_url = None
+    _properties = None
     """If 'True', the GIS instance is a GIS('home') from hosted nbs"""
 
     # admin = None
@@ -1177,12 +1178,14 @@ class GIS(object):
             pass
         return self._datastores_list
 
-    @_lazy_property
+    @property
     def properties(self):
         """
         ``properties`` manages the actual properties of the GIS object.
         """
-        return _mixins.PropertyMap(self._get_properties(force=True))
+        if self._properties is None:
+            self._properties = _mixins.PropertyMap(self._get_properties(force=True))
+        return self._properties
 
     def update_properties(self, properties_dict: dict[str, Any]):
         """The ``update_properties`` method updates the GIS's properties from those in ``properties_dict``. This method
@@ -4043,6 +4046,11 @@ class UserManager(object):
         ==================     ====================================================================
         """
         results = []
+        # ensure /Categories is at the start of each string.
+        categories = [
+            cat if cat.lower().find("/categories") > -1 else f"/Categories/{cat}"
+            for cat in categories
+        ]
         for user in users:
             results.append({user.username: user.update(categories=categories)})
         return results
@@ -4122,9 +4130,16 @@ class UserManager(object):
             res = self._gis._con.post(url, params)
             if res.get("success", False) == False:
                 raise Exception(res)
+            else:
+                self._gis._properties = None
         elif isinstance(value, (tuple, list)):
             url = f"{self._gis._portal.resturl}portals/self/assignMemberCategorySchema"
-            cat_param = [{"title": category} for category in value]
+            cat_param = []
+            for category in value:
+                if isinstance(value, str):
+                    cat_param.append({"title": category})
+                else:
+                    cat_param.append(category)
             if self._gis.properties.hasMemberCategorySchema:
                 for category in self._gis.users.categories[0]["categories"]:
                     cat_param.append(category)
@@ -4142,6 +4157,8 @@ class UserManager(object):
             res = self._gis._con.post(url, params)
             if res.get("success", False) == False:
                 raise Exception(res)
+            else:
+                self._gis._properties = None
         elif isinstance(value, dict) and "memberCategorySchema" in value:
             url = f"{self._gis._portal.resturl}portals/self/assignMemberCategorySchema"
             if self._gis.properties.hasMemberCategorySchema:
@@ -4151,6 +4168,8 @@ class UserManager(object):
             res = self._gis._con.post(url, params)
             if res.get("success", False) == False:
                 raise Exception(res)
+            else:
+                self._gis._properties = None
         else:
             raise ValueError("A list or tuple must be given to set the categories.")
 
