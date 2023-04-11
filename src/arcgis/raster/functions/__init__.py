@@ -13088,7 +13088,7 @@ def surface_parameters(
                                          If this parameter is not specified, the neighborhood distance is the\
                                          input raster cell size, resulting in a 3 by 3 neighborhood size.
     --------------------------------     --------------------------------------------------------------------
-    use_adaptive_neighborhood            Optional bool. Specifies whether neighborhood distance will vary with landscape\
+    use_adaptive_neighborhood            Optional boolean. Specifies whether neighborhood distance will vary with landscape\
                                          changes (adaptive). The maximum distance is determined by the neighborhood\
                                          scale. The minimum distance is the input raster cell size. 
                                         

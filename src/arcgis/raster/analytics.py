@@ -9683,16 +9683,16 @@ def derive_continuous_flow(
     ====================================     ====================================================================
     **Argument**                             **Description**
     ------------------------------------     --------------------------------------------------------------------
-    input_surface_raster                     Required :class:`<arcgis.raster.ImageryLayer>` object. The input elevation surface.
+    input_surface_raster                     Required :class:`~arcgis.raster.ImageryLayer` object. The input elevation surface.
     ------------------------------------     --------------------------------------------------------------------
-    input_depressions_data                   Optional :class:`~arcgis.features.FeatureLayer`/ :class:`<arcgis.raster.ImageryLayer>`.\
+    input_depressions_data                   Optional :class:`~arcgis.features.FeatureLayer`/ :class:`~arcgis.raster.ImageryLayer`.\
                                              A dataset that defines real depressions. The depressions can\
                                              be defined either through a raster or a feature layer.\
                                             
                                              If input is a raster, the depression cells must take a valid value, including\
                                              zero, and the areas that are not depressions must be NoData.
     ------------------------------------     --------------------------------------------------------------------
-    input_weight_raster                      Optional :class:`<arcgis.raster.ImageryLayer>`. A raster that defines the fraction of flow that contributes\
+    input_weight_raster                      Optional :class:`~arcgis.raster.ImageryLayer`. A raster that defines the fraction of flow that contributes\
                                              to flow accumulation at each cell. The weight is only applied to flow accumulation.
                                              
                                              If no weight raster is specified, a default weight of 1 will be applied to each cell. 
