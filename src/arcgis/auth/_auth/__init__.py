@@ -1,6 +1,8 @@
 from ._base import BaseEsriAuth
 from ._pki import EsriPKIAuth
-from ._winauth import EsriWindowsAuth, EsriKerberosAuth
+from ._winauth import EsriKerberosAuth, EsriWindowsAuth
+from ._negotiate import EsriHttpNegotiateAuth
+from ._ntlm import EsriHttpNtlmAuth
 from ._apikey import EsriAPIKeyAuth
 from ._provided_token import (
     EsriUserTokenAuth,
@@ -31,4 +33,6 @@ __all__ = [
     "BaseEsriAuth",
     "EsriPKCEAuth",
     "ArcGISServerAuth",
+    "EsriHttpNtlmAuth",
+    "EsriHttpNegotiateAuth",
 ]

@@ -26,13 +26,10 @@ requirements:
   - pyshp >=2
   - requests >=2.27.1
   - requests-toolbelt
-  - requests_ntlm2
   - requests-kerberos
   - requests-oauthlib
-  - requests-negotiate-sspi [win]
   - pywin32-security [win]
   - lerc
-  - winkerberos      [win]
   - cryptography
   - lxml
   - certifi
@@ -40,6 +37,7 @@ requirements:
   - geomet
   - python-gssapi
   - requests-gssapi
+  - pyspnego
   run:
   - python
   - pillow
@@ -58,10 +56,8 @@ requirements:
   - requests-toolbelt
   - requests-kerberos
   - requests-oauthlib
-  - requests-negotiate-sspi [win]
   - pywin32-security [win]
   - lerc
-  - winkerberos      [win]
   - python-certifi-win32 [win]
   - cryptography
   - lxml
@@ -70,6 +66,7 @@ requirements:
   - geomet
   - python-gssapi
   - requests-gssapi
+  - pyspnego
 source:
   path: ../../src
 test:
