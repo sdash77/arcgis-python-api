@@ -712,16 +712,16 @@ def show_results(self, rows, **kwargs):
             final_img.shape[3],
             1,
         ),
-    ).cuda()
+    ).to(self._device)
     final_labs = [
         j for l in range(validarr.shape[0]) for j in validarr.shape[3] * [labsarr[l]]
     ]
-    final_labs = torch.stack(final_labs).cuda()
+    final_labs = torch.stack(final_labs).to(self._device)
     divided = DataLoader(img_arr, batch_size=65536, pin_memory=False)
 
     prediction = []
     for i in divided:
-        sim = torch.ones(i.shape[0], i.shape[1], 1).cuda()
+        sim = torch.ones(i.shape[0], i.shape[1], 1).to(self._device)
         self.learn.model.eval()
         with torch.no_grad():
             pred = self.learn.model(i, sim)
@@ -739,12 +739,12 @@ def show_results(self, rows, **kwargs):
     num_pixels = rows * 2
     grouped = df.groupby("True").apply(lambda x: x.sample(int(num_pixels / len(clses))))
     all_cls_arr = img_arr.index_select(
-        0, torch.tensor([j for i, j in grouped["Predicted"].index]).cuda()
+        0, torch.tensor([j for i, j in grouped["Predicted"].index]).to(self._device)
     )
     if grouped.shape[0] != num_pixels:
         remain = df.sample(abs(grouped.shape[0] - num_pixels))
         remained_all_cls_arr = img_arr.index_select(
-            0, torch.tensor([i for i in remain.index]).cuda()
+            0, torch.tensor([i for i in remain.index]).to(self._device)
         )
         all_cls_arr = torch.cat((all_cls_arr, remained_all_cls_arr), axis=0)
     bands = [("T" + str(x)) for x in range(all_cls_arr.shape[1])]

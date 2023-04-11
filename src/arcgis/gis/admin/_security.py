@@ -176,10 +176,9 @@ class Security(BasePortalAdmin):
         """
         See main ``tokens`` property docsring
         """
-        import six
 
         params = {"f": "json", "tokenConfig": None}
-        if isinstance(value, six.string_types):
+        if isinstance(value, str):
             params["tokenConfig"] = {"sharedKey": value}
         elif isinstance(value, dict) and "sharedKey" in value:
             params["tokenConfig"] = value
@@ -361,7 +360,7 @@ class Security(BasePortalAdmin):
 
     # ----------------------------------------------------------------------
     @property
-    @deprecated(deprecated_in="2.1.0", removed_in="3.0.0", current_version="2.1.0")
+    @deprecated(deprecated_in="2.1.0", removed_in="3.0.0", current_version="2.2.0")
     def ssl(self):
         """
         .. note::

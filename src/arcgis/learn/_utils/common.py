@@ -127,7 +127,12 @@ def read_image(path, resize_to: int = None, keep_raw=False):
 
 class ArcGISMSImage(Image):
     def show(
-        self, ax=None, rgb_bands=None, show_axis=False, title=None, return_ax=False
+        self,
+        ax=None,
+        rgb_bands=None,
+        show_axis=False,
+        title=None,
+        return_ax=False,
     ):
         if rgb_bands is None:
             rgb_bands = getattr(self, "rgb_bands", [0, 1, 2])
@@ -385,7 +390,7 @@ def get_post_processed_model(arcgis_model, input_normalization=True):
 
 
 def get_color_array(color_mapping: dict, alpha=0.7):
-    color_array = np.array(list(color_mapping.values()), dtype=np.float) / 255
+    color_array = np.array(list(color_mapping.values()), dtype=float) / 255
     color_array = np.concatenate(
         [
             color_array,
@@ -566,10 +571,14 @@ def get_percent_minmax(imagetensor_batch, min_clip=0.0025, max_clip=0.005):
         max_vals.append(v[1])
     return (
         torch.tensor(
-            min_vals, dtype=imagetensor_batch.dtype, device=imagetensor_batch.device
+            min_vals,
+            dtype=imagetensor_batch.dtype,
+            device=imagetensor_batch.device,
         ),
         torch.tensor(
-            max_vals, dtype=imagetensor_batch.dtype, device=imagetensor_batch.device
+            max_vals,
+            dtype=imagetensor_batch.dtype,
+            device=imagetensor_batch.device,
         ),
     )
 

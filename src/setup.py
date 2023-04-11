@@ -65,19 +65,17 @@ else:
     dependencies = [
         "pillow",
         "urllib3",
-        "gssapi",
         "cachetools",
-        "six",
         "lxml",
         "notebook",
         "cryptography",
-        "ipywidgets >=7",
+        "ipywidgets >=7,<8",
         "widgetsnbextension >=3",
         "jupyter-client <=6.1.12",
-        "pandas >=1.3.5",
+        "pandas >=2.0.0",
         "numpy >=1.16.2",
         "matplotlib",
-        "keyring >=23.3.*",
+        "keyring >=23.3.0",
         "lerc",
         "ujson >=3",
         "jupyterlab",
@@ -88,9 +86,8 @@ else:
         "requests >=2.27.1",
         "requests-oauthlib",
         "requests_toolbelt",
-        'requests-negotiate-sspi;platform_system=="Windows"',
-        'requests-kerberos;platform_system=="Windows"',
-        'winkerberos;platform_system=="Windows"',
+        "pyspnego >=0.8.0",
+        "requests-kerberos",
         "requests-gssapi",
         "gssapi>=1.8.1,<2",
         "dask",
@@ -221,7 +218,7 @@ data_files = [
 def get_version():
     """gets the version from environment variable or sets via manually setting"""
     MAJOR = "2"
-    MINOR = "1"
+    MINOR = "2"
     try:
         import os
 
@@ -309,7 +306,11 @@ kwargs = {
     # These classes will execute code after 'pip install' finishes
     # In this case, it will activate the 'arcgis' ipywidget
     # See the top of this setup.py file
-    "cmdclass": {"develop": develop, "install": install, "egg_info": egg_info},
+    "cmdclass": {
+        "develop": develop,
+        "install": install,
+        "egg_info": egg_info,
+    },
     # List additional groups of dependencies here (e.g. development
     # dependencies). You can install these using the following syntax,
     # for example:

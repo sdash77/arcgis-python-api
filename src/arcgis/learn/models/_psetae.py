@@ -100,6 +100,7 @@ class PSETAE(ArcGISModel):
         )
 
         self.learn.model = self.learn.model.to(self._device)
+        self.learn.model._device = self._device
         self._slice_lr = False
         if pretrained_path is not None:
             self.load(pretrained_path)

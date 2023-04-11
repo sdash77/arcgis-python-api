@@ -1,9 +1,8 @@
 urllib3
 cachetools
-six
 lxml
 cryptography
-ipywidgets >=7
+ipywidgets ~=7
 widgetsnbextension >=3
 pandas >=1.3.5
 numpy >=1.16.2
@@ -25,3 +24,4 @@ requests-kerberos
 winkerberos;platform_system=="Windows"
 requests-gssapi
 dask
+pyspnego >=0.8.0

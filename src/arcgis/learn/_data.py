@@ -1270,9 +1270,12 @@ def prepare_data(
     val_split_pct           Optional float. Percentage of training data to keep
                             as validation.
     ---------------------   -------------------------------------------
-    batch_size              Optional integer. Batch size for mini batch gradient
+    batch_size              Optional integer. Default 64. Batch size for mini batch gradient
                             descent (Reduce it if getting CUDA Out of Memory
-                            Errors). Batch size is required to be greater than 1.
+                            Errors). Batch size is required to be greater than 1. If None is
+                            provided, a recommended batch size is used. This is estimated based
+                            on GPU capacity, size of model and data. To explicitly find the
+                            recommended batch_size, use arcgis.learn.estimate_batch_size() method.
     ---------------------   -------------------------------------------
     transforms              Optional tuple. Fast.ai transforms for data
                             augmentation of training and validation datasets
@@ -1472,7 +1475,9 @@ def prepare_data(
     if type(path) is str:
         path = Path(path)
 
+    _estimate_batch = False
     if batch_size == None:
+        _estimate_batch = True
         batch_size = 2
 
     databunch_kwargs = {"num_workers": 0} if sys.platform == "win32" else {}
@@ -2670,7 +2675,7 @@ def prepare_data(
         if os.path.isfile(path):
             path = os.path.dirname(path)
         _prepare_working_dir(path)
-
+        data._estimate_batch = _estimate_batch
         return data
 
     elif dataset_type == "PointCloud":
@@ -2692,9 +2697,11 @@ def prepare_data(
             **kwargs,
         )
         data._data_path = data.path
+        data.arcgis_init_kwargs = arcgis_init_kwargs
         if working_dir is not None:
             data.path = Path(os.path.abspath(working_dir))
         _prepare_working_dir(data.path)
+        data._estimate_batch = _estimate_batch
         return data
 
     elif dataset_type == "ImageCaptioning":
@@ -2709,6 +2716,7 @@ def prepare_data(
         _prepare_working_dir(data.path)
 
         data.arcgis_init_kwargs = arcgis_init_kwargs
+        data._estimate_batch = _estimate_batch
         return data
 
     elif dataset_type == "ChangeDetection":
@@ -2732,6 +2740,7 @@ def prepare_data(
             **kwargs,
         )
         data.arcgis_init_kwargs = arcgis_init_kwargs
+        data._estimate_batch = _estimate_batch
         return data
 
     elif dataset_type == "CycleGAN":
@@ -2756,6 +2765,7 @@ def prepare_data(
                 data.path = Path(os.path.abspath(working_dir))
             data._temp_folder = _prepare_working_dir(data.path)
             data.arcgis_init_kwargs = arcgis_init_kwargs
+            data._estimate_batch = _estimate_batch
             return data
         data, batch_stats_a, batch_stats_b = prepare_data_ms_cyclegan(
             path, _is_multispectral, norm_pct, val_split_pct, seed, databunch_kwargs
@@ -2787,6 +2797,7 @@ def prepare_data(
             data._extract_bands = None
             data._do_normalize = False
         data.arcgis_init_kwargs = arcgis_init_kwargs
+        data._estimate_batch = _estimate_batch
         return data
 
     elif dataset_type == "PSETAE":
@@ -2800,7 +2811,7 @@ def prepare_data(
             class_mapping=class_mapping,
             **kwargs,
         )
-
+        data._estimate_batch = _estimate_batch
         return data
 
     elif dataset_type == "WNet_cGAN":
@@ -2856,6 +2867,7 @@ def prepare_data(
             data.path = Path(os.path.abspath(working_dir))
         data._temp_folder = _prepare_working_dir(data.path)
         data.arcgis_init_kwargs = arcgis_init_kwargs
+        data._estimate_batch = _estimate_batch
         return data
     elif dataset_type == "ObjectTracking":
         from ._utils.object_tracking_data import (
@@ -2885,6 +2897,7 @@ def prepare_data(
             data.path = Path(os.path.abspath(working_dir))
         data._temp_folder = _prepare_working_dir(data.path)
         data.arcgis_init_kwargs = arcgis_init_kwargs
+        data._estimate_batch = _estimate_batch
         return data
     else:
         raise NotImplementedError('Unknown dataset_type="{}".'.format(dataset_type))
@@ -3210,6 +3223,7 @@ def prepare_data(
     data.dataset_type = dataset_type
 
     data._is_multispectral = _is_multispectral
+
     if data._is_multispectral or 1 == 1:
         data._bands = bands
         data._norm_pct = norm_pct
@@ -3361,4 +3375,5 @@ def prepare_data(
         data._emd = emd
 
     data.arcgis_init_kwargs = arcgis_init_kwargs
+    data._estimate_batch = _estimate_batch
     return data

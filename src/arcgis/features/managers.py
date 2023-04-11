@@ -2800,6 +2800,22 @@ class FeatureLayerManager(_GISResource):
         self._hydrate()
 
     # ----------------------------------------------------------------------
+    @property
+    def contingent_values(self) -> dict[str, Any]:
+        """returns the contingent values for the service endpoint"""
+        url: str = f"{self._url}/contingentValues"
+        params: dict[str, Any] = {"f": "json"}
+        return self._gis._con.get(url, params)
+
+    # ----------------------------------------------------------------------
+    @property
+    def field_groups(self) -> dict[str, Any]:
+        """returns the field groups for the service endpoint"""
+        url: str = f"{self._url}/fieldGroups"
+        params: dict[str, Any] = {"f": "json"}
+        return self._gis._con.get(url, params)
+
+    # ----------------------------------------------------------------------
     @classmethod
     def fromitem(cls, item: Item, layer_id: int = 0):
         """

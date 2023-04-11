@@ -489,6 +489,7 @@ class DeepLab(ArcGISModel):
             )
             empty_data.class_mapping = class_mapping
             empty_data.color_mapping = color_mapping
+            empty_data._is_empty = True
             empty_data = get_multispectral_data_params_from_emd(empty_data, emd)
             empty_data.emd_path = emd_path
             empty_data.emd = emd

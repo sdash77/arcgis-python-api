@@ -36,7 +36,7 @@ def enable_verbose_logging(root):
     root.addHandler(handler)
 
 
-PROFILES = ["your_online_profile", "your_enterprise_profile"]
+PROFILES = ["your_online_admin_profile", "your_ent_admin_profile"]
 PROXIES = detect_proxy(True)  # Handles Fiddler when True
 enable_verbose_logging(__logger__)
 

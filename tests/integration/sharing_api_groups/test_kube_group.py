@@ -1,9 +1,14 @@
 import sys, os
+
+sys.path.insert(0, r"C:\SVN\geosaurus_issue_9202\src")
+sys.path.insert(1, r"C:\SVN\geosaurus_issue_9202\tests")
+sys.path.insert(2, r"C:\SVN\geosaurus_issue_9202\tests\integration")
+
 import unittest
 import unittest.mock
 from unittest.mock import MagicMock
 import uuid
-
+from arcgis.auth.tools._util import detect_proxy
 from arcgis.gis import (
     GIS,
     GroupApplication,
@@ -14,7 +19,14 @@ from arcgis.gis import (
     UserManager,
 )
 from arcgis.gis import ProfileManager
-from arcgis.gis import GIS, Item, User, UserManager, Group, GroupMigrationManager
+from arcgis.gis import (
+    GIS,
+    Item,
+    User,
+    UserManager,
+    Group,
+    GroupMigrationManager,
+)
 from arcgis.gis._impl._jb import StatusJob
 
 profiles = ["your_kubernetes_profile"]
@@ -22,26 +34,40 @@ profiles = ["your_kubernetes_profile"]
 dest_profile = "your_dest_ent_profile"
 VERIFY_CERT = False  # Boolean T/F
 
-if "your_dest_ent_profile" not in ProfileManager().list():
-    gis = GIS(
-        url="https://datascienceqa.esri.com/portal",
-        username="portaladmin",
-        password="esri.agp",
-        profile="your_dest_ent_profile",
-        verify_cert=False,
-        trust_env=True,
-    )
-    del gis
+# if "your_dest_ent_profile" not in ProfileManager().list():
+username = "PAPIadmin"
+password = "PAPIletmein01"
+GIS(
+    url="https://rqawinbi01pt.ags.esri.com/gis",
+    username=username,
+    password=password,
+    profile="your_dest_ent_profile",
+    verify_cert=False,
+    trust_env=True,
+    use_gen_token=True,
+    proxy=detect_proxy(),
+).users.me.update(security_question=1, security_answer="Redlands")
+
+GIS(
+    profile="your_kubernetes_profile",
+    verify_cert=False,
+    trust_env=True,
+    use_gen_token=True,
+    proxy=detect_proxy(),
+).users.me.update(security_question=1, security_answer="Redlands")
 
 try:
     from utils import NOTEBOOK_TESTS_DIR
 
     fp = os.path.join(NOTEBOOK_TESTS_DIR, "parkinglots.zip")
-
+    if not os.path.isfile(fp):
+        fp = r"\\qalab_server\pydata\v109\geosaurus\group_manager_data\parkinglots.zip"
 except:
-    fp = r"./parkinglots.zip"
+    fp = r"\\qalab_server\pydata\v109\geosaurus\group_manager_data\parkinglots.zip"
+
 
 ###########################################################################
+# @unittest.skip('verified')
 class TestGroupImportExport(unittest.TestCase):
     """Tests the Group Import/Export Methods on a Group Object"""
 
@@ -49,17 +75,23 @@ class TestGroupImportExport(unittest.TestCase):
     def test_group_export_async(self):
         """tests exporting the group items to an epk"""
         for profile in profiles:
-
             gis = GIS(profile=profile, verify_cert=False, trust_env=True)
             for i in gis.content.search("erasemedata123"):
                 assert i.delete()
             pitem = gis.content.add(
-                {"title": "erasemedata123", "tags": ["a", "b", "c"]}, data=fp
+                {
+                    "title": "erasemedata123",
+                    "tags": ["a", "b", "c"],
+                    'type': "Shapefile",
+                },
+                data=fp,
             )
             # pitem = item.publish()
             for grp in gis.groups.search("export_test_group"):
                 assert grp.delete()
-            new_group = gis.groups.create(title="export_test_group", tags="a,b,c")
+            new_group = gis.groups.create(
+                title="export_test_group", tags="a,b,c"
+            )
             isinstance(pitem, Item)
             pitem.share(groups=[new_group])
             epk_file = new_group.migration.create(
@@ -75,17 +107,23 @@ class TestGroupImportExport(unittest.TestCase):
     def test_group_export_sync(self):
         """tests exporting the group items to an epk"""
         for profile in profiles:
-
             gis = GIS(profile=profile, verify_cert=False, trust_env=True)
             for i in gis.content.search("erasemedata123"):
                 assert i.delete()
             pitem = gis.content.add(
-                {"title": "erasemedata123", "tags": ["a", "b", "c"]}, data=fp
+                {
+                    "title": "erasemedata123",
+                    "tags": ["a", "b", "c"],
+                    'type': "Shapefile",
+                },
+                data=fp,
             )
             # pitem = item.publish()
             for grp in gis.groups.search("export_test_group"):
                 assert grp.delete()
-            new_group = gis.groups.create(title="export_test_group", tags="a,b,c")
+            new_group = gis.groups.create(
+                title="export_test_group", tags="a,b,c"
+            )
             isinstance(pitem, Item)
             pitem.share(groups=[new_group])
 
@@ -98,45 +136,67 @@ class TestGroupImportExport(unittest.TestCase):
 
 
 ###########################################################################
+# @unittest.skip('verified')
 class TestImport2Group(unittest.TestCase):
     """tests the import methods"""
 
-    @unittest.skip("failing")
     def test_group_import_two_gis_objects(self):
         """tests importing the group items from an epk"""
         for profile in profiles:
-
-            gis = GIS(profile=profile, verify_cert=False, trust_env=True)
+            gis = GIS(
+                profile=profile,
+                verify_cert=False,
+                trust_env=True,
+                proxy=detect_proxy(),
+            )
 
             for i in gis.content.search("erasemedata123"):
                 assert i.delete()
             pitem = gis.content.add(
-                {"title": "erasemedata123", "tags": ["a", "b", "c"]}, data=fp
+                {
+                    "title": "erasemedata123",
+                    "tags": ["a", "b", "c"],
+                    'type': "Shapefile",
+                },
+                data=fp,
             )
             for grp in gis.groups.search("export_test_group"):
                 assert grp.delete()
-            new_group = gis.groups.create(title="export_test_group", tags="a,b,c")
+            new_group = gis.groups.create(
+                title="export_test_group", tags="a,b,c"
+            )
             isinstance(pitem, Item)
             pitem.share(groups=[new_group])
             epk_file = new_group.migration.create(
                 items=[pitem], future=False
             )  # SHould Return an Item
-            export_package_file = epk_file.download()
+            export_package_file = r"C:\Users\andr5624\AppData\Local\Temp\1\export_test_group_2023223_025646.epk"  # epk_file.download()
             assert isinstance(epk_file, Item)
             assert pitem.delete()
+
+            # export_package_file = r"C:\Users\andr5624\AppData\Local\Temp\1\export_test_group_2023223_025646.epk"  # epk_file.download()
             gis_dest = GIS(
                 profile="your_dest_ent_profile",
                 verify_cert=False,
                 trust_env=True,
                 set_active=False,
+                proxy=detect_proxy(),
             )
             grps = gis_dest.groups.search("new_group1_dest")
             if len(grps) > 0:
                 [grp.delete() for grp in grps]
-            group_dest = gis_dest.groups.create("new_group1_dest", tags="migration")
+            group_dest = gis_dest.groups.create(
+                "new_group1_dest", tags="migration"
+            )
 
             import uuid
 
+            [
+                i.delete()
+                for i in gis_dest.content.search(
+                    f"test_import owner:{gis_dest.users.me.username}"
+                )
+            ]
             new_item = gis_dest.content.add(
                 {
                     "title": f"test_import_{uuid.uuid4().hex[:6]}",
@@ -154,7 +214,7 @@ class TestImport2Group(unittest.TestCase):
             print("inspecting done")
             assert isinstance(m, GroupMigrationManager)
             print("loading")
-            res = m.load(epk_file)
+            res = m.load(new_item)
 
             assert res
             assert isinstance(res, StatusJob)
@@ -162,7 +222,8 @@ class TestImport2Group(unittest.TestCase):
             assert all([i.delete() for i in res.result()["itemsImported"]])
             print("loading done")
             print("clean up")
-            [i.delete() for i in group_dest.content()]
+            # [i.delete() for i in group_dest.content()]
+            group_dest.delete()
             new_group.delete()
 
     # ----------------------------------------------------------------------
@@ -173,11 +234,18 @@ class TestImport2Group(unittest.TestCase):
             for i in gis.content.search("erasemedata123"):
                 assert i.delete()
             pitem = gis.content.add(
-                {"title": "erasemedata123", "tags": ["a", "b", "c"]}, data=fp
+                {
+                    "title": "erasemedata123",
+                    "tags": ["a", "b", "c"],
+                    'type': "Shapefile",
+                },
+                data=fp,
             )
             for grp in gis.groups.search("export_test_group"):
                 assert grp.delete()
-            new_group = gis.groups.create(title="export_test_group", tags="a,b,c")
+            new_group = gis.groups.create(
+                title="export_test_group", tags="a,b,c"
+            )
             isinstance(pitem, Item)
             pitem.share(groups=[new_group])
             epk_file = new_group.migration.create(
@@ -200,7 +268,6 @@ class TestImport2Group(unittest.TestCase):
         tests the `inspect` package call on Portal
         """
         for profile in profiles:
-
             ##
             ## SETUP EXPORT
             ##
@@ -209,11 +276,18 @@ class TestImport2Group(unittest.TestCase):
                 assert i.delete()
 
             pitem = gis.content.add(
-                {"title": "erasemedata123", "tags": ["a", "b", "c"]}, data=fp
+                {
+                    "title": "erasemedata123",
+                    "tags": ["a", "b", "c"],
+                    "type": "Shapefile",
+                },
+                data=fp,
             )
             for grp in gis.groups.search("export_test_group"):
                 assert grp.delete()
-            new_group = gis.groups.create(title="export_test_group", tags="a,b,c")
+            new_group = gis.groups.create(
+                title="export_test_group", tags="a,b,c"
+            )
             pitem.share(groups=[new_group])
             epk_file = new_group.migration.create(
                 items=[pitem], future=False
@@ -228,7 +302,9 @@ class TestImport2Group(unittest.TestCase):
 
             for grp in gis.groups.search("export_test_group2342"):
                 assert grp.delete()
-            new_group = gis.groups.create(title="export_test_group2342", tags="a,b,c")
+            new_group = gis.groups.create(
+                title="export_test_group2342", tags="a,b,c"
+            )
 
             epk_file.share(groups=[new_group])
             m = new_group.migration
@@ -251,6 +327,7 @@ class TestImport2Group(unittest.TestCase):
 
 
 ###########################################################################
+# @unittest.skip('verified')
 class TestGroup(unittest.TestCase):
     """
     Tests the `Group` class operations
@@ -259,7 +336,9 @@ class TestGroup(unittest.TestCase):
     def test_group_properties(self):
         """tests the group properties"""
         for profile in profiles:
-            gis = GIS(profile=profile, verify_cert=VERIFY_CERT, trust_env=True)
+            gis = GIS(
+                profile=profile, verify_cert=VERIFY_CERT, trust_env=True
+            )
             gm = gis.groups
             group = gis.groups.create(
                 title=f"test_{uuid.uuid4().hex[:5]}", tags="tag1,tag2"
@@ -279,7 +358,9 @@ class TestGroup(unittest.TestCase):
     def test_list_content(self):
         """tests the group content and member listings"""
         for profile in profiles:
-            gis = GIS(profile=profile, verify_cert=VERIFY_CERT, trust_env=True)
+            gis = GIS(
+                profile=profile, verify_cert=VERIFY_CERT, trust_env=True
+            )
             gm = gis.groups
             group = gis.groups.create(
                 title=f"test_{uuid.uuid4().hex[:5]}", tags="tag1,tag2"
@@ -307,7 +388,9 @@ class TestGroup(unittest.TestCase):
     def test_update_group(self):
         """this method tests the update method on Group"""
         for profile in profiles:
-            gis = GIS(profile=profile, verify_cert=VERIFY_CERT, trust_env=True)
+            gis = GIS(
+                profile=profile, verify_cert=VERIFY_CERT, trust_env=True
+            )
             gm = gis.groups
             group = gis.groups.create(
                 title=f"test_{uuid.uuid4().hex[:5]}", tags="tag1,tag2"
@@ -337,7 +420,9 @@ class TestGroup(unittest.TestCase):
     def test_add_user_make_owner_group(self):
         """this method tests the add and make owner methods"""
         for profile in profiles:
-            gis = GIS(profile=profile, verify_cert=VERIFY_CERT, trust_env=True)
+            gis = GIS(
+                profile=profile, verify_cert=VERIFY_CERT, trust_env=True
+            )
             gm = gis.groups
             group = gis.groups.create(
                 title=f"test_{uuid.uuid4().hex[:5]}", tags="tag1,tag2"
@@ -354,13 +439,16 @@ class TestGroup(unittest.TestCase):
                 email="pythonapi@esri.com",
             )
             group.add_users(usernames=[user.username])  # adds a new user.
-            assert group.reassign_to(target_owner=user.username)  # changes the owner
+            assert group.reassign_to(
+                target_owner=user.username
+            )  # changes the owner
             assert group.delete()
 
             assert user.delete()
 
 
 ###########################################################################
+# @unittest.skip('verified')
 class TestGroupApplication(unittest.TestCase):
     """
     Tests the `GroupApplication` class operations
@@ -370,7 +458,9 @@ class TestGroupApplication(unittest.TestCase):
     def test_accept_decline_ops(self):
         """tests the application accept/decline operation for `Group`"""
         for profile in profiles:
-            gis = GIS(profile=profile, verify_cert=VERIFY_CERT, trust_env=True)
+            gis = GIS(
+                profile=profile, verify_cert=VERIFY_CERT, trust_env=True
+            )
             um = gis.users
             isinstance(um, UserManager)
             user = um.create(
@@ -406,7 +496,9 @@ class TestGroupApplication(unittest.TestCase):
             print(resp)
             assert resp
             del gis
-            gis = GIS(profile=profile, verify_cert=VERIFY_CERT, trust_env=True)
+            gis = GIS(
+                profile=profile, verify_cert=VERIFY_CERT, trust_env=True
+            )
             group = gis.groups.get(group_id)
             assert isinstance(group, Group)
             assert isinstance(group.applications, list)
@@ -431,7 +523,9 @@ class TestGroupApplication(unittest.TestCase):
             resp = gis.groups.get(group_id).join()
             del gis
 
-            gis = GIS(profile=profile, verify_cert=VERIFY_CERT, trust_env=True)
+            gis = GIS(
+                profile=profile, verify_cert=VERIFY_CERT, trust_env=True
+            )
             group = gis.groups.get(group_id)
             assert isinstance(group, Group)
             assert isinstance(group.applications, list)
@@ -443,7 +537,9 @@ class TestGroupApplication(unittest.TestCase):
 
             del gis
 
-            gis = GIS(profile=profile, verify_cert=VERIFY_CERT, trust_env=True)
+            gis = GIS(
+                profile=profile, verify_cert=VERIFY_CERT, trust_env=True
+            )
             group = gis.groups.get(group_id)
             user = gis.users.get(username)
 
@@ -452,6 +548,7 @@ class TestGroupApplication(unittest.TestCase):
 
 
 ###########################################################################
+# @unittest.skip('verified')
 class TestGroupManager(unittest.TestCase):
     """
     Tests the `GroupManager` class operations
@@ -461,17 +558,23 @@ class TestGroupManager(unittest.TestCase):
     def test_create_group_manager(self):
         """tests the creation of the group manager object"""
         for profile in profiles:
-            gis = GIS(profile=profile, verify_cert=VERIFY_CERT, trust_env=True)
+            gis = GIS(
+                profile=profile, verify_cert=VERIFY_CERT, trust_env=True
+            )
             self.assertTrue(isinstance(gis.groups, GroupManager))
 
     # ----------------------------------------------------------------------
     def test_create(self):
         """tests the creation of a group"""
         for profile in profiles:
-            gis = GIS(profile=profile, verify_cert=VERIFY_CERT, trust_env=True)
+            gis = GIS(
+                profile=profile, verify_cert=VERIFY_CERT, trust_env=True
+            )
             gm = gis.groups
             isinstance(gm, GroupManager)
-            grp = gm.create(title=f"test_grp1_{uuid.uuid4().hex[:3]}", tags="tag1")
+            grp = gm.create(
+                title=f"test_grp1_{uuid.uuid4().hex[:3]}", tags="tag1"
+            )
             self.assertTrue(isinstance(grp, Group))
             assert grp.delete()
 
@@ -479,7 +582,9 @@ class TestGroupManager(unittest.TestCase):
     def test_create_dict(self):
         """tests the creation of a group"""
         for profile in profiles:
-            gis = GIS(profile=profile, verify_cert=VERIFY_CERT, trust_env=True)
+            gis = GIS(
+                profile=profile, verify_cert=VERIFY_CERT, trust_env=True
+            )
             gm = gis.groups
             isinstance(gm, GroupManager)
             d = {
@@ -495,7 +600,9 @@ class TestGroupManager(unittest.TestCase):
     def test_search(self):
         """tests the searching of a group"""
         for profile in profiles:
-            gis = GIS(profile=profile, verify_cert=VERIFY_CERT, trust_env=True)
+            gis = GIS(
+                profile=profile, verify_cert=VERIFY_CERT, trust_env=True
+            )
             gm = gis.groups
             isinstance(gm, GroupManager)
             res = gm.search(max_groups=10)
@@ -505,10 +612,14 @@ class TestGroupManager(unittest.TestCase):
     def test_get_group(self):
         """tests the `GET` of a group"""
         for profile in profiles:
-            gis = GIS(profile=profile, verify_cert=VERIFY_CERT, trust_env=True)
+            gis = GIS(
+                profile=profile, verify_cert=VERIFY_CERT, trust_env=True
+            )
             gm = gis.groups
             isinstance(gm, GroupManager)
-            grp = gm.create(title=f"test_grp1_{uuid.uuid4().hex[:3]}", tags="tag1")
+            grp = gm.create(
+                title=f"test_grp1_{uuid.uuid4().hex[:3]}", tags="tag1"
+            )
             assert gm.get(grp.id).id == grp.id  # checks the
             assert grp.delete()
 

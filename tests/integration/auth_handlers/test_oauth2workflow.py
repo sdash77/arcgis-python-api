@@ -1,6 +1,6 @@
 import sys
 
-# sys.path.insert(0, r"C:\SVN\geosaurus_master_issue_8030\src")
+sys.path.insert(0, r"c:\SVN\geosaurus_issue_9708\src")
 import unittest
 
 from arcgis.auth import EsriSession
@@ -110,7 +110,9 @@ class TestOAuth2Workflow(unittest.TestCase):
             )
             data = resp.json()
             assert data["appInfo"]["appOwner"]
-            session.auth._token = None  # ensures refresh token case is fired off
+            session.auth._token = (
+                None  # ensures refresh token case is fired off
+            )
             assert session.auth._oauth_token()
 
 

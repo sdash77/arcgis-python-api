@@ -5,7 +5,7 @@ from ._arcgis_model import _EmptyData
 from .._data import _raise_fastai_import_error
 
 try:
-    from ._arcgis_model import ArcGISModel, _resnet_family
+    from ._arcgis_model import ArcGISModel, _resnet_family, _get_device
     from ._superres_utils import (
         FeatureLoss,
         gram_matrix,
@@ -155,7 +155,6 @@ class SuperResolution(ArcGISModel):
         downsample_factor = emd.get("downsample_factor")
         resize_to = emd.get("resize_to")
         chip_size = emd["ImageHeight"]
-        feat_loss = create_loss()
         if data is None:
             data = (
                 ImageImageList.from_folder(emd_path.parent.parent)
@@ -173,6 +172,7 @@ class SuperResolution(ArcGISModel):
             data.emd_path = emd_path
             data.downsample_factor = downsample_factor
             data.emd = emd
+            data.device = _get_device()
         data.resize_to = resize_to
 
         return cls(data, **model_params, pretrained_path=str(model_file))

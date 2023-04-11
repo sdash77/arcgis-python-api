@@ -35,7 +35,8 @@ class TestUserManagerOrgSearch(unittest.TestCase):
     def tests_org_search_anonymous(self):
         """when not logged in the response should always be zero users."""
         gis = GIS()
-        assert len(gis.users.org_search()) == 0
+        with self.assertRaises(Exception):
+            gis.users.org_search()
 
     def test_no_given_parameters(self):
         """tests method without parameters"""

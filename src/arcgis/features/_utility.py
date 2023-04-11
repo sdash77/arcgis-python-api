@@ -92,6 +92,8 @@ class UtilityNetworkManager(object):
         configuration: dict | TraceConfiguration | None = None,
         result_type: str | None = None,
         result_types: list[dict] | None = None,
+        trace_config_global_id: str | None = None,
+        out_sr: int | None = None,
     ) -> dict:
         """
         A trace refers to a pre-configured algorithm that systematically
@@ -110,68 +112,76 @@ class UtilityNetworkManager(object):
             The active portal account must be licensed with the ArcGIS Utility
             Network user type extention to use this operation.
 
-        ====================    ==================================================
-        **Parameter**           **Description**
-        --------------------    --------------------------------------------------
-        locations               Required list of dictionaries. The locations for
-                                starting points and barriers. An empty array must
-                                be used when performing a subnetwork trace if a
-                                subnetworkName is provided as part of the
-                                `configuration`—for example, `locations=[]`.
+        =======================    ==================================================
+        **Parameter**              **Description**
+        -----------------------    --------------------------------------------------
+        locations                  Required list of dictionaries. The locations for
+                                   starting points and barriers. An empty array must
+                                   be used when performing a subnetwork trace if a
+                                   subnetworkName is provided as part of the
+                                   `configuration`—for example, `locations=[]`.
 
 
-                                The location is ignored by the trace if the following
-                                required properties are not defined:
+                                   The location is ignored by the trace if the following
+                                   required properties are not defined:
 
-                                * `percentAlong` : required for edge features and objects.
-                                * `terminalID` : required for junction features and objects.
+                                   * `percentAlong` : required for edge features and objects.
+                                   * `terminalID` : required for junction features and objects.
 
 
-                                .. code-block:: python
-                                    [{
-                                        "traceLocationType" : "startingPoint" | "barrier",
-                                        "globalId" : <guid>,
-                                        "terminalId" : <int>,   // optional
-                                        “percentAlong” : <double>, // optional
-                                        "isFilterBarrier" : true | false // optional Introduced at 10.8.1
-                                    }]
-        --------------------    --------------------------------------------------
-        trace_type              Required string. Specifies the core algorithm that
-                                will be executed to analyze the network. Can be
-                                configured using the `configuration` parameter.
+                                   .. code-block:: python
+                                       [{
+                                           "traceLocationType" : "startingPoint" | "barrier",
+                                           "globalId" : <guid>,
+                                           "terminalId" : <int>,   // optional
+                                           "percentAlong" : <double>, // optional
+                                           "isFilterBarrier" : true | false // optional Introduced at 10.8.1
+                                       }]
+        -----------------------    --------------------------------------------------
+        trace_type                 Required string. Specifies the core algorithm that
+                                   will be executed to analyze the network. Can be
+                                   configured using the `configuration` parameter.
 
-                                Values:
+                                   Values:
 
                                     'connected' | 'subnetwork' | 'subnetworkController' | 'upstream' | 'downstream' | 'loops' | 'shortestPath' | 'isolation'
-        --------------------    --------------------------------------------------
-        moment                  Optional Integer. Specifies the session moment. This
-                                should only be specified if you do not want to use
-                                the current moment.
+        -----------------------    --------------------------------------------------
+        moment                     Optional Integer. Specifies the session moment. This
+                                   should only be specified if you do not want to use
+                                   the current moment.
 
-                                Example: moment = <Epoch time in milliseconds>
-        --------------------    --------------------------------------------------
-        configuration           Optional dictionary or TraceConfiguration object.
-                                Specifies the collection of
-                                trace configuration properties. Depending on the
-                                `trace_type`, some properties are required.
+                                   Example: moment = <Epoch time in milliseconds>
+        -----------------------    --------------------------------------------------
+        configuration              Optional dictionary or TraceConfiguration object.
+                                   Specifies the collection of trace configuration
+                                   properties. Depending on the `trace_type`, some
+                                   properties are required.
 
-                                To see all configuration properties see:
-                                `Trace Configuration Properties
-                                <https://developers.arcgis.com/rest/services-reference/enterprise/trace-utility-network-server-.htm#GUID-F0C932FD-B403-4223-9B00-E44D156C7DF9/>`_
-        --------------------    --------------------------------------------------
-        result_types            Optional parameter specifying hte types of results
-                                to return.
+                                   To see all configuration properties see:
+                                   `Trace Configuration Properties
+                                   <https://developers.arcgis.com/rest/services-reference/enterprise/trace-utility-network-server-.htm#GUID-F0C932FD-B403-4223-9B00-E44D156C7DF9/>`_
+        -----------------------    --------------------------------------------------
+        result_types               Optional parameter specifying hte types of results
+                                   to return.
 
-                                .. code-block::
-                                    [{
-                                        "type" : "elements" | "aggregatedGeometry" | "connectivity",
-                                        "includeGeometry" : true | false,
-                                        "includePropagatedValues": true | false,
-                                        "networkAttributeNames" :["attribute1Name","attribute2Name",...],
-                                        "diagramTemplateName": <value>,
-                                        "resultTypeFields":[{"networkSourceId":<int>,"fieldname":<value>},...]
-                                    },...]
-        ====================    ==================================================
+                                   .. code-block::
+                                       [{
+                                           "type" : "elements" | "aggregatedGeometry" | "connectivity",
+                                           "includeGeometry" : true | false,
+                                           "includePropagatedValues": true | false,
+                                           "networkAttributeNames" :["attribute1Name","attribute2Name",...],
+                                           "diagramTemplateName": <value>,
+                                           "resultTypeFields":[{"networkSourceId":<int>,"fieldname":<value>},...]
+                                       },...]
+        -----------------------    --------------------------------------------------
+        trace_config_global_id     Optional String. The global ID of a named trace configuration.
+                                   When specified, this configuration is used instead of the
+                                   traceConfiguration parameter. Additionally, named trace
+                                   configurations are persisted with their own trace type so the
+                                   trace type parameter is ignored.
+        -----------------------    --------------------------------------------------
+        out_sr                     Optional Integer. The output spatial reference.
+        =======================    ==================================================
 
         :return:
             A dictionary with keys and value types of:
@@ -201,11 +211,14 @@ class UtilityNetworkManager(object):
             "traceLocations": locations,
             "traceConfiguration": configuration,
         }
+        if trace_config_global_id:
+            params["traceConfigurationGlobalId"] = trace_config_global_id
         if self._gis.version <= [7, 3]:
             params["resultType"] = result_type
         else:
             params["resultTypes"] = result_types
-
+        if out_sr:
+            params["outSR"] = out_sr
         return self._con.post(url, params)
 
     # ----------------------------------------------------------------------
@@ -278,7 +291,11 @@ class UtilityNetworkManager(object):
 
     # ----------------------------------------------------------------------
     def disable_subnetwork_controller(
-        self, network_source_id: str, global_id: str, terminal_id: str
+        self,
+        network_source_id: str,
+        global_id: str,
+        terminal_id: str,
+        out_sr: int | None = None,
     ) -> dict:
         """
         A subnetwork controller (or simply, a source or a sink) is the
@@ -300,6 +317,8 @@ class UtilityNetworkManager(object):
         ------------------------------------        --------------------------------------------------------------------
         terminal_id                                 Required String. The terminal ID of the device being disabled as a
                                                     network controller.
+        ------------------------------------        --------------------------------------------------------------------
+        out_sr                                      Required int. The output spatial reference as a wkid.
         ====================================        ====================================================================
 
         """
@@ -313,6 +332,8 @@ class UtilityNetworkManager(object):
             "featureGlobalId": global_id,
             "terminalId": terminal_id,
         }
+        if out_sr:
+            params["outSR"] = out_sr
         return self._con.post(url, params)
 
     # ----------------------------------------------------------------------
@@ -326,6 +347,7 @@ class UtilityNetworkManager(object):
         subnetwork_name: str | None = None,
         description: str | None = None,
         notes: str | None = None,
+        out_sr: int | None = None,
     ) -> dict:
         """
         A subnetwork controller is the origin (or destination) of resource
@@ -355,6 +377,8 @@ class UtilityNetworkManager(object):
         description                                 Optional String. Represents the description of the subnetwork controller.
         ------------------------------------        --------------------------------------------------------------------
         notes                                       Optional String. The notes associated with the subnetwork controller.
+        ------------------------------------        --------------------------------------------------------------------
+        out_sr                                      Optional Integer. The output spatial reference as a wkid (integer).
         ====================================        ====================================================================
 
         """
@@ -373,6 +397,8 @@ class UtilityNetworkManager(object):
             "description": description,
             "notes": notes,
         }
+        if not out_sr is None:
+            params["outSR"] = out_sr
         return self._con.post(url, params)
 
     # ----------------------------------------------------------------------
@@ -387,6 +413,7 @@ class UtilityNetworkManager(object):
         result_types: list[dict] | None = None,
         moment: int | None = None,
         run_async: bool = False,
+        out_sr: int | None = None,
     ) -> dict:
         """
         The `export_subnetwork` operation is used to export information
@@ -431,6 +458,8 @@ class UtilityNetworkManager(object):
         ------------------------------------        --------------------------------------------------------------------
         moment                                      Optional Integer. Specify the session moment if you do not want to use
                                                     the current moment.
+        ------------------------------------        --------------------------------------------------------------------
+        out_sr                                      Optional Integer. Optional parameter specifying the output spatial reference.
         ====================================        ====================================================================
 
         :return:
@@ -464,6 +493,8 @@ class UtilityNetworkManager(object):
             params["resultType"] = result_type
         else:
             params["resultTypes"] = result_types
+        if out_sr:
+            params["outSR"] = out_sr
         return self._con.post(url, params)
 
     # ----------------------------------------------------------------------
@@ -516,7 +547,7 @@ class UtilityNetworkManager(object):
         return self._con.post(url, params)
 
     # ----------------------------------------------------------------------
-    @deprecated(deprecated_in="2.1.0", removed_in=None, current_version="2.1.0")
+    @deprecated(deprecated_in="2.1.0", removed_in=None, current_version="2.2.0")
     def query_overrides(
         self,
         attribute_ids: Optional[list[str]] = None,
@@ -700,6 +731,7 @@ class UtilityNetworkManager(object):
         run_async: bool = False,
         return_edits: bool = False,
         validate_set: list[dict] | None = None,
+        out_sr: int | None = None,
     ) -> dict:
         """
         Validating the network topology for a utility network maintains
@@ -757,6 +789,8 @@ class UtilityNetworkManager(object):
                                                                 "globalIds": [<guid>]
                                                             }
                                                         ]
+        ------------------------------------        --------------------------------------------------------------------
+        out_sr                                      Optional integer. The output spatial reference.
         ====================================        ====================================================================
 
         :return: Dictionary indicating 'success' or 'error'
@@ -773,10 +807,12 @@ class UtilityNetworkManager(object):
         }
         if self._gis.version >= [9, 2]:
             params["validateSet"] = validate_set
+        if out_sr:
+            params["outSR"] = out_sr
         return self._con.post(url, params)
 
     # ----------------------------------------------------------------------
-    @deprecated(deprecated_in="2.1.0", removed_in=None, current_version="2.1.0")
+    @deprecated(deprecated_in="2.1.0", removed_in=None, current_version="2.2.0")
     def apply_overrides(
         self,
         adds: Optional[Union[list, dict[str, Any]]] = None,
@@ -1093,7 +1129,10 @@ class UtilityNetworkManager(object):
         if self._gis.version >= [9, 2]:
             url = "%s/traceConfigurations" % self._url
             return TraceConfigurationsManager(
-                url, version=self._version, gis=self._gis, service_url=self._url
+                url,
+                version=self._version,
+                gis=self._gis,
+                service_url=self._url,
             )
 
     # ----------------------------------------------------------------------
