@@ -9706,7 +9706,7 @@ def derive_continuous_flow(
     ------------------------------------     --------------------------------------------------------------------
     force_flow                               Optional string. Specifies if edge cells will always flow outward or follow normal flow rules.
     
-                                             Choice list: ['NORMAL', 'FORCE'] The default value is 'NORMAL'.
+                                             Choice list: ['NORMAL', 'FORCE']. The default value is 'NORMAL'.
     ------------------------------------     --------------------------------------------------------------------
     output_flow_accumulation_raster_name     Optional string. If not provided, an Image Service is created by the method and\
                                              used as the output raster.
