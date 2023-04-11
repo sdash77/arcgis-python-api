@@ -3420,6 +3420,7 @@ class GeoAccessor(object):
             _dtype(np.datetime64): "esriFieldTypeDate",
             arcgis.features.geo._array.GeoType(): "esriFieldTypeGeometry",
             pd.CategoricalDtype: "category",
+            pd.Timedelta: "esriFieldTypeDouble",
         }
         fields = []
         for idx, dtype in enumerate(self._data.dtypes):
@@ -3440,6 +3441,8 @@ class GeoAccessor(object):
                     except:
                         length = 254
                 elif dtype.categories.dtype.name == "datetime64[ns]":
+                    lu = _look_up[dtype.categories.dtype]
+                elif dtype.categories.dtype.name.find("timedelta") > -1:
                     lu = _look_up[dtype.categories.dtype]
                 else:
                     lu = _look_up[dtype.categories.dtype]
@@ -3472,21 +3475,17 @@ class GeoAccessor(object):
         number_columns = df.select_dtypes(np.number).columns.tolist()
         df[string_column] = df[string_column].replace(pd.NA, "")
         df[number_columns] = df[number_columns].replace(pd.NA, 0)
+        for td in time_delta_fields:
+            df[td] = df[td].dt.total_seconds() * 1000
+        for f in date_fields:
+            df[f] = pd.Series(df[f].dt.to_pydatetime()).apply(
+                lambda x: int(x.timestamp() * 1000)
+            )
         for row in df.to_dict("records"):
             geom = {}
             if self.name in row:
                 geom = row[self.name]
                 del row[self.name]
-            for f in date_fields:
-                try:
-                    row[f] = int(row[f].to_pydatetime().timestamp() * 1000)
-                except:
-                    row[f] = None
-            for f in time_delta_fields:
-                try:
-                    row[f] = row[f].dt.total_seconds()
-                except:
-                    row[f] = None
             if geom and pd.notna(geom):
                 features.append({"geometry": dict(geom), "attributes": row})
             elif pd.notna(geom) == False:

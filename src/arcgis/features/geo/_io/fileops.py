@@ -543,6 +543,9 @@ def to_table(geo, location, overwrite=True, sanitize_columns=False):
             elif df[col].dtype.name == "datetime64[ns]":
                 dtypes.append((col, "<M8[us]"))
                 df[col] = df[col].dt.to_pydatetime()
+            elif df[col].dtype.name.find("timedelta") > -1:
+                dtypes.append((col, float))
+                df[col] = df[col].dt.total_seconds() * 1000
             elif df[col].dtype.name == "object":
                 try:
                     u = type(df[col][df[col].first_valid_index()])
@@ -1031,6 +1034,9 @@ def to_featureclass(
                     dtypes.append((col, np.int32))
                 elif df[col].dtype.name.startswith("datetime64[ns"):
                     dtypes.append((col, "<M8[us]"))
+                elif df[col].dtype.name.find("timedelta") > -1:
+                    dtypes.append((col, float))
+                    df[col] = df[col].dt.total_seconds() * 1000
                 elif df[col].dtype.name == "object":
                     try:
                         u = type(df[col][df[col].first_valid_index()])
