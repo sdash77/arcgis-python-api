@@ -903,9 +903,9 @@ class OMJob(GPJob):
         flight_json_details = self._flight_details
         update_flight_json = False
         if isinstance(flight_json_details, dict):
-            project_item = flight_json_details.get("project_item", None)
+            #project_item = flight_json_details.get("project_item", None)
             item_name = flight_json_details.get("item_name", None)
-            flight = flight_json_details.get("flight", None)
+            mission = flight_json_details.get("mission", None)
             update_flight_json = flight_json_details.get("update_flight_json", None)
             processing_states = flight_json_details.get("processing_states", None)
             adjust_settings = flight_json_details.get("adjust_settings", None)
@@ -914,16 +914,17 @@ class OMJob(GPJob):
             import json
 
             job_messages = self.messages
-            resource = flight["resource"]
-            rm = project_item.resources
-            flight_json = rm.get(resource)
+            rm = mission._project_item.resources
+            mission_json = mission._mission_json
+            resource = mission._resource_info
+            resource_name = resource["resource"]
 
             start_time = (
                 self._gpjob._start_time.isoformat(timespec="milliseconds") + "Z"
             )
             end_time = self._gpjob._end_time.isoformat(timespec="milliseconds") + "Z"
 
-            flight_json["jobs"].update(
+            mission_json["jobs"].update(
                 {
                     item_name: {
                         "messages": job_messages,
@@ -936,20 +937,20 @@ class OMJob(GPJob):
                 }
             )
             if processing_states is not None:
-                flight_json["processingSettings"].update({item_name: processing_states})
+                mission_json["processingSettings"].update({item_name: processing_states})
             if adjust_settings is not None:
                 mode = adjust_settings.pop("mode", None)
-                flight_json["jobs"][item_name].update({"mode": mode})
-                flight_json["adjustSettings"].update(adjust_settings)
+                mission_json["jobs"][item_name].update({"mode": mode})
+                mission_json["adjustSettings"].update(adjust_settings)
 
-            properties = json.loads(flight["properties"])
+            properties = json.loads(resource["properties"])
 
             if self._item:
                 url = json.loads(self._item)["serviceProperties"]["serviceUrl"]
                 itemid = json.loads(self._item)["itemProperties"]["itemId"]
-                flight_json["items"].update({item_name: {"itemId": itemid, "url": url}})
+                mission_json["items"].update({item_name: {"itemId": itemid, "url": url}})
 
-                properties = json.loads(flight["properties"])
+                properties = json.loads(resource["properties"])
                 properties_items = properties["items"]
                 products = []
                 for dict_item in properties_items:
@@ -967,23 +968,22 @@ class OMJob(GPJob):
                     }
                 properties.update({"items": properties_items})
 
-            fname = resource.split("/")[1]
             import tempfile, uuid, os
 
-            fname = resource.split("/")[1]
+            fname = resource_name.split("/")[1]
             temp_dir = tempfile.gettempdir()
             temp_file = os.path.join(temp_dir, fname)
             with open(temp_file, "w") as writer:
-                json.dump(flight_json, writer)
+                json.dump(mission_json, writer)
             del writer
 
             try:
                 rm.update(
                     file=temp_file,
-                    text=flight_json,
+                    text=mission_json,
                     folder_name="flights",
                     file_name=fname,
                     properties=properties,
                 )
             except:
-                raise RuntimeError("Error updating the flight resource")
+                raise RuntimeError("Error updating the mission resource")

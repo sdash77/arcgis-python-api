@@ -239,7 +239,7 @@ def _create_project(
     return item
 
 def _add_mission(
-    project_item,
+    project,
     image_list: list,
     mission_name: Optional[str] = None,
     image_collection: Optional[str] = None,
@@ -388,9 +388,9 @@ def _add_mission(
 
     """
     gis = arcgis.env.active_gis if gis is None else gis
+    project_item = project._project_item
     resource_manager = project_item.resources
-    resources_list = resource_manager.list()
-    oid = len(resources_list)
+    oid = project.count
 
     for f in gis.users.me.folders:
         if f["id"] == project_item.ownerFolder:
@@ -424,7 +424,7 @@ def _add_mission(
             params = {"f": "json"}
             job_response = gis._con.post(job_url, params)
 
-        flight_json = {
+        mission_json = {
             "items": {"imageCollection": {}},
             "jobs": {
                 "imageCollection": {"checked": True, "progress": 100, "success": True},
@@ -462,7 +462,7 @@ def _add_mission(
             "gcsExtent": {},
         }
 
-        flight_json.update(
+        mission_json.update(
             {
                 "items": {
                     "imageCollection": {
@@ -473,13 +473,13 @@ def _add_mission(
             }
         )
 
-        flight_json["jobs"]["imageCollection"].update(
+        mission_json["jobs"]["imageCollection"].update(
             {"messages": job_response["messages"]}
         )
 
-        flight_json.update({"rasterType": raster_type_name})
+        mission_json.update({"rasterType": raster_type_name})
 
-        flight_json.update({"cameraInfo": raster_type_params["cameraProperties"]})
+        mission_json.update({"cameraInfo": raster_type_params["cameraProperties"]})
 
         gps_data = []
         gps_info_list = ["name", "lat", "long", "alt"]
@@ -510,7 +510,7 @@ def _add_mission(
 
         image_count = output_collection.layers[0].query(return_count_only=True)
 
-        flight_json.update(
+        mission_json.update(
             {
                 "sourceData": {
                     "gps": gps_data,
@@ -521,10 +521,10 @@ def _add_mission(
         )
 
         project_id = datetime.now().strftime("%Y%m%d%H%M%S")
-        flight_json.update({"projectId": project_id})
+        mission_json.update({"projectId": project_id})
 
         ts = int(datetime.timestamp(datetime.now())) * 1000
-        flight_json.update({"createTS": ts})
+        mission_json.update({"createTS": ts})
 
         ## Set extent
         try:
@@ -547,26 +547,26 @@ def _add_mission(
         except:
             projected_extent = {}
 
-        flight_json.update(
+        mission_json.update(
             {"gcsExtent": gcs_extent, "projectedExtent": projected_extent}
         )
 
         try:
             coverage_area = output_collection.layers[0].query_boundary()["area"]
-            flight_json.update({"coverage": coverage_area})
+            mission_json.update({"coverage": coverage_area})
         except:
             pass
 
         import uuid
 
-        if flight_name is None:
-            flight_name = "flight" + "_" + _id_generator()
-        fname = "%s.json" % flight_name
+        if mission_name is None:
+            mission_name = "mission" + "_" + _id_generator()
+        fname = "%s.json" % mission_name
 
         try:
             resource_manager.add(
                 file_name=fname,
-                text=flight_json,
+                text=mission_json,
                 folder_name="flights",
                 properties={
                     "oid": oid,
@@ -606,10 +606,10 @@ def _add_mission(
 
             # project_item.update(data=json.dumps(prj_data))
         except:
-            raise RuntimeError("Error adding the flight")
+            raise RuntimeError("Error adding the mission")
     except:
-        raise RuntimeError("Error updating the flight JSON")
-    return output_collection, fname
+        raise RuntimeError("Error updating the mission JSON")
+    return output_collection, mission_name
 
 ###################################################################################################
 ###
@@ -711,9 +711,9 @@ def compute_sensor_model(
     gis = arcgis.env.active_gis if gis is None else gis
     update_flight_json = False
     flight_json_details = {}
-    if image_collection.type == "Ortho Mapping Project":
-        project_item = image_collection
-        image_collection, flight = _get_collection_item(image_collection, gis)
+    if isinstance(image_collection, Mission):
+        mission = image_collection
+        image_collection = image_collection.collection
         update_flight_json = True
 
         adj_dict = {}
@@ -737,8 +737,7 @@ def compute_sensor_model(
         adj_dict.update({"mode": mode})
         flight_json_details = {
             "update_flight_json": update_flight_json,
-            "flight": flight,
-            "project_item": project_item,
+            "mission": mission,
             "item_name": "adjustment",
             "adjust_settings": adj_dict,
         }
@@ -2731,13 +2730,23 @@ def compute_spatial_reference_factory_code(latitude: float, longitude: float):
 
 
 class OrthomappingProject():
-    def __init__(self, project = None, *, gis: Optional[GIS] = None, **kwargs):
+    def __init__(self, project = None,definition=None, *, gis: Optional[GIS] = None, **kwargs):
 
+        if not isinstance(project, Item):
+            try:
+                project = _create_project(name=project,
+                                               definition=definition
+                                               )
+            except:
+                raise RuntimeError("Creation of orthompping project failed.")
 
         self._project_item = project
+        self._project_name = self._project_item.name
         self._mission_list=[]
         gis = arcgis.env.active_gis if gis is None else gis
         self._gis = gis
+
+
 
     @property
     def missions(self):
@@ -2746,17 +2755,33 @@ class OrthomappingProject():
 
         :return: A list of flights
         """
-        return self._flight_list
+        res_list = self._project_item.resources.list()
+        for resource in res_list:
+            full_res_name = resource["resource"]
+            res_name = full_res_name[full_res_name.find('/')+1:full_res_name.find('.')]
+            self._mission_list.append(Mission(mission_name=res_name,project=self, gis=self._gis ))
 
-    def create_project(self, name, definition: Optional[dict[str, Any]] = None):
-        try:
-            project_item = _create_project(name=name,
-                                           definition=definition
-                                           )
-            self._project_item = project_item
-            return True
-        except:
-            raise RuntimeError("Creation of orthompping project failed.")
+        return self._mission_list
+
+    @property
+    def count(self):
+        """
+        The ``count`` property returns the number of flights associated with the project
+
+        :return: A list of flights
+        """
+        res_list = self._project_item.resources.list()
+        return len(res_list)
+
+    #def create_project(self, name, definition: Optional[dict[str, Any]] = None):
+    #    try:
+    #        project_item = _create_project(name=name,
+    #                                       definition=definition
+    #                                       )
+    #        self._project_item = project_item
+    #        return True
+    #    except:
+    #        raise RuntimeError("Creation of orthompping project failed.")
 
     def add_mission(
         self,
@@ -2905,15 +2930,20 @@ class OrthomappingProject():
 
         """
 
-        collection, mission_name = _add_mission(
-        project_item=self._project_item,
-        image_list=image_list,
-        mission_name=mission_name,
-        image_collection= image_collection,
-        raster_type_name= raster_type_name,
-        raster_type_params= raster_type_params)
+        try:
 
-        self._mission_list.append(Mission(mission_name=mission_name,project=self, gis=self._gis ))
+            collection, mission_name = _add_mission(
+            project=self,
+            image_list=image_list,
+            mission_name=mission_name,
+            image_collection= image_collection,
+            raster_type_name= raster_type_name,
+            raster_type_params= raster_type_params)
+            return Mission(mission_name=mission_name,project=self, gis=self._gis )
+
+        except:
+            raise RuntimeError("Failed to add the mission to the project")
+
 
     def get_mission(self, name):
         res_list = self._project_item.resources.list()
@@ -2923,30 +2953,103 @@ class OrthomappingProject():
             if name == res_name:
                 return Mission(mission_name=name,project=self, gis=self._gis )
 
+    def __repr__(self):
+        return "<%s - %s>" % (type(self).__name__, self._project_name)
+
+
 class Mission():
     def __init__(self, mission_name, project = None, *, gis: Optional[GIS] = None, **kwargs):
             self._mission_name = mission_name
-            self._project = project
+            if isinstance(project, OrthomappingProject):
+                self._project = project
+            elif isinstance(project, Item):
+                if project.type == "Ortho Mapping Project":
+                    self._project = OrthomappingProject(project, gis=gis)
+
+            self._project_item = project._project_item
             self._gis = gis
-            self._mission_json = get_mission_json(self._mission_name)
+            self._mission_json = self._get_mission_json(self._mission_name)
+            self._collection = None
+            self._resource_info = self._resource_info(self._mission_name)
+
+            import types
+            self.compute_sensor_model = types.MethodType(compute_sensor_model, self)
 
     @property
     def products(self):
-        return self._mission_json.get("items", None)
+        items_prods = self._mission_json.get("items", None)
+        import copy
+        mission_product = copy.deepcopy(items_prods)
+        for key, val in mission_product.items():
+            if "itemId" in val.keys():
+                mission_product[key] = self._gis.content.get(val["itemId"])
+        return mission_product
+
+    @property
+    def processing_states(self):
+        return self._mission_json['processingSettings']
+
+    @property
+    def image_count(self):
+        if "sourceData" in self._mission_json.keys():   
+            source_data =  self._mission_json['sourceData']
+            if "imageCount" in source_data.keys():
+                return source_data['imageCount']
+            else:
+                return 0 
+        return 0
+
+    @property
+    def flight_date(self):
+        if "sourceData" in self._mission_json.keys():   
+            source_data =  self._mission_json['sourceData']
+            if "flightDate" in source_data.keys():
+                from datetime import datetime
+                datetime_obj = datetime.strptime(source_data['flightDate'], "%Y-%m-%d")
+                return datetime_obj
+            else:
+                return None 
+        return None
 
 
+    @property
+    def collection(self):
+        if self._collection is not None:
+            return self._collection
+        else:
+            mission_product = self._mission_json.get("items", None)
+            for key, val in mission_product.items():
+                if key == "imageCollection":
+                    item_id = val["itemId"]
+                image_collection_item = self._gis.content.get(item_id)
+                self._collection = image_collection_item 
+                return image_collection_item
 
-    def get_mission_json(self, name):
+
+    def _resource_info(self, name):
         res_manager = self._project._project_item.resources
         res_list = res_manager.list()
         for resource in res_list:
             full_res_name = resource["resource"]
-            res_name = res_name[res_name.find('/')+1:res_name.find('.')]
+            res_name = full_res_name[full_res_name.find('/')+1:full_res_name.find('.')]
+            if name == res_name:
+                return resource
+
+        return {}
+
+    def _get_mission_json(self, name):
+        res_manager = self._project._project_item.resources
+        res_list = res_manager.list()
+        for resource in res_list:
+            full_res_name = resource["resource"]
+            res_name = full_res_name[full_res_name.find('/')+1:full_res_name.find('.')]
             if name == res_name:
                 mission_json = res_manager.get(full_res_name)
                 return mission_json
 
         return {}
 
+    def __repr__(self):
+        return "<%s - %s>" % (type(self).__name__, self._mission_name)
 
 
