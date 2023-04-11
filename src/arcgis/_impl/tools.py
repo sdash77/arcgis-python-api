@@ -19303,6 +19303,8 @@ class _GeometryService(_GISService):
                 listGeoms.append(g)
             elif isinstance(g, Polyline):
                 listGeoms.append({"paths": g["paths"]})
+            elif isinstance(g, MultiPoint):
+                listGeoms.append({"points": g.get("points", [])})
         if returnType == "str":
             return json.dumps(listGeoms)
         elif returnType == "list":
@@ -19410,8 +19412,11 @@ class _GeometryService(_GISService):
                     return job
                 else:
                     results = job.result()
-                    for result in results:
-                        all_results.append(result)
+                    if isinstance(results, dict):
+                        all_results.append(results)
+                    else:
+                        for result in results:
+                            all_results.append(result)
         return all_results
 
     # ----------------------------------------------------------------------
@@ -19595,7 +19600,7 @@ class _GeometryService(_GISService):
             if sr is not None:
                 params["sr"] = sr
             else:
-                params["sr"] = g.spatialreference
+                params["sr"] = g.spatial_reference
             if isinstance(g, Polygon):
                 params["geometries"] = {
                     "geometryType": "esriGeometryPolygon",
@@ -19609,6 +19614,11 @@ class _GeometryService(_GISService):
             elif isinstance(g, Polyline):
                 params["geometries"] = {
                     "geometryType": "esriGeometryPolyline",
+                    "geometries": self.__geomToStringArray(geometries, "list"),
+                }
+            elif isinstance(g, MultiPoint):
+                params["geometries"] = {
+                    "geometryType": "esriGeometryMultipoint",
                     "geometries": self.__geomToStringArray(geometries, "list"),
                 }
         else:

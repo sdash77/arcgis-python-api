@@ -575,6 +575,18 @@ def to_table(geo, location, overwrite=True, sanitize_columns=False):
                 dtypes.append((col, np.float64))
             elif df[col].dtype.name == "bool":
                 dtypes.append((col, np.int32))
+            elif isinstance(df[col].dtype, pd.CategoricalDtype):
+                dtype = df[col].dtype
+                if dtype.categories.dtype.name == "object":
+                    try:
+                        msize = max(dtype.categories.str.len())
+                    except:
+                        msize = 254
+                    dtypes.append((col, "<U%s" % msize))
+                elif dtype.categories.dtype.name == "datetime64[ns]":
+                    dtypes.append((col, "<M8[us]"))
+                else:
+                    dtypes.append((col, dtype.categories.dtype))
             else:
                 dtypes.append((col, df[col].dtype.type))
 
@@ -1041,6 +1053,18 @@ def to_featureclass(
                     dtypes.append((col, np.float64))
                 elif df[col].dtype.name == "bool":
                     dtypes.append((col, np.int32))
+                elif isinstance(df[col].dtype, pd.CategoricalDtype):
+                    dtype = df[col].dtype
+                    if dtype.categories.dtype.name == "object":
+                        try:
+                            msize = max(dtype.categories.str.len())
+                        except:
+                            msize = 254
+                        dtypes.append((col, "<U%s" % msize))
+                    elif dtype.categories.dtype.name == "datetime64[ns]":
+                        dtypes.append((col, "<M8[us]"))
+                    else:
+                        dtypes.append((col, dtype.categories.dtype))
                 else:
                     if (
                         df[col].dtype.name == "object"

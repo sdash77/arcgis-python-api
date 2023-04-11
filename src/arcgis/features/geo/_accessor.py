@@ -3312,7 +3312,14 @@ class GeoAccessor(object):
             "features": [],
         }
         # Ensure all number values are 0 so errors do not occur.
-        df = self._data.where(pd.notnull(self._data), None)
+        replace_mappings = {
+            pd.NA: None,
+            np.nan: None,
+            np.NaN: None,
+            np.NAN: None,
+            pd.NaT: None,
+        }
+        df = self._data.replace(replace_mappings)
         date_fields = [col for col in df.columns if df[col].dtype == "datetime64[ns]"]
         time_delta_fields = [
             col for col in df.columns if df[col].dtype in ["<m8[ns]", "timedelta64[ns]"]
@@ -3412,9 +3419,11 @@ class GeoAccessor(object):
             np.datetime64: "esriFieldTypeDate",
             _dtype(np.datetime64): "esriFieldTypeDate",
             arcgis.features.geo._array.GeoType(): "esriFieldTypeGeometry",
+            pd.CategoricalDtype: "category",
         }
         fields = []
         for idx, dtype in enumerate(self._data.dtypes):
+            column = None
             col = self._data.dtypes.index[idx]
             if fs["objectIdFieldName"] == col:
                 column = {
@@ -3422,6 +3431,25 @@ class GeoAccessor(object):
                     "type": "esriFieldTypeOID",
                     "alias": col,
                 }
+            elif isinstance(dtype, pd.CategoricalDtype):
+                length = None
+                if dtype.categories.dtype.name == "object":
+                    lu = "esriFieldTypeString"
+                    try:
+                        length = max(dtype.categories.str.len())
+                    except:
+                        length = 254
+                elif dtype.categories.dtype.name == "datetime64[ns]":
+                    lu = _look_up[dtype.categories.dtype]
+                else:
+                    lu = _look_up[dtype.categories.dtype]
+                column = {
+                    "name": col,
+                    "type": lu,
+                    "alias": col,
+                }
+                if length:
+                    column["length"] = length
             else:
                 column = {
                     "name": col,
@@ -3433,7 +3461,9 @@ class GeoAccessor(object):
                     column["length"] = int(self._data[col].str.len().max())
                 except:
                     column["length"] = 256
-            if _look_up[dtype] != "esriFieldTypeGeometry":
+            if column and isinstance(dtype, pd.CategoricalDtype):
+                fields.append(column)
+            elif column and _look_up[dtype] != "esriFieldTypeGeometry":
                 fields.append(column)
 
         fs["fields"] = fields

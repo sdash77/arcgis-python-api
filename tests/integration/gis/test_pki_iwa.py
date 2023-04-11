@@ -1,33 +1,24 @@
 import os
-import sys
-
-# sys.path.insert(0, r"C:\SVN\achapkowski_geosaurus_fork_issue_4074\src")
 import unittest
 from arcgis.gis import GIS
+from utils import INTEGRATION_TESTS_DIR
+from pathlib import Path
+
 
 try:
-    from utils import NOTEBOOK_TESTS_DIR
-
-    fp = os.path.join(NOTEBOOK_TESTS_DIR, "dataset_test_123a.zip")
-
+    fp = os.path.join(INTEGRATION_TESTS_DIR, "gis", "dataset_test_123a.zip")
 except:
-    fp = r"./dataset_test_123a.zip"
+    fp = Path(Path.cwd(), "integration", "gis", "dataset_test_123a.zip")
 
 try:
-    from utils import NOTEBOOK_TESTS_DIR
-
-    PKI_ESRI_CERT = os.path.join(NOTEBOOK_TESTS_DIR, "gisproadv1.pfx")
-
+    PKI_ESRI_CERT = os.path.join(INTEGRATION_TESTS_DIR, "gis", "gisproadv1.pfx")
 except:
-    PKI_ESRI_CERT = r"./gisproadv1.pfx"
+    PKI_ESRI_CERT = Path(Path.cwd(), "integration", "gis", "gisproadv1.pfx")
 
 try:
-    from utils import NOTEBOOK_TESTS_DIR
-
-    PKI_ORACLE_CERT = os.path.join(NOTEBOOK_TESTS_DIR, "EsriJDeveloper.pfx")
-
+    PKI_ORACLE_CERT = os.path.join(INTEGRATION_TESTS_DIR, "gis", "EsriJDeveloper.pfx")
 except:
-    PKI_ORACLE_CERT = r"./EsriJDeveloper.pfx"
+    PKI_ORACLE_CERT = Path(Path.cwd(), "integration", "gis", "EsriJDeveloper.pfx")
 
 if os.path.isfile(PKI_ESRI_CERT) == False:
     SKIP_ORACLE = True
@@ -116,6 +107,7 @@ class TestIWAConnections(unittest.TestCase):
             },
             data=fp,
         )
+        print(item)
         pitem = item.publish()
         assert pitem.layers[0].properties
         pitem.delete()

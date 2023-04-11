@@ -1,12 +1,10 @@
 import unittest
-import sys, uuid
-
-# sys.path.insert(0, r"c:\SVN\geosaurus_master\src")
+import uuid
 from arcgis.gis import GIS, User, UserManager, Group, GroupManager
 from arcgis.auth.tools._util import detect_proxy
 from arcgis.gis.sharing import UserInvitationManager
 
-PROFILES = ["your_online_profile", "your_enterprise_profile"]
+PROFILES = ["your_online_admin_profile", "your_ent_admin_profile"]
 
 proxies = detect_proxy(True)
 

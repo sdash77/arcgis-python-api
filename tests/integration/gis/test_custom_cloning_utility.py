@@ -1,6 +1,3 @@
-import sys
-
-# sys.path.insert(0, r"C:\SVN\geosaurus_master_issues_6752\src")
 import unittest, re, os
 from arcgis.gis import GIS
 from arcgis.gis.clone import (
@@ -145,10 +142,10 @@ class TestCloningExtension(unittest.TestCase):
 class TestCustomCloning(unittest.TestCase):
     def setUp(self):
         self._source = GIS(
-            profile="your_online_profile", verify_cert=False, trust_env=True
+            profile="your_online_admin_profile", verify_cert=False, trust_env=True
         )
         self._target = GIS(
-            profile="your_enterprise_profile", verify_cert=False, trust_env=True
+            profile="your_ent_admin_profile", verify_cert=False, trust_env=True
         )
 
     def test_custom_cloning(self):
