@@ -140,6 +140,7 @@ class ChangeDetector(ArcGISModel):
                 chip_size=emd["ImageHeight"],
             )
             data._is_empty = True
+            data._imagery_type = None
             data.emd_path = emd_path
             data.emd = emd
             for key, value in emd["DataAttributes"].items():
