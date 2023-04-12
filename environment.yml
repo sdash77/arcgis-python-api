@@ -36,8 +36,8 @@ dependencies:
 - scipy
 - pillow
 - fastai=1.0.54
-- torchvision=0.3.0
-- pytorch=1.1.0
+- torchvision>=0.13.1
+- pytorch>=1.13.0
 - cudatoolkit
 - rtree>=0.8.3
 - lxml
