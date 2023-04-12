@@ -53,6 +53,7 @@ from requests_toolbelt.multipart.encoder import MultipartEncoder
 from json import JSONDecodeError
 from ._helpers import _filename_from_headers, _filename_from_url
 from ._authguess import GuessAuth
+from arcgis._impl.common._utils import _date_handler
 from arcgis._impl.common._mixins import PropertyMap
 from arcgis._impl.common._isd import InsensitiveDict
 from arcgis.auth import EsriSession
@@ -82,7 +83,7 @@ except ImportError:
 
 from arcgis.auth import EsriBasicAuth
 
-__version__ = "2.1.1"
+__version__ = "2.2.0"
 
 _DEFAULT_TOKEN = uuid.uuid4()
 _log = logging.getLogger(__name__)
@@ -795,9 +796,9 @@ class Connection(object):
             if params and json_encode:
                 for k, v in copy.copy(params).items():
                     if isinstance(v, (tuple, dict, list, bool)):
-                        params[k] = json.dumps(v)
+                        params[k] = json.dumps(v, default=_date_handler)
                     elif isinstance(v, PropertyMap):
-                        params[k] = json.dumps(dict(v))
+                        params[k] = json.dumps(dict(v), default=_date_handler)
                     elif isinstance(v, InsensitiveDict):
                         params[k] = v.json
         if add_headers:
@@ -949,8 +950,10 @@ class Connection(object):
                 max_length = int(resp.headers["Content-Length"])
                 if max_length > stream_size * 2 and max_length < 1024 * 1024:
                     stream_size = 1024 * 2
-                elif max_length > 5 * (1024 * 1024):
+                elif max_length > 5 * (1024 * 1024) and max_length < 10 * (1024 * 1024):
                     stream_size = 5 * (1024 * 1024)  # 5 mb
+                elif max_length >= 10 * (1024 * 1024):
+                    stream_size = 10 * (1024 * 1024)  # 10 mb
                 elif max_length > (1024 * 1024):
                     stream_size = 1024 * 1024  # 1 mb
                 else:
@@ -1173,9 +1176,9 @@ class Connection(object):
             if json_encode:
                 for k, v in params.items():
                     if isinstance(v, (dict, list, tuple, bool)):
-                        params[k] = json.dumps(v)
+                        params[k] = json.dumps(v, default=_date_handler)
                     elif isinstance(v, PropertyMap):
-                        params[k] = json.dumps(dict(v))
+                        params[k] = json.dumps(dict(v), default=_date_handler)
                     elif isinstance(v, InsensitiveDict):
                         params[k] = v.json
             # When data and files are present, they need to be combined
@@ -1428,9 +1431,9 @@ class Connection(object):
             if json_encode:
                 for k, v in params.items():
                     if isinstance(v, (dict, list, tuple, bool)):
-                        params[k] = json.dumps(v)
+                        params[k] = json.dumps(v, default=_date_handler)
                     elif isinstance(v, PropertyMap):
-                        params[k] = json.dumps(dict(v))
+                        params[k] = json.dumps(dict(v), default=_date_handler)
                     elif isinstance(v, InsensitiveDict):
                         params[k] = v.json
             if self._session.auth and drop_auth:
@@ -1660,9 +1663,9 @@ class Connection(object):
         if json_encode:
             for k, v in params.items():
                 if isinstance(v, (dict, list, tuple, bool)):
-                    params[k] = json.dumps(v)
+                    params[k] = json.dumps(v, default=_date_handler)
                 elif isinstance(v, PropertyMap):
-                    params[k] = json.dumps(dict(v))
+                    params[k] = json.dumps(dict(v), default=_date_handler)
                 elif isinstance(v, InsensitiveDict):
                     params[k] = v.json
         if self._session.auth and drop_auth:

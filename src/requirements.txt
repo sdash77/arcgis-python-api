@@ -24,3 +24,4 @@ requests-kerberos
 winkerberos;platform_system=="Windows"
 requests-gssapi
 dask
+pyspnego >=0.8.0

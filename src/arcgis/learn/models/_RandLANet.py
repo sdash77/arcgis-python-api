@@ -160,6 +160,7 @@ class RandLANet(PointCNN):
                 c=len(class_mapping),
                 chip_size=emd["ImageHeight"],
             )
+            data._is_empty = True
             data.emd_path = emd_path
             data.emd = emd
             for key, value in emd["DataAttributes"].items():

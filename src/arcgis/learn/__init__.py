@@ -62,6 +62,7 @@ if not _LAMBDA_TEXT_CLASSIFICATION:
     from ._utils.pointcloud_data import Transform3d
 from ._data import prepare_data, prepare_tabulardata, prepare_textdata
 from ._process_df import process_df, add_datepart
+from ._utils.evaluate_batchsize import estimate_batch_size
 
 
 def _set_param(gis, params, param_name, input_param):

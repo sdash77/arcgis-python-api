@@ -145,6 +145,7 @@ class ImageCaptioner(ArcGISModel):
 
             data.emd_path = emd_path
             data.emd = emd
+            data._is_empty = True
             for key, value in emd["DataAttributes"].items():
                 setattr(data, key, value)
 

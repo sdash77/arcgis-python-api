@@ -1,7 +1,3 @@
-import os
-import sys
-
-# sys.path.insert(0, r"C:\SVN\achapkowski_geosaurus_fork_issue3686\src")
 import json
 import uuid
 import unittest
@@ -13,9 +9,7 @@ from arcgis.gis._impl._jb import StatusJob
 
 try:
     gis = GIS(
-        url="https://pyrite.esri.com/portal",
-        username="admin",
-        password="esri.agp",
+        profile="your_ent_admin_profile",
         verify_cert=False,
     )
     SKIPTEST = False
