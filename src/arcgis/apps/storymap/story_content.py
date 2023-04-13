@@ -3390,3 +3390,13 @@ class MapAction:
                     "targetGeometry": target_geometry,
                 }
         return self.viewpoint
+
+    # ----------------------------------------------------------------------
+    def delete(self):
+        """
+        Delete the map action.
+        """
+        for idx, action in enumerate(self._story._properties["actions"]):
+            if action["origin"] == self.node:
+                del self._story._properties["actions"][idx]
+        return self._story._delete(self.node)
