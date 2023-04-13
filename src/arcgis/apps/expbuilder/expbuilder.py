@@ -5,6 +5,9 @@ from enum import Enum
 from arcgis.auth.tools import LazyLoader
 import copy
 from ._ref import templates
+import json
+from arcgis.gis import GIS
+import re
 
 arcgis = LazyLoader("arcgis")
 json = LazyLoader("json")
@@ -48,16 +51,16 @@ class Templates(Enum):
 
         try:
             temp = WebExperience(template=self.value)
-            temp._item.share(everyone=True)
+            temp.item.share(everyone=True)
             temp.publish()
             from IPython.display import IFrame
 
             frame = IFrame(
-                src=temp._item.url,
+                src=temp.item.url,
                 width=width,
                 height=height,
             )
-            delete = threading.Thread(target=thread_delete, args=([temp._item]))
+            delete = threading.Thread(target=thread_delete, args=([temp.item]))
             delete.start()
             return frame
 
@@ -93,17 +96,19 @@ class WebExperience(object):
     ===============     ====================================================================
     """
 
+    itemid = None
+    item = None
+    draft = {}
+    _local = False
     _properties = None
     _gis = None
-    _itemid = None
-    _item = None
     _resources = None
     _expdict = {}
-    _draft = {}
 
     def __init__(
         self,
         item: Optional[Union[arcgis.gis.Item, str]] = None,
+        path: Optional[str] = None,
         gis: Optional[arcgis.gis.GIS] = None,
         template: Optional[Union[Templates, str]] = None,
         name: Optional[str] = None,
@@ -121,12 +126,20 @@ class WebExperience(object):
             item = gis.content.get(item)
         if item and isinstance(item, arcgis.gis.Item) and item.type == "Web Experience":
             # set item properties
-            self._item = item
-            self._itemid = self._item.itemid
-            self._resources = self._item.resources.list()
-            self._expdict = self._item.resources.get("config/config.json")
-            self._draft = self._item.resources.get("config/config.json")
-            self._gis = self._item._gis
+            self.item = item
+            self.itemid = self.item.itemid
+            self._resources = self.item.resources.list()
+            self._expdict = self.item.resources.get("config/config.json")
+            self.draft = self.item.resources.get("config/config.json")
+            self._gis = self.item._gis
+        elif path and isinstance(path, str):
+            # construct web experience from path's config file
+            # note that this will not have an associated portal item/itemid/resources
+            self._local = True
+            with open(path) as json_file:
+                config = json.load(json_file)
+                self.draft = config
+                self._expdict = config
         elif (
             item and isinstance(item, arcgis.gis.Item) and item.type != "Web Experience"
         ):
@@ -136,36 +149,45 @@ class WebExperience(object):
             self._create_new_experience(template=template, name=name)
 
     # -----------------------------------------------------------------------------------
-    def _create_new_experience(self, template="blank fullscreen", name=None):
+    def _create_new_experience(self, config = None, template="blank fullscreen", name=None, gis = None):
         """
         If no experience is specified when creating a WebExperience, this helper function
         creates a new experience and saves it as an item to the active GIS. Users can specify
         a template from the experience builder to create their template, in addition to a custom
         item name (done as arguments in the initial creation of the WebExperience).
         """
+        
+        if config is None:
+            if isinstance(template, Templates):
+                template = template.value
 
-        if isinstance(template, Templates):
-            template = template.value
+            # retrieve template for experience
+            if template is None:
+                template = "blank fullscreen"
 
-        # retrieve template for experience
-        if template is None:
-            template = "blank fullscreen"
+            temp_low = template.lower()
+            if temp_low in arcgis.apps.expbuilder._ref.templates:
+                temp_dict = copy.deepcopy(arcgis.apps.expbuilder._ref.templates[temp_low])
+            else:
+                temp_dict = copy.deepcopy(
+                    arcgis.apps.expbuilder._ref.templates["blank fullscreen"]
+                )
 
-        temp_low = template.lower()
-        if temp_low in arcgis.apps.expbuilder._ref.templates:
-            temp_dict = copy.deepcopy(arcgis.apps.expbuilder._ref.templates[temp_low])
+            temp_dict["attributes"]["portalUrl"] = self._gis.url
+            # temp_dict["timestamp"]
+            # create item and generate basic properties
+            if name is None:
+                title = "Experience via Python %s" % uuid.uuid4().hex[:10]
+            else:
+                title = name
+        
         else:
-            temp_dict = copy.deepcopy(
-                arcgis.apps.expbuilder._ref.templates["blank fullscreen"]
-            )
+            temp_dict = config
+            if name is None:
+                title = config["attributes"]["portalUrl"]
+            else:
+                title = name
 
-        temp_dict["attributes"]["portalUrl"] = self._gis.url
-        # temp_dict["timestamp"]
-        # create item and generate basic properties
-        if name is None:
-            title = "Experience via Python %s" % uuid.uuid4().hex[:10]
-        else:
-            title = name
         keywords = ",".join(
             [
                 "EXB Experience",
@@ -186,17 +208,20 @@ class WebExperience(object):
         }
 
         # add to active gis and set properties
-        item = self._gis.content.add(item_properties=item_properties)
+        if gis is None:
+            item = self._gis.content.add(item_properties=item_properties)
+        else:
+            item = gis.content.add(item_properties=item_properties)
 
         # assign to experience properties
-        self._item = item
-        self._itemid = item.itemid
-        self._item.resources.add(
+        self.item = item
+        self.itemid = item.itemid
+        self.item.resources.add(
             folder_name="config", file_name="config.json", text=temp_dict
         )
-        self._resources = self._item.resources.list()
+        self._resources = self.item.resources.list()
         self._expdict = temp_dict
-        self._draft = temp_dict
+        self.draft = temp_dict
 
     # ----------------------------------------------------------------------
     def save(
@@ -237,7 +262,7 @@ class WebExperience(object):
         :return: A boolean indicating the success of the operation.
         """
 
-        keywords = self._item.typeKeywords
+        keywords = self.item.typeKeywords
         for i in range(len(keywords)):
             if keywords[i] == "status: Published":
                 keywords[i] = "status: Changed"
@@ -247,11 +272,11 @@ class WebExperience(object):
         if tags:
             item_properties["tags"] = tags
 
-        self._expdict = self._draft
-        self._item.resources.update(
+        self._expdict = self.draft
+        self.item.resources.update(
             folder_name="config", file_name="config.json", text=self._expdict
         )
-        self._resources = self._item.resources.list()
+        self._resources = self.item.resources.list()
         if publish:
             for i in range(len(keywords)):
                 if "status" in keywords[i]:
@@ -260,21 +285,21 @@ class WebExperience(object):
                 item_properties["access"] = access
             item_properties["typeKeywords"] = keywords
             if self._gis._is_agol:
-                url = "https://experience.arcgis.com/experience/" + self._item.itemid
+                url = "https://experience.arcgis.com/experience/" + self.item.itemid
             else:
                 url = (
                     self._gis.url
                     + "/apps/experiencebuilder/experience/?id="
-                    + self._item.itemid
+                    + self.item.itemid
                 )
             item_properties["url"] = url
-            return self._item.update(
+            return self.item.update(
                 item_properties=item_properties, data=self._expdict
             )
             # self.publish(item_properties = item_properties, data = self._expdict)
         else:
             item_properties["typeKeywords"] = keywords
-            return self._item.update(item_properties=item_properties)
+            return self.item.update(item_properties=item_properties)
 
     # ----------------------------------------------------------------------
     def reset(self):
@@ -285,8 +310,8 @@ class WebExperience(object):
         :return: A boolean indicating the success of the operation.
         """
 
-        self._draft = self._expdict
-        return self._item.resources.update(
+        self.draft = self._expdict
+        return self.item.resources.update(
             folder_name="config", file_name="config.json", text=self._expdict
         )
 
@@ -309,19 +334,19 @@ class WebExperience(object):
             An IFrame display of the story map if possible, else the item url is returned to be
             clicked on. If the item is unpublished, the function returns False.
         """
-        keywords = self._item.typeKeywords
+        keywords = self.item.typeKeywords
         if "status: Published" in keywords:
             from IPython.display import IFrame
 
             try:
                 frame = IFrame(
-                    src=self._item.url,
+                    src=self.item.url,
                     width=width,
                     height=height,
                 )
                 return frame
             except:
-                return self._item.url
+                return self.item.url
         else:
             return False
 
@@ -333,7 +358,7 @@ class WebExperience(object):
         :return:
             A boolean indicating the success of the operation.
         """
-        item = self._gis.content.get(self._itemid)
+        item = self._gis.content.get(self.itemid)
         return item.delete()
 
     # ----------------------------------------------------------------------
@@ -341,7 +366,7 @@ class WebExperience(object):
         """
         See :class:`~arcgis.gis.ResourceManager`
         """
-        resource_manager = arcgis.gis.ResourceManager(self._item, self._gis)
+        resource_manager = arcgis.gis.ResourceManager(self.item, self._gis)
         is_present = False
         if file:
             for resource in self._resources:
@@ -367,7 +392,7 @@ class WebExperience(object):
                 properties=properties,
             )
 
-        self._resources = self._item.resources.list()
+        self._resources = self.item.resources.list()
         return resp
 
     # ----------------------------------------------------------------------
@@ -398,7 +423,7 @@ class WebExperience(object):
             The newly created WebExperience object.
 
         """
-        new_item = self._item.copy_item(
+        new_item = self.item.copy_item(
             title=title,
             tags=tags,
             include_resources=True,
@@ -406,10 +431,69 @@ class WebExperience(object):
         )
         if new_item:
             new_exp = WebExperience(new_item)
-            new_exp._draft = self._draft
+            new_exp.draft = self.draft
             return new_exp
         else:
             return False
+
+    # ----------------------------------------------------------------------
+    def add_to_portal(
+        self, 
+        gis,
+        publish = False,
+        name = None,
+        item_mapping: Optional[dict] = None,
+        auto_remap: Optional[bool] = False,
+    ):
+
+        # this will be the config file that dictates our new portal experience
+        new_config = self.draft
+
+        # automatically remap data to matching sources in target GIS
+        if auto_remap:
+            sources = new_config["dataSources"]
+            for source in sources:
+                # first, see if we can already access each one anonymously
+                # CHECK FOR CASE IF PRIVATE ITEM BUT PASSED in GIS CAN ACCESS
+                url = sources[source]['portalUrl']
+                test_gis = GIS(url=url)
+                try:
+                    targ_item = test_gis.content.get(sources[source]["itemId"])
+                    targ_item.id
+                # this will only get triggered if we can't access and need to remap
+                except:
+                    # if available, match item in target GIS based on title and type
+                    source_title = sources[source]["sourceLabel"]
+                    source_type = sources[source]["type"]
+                    source_reg = re.sub('[^A-Za-z0-9]+', '', source_type).lower()
+                    query = 'title:"' + source_title + '"'
+
+                    for item in gis.content.search(query=query):
+                        target_title = item.title
+                        target_type = item.type
+                        target_reg = re.sub('[^A-Za-z0-9]+', '', target_type).lower()
+
+                        # must be exact match on both
+                        if source_title == target_title and source_reg == target_reg:
+                            new_config["dataSources"][source]["itemId"] = item.id
+                            new_config["dataSources"][source]["portalUrl"] = gis.url
+                            break
+
+        # if user passed in their own custom remapping, use that
+        if item_mapping is not None:
+            for k, v in item_mapping.items():
+                new_config["dataSources"][k]["itemId"] = v[0]
+                new_config["dataSources"][k]["portalUrl"] = v[1]
+
+        # create a new portal experience using the config
+        self._create_new_experience(config = new_config, name = name, gis = gis)
+        
+        # if wish for item to be published, save/publish
+        if publish:
+            self.save(publish=True)
+        
+
+        
 
     # ----------------------------------------------------------------------
     def publish(self, access: str = None):
@@ -422,7 +506,7 @@ class WebExperience(object):
         :return:
             A boolean indicating the success of the operation.
         """
-        keywords = self._item.typeKeywords
+        keywords = self.item.typeKeywords
         item_properties = {}
         for i in range(len(keywords)):
             if "status" in keywords[i]:
@@ -431,15 +515,15 @@ class WebExperience(object):
             item_properties["access"] = access
         item_properties["typeKeywords"] = keywords
         if self._gis._is_agol:
-            url = "https://experience.arcgis.com/experience/" + self._item.itemid
+            url = "https://experience.arcgis.com/experience/" + self.item.itemid
         else:
             url = (
                 self._gis.url
                 + "/apps/experiencebuilder/experience/?id="
-                + self._item.itemid
+                + self.item.itemid
             )
         item_properties["url"] = url
-        return self._item.update(item_properties=item_properties, data=self._expdict)
+        return self.item.update(item_properties=item_properties, data=self._expdict)
 
     # ----------------------------------------------------------------------
     def preview(self, width: Optional[int] = 800, height: Optional[int] = 500):
@@ -469,21 +553,21 @@ class WebExperience(object):
 
         try:
             dummy_exp = self.duplicate()
-            dummy_exp._item.share(everyone=True)
+            dummy_exp.item.share(everyone=True)
             dummy_exp.save(publish=True)
             from IPython.display import IFrame
 
             frame = IFrame(
-                src=dummy_exp._item.url,
+                src=dummy_exp.item.url,
                 width=width,
                 height=height,
             )
-            delete = threading.Thread(target=thread_delete, args=([dummy_exp._item]))
+            delete = threading.Thread(target=thread_delete, args=([dummy_exp.item]))
             delete.start()
             return frame
 
         except:
-            return self._item.url
+            return self.item.url
 
     # ----------------------------------------------------------------------
     def clone(self, target, owner, **kwargs):
@@ -528,27 +612,27 @@ class WebExperience(object):
 
             return new_dict
 
-        exp_clone = target.content.clone_items([self._item], owner=owner, **kwargs)
+        exp_clone = target.content.clone_items([self.item], owner=owner, **kwargs)
         if exp_clone:
             new_dict = _clone_dict(self._expdict, self._gis, target, owner, **kwargs)
             target_exp = WebExperience(exp_clone[0])
             target_exp._expdict = new_dict
-            target_exp._item.resources.update(
+            target_exp.item.resources.update(
                 folder_name="config", file_name="config.json", text=target_exp._expdict
             )
-            keywords = target_exp._item.typeKeywords
+            keywords = target_exp.item.typeKeywords
             for word in keywords:
                 if "status" in word:
                     if "Published" in word or "Changed" in word:
                         new_data = _clone_dict(
-                            self._item.get_data(), self._gis, target, owner, **kwargs
+                            self.item.get_data(), self._gis, target, owner, **kwargs
                         )
-                        target_exp._item.update(item_properties={}, data=new_data)
+                        target_exp.item.update(item_properties={}, data=new_data)
                     else:
-                        target_exp._item.update(
+                        target_exp.item.update(
                             item_properties={}, data={"__not_publish": True}
                         )
                     break
-            return target_exp._item
+            return target_exp.item
         else:
             return False
