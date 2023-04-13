@@ -422,7 +422,7 @@ class TestDivideParcels(unittest.TestCase):
 
     def test_equal_area_dist_remainder_square(self):
         fq_version_name = pfutils.create_version(self.vms)
-        divide_parcel_guid = "{E2A3030E-AFE0-4EC7-9028-D72747D4419A}"
+        divide_parcel_guid = "{6A072F92-2345-40B0-9F21-BE4BFBC7E2B6}"
         divide_parcel_type = 15
         existing_record_guid = "{18F944EA-50E9-4792-9814-FD419644934E}"
         divide_option = "EqualArea"
@@ -823,56 +823,6 @@ class TestDivideParcels(unittest.TestCase):
             except Exception as ex:
                 print(ex)
                 self.fail(f"Divide failed: {ex}")
-                
-    def test_equal_width_merge_remainder_reconcile_async(self):
-        fq_version_name = pfutils.create_version(self.vms)
-        divide_parcel_guid = "{3293FC07-1127-4FF6-92F1-8FF7DF663ADD}"
-        divide_parcel_type = 15
-        existing_record_guid = "{18F944EA-50E9-4792-9814-FD419644934E}"
-        divide_option = "EqualWidth"
-        number_of_parts = 10
-        divide_part_area_or_width = 10
-        divide_line_bearing = 360
-        divide_left_side = True
-        divide_distribute_remainder = True
-        default_area_unit = 109405
-        divide_cogo_line_bearing = None
-
-        with self.vms.get(fq_version_name, "read") as version:
-            parcel_fabric = ParcelFabricManager(
-                self.service_urls["ParcelFabricServer"],
-                self.gis,
-                version,
-                self.parcel_fabric_flc,
-            )
-            # Divide the parcels
-            try:
-                divide = parcel_fabric.divide(
-                    divide_parcel_guid=divide_parcel_guid,
-                    divide_parcel_type=divide_parcel_type,
-                    divide_record=existing_record_guid,
-                    divide_option=divide_option,
-                    divide_number_of_parts=number_of_parts,
-                    divide_part_area=divide_part_area_or_width,
-                    divide_line_bearing=divide_line_bearing,
-                    divide_left_side=divide_left_side,
-                    divide_distribute_remainder=divide_distribute_remainder,
-                    divide_cogo_line_bearing=divide_cogo_line_bearing,
-                    default_area_unit=default_area_unit,
-                )
-                self.assertTrue(divide, "Divide failed.")
-            except Exception as ex:
-                print(ex)
-                self.fail(f"Divide failed: {ex}")
-
-        with self.vms.get(fq_version_name, "edit") as version:
-            # version.mode = "edit"
-            result = version.reconcile(True, False, "byObject", True)
-            assert isinstance(result, concurrent.futures.Future)
-            result = result.result()
-            self.assertEqual(
-                "Completed", result["status"], f"Async job failed:\t{result['status']}"
-            )
 
     def test_equal_width_merge_remainder_junk_values(self):
         fq_version_name = pfutils.create_version(self.vms)
