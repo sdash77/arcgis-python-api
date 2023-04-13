@@ -3425,6 +3425,8 @@ class GeoAccessor(object):
             np.datetime64: "esriFieldTypeDate",
             _dtype(np.datetime64): "esriFieldTypeDate",
             arcgis.features.geo._array.GeoType(): "esriFieldTypeGeometry",
+            arcgis.features.geo._array.GeoType: "esriFieldTypeGeometry",
+            arcgis.geometry._types.Geometry: "esriFieldTypeGeometry",
             pd.CategoricalDtype: "category",
             pd.Timedelta: "esriFieldTypeDouble",
             pd.Timestamp: "esriFieldTypeDate",
