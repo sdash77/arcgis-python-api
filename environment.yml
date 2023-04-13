@@ -35,7 +35,7 @@ dependencies:
 - selenium
 - scipy
 - pillow
-- fastai <2
+- fastai >=2.7.12
 - torchvision >=0.15.0
 - pytorch >=2
 - cudatoolkit
