@@ -33,7 +33,7 @@ requirements:
   - cryptography
   - lxml
   - certifi
-  - dask
+  - dask >=2023.3.2
   - geomet
   - python-gssapi
   - requests-gssapi
@@ -62,7 +62,7 @@ requirements:
   - cryptography
   - lxml
   - certifi
-  - dask
+  - dask >=2023.3.2
   - geomet
   - python-gssapi
   - requests-gssapi
