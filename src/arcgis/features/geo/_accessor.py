@@ -7,6 +7,7 @@ import pandas as pd
 from collections.abc import Iterable
 
 from ._internals import register_dataframe_accessor, register_series_accessor
+from pandas.core.dtypes.common import infer_dtype_from_object
 from ._array import GeoType
 from ._io.fileops import (
     to_featureclass,
@@ -3319,10 +3320,15 @@ class GeoAccessor(object):
             np.NAN: None,
             pd.NaT: None,
         }
-        df = self._data.replace(replace_mappings)
-        date_fields = [col for col in df.columns if df[col].dtype == "datetime64[ns]"]
+        df = self._data.replace(replace_mappings).convert_dtypes()
+        date_fields = [
+            col for col in df.columns if df[col].dtype.name.find("datetime") > -1
+        ]
         time_delta_fields = [
-            col for col in df.columns if df[col].dtype in ["<m8[ns]", "timedelta64[ns]"]
+            col
+            for col in df.columns
+            if df[col].dtype.name.find("timedelta") > -1
+            or df[col].dtype.name.find("<m8[ns]") > -1
         ]
         cols_norm = [col for col in df.columns]
         cols_lower = [col.lower() for col in df.columns]
@@ -3419,8 +3425,11 @@ class GeoAccessor(object):
             np.datetime64: "esriFieldTypeDate",
             _dtype(np.datetime64): "esriFieldTypeDate",
             arcgis.features.geo._array.GeoType(): "esriFieldTypeGeometry",
+            arcgis.features.geo._array.GeoType: "esriFieldTypeGeometry",
+            arcgis.geometry._types.Geometry: "esriFieldTypeGeometry",
             pd.CategoricalDtype: "category",
             pd.Timedelta: "esriFieldTypeDouble",
+            pd.Timestamp: "esriFieldTypeDate",
         }
         fields = []
         for idx, dtype in enumerate(self._data.dtypes):
@@ -3432,6 +3441,13 @@ class GeoAccessor(object):
                     "type": "esriFieldTypeOID",
                     "alias": col,
                 }
+            elif dtype.name.find("datetime") > -1:
+                lu = _look_up[np.datetime64]
+                column = {
+                    "name": col,
+                    "type": lu,
+                    "alias": col,
+                }
             elif isinstance(dtype, pd.CategoricalDtype):
                 length = None
                 if dtype.categories.dtype.name == "object":
@@ -3440,7 +3456,7 @@ class GeoAccessor(object):
                         length = max(dtype.categories.str.len())
                     except:
                         length = 254
-                elif dtype.categories.dtype.name == "datetime64[ns]":
+                elif dtype.categories.dtype.name.find("datetime") > -1:
                     lu = _look_up[dtype.categories.dtype]
                 elif dtype.categories.dtype.name.find("timedelta") > -1:
                     lu = _look_up[dtype.categories.dtype]
@@ -3466,7 +3482,10 @@ class GeoAccessor(object):
                     column["length"] = 256
             if column and isinstance(dtype, pd.CategoricalDtype):
                 fields.append(column)
-            elif column and _look_up[dtype] != "esriFieldTypeGeometry":
+            elif column and (
+                (dtype in _look_up and _look_up[dtype] != "esriFieldTypeGeometry")
+                or _look_up[infer_dtype_from_object(dtype)]
+            ):
                 fields.append(column)
 
         fs["fields"] = fields
