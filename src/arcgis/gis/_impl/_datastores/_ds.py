@@ -318,7 +318,7 @@ class PortalDataStore(object):
             >>> conn_string = host_dsmgr.generate_connection_string(conn_file_sql)
             >>>
             >>> # Add the data store item to the Enterprise Portal
-            >>> text_param = {"info": {"isManaged": "false",
+            >>> text_param = {"info": {"isManaged": False,
             >>>                        "dataStoreConnectionType": "shared",
             >>>                        "connectionString": conn_string},
             >>>               "type": "egdb",

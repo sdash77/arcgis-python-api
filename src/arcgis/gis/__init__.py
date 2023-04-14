@@ -9701,7 +9701,7 @@ class Group(dict):
 
             # Usage Example
 
-            >>> group.notify(users="User1234", subject= "Test Message", message="Testing the notification system",
+            >>> group.notify(users=["User1234"], subject= "Test Message", message="Testing the notification system",
             >>>              method="email"
 
         """
