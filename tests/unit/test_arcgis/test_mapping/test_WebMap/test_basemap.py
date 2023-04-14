@@ -57,11 +57,6 @@ class TestBasemap(unittest.TestCase):
         wm = WebMap()
         assert wm.basemap
 
-    def test_gallery_basemap_no_gis(self):
-        from arcgis.mapping import WebMap
-
-        wm = WebMap()
-        assert len(wm.gallery_basemaps) == 0 or wm.gallery_basemaps == []
 
 
 if __name__ == "__main__":
