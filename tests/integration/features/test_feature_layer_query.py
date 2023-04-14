@@ -1,6 +1,3 @@
-import sys
-
-sys.path.insert(0, r"C:\\ipython_workfolder\\geosaurus\src")
 import os
 import unittest
 
@@ -136,7 +133,7 @@ class TestQueryFeatureLayer(unittest.TestCase):
         Test query with historic_moments parameter
         """
         try:
-            item = gis.content.search("Traffic Collisions")[1]
+            item = gis.content.search("Traffic Collisions")[0]
         except:
             fp = "./traffic_collisions"
             if os.path.isfile(path=fp):
