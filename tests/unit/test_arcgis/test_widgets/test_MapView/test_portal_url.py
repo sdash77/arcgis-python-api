@@ -11,24 +11,30 @@ class TestPortalUrl(unittest.TestCase):
 
     def test_portal_url_format(self):
         self._test_portal_url(
-            profile="your_enterprise_profile",
+            url = "https://pythonapi.playground.esri.com/portal",
+            username = "arcgis_python",
+            password = "amazing_arcgis_123",
             expected="https://pythonapi.playground.esri.com/portal",
         )
 
     def test_agol_standard(self):
         self._test_portal_url(
-            profile=None,
+            url=None,
+            username= None,
+            password=None,
             expected="https://www.arcgis.com",
         )
 
     def test_agol_subdomain(self):
         self._test_portal_url(
-            profile="your_online_profile",
+            url= "https://geosaurus.maps.arcgis.com",
+            username= "ArcGISPyAPIBot",
+            password= "geosaurus_automation123",
             expected="https://geosaurus.maps.arcgis.com",
         )
 
-    def _test_portal_url(self, profile, expected):
-        gis = GIS(profile=profile)
+    def _test_portal_url(self, url, username, password, expected):
+        gis = GIS(url=url, username=username, password=password)
         mv = gis.map()
         assert expected == mv._get_portal_url()
 
