@@ -1849,7 +1849,7 @@ def query_exif_info(
     ------------------     --------------------------------------------------------------------
     input_images           Required String/list of Strings.  The input images could be a single image path, list of image paths,
                            or a folder path, or a list of folder paths. The image file paths can also be server data store path.
-                           
+
                            Eg:
 
                            - "\\servername\drone\imagefolder\image_file.jpg"

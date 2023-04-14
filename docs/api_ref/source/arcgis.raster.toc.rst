@@ -76,3 +76,4 @@ Submodules
    arcgis.raster.orthomapping
    arcgis.raster.functions.RFT
    arcgis.raster.utils
+   arcgis.raster.realitymapping

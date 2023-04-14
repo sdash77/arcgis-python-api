@@ -2,7 +2,7 @@
 The realitymapping python API allows automating realitymapping tasks in the server environment.
 
 For more information about realitymapping workflows in ArcGIS, please visit the help documentation at
-`Block adjustment for mosaic datasets <https://pro.arcgis.com/en/pro-app/latest/help/data/imagery/reality-mapping-in-arcgis-pro.htm>`_
+`Realitymapping in ArcGIS <https://pro.arcgis.com/en/pro-app/latest/help/data/imagery/reality-mapping-in-arcgis-pro.htm>`_
 
 """
 
@@ -1837,9 +1837,9 @@ def query_exif_info(
     ------------------     --------------------------------------------------------------------
     input_images           Required String/list of Strings.  The input images could be a single image path, list of image paths,
                            or a folder path, or a list of folder paths. The image file paths can also be server data store path.
-                           
-                           Eg: 
-                           
+
+                           Eg:
+
                            - "\\servername\drone\imagefolder\image_file.jpg"
                            - "/cloudStores/S3DataStore/yvwd13"
                            - "/fileShares/drones/SampleEXIF/YUN_0040.jpg"
@@ -1866,7 +1866,7 @@ def query_exif_info(
 def reconstruct_surface(
     image_collection,
     scenario: Optional[str] = "DEFAULT",
-    forward_overlap: Optional[int] =None,
+    forward_overlap: Optional[int] = None,
     sideward_overlap: Optional[int] = None,
     quality: Optional[str] = "ULTRA",
     area_of_interest: Optional[FeatureLayer] = None,
@@ -1882,7 +1882,7 @@ def reconstruct_surface(
     *,
     gis: Optional[GIS] = None,
     future: bool = False,
-    **kwargs
+    **kwargs,
 ):
     """
     The `reconstruct_surface` generates a digital surface model (DSM), true
@@ -1900,7 +1900,7 @@ def reconstruct_surface(
                                                                                 - AERIAL_OBLIQUE: The input imagery will be defined as having been acquired with oblique camera systems.
     -------------------------------------------------------------------------   ---------------------------------------------------------------------------
     forward_overlap                                                             Optional Integer. The forward (in-strip) overlap percentage that will be used between the images.
-                                                                                This parameter is enabled when the scenario parameter is set to AERIAL_NADIR. 
+                                                                                This parameter is enabled when the scenario parameter is set to AERIAL_NADIR.
     -------------------------------------------------------------------------   ---------------------------------------------------------------------------
     sideward_overlap                                                            Optional Integer. The sideward (cross-strip) overlap percentage that will be used between the images.
                                                                                 This parameter is enabled when the scenario parameter is set to AERIAL_NADIR.
@@ -1917,12 +1917,12 @@ def reconstruct_surface(
                                                                                 or defined using an input shapefile.
                                                                                 If the value contains 3D geometries, the z-component will be ignored. If the value includes
                                                                                 overlapping features, the union of these features will be computed.
-                                                                                
+
                                                                                 - NONE - All images will be used in processing.
                                                                                 - AUTO - The processing extent will be calculated automatically. This is the default.
     -------------------------------------------------------------------------   ---------------------------------------------------------------------------
     waterbody_features                                                          Optional :class:`~arcgis.features.FeatureLayer`. A polygon that will define the extent of large water bodies.
-                                                                                For the best results, use a 3D feature. 
+                                                                                For the best results, use a 3D feature.
     -------------------------------------------------------------------------   ---------------------------------------------------------------------------
     correction_features                                                         Optional :class:`~arcgis.features.FeatureLayer`. A polygon that will define the extent of all surfaces that are not water bodies.
                                                                                 The value must be a 3D feature.
@@ -2036,5 +2036,5 @@ def reconstruct_surface(
         output_mesh_name=output_mesh_name,
         context=context,
         future=future,
-        **kwargs
+        **kwargs,
     )

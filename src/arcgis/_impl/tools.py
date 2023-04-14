@@ -8736,7 +8736,7 @@ class _OrthoRealityMappingTools:
                 raise TypeError("The 'camera_query' parameter must be of type string")
 
         job = self._tbx.query_camera_info(query=camera_query, gis=gis, future=True)
-        
+
         final_job = None
         if self._is_ortho:
             job._is_ortho = True
@@ -8781,7 +8781,7 @@ class _OrthoRealityMappingTools:
         job = self._tbx.query_control_points(
             image_collection=image_collection, where=where, gis=gis, future=True
         )
-        
+
         final_job = None
         if self._is_ortho:
             job._is_ortho = True
@@ -8825,7 +8825,7 @@ class _OrthoRealityMappingTools:
         job = self._tbx.reset_image_collection(
             image_collection=image_collection, gis=gis, future=True
         )
-        
+
         final_job = None
         if self._is_ortho:
             job._is_ortho = True
@@ -8838,9 +8838,7 @@ class _OrthoRealityMappingTools:
         return final_job.result()
 
     # ----------------------------------------------------------------------
-    def query_exif_info(
-        self, input_images, gis=None, future=False, **kwargs
-    ):
+    def query_exif_info(self, input_images, gis=None, future=False, **kwargs):
         """
         The `query_exif_info` reads the Exif header metadata from single or
         multiple images in shared data store. The Exif metadata is usually stored
@@ -8852,7 +8850,7 @@ class _OrthoRealityMappingTools:
         -------------------------------------------------------------------------   ---------------------------------------------------------------------------
         input_images                                                                Required String/list of Strings. The input images could be a single image path, list of image paths,
                                                                                     or a folder path, or a list of folder paths. The image file paths can also be server data store path.
-                                                                                    Eg: 
+                                                                                    Eg:
                                                                                     - "\\servername\drone\imagefolder\image_file.jpg"
                                                                                     - "/cloudStores/S3DataStore/yvwd13"
                                                                                     - "/fileShares/drones/SampleEXIF/YUN_0040.jpg"
@@ -8868,10 +8866,8 @@ class _OrthoRealityMappingTools:
 
         """
         gis = self._gis
-        job = self._tbx.query_exif_info(
-            input_images=input_images, gis=gis, future=True
-        )
-        
+        job = self._tbx.query_exif_info(input_images=input_images, gis=gis, future=True)
+
         final_job = None
         if self._is_ortho:
             job._is_ortho = True
@@ -8903,7 +8899,7 @@ class _OrthoRealityMappingTools:
         context=None,
         gis=None,
         future=False,
-        **kwargs
+        **kwargs,
     ):
         """
         The `reconstruct_surface` generates a digital surface model (DSM), true
@@ -8921,7 +8917,7 @@ class _OrthoRealityMappingTools:
                                                                                     - AERIAL_OBLIQUE: The input imagery will be defined as having been acquired with oblique camera systems.
         -------------------------------------------------------------------------   ---------------------------------------------------------------------------
         forward_overlap                                                             Optional Integer. The forward (in-strip) overlap percentage that will be used between the images.
-                                                                                    This parameter is enabled when the scenario parameter is set to AERIAL_NADIR. 
+                                                                                    This parameter is enabled when the scenario parameter is set to AERIAL_NADIR.
         -------------------------------------------------------------------------   ---------------------------------------------------------------------------
         sideward_overlap                                                            Optional Integer. The sideward (cross-strip) overlap percentage that will be used between the images.
                                                                                     This parameter is enabled when the scenario parameter is set to AERIAL_NADIR.
@@ -8938,12 +8934,12 @@ class _OrthoRealityMappingTools:
                                                                                     or defined using an input shapefile.
                                                                                     If the value contains 3D geometries, the z-component will be ignored. If the value includes
                                                                                     overlapping features, the union of these features will be computed.
-                                                                                    
+
                                                                                     - NONE - All images will be used in processing.
                                                                                     - AUTO - The processing extent will be calculated automatically. This is the default.
         -------------------------------------------------------------------------   ---------------------------------------------------------------------------
         waterbody_features                                                          Optional :class:`~arcgis.features.FeatureLayer`. A polygon that will define the extent of large water bodies.
-                                                                                    For the best results, use a 3D feature. 
+                                                                                    For the best results, use a 3D feature.
         -------------------------------------------------------------------------   ---------------------------------------------------------------------------
         correction_features                                                         Optional :class:`~arcgis.features.FeatureLayer`. A polygon that will define the extent of all surfaces that are not water bodies.
                                                                                     The value must be a 3D feature.
@@ -9045,14 +9041,14 @@ class _OrthoRealityMappingTools:
         _set_raster_context(context_param, context)
         if "context" in context_param.keys():
             context = context_param["context"]
-        
+
         if scenario is not None:
-            scenario_allowed_values = (
-                self._tbx.choice_list.reconstruct_surface["scenario"]
-            )
-            if [
-                element.lower() for element in scenario_allowed_values
-            ].count(scenario.lower()) <= 0:
+            scenario_allowed_values = self._tbx.choice_list.reconstruct_surface[
+                "scenario"
+            ]
+            if [element.lower() for element in scenario_allowed_values].count(
+                scenario.lower()
+            ) <= 0:
                 raise RuntimeError(
                     "scenario can only be one of the following:"
                     + str(scenario_allowed_values)
@@ -9062,12 +9058,12 @@ class _OrthoRealityMappingTools:
                     scenario = element
 
         if quality is not None:
-            quality_allowed_values = (
-                self._tbx.choice_list.reconstruct_surface["quality"]
-            )
-            if [
-                element.lower() for element in quality_allowed_values
-            ].count(quality.lower()) <= 0:
+            quality_allowed_values = self._tbx.choice_list.reconstruct_surface[
+                "quality"
+            ]
+            if [element.lower() for element in quality_allowed_values].count(
+                quality.lower()
+            ) <= 0:
                 raise RuntimeError(
                     "quality can only be one of the following:"
                     + str(quality_allowed_values)
@@ -9090,7 +9086,10 @@ class _OrthoRealityMappingTools:
         output_products = {}
         if scenario in ("DEFAULT", "AERIAL_OBLIQUE"):
             # Generate Point Cloud and Mesh output by default
-            output_point_cloud_raster, output_point_cloud_service = self._set_output_raster(
+            (
+                output_point_cloud_raster,
+                output_point_cloud_service,
+            ) = self._set_output_raster(
                 output_name=output_point_cloud_name, task=task, output_properties=kwargs
             )
             output_mesh_raster, output_mesh_service = self._set_output_raster(
@@ -9100,13 +9099,23 @@ class _OrthoRealityMappingTools:
             output_products["Mesh"] = output_mesh_raster
 
             if output_dsm_mesh_name is not None:
-                output_dsm_mesh_raster, output_dsm_mesh_service = self._set_output_raster(
-                    output_name=output_dsm_mesh_name, task=task, output_properties=kwargs
+                (
+                    output_dsm_mesh_raster,
+                    output_dsm_mesh_service,
+                ) = self._set_output_raster(
+                    output_name=output_dsm_mesh_name,
+                    task=task,
+                    output_properties=kwargs,
                 )
                 output_products["DSM_Mesh"] = output_dsm_mesh_raster
             if output_true_ortho_name is not None:
-                output_true_ortho_raster, output_true_ortho_service = self._set_output_raster(
-                    output_name=output_true_ortho_name , task=task, output_properties=kwargs
+                (
+                    output_true_ortho_raster,
+                    output_true_ortho_service,
+                ) = self._set_output_raster(
+                    output_name=output_true_ortho_name,
+                    task=task,
+                    output_properties=kwargs,
                 )
                 output_products["True_Ortho"] = output_true_ortho_raster
             if output_dsm_name is not None:
@@ -9126,8 +9135,11 @@ class _OrthoRealityMappingTools:
             output_dsm_raster, output_dsm_service = self._set_output_raster(
                 output_name=output_dsm_name, task=task, output_properties=kwargs
             )
-            output_true_ortho_raster, output_true_ortho_service = self._set_output_raster(
-                output_name=output_true_ortho_name , task=task, output_properties=kwargs
+            (
+                output_true_ortho_raster,
+                output_true_ortho_service,
+            ) = self._set_output_raster(
+                output_name=output_true_ortho_name, task=task, output_properties=kwargs
             )
             output_dsm_mesh_raster, output_dsm_mesh_service = self._set_output_raster(
                 output_name=output_dsm_mesh_name, task=task, output_properties=kwargs
@@ -9137,8 +9149,13 @@ class _OrthoRealityMappingTools:
             output_products["DSM_Mesh"] = output_dsm_mesh_raster
 
             if output_point_cloud_name is not None:
-                output_point_cloud_raster, output_point_cloud_service = self._set_output_raster(
-                    output_name=output_point_cloud_name, task=task, output_properties=kwargs
+                (
+                    output_point_cloud_raster,
+                    output_point_cloud_service,
+                ) = self._set_output_raster(
+                    output_name=output_point_cloud_name,
+                    task=task,
+                    output_properties=kwargs,
                 )
                 output_products["Point_Cloud"] = output_point_cloud_raster
             if output_mesh_name is not None:
@@ -9160,7 +9177,7 @@ class _OrthoRealityMappingTools:
             reconstruct_options=reconstruct_options,
             context=context,
             gis=gis,
-            future=True
+            future=True,
         )
 
         final_job = None
@@ -21136,7 +21153,9 @@ class _Tools(object):
                         "You need to be signed in to use Reality Mapping Tools."
                     )
                 else:
-                    raise RuntimeError("This GIS does not support Reality Mapping Tools.")
+                    raise RuntimeError(
+                        "This GIS does not support Reality Mapping Tools."
+                    )
                 return None
 
             self._realitymapping = _OrthoRealityMappingTools(svcurl, self._gis)
