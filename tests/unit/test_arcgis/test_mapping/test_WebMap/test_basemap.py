@@ -3,16 +3,10 @@ import unittest
 
 sys.path.insert(0, r"C:\ipython_workfolder\geosaurus\src")
 sys.path.insert(1, r"C:\ipython_workfolder\geosaurus\tests")
-from unittest.mock import patch
-
-from utils.mocks import MockMapView
 
 gen_input_item_prop = {"title": "title", "snippet": "snippet", "tags": ["tags"]}
-
-
 class TestBasemap(unittest.TestCase):
 
-    @patch("arcgis.widgets.MapView", MockMapView)
     def test_set_basemap_to_invalid_string(self):
         """Tests that WebMap.save throws an exception if a user doesn't pass in
         a dict with the 'title', 'snippet', 'tags' keys
@@ -25,7 +19,6 @@ class TestBasemap(unittest.TestCase):
         except RuntimeError as e:
             assert "Basemap 'hello' isn't valid" in str(e)
 
-    @patch("arcgis.widgets.MapView", MockMapView)
     def test_set_basemap_to_valid_string(self):
         """Tests that WebMap.save throws an exception if a user doesn't pass in
         a dict with the 'title', 'snippet', 'tags' keys
@@ -38,7 +31,6 @@ class TestBasemap(unittest.TestCase):
             wm._webmapdict
         )
 
-    @patch("arcgis.widgets.MapView", MockMapView)
     def test_set_basemap_using_webmap_basemap(self):
         from arcgis.mapping import WebMap
 
@@ -48,7 +40,6 @@ class TestBasemap(unittest.TestCase):
         wm2.basemap = wm.basemap
         assert "osm" in str(wm.basemap["baseMapLayers"]) and "osm" in str(wm._webmapdict)
 
-    @patch("arcgis.widgets.MapView", MockMapView)
     def test_set_basemap_using_webmap_object(self):
         from arcgis.mapping import WebMap
 
@@ -60,14 +51,12 @@ class TestBasemap(unittest.TestCase):
             wm._webmapdict
         )
 
-    @patch("arcgis.widgets.MapView", MockMapView)
     def test_default_basemap_no_gis(self):
         from arcgis.mapping import WebMap
 
         wm = WebMap()
         assert "Topographic Vector" in str(wm.basemap)
 
-    @patch("arcgis.widgets.MapView", MockMapView)
     def test_gallery_basemap_no_gis(self):
         from arcgis.mapping import WebMap
 
