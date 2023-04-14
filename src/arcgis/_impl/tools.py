@@ -7466,7 +7466,7 @@ class _HydrologyTool:
 
 ###########################################################################
 class _OrthoRealityMappingTools:
-    """Exposes the Orthmapping Geoprocessing tools"""
+    """Exposes the Orthmapping and Realitymapping Geoprocessing tools"""
 
     _gptbx = None
     _url = None
@@ -21126,7 +21126,8 @@ class _Tools(object):
         try:
             try:
                 # svcurl = self._gis.properties.helperServices["realityMapping"]["url"]
-                svcurl = "https://svrcluster-sha.esri.com/server/rest/services/System/RealitymappingTools/GPServer"
+                # svcurl = "https://svrcluster-sha.esri.com/server/rest/services/System/RealitymappingTools/GPServer"
+                svcurl = "https://sha-97611-d02.esri.com/server/rest/services/RealityMappingTools/GPServer"
                 if self._gis._is_hosted_nb_home:
                     svcurl = self._validate_url(svcurl)
             except:

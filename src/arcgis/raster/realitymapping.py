@@ -2,7 +2,7 @@
 The realitymapping python API allows automating realitymapping tasks in the server environment.
 
 For more information about realitymapping workflows in ArcGIS, please visit the help documentation at
-`Block adjustment for mosaic datasets <https://desktop.arcgis.com/en/arcmap/10.4/manage-data/raster-and-images/block-adjustment-for-mosaic-datasets.htm>`_
+`Block adjustment for mosaic datasets <https://pro.arcgis.com/en/pro-app/latest/help/data/imagery/reality-mapping-in-arcgis-pro.htm>`_
 
 """
 
