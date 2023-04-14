@@ -65,7 +65,7 @@ class TestBasemap(unittest.TestCase):
         from arcgis.mapping import WebMap
 
         wm = WebMap()
-        assert "World Topo" in str(wm.basemap)
+        assert "Topographic Vector" in str(wm.basemap)
 
     @patch("arcgis.widgets.MapView", MockMapView)
     def test_gallery_basemap_no_gis(self):
