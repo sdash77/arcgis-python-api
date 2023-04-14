@@ -117,11 +117,11 @@ def from_featureset(fset, sr=None):
 
         for fld in dt_fields:
             try:
-                df[fld] = pd.to_datetime(
-                    df[fld] / 1000, infer_datetime_format=True, unit="s"
-                )
+                df[fld] = pd.to_datetime(df[fld] / 1000, unit="s")
             except:
-                df[fld] = pd.to_datetime(df[fld], infer_datetime_format=True)
+                df[fld] = pd.to_datetime(
+                    df[fld],
+                )
         if gt and not "SHAPE" in df.columns:
             df["SHAPE"] = None
         if "SHAPE" in df.columns:
