@@ -3539,7 +3539,7 @@ class MapTour(object):
         """
         return self._story._assign_node_class(node_id)
 
-# ----------------------------------------------------------------------
+    # ----------------------------------------------------------------------
     def _check_node(self):
         # Node is not in the story if no story or node id is present
         if self._story is None:
@@ -3548,6 +3548,8 @@ class MapTour(object):
             return False
         else:
             return True
+
+
 ###############################################################################################################
 class MapAction:
     """
@@ -3684,6 +3686,7 @@ class MapAction:
             if action["origin"] == self.node:
                 del self._story._properties["actions"][idx]
         return self._story._delete(self.node)
+
     # ----------------------------------------------------------------------
     def _check_node(self):
         # Node is not in the story if no story or node id is present
