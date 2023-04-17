@@ -36,7 +36,7 @@ PKI_ORACLE = "https://wdcintelgx.dev.geocloud.com/portal"
 PKI_ORACLE_PW = "password"
 
 IWA_ESRI = "https://rqawiniwa02pt.ags.esri.com/gis"
-IWA_DUEL_ESRI = "https://rqawinmiwa05pt.ags.esri.com/gis"
+IWA_DUEL_ESRI = "https://rqawintest99pt.ags.esri.com/gis"
 #########################################################################################
 class TestIWAConnections(unittest.TestCase):
     """Tests IWA access to portal/server"""

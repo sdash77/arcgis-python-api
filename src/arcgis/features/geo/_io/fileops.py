@@ -540,9 +540,12 @@ def to_table(geo, location, overwrite=True, sanitize_columns=False):
                 pass
             elif col.lower() in ["fid", "oid", "objectid"]:
                 dtypes.append((col, np.int32))
-            elif df[col].dtype.name == "datetime64[ns]":
+            elif df[col].dtype.name.find("datetime") > -1:
                 dtypes.append((col, "<M8[us]"))
                 df[col] = df[col].dt.to_pydatetime()
+            elif df[col].dtype.name.find("timedelta") > -1:
+                dtypes.append((col, float))
+                df[col] = df[col].dt.total_seconds() * 1000
             elif df[col].dtype.name == "object":
                 try:
                     u = type(df[col][df[col].first_valid_index()])
@@ -583,7 +586,7 @@ def to_table(geo, location, overwrite=True, sanitize_columns=False):
                     except:
                         msize = 254
                     dtypes.append((col, "<U%s" % msize))
-                elif dtype.categories.dtype.name == "datetime64[ns]":
+                elif dtype.categories.dtype.name.fins("datetime") > -1:
                     dtypes.append((col, "<M8[us]"))
                 else:
                     dtypes.append((col, dtype.categories.dtype))
@@ -1029,8 +1032,11 @@ def to_featureclass(
             for col in columns[:]:
                 if col.lower() in ["fid", "oid", "objectid"]:
                     dtypes.append((col, np.int32))
-                elif df[col].dtype.name.startswith("datetime64[ns"):
+                elif df[col].dtype.name.startswith("datetime"):
                     dtypes.append((col, "<M8[us]"))
+                elif df[col].dtype.name.find("timedelta") > -1:
+                    dtypes.append((col, float))
+                    df[col] = df[col].dt.total_seconds() * 1000
                 elif df[col].dtype.name == "object":
                     try:
                         u = type(df[col][df[col].first_valid_index()])
@@ -1061,7 +1067,7 @@ def to_featureclass(
                         except:
                             msize = 254
                         dtypes.append((col, "<U%s" % msize))
-                    elif dtype.categories.dtype.name == "datetime64[ns]":
+                    elif dtype.categories.dtype.name.find("datetime") > -1:
                         dtypes.append((col, "<M8[us]"))
                     else:
                         dtypes.append((col, dtype.categories.dtype))
@@ -1103,7 +1109,7 @@ def to_featureclass(
                 dt_fld_idx = [
                     irows.fields.index(col)
                     for col in df.columns
-                    if df[col].dtype.name.startswith("datetime64[ns")
+                    if df[col].dtype.name.startswith("datetime")
                 ]
 
                 def _insert_row(row):
