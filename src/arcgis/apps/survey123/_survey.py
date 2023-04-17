@@ -391,7 +391,9 @@ class Survey:
                 }
             )
         # 1). Submit the request.
-        submit = self._si._gis._con.post(url, params, add_headers={'X-Survey123-Request-Source': 'API/Python'})
+        submit = self._si._gis._con.post(
+            url, params, add_headers={"X-Survey123-Request-Source": "API/Python"}
+        )
         return self._check_status(
             res=submit, status_type="generate_report", save_folder=save_folder
         )
@@ -485,7 +487,7 @@ class Survey:
             try_json=False,
             out_folder=save_folder,
             file_name=file_name,
-            add_headers={'X-Survey123-Request-Source': 'API/Python'}
+            add_headers={"X-Survey123-Request-Source": "API/Python"},
         )
         return res
 
@@ -528,7 +530,12 @@ class Survey:
             "f": "json",
         }
 
-        check = gis._con.post(url, params, files=file, add_headers={'X-Survey123-Request-Source': 'API/Python'})
+        check = gis._con.post(
+            url,
+            params,
+            files=file,
+            add_headers={"X-Survey123-Request-Source": "API/Python"},
+        )
         return check
 
     # ----------------------------------------------------------------------
@@ -668,7 +675,9 @@ class Survey:
             "f": "json",
         }
 
-        estimate = gis._con.get(url, params, add_headers={'X-Survey123-Request-Source': 'API/Python'})
+        estimate = gis._con.get(
+            url, params, add_headers={"X-Survey123-Request-Source": "API/Python"}
+        )
         return estimate
 
     # ----------------------------------------------------------------------
@@ -781,7 +790,9 @@ class Survey:
             params["outputReportName"] = report_title
 
         # 1). Submit the request.
-        submit = self._si._gis._con.post(url, params, add_headers={'X-Survey123-Request-Source': 'API/Python'})
+        submit = self._si._gis._con.post(
+            url, params, add_headers={"X-Survey123-Request-Source": "API/Python"}
+        )
         return self._check_status(
             res=submit, status_type="generate_report", save_folder=save_folder
         )
@@ -801,9 +812,17 @@ class Survey:
             base=self._baseurl, jid=jid
         )
         # 3). Start Checking the status
-        res = gis._con.get(status_url, params=params, add_headers={'X-Survey123-Request-Source': 'API/Python'})
+        res = gis._con.get(
+            status_url,
+            params=params,
+            add_headers={"X-Survey123-Request-Source": "API/Python"},
+        )
         while res["jobStatus"] == "esriJobExecuting":
-            res = self._si._gis._con.get(status_url, params=params, add_headers={'X-Survey123-Request-Source': 'API/Python'})
+            res = self._si._gis._con.get(
+                status_url,
+                params=params,
+                add_headers={"X-Survey123-Request-Source": "API/Python"},
+            )
             time.sleep(1)
         if status_type == "default_report_template":
             if (

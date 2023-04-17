@@ -370,6 +370,19 @@ class StoryMap(object):
 
     # ----------------------------------------------------------------------
     @property
+    def actions(self):
+        """
+        Get list of action nodes.
+        """
+        actions = []
+        if "actions" in self._properties:
+            for action in self._properties["actions"]:
+                node = self._assign_node_class(action["origin"])
+                actions.append({action["origin"]: node})
+        return actions
+
+    # ----------------------------------------------------------------------
+    @property
     def navigation_list(self):
         """
         Get a list of the nodes that are linked in the navigation.
@@ -443,6 +456,12 @@ class StoryMap(object):
             # return all nodes in order
             return self.nodes
         elif node_id is not None:
+            # check first if it's an action
+            all_actions = self.actions
+            for action in all_actions:
+                id = list(action.keys())[0]
+                if node_id == id:
+                    return list(action.values())[0]
             # return a specific node
             all_nodes = self._create_node_dict()
             # find the node in the list and return it
@@ -1529,6 +1548,8 @@ class StoryMap(object):
                 node = Content.Sidecar(story=self, node_id=node_id)
             else:
                 node = subtype
+        elif node_type == "action-button":
+            node = Content.MapAction(story=self, node_id=node_id)
         else:
             # if not of type story content then just return name of type
             node = node_type.capitalize()
