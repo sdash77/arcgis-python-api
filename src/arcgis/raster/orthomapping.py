@@ -836,9 +836,9 @@ def alter_processing_states(
     """
     gis = arcgis.env.active_gis if gis is None else gis
 
-    if image_collection.type == "Ortho Mapping Project":
-        project_item = image_collection
-        image_collection, flight = _get_collection_item(image_collection, gis)
+    if isinstance(image_collection, Mission):
+        mission = image_collection
+        image_collection = image_collection.collection
 
     return gis._tools.orthomapping.alter_processing_states(
         image_collection=image_collection,
@@ -903,9 +903,9 @@ def get_processing_states(
 
     gis = arcgis.env.active_gis if gis is None else gis
 
-    if image_collection.type == "Ortho Mapping Project":
-        project_item = image_collection
-        image_collection, flight = _get_collection_item(image_collection, gis)
+    if isinstance(image_collection, Mission):
+        mission = image_collection
+        image_collection = image_collection.collection
 
     return gis._tools.orthomapping.get_processing_states(
         image_collection=image_collection, future=future, **kwargs
@@ -1137,15 +1137,14 @@ def match_control_points(
     gis = arcgis.env.active_gis if gis is None else gis
     update_flight_json = False
     flight_json_details = {}
-    if image_collection.type == "Ortho Mapping Project":
-        project_item = image_collection
-        image_collection, flight = _get_collection_item(image_collection, gis)
+    if isinstance(image_collection, Mission):
+        mission = image_collection
+        image_collection = image_collection.collection
         update_flight_json = True
 
         flight_json_details = {
             "update_flight_json": update_flight_json,
-            "flight": flight,
-            "project_item": project_item,
+            "mission": mission,
             "item_name": "matchControlPoint",
         }
 
@@ -1307,19 +1306,17 @@ def color_correction(
         The imagery layer url
 
     """
-
     gis = arcgis.env.active_gis if gis is None else gis
     update_flight_json = False
     flight_json_details = {}
-    if image_collection.type == "Ortho Mapping Project":
-        project_item = image_collection
-        image_collection, flight = _get_collection_item(image_collection, gis)
+    if isinstance(image_collection, Mission):
+        mission = image_collection
+        image_collection = image_collection.collection
         update_flight_json = True
 
         flight_json_details = {
             "update_flight_json": update_flight_json,
-            "flight": flight,
-            "project_item": project_item,
+            "mission": mission,
             "item_name": "colorCorrection",
         }
 
@@ -1476,18 +1473,18 @@ def compute_control_points(
         The imagery layer url
 
     """
+
     gis = arcgis.env.active_gis if gis is None else gis
     update_flight_json = False
     flight_json_details = {}
-    if image_collection.type == "Ortho Mapping Project":
-        project_item = image_collection
-        image_collection, flight = _get_collection_item(image_collection, gis)
+    if isinstance(image_collection, Mission):
+        mission = image_collection
+        image_collection = image_collection.collection
         update_flight_json = True
 
         flight_json_details = {
             "update_flight_json": update_flight_json,
-            "flight": flight,
-            "project_item": project_item,
+            "mission": mission,
             "item_name": "computeControlPoints",
         }
 
@@ -1616,15 +1613,14 @@ def compute_seamlines(
     gis = arcgis.env.active_gis if gis is None else gis
     update_flight_json = False
     flight_json_details = {}
-    if image_collection.type == "Ortho Mapping Project":
-        project_item = image_collection
-        image_collection, flight = _get_collection_item(image_collection, gis)
+    if isinstance(image_collection, Mission):
+        mission = image_collection
+        image_collection = image_collection.collection
         update_flight_json = True
 
         flight_json_details = {
             "update_flight_json": update_flight_json,
-            "flight": flight,
-            "project_item": project_item,
+            "mission": mission,
             "item_name": "seamline",
         }
 
@@ -1774,15 +1770,14 @@ def edit_control_points(
     gis = arcgis.env.active_gis if gis is None else gis
     update_flight_json = False
     flight_json_details = {}
-    if image_collection.type == "Ortho Mapping Project":
-        project_item = image_collection
-        image_collection, flight = _get_collection_item(image_collection, gis)
+    if isinstance(image_collection, Mission):
+        mission = image_collection
+        image_collection = image_collection.collection
         update_flight_json = True
 
         flight_json_details = {
             "update_flight_json": update_flight_json,
-            "flight": flight,
-            "project_item": project_item,
+            "mission": mission,
             "item_name": "appendControlPoints",
         }
 
@@ -1922,12 +1917,13 @@ def generate_dem(
         The DEM layer item
 
     """
+
     gis = arcgis.env.active_gis if gis is None else gis
     update_flight_json = False
     flight_json_details = {}
-    if image_collection.type == "Ortho Mapping Project":
-        project_item = image_collection
-        image_collection, flight = _get_collection_item(image_collection, gis)
+    if isinstance(image_collection, Mission):
+        mission = image_collection
+        image_collection = image_collection.collection
         update_flight_json = True
 
         if kwargs is not None:
@@ -1983,8 +1979,7 @@ def generate_dem(
             dem_dict.update(interpolation_dict)
         flight_json_details = {
             "update_flight_json": update_flight_json,
-            "flight": flight,
-            "project_item": project_item,
+            "mission": mission,
             "item_name": surface_type.lower(),
             "processing_states": dem_dict,
         }
@@ -2185,12 +2180,13 @@ def generate_orthomosaic(
         The Orthomosaicked Imagery layer item
 
     """
+
     gis = arcgis.env.active_gis if gis is None else gis
 
     update_flight_json = False
-    if image_collection.type == "Ortho Mapping Project":
-        project_item = image_collection
-        image_collection, flight = _get_collection_item(image_collection, gis)
+    if isinstance(image_collection, Mission):
+        mission = image_collection
+        image_collection = image_collection.collection
         update_flight_json = True
 
         if kwargs is not None:
@@ -2297,8 +2293,7 @@ def generate_orthomosaic(
 
         flight_json_details = {
             "update_flight_json": update_flight_json,
-            "flight": flight,
-            "project_item": project_item,
+            "mission": mission,
             "item_name": "ortho",
             "processing_states": ortho_dict,
         }
@@ -2420,18 +2415,18 @@ def generate_report(
         The URL of a single html webpage that is a formatted orthomapping report
 
     """
+
     gis = arcgis.env.active_gis if gis is None else gis
     update_flight_json = False
     flight_json_details = {}
-    if image_collection.type == "Ortho Mapping Project":
-        project_item = image_collection
-        image_collection, flight = _get_collection_item(image_collection, gis)
+    if isinstance(image_collection, Mission):
+        mission = image_collection
+        image_collection = image_collection.collection
         update_flight_json = True
 
         flight_json_details = {
             "update_flight_json": update_flight_json,
-            "flight": flight,
-            "project_item": project_item,
+            "mission": mission,
             "item_name": "report",
         }
 
@@ -2569,18 +2564,18 @@ def query_control_points(
         A dictionary object
 
     """
+
     gis = arcgis.env.active_gis if gis is None else gis
     update_flight_json = False
     flight_json_details = {}
-    if image_collection.type == "Ortho Mapping Project":
-        project_item = image_collection
-        image_collection, flight = _get_collection_item(image_collection, gis)
+    if isinstance(image_collection, Mission):
+        mission = image_collection
+        image_collection = image_collection.collection
         update_flight_json = True
 
         flight_json_details = {
             "update_flight_json": update_flight_json,
-            "flight": flight,
-            "project_item": project_item,
+            "mission": mission,
             "item_name": "queryControlPoints",
         }
 
@@ -2649,17 +2644,17 @@ def reset_image_collection(
         A boolean indicating whether the reset was successful or not
 
     """
+
     gis = arcgis.env.active_gis if gis is None else gis
 
-    if image_collection.type == "Ortho Mapping Project":
-        project_item = image_collection
-        image_collection, flight = _get_collection_item(image_collection, gis)
+    if isinstance(image_collection, Mission):
+        mission = image_collection
+        image_collection = image_collection.collection
         update_flight_json = True
 
         flight_json_details = {
             "update_flight_json": update_flight_json,
-            "flight": flight,
-            "project_item": project_item,
+             "mission": mission,
             "item_name": "reset",
         }
 
@@ -2756,6 +2751,7 @@ class OrthomappingProject():
         :return: A list of flights
         """
         res_list = self._project_item.resources.list()
+        self._mission_list  =[]
         for resource in res_list:
             full_res_name = resource["resource"]
             res_name = full_res_name[full_res_name.find('/')+1:full_res_name.find('.')]
@@ -2921,9 +2917,6 @@ class OrthomappingProject():
                                                 | {"name": "cloud_shadow_count", "type": "Long"}]}
         ----------------------               --------------------------------------------------------------------
         gis                                  Keyword only parameter. Optional :class:`~arcgis.gis.GIS` object. The GIS on which this tool runs. If not specified, the active GIS is used.
-        ----------------------               --------------------------------------------------------------------
-        future                               Keyword only parameter. Optional boolean. If True, the result will be a GPJob object and 
-                                             results will be returned asynchronously.
         ======================               ====================================================================
 
         :return: The imagery layer item
@@ -2967,13 +2960,30 @@ class Mission():
                     self._project = OrthomappingProject(project, gis=gis)
 
             self._project_item = project._project_item
-            self._gis = gis
+            self._gis = project._gis if gis is None else gis
             self._mission_json = self._get_mission_json(self._mission_name)
             self._collection = None
             self._resource_info = self._resource_info(self._mission_name)
 
             import types
             self.compute_sensor_model = types.MethodType(compute_sensor_model, self)
+            self.alter_processing_states = types.MethodType(alter_processing_states, self)
+            self.get_processing_states = types.MethodType(get_processing_states, self)
+            self.match_control_points = types.MethodType(match_control_points, self)
+            self.color_correction = types.MethodType(color_correction, self)
+            self.compute_control_points = types.MethodType(compute_control_points, self)
+            self.compute_seamlines = types.MethodType(compute_seamlines, self)
+            self.edit_control_points = types.MethodType(edit_control_points, self)
+            self.generate_dem = types.MethodType(generate_dem, self)
+            self.generate_orthomosaic = types.MethodType(generate_orthomosaic, self)
+            self.generate_report = types.MethodType(generate_report, self)
+            self.query_control_points = types.MethodType(query_control_points, self)
+            self.reset_processing = types.MethodType(reset_image_collection, self)
+
+
+
+
+
 
     @property
     def products(self):
@@ -3024,6 +3034,414 @@ class Mission():
                 image_collection_item = self._gis.content.get(item_id)
                 self._collection = image_collection_item 
                 return image_collection_item
+
+    def add_image(self,
+        input_rasters: list,
+        raster_type_name: Optional[str] = None,
+        raster_type_params: Optional[dict[str, Any]] = None,
+        context: Optional[dict[str, Any]] = None
+    ):
+        """
+        .. image:: _static/images/add_image/add_image.png 
+
+        Add a collection of images to an existing image collection. It provides provision to use input rasters by reference 
+        and to specify image collection properties through context parameter.
+
+        It can be used when new data is available to be included in the same 
+        orthomapping project. When new data is added to the image collection
+        the entire image collection must be reset to the original state.
+
+        ==================                   ====================================================================
+        **Parameter**                         **Description**
+        ------------------                   --------------------------------------------------------------------
+        input_rasters                        Required list. The list of input rasters to be added to
+                                             the image collection being created. This parameter can
+                                             be any one of the following types:
+    
+                                             - List of portal Items of the images
+                                             - An image service URL
+                                             - Shared data path (this path must be accessible by the server)
+                                             - Name of a folder on the portal
+        ------------------                   --------------------------------------------------------------------
+        raster_type_name                     Optional string. The name of the raster type to use for adding data to
+                                             the image collection.
+
+
+                                             Choice list:
+
+                                                 | [
+                                                 | "Aerial", "ASTER", "DMCII", "DubaiSat-2", "GeoEye-1", "GF-1 PMS", "GF-1 WFV",
+                                                 | "GF-2 PMS", "GRIB", "HDF", "IKONOS", "Jilin-1", "KOMPSAT-2", "KOMPSAT-3",
+                                                 | "Landsat 1-5 MSS", "Landsat 4-5 TM", "Landsat 7 ETM+", "Landsat 8", "Landsat 9",
+                                                 | "NetCDF", "PlanetScope", "Pleiades-1", "Pleiades NEO", "QuickBird", "RapidEye",
+                                                 | "Raster Dataset", "ScannedAerial", "Sentinel-2", "SkySat", "SPOT 5", "SPOT 6",
+                                                 | "SPOT 7", "Superview-1", "Tiled Imagery Layer", "UAV/UAS", "WordView-1",
+                                                 | "WordView-2", "WordView-3", "WordView-4", "ZY3-SASMAC", "ZY3-CRESDA"
+                                                 | ]
+                                         
+
+                                             Example:
+
+                                                "QuickBird"
+        ------------------                   --------------------------------------------------------------------
+        raster_type_params                   Optional dict. Additional ``raster_type`` specific parameters.
+        
+                                             The process of add rasters to the image collection can be \
+                                             controlled by specifying additional raster type arguments.
+
+                                             The raster type parameters argument is a dictionary.
+                                         
+                                             Syntax:
+
+                                                 {"gps": [["image1.jpg", "10", "2", "300"], ["image2.jpg", "10", "3", "300"], ["image3.jpg", "10", "4", "300"]],
+                                                 "cameraProperties": {"Maker": "Canon", "Model": "5D Mark II", "FocalLength": 20, "PixelSize": 10, "x0": 0, "y0": 0, "columns": 4000, "rows": 3000},
+                                                 "constantZ": 300,"isAltitudeFlightHeight": "True","dem": {"url": ``https://...``}
+
+                                             The dictionary can contain productType, processingTemplate, \
+                                             pansharpenType, Filter, pansharpenWeights, ConstantZ, \
+                                             dem, zoffset, CorrectGeoid, ZFactor, StretchType, \
+                                             ScaleFactor, ValidRange
+
+                                             Please check the table below (Supported Raster Types), \
+                                             for more details about the product types, \
+                                             processing templates, pansharpen weights for each raster type. 
+
+                                             - Possible values for pansharpenType - ["Mean", "IHS", "Brovey", "Esri", "Mean", "Gram-Schmidt"]
+                                             - Possible values for filter - [None, "Sharpen", "SharpenMore"]
+                                             - Value for StretchType dictionary can be as follows:
+
+                                               - "None"
+                                               - "MinMax; <min>; <max>"
+                                               - "PercentMinMax; <MinPercent>; <MaxPercent>"
+                                               - "StdDev; <NumberOfStandardDeviation>"
+                                               Example: {"StretchType": "MinMax; <min>; <max>"}
+                                             - Value for ValidRange dictionary can be as follows:
+
+                                               - "<MaskMinValue>, <MaskMaxValue>"
+                                               Example: {"ValidRange": "10, 200"}
+
+                                             Example:
+
+                                                {"productType":"All","processingTemplate":"Pansharpen",
+                                                "pansharpenType":"Gram-Schmidt","filter":"SharpenMore",
+                                                "pansharpenWeights":"0.85 0.7 0.35 1","constantZ":-9999}
+        ------------------                   --------------------------------------------------------------------
+        context                              Optional dict. The context parameter is used to provide additional input parameters.
+
+                                             Syntax:
+
+                                                {"image_collection_properties": {"imageCollectionType":"Satellite"},"byref":'True'}
+                                            
+                                             Use ``image_collection_properties`` key to set value for imageCollectionType.
+
+
+                                             .. note::
+
+                                                The "imageCollectionType" property is important for image collection that will later on be adjusted by orthomapping system service.
+                                                Based on the image collection type, the orthomapping system service will choose different algorithm for adjustment.
+                                                Therefore, if the image collection is created by reference, the requester should set this
+                                                property based on the type of images in the image collection using the following keywords.
+                                                If the imageCollectionType is not set, it defaults to "UAV/UAS"
+ 
+                                             If byref is set to 'True', the data will not be uploaded. If it is not set, the default is 'False'
+        ==================                   ====================================================================
+
+        :return: The imagery layer url
+
+
+        """
+        flight_json_details = {}
+        if isinstance(self, Mission):
+            mission = self
+            image_collection = self.collection
+
+
+        from arcgis.raster.analytics import add_image
+        gis=self._gis
+        gpjob = add_image(image_collection=image_collection,
+                        input_rasters=input_rasters,
+                        raster_type_name=raster_type_name,
+                        raster_type_params= raster_type_params,
+                        context = context,
+                        gis =  gis,
+                        future = True)
+
+        while(not gpjob.done()):
+            continue
+
+        if gpjob.done():
+            try:
+
+                gps_data = []
+                gps_info_list = ["name", "lat", "long", "alt"]
+
+                if "gps" in raster_type_params:
+                    for ele in raster_type_params["gps"]:
+                        dict_gps = dict(zip(gps_info_list, ele))
+                        gps_data.append(dict_gps)
+
+                from datetime import datetime
+
+                lyr = image_collection.layers[0]
+
+                image_count = lyr.query(return_count_only=True)
+                mission_json = mission._mission_json
+                mission_json["sourceData"]["gps"].append(gps_data)
+                mission_json["sourceData"]["imageCount"] = image_count
+
+                ## Set extent
+                try:
+                    gcs_extent = {}
+                    extent_arr = image_collection.extent
+                    if extent_arr is not None:
+                        gcs_extent = {
+                            "xmin": extent_arr[0][0],
+                            "ymin": extent_arr[0][1],
+                            "xmax": extent_arr[1][0],
+                            "ymax": extent_arr[1][1],
+                            "spatialReference": {"wkid": 4326},
+                        }
+                except:
+                    gcs_extent = {}
+
+                projected_extent = {}
+                try:
+                    projected_extent = dict(lyr.extent)
+                except:
+                    projected_extent = {}
+
+                mission_json.update(
+                    {"gcsExtent": gcs_extent, "projectedExtent": projected_extent}
+                )
+
+                try:
+                    coverage_area = image_collection.layers[0].query_boundary()["area"]
+                    mission_json.update({"coverage": coverage_area})
+                except:
+                    pass
+
+                try:
+
+                    import json
+
+                    job_messages = gpjob.messages
+                    rm = mission._project_item.resources
+                    #mission_json = mission._mission_json
+                    resource = mission._resource_info
+                    resource_name = resource["resource"]
+
+                    start_time = (
+                        gpjob._gpjob._start_time.isoformat(timespec="milliseconds") + "Z"
+                    )
+                    end_time = gpjob._gpjob._end_time.isoformat(timespec="milliseconds") + "Z"
+                    job_id = gpjob._gpjob._jobid
+
+                    mission_json["jobs"].update(
+                        {
+                            'addImages': {
+                                "messages": job_messages,
+                                "checked": True,
+                                "progress": 100,
+                                "success": True,
+                                "startTime": start_time,
+                                "completionTime": end_time,
+                                 "jobId":job_id
+                            }
+                        }
+                    )
+                    resource_props = resource["properties"]
+                    properties = json.loads(resource["properties"])
+
+                    properties.update({"imageCount": image_count})
+
+                    import tempfile, uuid, os
+
+                    fname = resource_name.split("/")[1]
+                    temp_dir = tempfile.gettempdir()
+                    temp_file = os.path.join(temp_dir, fname)
+                    with open(temp_file, "w") as writer:
+                        json.dump(mission_json, writer)
+                    del writer
+
+                    try:
+                        rm.update(
+                            file=temp_file,
+                            text=mission_json,
+                            folder_name="flights",
+                            file_name=fname,
+                            properties=properties,
+                        )
+                    except:
+                        raise RuntimeError("Error updating the mission resource")
+
+                    prj_data = mission._project_item.get_data()
+
+                    project_properties = mission._project_item.properties
+
+                    project_properties["imageCount"] = image_count
+                    mission._project_item.update(
+                        item_properties={"properties": project_properties},
+                        data=json.dumps(prj_data),
+                    )
+
+                    # project_item.update(data=json.dumps(prj_data))
+                except:
+                    raise RuntimeError("Error adding the mission")
+            except:
+                raise RuntimeError("Error updating the mission JSON")
+        return image_collection.url
+
+
+
+    def delete_image(self,
+        where: str
+    ):
+        """
+
+        ``delete_image`` allows users to remove existing images from the image collection (mosaic dataset) of a mission.
+
+        ==================                   ====================================================================
+        **Parameter**                         **Description**
+        ------------------                   --------------------------------------------------------------------
+        where                                Required string. A SQL ``where`` clause for selecting the images
+                                             to be deleted from the image collection
+        ==================                   ====================================================================
+
+        :return: The imagery layer url
+
+        """
+
+        flight_json_details = {}
+        if isinstance(self, Mission):
+            mission = self
+            image_collection = self.collection
+
+
+        gis = self._gis
+        from arcgis.raster.analytics import delete_image
+
+        gpjob = delete_image(image_collection=image_collection,
+                        where=where,
+                        gis =  gis,
+                        future = True)
+
+        while(not gpjob.done()):
+            continue
+
+        if gpjob.done():
+            try:
+
+                from datetime import datetime
+
+                lyr = image_collection.layers[0]
+
+                image_count = lyr.query(return_count_only=True)
+                mission_json = mission._mission_json
+                ##########mission_json["sourceData"]["gps"].append(gps_data)
+                mission_json["sourceData"]["imageCount"] = image_count
+
+                ## Set extent
+                try:
+                    gcs_extent = {}
+                    extent_arr = image_collection.extent
+                    if extent_arr is not None:
+                        gcs_extent = {
+                            "xmin": extent_arr[0][0],
+                            "ymin": extent_arr[0][1],
+                            "xmax": extent_arr[1][0],
+                            "ymax": extent_arr[1][1],
+                            "spatialReference": {"wkid": 4326},
+                        }
+                except:
+                    gcs_extent = {}
+
+                projected_extent = {}
+                try:
+                    projected_extent = dict(lyr.extent)
+                except:
+                    projected_extent = {}
+
+                mission_json.update(
+                    {"gcsExtent": gcs_extent, "projectedExtent": projected_extent}
+                )
+
+                try:
+                    coverage_area = image_collection.layers[0].query_boundary()["area"]
+                    mission_json.update({"coverage": coverage_area})
+                except:
+                    pass
+
+                try:
+
+                    import json
+
+                    job_messages = gpjob.messages
+                    rm = mission._project_item.resources
+                    #mission_json = mission._mission_json
+                    resource = mission._resource_info
+                    resource_name = resource["resource"]
+
+                    start_time = (
+                        gpjob._gpjob._start_time.isoformat(timespec="milliseconds") + "Z"
+                    )
+                    end_time = gpjob._gpjob._end_time.isoformat(timespec="milliseconds") + "Z"
+
+                    job_id = gpjob._gpjob._jobid
+                    mission_json["jobs"].update(
+                        {
+                            'deleteImages': {
+                                "messages": job_messages,
+                                "checked": True,
+                                "progress": 100,
+                                "success": True,
+                                "startTime": start_time,
+                                "completionTime": end_time,
+                                "jobId":job_id
+                            }
+                        }
+                    )
+                    resource_props = resource["properties"]
+                    properties = json.loads(resource["properties"])
+
+                    properties.update({"imageCount": image_count})
+
+                    import tempfile, uuid, os
+
+                    fname = resource_name.split("/")[1]
+                    temp_dir = tempfile.gettempdir()
+                    temp_file = os.path.join(temp_dir, fname)
+                    with open(temp_file, "w") as writer:
+                        json.dump(mission_json, writer)
+                    del writer
+
+                    try:
+                        rm.update(
+                            file=temp_file,
+                            text=mission_json,
+                            folder_name="flights",
+                            file_name=fname,
+                            properties=properties,
+                        )
+                    except:
+                        raise RuntimeError("Error updating the mission resource")
+
+                    prj_data = mission._project_item.get_data()
+
+                    project_properties = mission._project_item.properties
+
+                    project_properties["imageCount"] = image_count
+                    mission._project_item.update(
+                        item_properties={"properties": project_properties},
+                        data=json.dumps(prj_data),
+                    )
+
+                    # project_item.update(data=json.dumps(prj_data))
+                except:
+                    raise RuntimeError("Error adding the mission")
+            except:
+                raise RuntimeError("Error updating the mission JSON")
+        return image_collection.url
+
 
 
     def _resource_info(self, name):
