@@ -3399,7 +3399,7 @@ class GeoAccessor(object):
             _dtype(np.int32): "esriFieldTypeInteger",
             np.int64: "esriFieldTypeDouble",
             _dtype(np.int64): "esriFieldTypeOID",
-            pd.Int64Dtype(): "esriFieldTypeOID",
+            pd.Int64Dtype(): "esriFieldTypeInteger",
             pd.Int32Dtype(): "esriFieldTypeInteger",
             int: "esriFieldTypeInteger",
             float: "esriFieldTypeDouble",
@@ -3432,6 +3432,14 @@ class GeoAccessor(object):
             pd.Timestamp: "esriFieldTypeDate",
             pd.BooleanDtype: "esriFieldTypeInteger",
             pd.BooleanDtype(): "esriFieldTypeInteger",
+            pd.UInt8Dtype: "esriFieldTypeInteger",
+            pd.UInt8Dtype(): "esriFieldTypeInteger",
+            pd.UInt16Dtype: "esriFieldTypeInteger",
+            pd.UInt16Dtype(): "esriFieldTypeInteger",
+            pd.UInt32Dtype: "esriFieldTypeInteger",
+            pd.UInt32Dtype(): "esriFieldTypeInteger",
+            pd.UInt64Dtype: "esriFieldTypeInteger",
+            pd.UInt64Dtype(): "esriFieldTypeInteger",
         }
         fields = []
         for idx, dtype in enumerate(self._data.dtypes):
