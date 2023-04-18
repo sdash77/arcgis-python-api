@@ -89,7 +89,7 @@ class StreamLayer(Layer):
                 connectWS,
             )
         except:
-            print(
+            raise ImportError(
                 "Install autobahn, twisted, pyOpenssl, service_identity packages to subscribe"
             )
 
