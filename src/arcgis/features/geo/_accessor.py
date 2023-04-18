@@ -3430,6 +3430,8 @@ class GeoAccessor(object):
             pd.CategoricalDtype: "category",
             pd.Timedelta: "esriFieldTypeDouble",
             pd.Timestamp: "esriFieldTypeDate",
+            pd.BooleanDtype: "esriFieldTypeInteger",
+            pd.BooleanDtype(): "esriFieldTypeInteger",
         }
         fields = []
         for idx, dtype in enumerate(self._data.dtypes):
