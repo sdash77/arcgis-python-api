@@ -336,15 +336,31 @@ class StoryMap(object):
     @property
     def nodes(self):
         """
-        Get main nodes in order of appearance in the story.
+        Get main nodes in order of appearance in the story. This will return a list 
+        of dictionaries specifying the node ids and the class content they correspond to.
+        If there is no class for the content, a string is returned with the content type.
         """
         # node_dict contains key-value pairs where the value is the class instance
         node_dict = self._create_node_dict()
         # make the value the string representation of the class
         nodes = []
         for node in node_dict:
-            nodes.append({k: str(node[k]) for k in node})
+            nodes.append({k: node[k] for k in node})
         return nodes
+
+    # ----------------------------------------------------------------------
+    @property
+    def content_list(self):
+        """
+        Get a list of all the content instances in order of appearance in the story.
+        """
+        contents = []
+        # get the values from the nodes list and return only these
+        nodes = self._create_node_dict()
+        for node in nodes:
+            content = list(node.values())[0]
+            contents.append(content)
+        return contents
 
     # ----------------------------------------------------------------------
     def _create_node_dict(self):
@@ -378,7 +394,7 @@ class StoryMap(object):
         if "actions" in self._properties:
             for action in self._properties["actions"]:
                 node = self._assign_node_class(action["origin"])
-                actions.append({action["origin"]: node})
+                actions.append(node)
         return actions
 
     # ----------------------------------------------------------------------

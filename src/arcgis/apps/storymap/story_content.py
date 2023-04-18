@@ -62,7 +62,7 @@ class Scales(Enum):
 
 
 ###############################################################################################################
-class Image(object):
+class Image:
     """
     Class representing an `image` from a url or file.
 
@@ -394,7 +394,7 @@ class Image(object):
 
 
 ###############################################################################################################
-class Video(object):
+class Video:
     """
     Class representing a `video` from a url or file
 
@@ -453,6 +453,9 @@ class Video(object):
     def __str__(self) -> str:
         return "Video"
 
+    # ----------------------------------------------------------------------
+    def __repr__(self) -> str:
+        return "Video"
     # ----------------------------------------------------------------------
     @property
     def properties(self):
@@ -706,7 +709,7 @@ class Video(object):
 
 
 ###############################################################################################################
-class Audio(object):
+class Audio:
     """
     This class represents content that is of type `audio`. It can be created from
     a file path and added to the story.
@@ -755,6 +758,9 @@ class Audio(object):
     def __str__(self) -> str:
         return "Audio"
 
+    # ----------------------------------------------------------------------
+    def __repr__(self) -> str:
+        return "Audio"
     # ----------------------------------------------------------------------
     @property
     def properties(self):
@@ -945,7 +951,7 @@ class Audio(object):
 
 
 ###############################################################################################################
-class Embed(object):
+class Embed:
     """
     Class representing a `webpage` or `embedded audio`.
     Embed will show as a card in the story.
@@ -999,6 +1005,10 @@ class Embed(object):
     def __str__(self) -> str:
         return "Embed"
 
+    # ----------------------------------------------------------------------
+    def __repr__(self) -> str:
+        return "Embed"
+    
     # ----------------------------------------------------------------------
     @property
     def link(self):
@@ -1145,7 +1155,7 @@ class Embed(object):
 
 
 ###############################################################################################################
-class Map(object):
+class Map:
     """
     Class representing a `webmap` or `webscene` for the story
 
@@ -1313,9 +1323,8 @@ class Map(object):
                 ]["datetime"]
 
     # ----------------------------------------------------------------------
-    def __str__(self) -> str:
-        return "%s" % self._type
-
+    def __repr__(self):
+        return self._type
     # ----------------------------------------------------------------------
     @property
     def properties(self):
@@ -1762,7 +1771,7 @@ class Map(object):
 
 
 ###############################################################################################################
-class Text(object):
+class Text:
     """
     Class representing a `text` and a style of text.
 
@@ -1884,6 +1893,10 @@ class Text(object):
         return "Text"
 
     # ----------------------------------------------------------------------
+    def __repr__(self) -> str:
+        return "Text"
+    
+    # ----------------------------------------------------------------------
     @property
     def properties(self):
         """
@@ -1961,7 +1974,7 @@ class Text(object):
 
 
 ###############################################################################################################
-class Button(object):
+class Button:
     """
     Class representing a `button`.
 
@@ -2001,6 +2014,10 @@ class Button(object):
     def __str__(self) -> str:
         return "Button"
 
+    # ----------------------------------------------------------------------
+    def __repr__(self) -> str:
+        return "Button"
+    
     # ----------------------------------------------------------------------
     @property
     def properties(self):
@@ -2094,7 +2111,7 @@ class Button(object):
 
 
 ###############################################################################################################
-class Gallery(object):
+class Gallery:
     """
     Class representing an `image gallery`
 
@@ -2136,6 +2153,9 @@ class Gallery(object):
     def __str__(self) -> str:
         return "Image Gallery"
 
+    # ----------------------------------------------------------------------
+    def __repr__(self) -> str:
+        return "Image Gallery"
     # ----------------------------------------------------------------------
     @property
     def properties(self):
@@ -2326,7 +2346,7 @@ class Gallery(object):
 
 
 ###############################################################################################################
-class Swipe(object):
+class Swipe:
     """
     Create an Swipe node.
 
@@ -2388,6 +2408,9 @@ class Swipe(object):
     def __str__(self) -> str:
         return "Swipe"
 
+    # ----------------------------------------------------------------------
+    def __repr__(self) -> str:
+        return "Swipe"
     # ----------------------------------------------------------------------
     @property
     def properties(self):
@@ -2563,7 +2586,7 @@ class Swipe(object):
 
 
 ###############################################################################################################
-class Sidecar(object):
+class Sidecar:
     """
     Create an Sidecar immersive object from a pre-existing ``immersive`` node.
 
@@ -2615,6 +2638,9 @@ class Sidecar(object):
     def __str__(self) -> str:
         return "Sidecar"
 
+    # ----------------------------------------------------------------------
+    def __repr__(self) -> str:
+        return "Sidecar"
     # ----------------------------------------------------------------------
     def _add_sidecar(
         self,
@@ -2680,6 +2706,37 @@ class Sidecar(object):
             )
         return sidecar_tree
 
+    # ----------------------------------------------------------------------
+    @property
+    def content_list(self):
+        """
+        Get a list of all the content instances within the sidecar in order of appearance.
+        The content will be displayed in the following order:
+        Slide 1 narrative panel children, followed by slide 1 media, then slide 2 narrative panel children,
+        then slide 2 media, and so on.
+        """
+        contents = []
+        # get the values from the nodes list and return only these
+        nodes = self.properties
+        for slide_dict in nodes:
+            # get the entire slide dict
+            slide = list(slide_dict.values())[0]
+            if "narrative_panel" in slide and "children" in slide["narrative_panel"] and len(slide["narrative_panel"]["children"]) > 1:
+                # Get the content that are children of the narrative panel
+                children = slide["narrative_panel"]["children"]
+                for child in children:
+                    # Get each class from the node value
+                    content = self.get(list(child.values())[0])
+                    # Add to content list
+                    contents.append(content)
+            if "media" in slide and (slide["media"] is not None or slide["media"] != {}):
+                # Get the media content for the slide
+                media = list(slide["media"].values())[0]
+                # Get the class using the node value
+                content = self.get(media)
+                # Add to the content list
+                contents.append(content)
+        return contents
     # ----------------------------------------------------------------------
     def edit(
         self,
@@ -3097,7 +3154,7 @@ class Sidecar(object):
 
 
 ###############################################################################################################
-class Timeline(object):
+class Timeline:
     """
     Create a Timeline object from a pre-existing `timeline` node.
 
@@ -3151,6 +3208,9 @@ class Timeline(object):
     def __str__(self) -> str:
         return "Timeline"
 
+    # ----------------------------------------------------------------------
+    def __repr__(self) -> str:
+        return "Timeline"
     # ----------------------------------------------------------------------
     def _add_timeline(
         self,
@@ -3425,7 +3485,7 @@ class Timeline(object):
 
 
 ###############################################################################################################
-class MapTour(object):
+class MapTour:
     """
     Create a MapTour object from a pre-existing `maptour` node.
 
@@ -3476,6 +3536,9 @@ class MapTour(object):
     def __str__(self) -> str:
         return "Map Tour"
 
+    # ----------------------------------------------------------------------
+    def __repr__(self) -> str:
+        return "Map Tour"
     # ----------------------------------------------------------------------
     @property
     def _children(self) -> list:
@@ -3591,8 +3654,11 @@ class MapAction:
 
     # ----------------------------------------------------------------------
     def __str__(self) -> str:
-        return "Map Action: " + self.properties["event"]
+        return "Map Action: " + str(self.text)
 
+    # ----------------------------------------------------------------------
+    def __repr__(self) -> str:
+        return "Map Action: " + str(self.text)
     # ----------------------------------------------------------------------
     @property
     def viewpoint(self) -> dict:
