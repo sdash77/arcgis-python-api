@@ -16,7 +16,7 @@ __webpack_public_path__ = document.querySelector('body').getAttribute('data-base
 
 var _httpGetAsync = function(theUrl){
     return new Promise((resolve, reject) => {
-        fetch(theUrl, {mode: 'cors'}).then((response) => {
+        fetch(theUrl, {mode: 'no-cors'}).then((response) => {
             if (response.status >= 200 && response.status < 300){
                 response.text().then((data) => {
                     resolve(data);
