@@ -82,3 +82,16 @@ compute_spatial_reference_factory_code
 ------------
 .. autofunction:: arcgis.raster.orthomapping.compute_spatial_reference_factory_code
 
+OrthomappingProject
+-------------------
+.. autoclass:: arcgis.raster.orthomapping.OrthomappingProject
+    :inherited-members:
+    :members:
+    :undoc-members:
+
+Mission
+-------
+.. autoclass:: arcgis.raster.orthomapping.Mission
+    :inherited-members:
+    :members:
+    :undoc-members:

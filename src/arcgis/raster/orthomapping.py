@@ -2725,6 +2725,40 @@ def compute_spatial_reference_factory_code(latitude: float, longitude: float):
 
 
 class OrthomappingProject():
+    """
+
+    OrthomappingProject represents an Orthomapping Project Item in the portal. 
+
+    Usage: ``arcgis.raster.OrthomappingProject(project, gis=gis)``
+
+    ====================================     ====================================================================
+    **Parameter**                             **Description**
+    ------------------------------------     --------------------------------------------------------------------
+    project                                  Required string or Orthomapping Project Item
+
+                                             Example:
+
+                                                project = "OM_project"
+
+                                                om_item = gis.content.get("85a54236c6364a88a7c7c2b1a31fd901")
+                                                project = om_item
+    ------------------------------------     --------------------------------------------------------------------
+    gis                                      Optional GIS. :class:`~arcgis.gis.GIS` of the ImageryLayer object.
+    ====================================     ====================================================================
+
+    .. code-block:: python
+
+        # Example Usage
+
+        project = OrthomappingProject('om_proj', gis=gis)
+
+        # Example Usage
+
+        #om_item = gis.content.get("85a54236c6364a88a7c7c2b1a31fd901")
+        #project = OrthomappingProject(om_item, gis=gis)
+
+    """
+
     def __init__(self, project = None,definition=None, *, gis: Optional[GIS] = None, **kwargs):
 
         if not isinstance(project, Item):
@@ -2746,9 +2780,9 @@ class OrthomappingProject():
     @property
     def missions(self):
         """
-        The ``missions`` property returns all the flights associated with the project
+        The ``missions`` property returns all the missions associated with the project
 
-        :return: A list of flights
+        :return: A list of missions of the orthomapping project
         """
         res_list = self._project_item.resources.list()
         self._mission_list  =[]
@@ -2762,9 +2796,9 @@ class OrthomappingProject():
     @property
     def count(self):
         """
-        The ``count`` property returns the number of flights associated with the project
+        The ``count`` property returns the number of missions associated with the project
 
-        :return: A list of flights
+        :return: An integer representing the number of missions
         """
         res_list = self._project_item.resources.list()
         return len(res_list)
@@ -2788,7 +2822,7 @@ class OrthomappingProject():
         raster_type_params: Optional[dict[str, Any]] = None):
 
         """
-        Add flights to the orthomapping project item. You can add imagery from one or more drone flights 
+        Add missions to the orthomapping project item. You can add imagery from one or more drone flights 
         to your orthomapping project item.
 
         ======================               ====================================================================
@@ -2915,8 +2949,6 @@ class OrthomappingProject():
 
                                                 | {"fields": [{"name": "cloud_cover", "type": "Long"},
                                                 | {"name": "cloud_shadow_count", "type": "Long"}]}
-        ----------------------               --------------------------------------------------------------------
-        gis                                  Keyword only parameter. Optional :class:`~arcgis.gis.GIS` object. The GIS on which this tool runs. If not specified, the active GIS is used.
         ======================               ====================================================================
 
         :return: The imagery layer item
@@ -2939,6 +2971,19 @@ class OrthomappingProject():
 
 
     def get_mission(self, name):
+        """
+        Returns a Mission object with the name specified using the name parameter. 
+
+        ==================                   ====================================================================
+        **Parameter**                         **Description**
+        ------------------                   --------------------------------------------------------------------
+        name                                 Required string. The name of the Mission.
+        ==================                   ====================================================================
+
+        :return: The imagery layer url
+
+
+        """
         res_list = self._project_item.resources.list()
         for resource in res_list:
             full_res_name = resource["resource"]
@@ -2951,7 +2996,36 @@ class OrthomappingProject():
 
 
 class Mission():
-    def __init__(self, mission_name, project = None, *, gis: Optional[GIS] = None, **kwargs):
+    """
+
+    Mission represents a mission in an Orthomapping Project.
+
+    Usage: ``arcgis.raster.Mission(mission_name=mission_name, project = project)``
+
+    ====================================     ====================================================================
+    **Parameter**                             **Description**
+    ------------------------------------     --------------------------------------------------------------------
+    mission_name                             Required string representing the mission name. 
+
+                                             Example:
+
+                                                mission_name='Mission_Yucaipa'
+    ------------------------------------     --------------------------------------------------------------------
+    project                                  Required OrthomappingProject object. The orthomapping project to which the mission belongs to.
+    ====================================     ====================================================================
+
+    .. code-block:: python
+
+        # Example Usage
+
+        #om_item = gis.content.get("85a54236c6364a88a7c7c2b1a31fd901")
+        #project = OrthomappingProject(om_item, gis=gis)
+
+        mission = Mission(mission_name='Mission_Yucaipa', project=project)
+
+
+    """
+    def __init__(self, mission_name, project = None):
             self._mission_name = mission_name
             if isinstance(project, OrthomappingProject):
                 self._project = project
@@ -2960,7 +3034,7 @@ class Mission():
                     self._project = OrthomappingProject(project, gis=gis)
 
             self._project_item = project._project_item
-            self._gis = project._gis if gis is None else gis
+            self._gis = project._gis
             self._mission_json = self._get_mission_json(self._mission_name)
             self._collection = None
             self._resource_info = self._resource_info(self._mission_name)
@@ -2987,12 +3061,22 @@ class Mission():
 
     @property
     def products(self):
+        """
+        The ``products`` property returns all the products associated with the mission
+
+        :return: A list of products of the mission
+        """
         items_prods = self._mission_json.get("items", None)
         import copy
         mission_product = copy.deepcopy(items_prods)
         for key, val in mission_product.items():
             if "itemId" in val.keys():
-                mission_product[key] = self._gis.content.get(val["itemId"])
+                if(key == "imageCollection"):
+                    key = "image_collection"
+                    mission_product[key] = self._gis.content.get(val["itemId"])
+                    del mission_product["imageCollection"]
+                else:
+                    mission_product[key] = self._gis.content.get(val["itemId"])
         return mission_product
 
     @property
@@ -3001,6 +3085,11 @@ class Mission():
 
     @property
     def image_count(self):
+        """
+        The ``image_count`` property returns the number of images in the mission
+
+        :return: An integer representing the number of images
+        """
         if "sourceData" in self._mission_json.keys():   
             source_data =  self._mission_json['sourceData']
             if "imageCount" in source_data.keys():
@@ -3011,6 +3100,11 @@ class Mission():
 
     @property
     def flight_date(self):
+        """
+        The ``image_count`` property returns the number of images in the mission
+
+        :return: An integer representing the number of images
+        """
         if "sourceData" in self._mission_json.keys():   
             source_data =  self._mission_json['sourceData']
             if "flightDate" in source_data.keys():
@@ -3023,7 +3117,12 @@ class Mission():
 
 
     @property
-    def collection(self):
+    def image_collection(self):
+        """
+        The ``image_collection`` property returns the image collection associated with the mission
+
+        :return: image collection item 
+        """
         if self._collection is not None:
             return self._collection
         else:
@@ -3042,26 +3141,21 @@ class Mission():
         context: Optional[dict[str, Any]] = None
     ):
         """
-        .. image:: _static/images/add_image/add_image.png 
+        Add a collection of images to existing image collection of the mission. It provides provision to specify image collection properties through context parameter.
 
-        Add a collection of images to an existing image collection. It provides provision to use input rasters by reference 
-        and to specify image collection properties through context parameter.
-
-        It can be used when new data is available to be included in the same 
+        It can be used when new data is available to be included in the same mission of the
         orthomapping project. When new data is added to the image collection
         the entire image collection must be reset to the original state.
 
         ==================                   ====================================================================
         **Parameter**                         **Description**
         ------------------                   --------------------------------------------------------------------
-        input_rasters                        Required list. The list of input rasters to be added to
+        input_rasters                        Required, the list of input images to be added to
                                              the image collection being created. This parameter can
-                                             be any one of the following types:
-    
-                                             - List of portal Items of the images
-                                             - An image service URL
-                                             - Shared data path (this path must be accessible by the server)
-                                             - Name of a folder on the portal
+                                             be a list of image paths or a path to a folder containing the images
+
+                                             The function can create hosted imagery layers on enterprise from 
+                                             local raster datasets by uploading the data to the server.  
         ------------------                   --------------------------------------------------------------------
         raster_type_name                     Optional string. The name of the raster type to use for adding data to
                                              the image collection.
