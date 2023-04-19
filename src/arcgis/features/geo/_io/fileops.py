@@ -551,7 +551,11 @@ def to_table(geo, location, overwrite=True, sanitize_columns=False):
                     u = type(df[col][df[col].first_valid_index()])
                 except:
                     u = pd.unique(df[col].apply(type)).tolist()[0]
-                if issubclass(u, str):
+                if u is None:
+                    dtypes.append((col, "<U254"))
+                elif u == type(None):
+                    dtypes.append((col, "<U254"))
+                elif issubclass(u, str):
                     mlen = df[col].str.len().max()
                     dtypes.append((col, "<U%s" % int(mlen)))
                 else:
@@ -564,7 +568,9 @@ def to_table(geo, location, overwrite=True, sanitize_columns=False):
                     u = type(df[col][df[col].first_valid_index()])
                 except:
                     u = pd.unique(df[col].apply(type)).tolist()[0]
-                if issubclass(u, str):
+                if u is None:
+                    dtypes.append((col, "<U254"))
+                elif issubclass(u, str):
                     mlen = df[col].str.len().max()
                     if int(mlen) == 0:
                         mlen = 1
@@ -1054,7 +1060,9 @@ def to_featureclass(
                         u = type(df[col][df[col].first_valid_index()])
                     except:
                         u = pd.unique(df[col].apply(type)).tolist()[0]
-                    if issubclass(u, str):
+                    if u is None:
+                        dtypes.append((col, "<U254"))
+                    elif issubclass(u, str):
                         mlen = df[col].str.len().max()
                         dtypes.append((col, "<U%s" % int(mlen)))
                     elif u is datetime.datetime:
@@ -1388,7 +1396,7 @@ def _pyshp2(df, out_path, out_name):
                             df[c].loc[idx],
                             (datetime.datetime, np.datetime64),
                         )
-                        or df[c].dtype.name == "datetime64[ns]"
+                        or df[c].dtype.name.find("datetime") > -1
                     ):
                         shpfile.field(name=c, fieldType="D", size=8)
                         dfields.append(c)
