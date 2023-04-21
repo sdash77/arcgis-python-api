@@ -1846,6 +1846,8 @@ def _preproces_data_colletions_and_analysis_variables(
 
     # if variables provided, prep as well
     if enrich_vars is not None and not isinstance(enrich_vars, pd.DataFrame):
+        if isinstance(src, Country):
+            src = src._ba_cntry  # change to business analyst country class
         av_vars = src.get_enrich_variables_from_iterable(enrich_vars, **kwargs)
     else:
         av_vars = None
