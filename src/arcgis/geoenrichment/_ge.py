@@ -319,7 +319,10 @@ class _GeoEnrichment(object):
                 raise ValueError("Invalid Country Code: %s" % country)
             country = countries[q]["Country_Code"].tolist()[0]
         params = {"f": "json"}
-        url = self._base_url + "/Geoenrichment/Reports/%s/%s" % (country, report_id)
+        url = self._base_url + "/Geoenrichment/Reports/%s/%s" % (
+            country,
+            report_id,
+        )
         if self._gis._con.token:
             params["token"] = self._gis._con.token
         res = self._gis._con.post(url, params)
@@ -390,7 +393,11 @@ class _GeoEnrichment(object):
         if hide_nulls is not None:
             params["suppressNullValues"] = hide_nulls
         if country is not None:
-            url = "%s%s/%s" % (self._base_url, self._url_data_collection, country)
+            url = "%s%s/%s" % (
+                self._base_url,
+                self._url_data_collection,
+                country,
+            )
             if collection_name is not None:
                 url = "%s%s/%s/%s" % (
                     self._base_url,
@@ -680,7 +687,11 @@ class _GeoEnrichment(object):
         import pandas as pd
 
         url = "%s%s" % (self._base_url, self._url_getVariables)
-        params = {"f": "json", "langCode": self._langCode, "sourceCountry": country}
+        params = {
+            "f": "json",
+            "langCode": self._langCode,
+            "sourceCountry": country,
+        }
         if self._gis._portal.is_arcgisonline and self._gis._con.token:
             params["token"] = self._gis._con.token
         if not text is None:
@@ -947,7 +958,11 @@ class _GeoEnrichment(object):
         if use_data is not None:
             params["useData"] = use_data
         return self._gis._con.post(
-            path=url, out_folder=out_folder, file_name=out_name, postdata=params
+            path=url,
+            out_folder=out_folder,
+            file_name=out_name,
+            postdata=params,
+            try_json=False,
         )
 
     # ----------------------------------------------------------------------
