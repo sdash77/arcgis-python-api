@@ -9664,12 +9664,12 @@ def export_to_tile_package(
 
 
 def derive_continuous_flow(
-    input_surface_raster,
-    input_depressions_data=None,
-    input_weight_raster=None,
-    flow_direction_type: str = "D8",
-    force_flow: str = "NORMAL",
-    output_flow_accumulation_raster_name: str = None,
+    input_surface_raster: ImageryLayer,
+    input_depressions_data: Optional[FeatureLayer]=None,
+    input_weight_raster: Optional[ImageryLayer]=None,
+    flow_direction_type: Optional[str] = "D8",
+    force_flow: Optional[str] = "NORMAL",
+    output_flow_accumulation_raster_name: Optional[str] = None,
     output_flow_direction_raster_name: Optional[str] = None,
     context: Optional[dict[str, Any]] = None,
     *,

@@ -13023,11 +13023,11 @@ def interpolate_raster_by_dimension(
 
 def surface_parameters(
     raster: Union[Raster, ImageryLayer],
-    parameter_type: str = "SLOPE",
-    local_surface_type: str = "QUADRATIC",
-    neighborhood_distance_with_units: str = None,
-    use_adaptive_neighborhood: bool = False,
-    z_unit: str = None,
+    parameter_type: Optional[str] = "SLOPE",
+    local_surface_type: Optional[str] = "QUADRATIC",
+    neighborhood_distance_with_units: Optional[str] = None,
+    use_adaptive_neighborhood: Optional[bool] = False,
+    z_unit: Optional[str] = None,
     slope_type: Optional[str] = "DEGREE",
     project_geodesic_azimuths: Optional[str] = "GEODESIC_AZIMUTHS",
     use_equatorial_aspect: Optional[str] = "NORTH_POLE_ASPECT",
