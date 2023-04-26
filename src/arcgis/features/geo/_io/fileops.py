@@ -594,7 +594,7 @@ def to_table(geo, location, overwrite=True, sanitize_columns=False):
                     except:
                         msize = 254
                     dtypes.append((col, "<U%s" % msize))
-                elif dtype.categories.dtype.name.fins("datetime") > -1:
+                elif dtype.categories.dtype.name.find("datetime") > -1:
                     dtypes.append((col, "<M8[us]"))
                 else:
                     dtypes.append((col, dtype.categories.dtype))
