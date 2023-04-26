@@ -1,6 +1,6 @@
 import sys
 
-# sys.path.insert(0, r"c:\SVN\geosaurus_master_issue_4790a\src")
+sys.path.insert(0, r"c:\SVN\geosaurus_issue_9708\src")
 import unittest
 from arcgis.auth import EsriNotebookAuth, EsriSession, EsriKerberosAuth
 
@@ -45,9 +45,13 @@ class TestAPIKey(unittest.TestCase):
 
     def test_notebook_op(self):
         """Tests a web call using a API Key"""
-        auth = EsriNotebookAuth(token=API_KEY, auth=EsriKerberosAuth(referer=""))
+        auth = EsriNotebookAuth(
+            token=API_KEY, auth=EsriKerberosAuth(referer="")
+        )
         with EsriSession(auth=auth) as session:
-            resp = session.get(url=f"{SITE_URL}/sharing/rest/portals/self?f=json")
+            resp = session.get(
+                url=f"{SITE_URL}/sharing/rest/portals/self?f=json"
+            )
             assert resp.status_code == 200
             data = resp.json()
             assert "user" in data or "appInfo" in data

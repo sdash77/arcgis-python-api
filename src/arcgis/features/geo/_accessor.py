@@ -7,6 +7,7 @@ import pandas as pd
 from collections.abc import Iterable
 
 from ._internals import register_dataframe_accessor, register_series_accessor
+from pandas.core.dtypes.common import infer_dtype_from_object
 from ._array import GeoType
 from ._io.fileops import (
     to_featureclass,
@@ -1404,11 +1405,11 @@ class GeoAccessor(object):
 
         Examples
         --------
-        >>> df = pd.DataFrame.spatial.read_parquet("data.parquet")  # doctest: +SKIP
+        >>> df = pd.DataFrame.spatial.from_parquet("data.parquet")  # doctest: +SKIP
 
         Specifying columns to read:
 
-        >>> df = pd.DataFrame.spatial.read_parquet(
+        >>> df = pd.DataFrame.spatial.from_parquet(
         ...     "data.parquet",
         ...     columns=["SHAPE", "pop_est"]
         ... )  # doctest: +SKIP
@@ -3295,22 +3296,39 @@ class GeoAccessor(object):
             sr = {"wkid": 4326}
         else:
             sr = self.sr
+        if self.name is None:
+            geom_type = "esriGeometryPoint"
+        else:
+            geom_type = _geom_types[
+                type(self._data[self.name][self._data[self.name].first_valid_index()])
+            ]
+
         fs = {
             "objectIdFieldName": "",
             "globalIdFieldName": "",
             "displayFieldName": "",
-            "geometryType": _geom_types[
-                type(self._data[self.name][self._data[self.name].first_valid_index()])
-            ],
+            "geometryType": geom_type,
             "spatialReference": sr,
             "fields": [],
             "features": [],
         }
         # Ensure all number values are 0 so errors do not occur.
-        df = self._data.where(pd.notnull(self._data), None)
-        date_fields = [col for col in df.columns if df[col].dtype == "datetime64[ns]"]
+        replace_mappings = {
+            pd.NA: None,
+            np.nan: None,
+            np.NaN: None,
+            np.NAN: None,
+            pd.NaT: None,
+        }
+        df = self._data.replace(replace_mappings).convert_dtypes()
+        date_fields = [
+            col for col in df.columns if df[col].dtype.name.find("datetime") > -1
+        ]
         time_delta_fields = [
-            col for col in df.columns if df[col].dtype in ["<m8[ns]", "timedelta64[ns]"]
+            col
+            for col in df.columns
+            if df[col].dtype.name.find("timedelta") > -1
+            or df[col].dtype.name.find("<m8[ns]") > -1
         ]
         cols_norm = [col for col in df.columns]
         cols_lower = [col.lower() for col in df.columns]
@@ -3381,7 +3399,7 @@ class GeoAccessor(object):
             _dtype(np.int32): "esriFieldTypeInteger",
             np.int64: "esriFieldTypeDouble",
             _dtype(np.int64): "esriFieldTypeOID",
-            pd.Int64Dtype(): "esriFieldTypeOID",
+            pd.Int64Dtype(): "esriFieldTypeInteger",
             pd.Int32Dtype(): "esriFieldTypeInteger",
             int: "esriFieldTypeInteger",
             float: "esriFieldTypeDouble",
@@ -3407,9 +3425,25 @@ class GeoAccessor(object):
             np.datetime64: "esriFieldTypeDate",
             _dtype(np.datetime64): "esriFieldTypeDate",
             arcgis.features.geo._array.GeoType(): "esriFieldTypeGeometry",
+            arcgis.features.geo._array.GeoType: "esriFieldTypeGeometry",
+            arcgis.geometry._types.Geometry: "esriFieldTypeGeometry",
+            pd.CategoricalDtype: "category",
+            pd.Timedelta: "esriFieldTypeDouble",
+            pd.Timestamp: "esriFieldTypeDate",
+            pd.BooleanDtype: "esriFieldTypeInteger",
+            pd.BooleanDtype(): "esriFieldTypeInteger",
+            pd.UInt8Dtype: "esriFieldTypeInteger",
+            pd.UInt8Dtype(): "esriFieldTypeInteger",
+            pd.UInt16Dtype: "esriFieldTypeInteger",
+            pd.UInt16Dtype(): "esriFieldTypeInteger",
+            pd.UInt32Dtype: "esriFieldTypeInteger",
+            pd.UInt32Dtype(): "esriFieldTypeInteger",
+            pd.UInt64Dtype: "esriFieldTypeInteger",
+            pd.UInt64Dtype(): "esriFieldTypeInteger",
         }
         fields = []
         for idx, dtype in enumerate(self._data.dtypes):
+            column = None
             col = self._data.dtypes.index[idx]
             if fs["objectIdFieldName"] == col:
                 column = {
@@ -3417,6 +3451,34 @@ class GeoAccessor(object):
                     "type": "esriFieldTypeOID",
                     "alias": col,
                 }
+            elif dtype.name.find("datetime") > -1:
+                lu = _look_up[np.datetime64]
+                column = {
+                    "name": col,
+                    "type": lu,
+                    "alias": col,
+                }
+            elif isinstance(dtype, pd.CategoricalDtype):
+                length = None
+                if dtype.categories.dtype.name == "object":
+                    lu = "esriFieldTypeString"
+                    try:
+                        length = max(dtype.categories.str.len())
+                    except:
+                        length = 254
+                elif dtype.categories.dtype.name.find("datetime") > -1:
+                    lu = _look_up[dtype.categories.dtype]
+                elif dtype.categories.dtype.name.find("timedelta") > -1:
+                    lu = _look_up[dtype.categories.dtype]
+                else:
+                    lu = _look_up[dtype.categories.dtype]
+                column = {
+                    "name": col,
+                    "type": lu,
+                    "alias": col,
+                }
+                if length:
+                    column["length"] = length
             else:
                 column = {
                     "name": col,
@@ -3428,7 +3490,12 @@ class GeoAccessor(object):
                     column["length"] = int(self._data[col].str.len().max())
                 except:
                     column["length"] = 256
-            if _look_up[dtype] != "esriFieldTypeGeometry":
+            if column and isinstance(dtype, pd.CategoricalDtype):
+                fields.append(column)
+            elif column and (
+                (dtype in _look_up and _look_up[dtype] != "esriFieldTypeGeometry")
+                or _look_up[infer_dtype_from_object(dtype)]
+            ):
                 fields.append(column)
 
         fs["fields"] = fields
@@ -3437,21 +3504,17 @@ class GeoAccessor(object):
         number_columns = df.select_dtypes(np.number).columns.tolist()
         df[string_column] = df[string_column].replace(pd.NA, "")
         df[number_columns] = df[number_columns].replace(pd.NA, 0)
+        for td in time_delta_fields:
+            df[td] = df[td].dt.total_seconds() * 1000
+        for f in date_fields:
+            df[f] = pd.Series(df[f].dt.to_pydatetime()).apply(
+                lambda x: int(x.timestamp() * 1000)
+            )
         for row in df.to_dict("records"):
             geom = {}
             if self.name in row:
                 geom = row[self.name]
                 del row[self.name]
-            for f in date_fields:
-                try:
-                    row[f] = int(row[f].to_pydatetime().timestamp() * 1000)
-                except:
-                    row[f] = None
-            for f in time_delta_fields:
-                try:
-                    row[f] = row[f].dt.total_seconds()
-                except:
-                    row[f] = None
             if geom and pd.notna(geom):
                 features.append({"geometry": dict(geom), "attributes": row})
             elif pd.notna(geom) == False:
@@ -3494,18 +3557,19 @@ class GeoAccessor(object):
         value                   Spatial Reference
         ==================      ====================================================================
         """
-        data = [
-            getattr(g, "spatialReference", None) or g["spatialReference"]
-            for g in self._data[self.name]
-            if g not in [None, np.NaN, np.nan, "", {}] and isinstance(g, dict)
-        ]
-        srs = [
-            _geometry.SpatialReference(sr)
-            for sr in pd.DataFrame(data).drop_duplicates().to_dict("records")
-        ]
-        if len(srs) == 1:
-            return srs[0]
-        return srs
+        if self.name:
+            data = [
+                getattr(g, "spatialReference", None) or g["spatialReference"]
+                for g in self._data[self.name]
+                if g not in [None, np.NaN, np.nan, "", {}] and isinstance(g, dict)
+            ]
+            srs = [
+                _geometry.SpatialReference(sr)
+                for sr in pd.DataFrame(data).drop_duplicates().to_dict("records")
+            ]
+            if len(srs) == 1:
+                return srs[0]
+            return srs
 
     # ----------------------------------------------------------------------
     @sr.setter
@@ -3565,7 +3629,8 @@ class GeoAccessor(object):
         """
         from arcgis.features import FeatureSet
 
-        return FeatureSet.from_dict(self.__feature_set__)
+        d = self.__feature_set__
+        return FeatureSet.from_dict(d)
 
     # ----------------------------------------------------------------------
     def to_feature_collection(

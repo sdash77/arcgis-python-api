@@ -80,6 +80,10 @@ class StoryMap(object):
         if item and isinstance(item, str):
             # get item using the item id
             item = gis.content.get(item)
+            if item is None:
+                raise ValueError(
+                    "Cannot find storymap associated with this item id in your portal. Please check it is correct."
+                )
         if item and isinstance(item, arcgis.gis.Item) and item.type == "StoryMap":
             # set item properties
             self._item = item
@@ -366,6 +370,19 @@ class StoryMap(object):
 
     # ----------------------------------------------------------------------
     @property
+    def actions(self):
+        """
+        Get list of action nodes.
+        """
+        actions = []
+        if "actions" in self._properties:
+            for action in self._properties["actions"]:
+                node = self._assign_node_class(action["origin"])
+                actions.append({action["origin"]: node})
+        return actions
+
+    # ----------------------------------------------------------------------
+    @property
     def navigation_list(self):
         """
         Get a list of the nodes that are linked in the navigation.
@@ -396,7 +413,7 @@ class StoryMap(object):
         ===============     ====================================================================
         **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
-        node_id             Optional string. The node id for the node that should be returned.
+        node                Optional string. The node id for the node that should be returned.
                             This will return the class of the node if of type story content.
         ---------------     --------------------------------------------------------------------
         type                Optional string. The type of nodes that user wants returned.
@@ -439,6 +456,12 @@ class StoryMap(object):
             # return all nodes in order
             return self.nodes
         elif node_id is not None:
+            # check first if it's an action
+            all_actions = self.actions
+            for action in all_actions:
+                id = list(action.keys())[0]
+                if node_id == id:
+                    return list(action.values())[0]
             # return a specific node
             all_nodes = self._create_node_dict()
             # find the node in the list and return it
@@ -450,7 +473,7 @@ class StoryMap(object):
             # return all nodes of a certain type
             all_nodes = self._create_node_dict()
             for node in all_nodes:
-                keyword = list(node.values())[0]
+                keyword = list(node.values())[0].lower()
                 if isinstance(keyword, str):
                     # Not a type of story content (i.e. navigation)
                     if type.lower() in keyword:
@@ -509,7 +532,7 @@ class StoryMap(object):
         dict_node = self.nodes[0]
 
         # get the node id
-        for key, value in dict_node.items():
+        for key, _ in dict_node.items():
             story_cover_node = key
 
         # get original data of story cover
@@ -766,6 +789,8 @@ class StoryMap(object):
                 Content.Button,
                 Content.Text,
                 Content.Gallery,
+                Content.Timeline,
+                Content.Sidecar,
             ]
         ] = None,
         caption: Optional[str] = None,
@@ -779,11 +804,6 @@ class StoryMap(object):
         at which it will be in your story.
         Not passing in any content means a separator will be added.
 
-        .. note::
-            Not all story content can be added from scratch. Content such as ``swipe``, ``sidecar``, and
-            ``timeline`` can only be edited from pre-existing story content of those types. Please refer
-            to the documentation for each.
-
         ===============     ====================================================================
         **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
@@ -795,7 +815,11 @@ class StoryMap(object):
                             :class:`~arcgis.apps.storymap.story_content.Embed`,
                             :class:`~arcgis.apps.storymap.story_content.Map`,
                             :class:`~arcgis.apps.storymap.story_content.Text`,
-                            :class:`~arcgis.apps.storymap.story_content.Button`
+                            :class:`~arcgis.apps.storymap.story_content.Button`,
+                            :class:`~arcgis.apps.storymap.story_content.Timeline`,
+                            :class:`~arcgis.apps.storymap.story_content.Sidecar`
+                            :class:`~arcgis.apps.storymap.story_content.Swipe`
+
 
                             If none is provided, a separator is added.
         ---------------     --------------------------------------------------------------------
@@ -813,6 +837,9 @@ class StoryMap(object):
 
                             For Embed:
                             Values: "card" | "inline"
+
+                            For Swipe:
+                            Values: "small" | "medium" | "large"
         ---------------     --------------------------------------------------------------------
         position            Optional Integer. Indicates the position in which the content will be
                             added. To see all node positions use the ``node`` property.
@@ -826,11 +853,11 @@ class StoryMap(object):
 
             # Example with Image
             >>> image1 = Image("<image-path>.jpg/jpeg/png/gif ")
-            >>> new_node = new_story.add(image1, "my caption", "my alt-text", "float", 2)
+            >>> new_node = new_story.add(image1, position = 2)
 
             # Example with Map
             >>> my_map = Map(<item-id of type webmap>)
-            >>> new_node = new_story.add(my_map, "A map caption", "A new map alt-text", "wide")
+            >>> new_node = new_story.add(my_map, "A map caption", "A new map alt-text")
 
             # Example to add a Separator
             >>> new_node = new_story.add()
@@ -861,6 +888,12 @@ class StoryMap(object):
             content._add_button(self)
         elif isinstance(content, Content.Text):
             content._add_text(self)
+        elif isinstance(content, Content.Timeline):
+            content._add_timeline(self)
+        elif isinstance(content, Content.Sidecar):
+            content._add_sidecar(self)
+        elif isinstance(content, Content.Swipe):
+            content._add_swipe(caption, alt_text, display, self)
         else:
             # If no content passed, separator is added
             self._properties["nodes"][node_id] = {"type": "separator"}
@@ -1501,20 +1534,22 @@ class StoryMap(object):
         elif node_type == "button":
             node = Content.Button(story=self, node_id=node_id)
         elif node_type == "swipe":
-            node = Content.Swipe(self, node_id)
+            node = Content.Swipe(story=self, node_id=node_id)
         elif node_type == "gallery":
             node = Content.Gallery(story=self, node_id=node_id)
         elif node_type == "timeline":
-            node = Content.Timeline(self, node_id)
+            node = Content.Timeline(story=self, node_id=node_id)
         elif node_type == "tour":
-            node = Content.MapTour(self, node_id)
+            node = Content.MapTour(story=self, node_id=node_id)
         elif node_type == "immersive":
             # immersive has subtype sidecar (more to add later)
             subtype = self._properties["nodes"][node_id]["data"]["type"]
             if subtype == "sidecar":
-                node = Content.Sidecar(self, node_id)
+                node = Content.Sidecar(story=self, node_id=node_id)
             else:
                 node = subtype
+        elif node_type == "action-button":
+            node = Content.MapAction(story=self, node_id=node_id)
         else:
             # if not of type story content then just return name of type
             node = node_type.capitalize()

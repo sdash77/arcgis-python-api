@@ -212,15 +212,15 @@ webmap = {
 class TestItemByItemId(unittest.TestCase):
     """Tests the 10.8.1 Create Items with user specified UUID"""
 
+    """Only works for Enterprise"""
+
     _gis = None
 
     @classmethod
     def setUpClass(cls):
         cls._gis = GIS(
-            url="https://portalhostds.ags.esri.com/gis",
-            username="creator1",
-            password="portalaccount1",
-            verif_cert=False,
+            profile="your_enterprise_profile",
+            verify_cert=False,
         )
 
     # ----------------------------------------------------------------------

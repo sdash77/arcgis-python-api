@@ -1,9 +1,4 @@
 import sys
-
-#
-#  Update the Path to set the test area
-sys.path.insert(0, r"C:\ipython_workfolder\geosaurus\src")
-#
 import os, shutil, tempfile
 import logging
 import unittest
@@ -23,7 +18,7 @@ def enable_verbose_logging(root):
     root.addHandler(handler)
 
 
-profiles = ["your_online_profile", "your_enterprise_profile"]
+profiles = ["your_online_admin_profile", "your_ent_admin_profile"]
 PROXIES = detect_proxy(True)  # Handles Fiddler when True
 enable_verbose_logging(__logger__)
 
@@ -57,12 +52,12 @@ class TestInfoFileOps(unittest.TestCase):
             if len(items) > 0:
                 fp = items[0].item_card
                 assert fp
-                
+
                 updated = items[8].update_info(fp)
                 assert updated
                 assert updated["success"] is True
                 os.remove(fp)
- 
+
 
 if __name__ == "__main__":
     unittest.main()

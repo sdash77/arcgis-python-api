@@ -1,6 +1,4 @@
 import sys
-
-sys.path.insert(0, r"C:\\ipython_workfolder\\geosaurus\\src")
 import unittest
 import os
 from arcgis.gis import GIS
@@ -26,7 +24,7 @@ from arcgis.gis.admin import (
 from datetime import datetime
 
 
-ent_admin = GIS(profile="your_enterprise_profile", verify_cert=False)
+ent_admin = GIS(profile="your_ent_admin_profile", verify_cert=False)
 
 # create an admin
 admin = PortalAdminManager(

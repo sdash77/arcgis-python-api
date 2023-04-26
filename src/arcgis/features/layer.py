@@ -10,7 +10,6 @@ from datetime import datetime
 import json
 import os
 from re import S, search
-import six
 import time
 import concurrent.futures
 from typing import Any, Optional, Union
@@ -74,6 +73,33 @@ class FeatureLayer(Layer):
         self._dynamic_layer = dynamic_layer
         self.attachments = AttachmentManager(self)
         self._time_filter = None
+
+    @property
+    def field_groups(self) -> dict[str, Any]:
+        """
+        Returns the defined list of field groups for a given layer.
+
+        :returns: dict[str,Any]
+        """
+        url: str = f"{self._url}/fieldGroups"
+        params: dict[str, Any] = {"f": "json"}
+        try:
+            return self._con.get(url, params=params)
+        except:
+            return {}
+
+    @property
+    def contingent_values(self) -> dict[str, Any]:
+        """
+        Returns the define contingent values for the given layer.
+        :returns: Dict[str,Any]
+        """
+        url: str = f"{self._url}/contingentValues"
+        params: dict[str, Any] = {"f": "json"}
+        try:
+            return self._con.get(url, params=params)
+        except:
+            return {}
 
     @property
     def time_filter(self):
@@ -2301,13 +2327,12 @@ class FeatureLayer(Layer):
                         if fld in df.columns:
                             df[fld] = pd.to_datetime(
                                 df[fld] / 1000,
-                                infer_datetime_format=True,
                                 unit="s",
                             )
                     except:
                         if fld in df.columns:
                             df[fld] = pd.to_datetime(
-                                df[fld], infer_datetime_format=True
+                                df[fld],
                             )
                 return df
 
@@ -2387,13 +2412,11 @@ class FeatureLayer(Layer):
                     try:
                         df[fld] = pd.to_datetime(
                             df[fld] / 1000,
-                            infer_datetime_format=True,
                             unit="s",
                         )
                     except:
                         df[fld] = pd.to_datetime(
                             df[fld],
-                            infer_datetime_format=True,
                             errors="coerce",
                         )
             return df
@@ -3777,13 +3800,13 @@ class FeatureLayer(Layer):
                 try:
                     df[fld] = pd.to_datetime(
                         df[fld] / 1000,
-                        infer_datetime_format=True,
                         errors="coerce",
                         unit="s",
                     )
                 except:
                     df[fld] = pd.to_datetime(
-                        df[fld], errors="coerce", infer_datetime_format=True
+                        df[fld],
+                        errors="coerce",
                     )
         return df
 
@@ -4193,13 +4216,12 @@ class Table(FeatureLayer):
                         if fld in df.columns:
                             df[fld] = pd.to_datetime(
                                 df[fld] / 1000,
-                                infer_datetime_format=True,
                                 unit="s",
                             )
                     except:
                         if fld in df.columns:
                             df[fld] = pd.to_datetime(
-                                df[fld], infer_datetime_format=True
+                                df[fld],
                             )
                 return df
 
@@ -4276,11 +4298,11 @@ class Table(FeatureLayer):
                 df.spatial._meta.source = self
             for fld in dt_fields:
                 try:
-                    df[fld] = pd.to_datetime(
-                        df[fld] / 1000, infer_datetime_format=True, unit="s"
-                    )
+                    df[fld] = pd.to_datetime(df[fld] / 1000, unit="s")
                 except:
-                    df[fld] = pd.to_datetime(df[fld], infer_datetime_format=True)
+                    df[fld] = pd.to_datetime(
+                        df[fld],
+                    )
             return df
         return result
 
