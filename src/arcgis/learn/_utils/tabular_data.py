@@ -1650,7 +1650,7 @@ class TabularDataObject(object):
                 for i in range(len(sdf)):
                     original_points.append(sdf.iloc[i]["SHAPE"])
 
-                input_layer_spatial_reference = sdf.spatial._sr
+                input_layer_spatial_reference = sdf.spatial.sr
                 if cell_sizes and not rasters:
                     sdf = add_h3(sdf, cell_sizes)
 
