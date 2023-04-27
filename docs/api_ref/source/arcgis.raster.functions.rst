@@ -640,6 +640,10 @@ sum
 ___
 .. autofunction:: arcgis.raster.functions.sum
 
+surface_parameters
+__________________
+.. autofunction:: arcgis.raster.functions.surface_parameters
+
 tan
 ___
 .. autofunction:: arcgis.raster.functions.tan

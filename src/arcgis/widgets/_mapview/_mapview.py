@@ -262,7 +262,6 @@ class MapView(widgets.DOMWidget):
 
     """
 
-    # region Class, instance and interop variables
     _view_name = Unicode("ArcGISMapIPyWidgetView").tag(sync=True)
     _model_name = Unicode("ArcGISMapIPyWidgetModel").tag(sync=True)
     _view_module = Unicode("arcgis-map-ipywidget").tag(sync=True)
@@ -1288,7 +1287,7 @@ class MapView(widgets.DOMWidget):
 
     def _get_portal_url(self):
         try:
-            return self.gis._portal.resturl.split("sharing")[0]
+            return self.gis._portal._public_rest_url.split("sharing")[0]
         except Exception as e:
             return self.gis.url
 

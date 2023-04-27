@@ -13,6 +13,10 @@ export_point_dataset
 ^^^^^^^^^^^^^^^^^^^^
 .. autofunction:: arcgis.learn.export_point_dataset
 
+estimate_batch_size
+^^^^^^^^^^^^^^^^^^^
+.. autofunction:: arcgis.learn.estimate_batch_size
+
 prepare_data
 ^^^^^^^^^^^^
 .. autofunction:: arcgis.learn.prepare_data
@@ -30,6 +34,7 @@ Transform3d
 .. autoclass:: arcgis.learn.Transform3d
     :members:
     :undoc-members:
+
 
 Automated Machine Learning
 ----------------------------
