@@ -5331,6 +5331,7 @@ class FeatureLayerCollection(_GISResource):
 
         """
         url = "{url}/cleanupChangeTracking".format(url=self._url)
+        url = url.replace("/rest/services/", "/rest/admin/services/")
         params = {
             "f": "json",
             "layers": layers,
