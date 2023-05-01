@@ -61,7 +61,10 @@ class KubeServiceDirectory(_BaseKube):
                 # if s['name'].split('/')[-1].lower() == name.lower():
                 url = "%s/%s/%s" % (url, s["name"], s["type"])
                 data.append(
-                    [s["name"].split("/")[-1], """<a href="%s">Service</a>""" % url]
+                    [
+                        s["name"].split("/")[-1],
+                        """<a href="%s">Service</a>""" % url,
+                    ]
                 )
 
         df = pd.DataFrame(data=data, columns=columns)
@@ -190,7 +193,7 @@ class KubeServiceDirectory(_BaseKube):
         status, res = uploads.upload(path=sd_file, description="sd file")
         if status:
             uid = res["item"]["itemID"]
-            config = uploads._service_configuration(uid)
+            config = uploads._service_configuration(uid).get("service", {})
             if service_config or folder:
                 if service_config:
                     config.update(service_config)
@@ -201,6 +204,7 @@ class KubeServiceDirectory(_BaseKube):
                     in_sdp_id=uid, in_config_overwrite=json.dumps(config)
                 )
             else:
+                uid = res["item"]["itemID"]
                 res = service.publish_service_definition(in_sdp_id=uid)
             return True
         return False
