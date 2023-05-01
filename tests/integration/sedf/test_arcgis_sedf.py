@@ -1,19 +1,19 @@
 """
 Tests Related to Spatially Enabled Data Frame
 """
-import sys
-import shutil
-import unittest
-import pandas as pd
-from arcgis.features import GeoSeriesAccessor, GeoAccessor
-from arcgis.features.geo import _is_geoenabled
-
 import ssl
-
-ssl._create_default_https_context = ssl._create_unverified_context
+from arcgis.geometry import _types, Geometry
+from arcgis.features.geo import _is_geoenabled
+from arcgis.features.geo import GeoAccessor, GeoSeriesAccessor
+from arcgis.features.geo._array import GeoArray
+from arcgis.gis.server._service import Service
+from arcgis.features import FeatureLayer
+import tempfile, uuid
 import unittest
 import pandas as pd
 import os, shutil
+
+ssl._create_default_https_context = ssl._create_unverified_context
 
 try:
     import arcpy
@@ -22,12 +22,9 @@ try:
     HAS_ARCPY = True
 except:
     HAS_ARCPY = False
-from arcgis.geometry import _types, Geometry
-from arcgis.features.geo import GeoAccessor, GeoSeriesAccessor
-from arcgis.features.geo._array import GeoArray
-from arcgis.gis.server._service import Service
-from arcgis.features import FeatureLayer
-import tempfile, uuid
+
+DATA_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "spatial")
+print(DATA_PATH)
 
 fs_urls = [
     "https://services.arcgis.com/P3ePLMYs2RVChkJx/ArcGIS/rest/services/World_Cities/FeatureServer/0",  # Point
@@ -212,7 +209,7 @@ if HAS_ARCPY:
         # ----------------------------------------------------------------------
         def test_from_featureclass(self):
             """tests reading from spatial data"""
-            sdf = pd.DataFrame.spatial.from_featureclass(r"./spatial/aoi.shp")
+            sdf = pd.DataFrame.spatial.from_featureclass(os.path.join(DATA_PATH, "aoi.shp"))
             self.assertIsInstance(sdf, pd.DataFrame)
             self.assertTrue(_is_geoenabled(sdf))
 
@@ -222,7 +219,7 @@ if HAS_ARCPY:
             pklout = os.path.join(tempfile.gettempdir(), "export.pkl")
             if os.path.isfile(pklout):
                 os.remove(pklout)
-            sdf = pd.DataFrame.spatial.from_featureclass(r"./spatial/aoi.shp")
+            sdf = pd.DataFrame.spatial.from_featureclass(os.path.join(DATA_PATH, "aoi.shp"))
             sdf.to_pickle(pklout)
             self.assertTrue(os.path.isfile(pklout))
             os.remove(pklout)
@@ -230,7 +227,7 @@ if HAS_ARCPY:
         # ----------------------------------------------------------------------
         def test_from_pickle(self):
             """tests loading from pickle"""
-            pklin = r"./spatial/sample.pkl"
+            pklin = os.path.join(DATA_PATH, "sample.pkl")
             sdf = pd.read_pickle(pklin)
             self.assertTrue(_is_geoenabled(sdf))
 
@@ -341,8 +338,8 @@ if HAS_ARCPY:
             from scipy.spatial import cKDTree, KDTree
             from arcgis.geometry._types import SpatialReference
 
-            sdf1 = pd.DataFrame.spatial.from_featureclass(r"./spatial/area_of_int.shp")
-            sdf2 = pd.DataFrame.spatial.from_featureclass(r"./spatial/training.shp")
+            sdf1 = pd.DataFrame.spatial.from_featureclass(os.path.join(DATA_PATH, "area_of_int.shp"))
+            sdf2 = pd.DataFrame.spatial.from_featureclass(os.path.join(DATA_PATH, "training.shp"))
             final_right = sdf1.spatial.join(sdf2, "right")
             assert isinstance(final_right, pd.DataFrame)
             assert _is_geoenabled(final_right)
@@ -353,7 +350,7 @@ if HAS_ARCPY:
         # ----------------------------------------------------------------------
         def test_ga_project(self):
             """tests the geoaccessor"""
-            sdf = pd.DataFrame.spatial.from_featureclass(r"./spatial/area_of_int.shp")
+            sdf = pd.DataFrame.spatial.from_featureclass(os.path.join(DATA_PATH, "area_of_int.shp"))
             ga = sdf.spatial
             isinstance(ga, GeoAccessor)
             assert ga.project(spatial_reference=4326)
@@ -364,8 +361,8 @@ if HAS_ARCPY:
         # ----------------------------------------------------------------------
         def test_overlay_ops(self):
             """tests the various overlay operations."""
-            sdf = pd.DataFrame.spatial.from_featureclass(r"./spatial/area_of_int.shp")
-            sdf2 = pd.DataFrame.spatial.from_featureclass(r"./spatial/training.shp")
+            sdf = pd.DataFrame.spatial.from_featureclass(os.path.join(DATA_PATH, "area_of_int.shp"))
+            sdf2 = pd.DataFrame.spatial.from_featureclass(os.path.join(DATA_PATH, "training.shp"))
             ga = sdf.spatial
             isinstance(ga, GeoAccessor)
             union = ga.overlay(sdf=sdf2)
@@ -376,8 +373,8 @@ if HAS_ARCPY:
         # ----------------------------------------------------------------------
         def test_ga_relationship(self):
             """GA Relationship Method"""
-            sdf = pd.DataFrame.spatial.from_featureclass(r"./spatial/area_of_int.shp")
-            sdf2 = pd.DataFrame.spatial.from_featureclass(r"./spatial/training.shp")
+            sdf = pd.DataFrame.spatial.from_featureclass(os.path.join(DATA_PATH, "area_of_int.shp"))
+            sdf2 = pd.DataFrame.spatial.from_featureclass(os.path.join(DATA_PATH, "training.shp"))
             ga = sdf.spatial
             isinstance(ga, GeoAccessor)
             df1 = ga.relationship(other=sdf2, op="contains")
@@ -400,15 +397,15 @@ if HAS_ARCPY:
         # ----------------------------------------------------------------------
         def test_ga_select(self):
             """tests the select operation"""
-            sdf = pd.DataFrame.spatial.from_featureclass(r"./spatial/area_of_int.shp")
-            sdf2 = pd.DataFrame.spatial.from_featureclass(r"./spatial/training.shp")
+            sdf = pd.DataFrame.spatial.from_featureclass(os.path.join(DATA_PATH, "area_of_int.shp"))
+            sdf2 = pd.DataFrame.spatial.from_featureclass(os.path.join(DATA_PATH, "training.shp"))
             ga = sdf.spatial
             select = ga.select(other=sdf2)
 
         # ----------------------------------------------------------------------
         def test_to_methods(self):
             """test the GeoAccessor to methods"""
-            sdf = pd.DataFrame.spatial.from_featureclass(r"./spatial/area_of_int.shp")
+            sdf = pd.DataFrame.spatial.from_featureclass(os.path.join(DATA_PATH, "area_of_int.shp"))
             ga = sdf.spatial
             isinstance(ga, GeoAccessor)
             fs = ga.to_featureset()
@@ -433,7 +430,7 @@ if HAS_ARCPY:
                 pass
             from arcgis.geometry import Geometry
 
-            self._sdf = pd.read_pickle(r"./spatial/sample.pkl")
+            self._sdf = pd.read_pickle(os.path.join(DATA_PATH, "sample.pkl"))
             self._pt = Geometry({"x": 1, "y": 1, "spatialReference": {"wkid": 4326}})
             self._pt2 = Geometry(
                 {"x": 2.22, "y": -1.5, "spatialReference": {"wkid": 4326}}
