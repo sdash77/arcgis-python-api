@@ -1,11 +1,9 @@
 import os
 import sys
 
-# sys.path.insert(0, r"C:\SVN\geosaurus_master_kubernetes\src")
+# sys.path.insert(0, r"c:\ipython_workfolder\geosaurus\src")
 import unittest
-import pytest
 import pandas as pd
-from pandas import Timestamp
 from arcgis.gis import GIS
 from arcgis.geoenrichment import service_limits
 

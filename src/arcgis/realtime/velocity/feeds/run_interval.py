@@ -9,17 +9,21 @@ class RunInterval:
     Set the run interval for the feed.
 
     ===============     ================================================================================================
-    **Argument**        **Description**
+    **Parameter**        **Description**
     ---------------     ------------------------------------------------------------------------------------------------
-    cron_expression     str. Cron expression that specifies the run interval. You can use the cron generator at the
+    cron_expression     String. Cron expression that specifies the run interval. You can use the cron generator at the
                         following link to generate a cron expression: `Cron Expression Generator & Explainer
-                        <https://www.freeformatter.com/cron-expression-generator-quartz.html`>. The default is every one minute,
-                        represented by the following expression: "0 * * ? * * *"
+                        <https://www.freeformatter.com/cron-expression-generator-quartz.html>`_.
+
+                        The default is every one minute, represented by the following expression:
+
+                            "``0 * * ? * * *``"
     ---------------     ------------------------------------------------------------------------------------------------
-    timezone            str. Run interval timezone to use. The default is: "America/Los_Angeles"
+    timezone            String. Run interval timezone to use. The default is: "America/Los_Angeles"
+
                         .. note::
                             To learn more about time zones, see
-                            `List of tz database time zones <https://en.wikipedia.org/wiki/List_of_tz_database_time_zones>` page on Wikipedia.
+                            `List of tz database time zones <https://en.wikipedia.org/wiki/List_of_tz_database_time_zones>`_ page on Wikipedia.
     ===============     ================================================================================================
 
     :return: `True` if the operation is a success

@@ -34,16 +34,16 @@ class WNet_cGAN(ArcGISModel):
     Creates a model object which generates images of type C from type A and type B.
 
     =====================   ===========================================
-    **Argument**            **Description**
+    **Parameter**            **Description**
     ---------------------   -------------------------------------------
     data                    Required fastai Databunch. Returned data object from
-                            `prepare_data` function.
+                            :meth:`~arcgis.learn.prepare_data` function.
     ---------------------   -------------------------------------------
     pretrained_path         Optional string. Path where pre-trained model is
                             saved.
     =====================   ===========================================
 
-    :returns: `WNet_cGAN` Object
+    :return:  :class:`~arcgis.learn.WNet_cGAN` Object
     """
 
     def __init__(self, data, pretrained_path=None, *args, **kwargs):
@@ -75,22 +75,21 @@ class WNet_cGAN(ArcGISModel):
 
     @classmethod
     def from_model(cls, emd_path, data=None):
-
         """
-        Creates a WNet_cGAN object from an Esri Model Definition (EMD) file.
+        Creates a :class:`~arcgis.learn.WNet_cGAN` object from an Esri Model Definition (EMD) file.
 
         =====================   ===========================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ---------------------   -------------------------------------------
         emd_path                Required string. Path to Deep Learning Package
                                 (DLPK) or Esri Model Definition(EMD) file.
         ---------------------   -------------------------------------------
         data                    Required fastai Databunch or None. Returned data
-                                object from `prepare_data` function or None for
+                                object from :meth:`~arcgis.learn.prepare_data` function or None for
                                 inferencing.
         =====================   ===========================================
 
-        :returns: `WNet_cGAN` Object
+        :return:  :class:`~arcgis.learn.WNet_cGAN` Object
         """
 
         if not HAS_FASTAI:
@@ -182,7 +181,7 @@ class WNet_cGAN(ArcGISModel):
         Displays the results of a trained model on a part of the validation set.
 
         =====================   ===========================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ---------------------   -------------------------------------------
         rows                    Optional int. Number of rows of results
                                 to be displayed.
@@ -194,12 +193,11 @@ class WNet_cGAN(ArcGISModel):
         show_results(self, rows, **kwargs)
 
     def predict(self, img_path1, img_path2):
-
         """
         Predicts and display the image.
 
         =====================   ===========================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ---------------------   -------------------------------------------
         img_path1                Required path of an image 1.
         img_path2                Required path of an image 2.

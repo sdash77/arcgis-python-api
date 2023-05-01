@@ -11,10 +11,15 @@ import textwrap
 import warnings
 import re
 
-__version__ = "2.1.0"
+__version__ = "2.2.0"
 
 # This is mostly here so automodule docs are ordered more ideally.
-__all__ = ["deprecated", "message_location", "DeprecatedWarning", "UnsupportedWarning"]
+__all__ = [
+    "deprecated",
+    "message_location",
+    "DeprecatedWarning",
+    "UnsupportedWarning",
+]
 
 # message_location provides some simple
 message_location = "top"

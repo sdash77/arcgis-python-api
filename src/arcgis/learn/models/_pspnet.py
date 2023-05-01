@@ -46,10 +46,10 @@ class PSPNetClassifier(ArcGISModel):
     Creates a PSPNet Image Segmentation/ Pixel Classification model.
 
     =====================   ===========================================
-    **Argument**            **Description**
+    **Parameter**            **Description**
     ---------------------   -------------------------------------------
     data                    Required fastai Databunch. Returned data object from
-                            `prepare_data` function.
+                            :meth:`~arcgis.learn.prepare_data` function.
     ---------------------   -------------------------------------------
     backbone                Optional string. Backbone convolutional neural network
                             model used for feature extraction, which
@@ -83,7 +83,7 @@ class PSPNetClassifier(ArcGISModel):
     **kwargs**
 
     =====================   ===========================================
-    **Argument**            **Description**
+    **Parameter**            **Description**
     ---------------------   -------------------------------------------
     class_balancing         Optional boolean. If True, it will balance the
                             cross-entropy loss inverse to the frequency
@@ -100,15 +100,19 @@ class PSPNetClassifier(ArcGISModel):
                             If > 0 , model will use a combination of default or
                             focal(if focal=True) loss with the specified fraction
                             of dice loss.
-                            E.g.
-                            for dice = 0.3, loss = (1-0.3)*default loss + 0.3*dice
+
+                            Example:
+
+                                for dice = 0.3, loss = (1-0.3)*default loss + 0.3*dice
+
                             Default: 0
     ---------------------   -------------------------------------------
     dice_loss_average       Optional str.
-                            micro: Micro dice coefficient will be used for loss
-                            calculation.
-                            macro: Macro dice coefficient will be used for loss
-                            calculation.
+
+                            * "``micro``": Micro dice coefficient will be used for loss calculation.
+
+                            * "``macro``": Macro dice coefficient will be used for loss calculation.
+
                             A macro-average will compute the metric independently
                             for each class and then take the average (hence treating
                             all classes equally), whereas a micro-average will
@@ -124,11 +128,11 @@ class PSPNetClassifier(ArcGISModel):
                             Default: []
     ---------------------   -------------------------------------------
     keep_dilation           Optional boolean. When PointRend architecture is used,
-                            keep_dilation=True can potentially improves accuracy
+                            keep_dilation=True can potentially improve accuracy
                             at the cost of memory consumption. Default: False
     =====================   ===========================================
 
-    :return: `PSPNetClassifier` Object
+    :return: :class:`~arcgis.learn.PSPNetClassifier` Object
     """
 
     def __init__(
@@ -143,7 +147,6 @@ class PSPNetClassifier(ArcGISModel):
         *args,
         **kwargs,
     ):
-
         # Set default backbone to be 'resnet50'
         if backbone is None:
             backbone = models.resnet50
@@ -159,7 +162,7 @@ class PSPNetClassifier(ArcGISModel):
                 f"Enter only compatible backbones from {', '.join(self.supported_backbones)}"
             )
 
-        super().__init__(data, backbone, **kwargs)
+        super().__init__(data, backbone, pretrained_path=pretrained_path, **kwargs)
 
         if pointrend:
             use_unet = False
@@ -349,17 +352,17 @@ class PSPNetClassifier(ArcGISModel):
         Creates a PSPNet classifier from an Esri Model Definition (EMD) file.
 
         =====================   ===========================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ---------------------   -------------------------------------------
         emd_path                Required string. Path to Deep Learning Package
                                 (DLPK) or Esri Model Definition(EMD) file.
         ---------------------   -------------------------------------------
         data                    Required fastai Databunch or None. Returned data
-                                object from `prepare_data` function or None for
+                                object from :meth:`~arcgis.learn.prepare_data` function or None for
                                 inferencing.
         =====================   ===========================================
 
-        :return: `PSPNetClassifier` Object
+        :return: :class:`~arcgis.learn.PSPNetClassifier` Object
         """
         emd_path = _get_emd_path(emd_path)
         with open(emd_path) as f:
@@ -392,6 +395,7 @@ class PSPNetClassifier(ArcGISModel):
             data = get_multispectral_data_params_from_emd(data, emd)
             data.emd_path = emd_path
             data.emd = emd
+            data._is_empty = True
 
         return cls(data, **model_params, pretrained_path=str(model_file))
 
@@ -506,7 +510,7 @@ class PSPNetClassifier(ArcGISModel):
         Displays the results of a trained model on a part of the validation set.
 
         =====================   ===========================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ---------------------   -------------------------------------------
         rows                    Optional int. Number of rows of results
                                 to be displayed.
@@ -531,7 +535,7 @@ class PSPNetClassifier(ArcGISModel):
         **kwargs**
 
         =====================   ===========================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ---------------------   -------------------------------------------
         rows                    Number of rows of data to be displayed, if
                                 batch size is smaller, then the rows will
@@ -573,12 +577,11 @@ class PSPNetClassifier(ArcGISModel):
         return float(model_accuracy)
 
     def mIOU(self, mean=False, show_progress=True):
-
         """
         Computes mean IOU on the validation set for each class.
 
         =====================   ===========================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ---------------------   -------------------------------------------
         mean                    Optional bool. If False returns class-wise
                                 mean IOU, otherwise returns mean iou of all
@@ -620,7 +623,7 @@ class PSPNetClassifier(ArcGISModel):
         Computer per class precision, recall and f1-score on validation set.
 
         =====================   ===========================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ---------------------   -------------------------------------------
         self                    segmentation model object -> [PSPNetClassifier | UnetClassifier | DeepLab]
         ---------------------   -------------------------------------------

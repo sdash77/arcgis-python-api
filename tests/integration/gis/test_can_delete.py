@@ -1,4 +1,3 @@
-import pytest
 import sys
 import unittest
 from arcgis.gis import GIS, ContentManager

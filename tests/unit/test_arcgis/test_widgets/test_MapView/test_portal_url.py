@@ -1,33 +1,44 @@
-from unittest.mock import patch, MagicMock
+import sys
 
-import pytest
+sys.path.insert(0, r"C:\ipython_workfolder\geosaurus\src")
+sys.path.insert(1, r"C:\ipython_workfolder\geosaurus\tests")
 
-from utils.mocks import MockMapView
-from arcgis.widgets import MapView
-
-
-def test_portal_url_format():
-    _test_portal_url(
-        mock_rest_url="https://pythonapi.playground.esri.com/portal/sharing/rest/",
-        expected="https://pythonapi.playground.esri.com/portal/",
-    )
+import unittest
+from arcgis.gis import GIS
 
 
-def test_agol_standard():
-    _test_portal_url(
-        mock_rest_url="https://www.arcgis.com/sharing/rest/",
-        expected="https://www.arcgis.com/",
-    )
+class TestPortalUrl(unittest.TestCase):
+
+    def test_portal_url_format(self):
+        self._test_portal_url(
+            url = "https://pythonapi.playground.esri.com/portal",
+            username = "arcgis_python",
+            password = "amazing_arcgis_123",
+            expected="https://pythonapi.playground.esri.com/portal",
+        )
+
+    def test_agol_standard(self):
+        self._test_portal_url(
+            url=None,
+            username= None,
+            password=None,
+            expected="https://www.arcgis.com",
+        )
+
+    def test_agol_subdomain(self):
+        self._test_portal_url(
+            url= "https://geosaurus.maps.arcgis.com",
+            username= "ArcGISPyAPIBot",
+            password= "geosaurus_automation123",
+            expected="https://geosaurus.maps.arcgis.com",
+        )
+
+    def _test_portal_url(self, url, username, password, expected):
+        gis = GIS(url=url, username=username, password=password)
+        mv = gis.map()
+        assert expected == mv._get_portal_url()
 
 
-def test_agol_subdomain():
-    _test_portal_url(
-        mock_rest_url="https://geosaurus.maps.arcgis.com/sharing/rest/",
-        expected="https://geosaurus.maps.arcgis.com/",
-    )
+if __name__ == "__main__":
 
-
-def _test_portal_url(mock_rest_url, expected):
-    mock_mapview = MockMapView()
-    mock_mapview.gis._portal.resturl = mock_rest_url
-    assert expected == MapView._get_portal_url(mock_mapview)
+    unittest.main()

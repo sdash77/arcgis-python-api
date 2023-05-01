@@ -1,9 +1,15 @@
-from requests.auth import _basic_auth_str, HTTPBasicAuth, HTTPDigestAuth, HTTPProxyAuth
+from requests.auth import (
+    _basic_auth_str,
+    HTTPBasicAuth,
+    HTTPDigestAuth,
+    HTTPProxyAuth,
+)
 from ._schain import SupportMultiAuth
 from ..tools._lazy import LazyLoader
 from ..tools import parse_url
 
 requests = LazyLoader("requests")
+
 
 ###########################################################################
 class ProxyAuth(HTTPProxyAuth, SupportMultiAuth):  # pragma: no cover
@@ -88,21 +94,24 @@ class EsriBasicAuth(HTTPBasicAuth, SupportMultiAuth):
     def generate_portal_server_token(self, r, **kwargs):
         """generates a server token using Portal token"""
         parsed = parse_url(r.url)
+        if parsed.port:
+            if parsed.port in parsed.netloc:
+                server_url = (
+                    f'{parsed.scheme}://{parsed.netloc}/{parsed.path[1:].split("/")[0]}'
+                )
+            else:
+                server_url = f'{parsed.scheme}://{parsed.netloc}:{parsed.port}/{parsed.path[1:].split("/")[0]}'
+        else:
+            server_url = (
+                f'{parsed.scheme}://{parsed.netloc}/{parsed.path[1:].split("/")[0]}'
+            )
         if (
             r.text.lower().find("invalid token") > -1
             or r.text.lower().find("token required") > -1
             or r.text.lower().find("unauthorized") > -1
-        ) or parsed.netloc in self._server_log:
+        ) or server_url in self._server_log:
             expiration = 16000
-            if parsed.port:
-                if parsed.port in parsed.netloc:
-                    server_url = f'{parsed.scheme}://{parsed.netloc}/{parsed.path[1:].split("/")[0]}'
-                else:
-                    server_url = f'{parsed.scheme}://{parsed.netloc}:{parsed.port}/{parsed.path[1:].split("/")[0]}'
-            else:
-                server_url = (
-                    f'{parsed.scheme}://{parsed.netloc}/{parsed.path[1:].split("/")[0]}'
-                )
+
             postdata = {
                 "request": "getToken",
                 "serverURL": server_url,
@@ -111,23 +120,25 @@ class EsriBasicAuth(HTTPBasicAuth, SupportMultiAuth):
             }
             if expiration:
                 postdata["expiration"] = expiration
-            if parsed.netloc in self._server_log:
-                token_url = self._server_log[parsed.netloc]
+            if server_url in self._server_log:
+                token_url = self._server_log[server_url]
             else:
                 info = self._session.get(
                     server_url + "/rest/info?f=json",
-                    auth=self.auth,
+                    auth=self._session.auth,
                     verify=self.verify_cert,
+                    proxies=self._proxies,
+                    timeout=5,
                 ).json()
                 token_url = info["authInfo"]["tokenServicesUrl"]
-                self._server_log[parsed.netloc] = token_url
+                self._server_log[server_url] = token_url
             if server_url in self._tokens:
                 token_str = self._tokens[server_url]
             else:
                 token = self._session.post(
                     token_url,
                     data=postdata,
-                    auth=self.auth,
+                    auth=self._session.auth,
                     verify=self.verify_cert,
                     proxies=self._proxies,
                 )
@@ -149,7 +160,6 @@ class EsriBasicAuth(HTTPBasicAuth, SupportMultiAuth):
         return r
 
     def __call__(self, r):
-
         if self.auth:
             self.auth.__call__(r)
         r.headers["Authorization"] = _basic_auth_str(self.username, self.password)

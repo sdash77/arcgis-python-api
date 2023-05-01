@@ -46,7 +46,7 @@ def profile(
     In asynchronous mode, the maximum number of input line features that can be accepted by the task for each request is 1000.
 
     =====================================    ===========================================================================
-    **Argument**                             **Description**
+    **Parameter**                             **Description**
     -------------------------------------    ---------------------------------------------------------------------------
     input_line_features                      Required featureset. The line features that will be profiled over the surface.
     -------------------------------------    ---------------------------------------------------------------------------
@@ -128,7 +128,7 @@ def viewshed(
     The ``viewshed`` method is used to identify visible areas based on observer locations you provide as well as ArcGIS Online Elevation data.
 
     ===============================    =========================================================
-    **Parameter**                      **Description**
+    **Parameter**                       **Description**
     -------------------------------    ---------------------------------------------------------
     input_points                       Required FeatureSet. The point features to use as the observer locations. See :ref:`Feature Input<FeatureInput>`.
     -------------------------------    ---------------------------------------------------------
@@ -242,7 +242,7 @@ def summarize_elevation(
     for the elevation, slope, and aspect of the features.
 
     =========================    =========================================================
-    **Parameter**                **Description**
+    **Parameter**                 **Description**
     -------------------------    ---------------------------------------------------------
     input_features               Reqauired FeatureSet. Input features to summarize the elevation for. The features can be point, line, or area. See :ref:`Feature Input<FeatureInput>`.
     -------------------------    ---------------------------------------------------------

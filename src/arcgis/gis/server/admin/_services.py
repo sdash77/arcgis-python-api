@@ -3,6 +3,8 @@ Classes and objects used to manage published services.
 """
 from __future__ import absolute_import
 from __future__ import print_function
+from __future__ import annotations
+from typing import Any
 import os
 import json
 import tempfile
@@ -13,6 +15,8 @@ from arcgis.gis import GIS
 from arcgis.gis._impl._con import Connection
 import datetime as _datetime
 from typing import Optional
+from arcgis.features.managers import WebHookScheduleInfo, WebHookEvents
+
 
 ########################################################################
 class ServiceManager(BaseServer):
@@ -36,6 +40,7 @@ class ServiceManager(BaseServer):
     _isDefault = None
     _services = None
     _json = None
+
     # ----------------------------------------------------------------------
     def __init__(
         self,
@@ -47,7 +52,7 @@ class ServiceManager(BaseServer):
         """Constructor
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         url                 Required string. The administration url endpoint.
         ---------------     --------------------------------------------------------------------
@@ -126,14 +131,14 @@ class ServiceManager(BaseServer):
         """
         returns a list of services in the specified folder
 
-         ===============     ====================================================================
-        **Argument**        **Description**
-        ---------------     --------------------------------------------------------------------
+        ===============     ===========================================================================================
+        **Parameter**        **Description**
+        ---------------     -------------------------------------------------------------------------------------------
         folder              Required string. The name of the folder to list services from.
-        ---------------     --------------------------------------------------------------------
+        ---------------     -------------------------------------------------------------------------------------------
         refresh             Optional boolean. Default is False. If True, the list of services will be
                             requested to the server, else the list will be returned from cache.
-        ===============     ====================================================================
+        ===============     ===========================================================================================
 
 
         :return: list
@@ -154,7 +159,7 @@ class ServiceManager(BaseServer):
         Export services allows for the backup and storage of non-hosted services.
 
         =================   ====================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         -----------------   ----------------------------------------------------
         folder              required string.  This is the path to the save folder.
                             The ArcGIS Account must have access to the location
@@ -167,7 +172,11 @@ class ServiceManager(BaseServer):
         if os.path.isdir(folder) == False:
             os.makedirs(folder)
         url = self._url + "/exportServices"
-        params = {"f": "json", "location": folder, "csrfPreventToken": self._con.token}
+        params = {
+            "f": "json",
+            "location": folder,
+            "csrfPreventToken": self._con.token,
+        }
         res = self._con.post(path=url, postdata=params)
         if "location" in res:
             return res["location"]
@@ -179,7 +188,7 @@ class ServiceManager(BaseServer):
         Import services allows for the backup and storage of non-hosted services.
 
         =================   ====================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         -----------------   ----------------------------------------------------
         file_path           required string.  File path with extension
                             .agssiteservices.
@@ -209,10 +218,15 @@ class ServiceManager(BaseServer):
             for s in json_dict["services"]:
                 from urllib.parse import quote, quote_plus, urlparse, urljoin
 
-                u_url = self._currentURL + "/%s.%s" % (s["serviceName"], s["type"])
+                u_url = self._currentURL + "/%s.%s" % (
+                    s["serviceName"],
+                    s["type"],
+                )
                 parsed = urlparse(u_url)
                 u_url = "{scheme}://{netloc}{path}".format(
-                    scheme=parsed.scheme, netloc=parsed.netloc, path=quote(parsed.path)
+                    scheme=parsed.scheme,
+                    netloc=parsed.netloc,
+                    path=quote(parsed.path),
                 )
                 self._services.append(Service(url=u_url, gis=self._con))
         return self._services
@@ -244,7 +258,7 @@ class ServiceManager(BaseServer):
         publishes a service definition file to arcgis server
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         sd_file             Required string. File path to the .sd file
         ---------------     --------------------------------------------------------------------
@@ -253,7 +267,7 @@ class ServiceManager(BaseServer):
         ===============     ====================================================================
 
 
-        :return: boolean
+        :return: Boolean
 
         """
         return self._sm.publish_sd(sd_file, folder, service_config=service_config)
@@ -264,7 +278,7 @@ class ServiceManager(BaseServer):
             returns a list of a particular service type on AGS
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         service_type        Required string. Type of service to find.  The allowed types
                              are: ("GPSERVER", "GLOBESERVER", "MAPSERVER",
@@ -328,7 +342,7 @@ class ServiceManager(BaseServer):
         change those permissions at a later time.
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         folder              Required string. name of folder to examine.
         ===============     ====================================================================
@@ -357,7 +371,7 @@ class ServiceManager(BaseServer):
         created on the ArcGIS Server site.
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         service             Required dict. The service configuration in JSON format. For more
                             information about the service configuration options, see
@@ -403,7 +417,7 @@ class ServiceManager(BaseServer):
            resources
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         principal           Required string. Name of role to assign/disassign accesss.
         ---------------     --------------------------------------------------------------------
@@ -420,7 +434,11 @@ class ServiceManager(BaseServer):
             u_url = self._url + "/%s/%s" % (folder, "/permissions/add")
         else:
             u_url = self._url + "/permissions/add"
-        params = {"f": "json", "principal": principal, "isAllowed": is_allowed}
+        params = {
+            "f": "json",
+            "principal": principal,
+            "isAllowed": is_allowed,
+        }
         res = self._con.post(path=u_url, postdata=params)
         if "status" in res:
             return res["status"] == "success"
@@ -432,7 +450,7 @@ class ServiceManager(BaseServer):
         Lists principals which have permissions for the folder.
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         folder_name              Optional string. Name of folder to examine permissions.
         ===============     ====================================================================
@@ -454,7 +472,7 @@ class ServiceManager(BaseServer):
         (principal). This is typically used when a role is deleted.
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         principal           Required string. Name of role to dis-assign all accesss.
         ===============     ====================================================================
@@ -475,16 +493,20 @@ class ServiceManager(BaseServer):
         Creates a unique folder name on AGS
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         folder_name         Required string. Name of the new folder.
         ---------------     --------------------------------------------------------------------
         description         Optional string. Description of what the folder is.
         ===============     ====================================================================
 
-        :return: boolean
+        :return: Boolean
         """
-        params = {"f": "json", "folderName": folder_name, "description": description}
+        params = {
+            "f": "json",
+            "folderName": folder_name,
+            "description": description,
+        }
         u_url = self._url + "/createFolder"
         res = self._con.post(path=u_url, postdata=params)
         self._init()
@@ -498,12 +520,12 @@ class ServiceManager(BaseServer):
         Removes a folder on ArcGIS Server
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         folder_name         Required string. Name of the folder.
         ===============     ====================================================================
 
-        :return: boolean
+        :return: Boolean
         """
         params = {"f": "json"}
         if folder_name in self.folders:
@@ -524,7 +546,7 @@ class ServiceManager(BaseServer):
         Deletes a service from ArcGIS Server
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         name                Required string. Name of the service
         ---------------     --------------------------------------------------------------------
@@ -539,7 +561,11 @@ class ServiceManager(BaseServer):
         if folder is None:
             u_url = self._url + "/%s.%s/delete" % (name, service_type)
         else:
-            u_url = self._url + "/%s/%s.%s/delete" % (folder, name, service_type)
+            u_url = self._url + "/%s/%s.%s/delete" % (
+                folder,
+                name,
+                service_type,
+            )
         params = {"f": "json"}
         res = self._con.post(path=u_url, postdata=params)
         if "status" in res:
@@ -552,14 +578,20 @@ class ServiceManager(BaseServer):
         Provides a report on all items in a given folder.
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         folder              Optional string. Location of the service on ArcGIS Server.
         ===============     ====================================================================
 
         :return: boolean
         """
-        items = ["description", "status", "instances", "iteminfo", "properties"]
+        items = [
+            "description",
+            "status",
+            "instances",
+            "iteminfo",
+            "properties",
+        ]
         if folder is None:
             u_url = self._url + "/report"
         else:
@@ -629,7 +661,7 @@ class ServiceManager(BaseServer):
         object extension (.SOE) file.
 
         ======================     ====================================================================
-        **Argument**               **Description**
+        **Parameter**               **Description**
         ----------------------     --------------------------------------------------------------------
         extension_filename         Required string. Name of the previously registered .SOE file.
         ======================     ====================================================================
@@ -654,7 +686,7 @@ class ServiceManager(BaseServer):
         configuration properties.
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         item_id             Required string. Id of the uploaded .SOE file
         ===============     ====================================================================
@@ -672,13 +704,17 @@ class ServiceManager(BaseServer):
 
     # ----------------------------------------------------------------------
     def _rename_service(
-        self, name: str, service_type: str, new_name: str, folder: Optional[str] = None
+        self,
+        name: str,
+        service_type: str,
+        new_name: str,
+        folder: Optional[str] = None,
     ) -> bool:
         """
         Renames a published AGS Service
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         name                Required string.  Old service name.
         ---------------     --------------------------------------------------------------------
@@ -718,29 +754,30 @@ class ServiceManager(BaseServer):
         The JSON representation of a service contains the following four
         sections:
          - Service Description Properties-Common properties that are shared
-          by all service types. Typically, they identify a specific service.
+           by all service types. Typically, they identify a specific service.
          - Service Framework Properties-Properties targeted towards the
-          framework that hosts the GIS service. They define the life cycle
-          and load balancing of the service.
+           framework that hosts the GIS service. They define the life cycle
+           and load balancing of the service.
          - Service Type Properties -Properties targeted towards the core
-          service type as seen by the server administrator. Since these
-          properties are associated with a server object, they vary across
-          the service types. The Service Types section in the Help
-          describes the supported properties for each service.
+           service type as seen by the server administrator. Since these
+           properties are associated with a server object, they vary across
+           the service types. The Service Types section in the Help
+           describes the supported properties for each service.
          - Extension Properties-Represent the extensions that are enabled
-          on the service. The Extension Types section in the Help describes
-          the supported out-of-the-box extensions for each service type.
+           on the service. The Extension Types section in the Help describes
+           the supported out-of-the-box extensions for each service type.
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         service             Required dict. The service is the properties to create a service.
         ===============     ====================================================================
 
-        :return: dict
+        :return: Dict
 
         Output:
          dictionary status message
+
         """
         url = self._url + "/createService"
         params = {"f": "json"}
@@ -756,7 +793,7 @@ class ServiceManager(BaseServer):
         Stops serveral services on a single server.
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         services            Required list.  A list of dictionary objects. Each dictionary object
                             is defined as:
@@ -798,7 +835,7 @@ class ServiceManager(BaseServer):
         starts serveral services on a single server
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         services            Required list.  A list of dictionary objects. Each dictionary object
                             is defined as:
@@ -844,7 +881,7 @@ class ServiceManager(BaseServer):
         directory security in the security configuration.
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         description         Required string. A description of the folder.
         ---------------     --------------------------------------------------------------------
@@ -881,7 +918,7 @@ class ServiceManager(BaseServer):
         in a folder, supply all three parameters.
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         folder_name         Required string. The folder name to check for.
         ---------------     --------------------------------------------------------------------
@@ -892,7 +929,7 @@ class ServiceManager(BaseServer):
                              GeoDataServer | GPServer | GlobeServer | SearchServer
         ===============     ====================================================================
 
-        :return: boolean
+        :return: Boolean
 
         """
         if folder_name and name is None and service_type is None:
@@ -914,6 +951,429 @@ class ServiceManager(BaseServer):
         elif "exists" in res:
             return res["exists"]
         return res
+
+
+########################################################################
+class ServiceWebHook(BaseServer):
+    """
+    The webhooks resource returns a list of service webhooks configured
+    for a specific geoprocessing or feature service, including
+    deactivated and activated webhooks. Webhooks are an ArcGIS
+    Enterprise capability that provide other applications or webhook
+    receivers with event-driven information, delivered as an HTTPS POST
+    request, that can be used to create automated and integrative
+    workflows. For more information on how webhooks are supported in
+    ArcGIS Enterprise, see Webhooks in ArcGIS Enterprise.
+    """
+
+    _url: str = None
+    _con: Connection = None
+    _gis: GIS = None
+
+    def __init__(
+        self,
+        url: str,
+        gis: GIS | Connection,
+        initialize: bool = False,
+        **kwargs,
+    ):
+        """initializer"""
+        super()
+        if isinstance(gis, GIS):
+            con = gis._con
+        else:
+            con = gis
+
+        self._url = url
+        self._con = con
+        if initialize:
+            self._init(self._con)
+
+    # ----------------------------------------------------------------------
+    def edit(
+        self,
+        *,
+        name: str | None = None,
+        change_types: WebHookEvents | str | None = None,
+        hook_url: str | None = None,
+        signature_key: str | None = None,
+        active: bool | None = None,
+        schedule_info: WebHookScheduleInfo | dict[str, Any] | None = None,
+        payload_format: str | None = None,
+        content_type: str | None = None,
+    ) -> dict[str, Any]:
+        """
+        Updates the existing WebHook's Properties.
+
+        =====================================    ===========================================================================
+        **Parameter**                             **Description**
+        -------------------------------------    ---------------------------------------------------------------------------
+        name                                     Optional String. Use valid name for a webhook. This name needs to be unique per service.
+        -------------------------------------    ---------------------------------------------------------------------------
+        hook_url                                 Optional String.  The URL to which the payloads will be delivered.
+        -------------------------------------    ---------------------------------------------------------------------------
+        change_types                             Optional :class:`~arcgis.features.managers.WebHookEvents` or String.
+                                                 The default is "*", which means all events.  This is a
+                                                 comma separated list of values that will fire off the web hook.  The list
+                                                 each supported type is below.
+        -------------------------------------    ---------------------------------------------------------------------------
+        signature_key                            Optional String. If specified, the key will be used in generating the HMAC
+                                                 hex digest of value using sha256 hash function and is return in the
+                                                 x-esriHook-Signature header.
+        -------------------------------------    ---------------------------------------------------------------------------
+        active                                   Optional bool. Enable or disable call backs when the webhook is triggered.
+        -------------------------------------    ---------------------------------------------------------------------------
+        schedule_info                            Optional :class:`~arcgis.features.managers.WebHookScheduleInfo` or Dict.
+                                                 Allows the trigger to be used as a given schedule.
+
+                                                 Example Dictionary:
+
+
+                                                     | {
+                                                     |    "name" : "Every-5seconds",
+                                                     |    "startAt" : 1478280677536,
+                                                     |    "state" : "enabled",
+                                                     |    "recurrenceInfo" : {
+                                                     |     "frequency" : "second",
+                                                     |     "interval" : 5
+                                                     |   }
+                                                     | }
+
+        -------------------------------------    ---------------------------------------------------------------------------
+        payload_format                           Optional String. The payload can be sent in pretty format or standard.
+                                                 The default is `json`.
+        -------------------------------------    ---------------------------------------------------------------------------
+        content_type                             Optional String. The Content Type is used to indicate the media type of the
+                                                 resource. The media type is a string sent along with the file indicating
+                                                 the format of the file.
+        =====================================    ===========================================================================
+
+
+        A list of allowed web hook triggers is shown below.
+
+        =====================================    ===========================================================================
+        **Name**                                 **Triggered When**
+        -------------------------------------    ---------------------------------------------------------------------------
+        `*`                                      Wildcard event. Any time any event is triggered.
+        -------------------------------------    ---------------------------------------------------------------------------
+        `FeaturesCreated`                        A new feature is created
+        -------------------------------------    ---------------------------------------------------------------------------
+        `FeaturesUpdated`                        Any time a feature is updated
+        -------------------------------------    ---------------------------------------------------------------------------
+        `FeaturesDeleted`                        Any time a feature is deleted
+        -------------------------------------    ---------------------------------------------------------------------------
+        `FeaturesEdited`                         Any time a feature is edited (insert or update or delete)
+        -------------------------------------    ---------------------------------------------------------------------------
+        `AttachmentsCreated`                     Any time adding a new attachment to a feature
+        -------------------------------------    ---------------------------------------------------------------------------
+        `AttachmentsUpdated`                     Any time updating a feature attachment
+        -------------------------------------    ---------------------------------------------------------------------------
+        `AttachmentsDeleted`                     Any time an attachment is deleted from a feature
+        -------------------------------------    ---------------------------------------------------------------------------
+        `LayerSchemaChanged`                     Any time a schema is changed in a layer
+        -------------------------------------    ---------------------------------------------------------------------------
+        `LayerDefinitionChanged`                 Any time a layer definition is changed
+        -------------------------------------    ---------------------------------------------------------------------------
+        `FeatureServiceDefinitionChanged`        Any time a feature service is changed
+        =====================================    ===========================================================================
+
+
+        :return: Response of edit as a dict.
+
+        """
+        props: dict[str, Any] = dict(self.properties)
+        url: str = f"{self._url}/edit"
+        if isinstance(schedule_info, WebHookScheduleInfo):
+            schedule_info: dict[str, Any] = schedule_info.as_dict()
+        if isinstance(change_types, list):
+            ctypes: list[str] = []
+            for ct in change_types:
+                if isinstance(ct, WebHookEvents):
+                    ctypes.append(ct.value)
+                else:
+                    ctypes.append(ct)
+
+            change_types: str = ",".join(ctypes)
+        elif isinstance(change_types, WebHookEvents):
+            change_types: str = change_types.value
+        elif change_types is None:
+            change_types: str = ",".join(self.properties["changeTypes"])
+        params: dict[str, Any] = {
+            "f": "json",
+            "name": name,
+            "changeTypes": change_types,
+            "signatureKey": signature_key,
+            "hookUrl": hook_url,
+            "active": active,
+            "scheduleInfo": schedule_info,
+            "payloadFormat": payload_format,
+            "content_type": content_type,
+        }
+        for k in list(params.keys()):
+            if params[k] is None:
+                params.pop(k)
+            del k
+        props.update(params)
+        resp: dict[str, Any] = self._con.post(url, props)
+        self._properties: PropertyMap = PropertyMap(resp)
+        return resp
+
+    # ----------------------------------------------------------------------
+    def delete(self) -> bool:
+        """
+        Deletes the current webhook from the system
+
+        :return: Boolean, True if successful
+        """
+        url = f"{self._url}/delete"
+        params = {"f": "json"}
+        resp = self._con.post(url, params)
+        return resp["status"] == "success"
+
+
+########################################################################
+class ServiceWebHookManager(BaseServer):
+    """
+    The webhooks resource returns a list of service webhooks configured
+    for a specific geoprocessing or feature service, including
+    deactivated and activated webhooks. Webhooks are an ArcGIS
+    Enterprise capability that provide other applications or webhook
+    receivers with event-driven information, delivered as an HTTPS POST
+    request, that can be used to create automated and integrative
+    workflows. For more information on how webhooks are supported in
+    ArcGIS Enterprise, see Webhooks in ArcGIS Enterprise.
+    """
+
+    _url: str = None
+    _con: Connection = None
+    _properties: dict = None
+
+    def __init__(self, url: str, con: Connection, **kwargs):
+        """initializer"""
+        super()
+        self._url = url
+        self._con = con
+
+    # ----------------------------------------------------------------------
+    def __str__(self):
+        """returns the class as a string"""
+        return f"< ServiceWebHookManager @ {self._url} >"
+
+    # ----------------------------------------------------------------------
+    def __repr__(self):
+        return self.__str__()
+
+    # ----------------------------------------------------------------------
+    def create(
+        self,
+        name: str,
+        hook_url: str,
+        *,
+        change_types: WebHookEvents | str = WebHookEvents.ALL,
+        signature_key: str | None = None,
+        active: bool = False,
+        schedule_info: dict[str, Any] | WebHookScheduleInfo | None = None,
+        payload_format: str = "json",
+        content_type: str | None = None,
+    ) -> ServiceWebHook:
+        """
+
+        Creates a new Feature Collection Web Hook
+
+
+        =====================================    ===========================================================================
+        **Parameter**                             **Description**
+        -------------------------------------    ---------------------------------------------------------------------------
+        name                                     Required String. Use valid name for a webhook. This name needs to be unique per service.
+        -------------------------------------    ---------------------------------------------------------------------------
+        hook_url                                 Required String.  The URL to which the payloads will be delivered.
+        -------------------------------------    ---------------------------------------------------------------------------
+        change_types                             Optional WebHookEvents or String.  The default is "WebHookEvents.ALL", which means all events.  This is a
+                                                 comma separated list of values that will fire off the web hook.  The list
+                                                 each supported type is below.
+        -------------------------------------    ---------------------------------------------------------------------------
+        signature_key                            Optional String. If specified, the key will be used in generating the HMAC
+                                                 hex digest of value using sha256 hash function and is return in the
+                                                 x-esriHook-Signature header.
+        -------------------------------------    ---------------------------------------------------------------------------
+        active                                   Optional bool. Enable or disable call backs when the webhook is triggered.
+        -------------------------------------    ---------------------------------------------------------------------------
+        schedule_info                            Optional Dict or `WebHookScheduleInfo`. Allows the trigger to be used as a given schedule.
+
+                                                 Example Dictionary:
+
+                                                     | {
+                                                     |   "name" : "Every-5seconds",
+                                                     |   "startAt" : 1478280677536,
+                                                     |   "state" : "enabled"
+                                                     |   "recurrenceInfo" : {
+                                                     |     "frequency" : "second",
+                                                     |     "interval" : 5
+                                                     |   }
+                                                     | }
+
+        -------------------------------------    ---------------------------------------------------------------------------
+        payload_format                           Optional String. The payload can be sent in pretty format or standard.
+                                                 The default is `json`.
+        -------------------------------------    ---------------------------------------------------------------------------
+        content_type                             Optional String. The Content Type is used to indicate the media type of the
+                                                 resource. The media type is a string sent along with the file indicating
+                                                 the format of the file.
+        =====================================    ===========================================================================
+
+
+        A list of allowed web hook triggers is shown below.
+
+        =====================================    ===========================================================================
+        **Name**                                 **Triggered When**
+        -------------------------------------    ---------------------------------------------------------------------------
+        `*`                                      Wildcard event. Any time any event is triggered.
+        -------------------------------------    ---------------------------------------------------------------------------
+        `FeaturesCreated`                        A new feature is created
+        -------------------------------------    ---------------------------------------------------------------------------
+        `FeaturesUpdated`                        Any time a feature is updated
+        -------------------------------------    ---------------------------------------------------------------------------
+        `FeaturesDeleted`                        Any time a feature is deleted
+        -------------------------------------    ---------------------------------------------------------------------------
+        `FeaturesEdited`                         Any time a feature is edited (insert or update or delete)
+        -------------------------------------    ---------------------------------------------------------------------------
+        `AttachmentsCreated`                     Any time adding a new attachment to a feature
+        -------------------------------------    ---------------------------------------------------------------------------
+        `AttachmentsUpdated`                     Any time updating a feature attachment
+        -------------------------------------    ---------------------------------------------------------------------------
+        `AttachmentsDeleted`                     Any time an attachment is deleted from a feature
+        -------------------------------------    ---------------------------------------------------------------------------
+        `LayerSchemaChanged`                     Any time a schema is changed in a layer
+        -------------------------------------    ---------------------------------------------------------------------------
+        `LayerDefinitionChanged`                 Any time a layer definition is changed
+        -------------------------------------    ---------------------------------------------------------------------------
+        `FeatureServiceDefinitionChanged`        Any time a feature service is changed
+        =====================================    ===========================================================================
+
+        :return:
+            A :class:`~arcgis.gis.server.admin._services.ServiceWebHook` object
+
+        """
+        url: str = f"{self._url}/create"
+        if isinstance(change_types, list):
+            ctnew: list[str] = []
+            for ct in change_types:
+                if isinstance(ct, str):
+                    ctnew.append(ct)
+                elif isinstance(ct, WebHookEvents):
+                    ctnew.append(ct.value)
+            change_types: str = ",".join(ctnew)
+        elif isinstance(change_types, WebHookEvents):
+            change_types: str = change_types.value
+        if isinstance(schedule_info, WebHookScheduleInfo):
+            schedule_info: dict[str, Any] = schedule_info.as_dict()
+        elif schedule_info is None:
+            schedule_info: dict[str, Any] = {
+                "name": "",
+                "state": "enabled",
+                "startAt": int(_datetime.datetime.now().timestamp() * 1000),
+                "recurrenceInfo": {"interval": 20, "frequency": "second"},
+            }
+        params: dict[str, Any] = {
+            "f": "json",
+            "name": name,
+            "changeTypes": change_types,
+            "signatureKey": signature_key,
+            "hookUrl": hook_url,
+            "active": active,
+            "scheduleInfo": schedule_info,
+            "payloadFormat": payload_format,
+        }
+        if content_type:
+            params["contentType"] = content_type
+        resp: dict[str, Any] = self._con.post(url, params)
+        self._properties = None
+        if "status" in resp and resp["status"] == "error":
+            raise ValueError(". ".join(resp["messages"]))
+        elif not "url" in resp:
+            hook_id: str = resp.get("id", None) or resp.get("globalId", None)
+            hook_url: str = self._url + f"/{hook_id}"
+            return ServiceWebHook(url=hook_url, gis=self._con)
+        else:
+            return ServiceWebHook(url=resp["url"], gis=self._con)
+
+    # ----------------------------------------------------------------------
+    @property
+    def list(self) -> list[ServiceWebHook]:
+        """
+        Lists the existing webhooks
+
+        :return: list[ServiceWebHook]
+        """
+        hooks: list[ServiceWebHook] = []
+        url: str = f"{self.url}"
+        params: dict[str, Any] = {
+            "f": "json",
+            "start": 1,
+            "num": 25,
+            "sortField": None,
+            "sortOrder": None,
+        }
+        res: dict[str, Any] = self._con.get(url, params=params)
+        hooks.extend(
+            [
+                ServiceWebHook(url, gis=self._con)
+                for url in ["%s/%s" % (self._url, wh["id"]) for wh in res["webhooks"]]
+            ]
+        )
+
+        while res.get("nextStart", -1) > -1:
+            params["start"] = res["nextStart"]
+            res: dict[str, Any] = self._con.get(url, params=params)
+            hooks.extend(
+                [
+                    ServiceWebHook(url, gis=self._gis)
+                    for url in [
+                        "%s/%s" % (self._url, wh["id"]) for wh in res["webhooks"]
+                    ]
+                ]
+            )
+        return hooks
+
+    # ----------------------------------------------------------------------
+    def disable_hooks(self) -> bool:
+        """
+        The `disable_hooks` will temporarily deactivate all configured webhooks
+        for a geoprocessing or feature service. While deactivated, the service's
+        webhooks will not be invoked and payloads will not be delivered.
+
+        :return: Bool, True if successful
+
+        """
+        url: str = f"{self._url}/deactivateAll"
+        params: dict[str, Any] = {"f": "json"}
+        return self._con.post(url, params).get("status", "failed") == "success"
+
+    # ----------------------------------------------------------------------
+    def delete_all_hooks(self) -> bool:
+        """
+        The `delete_all_hooks` operation will permanently remove the specified webhook.
+
+        :return: Bool, True if successful
+
+        """
+        url = f"{self._url}/deleteAll"
+        params = {"f": "json"}
+        return self._con.post(url, params).get("status", "failed") == "success"
+
+    # ----------------------------------------------------------------------
+    def enable_hooks(self) -> bool:
+        """
+        The `enable_hooks` operation restarts a deactivated webhook. When
+        activated, payloads will be delivered to the payload URL when the
+        webhook is invoked.
+
+        :return: Bool, True if successful
+
+        """
+        url: str = f"{self._url}/activateAll"
+        params: dict[str, Any] = {"f": "json"}
+        return self._con.post(url, params).get("status", "failed") == "success"
 
 
 ########################################################################
@@ -961,13 +1421,15 @@ class Service(BaseServer):
     _url = None
     _extensions = None
     _jm = None
+    _whm = None
+
     # ----------------------------------------------------------------------
     def __init__(self, url: str, gis: GIS, initialize: bool = False, **kwargs):
         """
         Constructor
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         url                 Required string. The administration URL.
         ---------------     --------------------------------------------------------------------
@@ -979,13 +1441,14 @@ class Service(BaseServer):
 
 
         """
+        super()
         from arcgis.gis import GIS
 
         if isinstance(gis, GIS):
             con = gis._con
         else:
             con = gis
-        super(Service, self)
+        # super(Service, self)
 
         self._service_manager = kwargs.pop("service_manager", None)
         self._url = url
@@ -1080,13 +1543,13 @@ class Service(BaseServer):
         enables/disables a service extension type based on the name
 
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
         extension_objects      Required list. A list of new extensions.
         ==================     ====================================================================
 
 
-        :return: boolean
+        :return: Boolean
 
         """
         if extension_objects is None:
@@ -1115,7 +1578,7 @@ class Service(BaseServer):
         operation takes the same parameters as the Add Permission operation.
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         principal           Required string. Name of the role for whom the permission is being
                             assigned.
@@ -1132,7 +1595,11 @@ class Service(BaseServer):
         :return: dict
 
         """
-        params = {"f": "json", "principal": principal, "permission": permission}
+        params = {
+            "f": "json",
+            "principal": principal,
+            "permission": permission,
+        }
         url = self._url + "/permissions/hasChildPermissionsConflict"
         return self._con.post(path=url, postdata=params)
 
@@ -1169,13 +1636,13 @@ class Service(BaseServer):
         Renames this service to the new name
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         new_name            Required string. New name of the current service.
         ===============     ====================================================================
 
 
-        :return: boolean
+        :return: Boolean
 
         """
         params = {
@@ -1232,6 +1699,16 @@ class Service(BaseServer):
 
     # ----------------------------------------------------------------------
     @property
+    def webhook_manager(self) -> ServiceWebHookManager:
+        """Returns the Service Based Webhook Manager (ArcGIS Server 11.1+)"""
+        if self._server_version() >= [11, 0]:
+            url: str = f"{self._url}/webhooks"
+            if self._whm is None:
+                self._whm = ServiceWebHookManager(url, con=self._con)
+        return self._whm
+
+    # ----------------------------------------------------------------------
+    @property
     def _iteminfo(self) -> dict:
         """returns the item information"""
         params = {"f": "json"}
@@ -1250,7 +1727,7 @@ class Service(BaseServer):
         in the .SOE file.
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         item_id             Required string. unique ID of the item
         ===============     ====================================================================
@@ -1278,7 +1755,7 @@ class Service(BaseServer):
         Allows for the upload of new itemInfo files such as metadata.xml
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         folder              Required string. Folder on ArcGIS Server.
         ---------------     --------------------------------------------------------------------
@@ -1305,7 +1782,7 @@ class Service(BaseServer):
         this object back into the editItemInfo() as a dictionary.
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         json_dict           Required dict.  Item information dictionary.
         ===============     ====================================================================
@@ -1319,7 +1796,7 @@ class Service(BaseServer):
         return self._con.post(path=url, postdata=params)
 
     # ----------------------------------------------------------------------
-    def _service_manifest(self, file_type: str = "json") -> str:
+    def service_manifest(self, file_type: str = "json") -> str:
         """
         The service manifest resource documents the data and other
         resources that define the service origins and power the service.
@@ -1327,7 +1804,7 @@ class Service(BaseServer):
         along with other supplementary files that make up the service.
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         file_type           Required string.  This value can be json or xml.  json return the
                             manifest.json file.  xml returns the manifest.xml file.
@@ -1356,7 +1833,7 @@ class Service(BaseServer):
         on a parent resource is automatically inherited by all child resources.
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         principal           Required string. The role to be assigned.
         ---------------     --------------------------------------------------------------------
@@ -1368,7 +1845,11 @@ class Service(BaseServer):
 
         """
         u_url = self._url + "/permissions/add"
-        params = {"f": "json", "principal": principal, "isAllowed": is_allowed}
+        params = {
+            "f": "json",
+            "principal": principal,
+            "isAllowed": is_allowed,
+        }
         res = self._con.post(path=u_url, postdata=params)
         if "status" in res:
             return res["status"] == "success"
@@ -1383,13 +1864,13 @@ class Service(BaseServer):
         restarted with updated properties.
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         service             Required dict. The service JSON as a dictionary.
         ===============     ====================================================================
 
 
-        :return: boolean
+        :return: Boolean
 
 
         """
@@ -1411,7 +1892,8 @@ class Service(BaseServer):
         """
         Returns the item information
 
-        :return: ItemInformationManager
+        :return:
+            :class:`~arcgis.gis.server.ItemInformationManager`
 
         """
         if self._ii is None:
@@ -1422,7 +1904,7 @@ class Service(BaseServer):
     # ----------------------------------------------------------------------
     @property
     def jobs(self) -> "JobManager":
-        """returns a `JobManager` to manage asynchronous geoprocessing tasks"""
+        """returns a :class:`~arcgis.gis.server.JobManager` to manage asynchronous geoprocessing tasks"""
         if self._jm is None:
             url = "%s/jobs" % self._url
             self._jm = JobManager(url=url, con=self._con)
@@ -1432,6 +1914,7 @@ class Service(BaseServer):
     @property
     def _jobs(self) -> "JobManager":
         """returns a `JobManager` to manage asynchronous geoprocessing tasks"""
+
         if self._jm is None:
             url = "%s/jobs" % self._url
             self._jm = JobManager(url=url, con=self._con)
@@ -1449,6 +1932,7 @@ class JobManager(BaseServer):
     _gis = None
     _url = None
     _properties = None
+
     # ----------------------------------------------------------------------
     def __init__(self, url: str, con: Connection):
         """Constructor"""
@@ -1470,7 +1954,7 @@ class JobManager(BaseServer):
         meet specific conditions.
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         start_time          Optional Datetime. The start date/time of the geoprocessing job.
         ---------------     --------------------------------------------------------------------
@@ -1495,7 +1979,7 @@ class JobManager(BaseServer):
         ===============     ====================================================================
 
 
-        :return: List of `Job`
+        :return: List of geoprocessing service :class:`jobs <arcgis.gis.server.Job>`
 
         """
         url = "{base}/query".format(base=self._url)
@@ -1561,6 +2045,7 @@ class Job(BaseServer):
     _con = None
     _url = None
     _properties = None
+
     # ----------------------------------------------------------------------
     def __init__(self, url: str, con: GIS):
         """Constructor"""
@@ -1639,7 +2124,7 @@ class ItemInformationManager(BaseServer):
         """Uploads a file associated with the item information to the server.
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         info_file           Required String. The file to upload to the server.
         ---------------     --------------------------------------------------------------------
@@ -1674,13 +2159,9 @@ class ItemInformationManager(BaseServer):
 
         Databases
 
-           + byReference - Indicates whether the service data is referenced
-                           from a registered folder or database (true) or
-                           if it was copied to the server at the time the
-                           service was published (false).
-           + onPremiseConnectionString - Path to publisher data location.
-           + onServerConnectionString - Path to data location after
-                                        publishing completes.
+        - **byReference** - Indicates whether the service data is referenced from a registered folder or database (true) or it was copied to the server at the time the service was published (false).
+        - **onPremiseConnectionString** - Path to publisher data location.
+        - **onServerConnectionString** - Path to data location after publishing completes.
 
 
         When both the server machine and the publisher's machine are using
@@ -1698,14 +2179,9 @@ class ItemInformationManager(BaseServer):
 
         Resources
 
-           + clientName - Machine where ArcGIS Pro or ArcGIS Desktop was used to
-                          publish the service.
-           + onPremisePath - Path, relative to the 'clientName'
-                             machine, where the source resource (.mxd,
-                             .3dd, .tbx files, geodatabases, and so on)
-                             originated.
-           + serverPath - Path to the document after publishing
-                          completes.
+        - **clientName** - Machine where ArcGIS Pro or ArcGIS Desktop was used to publish the service.
+        - **onPremisePath** - Path, relative to the 'clientName' machine, where the source resource (.mxd, .3dd, .tbx files, geodatabases, and so on) originated.
+        - **serverPath** - Path to the document after publishing completes.
 
         :return: Dict
 
@@ -1738,7 +2214,7 @@ class ItemInformationManager(BaseServer):
 
         """
         url = "{base}/edit".format(base=self._url)
-        params = {"f": "json"}
+        params = {"f": "json", "serviceItemInfo": value}
         return self._con.post(url, params)
 
 

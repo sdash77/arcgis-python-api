@@ -203,7 +203,12 @@ def areas_and_lengths(
     if isinstance(area_unit, AreaUnits):
         area_unit = area_unit.value
     return gis._tools.geometry.areas_and_lengths(
-        polygons, length_unit, area_unit, calculation_type, spatial_ref, future=future
+        polygons,
+        length_unit,
+        area_unit,
+        calculation_type,
+        spatial_ref,
+        future=future,
     )
 
 
@@ -302,6 +307,7 @@ def buffer(
     ----------------  -------------------------------------------------------------------------------
     future            Optional boolean. If True, a future object will be returned and the process
                       will not wait for the task to complete. The default is False, which means wait for results.
+                      If setting future to True there is a limitation of 6500 geometries that can be processed in one call.
     ================  ===============================================================================
 
     :returns:
@@ -342,10 +348,11 @@ def convex_hull(
     future: bool = False,
 ):
     """
-    The `convex_hull` function is performed on a :class:`~arcgis.geometry.Geometry` service
-    resource. It returns the convex hull of the input geometry. The
+    The `convex_hull` function is performed on a `Geometry Service
+    resource <https://developers.arcgis.com/rest/services-reference/enterprise/geometry-service.htm>`_.
+    It returns the minimum bounding shape that contains the input geometry. The
     input geometry can be a :class:`~arcgis.geometry.Point`, :class:`~arcgis.geometry.MultiPoint`,
-    :class:`~arcgis.geometry.Polyline` , or :class:`~arcgis.geometry.Polygon`.
+    :class:`~arcgis.geometry.Polyline` , or :class:`~arcgis.geometry.Polygon` object.
 
     .. note::
         The convex hull is typically a polygon but can also be a polyline
@@ -354,22 +361,92 @@ def convex_hull(
     ================  ===============================================================================
     **Keys**          **Description**
     ----------------  -------------------------------------------------------------------------------
-    geometries        An array of :class:`~arcgis.geometry.Point`, :class:`~arcgis.geometry.MultiPoint`,
+    geometries        A list of :class:`~arcgis.geometry.Point`, :class:`~arcgis.geometry.MultiPoint`,
                       :class:`~arcgis.geometry.Polyline`, or :class:`~arcgis.geometry.Polygon` objects.
-                      The structure of each geometry in the array is the
-                      same as the structure of the JSON geometry objects returned by
-                      the ArcGIS REST API.
+                      The structure of each geometry in the array is defined the same as the
+                      `JSON geometry objects <https://developers.arcgis.com/documentation/common-data-types/geometry-objects.htm>`_
+                      returned by the ArcGIS REST API.
+
+                      .. note::
+                          :class:`~arcgis.geometry.Geometry` objects can be obtained by querying a
+                          :class:`~arcgis.features.FeatureLayer`, returning it as a Pandas
+                          data frame, and then assigning variables to a geometry based on the row index.
+
+                          .. code-block:: python
+
+                              >>> flyr_item = gis.content.search("*", "Feature Layer")[0]
+
+                              >>> flyr_df = flyr_item.query(where="1=1", as_df=True)
+                              >>> geom0 = flyr_df.loc[0].SHAPE
+
     ----------------  -------------------------------------------------------------------------------
-    spatial_ref       A :class:`~arcgis.geometry.SpatialReference` of the input geometries Well-Known ID or JSON object
+    spatial_ref       An integer value, or a :class:`~arcgis.geometry.SpatialReference` object
+                      defined using the the Well-Known ID (`wkid`) of the Spatial Reference.
+
+                      .. note:: See `Spatial Reference <https://developers.arcgis.com/documentation/common-data-types/geometry-objects.htm#GUID-DFF0E738-5A42-40BC-A811-ACCB5814BABC>`_
+                          in the `Geometry objects` help, or `Using Spatial References <https://developers.arcgis.com/rest/services-reference/enterprise/using-spatial-references.htm>`_
+                          for details on concepts and resources for finding specific `wkid` values.
+
+                      .. code-block:: python
+
+                          >>> geom_result = convex_hull(geometries=[geometry_object]
+                                                        spatial_ref=<wkid>)
+
+                      or
+
+                      .. code-block:: python
+
+                          >>> geom_result = convex_hull(geometries=[geometry_object],
+                                                        spatial_ref={"wkid": <wkid>})
+
+                      or
+
+                      .. code-block:: python
+
+                          >>> from arcgis.geometry import SpatialReference
+                          >>> sr_obj_wkid = SpatialReference(<wkid>)
+
+                          >>> geom_result = convex_hull(geometries=[geometry_object],
+                                                        spatial_ref=sr_obj_wkid)
+
     ----------------  -------------------------------------------------------------------------------
     future            Optional boolean. If True, a future object will be returned and the process
                       will not wait for the task to complete. The default is False, which means wait for results.
+                      If setting future to True there is a limitation of 6500 geometries that can be processed in one call.
     ================  ===============================================================================
 
     :returns:
-        The convex hull of the :class:`~arcgis.geometry.Geometry` object, or a `GeometryJob` object.
-        If ``future = True``,
-        then the result is a :class:`~concurrent.futures.Future` object. Call ``result()`` to get the response.
+        A list containing the :class:`~arcgis.geometry.Geometry` object of the result, or  if ``future=True``,
+        a :class:`~concurrent.futures.Future` object. Call ``result()`` on the `future` to get
+        the response details.
+
+
+    .. code-block:: python
+
+        # Usage Example:
+
+        >>> from arcgis.gis import GIS
+        >>> from arcgis.geometry import convex_hull
+
+        >>> gis = GIS(profile="your_organization_profile")
+
+        >>> flyr_item = gis.content.get("<item_id for feature layer>")
+        >>> flyr = flyr_item.layers[0]
+
+        >>> df = flyr.query(where="OBJECTID=1", as_df=True)
+
+        >>> geom1 = df.loc[0].SHAPE
+        >>> hull_geom1 = convex_hull(geometries=[geom1],
+                                     spatial_ref={"wkid": 2056})
+
+        >>> hull_geom1[0]
+
+        {'rings': [[[2664507.7925999984, 1212609.7138999999],
+        .,
+        .,
+        [2664678.264199998, 1212618.6860999987],
+        [2664507.7925999984, 1212609.7138999999]]],
+        'spatialReference': {'wkid': {'wkid': 2056}}}
     """
     if gis is None:
         gis = arcgis.env.active_gis
@@ -415,6 +492,7 @@ def cut(
     ----------------  -------------------------------------------------------------------------------
     future            Optional boolean. If True, a future object will be returned and the process
                       will not wait for the task to complete. The default is False, which means wait for results.
+                      If setting future to True there is a limitation of 6500 geometries that can be processed in one call.
     ================  ===============================================================================
 
     :returns:
@@ -476,6 +554,7 @@ def densify(
     ----------------  -------------------------------------------------------------------------------
     future            Optional boolean. If True, a future object will be returned and the process
                       will not wait for the task to complete. The default is False, which means wait for results.
+                      If setting future to True there is a limitation of 6500 geometries that can be processed in one call.
     ================  ===============================================================================
 
     :returns:
@@ -541,6 +620,7 @@ def difference(
     ----------------  -------------------------------------------------------------------------------
     future            Optional boolean. If True, a future object will be returned and the process
                       will not wait for the task to complete. The default is False, which means wait for results.
+                      If setting future to True there is a limitation of 6500 geometries that can be processed in one call.
     ================  ===============================================================================
 
     :returns:
@@ -610,7 +690,12 @@ def distance(
     if isinstance(distance_unit, LengthUnits):
         distance_unit = distance_unit.value
     return gis._tools.geometry.distance(
-        spatial_ref, geometry1, geometry2, distance_unit, geodesic, future=future
+        spatial_ref,
+        geometry1,
+        geometry2,
+        distance_unit,
+        geodesic,
+        future=future,
     )
 
 
@@ -805,6 +890,7 @@ def generalize(
     ----------------  -------------------------------------------------------------------------------
     future            Optional boolean. If True, a future object will be returned and the process
                       will not wait for the task to complete. The default is False, which means wait for results.
+                      If setting future to True there is a limitation of 6500 geometries that can be processed in one call.
     ================  ===============================================================================
 
     :returns:
@@ -854,6 +940,7 @@ def intersect(
     ----------------  -------------------------------------------------------------------------------
     future            Optional boolean. If True, a future object will be returned and the process
                       will not wait for the task to complete. The default is False, which means wait for results.
+                      If setting future to True there is a limitation of 6500 geometries that can be processed in one call.
     ================  ===============================================================================
 
     :returns:
@@ -959,8 +1046,8 @@ def lengths(
         gis = arcgis.env.active_gis
     if isinstance(length_unit, LengthUnits):
         length_unit = length_unit.value
-
-    return gis._tools.geometry.lengths(
+    service = gis._tools.geometry
+    return service.lengths(
         spatial_ref, polylines, length_unit, calculation_type, future=future
     )
 
@@ -1032,6 +1119,7 @@ def offset(
     ----------------  -------------------------------------------------------------------------------
     future            Optional boolean. If True, a future object will be returned and the process
                       will not wait for the task to complete. The default is False, which means wait for results.
+                      If setting future to True there is a limitation of 6500 geometries that can be processed in one call.
     ================  ===============================================================================
 
     :returns:
@@ -1110,6 +1198,7 @@ def project(
     ----------------  -------------------------------------------------------------------------------
     future            Optional boolean. If True, a future object will be returned and the process
                       will not wait for the task to complete. The default is False, which means wait for results.
+                      If setting future to True there is a limitation of 6500 geometries that can be processed in one call.
     ================  ===============================================================================
 
     :returns:
@@ -1129,7 +1218,12 @@ def project(
     if gis is None:
         gis = arcgis.env.active_gis
     return gis._tools.geometry.project(
-        geometries, in_sr, out_sr, transformation, transform_forward, future=future
+        geometries,
+        in_sr,
+        out_sr,
+        transformation,
+        transform_forward,
+        future=future,
     )
 
 
@@ -1265,6 +1359,7 @@ def simplify(
     ----------------  -------------------------------------------------------------------------------
     future            Optional boolean. If True, a future object will be returned and the process
                       will not wait for the task to complete. The default is False, which means wait for results.
+                      If setting future to True there is a limitation of 6500 geometries that can be processed in one call.
     ================  ===============================================================================
 
     :returns:
@@ -1492,6 +1587,7 @@ def union(
     ----------------  -------------------------------------------------------------------------------
     future            Optional boolean. If True, a future object will be returned and the process
                       will not wait for the task to complete. The default is False, which means wait for results.
+                      If setting future to True there is a limitation of 6500 geometries that can be processed in one call.
     ================  ===============================================================================
 
     :returns:

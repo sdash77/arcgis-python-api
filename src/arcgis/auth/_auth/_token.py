@@ -1,7 +1,9 @@
+from __future__ import annotations
 from cachetools import cached, TTLCache
 import lxml.html
-from urllib.parse import urlunparse, quote, parse_qsl, parse_qs
+from urllib.parse import urlunparse, quote, parse_qsl, parse_qs, urlparse
 from functools import lru_cache
+from typing import Any
 from getpass import getpass
 from requests.auth import AuthBase
 from requests_oauthlib import OAuth2Session
@@ -12,12 +14,15 @@ from ..tools._lazy import LazyLoader
 from ..tools import parse_url
 from .._error import ArcGISLoginError
 
+warnings = LazyLoader("warnings")
 re = LazyLoader("re")
 json = LazyLoader("json")
 threading = LazyLoader("threading")
 _dt = LazyLoader("datetime")
 requests = LazyLoader("requests")
 requests_oauthlib = LazyLoader("requests_oauthlib")
+warnings = LazyLoader("warnings")
+
 _MSG = """
 
 You need to a security question by integer:
@@ -37,10 +42,15 @@ You need to a security question by integer:
 13. What is your dream job?
 14. Where did you go on your first date?
 """
+
+
 # -------------------------------------------------------------------------
 @lru_cache(maxsize=255)
 def _token_url_validator(
-    url: str, session: "EsriSession", verify: bool = False, proxies: frozenset = None
+    url: str,
+    session: "EsriSession",
+    verify: bool = False,
+    proxies: frozenset = None,
 ) -> str:
     """validates the token url from the give URL"""
     parts = ["/info", "/rest/info", "/sharing/rest/info"]
@@ -49,17 +59,21 @@ def _token_url_validator(
         proxies = dict(proxies)
     parsed_url = _parse_arcgis_url(url=url)
     token_url = None  # parsed_url + "/sharing/rest/generateToken"
-    for pt in parts:
-        try:
-            resp = session.get(
-                f"{parsed_url}{pt}?f=json", proxies=proxies, verify=verify
-            )  # need to include proxies, verify parameter
-            token_url = resp.json()["authInfo"]["tokenServicesUrl"]
-            if token_url:
-                break
-            del pt
-        except Exception as e:
-            pass
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore")
+        for pt in parts:
+            try:
+                resp = session.get(
+                    f"{parsed_url}{pt}?f=json",
+                    proxies=proxies,
+                    verify=verify,
+                )  # need to include proxies, verify parameter
+                token_url = resp.json()["authInfo"]["tokenServicesUrl"]
+                if token_url:
+                    break
+                del pt
+            except Exception as e:
+                pass
     return token_url
 
 
@@ -87,6 +101,174 @@ def _parse_arcgis_url(url: str) -> str:
         if len(wa) == 0:
             return f"{parsed.scheme}://{parsed.netloc}"
         return f"{parsed.scheme}://{parsed.netloc}/{wa}"
+
+
+###########################################################################
+class ArcGISServerAuth(AuthBase, SupportMultiAuth):
+    """
+    Performs the ArcGIS Server (ags) Authentication for a given request.
+    """
+
+    _arcpy = None
+    _referer = None
+    _invalid_token_urls = None
+    _401_counters = None
+    _ags = None
+
+    # ----------------------------------------------------------------------
+    def __init__(self, ags_file: str, legacy: bool = False):
+        try:
+            self._arcpy = LazyLoader("arcpy", strict=True)
+            self.legacy = legacy
+            self._invalid_token_urls = set()
+            self._401_counters = dict()
+            self._ags = ags_file
+        except:
+            raise
+
+    # ----------------------------------------------------------------------
+    def __str__(self):
+        return f"<{self.__class__.__name__}, token=.....>"
+
+    # ----------------------------------------------------------------------
+    def __repr__(self):
+        return f"<{self.__class__.__name__}, token=.....>"
+
+    # ----------------------------------------------------------------------
+    @property
+    def token(self):
+        """obtains the login token"""
+        return self._ags_token()
+
+    @lru_cache(maxsize=255)
+    def _read_ags_file(self, ags_file: str) -> dict[str, Any]:
+        """reads the ags file into cache"""
+        return self._arcpy.gp.getStandaloneServerToken(self._ags) or {}
+
+    # ----------------------------------------------------------------------
+    @lru_cache(maxsize=255)
+    def _url(self, ags_file) -> str:
+        if self._arcpy:
+            resp = self._read_ags_file(ags_file)
+            return _parse_arcgis_url(resp.get("serverUrl")) + "/rest/services"
+        else:
+            raise Exception("ArcPy not found, please install arcpy")
+
+    # ----------------------------------------------------------------------
+    @property
+    def url(self) -> str:
+        """gets the token for various products"""
+        if self._arcpy:
+            return self._url(ags_file=self._ags)
+
+        else:
+            raise Exception("ArcPy not found, please install arcpy")
+
+    # ----------------------------------------------------------------------
+    def _ags_token(self):
+        """gets the token for various products"""
+        if self._arcpy:
+            resp = self._read_ags_file(self._ags)
+            if resp:
+                if "referer" in resp:
+                    self._referer = resp["referer"]
+                if "token" in resp:
+                    return resp["token"]
+                else:
+                    raise Exception("Could not generate token.")
+            else:
+                raise Exception(
+                    (
+                        "Could not login using Pro authencation."
+                        "Please verify in Pro that you are logged in."
+                    )
+                )
+        else:
+            raise Exception("ArcPy not found, please install arcpy")
+
+    # ----------------------------------------------------------------------
+    def handle_40x(self, r, **kwargs):
+        """Handles Case where token is invalid"""
+        parsed = parse_url(r.url)
+        if parsed.port:
+            server_url = (
+                f"{parsed.scheme}://{parsed.netloc}:{parsed.port}/{parsed.path}"
+            )
+        else:
+            server_url = f"{parsed.scheme}://{parsed.netloc}/{parsed.path}"
+        if (r.status_code < 500 and r.status_code > 399) and str(r.text).lower().find(
+            "invalid token"
+        ) > -1:
+            # Recreate the request without the token
+            #
+            parsed = parse_url(r.url)
+
+            self._invalid_token_urls.add(server_url)
+            r.content
+            r.raw.release_conn()
+            r.request.headers.pop("X-Esri-Authorization", None)
+            _r = r.connection.send(r.request, **kwargs)
+            _r.headers["referer"] = self._referer or "http"
+            _r.history.append(r)
+            return _r
+        elif str(r.text).lower().find("invalid token") > -1:
+            # Recreate the request without the token
+            #
+            parsed = parse_url(r.url)
+            self._invalid_token_urls.add(server_url)
+            r.content
+            r.raw.release_conn()
+            r.request.headers.pop("X-Esri-Authorization", None)
+            _r = r.connection.send(r.request, **kwargs)
+            _r.headers["referer"] = self._referer or "http"
+            _r.history.append(r)
+            return _r
+        return r
+
+    # ----------------------------------------------------------------------
+    def __call__(self, r):
+        """Handles the Token Authorization Logic"""
+        if self._invalid_token_urls is None:
+            self._invalid_token_urls = set()
+        parsed = parse_url(r.url)
+        if parsed.port:
+            server_url = f"{parsed.scheme}://{parsed.netloc}:{parsed.port}{parsed.path}"
+        else:
+            server_url = f"{parsed.scheme}://{parsed.netloc}{parsed.path}"
+        if not server_url in self._invalid_token_urls:
+            r.register_hook("response", self.handle_40x)
+            if self.legacy == False and self.token:
+                r.headers["X-Esri-Authorization"] = f"Bearer {self.token}"
+                r.headers["referer"] = self._referer or ""
+            elif self.legacy == False and not self.token:
+                r.headers["referer"] = self._referer or ""
+            elif self.legacy and r.method == "GET" and self.token:
+                r.prepare_url(url=r.url, params={"token": self.token})
+                r.headers["referer"] = self._referer or ""
+            elif self.legacy and r.method == "GET" and not self.token:
+                r.headers["referer"] = self._referer or ""
+            elif self.legacy and r.method == "POST" and self.token:
+                data = parse_qs(r.body)
+                data["token"] = self.token
+                r.prepare_body(data, None, None)
+                r.headers["referer"] = self._referer or ""
+            elif self.legacy and r.method == "POST" and not self.token:
+                data = parse_qs(r.body)
+                r.prepare_body(data, None, None)
+                r.headers["referer"] = self._referer or ""
+            else:
+                raise Exception(
+                    "Only POST and GET are supported with legacy methods of authentication."
+                )
+            try:
+                self.pos = r.body.tell()
+            except AttributeError:
+                self.pos = None
+
+            return r
+        else:
+            r.headers.pop("X-Esri-Authorization", None)
+        return r
 
 
 ###########################################################################
@@ -148,14 +330,21 @@ class ArcGISProAuth(AuthBase, SupportMultiAuth):
     # ----------------------------------------------------------------------
     def handle_40x(self, r, **kwargs):
         """Handles Case where token is invalid"""
-
+        parsed = parse_url(r.url)
+        if parsed.port:
+            server_url = (
+                f"{parsed.scheme}://{parsed.netloc}:{parsed.port}/{parsed.path}"
+            )
+        else:
+            server_url = f"{parsed.scheme}://{parsed.netloc}/{parsed.path}"
         if (r.status_code < 500 and r.status_code > 399) and str(r.text).lower().find(
             "invalid token"
         ) > -1:
             # Recreate the request without the token
             #
             parsed = parse_url(r.url)
-            self._invalid_token_urls.add(parsed.netloc)
+
+            self._invalid_token_urls.add(server_url)
             r.content
             r.raw.release_conn()
             r.request.headers.pop("X-Esri-Authorization", None)
@@ -167,7 +356,7 @@ class ArcGISProAuth(AuthBase, SupportMultiAuth):
             # Recreate the request without the token
             #
             parsed = parse_url(r.url)
-            self._invalid_token_urls.add(parsed.netloc)
+            self._invalid_token_urls.add(server_url)
             r.content
             r.raw.release_conn()
             r.request.headers.pop("X-Esri-Authorization", None)
@@ -183,7 +372,13 @@ class ArcGISProAuth(AuthBase, SupportMultiAuth):
         if self._invalid_token_urls is None:
             self._invalid_token_urls = set()
         parsed = parse_url(r.url)
-        if not parsed.netloc in self._invalid_token_urls:
+        if parsed.port:
+            server_url = (
+                f"{parsed.scheme}://{parsed.netloc}:{parsed.port}/{parsed.path}"
+            )
+        else:
+            server_url = f"{parsed.scheme}://{parsed.netloc}/{parsed.path}"
+        if not server_url in self._invalid_token_urls:
             r.register_hook("response", self.handle_40x)
             if self.legacy == False:
                 r.headers["X-Esri-Authorization"] = f"Bearer {self.token}"
@@ -234,6 +429,7 @@ class EsriBuiltInAuth(AuthBase, SupportMultiAuth):
     _response_type = None
     _client = None
     _expiration = None
+
     # ----------------------------------------------------------------------
     def __init__(
         self,
@@ -250,9 +446,13 @@ class EsriBuiltInAuth(AuthBase, SupportMultiAuth):
         self._expiration = expiration or 20160
         self._response_type = kwargs.pop("response_type", "token")
         if self._response_type == "token":
+            self._clientid = "pythonapi"  # "arcgisonline"
+        else:
+            self._clientid = kwargs.get("clientid", "pythonapi")  # "arcgispro"
+        if self._response_type == "token":
             from oauthlib.oauth2 import MobileApplicationClient
 
-            self._client = MobileApplicationClient(client_id="arcgisonline")
+            self._client = MobileApplicationClient(client_id=self._clientid)
 
         if referer is None:
             self._referer = ""
@@ -266,10 +466,7 @@ class EsriBuiltInAuth(AuthBase, SupportMultiAuth):
         self._signin_url = f"{url}/sharing/oauth2/signin"
         self._reset_password_url = f"{url}/sharing/oauth2/resetPassword"
         self._update_profile_url = f"{url}/sharing/oauth2/updateUserProfile"
-        if self._response_type == "token":
-            self._clientid = "arcgisonline"
-        else:
-            self._clientid = kwargs.get("clientid", "arcgispro")
+
         self._no_go_token = set()
         self._username = username
         self._password = password
@@ -339,7 +536,11 @@ class EsriBuiltInAuth(AuthBase, SupportMultiAuth):
         auth_url, state = session.authorization_url(
             self._auth_url,
             expiration=self._expiration,
-            **{"allow_verification": "false", "style": "dark", "locale": "en-US"},
+            **{
+                "allow_verification": "false",
+                "style": "dark",
+                "locale": "en-US",
+            },
         )
         auth_response = requests.get(
             url=auth_url,
@@ -376,7 +577,10 @@ class EsriBuiltInAuth(AuthBase, SupportMultiAuth):
             oauth_state = parse_qs(parsed.query)["oauth_state"][0]
 
             url = f"{parsed.scheme}://{parsed.netloc}{parsed.path}"
-            params = {"oauth_state": oauth_state, "acceptTermsAndConditions": True}
+            params = {
+                "oauth_state": oauth_state,
+                "acceptTermsAndConditions": True,
+            }
             response = requests.post(
                 url,
                 params,
@@ -408,13 +612,26 @@ class EsriBuiltInAuth(AuthBase, SupportMultiAuth):
         authorization_url, state = self._oauth.authorization_url(
             self._auth_url,
             expiration=20160,
-            **{"allow_verification": "false", "style": "dark", "locale": "en-US"},
+            **{
+                "allow_verification": "false",
+                "style": "dark",
+                "locale": "en-US",
+            },
         )
         self._authorization_url = authorization_url
         self._state = state
         content = requests.get(
-            self._authorization_url, verify=self._verify_cert, proxies=self.proxies
+            self._authorization_url,
+            verify=self._verify_cert,
+            proxies=self.proxies,
         ).text
+        if content.find("Error: Invalid client_id") > -1:
+            self._clientid = "arcgisonline"
+            from oauthlib.oauth2 import MobileApplicationClient
+
+            self._client = MobileApplicationClient(client_id=self._clientid)
+            self._init_response_type_token()
+            return
         oauth_info = None
         pattern = self._re_expressions["step-1a"]
         if len(pattern.findall(content)) == 0:
@@ -431,7 +648,6 @@ class EsriBuiltInAuth(AuthBase, SupportMultiAuth):
                     oauth_info = json.loads(js_object + "}")
                 break
         if oauth_info:
-
             oauth_state = oauth_info["oauth_state"]
         else:
             raise ArcGISLoginError(
@@ -478,7 +694,10 @@ class EsriBuiltInAuth(AuthBase, SupportMultiAuth):
             parsed = parse_url(signin_resp.url)
             oauth_state = parse_qs(signin_resp.url.split("?")[-1])["oauth_state"][0]
             url = f"{parsed.scheme}://{parsed.netloc}{parsed.path}"
-            params = {"oauth_state": oauth_state, "acceptTermsAndConditions": True}
+            params = {
+                "oauth_state": oauth_state,
+                "acceptTermsAndConditions": True,
+            }
             signin_resp = requests.post(
                 url,
                 params,
@@ -666,7 +885,6 @@ class EsriBuiltInAuth(AuthBase, SupportMultiAuth):
             )
             self._init_response_type_token()
         else:
-
             self._auth_token = self._oauth.refresh_token(
                 token_url=self._token_url,
                 verify=self._verify_cert,
@@ -701,6 +919,7 @@ class EsriGenTokenAuth(AuthBase, SupportMultiAuth):
     _token = None
     _expires_on = None
     _portal_auth = None
+
     # ----------------------------------------------------------------------
     def __init__(
         self,
@@ -730,19 +949,22 @@ class EsriGenTokenAuth(AuthBase, SupportMultiAuth):
             self._session.verify = verify_cert
             self._session.allow_redirects = True
         if self.proxies:
-
-            token_url = _token_url_validator(
-                _parse_arcgis_url(token_url),
-                session=self._session,
-                verify=False,
-                proxies=frozenset(self.proxies.items()),
-            )
+            with warnings.catch_warnings():
+                warnings.simplefilter("ignore")
+                token_url = _token_url_validator(
+                    _parse_arcgis_url(token_url),
+                    session=self._session,
+                    verify=False,
+                    proxies=frozenset(self.proxies.items()),
+                )
         else:
-            token_url = _token_url_validator(
-                _parse_arcgis_url(token_url),
-                session=self._session,
-                verify=False,
-            )
+            with warnings.catch_warnings():
+                warnings.simplefilter("ignore")
+                token_url = _token_url_validator(
+                    _parse_arcgis_url(token_url),
+                    session=self._session,
+                    verify=False,
+                )
         self._thread_local = threading.local()
 
         self._expires_on = None
@@ -887,16 +1109,21 @@ class EsriGenTokenAuth(AuthBase, SupportMultiAuth):
                 r.close()
                 prep = r.request.copy()
                 if self._legacy_auth and prep.method == "GET":
-
                     parsed = parse_url(prep.url)
                     url = urlunparse(
-                        (parsed.scheme, parsed.netloc, parsed.path, "", "", "")
+                        (
+                            parsed.scheme,
+                            parsed.netloc,
+                            parsed.path,
+                            "",
+                            "",
+                            "",
+                        )
                     )
                     kv = dict(parse_qsl(parsed.query))
                     kv.pop("token", None)
                     prep.prepare_url(url=url, params=kv)
                 elif self._legacy_auth and prep.method == "POST":
-
                     data = parse_qs(prep.body)
                     data.pop("token", None)
                     prep.prepare_body(data, None, None)

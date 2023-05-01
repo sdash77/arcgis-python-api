@@ -79,11 +79,11 @@ class TabularDataObject(object):
         procs=None,
         val_split_pct=0.1,
         seed=42,
+        stratify=False,
         batch_size=64,
         index_field=None,
         column_transforms_mapping=None,
     ):
-
         if not HAS_FASTAI:
             return
 
@@ -153,25 +153,115 @@ class TabularDataObject(object):
         tabular_data._seed = seed
         tabular_data._cell_sizes = cell_sizes
 
+        tabular_data._is_empty = False
+
         validation_indexes = []
         if tabular_data._dependent_variable:
             random.seed(seed)
-            validation_indexes = random.sample(
-                range(len(tabular_data._dataframe)),
-                round(val_split_pct * len(tabular_data._dataframe)),
-            )
-            tabular_data._validation_indexes = validation_indexes
+            if tabular_data._is_classification():
+                dependent_variable_column = tabular_data._dataframe[
+                    tabular_data._dependent_variable
+                ]
+                try:
+                    total_val = len(dependent_variable_column.values)
+                    unique_rows = dependent_variable_column.value_counts()
+                    imabalanced_class_list = {}
+                    for row, count in unique_rows.items():
+                        if count < total_val * 0.01:
+                            imabalanced_class_list[row] = count
+                except Exception as e:
+                    warnings.warn(f"Unable to check for class imbalance [reason : {e}]")
+                if stratify:
+                    if len(imabalanced_class_list) > 0:
+                        try:
+                            warnings.warn(
+                                f'We see a class imbalance in the dataset. The class(es) {",".join([str(key) for key in imabalanced_class_list.keys()])} does not have enough data points in your dataset.'
+                            )
+                        except:
+                            warnings.warn("We see a class imbalance in the dataset")
+                    try:
+                        from sklearn.model_selection import train_test_split
 
-        tabular_data._training_indexes = list(
-            set([i for i in range(len(tabular_data._dataframe))])
-            - set(validation_indexes)
-        )
+                        if (
+                            len(set(dependent_variable_column.values))
+                            > len(dependent_variable_column.values) * val_split_pct
+                        ):
+                            classes = len(set(dependent_variable_column.values))
+                            xlen = len(dependent_variable_column.values)
+                            sample_shortage = math.ceil(
+                                (classes - xlen * val_split_pct) / val_split_pct
+                            )
+                            req_instances_per_class = (xlen + sample_shortage) / classes
+                            classes_below_req_intances = list(
+                                dependent_variable_column.value_counts()[
+                                    dependent_variable_column.value_counts()
+                                    < req_instances_per_class
+                                ].index
+                            )
+                            warnings.warn(
+                                f'For valid statification all classes should have at least {str(req_instances_per_class)} data points, class(es) {",".join(str(classes_below_req_intances))} in your data does not meet the condition. Unable to perform stratified splitting, falling back to random split'
+                            )
+                            validation_indexes = tabular_data._dataframe.sample(
+                                n=round(val_split_pct * len(tabular_data._dataframe)),
+                                replace=False,
+                                random_state=seed,
+                            ).index.to_list()
+                        else:
+                            train, test = train_test_split(
+                                tabular_data._dataframe,
+                                test_size=val_split_pct,
+                                random_state=seed,
+                                stratify=dependent_variable_column,
+                            )
+                            validation_indexes = test.index.tolist()
+                    except Exception as e:
+                        warnings.warn(
+                            f"Unable to perform stratified splitting [reason : {e}], falling back to random split"
+                        )
+                        validation_indexes = tabular_data._dataframe.sample(
+                            n=round(val_split_pct * len(tabular_data._dataframe)),
+                            replace=False,
+                            random_state=seed,
+                        ).index.to_list()
+                else:
+                    if len(imabalanced_class_list) > 0:
+                        try:
+                            warnings.warn(
+                                f'We see a class imbalance in the dataset. The class(es) {",".join([str(key) for key in imabalanced_class_list.keys()])} does not have enough data points in your dataset. Although, class imbalance cannot be overcome easily, adding the parameter stratify = True will to a certain extent help get over this problem.'
+                            )
+                        except:
+                            warnings.warn("We see a class imbalance in the dataset")
+                    validation_indexes = tabular_data._dataframe.sample(
+                        n=round(val_split_pct * len(tabular_data._dataframe)),
+                        replace=False,
+                        random_state=seed,
+                    ).index.to_list()
+            else:
+                validation_indexes = random.sample(
+                    range(len(tabular_data._dataframe)),
+                    round(val_split_pct * len(tabular_data._dataframe)),
+                )
+
+            tabular_data._validation_indexes = validation_indexes
+        if tabular_data._dependent_variable:
+            if tabular_data._is_classification():
+                tabular_data._training_indexes = list(
+                    set([i for i in tabular_data._dataframe.index])
+                    - set(validation_indexes)
+                )
+            else:
+                tabular_data._training_indexes = list(
+                    set([i for i in range(len(tabular_data._dataframe))])
+                    - set(validation_indexes)
+                )
         if not tabular_data._dependent_variable:
+            tabular_data._training_indexes = list(
+                set([i for i in range(len(tabular_data._dataframe))])
+                - set(validation_indexes)
+            )
             tabular_data._validation_indexes = list(
                 set([i for i in range(len(tabular_data._dataframe))])
             )
-
-        tabular_data._is_empty = False
 
         if tabular_data._dependent_variable:
             tabular_data._is_classification = tabular_data._is_classification()
@@ -410,6 +500,7 @@ class TabularDataObject(object):
             self._procs,
             self._validation_indexes,
             self._bs,
+            self._is_classification,
         )
 
     @property
@@ -428,7 +519,10 @@ class TabularDataObject(object):
         labels = None
 
         if self._dependent_variable:
-            labels = np.array(dataframe[self._dependent_variable])
+            labels = np.array(
+                dataframe[self._dependent_variable],
+                dtype=dataframe[self._dependent_variable].dtype.type,
+            )
             dataframe = dataframe.drop(self._dependent_variable, axis=1)
 
         if not self._procs:
@@ -455,14 +549,17 @@ class TabularDataObject(object):
                 try:
                     dataframe[variable] = np.array(
                         labelEncoder.fit_transform(
-                            dataframe[variable].values.reshape(-1, 1)
+                            dataframe[variable].values.astype(str).reshape(-1, 1)
                         ),
                         dtype="int64",
                     )
                 except:
                     dataframe[variable] = np.array(
                         labelEncoder.fit_transform(
-                            dataframe[variable].values.to_numpy().reshape(-1, 1)
+                            dataframe[variable]
+                            .values.astype(str)
+                            .to_numpy()
+                            .reshape(-1, 1)
                         ),
                         dtype="int64",
                     )
@@ -478,19 +575,43 @@ class TabularDataObject(object):
                 "ERROR",
             )
 
-        training_data = processed_data.take(self._training_indexes, axis=0)
-        training_labels = None
-        if self._dependent_variable:
-            training_labels = labels.take(self._training_indexes)
+        if self._is_classification:
+            scaled_features_df = pd.DataFrame(
+                processed_data, index=dataframe.index, columns=dataframe.columns
+            )
+            scaled_labels_df = pd.DataFrame(labels, index=dataframe.index)
 
-        validation_data = processed_data.take(self._validation_indexes, axis=0)
-        validation_labels = None
-        if self._dependent_variable:
-            validation_labels = labels.take(self._validation_indexes)
+            training_data = scaled_features_df.loc[self._training_indexes].to_numpy()
+            training_labels = None
+            if self._dependent_variable:
+                training_labels = (
+                    scaled_labels_df.loc[self._training_indexes].to_numpy().squeeze()
+                )
+
+            validation_data = scaled_features_df.loc[
+                self._validation_indexes
+            ].to_numpy()
+            validation_labels = None
+            if self._dependent_variable:
+                validation_labels = (
+                    scaled_labels_df.loc[self._validation_indexes].to_numpy().squeeze()
+                )
+            del scaled_features_df
+            del scaled_labels_df
+        else:
+            training_data = processed_data.take(self._training_indexes, axis=0)
+            training_labels = None
+            if self._dependent_variable:
+                training_labels = labels.take(self._training_indexes)
+
+            validation_data = processed_data.take(self._validation_indexes, axis=0)
+            validation_labels = None
+            if self._dependent_variable:
+                validation_labels = labels.take(self._validation_indexes)
 
         return training_data, training_labels, validation_data, validation_labels
 
-    def _time_series_bunch(self, seq_len, normalize=True, bunch=True):
+    def _time_series_bunch(self, seq_len, location_var, normalize=True, bunch=True):
         if self._index_data is not None:
             bunched = []
             for i in range(len(self._index_data) - seq_len - 1):
@@ -498,13 +619,27 @@ class TabularDataObject(object):
 
             self._index_seq = np.array(bunched)
 
+        if location_var:
+            location_var_data = self._dataframe[location_var]
+            self._dataframe = self._dataframe.drop(location_var, axis=1)
+            if location_var in self._continuous_variables:
+                self._continuous_variables.remove(location_var)
+            elif location_var in self._categorical_variables:
+                self._categorical_variables.remove(location_var)
+            else:
+                location_var_data = None
+        else:
+            location_var_data = None
+
         if self._is_raster_only:
             return self._raster_timeseries_bunch(normalize, bunch)
 
         if len(list(self._dataframe.columns.values)) == 1:
-            return self._univariate_bunch(seq_len, normalize, bunch)
+            return self._univariate_bunch(seq_len, normalize, bunch, location_var_data)
         else:
-            return self._multivariate_bunch(seq_len, normalize, bunch)
+            return self._multivariate_bunch(
+                seq_len, normalize, bunch, location_var_data
+            )
 
     def _raster_timeseries_bunch(self, normalize=True, bunched=True):
         kwargs_variables = {"num_workers": 0} if sys.platform == "win32" else {}
@@ -542,13 +677,28 @@ class TabularDataObject(object):
             for col in list(df.columns):
                 transformed_data = df[col]
                 for transform in self._column_transforms_mapping.get(col, []):
-                    transformed_data = transform.fit_transform(
-                        np.array(transformed_data, dtype=df[col].dtype).reshape(-1, 1)
-                    )
+                    try:
+                        transformed_data = transform.fit_transform(
+                            np.array(transformed_data, dtype=df[col].dtype).reshape(
+                                -1, 1
+                            )
+                        )
+                    except:
+                        transformed_data = transform.fit_transform(
+                            np.array(
+                                transformed_data,
+                                dtype=type(df[col][0]),
+                            ).reshape(-1, 1)
+                        )
                     transformed_data = transformed_data.squeeze(1)
-                processed_dataframe[col] = np.array(
-                    transformed_data, dtype=df[col].dtype
-                )
+                try:
+                    processed_dataframe[col] = np.array(
+                        transformed_data, dtype=df[col].dtype
+                    )
+                except:
+                    processed_dataframe[col] = np.array(
+                        transformed_data, dtype=type(df[col][0])
+                    )
         else:
             processed_dataframe = df.copy()
 
@@ -597,7 +747,9 @@ class TabularDataObject(object):
 
         return data
 
-    def _multivariate_bunch(self, seq_len, normalize=True, bunched=True):
+    def _multivariate_bunch(
+        self, seq_len, normalize=True, bunched=True, location_var=None
+    ):
         kwargs_variables = {"num_workers": 0} if sys.platform == "win32" else {}
 
         kwargs_variables["bs"] = self._bs
@@ -633,24 +785,53 @@ class TabularDataObject(object):
             for col in list(df.columns):
                 transformed_data = df[col]
                 for transform in self._column_transforms_mapping.get(col, []):
-                    transformed_data = transform.fit_transform(
-                        np.array(transformed_data, dtype=df[col].dtype).reshape(-1, 1)
-                    )
+                    try:
+                        transformed_data = transform.fit_transform(
+                            np.array(transformed_data, dtype=df[col].dtype).reshape(
+                                -1, 1
+                            )
+                        )
+                    except:
+                        transformed_data = transform.fit_transform(
+                            np.array(
+                                transformed_data,
+                                dtype=type(df[col][0]),
+                            ).reshape(-1, 1)
+                        )
                     transformed_data = transformed_data.squeeze(1)
-                processed_dataframe[col] = np.array(
-                    transformed_data, dtype=df[col].dtype
-                )
+                try:
+                    processed_dataframe[col] = np.array(
+                        transformed_data, dtype=df[col].dtype
+                    )
+                except:
+                    processed_dataframe[col] = np.array(
+                        transformed_data, dtype=type(df[col][0])
+                    )
         else:
             processed_dataframe = df.copy()
 
         big_bunch = []
 
-        for i in range(len(processed_dataframe) - seq_len - 1):
-            bunch = []
-            for col in list(processed_dataframe.columns.values):
-                bunch.append(list(processed_dataframe[col][i : i + seq_len]))
+        if location_var is not None:
+            big_loc_processed_dataframe = pd.DataFrame()
+            big_loc_processed_dataframe["temp_location"] = location_var
+            unq_locations = location_var.unique()
+        else:
+            unq_locations = [None]
+        for k in range(len(unq_locations)):
+            if unq_locations[0] is not None:
+                loc_processed_dataframe = processed_dataframe[
+                    big_loc_processed_dataframe["temp_location"] == unq_locations[k]
+                ]
+                loc_processed_dataframe.reset_index(inplace=True, drop=True)
+            else:
+                loc_processed_dataframe = processed_dataframe
+            for i in range(len(loc_processed_dataframe) - seq_len - 1):
+                bunch = []
+                for col in list(loc_processed_dataframe.columns.values):
+                    bunch.append(list(loc_processed_dataframe[col][i : i + seq_len]))
 
-            big_bunch.append(bunch)
+                big_bunch.append(bunch)
 
         big_bunch = np.array(big_bunch)
 
@@ -689,7 +870,7 @@ class TabularDataObject(object):
 
         return data
 
-    def _univariate_bunch(self, seq_len, normalize=True, bunch=True):
+    def _univariate_bunch(self, seq_len, normalize=True, bunch=True, location_var=None):
         kwargs_variables = {"num_workers": 0} if sys.platform == "win32" else {}
 
         kwargs_variables["bs"] = self._bs
@@ -726,34 +907,71 @@ class TabularDataObject(object):
             processed_dataframe = self._dataframe.copy()
             transformed_data = processed_dataframe[self._dependent_variable]
             for transform in self._column_transforms_mapping[self._dependent_variable]:
-                transformed_data = transform.fit_transform(
-                    np.array(
-                        transformed_data,
-                        dtype=processed_dataframe[self._dependent_variable].dtype,
-                    ).reshape(-1, 1)
-                )
+                try:
+                    transformed_data = transform.fit_transform(
+                        np.array(
+                            transformed_data,
+                            dtype=processed_dataframe[self._dependent_variable].dtype,
+                        ).reshape(-1, 1)
+                    )
+                except:
+                    transformed_data = transform.fit_transform(
+                        np.array(
+                            transformed_data,
+                            dtype=type(
+                                processed_dataframe[self._dependent_variable][0]
+                            ),
+                        ).reshape(-1, 1)
+                    )
                 transformed_data = transformed_data.squeeze(1)
 
-            processed_dataframe[self._dependent_variable] = np.array(
-                transformed_data, dtype=self._dataframe[self._dependent_variable].dtype
-            )
+            try:
+                processed_dataframe[self._dependent_variable] = np.array(
+                    transformed_data,
+                    dtype=self._dataframe[self._dependent_variable].dtype,
+                )
+            except:
+                processed_dataframe[self._dependent_variable] = np.array(
+                    transformed_data,
+                    dtype=type(processed_dataframe[self._dependent_variable][0]),
+                )
         else:
             processed_dataframe = self._dataframe.copy()
 
-        for i in range(len(processed_dataframe[self._dependent_variable]) - seq_len):
-            for j in range(seq_len):
-                if len(processed_dataframe[self._dependent_variable]) > i + seq_len - 1:
-                    df_columns[f"att{j + 1}"].append(
-                        processed_dataframe[self._dependent_variable][i + j]
-                    )
-                else:
-                    continue
-
-            df_columns["target"].append(
-                processed_dataframe[self._dependent_variable][i + seq_len]
-            )
-
         import pandas as pd
+
+        if location_var is not None:
+            big_loc_processed_dataframe = pd.DataFrame()
+            big_loc_processed_dataframe["temp_location"] = location_var
+            unq_locations = location_var.unique()
+        else:
+            unq_locations = [None]
+
+        for k in range(len(unq_locations)):
+            if unq_locations[0] is not None:
+                loc_processed_dataframe = processed_dataframe[
+                    big_loc_processed_dataframe["temp_location"] == unq_locations[k]
+                ]
+                loc_processed_dataframe.reset_index(inplace=True, drop=True)
+            else:
+                loc_processed_dataframe = processed_dataframe
+            for i in range(
+                len(loc_processed_dataframe[self._dependent_variable]) - seq_len
+            ):
+                for j in range(seq_len):
+                    if (
+                        len(loc_processed_dataframe[self._dependent_variable])
+                        > i + seq_len - 1
+                    ):
+                        df_columns[f"att{j + 1}"].append(
+                            loc_processed_dataframe[self._dependent_variable][i + j]
+                        )
+                    else:
+                        continue
+
+                df_columns["target"].append(
+                    loc_processed_dataframe[self._dependent_variable][i + seq_len]
+                )
 
         df = pd.DataFrame(df_columns)
 
@@ -820,10 +1038,23 @@ class TabularDataObject(object):
         # if hasattr(self,'_encoder_mapping'):
         if self._encoder_mapping:
             for variable, encoder in self._encoder_mapping.items():
-                dataframe[variable] = np.array(
-                    encoder.fit_transform(dataframe[variable].values.reshape(-1, 1)),
-                    dtype="int64",
-                )
+                try:
+                    dataframe[variable] = np.array(
+                        encoder.fit_transform(
+                            dataframe[variable].values.astype(str).reshape(-1, 1)
+                        ),
+                        dtype="int64",
+                    )
+                except:
+                    dataframe[variable] = np.array(
+                        encoder.fit_transform(
+                            dataframe[variable]
+                            .values.astype(str)
+                            .to_numpy()
+                            .reshape(-1, 1)
+                        ),
+                        dtype="int64",
+                    )
 
         if fit:
             processed_data = _procs.fit_transform(dataframe)
@@ -836,7 +1067,7 @@ class TabularDataObject(object):
         """
         Shows a chunk of data prepared without applying transforms.
         =====================   ===========================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ---------------------   -------------------------------------------
         rows                    Optional integer. Number of rows of dataframe
                                 or graph to plot. This parameter is not used
@@ -862,7 +1093,12 @@ class TabularDataObject(object):
             rows = len(self._training_indexes)
 
         random_batch = random.sample(self._training_indexes, rows)
-        return self._dataframe.iloc[random_batch].sort_index()
+
+        # using loc instead of iloc to get data when dataframe doesnt have continuous indexes
+        if self._is_classification:
+            return self._dataframe.loc[random_batch].sort_index()
+        else:
+            return self._dataframe.iloc[random_batch].sort_index()
 
     def _show_graph(self, seq_len=None, rows=5):
         """
@@ -875,9 +1111,14 @@ class TabularDataObject(object):
         import matplotlib.pyplot as plt
 
         if seq_len is not None:
-            X_train, X_valid, y_train, y_valid = self._time_series_bunch(
-                seq_len, False, False
-            )
+            try:
+                X_train, X_valid, y_train, y_valid = self._time_series_bunch(
+                    seq_len, False, False
+                )
+            except:
+                ts_bunch = self._time_series_bunch(seq_len, False, False)
+                X_train = ts_bunch.train_ds.x.items
+                y_train = ts_bunch.train_ds.y.items
 
             n_items = rows**2
             if n_items > len(X_train):
@@ -1181,6 +1422,7 @@ class TabularDataObject(object):
         index_data = None
         data_source = None
         import arcpy
+        import spatial_reference_helper
         import pandas as pd
 
         # if ((distance_feature) and (data_source)):F
@@ -1200,7 +1442,16 @@ class TabularDataObject(object):
                 fields = [["NEAR_DIST", field_2]]
                 arcpy.Near_analysis(data_source, distance_layer, field_names=fields)
                 count = count + 1
-            sdf = pd.DataFrame.spatial.from_featureclass(data_source, sr="4326")
+
+            data_source_desc = arcpy.Describe(data_source)
+            transformation = spatial_reference_helper.get_datum_transformation(
+                data_source_desc.spatialReference,
+                arcpy.SpatialReference(4326),
+                data_source_desc.extent,
+            )
+            sdf = pd.DataFrame.spatial.from_featureclass(
+                data_source, sr="4326", datum_transformation=transformation
+            )
         else:
             sdf = pd.DataFrame()
             data_type = arcpy.Describe(input_features).dataType
@@ -1298,11 +1549,17 @@ class TabularDataObject(object):
                         data_source, fields, spatial_reference=sr
                     ) as cursor:
                         for row in cursor:
+                            loc = "{locx} {locy}".format(locx=row[0], locy=row[1])
                             # print(u'{0}, {1}'.format(row[0], row[1]))
                             # if arcpy.Describe(data_source).shapeType == "Point":
                             try:
+                                new_coordinate = _adjust_origin_coordinate(
+                                    (row[0], row[1]),
+                                    raster,
+                                    (raster.mean_cell_width, raster.mean_cell_height),
+                                )
                                 raster_value = raster.read(
-                                    origin_coordinate=(row[0], row[1]), ncols=1, nrows=1
+                                    origin_coordinate=(new_coordinate), ncols=1, nrows=1
                                 )
                                 value = raster_value[0][0]
                             except:
@@ -1325,11 +1582,14 @@ class TabularDataObject(object):
         index_data = None
         if input_features is not None:
             if isinstance(input_features, FeatureLayer):
+                import pandas as pd
+
                 input_layer = input_features
                 out_sr = None
                 if cell_sizes and not rasters:
                     out_sr = 4326
-                sdf = input_features.query(out_sr=out_sr).sdf
+                # sdf = input_features.query(out_sr=out_sr).sdf
+                sdf = pd.DataFrame.spatial.from_layer(input_features)
 
             elif (
                 hasattr(input_features, "dataSource")
@@ -1390,7 +1650,7 @@ class TabularDataObject(object):
                 for i in range(len(sdf)):
                     original_points.append(sdf.iloc[i]["SHAPE"])
 
-                input_layer_spatial_reference = sdf.spatial._sr
+                input_layer_spatial_reference = sdf.spatial.sr
                 if cell_sizes and not rasters:
                     sdf = add_h3(sdf, cell_sizes)
 
@@ -1429,12 +1689,15 @@ class TabularDataObject(object):
                     for shape in shape_objects_transformed:
                         shape["spatialReference"] = raster.extent["spatialReference"]
                         if isinstance(shape, arcgis.geometry._types.Point):
-                            raster_value = raster.read(
-                                origin_coordinate=(shape["x"], shape["y"]),
-                                ncols=1,
-                                nrows=1,
-                            )
-                            value = raster_value[0][0]
+                            try:
+                                raster_value = raster.read(
+                                    origin_coordinate=(shape["x"], shape["y"]),
+                                    ncols=1,
+                                    nrows=1,
+                                )
+                                value = raster_value[0][0]
+                            except:
+                                value = [0.0]
                         elif isinstance(shape, arcgis.geometry._types.Polygon):
                             xmin, ymin, xmax, ymax = shape.extent
                             start_x, start_y = (
@@ -1646,9 +1909,13 @@ class TabularDataObject(object):
 
     @staticmethod
     def _prepare_databunch(
-        dataframe, fields_mapping, procs=None, validation_indexes=[], batch_size=64
+        dataframe,
+        fields_mapping,
+        procs=None,
+        validation_indexes=[],
+        batch_size=64,
+        is_classification=False,
     ):
-
         if procs is None:
             procs = [Categorify, Normalize]
             fm = FillMissing(
@@ -1672,12 +1939,24 @@ class TabularDataObject(object):
         ):
             kwargs_variables["device"] = torch.device("cpu")
 
+        sorted_dataframe = dataframe.copy()
+        sorted_dataframe["sorted_index_col"] = range(0, len(dataframe))
+        if is_classification:
+            validation_indexes_sorted = sorted_dataframe.loc[validation_indexes][
+                "sorted_index_col"
+            ].to_list()
+        else:
+            validation_indexes_sorted = sorted_dataframe.iloc[validation_indexes][
+                "sorted_index_col"
+            ].to_list()
+        del sorted_dataframe
+
         data_bunch = TabularDataBunch.from_df(
             temp_file,
             dataframe,
             fields_mapping["dependent_variable"],
             procs=procs,
-            valid_idx=validation_indexes,
+            valid_idx=validation_indexes_sorted,
             **kwargs_variables,
         )
 
@@ -1815,12 +2094,11 @@ def explain_prediction(
 
 
 def add_h3(sdf, cell_sizes):
-    if sdf["SHAPE"][0]["spatialReference"]["wkid"] == 4326:
+    if sdf["SHAPE"].iloc[0]["spatialReference"]["wkid"] == 4326:
         if (
             "polygon" in sdf.spatial.geometry_type
             or "point" in sdf.spatial.geometry_type
         ):
-
             try:
                 sdf = point_to_h3(sdf, cell_sizes)
             except:
@@ -1835,7 +2113,6 @@ def point_to_h3(sdf, cell_sizes):
         h3_id = []
 
         if "polygon" in sdf.spatial.geometry_type:
-
             for poly in sdf["SHAPE"]:
                 centroid = poly.centroid
                 h3_id.append(h3.geo_to_h3(centroid[1], centroid[0], res))
@@ -2011,6 +2288,22 @@ def show_local_interpretation(
         shap.force_plot(
             explainer.expected_value, shap_values[0], processed_df, matplotlib=True
         )
+
+
+def _adjust_origin_coordinate(coordinate, raster, cell_size):
+    import math
+
+    x = coordinate[0]
+    y = coordinate[1]
+    xmin = raster.extent["xmin"]
+    ymax = raster.extent["ymax"]
+    dx = cell_size[0]
+    dy = cell_size[1]
+    x = math.floor((x - xmin) / dx)
+    y = math.floor((ymax - y) / dy)
+    xmin_new = xmin + x * dx
+    ymax_new = ymax - y * dy
+    return xmin_new, ymax_new
 
 
 def global_interpretation(model, plot_type="bar", method="KernelRegressor"):

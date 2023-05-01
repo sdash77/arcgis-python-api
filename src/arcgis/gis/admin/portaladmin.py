@@ -9,6 +9,7 @@ from ._resources import PortalResourceManager
 from ._base import BasePortalAdmin
 from ...apps.tracker._location_tracking import LocationTrackingManager
 
+
 ########################################################################
 class PortalAdminManager(BasePortalAdmin):
     """
@@ -20,7 +21,7 @@ class PortalAdminManager(BasePortalAdmin):
     portal environment is available through System and Security resources.
 
     ================    =================================================================================
-    **Argument**        **Description**
+    **Parameter**        **Description**
     ----------------    ---------------------------------------------------------------------------------
     url                 web address to portaladmin rest API (ends with: portal//sharing/rest/)
     ----------------    ---------------------------------------------------------------------------------
@@ -51,6 +52,7 @@ class PortalAdminManager(BasePortalAdmin):
     _livingatlas = None
     _category_schema = None
     _whm = None
+
     # ----------------------------------------------------------------------
     def __init__(self, url, gis=None, **kwargs):
         """initializer"""
@@ -175,6 +177,19 @@ class PortalAdminManager(BasePortalAdmin):
             self._sp = SocialProviders(gis=self._gis)
         return self._sp
 
+    @property
+    def info(self) -> dict:
+        """
+        Returns the current version and build number of the Enterprise system
+
+        :returns: dict
+        """
+        if self._gis.version >= [10, 3]:
+            url = "%s/portaladmin/info" % self._gis._portal.url
+            params = {"f": "json"}
+            return self._gis._con.get(url, params)
+        return None
+
     # ----------------------------------------------------------------------
     @property
     def metadata(self):
@@ -219,7 +234,7 @@ class PortalAdminManager(BasePortalAdmin):
         This property allows `org_admins` to be able to see all scheduled tasks on the enterprise
 
         ================  ===============================================================================
-        **Argument**      **Description**
+        **Parameter**      **Description**
         ----------------  -------------------------------------------------------------------------------
         item              Optional Item. The item to query tasks about.
         ----------------  -------------------------------------------------------------------------------
@@ -492,7 +507,7 @@ class PortalAdminManager(BasePortalAdmin):
         Returns a CSV file containing the login history from a start_date to the present.
 
         ================  ===============================================================================
-        **Argument**      **Description**
+        **Parameter**      **Description**
         ----------------  -------------------------------------------------------------------------------
         start_date        Required datetime.datetime object. The beginning date.
         ----------------  -------------------------------------------------------------------------------

@@ -11,10 +11,17 @@ from ..._impl.common._utils import local_time_to_online, timestamp_to_datetime
 from ...gis import GIS
 from ._base import BasePortalAdmin
 
+
 ########################################################################
+
+
 class AGOLUsageReports(BasePortalAdmin):
     """
-    Compiles Simple Usage Reports from ArcGIS Online
+    Simple Usage Reports from ArcGIS Online
+
+    .. note::
+        Usage reports can contain users outside your organization.
+
     """
 
     _json_dict = {}
@@ -23,7 +30,9 @@ class AGOLUsageReports(BasePortalAdmin):
     _portal = None
     _gis = None
     _url = None
+
     # ----------------------------------------------------------------------
+
     def _init(self, connection=None):
         """loads the properties into the class"""
         self._json_dict = {}
@@ -47,42 +56,90 @@ class AGOLUsageReports(BasePortalAdmin):
 
 
         ===============     ====================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     ----------------------------------------------------
-        focus               Required String. The level to perform the report on.
-                            The allowed value is only `org`.
+        focus               Optional String. The report type. Currently, only
+                            the organization (`org`) report type is supported.
         ---------------     ----------------------------------------------------
-        report_type         Required String. The type of report to generate. The
-                            allowed values are `users`,`content`, or `credits`.
+        report_type         Required String. The type of report to generate.
+
+                            Values:
+                                - 'content'
+                                - 'users'
+                                - 'activity'
+                                - 'credits'
+                                - 'serviceUsages'
+                                - 'itemUsages'
         ---------------     ----------------------------------------------------
-        title               Optional String.  The Item's title.
+        title               *deprecated* Optional String.  The output report item's title.
         ---------------     ----------------------------------------------------
-        duration            Optional String.  This is the timeframe to generate
-                            the report on.  The allowed values are: `weekly` or
-                            `monthly`.
+        duration            Optional String. Specifies the time duration for the
+                            reports. This parameter is required when `report_type`
+                            is set to `credits`, `activity`, `serviceUsages`, or `itemUsages`.
+
+                            .. note::
+                                The `daily` value is only available when `report_type` is
+                                set to `activity`.
+                                The `yearly` value is only available when `report_type`
+                                is set to `itemUsages`.
+
+                            Values:
+                                - 'daily'
+                                - 'weekly'
+                                - 'monthly'
+                                - 'quarterly'
+                                - 'yearly'
         ---------------     ----------------------------------------------------
-        start_time          Optional datetime.datetime. The start time to begin
-                            reporting time.
+        start_time          Optional datetime.datetime. The start time of the
+                            time duration. The time format is Unix time with millisecond
+                            precision. If `duration = 'weekly'`, the start_time
+                            value must be a time on Sunday or Monday GMT.
+                            If `duration = 'monthly`, the start_time value must
+                            be on the first day of the month.
         ---------------     ----------------------------------------------------
         notify              Optional Boolean. The Job will print a message upon
-                            completing of the task.
+                            task completion.
         ---------------     ----------------------------------------------------
         future              Optional Boolean. Returns an asynchronous Job when
-                            `True` when `False`, it returns an Item.
+                            `True`, when `False`, returns an :class:`~arcgis.gis.Item`.
         ===============     ====================================================
 
 
-        :return: Async Job Object or Item
+        :return: Async Job Object or :class:`~arcgis.gis.Item`
 
         """
         url = f"{self._gis._portal.resturl}community/users/{self._gis.users.me.username}/report"
         params = {"f": "json", "reportType": focus, "reportSubType": report_type}
-        if title:
-            params["title"] = title
-        if duration and duration.lower() in ["weekly", "monthly", None]:
-            params["timeDuration"] = duration
-        elif duration and not duration.lower() in ["weekly", "monthly", None]:
+
+        # Perform Checks
+        if duration and duration.lower() not in [
+            "daily",
+            "weekly",
+            "monthly",
+            "quarterly",
+            "yearly",
+        ]:
             raise ValueError("Invalid `duration` value %s" % duration)
+        if duration:
+            duration = duration.lower()
+            if duration == "daily" and report_type != "activity":
+                raise ValueError(
+                    "Duration set to 'daily' can only be used with report type 'activity'."
+                )
+            elif duration == "yearly" and report_type != "itemUsages":
+                raise ValueError(
+                    "Duration set to 'yearly' can only be used with report type 'itemUsages'."
+                )
+            params["timeDuration"] = duration
+        if (
+            report_type in ["credits", "activity", "serviceUsages", "itemUsages"]
+            and duration is None
+        ):
+            raise ValueError(
+                "For the report type specified, a duration must also be specified."
+            )
+
+        # Assign parameters
         if not start_time is None and isinstance(start_time, datetime.datetime):
             params["startTime"] = local_time_to_online(start_time)
         elif not start_time is None and isinstance(start_time, int):
@@ -118,11 +175,11 @@ class AGOLUsageReports(BasePortalAdmin):
         export: bool = False,
     ):
         """
-        Creates a Report as a Panda's dataframe or CSV file for a given time range
-        for ArcGIS Online Organizations.
+        Creates a Panda's dataframe or CSV file reporting on credit consumption
+        within an ArcGIS Online organization.
 
         ===============     ====================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     ----------------------------------------------------
         start_time          optional datetime, the time to step back from.  If
                             None, the current time is used.
@@ -131,13 +188,36 @@ class AGOLUsageReports(BasePortalAdmin):
                             Allowed values: today, week (default), 14days, 30days,
                             60days, 90days, 6months, year
         ---------------     ----------------------------------------------------
-        export              optional boolean, if True, a csv is generated from
-                            the request. If False, a Panda's dataframe is
-                            returned
+        export              optional boolean, if `True`, a csv is generated from
+                            the request. If `False`, a Panda's dataframe is
+                            returned. Default is `False`
         ===============     ====================================================
 
         :return:
-             string path to csv file or Panda's Dataframe (default)
+             string path to csv file or Panda's Dataframe (default) that
+             records the total number of credits consumed per:
+
+             * `hour` if ``time_frame`` is `today`
+             * `day` if ``time_frame`` is `week`, `7days`, `14days`, `30days`,
+               `60days` or `90days`
+             * `week` if ``time_frame`` is `6months`
+             * `month` if ``time_frame`` is `year`
+
+        .. code-block:: python
+
+            # Usage example
+
+            >>> usage_reporter = gis.admin.usage_reports
+
+            >>> usage_reporter.credit(start_time= jan2_23,
+                                      time_frame= "week")
+
+                date	credits
+                ________________________________________
+                0	2022-12-26 16:00:00	173.1696
+                ...
+                6	2023-01-01 16:00:00	177.6483
+
         """
         out_folder = None
         if start_time is None:
@@ -210,11 +290,15 @@ class AGOLUsageReports(BasePortalAdmin):
         self, start_time: Optional[datetime.datetime] = None, time_frame: str = "week"
     ):
         """
-        Creates a usage report for all users for a given organization on
-        ArcGIS Online.
+        Creates a credit usage report for resources of an ArcGIS Online
+        organization with results aggregated by specific `username` and user's
+        organization id.
+
+        .. note::
+            Reports can contain users outside your organization.
 
         ===============     ====================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     ----------------------------------------------------
         start_time          optional datetime, the time to step back from.  If
                             None, the current time is used.
@@ -225,7 +309,56 @@ class AGOLUsageReports(BasePortalAdmin):
         ===============     ====================================================
 
         :return:
-             dictionary
+             dictionary reporting the number of credits consumed by users
+             through this organization.
+
+             Results are aggregated by:
+               * `hour` if ``time_frame`` is `today`
+               * `day` if ``time_frame`` is `week`, `7days`, `14days`, `30days`,
+                 `60days` or `90days`
+               * `week` if ``time_frame`` is `6months`
+               * `month` if ``time_frame`` is `year`
+
+        .. code-block:: python
+
+            # Usage Example:
+
+            >>> from arcgis.gis import GIS
+            >>> import datetime as dt
+
+            >>> gis = GIS(profile="my_organizational_profile")
+            >>> usage_reporter = gis.admin.usage_reports
+
+            >>> jan2_23 = dt.datetime(2023, 1, 2)
+            >>> user_usg = usage_reporter.users(start_time = jan2_23,
+                                                time_frame = "week")
+
+            >>> list(user_usg.keys())
+            ['startTime', 'endTime', 'period', 'data']
+
+            >>> type(user_usg["data"])
+            list
+
+            ### The data key's value will be a list of
+            ### dictionaries. Each dictionary will have varying keys.
+            ### If the dictonary has no userOrgId key, that indicates
+            ### a public user account.
+
+            >>> user_usg['data'][1]
+            {'username': '<user_name1>',
+             'credits': [['1672099200000', '0.0'],
+                         ['1672185600000', '0.0'],
+                         ...
+                         ['1672617600000', '2.0E-4']]}
+
+           >>> user_usg['data'][2]
+           {'username': '<user_name2>',
+            'userOrgId': 'JXrNeAy8ce1q2b4l'
+            'credits': [['1672099200000', '0.0'],
+                        ['1672185600000', '0.0'],
+                       ...
+                        ['1672617600000', '0.0']]}
+
         """
         out_folder = None
         if start_time is None:
@@ -275,10 +408,14 @@ class AGOLUsageReports(BasePortalAdmin):
     ):
         """
         Creates a usage report for all registered application logins for a
-        given organization on ArcGIS Online.
+        given ArcGIS Online organization.
+
+        .. note::
+            Output can contain users outside your organization
+            that used organization applications
 
         ===============     ====================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     ----------------------------------------------------
         start_time          optional datetime, the time to step back from.  If
                             None, the current time is used.
@@ -289,7 +426,60 @@ class AGOLUsageReports(BasePortalAdmin):
         ===============     ====================================================
 
         :return:
-             dictionary
+             dictionary with the number of application logins grouped by
+             application and username.
+
+             Results aggregated by:
+
+             - `hour` if ``time_frame`` is `today`
+             - `day` if ``time_frame`` is `week`, `7days`, `14days`, `30days`,
+               `60days` or `90days`
+             - `week` if ``time_frame`` is `6months`
+             - `month` if ``time_frame`` is `year`
+
+        .. code-block:: python
+
+            # Usage example:
+
+            >>> import datetime as dt
+            >>> from arcgis.gis import GIS
+
+            >>> gis = GIS(profile="my_organizational_profile)
+            >>> jan2_23 = dt.datetime(2023, 1, 2)
+
+            >>> usage_reporter = gis.admin.usage_reports
+
+            >>> usage_reporter.applications(start_time= jan2_23,
+                                            time_frame="week")
+
+            {'startTime': 1672099200000,
+            'endTime': 1672704000000,
+            'period': '1d',
+            'data': [{'etype': 'svcusg',
+                    'stype': 'applogin',
+                    'username': <username 1>,
+                    'userOrgId': 'JXwx ... Ok2o',
+                    'appId': 'arcgisnotebooks',
+                    'appOrgId': 'Ab3e ... q0o7i',
+                    'num': [['1672099200000', '0'],
+                            ...
+                            ['1672444800000', '4'],
+                            ['1672531200000', '3'],
+                            ['1672617600000', '0']]},
+             ...
+             ...
+                    {'etype': 'svcusg',
+                     'stype': 'applogin',
+                     'username': 'external username2',
+                     'userOrgId': 'JLxMbZo4ex3kOa2o',
+                     'appId': 'arcgisonline',
+                     'appOrgId': 'Ab3e ... q0o7i',
+                     'num': [['1672099200000', '0'],
+                             ...
+                             ['1672444800000', '62'],
+                             ['1672531200000', '10'],
+                             ['1672617600000', '0']]}]}
+
         """
         out_folder = None
         if start_time is None:

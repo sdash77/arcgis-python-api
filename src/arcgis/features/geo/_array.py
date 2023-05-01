@@ -22,6 +22,8 @@ from arcgis.geometry import Geometry
 PANDAS_GE_024 = str(pd.__version__) >= LooseVersion("0.24.0")
 PANDAS_GE_025 = str(pd.__version__) >= LooseVersion("0.25.0")
 PANDAS_GE_10 = str(pd.__version__) >= LooseVersion("1")
+
+
 # --------------------------------------------------------------------------
 def _isna(value):
     """
@@ -265,7 +267,21 @@ class GeoArray(ExtensionArray):
         """converts the data to a pyarrow array"""
         import pyarrow
 
-        return pyarrow.array([d.EWKT for d in self.data if d], type=type)
+        return pyarrow.array([d.WKB for d in self.data if d], type=type)
+
+    def __eq__(self, other: Geometry):
+        """Checks if the Geometries are Equal"""
+        if isinstance(other, Geometry):
+            return self.equals(other)
+        else:
+            raise ValueError("Input must be a arcgis.geometry.Geometry")
+
+    def __ne__(self, other: Geometry):
+        """Checks if the Geometries are Equal"""
+        if isinstance(other, Geometry):
+            return self.equals(other) == False
+        else:
+            raise ValueError("Input must be a arcgis.geometry.Geometry")
 
     def _formatting_values_backport(self):
         return np.array(self._format_values(), dtype="object")
@@ -510,7 +526,6 @@ class GeoArray(ExtensionArray):
         return cls(data)
 
     def _values_for_factorize(self):
-        # type: () -> Tuple[np.ndarray, Any]
         """Return an array and missing value suitable for factorization.
 
         Returns
@@ -528,7 +543,7 @@ class GeoArray(ExtensionArray):
         return self, 0
 
     @classmethod
-    def _from_factorized(cls, values, original):
+    def _from_factorized(cls, values):
         """
         Reconstruct an ExtensionArray after factorization.
 
@@ -536,8 +551,6 @@ class GeoArray(ExtensionArray):
         ----------
         values : ndarray
             An integer ndarray with the factorized values.
-        original : ExtensionArray
-            The original ExtensionArray that factorize was called on.
 
         See Also
         --------
@@ -767,7 +780,7 @@ class GeoArray(ExtensionArray):
         measurement type.
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         second_geometry     Required Geometry.  A arcgis.Geometry object.
         ---------------     --------------------------------------------------------------------
@@ -803,7 +816,7 @@ class GeoArray(ExtensionArray):
         Constructs a polygon at a specified distance from the geometry.
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         distance            Required float. The buffer distance. The buffer distance is in the
                             same units as the geometry that is being buffered.
@@ -820,7 +833,7 @@ class GeoArray(ExtensionArray):
         Constructs the intersection of the geometry and the specified extent.
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         envelope            required tuple. The tuple must have (XMin, YMin, XMax, YMax) each value
                             represents the lower left bound and upper right bound of the extent.
@@ -837,7 +850,7 @@ class GeoArray(ExtensionArray):
         Indicates if the base geometry contains the comparison geometry.
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         second_geometry     Required arcgis.geometry.Geometry. A second geometry
         ---------------     --------------------------------------------------------------------
@@ -872,7 +885,7 @@ class GeoArray(ExtensionArray):
         shape type.
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         second_geometry     Required arcgis.geometry.Geometry. A second geometry
         ===============     ====================================================================
@@ -889,7 +902,7 @@ class GeoArray(ExtensionArray):
         a part right of it.
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         cutter              Required Polyline. The cuttin polyline geometry
         ===============     ====================================================================
@@ -905,7 +918,7 @@ class GeoArray(ExtensionArray):
         Creates a new geometry with added vertices
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         method              Required String. The type of densification, DISTANCE, ANGLE, or GEODESIC
         ---------------     --------------------------------------------------------------------
@@ -930,7 +943,11 @@ class GeoArray(ExtensionArray):
         return _binary_op_geo(
             name="densify",
             left=self.data,
-            **{"method": method, "distance": distance, "deviation": deviation},
+            **{
+                "method": method,
+                "distance": distance,
+                "deviation": deviation,
+            },
         )
 
     # ----------------------------------------------------------------------
@@ -942,7 +959,7 @@ class GeoArray(ExtensionArray):
         source geometry.
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         second_geometry     Required arcgis.geometry.Geometry. A second geometry
         ===============     ====================================================================
@@ -959,7 +976,7 @@ class GeoArray(ExtensionArray):
         common.
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         second_geometry     Required arcgis.geometry.Geometry. A second geometry
         ===============     ====================================================================
@@ -979,7 +996,7 @@ class GeoArray(ExtensionArray):
         Both geometries must have the same projection.
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         second_geometry     Required arcgis.geometry.Geometry. A second geometry
         ===============     ====================================================================
@@ -999,7 +1016,7 @@ class GeoArray(ExtensionArray):
         a 2D comparison only; M and Z values are ignored.
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         second_geometry     Required arcgis.geometry.Geometry. A second geometry
         ===============     ====================================================================
@@ -1017,7 +1034,7 @@ class GeoArray(ExtensionArray):
         tolerance.
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         max_offset          Required float. The maximum offset tolerance.
         ===============     ====================================================================
@@ -1035,7 +1052,7 @@ class GeoArray(ExtensionArray):
         Returns the area of the feature using a measurement type.
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         method              Required String. PLANAR measurements reflect the projection of
                             geographic data onto the 2D surface (in other words, they will not
@@ -1053,7 +1070,9 @@ class GeoArray(ExtensionArray):
 
         """
         return _binary_op(
-            name="get_area", left=self.data, **{"method": method, "units": units}
+            name="get_area",
+            left=self.data,
+            **{"method": method, "units": units},
         )
 
     # ----------------------------------------------------------------------
@@ -1062,7 +1081,7 @@ class GeoArray(ExtensionArray):
         Returns the length of the feature using a measurement type.
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         method              Required String. PLANAR measurements reflect the projection of
                             geographic data onto the 2D surface (in other words, they will not
@@ -1079,7 +1098,9 @@ class GeoArray(ExtensionArray):
 
         """
         return _binary_op(
-            name="get_length", left=self.data, **{"method": method, "units": units}
+            name="get_length",
+            left=self.data,
+            **{"method": method, "units": units},
         )
 
     # ----------------------------------------------------------------------
@@ -1091,7 +1112,7 @@ class GeoArray(ExtensionArray):
         **requires arcpy**
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         index               Required Integer. The index position of the geometry.
         ===============     ====================================================================
@@ -1111,7 +1132,7 @@ class GeoArray(ExtensionArray):
         between the original geometries.
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         second_geometry     Required arcgis.geometry.Geometry. A second geometry
         ---------------     --------------------------------------------------------------------
@@ -1140,7 +1161,7 @@ class GeoArray(ExtensionArray):
         Returns a measure from the start point of this line to the in_point.
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         second_geometry     Required arcgis.geometry.Geometry. A second geometry
         ---------------     --------------------------------------------------------------------
@@ -1166,7 +1187,7 @@ class GeoArray(ExtensionArray):
         either of the input geometries.
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         second_geometry     Required arcgis.geometry.Geometry. A second geometry
         ===============     ====================================================================
@@ -1183,7 +1204,7 @@ class GeoArray(ExtensionArray):
         using the specified measurement type.
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         angle               Required Float. The angle in degrees to the returned point.
         ---------------     --------------------------------------------------------------------
@@ -1213,7 +1234,7 @@ class GeoArray(ExtensionArray):
         of the line.
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         value               Required Float. The distance along the line.
         ---------------     --------------------------------------------------------------------
@@ -1239,7 +1260,7 @@ class GeoArray(ExtensionArray):
         Projects a geometry and optionally applies a geotransformation.
 
         ====================     ====================================================================
-        **Argument**             **Description**
+        **Parameter**             **Description**
         --------------------     --------------------------------------------------------------------
         spatial_reference        Required SpatialReference. The new spatial reference. This can be a
                                  SpatialReference object or the coordinate system name.
@@ -1267,7 +1288,7 @@ class GeoArray(ExtensionArray):
         the line where the nearest point occurs.
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         second_geometry     Required arcgis.geometry.Geometry. A second geometry
         ---------------     --------------------------------------------------------------------
@@ -1293,7 +1314,7 @@ class GeoArray(ExtensionArray):
         two points on the polyline instead of a single point.
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         start_measure       Required Float. The starting distance from the beginning of the line.
         ---------------     --------------------------------------------------------------------
@@ -1326,7 +1347,7 @@ class GeoArray(ExtensionArray):
         Returns a new point based on in_point snapped to this geometry.
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         second_geometry     Required arcgis.geometry.Geometry. A second geometry
         ===============     ====================================================================
@@ -1347,7 +1368,7 @@ class GeoArray(ExtensionArray):
         The two input geometries must be the same shape type.
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         second_geometry     Required arcgis.geometry.Geometry. A second geometry
         ===============     ====================================================================
@@ -1355,7 +1376,9 @@ class GeoArray(ExtensionArray):
         :return: arcgis.gis.Geometry
         """
         return _binary_op_geo(
-            name="symmetric_difference", left=self.data, right=second_geometry
+            name="symmetric_difference",
+            left=self.data,
+            right=second_geometry,
         )
 
     # ----------------------------------------------------------------------
@@ -1365,7 +1388,7 @@ class GeoArray(ExtensionArray):
 
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         second_geometry     Required arcgis.geometry.Geometry. A second geometry
         ===============     ====================================================================
@@ -1382,7 +1405,7 @@ class GeoArray(ExtensionArray):
 
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         second_geometry     Required arcgis.geometry.Geometry. A second geometry
         ===============     ====================================================================
@@ -1397,7 +1420,7 @@ class GeoArray(ExtensionArray):
         Indicates if the base geometry is within the comparison geometry.
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         second_geometry     Required arcgis.geometry.Geometry. A second geometry
         ---------------     --------------------------------------------------------------------

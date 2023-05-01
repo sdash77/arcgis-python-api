@@ -27,6 +27,8 @@ try:
     from ._tsmodel_archs._FCN import _TSFCN
     from ._tsmodel_archs._LSTM import _TSLSTM
     from .._utils.TSData import To3dTensor, ToTensor
+    from .._utils.common import _get_emd_path
+    from arcgis.learn.models._tsmodel_archs._TST import TST
 
     _model_arch = {
         "inceptiontime": _TSInceptionTime,
@@ -34,6 +36,7 @@ try:
         "rescnn": _TSResCNN,
         "fcn": _TSFCN,
         "lstm": _TSLSTM,
+        "timeseriestransformer": TST,
     }
 except Exception as e:
     import_exception = "\n".join(
@@ -69,14 +72,14 @@ def _get_model_from_path(pretrained_path):
 
 class TimeSeriesModel(ArcGISModel):
     """
-    Creates a TimeSeriesModel Object.
+    Creates a :class:`~arcgis.learn.TimeSeriesModel` Object.
     Based on the Fast.ai's https://github.com/timeseriesAI/timeseriesAI
 
     =====================   ===========================================
-    **Argument**            **Description**
+    **Parameter**            **Description**
     ---------------------   -------------------------------------------
     data                    Required TabularDataObject. Returned data object from
-                            `prepare_tabulardata` function.
+                            :class:`~arcgis.learn.prepare_tabulardata` function.
     ---------------------   -------------------------------------------
     seq_len                 Required Integer. Sequence Length for the series.
                             In case of raster only, seq_len = number of rasters,
@@ -84,20 +87,23 @@ class TimeSeriesModel(ArcGISModel):
     ---------------------   -------------------------------------------
     model_arch              Optional string. Model Architecture.
                             Allowed "InceptionTime", "ResCNN",
-                            "Resnet", "FCN"
+                            "Resnet", "FCN", "TimeSeriesTransformer"
     ---------------------   -------------------------------------------
-    **kwargs                Optional kwargs.
+    location_var            Optional string. Location variable in case of
+                            NetCDF dataset.
+    ---------------------   -------------------------------------------
+    ``**kwargs``            Optional kwargs.
     =====================   ===========================================
 
-    :return: `TimeSeriesModel` Object
+    :return: :class:`~arcgis.learn.TimeSeriesModel` Object
     """
 
-    def __init__(self, data, seq_len, model_arch="InceptionTime", **kwargs):
-
+    def __init__(
+        self, data, seq_len, model_arch="InceptionTime", location_var=None, **kwargs
+    ):
         data_bunch = None
-
         if not data._is_empty:
-            data_bunch = data._time_series_bunch(seq_len)
+            data_bunch = data._time_series_bunch(seq_len, location_var)
 
         super().__init__(data, None)
 
@@ -114,6 +120,10 @@ class TimeSeriesModel(ArcGISModel):
             if model_arch.lower() == "lstm":
                 model = model_arch_ob(
                     data_bunch.features, data_bunch.c, self._device, **kwargs
+                ).to(self._device)
+            elif model_arch.lower() == "timeseriestransformer":
+                model = model_arch_ob(
+                    data_bunch.features, data_bunch.c, seq_len, **kwargs
                 ).to(self._device)
             else:
                 if model_arch.lower() in ["resnet", "fcn"]:
@@ -146,25 +156,25 @@ class TimeSeriesModel(ArcGISModel):
     @classmethod
     def from_model(cls, emd_path, data=None):
         """
-        Creates a TimeSeriesModel Object from an Esri Model Definition (EMD) file.
+        Creates a :class:`~arcgis.learn.TimeSeriesModel` Object from an Esri Model Definition (EMD) file.
 
         =====================   ===========================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ---------------------   -------------------------------------------
         emd_path                Required string. Path to Deep Learning Package
                                 (DLPK) or Esri Model Definition(EMD) file.
         ---------------------   -------------------------------------------
         data                    Required fastai Databunch or None. Returned data
-                                object from `prepare_tabulardata` function or None for
+                                object from :class:`~arcgis.learn.prepare_tabulardata` function or None for
                                 inferencing.
         =====================   ===========================================
 
-        :return: `TimeSeriesModel` Object
+        :return: :class:`~arcgis.learn.TimeSeriesModel` Object
         """
         if not HAS_FASTAI:
             _raise_fastai_import_error(import_exception=import_exception)
 
-        emd_path = Path(emd_path)
+        emd_path = _get_emd_path(emd_path)
         with open(emd_path) as f:
             emd = json.load(f)
 
@@ -180,6 +190,7 @@ class TimeSeriesModel(ArcGISModel):
         model_arch = emd["model_arch"]
         seq_len = emd["seq_len"]
         index_field = emd.get("index_field", None)
+        test_size = emd.get("test_size", None)
         # encoder_path = os.path.join(os.path.dirname(emd_path),
         #                             os.path.basename(emd_path).split('.')[0] + '_encoders.pkl')
 
@@ -209,8 +220,9 @@ class TimeSeriesModel(ArcGISModel):
             data._is_classification = _is_classification
             data._column_transforms_mapping = scaler
 
-            if index_field is not None:
-                data._index_field = index_field
+            # if index_field is not None:
+            data._index_field = index_field
+            data._test_size = test_size
 
             class_object = cls(
                 data,
@@ -245,12 +257,12 @@ class TimeSeriesModel(ArcGISModel):
         Learning Package zip for deployment to Image Server or ArcGIS Pro.
 
         =====================   ===========================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ---------------------   -------------------------------------------
         name_or_path            Required string. Folder path to save the model.
         ---------------------   -------------------------------------------
         framework               Optional string. Defines the framework of the
-                                model. (Only supported by ``SingleShotDetector``, currently.)
+                                model. (Only supported by :class:`~arcgis.learn.SingleShotDetector`, currently.)
                                 If framework used is ``TF-ONNX``, ``batch_size`` can be
                                 passed as an optional keyword argument.
 
@@ -258,7 +270,7 @@ class TimeSeriesModel(ArcGISModel):
         ---------------------   -------------------------------------------
         publish                 Optional boolean. Publishes the DLPK as an item.
         ---------------------   -------------------------------------------
-        gis                     Optional GIS Object. Used for publishing the item.
+        gis                     Optional :class:`~arcgis.gis.GIS`  Object. Used for publishing the item.
                                 If not specified then active gis user is taken.
         ---------------------   -------------------------------------------
         save_optimizer          Optional boolean. Used for saving the model-optimizer
@@ -340,6 +352,8 @@ class TimeSeriesModel(ArcGISModel):
         _emd_template["_is_classification"] = (
             "classification" if self._data._is_classification else "regression"
         )
+        if hasattr(self._data, "_test_size"):
+            _emd_template["test_size"] = self._data._test_size
 
         return _emd_template
 
@@ -377,9 +391,9 @@ class TimeSeriesModel(ArcGISModel):
         Predict on data from feature layer and or raster data.
 
         =================================   =========================================================================
-        **Argument**                        **Description**
+        **Parameter**                        **Description**
         ---------------------------------   -------------------------------------------------------------------------
-        input_features                      Optional Feature Layer or spatially enabled dataframe.
+        input_features                      Optional :class:`~arcgis.features.FeatureLayer` or spatially enabled dataframe.
                                             Contains features with location of the input data.
                                             Required if prediction_type is 'features' or 'dataframe'
         ---------------------------------   -------------------------------------------------------------------------
@@ -398,16 +412,16 @@ class TimeSeriesModel(ArcGISModel):
                                             All fields other than elapsed and dayofyear are treated
                                             as categorical.
         ---------------------------------   -------------------------------------------------------------------------
-        distance_features                   Optional List of Feature Layer objects.
+        distance_features                   Optional List of :class:`~arcgis.features.FeatureLayer` objects.
                                             These layers are used for calculation of field "NEAR_DIST_1",
                                             "NEAR_DIST_2" etc in the output dataframe.
                                             These fields contain the nearest feature distance
                                             from the input_features.
-                                            Same as `prepare_tabulardata()`.
+                                            Same as :meth:`~arcgis.learn.prepare_tabulardata`.
         ---------------------------------   -------------------------------------------------------------------------
         output_layer_name                   Optional string. Used for publishing the output layer.
         ---------------------------------   -------------------------------------------------------------------------
-        gis                                 Optional GIS Object. Used for publishing the item.
+        gis                                 Optional :class:`~arcgis.gis.GIS`  Object. Used for publishing the item.
                                             If not specified then active gis user is taken.
         ---------------------------------   -------------------------------------------------------------------------
         prediction_type                     Optional String.
@@ -425,13 +439,12 @@ class TimeSeriesModel(ArcGISModel):
                                             For prediction_type='raster', a new raster is created.
         =================================   =========================================================================
 
-        :returns Feature Layer/dataframe if prediction_type='features'/'dataframe', else returns True and saves output
+        :return: :class:`~arcgis.features.FeatureLayer`/dataframe if prediction_type='features'/'dataframe', else returns True and saves output
         raster at the specified path.
         """
 
         rasters = explanatory_rasters if explanatory_rasters else []
         if prediction_type in ["features", "dataframe"]:
-
             if input_features is None:
                 raise Exception("Feature Layer required for predict_features=True")
 
@@ -780,19 +793,20 @@ class TimeSeriesModel(ArcGISModel):
 
         processed_dataframe_transform = processed_dataframe.copy()
 
-        for col in list(processed_dataframe.columns):
-            transformed_data = processed_dataframe[col]
-            for transform in self._data._column_transforms_mapping.get(col, []):
-                transformed_data = transform.fit_transform(
-                    np.array(
-                        transformed_data, dtype=processed_dataframe[col].dtype
-                    ).reshape(-1, 1)
+        if number_of_predictions is not None and number_of_predictions > 0:
+            for col in list(processed_dataframe.columns):
+                transformed_data = processed_dataframe[col]
+                for transform in self._data._column_transforms_mapping.get(col, []):
+                    transformed_data = transform.fit_transform(
+                        np.array(
+                            transformed_data[:-number_of_predictions],
+                            dtype=type(processed_dataframe[col][0]),
+                        ).reshape(-1, 1)
+                    )
+                    transformed_data = transformed_data.squeeze(1)
+                processed_dataframe_transform[col][:-number_of_predictions] = np.array(
+                    transformed_data, dtype=type(processed_dataframe[col][0])
                 )
-                transformed_data = transformed_data.squeeze(1)
-            processed_dataframe_transform[col] = np.array(
-                transformed_data, dtype=processed_dataframe[col].dtype
-            )
-
         big_bunch = []
         prediction_sequence_list = None
         processed_dataframe_transform = processed_dataframe_transform.values
@@ -816,12 +830,17 @@ class TimeSeriesModel(ArcGISModel):
             raise Exception("Basic Sequence not found!")
 
         while index < len(prediction_sequence_list):
-            if prediction_sequence_list[index] in [
-                "",
-                None,
-                "null",
-                "None",
-            ] or np.isnan(prediction_sequence_list[index]):
+            if (
+                pd.isna(prediction_sequence_list[index])
+                or prediction_sequence_list[index]
+                in [
+                    "",
+                    None,
+                    "null",
+                    "None",
+                ]
+                or np.isnan(prediction_sequence_list[index])
+            ):
                 value = self._predict(np.array(big_bunch))
                 prediction_sequence_list[index] = value
 
@@ -883,7 +902,7 @@ class TimeSeriesModel(ArcGISModel):
 
     def score(self):
         """
-        :returns R2 score for regression model and Accuracy for classification model.
+        :return: R2 score for regression model and Accuracy for classification model.
         """
 
         self._check_requisites()
@@ -940,7 +959,7 @@ class TimeSeriesModel(ArcGISModel):
         Prints the graph with predictions.
 
         =====================   ===========================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ---------------------   -------------------------------------------
         rows                    Optional Integer.
                                 Number of rows to print.

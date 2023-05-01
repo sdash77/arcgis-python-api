@@ -1,3 +1,6 @@
+import sys
+import concurrent.futures
+# sys.path.insert(0, r"C:\ipython_workfolder\geosaurus\src")
 import unittest
 import concurrent.futures
 from arcgis.gis import GIS
@@ -37,7 +40,7 @@ class TestDivideParcels(unittest.TestCase):
 
     def test_divide_proportional_area_no_dist_remainder(self):
         fq_version_name = pfutils.create_version(self.vms, "api-divide_prop_area")
-        divide_parcel_guid = "{4A336964-922B-4CD5-8CEE-C25E41AE0922}"
+        divide_parcel_guid = "{3293FC07-1127-4FF6-92F1-8FF7DF663ADD}"
         divide_parcel_type = 15
         existing_record_guid = "{18F944EA-50E9-4792-9814-FD419644934E}"
         divide_option = "ProportionalArea"
@@ -97,7 +100,7 @@ class TestDivideParcels(unittest.TestCase):
 
     def test_divide_proportional_area_no_dist_remainder_timed(self):
         fq_version_name = pfutils.create_version(self.vms)
-        divide_parcel_guid = "{4A336964-922B-4CD5-8CEE-C25E41AE0922}"
+        divide_parcel_guid = "{3293FC07-1127-4FF6-92F1-8FF7DF663ADD}"
         divide_parcel_type = 15
         existing_record_guid = "{18F944EA-50E9-4792-9814-FD419644934E}"
         divide_option = "ProportionalArea"
@@ -137,7 +140,7 @@ class TestDivideParcels(unittest.TestCase):
 
     def test_proportional_area_check_defaults(self):
         fq_version_name = pfutils.create_version(self.vms)
-        divide_parcel_guid = "{4A336964-922B-4CD5-8CEE-C25E41AE0922}"
+        divide_parcel_guid = "{3293FC07-1127-4FF6-92F1-8FF7DF663ADD}"
         divide_parcel_type = 15
         existing_record_guid = "{18F944EA-50E9-4792-9814-FD419644934E}"
         divide_option = "ProportionalArea"
@@ -197,7 +200,7 @@ class TestDivideParcels(unittest.TestCase):
 
     def test_divide_equal_area_no_dist_remainder(self):
         fq_version_name = pfutils.create_version(self.vms)
-        divide_parcel_guid = "{4A336964-922B-4CD5-8CEE-C25E41AE0922}"
+        divide_parcel_guid = "{3293FC07-1127-4FF6-92F1-8FF7DF663ADD}"
         divide_parcel_type = 15
         existing_record_guid = "{18F944EA-50E9-4792-9814-FD419644934E}"
         divide_option = "EqualArea"
@@ -273,7 +276,7 @@ class TestDivideParcels(unittest.TestCase):
 
     def test_equal_area_dist_remainder_left_side_true(self):
         fq_version_name = pfutils.create_version(self.vms)
-        divide_parcel_guid = "{4A336964-922B-4CD5-8CEE-C25E41AE0922}"
+        divide_parcel_guid = "{3293FC07-1127-4FF6-92F1-8FF7DF663ADD}"
         divide_parcel_type = 15
         existing_record_guid = "{18F944EA-50E9-4792-9814-FD419644934E}"
         divide_option = "EqualArea"
@@ -346,7 +349,7 @@ class TestDivideParcels(unittest.TestCase):
 
     def test_equal_area_dist_remainder(self):
         fq_version_name = pfutils.create_version(self.vms, "api-divide_equal_area")
-        divide_parcel_guid = "{4A336964-922B-4CD5-8CEE-C25E41AE0922}"
+        divide_parcel_guid = "{3293FC07-1127-4FF6-92F1-8FF7DF663ADD}"
         divide_parcel_type = 15
         existing_record_guid = "{18F944EA-50E9-4792-9814-FD419644934E}"
         divide_option = "EqualArea"
@@ -419,7 +422,7 @@ class TestDivideParcels(unittest.TestCase):
 
     def test_equal_area_dist_remainder_square(self):
         fq_version_name = pfutils.create_version(self.vms)
-        divide_parcel_guid = "{E2A3030E-AFE0-4EC7-9028-D72747D4419A}"
+        divide_parcel_guid = "{6A072F92-2345-40B0-9F21-BE4BFBC7E2B6}"
         divide_parcel_type = 15
         existing_record_guid = "{18F944EA-50E9-4792-9814-FD419644934E}"
         divide_option = "EqualArea"
@@ -509,7 +512,7 @@ class TestDivideParcels(unittest.TestCase):
 
     def test_equal_area_dist_remainder_left_side_false(self):
         fq_version_name = pfutils.create_version(self.vms)
-        divide_parcel_guid = "{4A336964-922B-4CD5-8CEE-C25E41AE0922}"
+        divide_parcel_guid = "{3293FC07-1127-4FF6-92F1-8FF7DF663ADD}"
         divide_parcel_type = 15
         existing_record_guid = "{18F944EA-50E9-4792-9814-FD419644934E}"
         divide_option = "EqualArea"
@@ -582,7 +585,7 @@ class TestDivideParcels(unittest.TestCase):
 
     def test_equal_area_dist_remainder_cogo_line_bearing(self):
         fq_version_name = pfutils.create_version(self.vms)
-        divide_parcel_guid = "{4A336964-922B-4CD5-8CEE-C25E41AE0922}"
+        divide_parcel_guid = "{3293FC07-1127-4FF6-92F1-8FF7DF663ADD}"
         divide_parcel_type = 15
         existing_record_guid = "{18F944EA-50E9-4792-9814-FD419644934E}"
         divide_option = "EqualArea"
@@ -655,7 +658,7 @@ class TestDivideParcels(unittest.TestCase):
 
     def test_equal_width_merge_remainder_left_side_true(self):
         fq_version_name = pfutils.create_version(self.vms)
-        divide_parcel_guid = "{4A336964-922B-4CD5-8CEE-C25E41AE0922}"
+        divide_parcel_guid = "{3293FC07-1127-4FF6-92F1-8FF7DF663ADD}"
         divide_parcel_type = 15
         existing_record_guid = "{18F944EA-50E9-4792-9814-FD419644934E}"
         divide_option = "EqualWidth"
@@ -733,7 +736,7 @@ class TestDivideParcels(unittest.TestCase):
 
     def test_equal_width_merge_remainder_left_side_timed(self):
         fq_version_name = pfutils.create_version(self.vms, "api-divide_equal_width")
-        divide_parcel_guid = "{4A336964-922B-4CD5-8CEE-C25E41AE0922}"
+        divide_parcel_guid = "{3293FC07-1127-4FF6-92F1-8FF7DF663ADD}"
         divide_parcel_type = 15
         existing_record_guid = "{18F944EA-50E9-4792-9814-FD419644934E}"
         divide_option = "EqualWidth"
@@ -772,9 +775,9 @@ class TestDivideParcels(unittest.TestCase):
                 print(ex)
                 self.fail(f"Divide failed: {ex}")
 
-    def test_equal_width_merge_remainder_reconcile_async(self):
-        fq_version_name = pfutils.create_version(self.vms)
-        divide_parcel_guid = "{4A336964-922B-4CD5-8CEE-C25E41AE0922}"
+    def test_equal_width_merge_remainder_left_side_async(self):
+        fq_version_name = pfutils.create_version(self.vms, "api-divide_equal_width")
+        divide_parcel_guid = "{3293FC07-1127-4FF6-92F1-8FF7DF663ADD}"
         divide_parcel_type = 15
         existing_record_guid = "{18F944EA-50E9-4792-9814-FD419644934E}"
         divide_option = "EqualWidth"
@@ -785,6 +788,7 @@ class TestDivideParcels(unittest.TestCase):
         divide_distribute_remainder = True
         default_area_unit = 109405
         divide_cogo_line_bearing = None
+        future = True
 
         with self.vms.get(fq_version_name, "read") as version:
             parcel_fabric = ParcelFabricManager(
@@ -795,7 +799,7 @@ class TestDivideParcels(unittest.TestCase):
             )
             # Divide the parcels
             try:
-                divide = parcel_fabric.divide(
+                divide_result = parcel_fabric.divide(
                     divide_parcel_guid=divide_parcel_guid,
                     divide_parcel_type=divide_parcel_type,
                     divide_record=existing_record_guid,
@@ -807,24 +811,22 @@ class TestDivideParcels(unittest.TestCase):
                     divide_distribute_remainder=divide_distribute_remainder,
                     divide_cogo_line_bearing=divide_cogo_line_bearing,
                     default_area_unit=default_area_unit,
+                    future=future,
                 )
-                self.assertTrue(divide, "Divide failed.")
+                assert isinstance(divide_result, concurrent.futures.Future)
+                result = divide_result.result()
+                self.assertEqual(
+                    "esriJobSucceeded",
+                    result["status"],
+                    f"Async job failed:\t{result['status']}",
+                )
             except Exception as ex:
                 print(ex)
                 self.fail(f"Divide failed: {ex}")
-
-        with self.vms.get(fq_version_name, "edit") as version:
-            # version.mode = "edit"
-            result = version.reconcile(True, False, "byObject", True)
-            assert isinstance(result, concurrent.futures.Future)
-            result = result.result()
-            self.assertEqual(
-                "Completed", result["status"], f"Async job failed:\t{result['status']}"
-            )
 
     def test_equal_width_merge_remainder_junk_values(self):
         fq_version_name = pfutils.create_version(self.vms)
-        divide_parcel_guid = "{4A336964-922B-4CD5-8CEE-C25E41AE0922}"
+        divide_parcel_guid = "{3293FC07-1127-4FF6-92F1-8FF7DF663ADD}"
         divide_parcel_type = 15
         existing_record_guid = "{18F944EA-50E9-4792-9814-FD419644934E}"
         divide_option = "EqualWidth"
@@ -866,7 +868,7 @@ class TestDivideParcels(unittest.TestCase):
 
     def test_divide_missing_parameter_correct_error(self):
         fq_version_name = pfutils.create_version(self.vms)
-        divide_parcel_guid = "{4A336964-922B-4CD5-8CEE-C25E41AE0922}"
+        divide_parcel_guid = "{3293FC07-1127-4FF6-92F1-8FF7DF663ADD}"
         divide_parcel_type = None
         existing_record_guid = "{AF818140-99D3-4DBB-B65F-98CB2C9259A8}"
         divide_option = "ProportionalArea"
@@ -907,3 +909,7 @@ class TestDivideParcels(unittest.TestCase):
     @classmethod
     def tearDownClass(cls):
         pfutils.clean_up_versions(cls.vms)
+
+
+if __name__ == "__main__":
+    unittest.main()

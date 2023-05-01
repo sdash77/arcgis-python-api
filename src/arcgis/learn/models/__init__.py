@@ -35,3 +35,7 @@ if not _LAMBDA_TEXT_CLASSIFICATION:
     from ._max_deeplab import MaXDeepLab
     from ._wnet_cgan import WNet_cGAN
     from ._detreg_detector import DETReg
+    from ._RandLANet import RandLANet
+    from ._efficientdet import EfficientDet
+    from ._SQNSeg import SQNSeg
+    from ._psetae import PSETAE

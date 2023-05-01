@@ -31,11 +31,11 @@ except Exception as e:
 
 class ZeroShotClassifier(InferenceOnlyModel):
     """
-    Creates a `ZeroShotClassifier` Object.
+    Creates a :class:`~arcgis.learn.text.ZeroShotClassifier` Object.
     Based on the Hugging Face transformers library
 
     =====================   ===========================================
-    **Argument**            **Description**
+    **Parameter**            **Description**
     ---------------------   -------------------------------------------
     backbone                Optional string. Specifying the HuggingFace
                             transformer model name which will be used to
@@ -49,7 +49,7 @@ class ZeroShotClassifier(InferenceOnlyModel):
     **kwargs**
 
     =====================   ===========================================
-    **Argument**            **Description**
+    **Parameter**            **Description**
     ---------------------   -------------------------------------------
     pretrained_path         Option str. Path to a directory, where pretrained
                             model files are saved.
@@ -62,7 +62,7 @@ class ZeroShotClassifier(InferenceOnlyModel):
                             model.
     =====================   ===========================================
 
-    :return: `ZeroShotClassifier` Object
+    :return: :class:`~arcgis.learn.text.ZeroShotClassifier` Object
     """
 
     #: supported transformer architectures
@@ -78,7 +78,7 @@ class ZeroShotClassifier(InferenceOnlyModel):
         Predicts the class label(s) for the input text
 
         =====================   ===========================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ---------------------   -------------------------------------------
         text_or_list            Required string or list. The sequence or a
                                 list of sequences to classify.
@@ -95,7 +95,7 @@ class ZeroShotClassifier(InferenceOnlyModel):
         **kwargs**
 
         =====================   ===========================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ---------------------   -------------------------------------------
         multi_class             Optional boolean. Whether or not multiple
                                 candidate labels can be true.

@@ -1,6 +1,8 @@
 from ._base import BaseEsriAuth
 from ._pki import EsriPKIAuth
-from ._winauth import EsriWindowsAuth, EsriKerberosAuth
+from ._winauth import EsriKerberosAuth, EsriWindowsAuth
+from ._negotiate import EsriHttpNegotiateAuth
+from ._ntlm import EsriHttpNtlmAuth
 from ._apikey import EsriAPIKeyAuth
 from ._provided_token import (
     EsriUserTokenAuth,
@@ -10,9 +12,11 @@ from ._token import (
     EsriBuiltInAuth,
     EsriGenTokenAuth,
     ArcGISProAuth,
+    ArcGISServerAuth,
 )  # legacy or for stand alone only
 from ._oauth import EsriOAuth2Auth
 from ._notebook import EsriNotebookAuth
+from ._pkce import EsriPKCEAuth
 
 __all__ = [
     "EsriAPIKeyAuth",
@@ -27,4 +31,8 @@ __all__ = [
     "ArcGISProAuth",
     "EsriWindowsAuth",
     "BaseEsriAuth",
+    "EsriPKCEAuth",
+    "ArcGISServerAuth",
+    "EsriHttpNtlmAuth",
+    "EsriHttpNegotiateAuth",
 ]

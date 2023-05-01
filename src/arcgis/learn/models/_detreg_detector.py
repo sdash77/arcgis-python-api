@@ -26,7 +26,6 @@ class CustomDetReg:
     import torch
 
     def get_model(self, data, backbone="resnet50", **kwargs):
-
         from arcgis.learn._utils import nested_tensor_from_tensor_list
 
         self.Nt = nested_tensor_from_tensor_list
@@ -85,7 +84,6 @@ class CustomDetReg:
         return model
 
     def on_batch_begin(self, learn, model_input_batch, model_target_batch, **kwargs):
-
         target_list = []
 
         for bbox, label in zip(*model_target_batch):
@@ -117,7 +115,6 @@ class CustomDetReg:
         )
 
     def resize_input_batch(self, input):
-
         input = self.torch.nn.functional.interpolate(
             input,
             scale_factor=self.scale_factor,
@@ -152,7 +149,6 @@ class CustomDetReg:
     def post_process(
         self, pred, nms_overlap, thres, chip_size, device=torch.device("cuda")
     ):
-
         post_processed_pred = []
         pred_logits = pred["pred_logits"]
         results = self.postprocessors(
@@ -183,14 +179,14 @@ class CustomDetReg:
 class DETReg(ModelExtension):
     """
     Model architecture from https://arxiv.org/abs/2106.04550.
-    Creates a ``DETReg`` object detection model,
+    Creates a :class:`~arcgis.learn.DETReg` object detection model,
     based on https://github.com/amirbar/DETReg.
 
     =============================   =============================================
-    **Argument**                    **Description**
+    **Parameter**                    **Description**
     -----------------------------   ---------------------------------------------
     data                            Required fastai Databunch. Returned data object from
-                                    ``prepare_data`` function.
+                                    :meth:`~arcgis.learn.prepare_data`  function.
     -----------------------------   ---------------------------------------------
     backbone                        Optional string. Backbone convolutional neural network
                                     model used for feature extraction, which
@@ -201,11 +197,10 @@ class DETReg(ModelExtension):
                                     saved.
     =============================   =============================================
 
-    :return: ``DETReg`` Object
+    :return: :class:`~arcgis.learn.DETReg` Object
     """
 
     def __init__(self, data, backbone="resnet50", pretrained_path=None, **kwargs):
-
         self._check_dataset_support(data)
         backbone_name = backbone if type(backbone) is str else backbone.__name__
         if backbone_name not in self.supported_backbones:
@@ -259,21 +254,21 @@ class DETReg(ModelExtension):
     @classmethod
     def from_model(cls, emd_path, data=None):
         """
-        Creates a ``DETReg`` object from an Esri Model Definition (EMD) file.
+        Creates a :class:`~arcgis.learn.DETReg` object from an Esri Model Definition (EMD) file.
 
         =====================   ===========================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ---------------------   -------------------------------------------
         emd_path                Required string. Path to Deep Learning Package
                                 (DLPK) or Esri Model Definition(EMD) file.
         ---------------------   -------------------------------------------
         data                    Required fastai Databunch or None. Returned data
-                                object from ``prepare_data`` function or None for
+                                object from :meth:`~arcgis.learn.prepare_data`  function or None for
                                 inferencing.
 
         =====================   ===========================================
 
-        :return: `DETReg` Object
+        :return: :class:`~arcgis.learn.DETReg` Object
         """
         emd_path = _get_emd_path(emd_path)
 
@@ -302,7 +297,6 @@ class DETReg(ModelExtension):
 
         data_passed = True
         if data is None:
-
             data_passed = False
             train_tfms = []
             val_tfms = []
@@ -350,12 +344,11 @@ class DETReg(ModelExtension):
         visualize=False,
         resize=False,
     ):
-
         """
         Runs prediction on an Image. This method is only supported for RGB images.
 
         =====================   ===========================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ---------------------   -------------------------------------------
         image_path              Required. Path to the image file to make the
                                 predictions on.
@@ -421,13 +414,12 @@ class DETReg(ModelExtension):
         },
         resize=False,
     ):
-
         """
         Runs prediction on a video and appends the output VMTI predictions in the metadata file.
         This method is only supported for RGB images.
 
         =====================   ===========================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ---------------------   -------------------------------------------
         input_video_path        Required. Path to the video file to make the
                                 predictions on.
@@ -497,12 +489,11 @@ class DETReg(ModelExtension):
         mean=False,
         show_progress=True,
     ):
-
         """
         Computes average precision on the validation set for each class.
 
         =====================   ===========================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ---------------------   -------------------------------------------
         detect_thresh           Optional float. The probability above which
                                 a detection will be considered for computing
@@ -522,12 +513,11 @@ class DETReg(ModelExtension):
         """
 
     def show_results(self, rows=5, thresh=0.5, nms_overlap=0.1):
-
         """
         Displays the results of a trained model on a part of the validation set.
 
         =====================   ===========================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ---------------------   -------------------------------------------
         rows                    Optional int. Number of rows of results
                                 to be displayed.

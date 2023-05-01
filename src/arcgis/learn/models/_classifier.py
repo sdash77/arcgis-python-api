@@ -38,16 +38,13 @@ try:
         ClassificationInterpretation,
         cnn_config,
     )
-    from ._arcgis_model import _set_multigpu_callback, _resnet_family
+    from ._arcgis_model import _set_multigpu_callback, _resnet_family, _get_device
     from fastai.vision.transform import (
         crop,
         rotate,
         dihedral_affine,
         brightness,
         contrast,
-        skew,
-        rand_zoom,
-        get_transforms,
     )
     import torch.nn.functional as functional
     import glob
@@ -123,10 +120,10 @@ class FeatureClassifier(ArcGISModel):
     geographical feature based on the imagery it overlaps with.
 
     =====================   ===========================================
-    **Argument**            **Description**
+    **Parameter**            **Description**
     ---------------------   -------------------------------------------
     data                    Required fastai Databunch. Returned data object from
-                            `prepare_data` function.
+                            :meth:`~arcgis.learn.prepare_data`  function.
     ---------------------   -------------------------------------------
     backbone                Optional string. Backbone convolutional neural network
                             model used for feature extraction, which is ``resnet34``
@@ -149,10 +146,10 @@ class FeatureClassifier(ArcGISModel):
     backend                 Optional string. Controls the backend framework to be used
                             for this model, which is 'pytorch' by default.
 
-                            valid options are 'pytorch', 'tensorflow'
+                            valid options are "``pytorch``", "``tensorflow``"
     =====================   ===========================================
 
-    :return: `FeatureClassifier` Object
+    :return: :class:`~arcgis.learn.FeatureClassifier` Object
     """
 
     def __init__(
@@ -166,7 +163,6 @@ class FeatureClassifier(ArcGISModel):
         *args,
         **kwargs,
     ):
-
         # condition when databunch is from fastai
         # it will not contain class_mapping
         if not hasattr(data, "class_mapping"):
@@ -177,8 +173,8 @@ class FeatureClassifier(ArcGISModel):
             super().__init__(data, None)
             self._intialize_tensorflow(data, backbone, pretrained_path, mixup, kwargs)
         else:
-
-            super().__init__(data, backbone, **kwargs)
+            super().__init__(data, backbone, pretrained_path=pretrained_path, **kwargs)
+            data = self._data
 
             backbone_cut = None
             backbone_split = None
@@ -312,7 +308,7 @@ class FeatureClassifier(ArcGISModel):
         Displays the results of a trained model on a part of the validation set.
 
         =====================   ===========================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ---------------------   -------------------------------------------
         rows                    Optional int. Number of rows of results
                                 to be displayed.
@@ -329,7 +325,7 @@ class FeatureClassifier(ArcGISModel):
         Displays the results of a trained model on a part of the validation set.
 
         =====================   ===========================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ---------------------   -------------------------------------------
         rows                    Optional int. Number of rows of results
                                 to be displayed.
@@ -349,12 +345,14 @@ class FeatureClassifier(ArcGISModel):
         Runs prediction on an Image. Works with RGB images only.
 
         =====================   ===========================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ---------------------   -------------------------------------------
         img_path                Required. Path to the image file to make the
                                 predictions on.
+        ---------------------   -------------------------------------------
         visualize               Optional: Set this parameter to True to
                                 visualize the image being predicted.
+        ---------------------   -------------------------------------------
         gradcam                 Optional: Set this parameter to True to
                                 get gradcam visualization to help with
                                 explanability of the prediction. If set
@@ -511,17 +509,19 @@ class FeatureClassifier(ArcGISModel):
         Creates a Feature classifier from an Esri Model Definition (EMD) file.
 
         =====================   ===========================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ---------------------   -------------------------------------------
         emd_path                Required string. Path to Deep Learning Package
                                 (DLPK) or Esri Model Definition(EMD) file.
         ---------------------   -------------------------------------------
         data                    Required fastai Databunch or None. Returned data
-                                object from `prepare_data` function or None for
+                                object from :meth:`~arcgis.learn.prepare_data`  function or None for
                                 inferencing.
         =====================   ===========================================
 
-        :return: `FeatureClassifier` Object
+        :return:
+            :class:`~arcgis.learn.FeatureClassifier` Object
+
         """
         if not HAS_FASTAI:
             _raise_fastai_import_error(import_exception=import_exception)
@@ -593,6 +593,7 @@ class FeatureClassifier(ArcGISModel):
             data.emd_path = emd_path
             data.emd = emd
             data = get_multispectral_data_params_from_emd(data, emd)
+            data.device = _get_device()
 
         resize_to = emd.get("resize_to")
         data.resize_to = resize_to
@@ -605,7 +606,7 @@ class FeatureClassifier(ArcGISModel):
         **kwargs**
 
         =====================   ===========================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ---------------------   -------------------------------------------
         thresh                  confidence score threshold for multilabel predictions,
                                 defaults to 0.5
@@ -705,10 +706,10 @@ class FeatureClassifier(ArcGISModel):
         Plots the hard examples with their heatmaps.
 
         =====================   ===========================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ---------------------   -------------------------------------------
         num_examples            Number of hard examples to plot
-                                ``prepare_data`` function.
+                                :meth:`~arcgis.learn.prepare_data`  function.
         =====================   ===========================================
         """
         self._check_requisites()
@@ -791,13 +792,13 @@ class FeatureClassifier(ArcGISModel):
         Works with RGB images only.
 
         =====================   ===========================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ---------------------   -------------------------------------------
         folder                  Required String. Folder containing images to inference on.
         ---------------------   -------------------------------------------
         feature_layer_name      Required String. The name of the feature layer used to publish.
         ---------------------   -------------------------------------------
-        gis                     Optional GIS Object, the GIS on which this tool runs. If not specified,
+        gis                     Optional :class:`~arcgis.gis.GIS`  Object, the GIS on which this tool runs. If not specified,
                                 the active GIS is used.
         ---------------------   -------------------------------------------
         prediction_field        Optional String. The field name to use to add predictions.
@@ -805,7 +806,7 @@ class FeatureClassifier(ArcGISModel):
         confidence_field        Optional String. The field name to use to add confidence.
         =====================   ===========================================
 
-        :return: `FeatureCollection` Object
+        :return: :class:`~arcgis.features.FeatureCollection` Object
         """
         return self._create_feature_layer(
             self._extract_images_geo_data(folder),
@@ -981,7 +982,6 @@ class FeatureClassifier(ArcGISModel):
         confidence_field=None,
         predict_function=_prediction_function,
     ):
-
         features = feature_layer.query().features
         features_to_update = []
 
@@ -1083,17 +1083,16 @@ class FeatureClassifier(ArcGISModel):
         confidence_field=None,
         predict_function=None,
     ):
-
         """
-        Deprecated in ArcGIS version 1.9.1 and later: Use the Classify Objects Using Deep Learning tool or arcgis.learn.classify_objects()
+        Deprecated in ArcGIS version 1.9.1 and later: Use the Classify Objects Using Deep Learning tool or :meth:`~arcgis.learn.classify_objects`
 
         Classifies the exported images and updates the feature layer with the prediction results in the ``output_label_field``.
         Works with RGB images only.
 
         ====================================     ====================================================================
-        **Argument**                             **Description**
+        **Parameter**                             **Description**
         ------------------------------------     --------------------------------------------------------------------
-        feature_layer                            Required. Feature Layer for classification.
+        feature_layer                            Required. :class:`~arcgis.features.FeatureLayer` for classification.
         ------------------------------------     --------------------------------------------------------------------
         labeled_tiles_directory                  Required. Folder structure containing images and labels folder. The
                                                  chips should have been generated using the export training data tool in
@@ -1457,7 +1456,6 @@ class FeatureClassifier(ArcGISModel):
         batch_size,
         overwrite,
     ):
-
         # class values
         class_values = list(self._data.class_mapping.keys())
 
@@ -1718,7 +1716,7 @@ class FeatureClassifier(ArcGISModel):
 
     @deprecated(
         deprecated_in="1.7.1",
-        details="Please use arcgis.learn.classify_objects() instead",
+        details="Please use :meth:`~arcgis.learn.classify_objects` instead",
     )
     def categorize_features(
         self,
@@ -1736,14 +1734,14 @@ class FeatureClassifier(ArcGISModel):
         """
         Categorizes each feature by classifying its attachments or an image of its geographical area (using the provided Imagery Layer)
         and updates the feature layer with the prediction results in the ``output_label_field``.
-        Deprecated, Use the Classify Objects Using Deep Learning tool or arcgis.learn.classify_objects()
+        Deprecated, Use the Classify Objects Using Deep Learning tool or :meth:`~arcgis.learn.classify_objects`
 
         ====================================     ====================================================================
-        **Argument**                             **Description**
+        **Parameter**                             **Description**
         ------------------------------------     --------------------------------------------------------------------
-        feature_layer                            Required. Public Feature Layer or path of local feature class for classification with read, write, edit permissions.
+        feature_layer                            Required. Public :class:`~arcgis.features.FeatureLayer` or path of local feature class for classification with read, write, edit permissions.
         ------------------------------------     --------------------------------------------------------------------
-        raster                                   Optional. Imagery layer or path of local raster to be used for exporting image chips. (Requires arcpy)
+        raster                                   Optional. :class:`~arcgis.raster.ImageryLayer` or path of local raster to be used for exporting image chips. (Requires arcpy)
         ------------------------------------     --------------------------------------------------------------------
         class_value_field                        Required string. Output field to be added in the layer, containing class value of predictions.
         ------------------------------------     --------------------------------------------------------------------

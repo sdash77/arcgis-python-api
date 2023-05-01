@@ -1,6 +1,6 @@
 import sys
 
-# sys.path.insert(0, r"c:\SVN\geosaurus_master_issue_4790a\src")
+sys.path.insert(0, r"c:\SVN\geosaurus_issue_9708\src")
 import unittest
 from arcgis.auth import EsriSession
 from arcgis.auth.tools import no_ssl_verification
@@ -50,7 +50,9 @@ class TestNoSSLContext(unittest.TestCase, WarnAssertionsMixin):
         with self.assertNoWarnings() as cm:
             with no_ssl_verification():
                 with EsriSession() as session:
-                    resp = session.get("https://www.arcgis.com/sharing/rest?f=json")
+                    resp = session.get(
+                        "https://www.arcgis.com/sharing/rest?f=json"
+                    )
 
 
 if __name__ == "__main__":

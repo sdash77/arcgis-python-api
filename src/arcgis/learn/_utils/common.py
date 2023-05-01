@@ -8,6 +8,7 @@ import tempfile
 from pathlib import Path
 from typing import Callable
 import copy
+from .utils import check_imbalance
 
 HAS_FASTAI = False
 try:
@@ -126,7 +127,12 @@ def read_image(path, resize_to: int = None, keep_raw=False):
 
 class ArcGISMSImage(Image):
     def show(
-        self, ax=None, rgb_bands=None, show_axis=False, title=None, return_ax=False
+        self,
+        ax=None,
+        rgb_bands=None,
+        show_axis=False,
+        title=None,
+        return_ax=False,
     ):
         if rgb_bands is None:
             rgb_bands = getattr(self, "rgb_bands", [0, 1, 2])
@@ -270,6 +276,21 @@ class ArcGISImageList(ImageList):
     def open(self, fn):
         return ArcGISMSImage.open(fn, div=self._div, imagery_type=self._imagery_type)
 
+    def check_class_imbalance(
+        self, func: Callable, stratify=False, class_imbalance_pct=0.01
+    ):
+        try:
+            labelval = [(func(o)) for o in self.items]
+            if any(isinstance(el, list) for el in labelval):
+                total_sample = np.concatenate(np.array(labelval))
+            else:
+                total_sample = np.array(labelval)
+            unique_sample = set(total_sample)
+            check_imbalance(total_sample, unique_sample, class_imbalance_pct, stratify)
+        except Exception as e:
+            warnings.warn(f"Unable to check for class imbalance [reason : {e}]")
+        return self
+
     def label_list_from_func(self, func: Callable, val_split_pct):
         "Apply `func` to every input to get its label."
         import pandas as pd
@@ -369,7 +390,7 @@ def get_post_processed_model(arcgis_model, input_normalization=True):
 
 
 def get_color_array(color_mapping: dict, alpha=0.7):
-    color_array = np.array(list(color_mapping.values()), dtype=np.float) / 255
+    color_array = np.array(list(color_mapping.values()), dtype=float) / 255
     color_array = np.concatenate(
         [
             color_array,
@@ -550,10 +571,14 @@ def get_percent_minmax(imagetensor_batch, min_clip=0.0025, max_clip=0.005):
         max_vals.append(v[1])
     return (
         torch.tensor(
-            min_vals, dtype=imagetensor_batch.dtype, device=imagetensor_batch.device
+            min_vals,
+            dtype=imagetensor_batch.dtype,
+            device=imagetensor_batch.device,
         ),
         torch.tensor(
-            max_vals, dtype=imagetensor_batch.dtype, device=imagetensor_batch.device
+            max_vals,
+            dtype=imagetensor_batch.dtype,
+            device=imagetensor_batch.device,
         ),
     )
 

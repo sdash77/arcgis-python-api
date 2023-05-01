@@ -5,6 +5,8 @@ import torch
 from fastai.vision.data import ObjectCategoryList, ObjectItemList
 from fastai.vision.image import ImageBBox
 from fastai.core import split_kwargs_by_func, has_arg
+from fastai.vision import imagenet_stats
+from torchvision.transforms import Normalize
 from .common import (
     ArcGISMSImage,
     get_nbatches,
@@ -12,6 +14,7 @@ from .common import (
     dynamic_range_adjustment,
     image_batch_stretcher,
 )
+from .utils import check_imbalance
 from matplotlib import pyplot as plt
 from matplotlib import patheffects
 from fastai.basic_data import DatasetType
@@ -53,6 +56,19 @@ class ObjectDetectionItemList(ObjectItemList):
 
     def open(self, fn):
         return ArcGISMSImage.open(fn, div=self._div, imagery_type=self._imagery_type)
+
+    def check_class_imbalance(
+        self, func: Callable, stratify=False, class_imbalance_pct=0.01
+    ):
+        try:
+            labelval = [(func(o)[-1]) for o in self.items]
+            total_sample = np.concatenate(labelval)
+            unique_sample = set(total_sample)
+            check_imbalance(total_sample, unique_sample, class_imbalance_pct, stratify)
+        except Exception as e:
+            warnings.warn(f"Unable to check for class imbalance [reason : {e}]")
+
+        return self
 
     def label_list_from_func(self, func: Callable):
         "Apply `func` to every input to get its label."
@@ -162,7 +178,7 @@ def show_batch_object_detection(
     """
     This function randomly picks a few training chips and visualizes them.
     =====================   ===========================================
-    **Argument**            **Description**
+    **Parameter**            **Description**
     ---------------------   -------------------------------------------
     rows                    Optional Integer.
                             Number of rows to display.
@@ -195,7 +211,7 @@ def show_batch_pascal_voc_rectangles(
     """
     This function randomly picks a few training chips and visualizes them.
     =====================   ===========================================
-    **Argument**            **Description**
+    **Parameter**            **Description**
     ---------------------   -------------------------------------------
     rows                    Optional Integer.
                             Number of rows to display.
@@ -261,11 +277,10 @@ def show_batch_pascal_voc_rectangles(
     # Get Batch
     x_batch, y_batch = get_nbatches(data_loader, math.ceil(n_items / self.batch_size))
     x_batch = torch.cat(x_batch)
+
     # Denormalize X
-    x_batch = (
-        self._scaled_std_values[self._extract_bands].view(1, -1, 1, 1).to(x_batch)
-        * x_batch
-    ) + self._scaled_mean_values[self._extract_bands].view(1, -1, 1, 1).to(x_batch)
+    x_batch = denorm_x(x_batch, self)
+
     y_bboxes = []
     y_classes = []
     for yb in y_batch:
@@ -358,6 +373,7 @@ def show_results_multispectral(
     type_data_loader = kwargs.get(
         "data_loader", "validation"
     )  # options : traininig, validation, testing
+
     if type_data_loader == "training":
         data_loader = self._data.train_dl
     elif type_data_loader == "validation":
@@ -402,6 +418,15 @@ def show_results_multispectral(
     x_batch, y_batch = get_nbatches(
         data_loader, math.ceil(nrows / self._data.batch_size)
     )
+
+    if self._data.norm is None and not self._data._is_multispectral:
+        normalize = Normalize(mean=imagenet_stats[0], std=imagenet_stats[1])
+        modified_x_batch = []
+        for i in x_batch:
+            modified_x_batch.append(normalize(i))
+        x_batch = modified_x_batch
+        del modified_x_batch
+
     x_batch = torch.cat(x_batch)
     y_bboxes = []
     y_classes = []
@@ -415,7 +440,6 @@ def show_results_multispectral(
     pred_model_external = []
 
     for i in range(0, x_batch.shape[0], self._data.batch_size):
-
         if self._backend == "pytorch":
             if getattr(self, "_is_model_extension", False):
                 xb = self._model_conf.transform_input_multispectral(
@@ -424,7 +448,6 @@ def show_results_multispectral(
                 try:
                     _pred_ext = self.learn.model.eval()(xb)
                 except Exception as e:
-
                     if getattr(self, "_is_fasterrcnn", False):
                         _pred_ext = []
                         for _ in range(self._data.batch_size):
@@ -474,7 +497,6 @@ def show_results_multispectral(
             predictions_store = __predictions_store
 
     if self._is_multispectral:
-
         rgb_bands = kwargs.get("rgb_bands", self._data._symbology_rgb_bands)
 
         e = Exception(

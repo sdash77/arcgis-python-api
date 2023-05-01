@@ -291,6 +291,10 @@ geometric
 _________
 .. autofunction:: arcgis.raster.functions.geometric
 
+geometric_median
+________________
+.. autofunction:: arcgis.raster.functions.geometric_median
+
 gndvi
 ____
 .. autofunction:: arcgis.raster.functions.gndvi
@@ -635,6 +639,10 @@ ______
 sum
 ___
 .. autofunction:: arcgis.raster.functions.sum
+
+surface_parameters
+__________________
+.. autofunction:: arcgis.raster.functions.surface_parameters
 
 tan
 ___

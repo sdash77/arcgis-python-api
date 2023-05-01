@@ -2,16 +2,20 @@ import os
 from arcgis.gis import GIS
 from arcgis._impl.common._mixins import PropertyMap
 
+
 ########################################################################
 class SecurityManager(object):
     """
     This resource is a container for all resources and operations
-    pertaining to security in your ArcGIS Notebook Server site.
+    pertaining to security in your ArcGIS Notebook Server site. An object of this
+    class can be created using :attr:`~arcgis.gis.nb.NotebookServer.security` property of the
+    :class:`~arcgis.gis.nb.NotebookServer` class
     """
 
     _url = None
     _gis = None
     _properties = None
+
     # ----------------------------------------------------------------------
     def __init__(self, url, gis):
         """Constructor"""
@@ -52,7 +56,7 @@ class SecurityManager(object):
         **Configuration Properties**
 
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
         httpsProtocols	       The TLS protocols ArcGIS Notebook Server will use. Values must be comma-separated.
         ------------------     --------------------------------------------------------------------
@@ -69,29 +73,29 @@ class SecurityManager(object):
 
         **Portal Properties**
 
-        ==========================     ====================================================================
-        **Argument**                   **Description**
-        --------------------------     --------------------------------------------------------------------
-        portalMode	               Must be the value ARCGIS_PORTAL_FEDERATION.
-        --------------------------     --------------------------------------------------------------------
+        ==========================     ===========================================================================================
+        **Parameter**                   **Description**
+        --------------------------     -------------------------------------------------------------------------------------------
+        portalMode	                   Must be the value ARCGIS_PORTAL_FEDERATION
+        --------------------------     -------------------------------------------------------------------------------------------
         portalSecretKey	               The key obtained after federating ArcGIS Notebook Server with portal.
-        --------------------------     --------------------------------------------------------------------
-        portalURL	               The URL of your portal, in the format https://webadaptorhost.domain.com/webadaptorname.
-        --------------------------     --------------------------------------------------------------------
+        --------------------------     -------------------------------------------------------------------------------------------
+        portalURL	                   The URL of your portal, in the format ``https://webadaptorhost.domain.com/webadaptorname``
+        --------------------------     -------------------------------------------------------------------------------------------
         referer	                       The referer specified when generating the token.
-        --------------------------     --------------------------------------------------------------------
-        serverId	               The ID of the server federated with the portal.
-        --------------------------     --------------------------------------------------------------------
-        serverUrl	               The external URL of the federated ArcGIS Notebook Server, in the format https://webadaptorhost.domain.com/webadaptorname.
-        --------------------------     --------------------------------------------------------------------
+        --------------------------     -------------------------------------------------------------------------------------------
+        serverId	                   The ID of the server federated with the portal.
+        --------------------------     -------------------------------------------------------------------------------------------
+        serverUrl	                   The external URL of the federated ArcGIS Notebook Server, in the format ``https://webadaptorhost.domain.com/webadaptorname``
+        --------------------------     -------------------------------------------------------------------------------------------
         token                          A token obtained from the portal for initial validation of the ArcGIS Notebook Server.
-        --------------------------     --------------------------------------------------------------------
+        --------------------------     -------------------------------------------------------------------------------------------
         webgisServerTrustKey           A key for establishing trust between servers that are federated with the same portal.
-        --------------------------     --------------------------------------------------------------------
+        --------------------------     -------------------------------------------------------------------------------------------
         privateHostingServerUrl	       The private URL of the portal's hosting server.
-        --------------------------     --------------------------------------------------------------------
+        --------------------------     -------------------------------------------------------------------------------------------
         privatePortalUrl               The private URL of the portal.
-        ==========================     ====================================================================
+        ==========================     ===========================================================================================
 
 
 

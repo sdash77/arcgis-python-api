@@ -28,7 +28,6 @@ from torch.jit.annotations import List, Dict
 
 
 def create_pointrend(model, num_class):
-
     # get model parameter to create modified RoI head
     y = {}
     y["box_roi_pool"] = model.roi_heads.box_roi_pool
@@ -58,7 +57,6 @@ def create_pointrend(model, num_class):
 
 class PointRendROIHeads(RoIHeads):
     def forward(self, features, proposals, image_shapes, targets=None):
-
         """
         Arguments:
             features (List[Tensor])
@@ -66,9 +64,10 @@ class PointRendROIHeads(RoIHeads):
             image_shapes (List[Tuple[H, W]])
             targets (List[Dict])
         """
+        train_val = getattr(self, "train_val", False)
+
         if targets is not None:
             for t in targets:
-
                 floating_point_types = (torch.float, torch.double, torch.half)
                 assert (
                     t["boxes"].dtype in floating_point_types
@@ -78,6 +77,8 @@ class PointRendROIHeads(RoIHeads):
                 ), "target labels must of int64 type"
 
         if self.training:
+            if train_val:
+                original_prpsl = [p.clone() for p in proposals]
             (
                 proposals,
                 matched_idxs,
@@ -101,10 +102,18 @@ class PointRendROIHeads(RoIHeads):
                 class_logits, box_regression, labels, regression_targets
             )
             losses = {"loss_classifier": loss_classifier, "loss_box_reg": loss_box_reg}
-        else:
-            boxes, scores, labels = self.postprocess_detections(
-                class_logits, box_regression, proposals, image_shapes
-            )
+        if not self.training or train_val:
+            if train_val:
+                box_features = self.box_roi_pool(features, original_prpsl, image_shapes)
+                box_features = self.box_head(box_features)
+                class_logits, box_regression = self.box_predictor(box_features)
+                boxes, scores, labels = self.postprocess_detections(
+                    class_logits, box_regression, original_prpsl, image_shapes
+                )
+            else:
+                boxes, scores, labels = self.postprocess_detections(
+                    class_logits, box_regression, proposals, image_shapes
+                )
             num_images = len(boxes)
             for i in range(num_images):
                 result.append(
@@ -166,7 +175,21 @@ class PointRendROIHeads(RoIHeads):
                 )
                 loss_mask = {"loss_mask": rcnn_loss_mask}
                 loss_mask_point = {"loss_mask_point": mask_logits}
-            else:
+            if not self.training or train_val:
+                if train_val:
+                    mask_pred_gt = []
+                    for res in result:
+                        mask_pred_gt.append(
+                            {
+                                "pred_boxes": res["boxes"],
+                                "pred_classes": res["labels"],
+                            }
+                        )
+                    mask_features = self.mask_roi_pool.eval()(features, mask_pred_gt)
+                    mask_features = self.mask_head.eval()(mask_features)
+                    mask_logits = self.mask_predictor.eval()(
+                        features, mask_features, mask_pred_gt
+                    )
                 labels = [r["labels"] for r in result]
                 masks_probs = maskrcnn_inference(mask_logits, labels)
                 for mask_prob, r in zip(masks_probs, result):
@@ -207,7 +230,6 @@ def calculate_uncertainty(logits, classes):
 class MaskRoIPoolHead(nn.Module):
     # This code is based on https://github.com/facebookresearch/detectron2/blob/master/projects/PointRend
     def __init__(self, num_class):
-
         super().__init__()
         self.mask_coarse_in_features = ["0"]
         self.mask_coarse_side_size = 14
@@ -219,7 +241,6 @@ class MaskRoIPoolHead(nn.Module):
         }  # FPN block 1/stride
 
     def forward(self, features, proposals):
-
         if self.training:
             boxes = [x["proposal_boxes"] for x in proposals]
         else:
@@ -332,7 +353,6 @@ class CoarseMaskHead(nn.Module):
 class PointRendHeads(torch.nn.Module):
     # This code is based on https://github.com/facebookresearch/detectron2/blob/master/projects/PointRend
     def __init__(self, num_class, **kwargs):
-
         super().__init__()
         self._feature_scales = {
             "0": 1.0 / 4,

@@ -80,7 +80,7 @@ class _GeoEnrichment(object):
     Desktop to discover if custom reports, stored as portal items, are available in the service.
 
     ==================     ====================================================================
-    **Argument**           **Description**
+    **Parameter**           **Description**
     ------------------     --------------------------------------------------------------------
     gis                    Required GIS object.  The ArcGIS Online GIS object.
     ------------------     --------------------------------------------------------------------
@@ -105,6 +105,7 @@ class _GeoEnrichment(object):
     _url_list_reports = "/Geoenrichment/Reports"
     _url_enrich_data = "/Geoenrichment/Enrich"
     _url_data_collection = "/Geoenrichment/dataCollections"
+
     # ----------------------------------------------------------------------
     def __init__(
         self,
@@ -221,7 +222,7 @@ class _GeoEnrichment(object):
         Returns report information for a desired country using the country code.
 
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
         country                Required string. lets the user supply an optional name of a country
                                in order to get information about the data collections in that given
@@ -271,7 +272,7 @@ class _GeoEnrichment(object):
         # returns basic report metadata for Albania
 
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
         country                Required string. lets the user supply an optional name of a country
                                in order to get information about the data collections in that given
@@ -318,7 +319,10 @@ class _GeoEnrichment(object):
                 raise ValueError("Invalid Country Code: %s" % country)
             country = countries[q]["Country_Code"].tolist()[0]
         params = {"f": "json"}
-        url = self._base_url + "/Geoenrichment/Reports/%s/%s" % (country, report_id)
+        url = self._base_url + "/Geoenrichment/Reports/%s/%s" % (
+            country,
+            report_id,
+        )
         if self._gis._con.token:
             params["token"] = self._gis._con.token
         res = self._gis._con.post(url, params)
@@ -352,7 +356,7 @@ class _GeoEnrichment(object):
         Return a list of data collections that can be run for any country.
 
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
         country                optional string. lets the user supply an optional name of a country
                                in order to get information about the data collections in that given
@@ -389,7 +393,11 @@ class _GeoEnrichment(object):
         if hide_nulls is not None:
             params["suppressNullValues"] = hide_nulls
         if country is not None:
-            url = "%s%s/%s" % (self._base_url, self._url_data_collection, country)
+            url = "%s%s/%s" % (
+                self._base_url,
+                self._url_data_collection,
+                country,
+            )
             if collection_name is not None:
                 url = "%s%s/%s/%s" % (
                     self._base_url,
@@ -420,7 +428,7 @@ class _GeoEnrichment(object):
         Returns a list of reports by a country code
 
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
         country                Optional string. lets the user supply an optional name of a country
                                in order to get information about the data collections in that given
@@ -484,7 +492,7 @@ class _GeoEnrichment(object):
         features.
 
         =========================     ====================================================================
-        **Argument**                  **Description**
+        **Parameter**                  **Description**
         -------------------------     --------------------------------------------------------------------
         study_areas                   Required list/dictionary. This parameter is used to specify a list
                                       of input features to be enriched. Study areas can be input XY point
@@ -553,11 +561,11 @@ class _GeoEnrichment(object):
                                       for_storage parameter to true.
         -------------------------     --------------------------------------------------------------------
         as_featureset                 Optional boolean.  The default is False. If True, the result will be
-                                      a liar of arcgis.features.FeatureSet object instead of a
+                                      a liar of :class:`~arcgis.features.FeatureSet` object instead of a
                                       SpatailDataFrame or Pandas' DataFrame.
         =========================     ====================================================================
 
-        :return: Spatial DataFrame, Panda's DataFrame, or a dictionary (on error)
+        :return: Spatially Enabled DataFrame, Panda's DataFrame, or a dictionary (on error)
         """
         if _is_geoenabled(study_areas):
             study_areas = [{"FeatureSet": study_areas.spatial.__feature_set__}]
@@ -637,7 +645,7 @@ class _GeoEnrichment(object):
         collections for variables that contain specific keywords.
 
         ======================     ====================================================================
-        **Argument**               **Description**
+        **Parameter**               **Description**
         ----------------------     --------------------------------------------------------------------
         country                    Optional string. Specifies the source country for the search. Use
                                    this parameter to limit the search and query of standard geographic
@@ -679,7 +687,11 @@ class _GeoEnrichment(object):
         import pandas as pd
 
         url = "%s%s" % (self._base_url, self._url_getVariables)
-        params = {"f": "json", "langCode": self._langCode, "sourceCountry": country}
+        params = {
+            "f": "json",
+            "langCode": self._langCode,
+            "sourceCountry": country,
+        }
         if self._gis._portal.is_arcgisonline and self._gis._con.token:
             params["token"] = self._gis._con.token
         if not text is None:
@@ -724,7 +736,7 @@ class _GeoEnrichment(object):
         all search criteria specified.
 
         ======================     ====================================================================
-        **Argument**               **Description**
+        **Parameter**               **Description**
         ----------------------     --------------------------------------------------------------------
         type_filters               Optional list. List of business type filters restricting the search.
                                    For USA, either the NAICS or SIC filter is useful as a business type
@@ -759,7 +771,7 @@ class _GeoEnrichment(object):
                                    response.
         ----------------------     --------------------------------------------------------------------
         as_featureset              Optional boolean. If False (default) the return type is a Spatail
-                                   DataFrame, else it is a FeatureSet
+                                   DataFrame, else it is a :class:`~arcgis.features.FeatureSet`
         ======================     ====================================================================
 
         returns: DataFrame (Spatial or Pandas) or dictionary on error.
@@ -848,7 +860,7 @@ class _GeoEnrichment(object):
 
 
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
         study_areas            Required list. Required parameter: Study areas may be defined by
                                input points, polygons, administrative boundaries or addresses.
@@ -946,7 +958,11 @@ class _GeoEnrichment(object):
         if use_data is not None:
             params["useData"] = use_data
         return self._gis._con.post(
-            path=url, out_folder=out_folder, file_name=out_name, postdata=params
+            path=url,
+            out_folder=out_folder,
+            file_name=out_name,
+            postdata=params,
+            try_json=False,
         )
 
     # ----------------------------------------------------------------------
@@ -956,7 +972,7 @@ class _GeoEnrichment(object):
         relating to the area in question.
 
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
         country                Required string. lets the user supply an optional name of a country
                                in order to get information about the data collections in that given
@@ -993,7 +1009,7 @@ class _GeoEnrichment(object):
         """
 
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
         country                Required string. lets the user supply an optional name of a country
                                in order to get information about the data collections in that given
@@ -1091,7 +1107,7 @@ class _GeoEnrichment(object):
         in the enrichment pack and optionally return geometry for the feature.
 
         ======================     ====================================================================
-        **Argument**               **Description**
+        **Parameter**               **Description**
         ----------------------     --------------------------------------------------------------------
         source_country             Optional string. to specify the source country for the search. Use
                                    this parameter to limit the search and query of standard geographic
@@ -1177,7 +1193,7 @@ class _GeoEnrichment(object):
                                    that are returned from the geoquery.
         ----------------------     --------------------------------------------------------------------
         as_featureset              Optional boolean. If False (default) the return type is a Spatail
-                                   DataFrame, else it is a FeatureSet
+                                   DataFrame, else it is a :class:`~arcgis.features.FeatureSet`
         ======================     ====================================================================
 
         :return: Spatial or Pandas Dataframe on success, dictionary on failure.

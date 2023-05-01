@@ -52,10 +52,10 @@ class UnetClassifier(ArcGISModel):
     Creates a Unet like classifier based on given pretrained encoder.
 
     =====================   ===========================================
-    **Argument**            **Description**
+    **Parameter**            **Description**
     ---------------------   -------------------------------------------
     data                    Required fastai Databunch. Returned data object from
-                            `prepare_data` function.
+                            :meth:`~arcgis.learn.prepare_data` function.
     ---------------------   -------------------------------------------
     backbone                Optional string. Backbone convolutional neural network
                             model used for feature extraction, which
@@ -75,7 +75,7 @@ class UnetClassifier(ArcGISModel):
     **kwargs**
 
     =====================   ===========================================
-    **Argument**            **Description**
+    **Parameter**            **Description**
     ---------------------   -------------------------------------------
     class_balancing         Optional boolean. If True, it will balance the
                             cross-entropy loss inverse to the frequency
@@ -116,7 +116,7 @@ class UnetClassifier(ArcGISModel):
                             Default: []
     =====================   ===========================================
 
-    :return: `UnetClassifier` Object
+    :return: :class:`~arcgis.learn.UnetClassifier` Object
     """
 
     def __init__(
@@ -128,7 +128,6 @@ class UnetClassifier(ArcGISModel):
         *args,
         **kwargs,
     ):
-
         if pretrained_path is not None:
             backbone_pretrained = False
         else:
@@ -139,7 +138,8 @@ class UnetClassifier(ArcGISModel):
             super().__init__(data, None)
             self._intialize_tensorflow(data, backbone, pretrained_path, kwargs)
         else:
-            super().__init__(data, backbone, **kwargs)
+            super().__init__(data, backbone, pretrained_path=pretrained_path, **kwargs)
+            data = self._data
 
             self._check_dataset_support(self._data)
             if not (self._check_backbone_support(getattr(self, "_backbone", backbone))):
@@ -188,7 +188,6 @@ class UnetClassifier(ArcGISModel):
                 backbone_split = _backbone_meta["split"]
 
             if "timm" in self._backbone.__module__:
-
                 for bckbn in ["densenet", "inception_v4", "vgg"]:
                     if bckbn in self._backbone.__name__:
                         from torch import nn
@@ -365,17 +364,17 @@ class UnetClassifier(ArcGISModel):
         Creates a Unet like classifier from an Esri Model Definition (EMD) file.
 
         =====================   ===========================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ---------------------   -------------------------------------------
         emd_path                Required string. Path to Deep Learning Package
                                 (DLPK) or Esri Model Definition(EMD) file.
         ---------------------   -------------------------------------------
         data                    Required fastai Databunch or None. Returned data
-                                object from `prepare_data` function or None for
+                                object from :meth:`~arcgis.learn.prepare_data` function or None for
                                 inferencing.
         =====================   ===========================================
 
-        :return: `UnetClassifier` Object
+        :return: :class:`~arcgis.learn.UnetClassifier` Object
         """
         return cls.from_emd(data, emd_path)
 
@@ -385,17 +384,17 @@ class UnetClassifier(ArcGISModel):
         Creates a Unet like classifier from an Esri Model Definition (EMD) file.
 
         =====================   ===========================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ---------------------   -------------------------------------------
         data                    Required fastai Databunch or None. Returned data
-                                object from `prepare_data` function or None for
+                                object from :meth:`~arcgis.learn.prepare_data` function or None for
                                 inferencing.
         ---------------------   -------------------------------------------
         emd_path                Required string. Path to Esri Model Definition
                                 file.
         =====================   ===========================================
 
-        :return: `UnetClassifier` Object
+        :return: :class:`~arcgis.learn.UnetClassifier` Object
         """
         if not HAS_FASTAI:
             _raise_fastai_import_error(import_exception=import_exception)
@@ -490,7 +489,7 @@ class UnetClassifier(ArcGISModel):
         **kwargs**
 
         =====================   ===========================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ---------------------   -------------------------------------------
         rows                    Number of rows of data to be displayed, if
                                 batch size is smaller, then the rows will
@@ -513,7 +512,7 @@ class UnetClassifier(ArcGISModel):
         Displays the results of a trained model on a part of the validation set.
 
         =====================   ===========================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ---------------------   -------------------------------------------
         rows                    Optional int. Number of rows of results
                                 to be displayed.
@@ -560,12 +559,11 @@ class UnetClassifier(ArcGISModel):
         return float(model_accuracy)
 
     def mIOU(self, mean=False, show_progress=True):
-
         """
         Computes mean IOU on the validation set for each class.
 
         =====================   ===========================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ---------------------   -------------------------------------------
         mean                    Optional bool. If False returns class-wise
                                 mean IOU, otherwise returns mean iou of all
@@ -684,7 +682,7 @@ class UnetClassifier(ArcGISModel):
         Computer per class precision, recall and f1-score on validation set.
 
         =====================   ===========================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ---------------------   -------------------------------------------
         self                    segmentation model object -> [PSPNetClassifier | UnetClassifier | DeepLab]
         ---------------------   -------------------------------------------

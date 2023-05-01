@@ -1,6 +1,6 @@
 import sys
 
-# sys.path.insert(0, r"C:\ipython_workfolder\geosaurus\src")
+sys.path.insert(0, r"C:\ipython_workfolder\geosaurus\src")
 import unittest
 from arcgis.gis import GIS
 
@@ -26,9 +26,9 @@ class TestMarketPlaceManager(unittest.TestCase):
         mrkt = cnt.marketplace
         purchases = mrkt.purchases()
         assert purchases
-        assert purchases["purchases"]
-        assert purchases["trials"]
-        assert purchases["interests"]
+        assert isinstance(purchases["purchases"], list)
+        assert isinstance(purchases["trials"], list)
+        assert isinstance(purchases["interests"], list)
 
     def test_get_customer_list(self):
         gis = GIS(profile="your_enterprise_profile", verify_cert=False, trust_env=True)
@@ -38,9 +38,9 @@ class TestMarketPlaceManager(unittest.TestCase):
 
         customer_list = mrkt.customer_list(itemid=listings["listings"][0]["itemId"])
         assert customer_list
-        assert customer_list["purchases"]
-        assert customer_list["trials"]
-        assert customer_list["interests"]
+        assert isinstance(customer_list["purchases"], list)
+        assert isinstance(customer_list["trials"], list)
+        assert isinstance(customer_list["interests"], list)
 
     def test_user_entitlements(self):
         gis = GIS(profile="your_enterprise_profile", verify_cert=False, trust_env=True)

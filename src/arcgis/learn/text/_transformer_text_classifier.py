@@ -88,7 +88,6 @@ backbone_models_reverse_map = {
 
 
 class TransformerForTextClassification(ArcGISTransformer):
-
     _supported_backbones = transformer_architectures
 
     def __init__(
@@ -143,7 +142,7 @@ class TransformerForTextClassification(ArcGISTransformer):
         Provides a list of available models for a given transformer architecture
 
         =====================   =================================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ---------------------   -------------------------------------------------
         architecture            Required string. The transformer architecture for
                                 which we wish to get the available models
@@ -163,7 +162,7 @@ class TransformerForTextClassification(ArcGISTransformer):
         Method to save the fine-tuned model to the disk
 
         =====================   =================================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ---------------------   -------------------------------------------------
         model_path              Required string. The disk location where the
                                 fine-tuned model has to be saved
@@ -187,7 +186,7 @@ class TransformerForTextClassification(ArcGISTransformer):
         Method to load the fine-tuned model which was saved on the disk
 
         =====================   ===========================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ---------------------   -------------------------------------------
         path                    Required string. The disk location from
                                 where the fine-tuned model has to be loaded
@@ -212,7 +211,7 @@ class TransformerForTextClassification(ArcGISTransformer):
         Return only the logits from the transfomer model
 
         =====================   ==============================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ---------------------   ----------------------------------------------
         input_ids               tensor object. tensor containing the token-ids
                                 got by calling tokenizer.encode method to the
@@ -250,7 +249,7 @@ class TransformerForTextClassification(ArcGISTransformer):
         Method to predict the class labels for an input text
 
         =====================   ==============================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ---------------------   ----------------------------------------------
         text                    Required string. The text for which we wish to
                                 predict the class

@@ -1,22 +1,12 @@
-from typing import Union, Iterable
-
-from arcgis.geoenrichment._business_analyst import BusinessAnalyst, Country
-from arcgis.geoenrichment._business_analyst._utils import pep8ify
+import sys
+# sys.path.insert(0, r"C:\ipython_workfolder\geosaurus\tests")
+# sys.path.insert(1, r"C:\ipython_workfolder\geosaurus\src")
+from arcgis.geoenrichment._business_analyst import Country
 import pandas as pd
-import pytest
 
-from .configtest import (
+from integration.geoenrichment.business_analyst.configtest import (
     does_not_raise,
-    skip_if_no_local,
     skip_if_no_agol,
-    gis_agol,
-    ba_agol,
-    ba_local,
-    usa_local,
-    usa_agol,
-    usa_enrich_vars_local,
-    usa_enrich_vars_agol,
-    point_df
 )
 
 

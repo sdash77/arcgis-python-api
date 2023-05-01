@@ -10,19 +10,20 @@ from arcgis import env as _env
 from arcgis._impl.common._mixins import PropertyMap
 from ._base import BaseOGC
 
+
 ###########################################################################
 class WMSLayer(BaseOGC):
     """
     Represents a Web Map Service, which is an OGC web service endpoint.
 
     ===============     ====================================================================
-    **Argument**        **Description**
+    **Parameter**        **Description**
     ---------------     --------------------------------------------------------------------
     url                 Required string. The administration URL for the ArcGIS Server.
     ---------------     --------------------------------------------------------------------
     version             Optional String. The version number of the WMS service.  The default is `1.3.0`.
     ---------------     --------------------------------------------------------------------
-    gis                 Optional GIS. The GIS used to reference the service by. The arcgis.env.active_gis is used if not specified.
+    gis                 Optional :class:`~arcgis.gis.GIS`. The GIS used to reference the service by. The arcgis.env.active_gis is used if not specified.
     ---------------     --------------------------------------------------------------------
     copyright           Optional String. Describes limitations and usage of the data.
     ---------------     --------------------------------------------------------------------
@@ -42,6 +43,7 @@ class WMSLayer(BaseOGC):
     _cap_reader = None
     _properties = None
     _type = "WMS"
+
     # ----------------------------------------------------------------------
     def __init__(self, url, version="1.3.0", gis=None, **kwargs):
         super(WMSLayer, self)
@@ -73,7 +75,6 @@ class WMSLayer(BaseOGC):
         :return: PropertyMap
         """
         if self._properties is None:
-
             if self._add_token:
                 url = self._capabilities_url(
                     service_url=self._url, vendor_kwargs={"token": self._con.token}
@@ -127,7 +128,7 @@ class WMSLayer(BaseOGC):
             crss = self.properties.WMS_Capabilities.Capability.Layer.CRS
             output = []
             for crs_str in crss:
-                output += [int(crs_num) for crs_num in re.findall(r"\d+", crs_str)]
+                output += [int(crs_num) for crs_num in re.findall(r"[0-9]+", crs_str)]
             return output
         except Exception as e:
             return []

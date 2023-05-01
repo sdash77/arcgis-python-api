@@ -13,7 +13,7 @@ except Exception as e:
 
 import arcgis
 from arcgis.learn import MaskRCNN
-from skimage.measure import find_contours
+from arcgis.learn.models._maskrcnn_utils import predict_tta
 
 try:
     import arcpy
@@ -154,7 +154,6 @@ def batch_to_tile(batch, batch_height, batch_width):
 
 class ChildInstanceDetector:
     def initialize(self, model, model_as_file):
-
         if not HAS_TORCH:
             raise Exception(
                 "PyTorch is not installed. Install it using conda install -c pytorch pytorch torchvision"
@@ -217,6 +216,22 @@ class ChildInstanceDetector:
                     "displayName": "return_bboxes",
                     "description": "return_bboxes",
                 },
+                {
+                    "name": "test_time_augmentation",
+                    "dataType": "string",
+                    "required": False,
+                    "value": "False",
+                    "displayName": "Perform test time augmentation while predicting",
+                    "description": "If True, will merge predictions from flipped and rotated images.",
+                },
+                {
+                    "name": "merge_policy",
+                    "dataType": "string",
+                    "required": False,
+                    "value": "mean",
+                    "displayName": "Policy for merging augmented predictions",
+                    "description": "Policy for merging predictions('mean' or 'nms'). Applicable when test_time_augmentation is True.",
+                },
             ]
         )
         required_parameters = variable_tile_size_check(
@@ -241,6 +256,20 @@ class ChildInstanceDetector:
         )  ## Default 4 batch_size
         self.threshold = float(scalars.get("threshold", 0.9))  ## Default 0.9 threshold.
         self.return_bboxes = eval(scalars.get("return_bboxes", "False"))
+        self.merge_policy = scalars.get("merge_policy", "mean").lower()
+        self.use_tta = scalars.get("test_time_augmentation", "false").lower() in [
+            "true",
+            "1",
+            "t",
+            "y",
+            "yes",
+        ]
+
+        if self.use_tta:
+            if self.json_info["ImageSpaceUsed"] == "MAP_SPACE":
+                self.model.arcgis_tta = list(range(8))
+            else:
+                self.model.arcgis_tta = [0, 2]
 
         (
             self.rectangle_height,
@@ -263,7 +292,6 @@ class ChildInstanceDetector:
         }
 
     def vectorize(self, **pixelBlocks):  # 8 x 3 x 224 x 224
-
         input_image = pixelBlocks["raster_pixels"].astype(np.float32)
         batch, batch_height, batch_width = tile_to_batch(
             input_image,
@@ -288,16 +316,25 @@ class ChildInstanceDetector:
             threshold=self.threshold,
             batch_size=self.batch_size,
             return_bboxes=self.return_bboxes,
+            use_tta=self.use_tta,
+            merge_policy=self.merge_policy,
         )
 
         return predictions
 
 
-def predict_mask_rcnn(model, images, device, chip_size, threshold=0.5):
-
+def predict_mask_rcnn(
+    model, images, device, chip_size, threshold=0.5, use_tta=False, merge_policy="mean"
+):
     model = model.to(device)
     normed_batch_tensor = torch.tensor(images).to(device).float()
-    predictions = model(list(normed_batch_tensor))
+    if use_tta:
+        predictions = predict_tta(model, normed_batch_tensor, threshold, merge_policy)
+    else:
+        temp = model.roi_heads.score_thresh
+        model.roi_heads.score_thresh = threshold
+        predictions = model(list(normed_batch_tensor))
+        model.roi_heads.score_thresh = temp
 
     return predictions
 
@@ -310,12 +347,19 @@ def pixel_mask_image(
     threshold=0.5,
     batch_size=4,
     return_bboxes=False,
+    use_tta=False,
+    merge_policy="mean",
 ):
-
     side = int(math.sqrt(batch_size))
 
     predictions = predict_mask_rcnn(
-        model, img_normed, device, chip_size, threshold=threshold
+        model,
+        img_normed,
+        device,
+        chip_size,
+        threshold=threshold,
+        use_tta=use_tta,
+        merge_policy=merge_policy,
     )
 
     all_contour_list = []
@@ -349,29 +393,51 @@ def pixel_mask_image(
                             (next_contour, prev_contour, child_contour, parent_contour),
                         ) in enumerate(hierarchy):
                             if parent_contour == -1:
-                                coord_list = [contours[contour_idx].tolist()]
+                                coord_list = []
+                                # check if it is a state line
+                                closed_contour = (
+                                    all(
+                                        contours[contour_idx].max(axis=0)
+                                        - contours[contour_idx].min(axis=0)
+                                    )
+                                    and contours[contour_idx].shape[0] > 2
+                                )
+                                if closed_contour:
+                                    coord_list.append(contours[contour_idx].tolist())
                                 while child_contour != -1:
-                                    coord_list.append(contours[child_contour].tolist())
+                                    closed_contour = (
+                                        all(
+                                            contours[child_contour].max(axis=0)
+                                            - contours[child_contour].min(axis=0)
+                                        )
+                                        and contours[child_contour].shape[0] > 2
+                                    )
+                                    if closed_contour:
+                                        coord_list.append(
+                                            contours[child_contour].tolist()
+                                        )
                                     child_contour = hierarchy[child_contour][0]
                                 #
-                                all_contour_list.append(coord_list)
-                                pred_class.append(
-                                    predictions[batch_idx]["labels"][n].tolist()
-                                )
-                                pred_score.append(
-                                    predictions[batch_idx]["scores"][n].tolist() * 100
-                                )
-                                box = (
-                                    predictions[batch_idx]["boxes"][n]
-                                    .cpu()
-                                    .detach()
-                                    .numpy()
-                                )
-                                box[0] += j * chip_size
-                                box[2] += j * chip_size
-                                box[1] += i * chip_size
-                                box[3] += i * chip_size
-                                pred_box.append(box)
+                                if coord_list != []:
+                                    all_contour_list.append(coord_list)
+                                    pred_class.append(
+                                        predictions[batch_idx]["labels"][n].tolist()
+                                    )
+                                    pred_score.append(
+                                        predictions[batch_idx]["scores"][n].tolist()
+                                        * 100
+                                    )
+                                    box = (
+                                        predictions[batch_idx]["boxes"][n]
+                                        .cpu()
+                                        .detach()
+                                        .numpy()
+                                    )
+                                    box[0] += j * chip_size
+                                    box[2] += j * chip_size
+                                    box[1] += i * chip_size
+                                    box[3] += i * chip_size
+                                    pred_box.append(box)
 
     if return_bboxes:
         pred_box = np.array(pred_box)

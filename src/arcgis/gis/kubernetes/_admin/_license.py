@@ -1,5 +1,7 @@
+from __future__ import annotations
 from arcgis.gis.kubernetes._admin._base import _BaseKube
 from arcgis.gis import GIS
+
 
 ###########################################################################
 class LicenseManager(_BaseKube):
@@ -23,7 +25,7 @@ class LicenseManager(_BaseKube):
         authorizations with those from the imported license file.
 
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
         license_file           Required string. The ArcGIS Server authorization file (either in
                                .epc or .prvc file format).

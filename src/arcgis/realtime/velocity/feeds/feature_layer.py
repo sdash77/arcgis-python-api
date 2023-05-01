@@ -16,30 +16,34 @@ class FeatureLayer(_FeedTemplate, _HasTime):
     The data format is a feature layer. ArcGIS Velocity will automatically handle the location for you.
 
     =====================           ====================================================================
-    **Argument**                    **Description**
+    **Parameter**                    **Description**
     ---------------------           --------------------------------------------------------------------
-    label                           str. Unique label for this feed instance.
+    label                           String. Unique label for this feed instance.
     ---------------------           --------------------------------------------------------------------
-    description                     str. Feed description.
+    description                     String. Feed description.
     ---------------------           --------------------------------------------------------------------
-    query                           str. Feature layer query parameters. The default is: 1=1.
+    query                           String. Feature layer query parameters. The default is: 1=1.
     ---------------------           --------------------------------------------------------------------
-    fields                          str. Requested feature layer output fields. For example: "field1,field2"
+    fields                          String. Requested feature layer output fields.
+
+                                    For example:
+
+                                           "field1, field2"
+
                                     The default is: *.
     ---------------------           --------------------------------------------------------------------
     outSR                           int. Requested output spatial reference. The default is: 4326.
+
                                     .. note::
-                                        To learm more about projected and geographic coordinate systems, refer to
-                                        `Using spatial references <https://developers.arcgis.com/rest/services-reference/enterprise/using-spatial-references.htm>`.
+                                        To learn more about projected and geographic coordinate systems, refer to
+                                        `Using spatial references <https://developers.arcgis.com/rest/services-reference/enterprise/using-spatial-references.htm>`_.
     =====================           ====================================================================
 
     =====================           ====================================================================
     **Optional Argument**           **Description**
     =====================           ====================================================================
-                                    .. note::
-                                        Either the portal_item_id or url is required.
-    ---------------------           --------------------------------------------------------------------
-    portal_item_id                  str. The Portal item ID of the feature layer.
+    portal_item_id                  String. The Portal :class:`~arcgis.gis.Item` ID of the feature layer.
+
                                     .. note::
                                         Either the portal_item_id or url is required.
     ---------------------           --------------------------------------------------------------------
@@ -61,7 +65,7 @@ class FeatureLayer(_FeedTemplate, _HasTime):
                                         }
 
     ---------------------           --------------------------------------------------------------------
-    time_stamp_field                str.
+    time_stamp_field                String.
                                     An optional date field for latest features.
                                     Optionally, specify a date field to be used to retrieve only the latest
                                     features from the feature layer.
@@ -76,13 +80,13 @@ class FeatureLayer(_FeedTemplate, _HasTime):
                                     between the last polling time and the current polling time that also meet the
                                     criteria of the WHERE clause will be loaded.
     ---------------------           --------------------------------------------------------------------
-    track_id_field                  str. Name of the field from the incoming data that should be set as
+    track_id_field                  String. Name of the field from the incoming data that should be set as
                                     track ID.
     ---------------------           --------------------------------------------------------------------
-    time                            Union[TimeInstant, TimeInterval]. An instance of time configuration that
+    time                            [:class:`~arcgis.realtime.velocity.feeds.TimeInstant`, :class:`~arcgis.realtime.velocity.feeds.TimeInterval`]. An instance of time configuration that
                                     will be used to create time information from the incoming data.
     ---------------------           --------------------------------------------------------------------
-    run_interval                    RunInterval. An instance of the scheduler configuration. The default is:
+    run_interval                    :class:`~arcgis.realtime.velocity.feeds.RunInterval`. An instance of the scheduler configuration. The default is:
                                     RunInterval(cron_expression="0 * * ? * * *", timezone="America/Los_Angeles")
     =====================           ====================================================================
 

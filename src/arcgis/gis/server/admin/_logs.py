@@ -1,3 +1,4 @@
+from __future__ import annotations
 from __future__ import absolute_import
 from __future__ import print_function
 import csv
@@ -5,6 +6,7 @@ from datetime import datetime
 from .._common import BaseServer
 from arcgis.gis import GIS
 from typing import Optional
+
 
 ########################################################################
 class LogManager(BaseServer):
@@ -21,13 +23,14 @@ class LogManager(BaseServer):
     _con = None
     _json_dict = None
     _json = None
+
     # ----------------------------------------------------------------------
     def __init__(self, url: str, gis: GIS, initialize: bool = False):
         """Constructor
 
 
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
         url                    Required string. The machine URL.
         ------------------     --------------------------------------------------------------------
@@ -57,7 +60,7 @@ class LogManager(BaseServer):
         on each machine.
 
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
         machine                Optional string. The name of the machine on which to count the
                                reports. The default will return the count for all machines in a site.
@@ -117,7 +120,7 @@ class LogManager(BaseServer):
         Provides log editing capabilities for the entire site.
 
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
         level                  Optional string. The log level.  Can be one of (in severity order):
                                OFF, DEBUG, VERBOSE, FINE, INFO, WARNING, SEVERE. The default is WARNING.
@@ -166,18 +169,18 @@ class LogManager(BaseServer):
     # ----------------------------------------------------------------------
     def query(
         self,
-        start_time: Optional[str] = None,
-        end_time: Optional[str] = None,
+        start_time: int | datetime | None = None,
+        end_time: int | datetime | None = None,
         since_server_start: bool = False,
         level: str = "WARNING",
         services: str = "*",
         machines: str = "*",
         server: str = "*",
-        codes: Optional[str] = None,
-        process_IDs: Optional[str] = None,
+        codes: str | None = None,
+        process_IDs: str | None = None,
         export: bool = False,
         export_type: str = "CSV",
-        out_path: Optional[str] = None,
+        out_path: str | None = None,
         max_records_return: int = 5000,
     ):
         """
@@ -185,14 +188,17 @@ class LogManager(BaseServer):
         aggregate, filter, and page through logs across the entire site.
 
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
-        start_time             Optional String. The most recent time to query.  Default is now.
-                               Time can be specified in milliseconds since UNIX epoch, or as an
-                               ArcGIS Server timestamp. For example { "startTime": "2011-08-01T15:17:20,123", ... },
-                               { "startTime": 1312237040123, ... }, respectively.
+        start_time             Optional Integer or datetime. The most recent time to query.  Default is now.
+                               Time can be specified in milliseconds since UNIX epoch.
+
+
+                               Example for integer:
+                               start_time = 1312237040123
+
         ------------------     --------------------------------------------------------------------
-        end_time               Optional String. The oldest time to include in the result set. You
+        end_time               Optional String or datetime. The oldest time to include in the result set. You
                                can use this to limit the query to the last n minutes or hours as
                                needed.
 
@@ -259,11 +265,15 @@ class LogManager(BaseServer):
         max_records_return -= 5000
         url = "{url}/query".format(url=self._url)
         if start_time is not None and isinstance(start_time, datetime):
-            params["startTime"] = start_time.strftime("%Y-%m-%dT%H:%M:%S,%f")
+            params["startTime"] = int(start_time.timestamp() * 1000)
+        elif start_time:
+            params["startTime"] = start_time
         else:
-            params["startTime"] = datetime.now().strftime("%Y-%m-%dT%H:%M:%S,%f")
+            params["startTime"] = int(datetime.now().timestamp() * 1000)
         if end_time is not None and isinstance(end_time, datetime):
-            params["endTime"] = end_time.strftime("%Y-%m-%dT%H:%M:%S,%f")
+            params["endTime"] = int(end_time.timestamp() * 1000)
+        elif end_time and isinstance(end_time, int):
+            params["endTime"] = end_time
         if level.upper() in allowed_levels:
             params["level"] = level
         if server != "*":
@@ -283,7 +293,7 @@ class LogManager(BaseServer):
         # for the next request to get the next set of records
         loop = 0
         new_logs = {}
-        while max_records_return > 1:
+        while max_records_return > 1 and has_more:
             if has_more:
                 # get new start time from logs endTime in first loop then from new_logs endTime after
                 params["startTime"] = (
@@ -306,7 +316,6 @@ class LogManager(BaseServer):
                     break
         # if export true then no values returned, file written to
         if export is True and out_path is not None:
-
             with open(file=out_path, mode="w") as f:
                 hasKeys = False
                 if export_type == "TAB":

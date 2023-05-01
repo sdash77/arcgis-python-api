@@ -1,3 +1,6 @@
+import sys
+
+# sys.path.insert(0, r"C:\ipython_workfolder\geosaurus\src")
 import unittest
 from arcgis.gis import GIS
 from arcgis.features._parcel import ParcelFabricManager
@@ -6,7 +9,7 @@ import parcel_fabric_utils as pfutils
 
 
 class TestDeleteParcels(unittest.TestCase):
-    """Reassign parcels to a different record"""
+    """Delete parcels"""
 
     vms = None
     gis = None
@@ -85,3 +88,7 @@ class TestDeleteParcels(unittest.TestCase):
     @classmethod
     def tearDownClass(cls):
         pfutils.clean_up_versions(cls.vms)
+
+
+if __name__ == "__main__":
+    unittest.main()

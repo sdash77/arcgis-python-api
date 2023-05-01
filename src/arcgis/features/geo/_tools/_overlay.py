@@ -12,6 +12,7 @@ from arcgis.features.geo._array import GeoArray
 
 _HASARCPY, _HASSHAPELY = None, None
 
+
 # ----------------------------------------------------------------------
 def _check_geometry_engine():
     """checks if the geometry engine exists"""
@@ -104,7 +105,7 @@ def _overlay_intersection(df1, df2):
             [
                 getattr(this_elem, "intersect")(other_elem, gtype)
                 if not this_elem.is_empty | other_elem.is_empty
-                else null_value
+                else None
                 for this_elem, other_elem in zip(this, other)
             ]
         )
@@ -197,7 +198,7 @@ def overlay(sdf1, sdf2, op="union"):
     Enabled DataFrames.
 
     =========================    =========================================================
-    **Argument**                 **Description**
+    **Parameter**                 **Description**
     -------------------------    ---------------------------------------------------------
     sdf1                         Required Spatially Enabled DataFrame. The dataframe to have the operation performed on.
     -------------------------    ---------------------------------------------------------

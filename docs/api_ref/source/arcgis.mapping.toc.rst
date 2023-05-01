@@ -97,6 +97,13 @@ PointCloudLayer
     :undoc-members:
     :show-inheritance:
 
+VoxelLayer
+^^^^^^^^^^^^^^^
+.. autoclass:: arcgis.mapping.VoxelLayer
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
 Working with Map Service Layers
 -------------------------------
 MapServiceLayer
@@ -193,6 +200,10 @@ export_map
 ^^^^^^^^^^
 .. autofunction:: arcgis.mapping.export_map
 
+create_colormap
+^^^^^^^^^^^^^^^
+.. autofunction:: arcgis.mapping.create_colormap
+
 get_layout_templates
 ^^^^^^^^^^^^^^^^^^^^
 .. autofunction:: arcgis.mapping.get_layout_templates
@@ -203,6 +214,22 @@ Symbology
     :members:
     :undoc-members:
     :show-inheritance:
+
+generate_simple
+^^^^^^^^^^^^^^^
+.. autofunction:: arcgis.mapping.renderer.generate_simple
+
+generate_heatmap
+^^^^^^^^^^^^^^^^
+.. autofunction:: arcgis.mapping.renderer.generate_heatmap
+
+generate_unique
+^^^^^^^^^^^^^^^
+.. autofunction:: arcgis.mapping.renderer.generate_unique
+
+generate_classbreaks
+^^^^^^^^^^^^^^^^^^^^
+.. autofunction:: arcgis.mapping.renderer.generate_classbreaks
 
 generate_renderer
 ^^^^^^^^^^^^^^^^^

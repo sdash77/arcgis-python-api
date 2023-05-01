@@ -5,6 +5,7 @@
 import unittest
 import os
 import sys
+
 sys.path.insert(0, r"C:\ipython_workfolder\geosaurus\tests")
 from integration.dino_utils.dino_precondition_checks import PreconditionChecks
 from integration.dino_utils.dino_precondition_checks import PortalUtils
@@ -1077,6 +1078,6 @@ class Test_WebMap_AGO(unittest.TestCase):
 def tearDownModule():
     print("**End GIS module Tests**")
 
+
 if __name__ == "__main__":
     unittest.main()
-

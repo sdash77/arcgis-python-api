@@ -1,16 +1,17 @@
 import uuid
 from arcgis._impl.common._mixins import PropertyMap
 
+
 ###########################################################################
 class BaseOGC(object):
     """
 
     ===============     ====================================================================
-    **Argument**        **Description**
+    **Parameter**        **Description**
     ---------------     --------------------------------------------------------------------
     url                 Required string. The web address of the endpoint.
     ---------------     --------------------------------------------------------------------
-    gis                 Optional GIS. The `GIS` connection object
+    gis                 Optional :class:`~arcgis.gis.GIS` . The `GIS` connection object
     ---------------     --------------------------------------------------------------------
     copyright           Optional String. Describes limitations and usage of the data.
     ---------------     --------------------------------------------------------------------
@@ -35,6 +36,7 @@ class BaseOGC(object):
     _copyright = None
     _min_scale = None
     _max_scale = None
+
     # ----------------------------------------------------------------------
     def __init__(self, url, gis=None, **kwargs):
         self._url = url
@@ -70,7 +72,7 @@ class BaseOGC(object):
         Get/Set the title of the layer used to identify it in places such as the Legend and LayerList widgets.
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         value               Required string. Name of title
         ===============     ====================================================================
@@ -95,7 +97,7 @@ class BaseOGC(object):
         Get/Set the opacity value.
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         value               Required float. Value can range between 1 and 0, where 0 is 100
                             percent transparent and 1 is completely opaque.
@@ -121,7 +123,7 @@ class BaseOGC(object):
         Gets/Sets the Min/Max Scale for the layer
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         value               Required tuple. (Min_value, Max_value)
         ===============     ====================================================================
@@ -174,11 +176,11 @@ class BaseOpenData(BaseOGC):
     """
 
     ===============     ====================================================================
-    **Argument**        **Description**
+    **Parameter**        **Description**
     ---------------     --------------------------------------------------------------------
     url                 Required string. The web address of the endpoint.
     ---------------     --------------------------------------------------------------------
-    gis                 Optional GIS. The `GIS` connection object
+    gis                 Optional :class:`~arcgis.gis.GIS` . The `GIS` connection object
     ---------------     --------------------------------------------------------------------
     copyright           Optional String. Describes limitations and usage of the data.
     ---------------     --------------------------------------------------------------------

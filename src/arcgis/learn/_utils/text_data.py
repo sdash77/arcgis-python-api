@@ -222,7 +222,6 @@ class TextDataObject:
         val_split_pct=0.1,
         label2id=None,
     ):
-
         if not HAS_FASTAI:
             _raise_fastai_exception(import_exception)
 
@@ -386,7 +385,6 @@ class TextDataObject:
         remove_html_tags=False,
         remove_urls=False,
     ):
-
         if not HAS_FASTAI:
             _raise_fastai_exception(import_exception)
 
@@ -644,7 +642,7 @@ class TextDataObject:
         """
         Shows a batch of dataframe prepared without applying transforms.
         =====================   ===========================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ---------------------   -------------------------------------------
         rows                    Optional integer. Number of rows in the
                                 dataframe to be shown on the function call.

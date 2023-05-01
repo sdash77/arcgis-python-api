@@ -16,6 +16,7 @@ class EsriUserTokenAuth(AuthBase, SupportMultiAuth):
     _invalid_token_urls = None
     token = None
     auth = None
+
     # ----------------------------------------------------------------------
     def __init__(
         self, token: str, referer: str = None, verify_cert: bool = True, **kwargs
@@ -48,7 +49,13 @@ class EsriUserTokenAuth(AuthBase, SupportMultiAuth):
             # Recreate the request without the token
             #
             parsed = parse_url(r.url)
-            self._invalid_token_urls.add(parsed.netloc)
+            if parsed.port:
+                server_url = (
+                    f"{parsed.scheme}://{parsed.netloc}:{parsed.port}/{parsed.path}"
+                )
+            else:
+                server_url = f"{parsed.scheme}://{parsed.netloc}/{parsed.path}"
+            self._invalid_token_urls.add(server_url)
             r.content
             r.raw.release_conn()
             r.request.headers.pop("X-Esri-Authorization", None)
@@ -63,7 +70,13 @@ class EsriUserTokenAuth(AuthBase, SupportMultiAuth):
         if self._invalid_token_urls is None:
             self._invalid_token_urls = set()
         parsed = parse_url(r.url)
-        if not parsed.netloc in self._invalid_token_urls:
+        if parsed.port:
+            server_url = (
+                f"{parsed.scheme}://{parsed.netloc}:{parsed.port}/{parsed.path}"
+            )
+        else:
+            server_url = f"{parsed.scheme}://{parsed.netloc}/{parsed.path}"
+        if not server_url in self._invalid_token_urls:
             r.register_hook("response", self.handle_40x)
             if self.legacy == False:
                 r.headers["X-Esri-Authorization"] = f"Bearer {self.token}"

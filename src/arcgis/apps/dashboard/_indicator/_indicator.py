@@ -9,10 +9,10 @@ class Indicator(_BaseWidget):
     Creates a dashboard Indicator widget.
 
     =========================   ===========================================
-    **Argument**                **Description**
+    **Parameter**                **Description**
     -------------------------   -------------------------------------------
-    item                        Required Portal Item object. Item object can
-                                be a Feature Layer or a MapWidget.
+    item                        Required Portal :class:`~arcgis.gis.Item` object. Item object can
+                                be a :class:`~arcgis.features.FeatureLayer`  or a MapWidget.
     -------------------------   -------------------------------------------
     name                        Optional string. Name of the Indicator
                                 widget.
@@ -83,7 +83,7 @@ class Indicator(_BaseWidget):
     @property
     def max_features(self):
         """
-        :return: max features for widget.
+        :return: Maximum features for widget.
         """
         return self._max_features
 
@@ -97,7 +97,7 @@ class Indicator(_BaseWidget):
     @property
     def show_last_update(self):
         """
-        :return: show last update or not.
+        :return: Show last update or not.
         """
         return self._show_last_update
 
@@ -111,7 +111,6 @@ class Indicator(_BaseWidget):
             self._show_last_update = True
 
     def _convert_to_json(self):
-
         self._reference_statistic = []
         self._statistic_definition = []
 
@@ -356,7 +355,7 @@ class IndicatorData(object):
         for detailed description of how filtering works with dashboard elements.
 
         ===============     ====================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     ----------------------------------------------------
         field               The layer's attribute field name that will be used
                             to limit the features visualized in the widget.

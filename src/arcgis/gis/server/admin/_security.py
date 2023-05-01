@@ -13,6 +13,7 @@ from .._common import BaseServer
 from arcgis.gis import GIS
 from typing import Optional
 
+
 ########################################################################
 class Security(BaseServer):
     """
@@ -33,12 +34,13 @@ class Security(BaseServer):
     _json = None
     _um = None
     _rm = None
+
     # ----------------------------------------------------------------------
     def __init__(self, url: str, gis: GIS, initialize: bool = False):
         """Constructor
 
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
         url                    Required string. The machine URL.
         ------------------     --------------------------------------------------------------------
@@ -121,7 +123,7 @@ class Security(BaseServer):
         Updates account properties of the primary site administrator
 
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
         username               Required string. You can optionally provide a new name for the
                                primary site administrator account.
@@ -181,13 +183,14 @@ class UserManager(BaseServer):
     _json_dict = None
     _json = None
     _rm = None
+
     # ----------------------------------------------------------------------
     def __init__(self, url: str, gis: GIS, initialize: bool = False):
         """
         Constructor
 
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
         url                    Required string. The machine URL.
         ------------------     --------------------------------------------------------------------
@@ -219,6 +222,10 @@ class UserManager(BaseServer):
         Gets the user object as the current logged in user. If the username
         cannot be found, for example, the site administrator account, then
         just the username is returned.
+
+        :return:
+            The :class:`~arcgis.gis.server.User` object or username
+
         """
         res = self.search(username=self._con._username, max_results=1)
         if len(res) == 0:
@@ -238,7 +245,7 @@ class UserManager(BaseServer):
         Adds a user account to the user store.
 
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
         username               Required string. The name of the new user. The name must be unique
                                in the user store.
@@ -282,7 +289,7 @@ class UserManager(BaseServer):
         Returns the privilege associated with a user.
 
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
         username               Required string. The user name of the user.
         ==================     ====================================================================
@@ -307,7 +314,7 @@ class UserManager(BaseServer):
         assigned to a particular user account.
 
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
         username               Required string. The name of the user to get roles for.
         ------------------     --------------------------------------------------------------------
@@ -342,7 +349,7 @@ class UserManager(BaseServer):
         Search Users operation.
 
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
         start_index            Optional integer. The starting index (zero-based) from the users
                                list to be returned in the result page. The default is 0.
@@ -369,7 +376,7 @@ class UserManager(BaseServer):
         user and role store supports reads and writes.
 
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
         username               Required string. The name of the user to remove roles from.
         ------------------     --------------------------------------------------------------------
@@ -396,7 +403,7 @@ class UserManager(BaseServer):
         ArcGIS Server store.
 
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
         username               Required string. The name of the user to remove.
         ==================     ====================================================================
@@ -419,7 +426,7 @@ class UserManager(BaseServer):
            Removes a role assignment from multiple users.
 
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
         rolename               Required string. The name of the role to remove from multiple users.
         ------------------     --------------------------------------------------------------------
@@ -447,7 +454,7 @@ class UserManager(BaseServer):
         controlled with the max_results parameter.
 
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
         username               Required string. The user or users to find.
         ------------------     --------------------------------------------------------------------
@@ -474,14 +481,15 @@ class UserManager(BaseServer):
         Finds a specific user.
 
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
         username               Required string. The user to find.
         ==================     ====================================================================
 
 
         :return:
-            The user object.
+            The :class:`~arcgis.gis.server.User` object or None.
+
         """
         res = self.search(username=username, max_results=1)
         if len(res) == 0:
@@ -489,8 +497,13 @@ class UserManager(BaseServer):
         return res[0]
 
     @property
-    def roles(self) -> "RoleManager":
-        """Helper object to manage custom roles for users"""
+    def roles(self):
+        """Helper object to manage custom roles for users
+
+        :return:
+            :class:`~arcgis.gis.server.RoleManager` object
+
+        """
         if self._rm is None:
             self._rm = RoleManager(self._url, gis=self._con)
         return self._rm
@@ -503,7 +516,7 @@ class UserManager(BaseServer):
         be controlled with the max_count parameter.
 
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
         criteria               Optional string. The filter to be applied to search for the users.
                                The default is None, nothing will be filtered.
@@ -535,7 +548,7 @@ class UserManager(BaseServer):
         Updates a user account in the user store.
 
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
         username               Required string. The name of the user to update.
         ------------------     --------------------------------------------------------------------
@@ -575,6 +588,7 @@ class User(dict):
 
     _security = None
     _user_dict = None
+
     # ----------------------------------------------------------------------
     def __init__(self, usermanager: UserManager, user_dict: dict):
         """Constructor"""
@@ -599,7 +613,9 @@ class User(dict):
     # ----------------------------------------------------------------------
     def __getitem__(
         self, k: str
-    ) -> object:  # support user attributes as dictionary keys on this object, eg. user['role']
+    ) -> (
+        object
+    ):  # support user attributes as dictionary keys on this object, eg. user['role']
         try:
             return dict.__getitem__(self, k)
         except KeyError:
@@ -676,7 +692,7 @@ class User(dict):
         Updates this user account in the user store.
 
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
         password               Optional string. The password for this user.
         ------------------     --------------------------------------------------------------------
@@ -714,7 +730,7 @@ class User(dict):
         inherits all the role's permissions.
 
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
         role_name              Required string. A role name to assign to this user.
         ==================     ====================================================================
@@ -766,13 +782,14 @@ class RoleManager(BaseServer):
     _resources = None
     _json_dict = None
     _json = None
+
     # ----------------------------------------------------------------------
     def __init__(self, url: str, gis: GIS, initialize: bool = False):
         """
         Constructor
 
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
         url                    Required string. The machine URL.
         ------------------     --------------------------------------------------------------------
@@ -808,7 +825,7 @@ class RoleManager(BaseServer):
         be returned.
 
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
         name                   Required string. The name of the new role. The name must be unique
                                in the role store.
@@ -835,7 +852,7 @@ class RoleManager(BaseServer):
         Assigns a role to multiple users.
 
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
         rolename               Required string. The name of the role.
         ------------------     --------------------------------------------------------------------
@@ -877,7 +894,7 @@ class RoleManager(BaseServer):
 
 
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
         rolename               Required string. The name of the role.
         ------------------     --------------------------------------------------------------------
@@ -908,7 +925,7 @@ class RoleManager(BaseServer):
 
 
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
         username               Required string. The name of the user.
         ------------------     --------------------------------------------------------------------
@@ -934,7 +951,7 @@ class RoleManager(BaseServer):
         Returns the privilege associated with a role.
 
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
         rolename               Required string. The name of the role.
         ==================     ====================================================================
@@ -955,7 +972,7 @@ class RoleManager(BaseServer):
         user belongs and returns the highest privilege.
 
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
         username               Required string. The name of the user.
         ==================     ====================================================================
@@ -978,7 +995,7 @@ class RoleManager(BaseServer):
         Search Roles operation.
 
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
         start_index            Optional integer. The starting index (zero-based) from the roles
                                list to be returned in the result page. The default is 0.
@@ -1008,7 +1025,7 @@ class RoleManager(BaseServer):
 
 
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
         privilege              Required string. The name of the privilege. Choices are ADMINISTER, PUBLISH, ACCESS.
         ==================     ====================================================================
@@ -1032,7 +1049,7 @@ class RoleManager(BaseServer):
         Supplies a list of roles that have been assigned to a particular user account.
 
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
         username               Required string. The name of the user to get roles for.
         ------------------     --------------------------------------------------------------------
@@ -1069,7 +1086,7 @@ class RoleManager(BaseServer):
         accounts to whom this role has been assigned.
 
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
         rolename               Required string. The name of the role.
         ------------------     --------------------------------------------------------------------
@@ -1099,7 +1116,7 @@ class RoleManager(BaseServer):
         the default ArcGIS Server store.
 
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
         rolename               Required string. The name of the role to remove.
         ==================     ====================================================================
@@ -1124,7 +1141,7 @@ class RoleManager(BaseServer):
         user and role store supports reads and writes.
 
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
         username               Required string. The name of the user to remove roles from.
         ------------------     --------------------------------------------------------------------
@@ -1149,7 +1166,7 @@ class RoleManager(BaseServer):
         Removes a role assignment from multiple users.
 
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
         rolename               Required string. The name of the role to remove from the given users.
         ------------------     --------------------------------------------------------------------
@@ -1185,7 +1202,7 @@ class RoleManager(BaseServer):
         of roles from the role store.
 
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
         role_id                Optional string. A filter string to search for the roles
         ------------------     --------------------------------------------------------------------
@@ -1214,7 +1231,7 @@ class RoleManager(BaseServer):
         Updates a role description in the role store
 
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
         rolename               Required string. The name of the role. The name must be unique in
                                the role store. to remove from the given users.
@@ -1244,6 +1261,7 @@ class Role(dict):
 
     _roledict = None
     _security = None
+
     # ----------------------------------------------------------------------
     def __init__(self, rolemanager: RoleManager, roledict: dict):
         """Constructor"""
@@ -1266,7 +1284,9 @@ class Role(dict):
     # ----------------------------------------------------------------------
     def __getitem__(
         self, k: str
-    ) -> object:  # support user attributes as dictionary keys on this object, eg. user['role']
+    ) -> (
+        object
+    ):  # support user attributes as dictionary keys on this object, eg. user['role']
         try:
             return dict.__getitem__(self, k)
         except KeyError:
@@ -1292,7 +1312,7 @@ class Role(dict):
         store such as the default ArcGIS Server store.
 
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
         description            Optional string. An optional field to add comments or a description for the role.
         ==================     ====================================================================
@@ -1344,7 +1364,7 @@ class Role(dict):
 
 
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
         privilage              Required string. The capability to assign to the role. Choices are
                                ADMINISTER, PUBLISH, ACCESS

@@ -1,114 +1,116 @@
 import sys
 import builtins
+import unittest
+
 from utils._common import *
-from utils.imports import __import__custom, configure_imports, clear_arcgis_import_cache
-
-__import__real = builtins.__import__
+from utils.imports import __import__custom as ic, configure_imports, clear_arcgis_import_cache
 
 
-def test_no_ipywidgets():
-    try:
-        configure_imports(
-            __import__real=__import__real, modules_to_raise_importerrors=["ipywidgets"]
-        )
-        builtins.__import__ = __import__custom
-        clear_arcgis_import_cache()
+class TestNonarcpyDependenciesOnArcgisImport(unittest.TestCase):
 
-        import arcgis
+    def setUp(self):
+        self.__import__real = builtins.__import__
 
-        builtins.__import__ = __import__real
-        clear_arcgis_import_cache()
+    def test_no_ipywidgets(self):
+        try:
+            configure_imports(
+                __import__real=self.__import__real, modules_to_raise_importerrors=["ipywidgets"]
+            )
+            builtins.__import__ = ic
+            clear_arcgis_import_cache()
 
-    except ImportError as e:
-        builtins.__import__ = __import__real
-        clear_arcgis_import_cache()
-        raise Exception(_assemble_err_msg("ipywidgets")) from e
+            import arcgis
 
+            builtins.__import__ = self.__import__real
+            clear_arcgis_import_cache()
 
-def test_no_pandas():
-    try:
-        configure_imports(
-            __import__real=__import__real, modules_to_raise_importerrors=["pandas"]
-        )
-        builtins.__import__ = __import__custom
-        clear_arcgis_import_cache()
+        except ImportError as e:
+            builtins.__import__ = self.__import__real
+            clear_arcgis_import_cache()
+            raise Exception(_assemble_err_msg("ipywidgets")) from e
 
-        import arcgis
-        from arcgis.gis import GIS
+    def test_no_pandas(self):
+        try:
+            configure_imports(
+                __import__real=self.__import__real, modules_to_raise_importerrors=["pandas"]
+            )
+            builtins.__import__ = ic
+            clear_arcgis_import_cache()
 
-        builtins.__import__ = __import__real
-        clear_arcgis_import_cache()
+            import arcgis
+            from arcgis.gis import GIS
 
-    except ImportError as e:
-        builtins.__import__ = __import__real
-        clear_arcgis_import_cache()
-        raise Exception(_assemble_err_msg("pandas")) from e
+            builtins.__import__ = self.__import__real
+            clear_arcgis_import_cache()
 
+        except ImportError as e:
+            builtins.__import__ = self.__import__real
+            clear_arcgis_import_cache()
+            raise Exception(_assemble_err_msg("pandas")) from e
 
-def test_no_fastai():
-    try:
-        configure_imports(
-            __import__real=__import__real, modules_to_raise_importerrors=["fastai"]
-        )
-        builtins.__import__ = __import__custom
-        clear_arcgis_import_cache()
+    def test_no_fastai(self):
+        try:
+            configure_imports(
+                __import__real=self.__import__real, modules_to_raise_importerrors=["fastai"]
+            )
+            builtins.__import__ = ic
+            clear_arcgis_import_cache()
 
-        import arcgis
-        import arcgis.learn
-        from arcgis.learn import export_training_data
-        from arcgis.learn import prepare_data
-        from arcgis.learn import Model
-        from arcgis.learn import detect_objects
-        from arcgis.learn import UnetClassifier
+            import arcgis
+            import arcgis.learn
+            from arcgis.learn import export_training_data
+            from arcgis.learn import prepare_data
+            from arcgis.learn import Model
+            from arcgis.learn import detect_objects
+            from arcgis.learn import UnetClassifier
 
-        builtins.__import__ = __import__real
-        clear_arcgis_import_cache()
+            builtins.__import__ = self.__import__real
+            clear_arcgis_import_cache()
 
-    except ImportError as e:
-        builtins.__import__ = __import__real
-        clear_arcgis_import_cache()
-        raise Exception(_assemble_err_msg("fastai")) from e
+        except ImportError as e:
+            builtins.__import__ = self.__import__real
+            clear_arcgis_import_cache()
+            raise Exception(_assemble_err_msg("fastai")) from e
 
+    def test_minimal_install(self):
+        """
+        This test is not complete -- should go through all referenced third
+        party libs in the source and make sure they are added to this test.
+        In theory, the basic functionality of the Python API can be used with
+        just `six` in the environment
+        """
+        mods_import_errors = [
+            "pandas",
+            "fastai",
+            "numpy",
+            "shapely",
+            "PIL",
+            "arcpy",
+            "matplotlib",
+            "ipywidgets",
+            "keyring",
+        ]
 
-def test_minimal_install():
-    """
-    This test is not complete -- should go through all referenced third
-    party libs in the source and make sure they are added to this test.
-    In theory, the basic functionality of the Python API can be used with
-    just `six` in the environment
-    """
-    mods_import_errors = [
-        "pandas",
-        "fastai",
-        "numpy",
-        "shapely",
-        "PIL",
-        "arcpy",
-        "matplotlib",
-        "ipywidgets",
-        "keyring",
-    ]
+        try:
+            configure_imports(
+                __import__real=self.__import__real,
+                modules_to_raise_importerrors=mods_import_errors,
+            )
 
-    try:
-        configure_imports(
-            __import__real=__import__real,
-            modules_to_raise_importerrors=mods_import_errors,
-        )
+            builtins.__import__ = ic
+            clear_arcgis_import_cache()
 
-        builtins.__import__ = __import__custom
-        clear_arcgis_import_cache()
+            import arcgis
+            from arcgis.gis import GIS
 
-        import arcgis
-        from arcgis.gis import GIS
+            gis = GIS()
 
-        gis = GIS()
-
-        builtins.__import__ = __import__real
-        clear_arcgis_import_cache()
-    except ImportError as e:
-        builtins.__import__ = __import__real
-        clear_arcgis_import_cache()
-        raise Exception(_assemble_err_msg(mods_import_errors)) from e
+            builtins.__import__ = self.__import__real
+            clear_arcgis_import_cache()
+        except ImportError as e:
+            builtins.__import__ = self.__import__real
+            clear_arcgis_import_cache()
+            raise Exception(_assemble_err_msg(mods_import_errors)) from e
 
 
 def _assemble_err_msg(module_names):
@@ -118,3 +120,8 @@ def _assemble_err_msg(module_names):
         "`import` statements that import these modules. Try moving them "
         f"inside of a function, or in a try: except statement."
     )
+
+
+if __name__ == "__main__":
+
+    unittest.main()

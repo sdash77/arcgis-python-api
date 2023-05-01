@@ -33,13 +33,15 @@ from ._auth import (
     EsriKerberosAuth,
 )
 
-from ._auth._winauth import HAS_GSSAPI, HAS_SSPI, HAS_KERBEROS
+from ._auth._winauth import HAS_KERBEROS
+from ._auth._negotiate import HAS_GSSAPI
 
 from requests_toolbelt.adapters.host_header_ssl import HostHeaderSSLAdapter
 
 from .tools import LazyLoader
 
 urllib3 = LazyLoader("urllib3")
+
 
 ###########################################################################
 class EsriSession:
@@ -76,7 +78,7 @@ class EsriSession:
     can caused unintended failures.
 
     ==================     ====================================================================
-    **Argument**           **Description**
+    **Parameter**           **Description**
     ------------------     --------------------------------------------------------------------
     auth                   Optional AuthBase. This is a security handler that performs some sort
                            of security check.
@@ -102,7 +104,7 @@ class EsriSession:
     **Optional Arguments**
 
     ==================     ====================================================================
-    **Argument**           **Description**
+    **Parameter**           **Description**
     ------------------     --------------------------------------------------------------------
     trust_env              Optional Bool. The default is `True`. If `False` proxies will cause
                            an error to be raised if set by **.netrc** files.
@@ -145,6 +147,7 @@ class EsriSession:
     _baseurl = None  # if partial url given, try the base url
     _referer = None
     allow_redirects = None
+
     # ----------------------------------------------------------------------
     def __init__(
         self,
@@ -192,7 +195,10 @@ class EsriSession:
             )
         elif auth is None and cert:
             self.auth = EsriPKIAuth(
-                cert=cert, referer=referer, verify_cert=verify_cert, session=self
+                cert=cert,
+                referer=referer,
+                verify_cert=verify_cert,
+                session=self,
             )
         elif sys.platform == "win32" and HAS_GSSAPI:  # Default Case Load IWA/WinAuth
             self.auth = EsriWindowsAuth(referer=referer, verify_cert=verify_cert)
@@ -215,7 +221,15 @@ class EsriSession:
                     method_whitelist=kwargs.get(
                         "method_whitelist",
                         frozenset(
-                            ["POST", "DELETE", "GET", "HEAD", "OPTIONS", "PUT", "TRACE"]
+                            [
+                                "POST",
+                                "DELETE",
+                                "GET",
+                                "HEAD",
+                                "OPTIONS",
+                                "PUT",
+                                "TRACE",
+                            ]
                         ),
                     ),
                 )
@@ -230,7 +244,15 @@ class EsriSession:
                     allowed_methods=kwargs.get(
                         "method_whitelist",
                         frozenset(
-                            ["POST", "DELETE", "GET", "HEAD", "OPTIONS", "PUT", "TRACE"]
+                            [
+                                "POST",
+                                "DELETE",
+                                "GET",
+                                "HEAD",
+                                "OPTIONS",
+                                "PUT",
+                                "TRACE",
+                            ]
                         ),
                     ),
                 )
@@ -415,7 +437,9 @@ class EsriSession:
             self._cert = cert
             self._session.cert = cert
             self._session.auth = EsriPKIAuth(
-                cert=cert, referer=self._referer, verify_cert=self.verify_cert
+                cert=cert,
+                referer=self._referer,
+                verify_cert=self.verify_cert,
             )
 
     # ----------------------------------------------------------------------

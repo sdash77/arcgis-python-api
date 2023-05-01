@@ -48,12 +48,14 @@ class SnapShot(object):
         Converts a Snapshot to a new notebook `Item`.
 
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
         title                  Required String. The name of the new notebook.
         ==================     ====================================================================
 
-        :return: Item
+        :return:
+            :class:`~arcgis.gis.Item`
+
         """
         return self._sm._convert(
             item=self._item, snapshot=self.properties["resourceKey"], title=title
@@ -70,7 +72,7 @@ class SnapShot(object):
         Rolls back the notebook to a previous snapshot state
 
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
         title                  Optional string. The Item's title.
         ------------------     --------------------------------------------------------------------
@@ -79,7 +81,7 @@ class SnapShot(object):
         description            Optional String. Text describing the restoration point.
         ==================     ====================================================================
 
-        :return: dict
+        :return: Dict
         """
         return self._sm._restore(
             item=self._item,
@@ -95,14 +97,14 @@ class SnapShot(object):
         Deletes a snapshot associated with the notebook item
 
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
         item                   Required Item. The 'Notebook' typed item to remove snapshots from.
         ------------------     --------------------------------------------------------------------
         snapshot               Required String. The name of the snapshot.
         ==================     ====================================================================
 
-        :return: bool
+        :return: Boolean
 
         """
         res = self._sm._delete(item=self._item, snapshot=self.properties["resourceKey"])
@@ -120,6 +122,7 @@ class SnapshotManager(object):
     _gis = None
     _url = None
     _properties = None
+
     # ----------------------------------------------------------------------
     def __init__(self, url, gis):
         self._url = url
@@ -140,7 +143,7 @@ class SnapshotManager(object):
         Converts a Snapshot to a new notebook.
 
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
         item                   Required Item. The 'Notebook' typed item to convert.
         ------------------     --------------------------------------------------------------------
@@ -149,6 +152,7 @@ class SnapshotManager(object):
 
 
         :return: Item
+
 
         """
         if isinstance(item, Item) and item.type.lower() == "notebook":
@@ -173,7 +177,7 @@ class SnapshotManager(object):
         Retrieves a snap shot locally on disk.
 
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
         item                   Required Item. The 'Notebook' typed item to retrieve.
         ------------------     --------------------------------------------------------------------
@@ -207,7 +211,7 @@ class SnapshotManager(object):
         Creates a Snapshot of a Given Item.
 
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
         item                   Required Item. The 'Notebook' typed item to create a snapshot for.
         ------------------     --------------------------------------------------------------------
@@ -222,7 +226,7 @@ class SnapshotManager(object):
         access                 Optional Bool. When false, the snapshot will not be publicly available.
         ==================     ====================================================================
 
-        :return: dict
+        :return: Dict
 
         """
         if isinstance(item, Item) and item.type.lower() == "notebook":
@@ -246,12 +250,13 @@ class SnapshotManager(object):
         Returns a list of SnapShots for a notebook item.
 
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
-        item                   Required Item. The 'Notebook' typed item to get all the snapshots for.
+        item                   Required Item. The Notebook :class:`~arcgis.gis.Item` to get all
+                               snapshots for.
         ==================     ====================================================================
 
-        :return: namedtuple of snapshot properties
+        :return: List of :class:`~arcgis.gis.nb.SnapShot` objects
 
         """
         if isinstance(item, Item) and item.type.lower() == "notebook":
@@ -289,7 +294,7 @@ class SnapshotManager(object):
         Rolls back the notebook to a previous snapshot state
 
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
         item                   Required Item. The 'Notebook' typed item to have rolled back.
         ------------------     --------------------------------------------------------------------
@@ -325,7 +330,7 @@ class SnapshotManager(object):
         Deletes a snapshot associated with the notebook item
 
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
         item                   Required Item. The 'Notebook' typed item to remove snapshots from.
         ------------------     --------------------------------------------------------------------

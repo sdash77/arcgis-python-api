@@ -17,7 +17,7 @@ find_similar_locations
 
 find_centroids
 --------------
-.. autofunction:: arcgis.features.analysis.find_centroids
+.. autofunction:: arcgis.features.find_locations.find_centroids
 
 choose_best_facilities
 --------------

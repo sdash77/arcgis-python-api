@@ -1,10 +1,9 @@
 import sys, json
 
-# sys.path.insert(0, r"c:\SVN\geosaurus_master\src")
+sys.path.insert(0, r"c:\SVN\geosaurus_issue_9708\src")
 import unittest
 
 try:
-
     import requests_mock
 
     SKIPME = False
@@ -27,13 +26,19 @@ class TestEsriSessionHTTPVerbs(unittest.TestCase):
         with requests_mock.Mocker() as m:
             m.get(mock_url, text=mock_resp)
             assert EsriSession().get(mock_url).text == mock_resp
-            assert EsriSession().get(mock_url, allow_redirects=True).text == mock_resp
+            assert (
+                EsriSession().get(mock_url, allow_redirects=True).text
+                == mock_resp
+            )
 
     def test_post(self):
         """tests the post method"""
         with requests_mock.Mocker() as m:
             m.post(mock_url, text=mock_resp)
-            assert EsriSession().post(mock_url, allow_redirects=True).text == mock_resp
+            assert (
+                EsriSession().post(mock_url, allow_redirects=True).text
+                == mock_resp
+            )
 
     def test_put(self):
         """tests the put method"""
@@ -102,7 +107,9 @@ class TestEsriSessionClass(unittest.TestCase):
         with EsriSession(headers=expected_headers) as es:
             expected = "some_text"
             mock_for_requests.get(
-                API_URL + "/someendpoint", headers=expected_headers, text=expected
+                API_URL + "/someendpoint",
+                headers=expected_headers,
+                text=expected,
             )
             response = es.get(API_URL + "/someendpoint")
             self.assertEqual(response.headers, expected_headers)

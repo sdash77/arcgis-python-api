@@ -21,13 +21,13 @@ except Exception as e:
 
 class TextTranslator(InferenceOnlyModel):
     """
-    Creates a `TextTranslator` Object.
+    Creates a :class:`~arcgis.learn.text.TextTranslator` Object.
     Based on the Hugging Face transformers library
     To learn more about the available models for translation task,
     kindly visit:- https://huggingface.co/models?pipeline_tag=translation&search=Helsinki
 
     =====================   ===========================================
-    **Argument**            **Description**
+    **Parameter**            **Description**
     ---------------------   -------------------------------------------
     source_language         Optional string. Specify the language of the
                             text you would like to get the translation of.
@@ -41,7 +41,7 @@ class TextTranslator(InferenceOnlyModel):
     **kwargs**
 
     =====================   ===========================================
-    **Argument**            **Description**
+    **Parameter**            **Description**
     ---------------------   -------------------------------------------
     pretrained_path         Option str. Path to a directory, where pretrained
                             model files are saved.
@@ -54,7 +54,7 @@ class TextTranslator(InferenceOnlyModel):
                             model.
     =====================   ===========================================
 
-    :return: `TextTranslator` Object
+    :return: :class:`~arcgis.learn.text.TextTranslator` Object
     """
 
     #: supported transformer architectures
@@ -91,7 +91,7 @@ class TextTranslator(InferenceOnlyModel):
         Translate the given text or list of text into the target language
 
         =====================   ===========================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ---------------------   -------------------------------------------
         text_or_list            Required string or list. A text/passage
                                 or a list of texts/passages to translate.
@@ -103,7 +103,7 @@ class TextTranslator(InferenceOnlyModel):
         **kwargs**
 
         =====================   ===========================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ---------------------   -------------------------------------------
         min_length              Optional integer. The minimum length of the
                                 sequence to be generated.
@@ -180,7 +180,7 @@ class TextTranslator(InferenceOnlyModel):
         Saves the translator model files on a specified path on the local disk.
 
         =====================   ===========================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ---------------------   -------------------------------------------
         name_or_path            Required string. Path to save
                                 model files on the local disk.

@@ -17,7 +17,11 @@ try:
     import sklearn
     from sklearn import *
     import pandas as pd
-    import xgboost
+    import warnings
+
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore")
+        import xgboost
     import lightgbm
     import catboost
 
@@ -99,10 +103,10 @@ class MLModel(object):
     """
     Creates a machine learning model based on its implementation from scikit-learn, xgboost, lightgbm, catboost.
     For supervised learning:
-    Refer https://scikit-learn.org/stable/supervised_learning.html#supervised-learning for scikit-learn,
-    https://xgboost.readthedocs.io/en/stable/python/python_api.html for xgboost,
-    https://lightgbm.readthedocs.io/en/latest/Python-API.html# for lightgbm,
-    https://catboost.ai/en/docs/concepts/python-quickstart for catboost.
+    Refer `scikit-learn <https://scikit-learn.org/stable/supervised_learning.html#supervised-learning>`_,
+    `xgboost <https://xgboost.readthedocs.io/en/stable/python/python_api.html>`_,
+    `lightgbm <https://lightgbm.readthedocs.io/en/latest/Python-API.html>`_ ,
+    `catboost <https://catboost.ai/en/docs/concepts/python-quickstart>`_ .
 
     For unsupervised learning:
     1. Clustering Models
@@ -111,36 +115,42 @@ class MLModel(object):
     Refer https://scikit-learn.org/stable/unsupervised_learning.html
 
     =====================   ===========================================
-    **Argument**            **Description**
+    **Parameter**            **Description**
     ---------------------   -------------------------------------------
     data                    Required TabularDataObject. Returned data object from
-                            `prepare_tabulardata` function.
+                            :class:`~arcgis.learn.prepare_tabulardata` function.
     ---------------------   -------------------------------------------
     model_type              Required string path to the module.
                             For example for SVM:
-                                sklearn.svm.SVR or sklearn.svm.SVC
+
+                            `sklearn.svm.SVR <https://scikit-learn.org/stable/modules/generated/sklearn.svm.SVR.html>`_ or `sklearn.svm.SVC <https://scikit-learn.org/stable/modules/generated/sklearn.svm.SVC.html>`_
+
                             For tree:
-                                sklearn.tree.DecisionTreeRegressor or sklearn.tree.DecisionTreeClassifier
+
+                            `sklearn.tree.DecisionTreeRegressor <https://scikit-learn.org/stable/modules/generated/sklearn.tree.DecisionTreeRegressor.html>`_ or `sklearn.tree.DecisionTreeClassifier <https://scikit-learn.org/stable/modules/generated/sklearn.tree.DecisionTreeClassifier.html>`_
+
                             For gradient boosting:
-                                lightgbm.LGBMRegressor or lightgbm.LGBMClassifier
+
+                            `lightgbm.LGBMRegressor <https://lightgbm.readthedocs.io/en/latest/pythonapi/lightgbm.LGBMRegressor.html>`_ or `lightgbm.LGBMClassifier <https://lightgbm.readthedocs.io/en/latest/pythonapi/lightgbm.LGBMClassifier.html>`_
     ---------------------   -------------------------------------------
-    **kwargs                model_type specific arguments.
+    ``**kwargs``            model_type specific arguments.
                             Refer Parameters section
-                            https://scikit-learn.org/stable/supervised_learning.html#supervised-learning for scikit-learn,
 
-                            lgbm
-                            https://lightgbm.readthedocs.io/en/latest/pythonapi/lightgbm.LGBMRegressor.html
-                            https://lightgbm.readthedocs.io/en/latest/pythonapi/lightgbm.LGBMClassifier.html
+                            `scikit-learn <https://scikit-learn.org/stable/supervised_learning.html#supervised-learning>`_,
 
-                            catboost
-                            https://catboost.ai/en/docs/concepts/python-reference_catboostregressor
-                            https://catboost.ai/en/docs/concepts/python-reference_catboostclassifier
+                            `lightgbm.LGBMRegressor <https://lightgbm.readthedocs.io/en/latest/pythonapi/lightgbm.LGBMRegressor.html>`_
 
-                            xgboost
-                            https://xgboost.readthedocs.io/en/stable/python/python_api.html#module-xgboost.sklearn
+                            `lightgbm.LGBMClassifier <https://lightgbm.readthedocs.io/en/latest/pythonapi/lightgbm.LGBMClassifier.html>`_
+
+                            `catboostregressor <https://catboost.ai/en/docs/concepts/python-reference_catboostregressor>`_
+
+                            `catboostclassifier <https://catboost.ai/en/docs/concepts/python-reference_catboostclassifier>`_
+
+                            `xgboost <https://xgboost.readthedocs.io/en/stable/python/python_api.html#module-xgboost.sklearn>`_
+
     =====================   ===========================================
 
-    :return: `MLModel` Object
+    :return: :class:`~arcgis.learn.MLModel` Object
     """
 
     def __init__(self, data, model_type, **kwargs):
@@ -199,12 +209,12 @@ class MLModel(object):
         Shows sample results for the model.
 
         =====================   ===========================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ---------------------   -------------------------------------------
         rows                    Optional number of rows. By default, 5 rows
                                 are displayed.
         =====================   ===========================================
-        :returns dataframe
+        :return: dataframe
         """
         if (
             not self._data._is_unsupervised
@@ -224,9 +234,14 @@ class MLModel(object):
 
         output_labels = self._predict(validation_data_batch)
         pd.options.mode.chained_assignment = None
-        df = self._data._dataframe.iloc[
-            sample_indexes
-        ]  # .loc[sample_batch]#.reset_index(drop=True).loc[sample_batch].reset_index(drop=True)
+
+        # using loc instead of iloc to get data when dataframe doesnt have continuous indexes
+        if self._data._is_classification:
+            df = self._data._dataframe.loc[
+                sample_indexes
+            ]  # .loc[sample_batch]#.reset_index(drop=True).loc[sample_batch].reset_index(drop=True)
+        else:
+            df = self._data._dataframe.iloc[sample_indexes]
 
         if self._data._dependent_variable:
             df[self._data._dependent_variable + "_results"] = output_labels
@@ -237,7 +252,7 @@ class MLModel(object):
 
     def score(self):
         """
-        :returns output from scikit-learn's model.score(), R2 score in case of regression and Accuracy in case of classification.
+        :return: output from scikit-learn's model.score(), R2 score in case of regression and Accuracy in case of classification.
         For KMeans returns Opposite of the value of X on the K-means objective.
         """
         if (
@@ -256,7 +271,7 @@ class MLModel(object):
 
     def decision_function(self):
         """
-        :returns output from scikit-learn's model.decision_function()
+        :return: output from scikit-learn's model.decision_function()
         """
         if self._training_data is None:
             raise_data_exception()
@@ -268,7 +283,7 @@ class MLModel(object):
 
     def mahalanobis(self):
         """
-        :returns output from scikit-learn's model.mahalanobis()
+        :return: output from scikit-learn's model.mahalanobis()
         """
         if self._training_data is None:
             raise_data_exception()
@@ -280,7 +295,7 @@ class MLModel(object):
 
     def kneighbors(self, X=None, n_neighbors=None, return_distance=True):
         """
-        :returns output from scikit-learn's model.kneighbors()
+        :return: output from scikit-learn's model.kneighbors()
         """
         if not hasattr(self._model, "kneighbors"):
             raise Exception("Function not implemented for this model.")
@@ -302,7 +317,7 @@ class MLModel(object):
 
     def predict_proba(self):
         """
-        :returns output from scikit-learn's model.predict_proba()
+        :return: output from scikit-learn's model.predict_proba()
         """
 
         if not hasattr(self._model, "predict_proba"):
@@ -316,8 +331,7 @@ class MLModel(object):
     @property
     def feature_importances_(self):
         """
-        :Returns the global feature importance summary plot from SHAP.
-        Most of the sklearn models are supported by this method.
+        :return: the global feature importance summary plot from SHAP. Most of the sklearn models are supported by this method.
         """
         # if not hasattr(self._model, 'feature_importances_'):
         # raise Exception("Property not implemented for this model.")
@@ -342,20 +356,20 @@ class MLModel(object):
         Using protocol level 2. Protocol level is backward compatible.
 
         =====================   ===========================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ---------------------   -------------------------------------------
         name_or_path            Required string. Folder path to save the model.
         ---------------------   -------------------------------------------
         publish                 Optional boolean. Publishes the DLPK as an item.
         ---------------------   -------------------------------------------
-        gis                     Optional GIS Object. Used for publishing the item.
+        gis                     Optional :class:`~arcgis.gis.GIS`  Object. Used for publishing the item.
                                 If not specified then active gis user is taken.
         ---------------------   -------------------------------------------
         kwargs                  Optional Parameters:
                                 Boolean `overwrite` if True, it will overwrite
                                 the item on ArcGIS Online/Enterprise, default False.
         =====================   ===========================================
-        :returns dataframe
+        :return: dataframe
         """
 
         if "\\" in name_or_path or "/" in name_or_path:
@@ -494,20 +508,20 @@ class MLModel(object):
     @classmethod
     def from_model(cls, emd_path, data=None):
         """
-        Creates a `MLModel` Object from an Esri Model Definition (EMD) file.
+        Creates a :class:`~arcgis.learn.MLModel` Object from an Esri Model Definition (EMD) file.
 
         =====================   ===========================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ---------------------   -------------------------------------------
         emd_path                Required string. Path to Esri Model Definition
                                 file.
         ---------------------   -------------------------------------------
         data                    Required TabularDataObject or None. Returned data
-                                object from `prepare_tabulardata` function or None for
+                                object from :class:`~arcgis.learn.prepare_tabulardata` function or None for
                                 inferencing.
         =====================   ===========================================
 
-        :return: `MLModel` Object
+        :return: :class:`~arcgis.learn.MLModel` Object
         """
         if not HAS_ML_DEPS:
             raise Exception(missing_deps_trace)
@@ -694,7 +708,7 @@ class MLModel(object):
         Loads a compatible saved model for inferencing or fine tuning from the disk.
 
         =====================   ===========================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ---------------------   -------------------------------------------
         name_or_path            Required string. Name or Path to
                                 Esri Model Definition(EMD) file.
@@ -792,9 +806,9 @@ class MLModel(object):
         Predict on data from feature layer, dataframe and or raster data.
 
         =================================   =========================================================================
-        **Argument**                        **Description**
+        **Parameter**                        **Description**
         ---------------------------------   -------------------------------------------------------------------------
-        input_features                      Optional Feature Layer or spatial dataframe. Required if prediction_type='features'.
+        input_features                      Optional :class:`~arcgis.features.FeatureLayer` or spatial dataframe. Required if prediction_type='features'.
                                             Contains features with location and
                                             some or all fields required to infer the dependent variable value.
         ---------------------------------   -------------------------------------------------------------------------
@@ -804,18 +818,18 @@ class MLModel(object):
         ---------------------------------   -------------------------------------------------------------------------
         datefield                           Optional string. Field name from feature layer
                                             that contains the date, time for the input features.
-                                            Same as `prepare_tabulardata()`.
+                                            Same as :meth:`~arcgis.learn.prepare_tabulardata` .
         ---------------------------------   -------------------------------------------------------------------------
-        distance_features                   Optional List of Feature Layer objects.
+        distance_features                   Optional List of :class:`~arcgis.features.FeatureLayer` objects.
                                             These layers are used for calculation of field "NEAR_DIST_1",
                                             "NEAR_DIST_2" etc in the output dataframe.
                                             These fields contain the nearest feature distance
                                             from the input_features.
-                                            Same as `prepare_tabulardata()`.
+                                            Same as :meth:`~arcgis.learn.prepare_tabulardata` .
         ---------------------------------   -------------------------------------------------------------------------
         output_layer_name                   Optional string. Used for publishing the output layer.
         ---------------------------------   -------------------------------------------------------------------------
-        gis                                 Optional GIS Object. Used for publishing the item.
+        gis                                 Optional :class:`~arcgis.gis.GIS`  Object. Used for publishing the item.
                                             If not specified then active gis user is taken.
         ---------------------------------   -------------------------------------------------------------------------
         prediction_type                     Optional String.
@@ -833,13 +847,14 @@ class MLModel(object):
                                             Specify mapping of field names from prediction set
                                             to training set.
                                             For example:
-                                                {
-                                                    "Field_Name_1": "Field_1",
-                                                    "Field_Name_2": "Field_2"
-                                                }
+
+                                                | {
+                                                |    "Field_Name_1": "Field_1",
+                                                |    "Field_Name_2": "Field_2"
+                                                | }
         ---------------------------------   -------------------------------------------------------------------------
         explain                             Optional Bool.
-                                            Setting this parameter to true generates prediction explaination plot.
+                                            Setting this parameter to true generates prediction explanation plot.
                                             Plot is generated using model interpretability library called SHAP.
                                             (https://github.com/slundberg/shap)
         ---------------------------------   -------------------------------------------------------------------------
@@ -850,7 +865,7 @@ class MLModel(object):
                                             random index of the dataframe.
         =================================   =========================================================================
 
-        :returns Feature Layer if prediction_type='features', dataframe for prediction_type='dataframe' else creates an output raster.
+        :return: :class:`~arcgis.features.FeatureLayer` if prediction_type='features', dataframe for prediction_type='dataframe' else creates an output raster.
 
         """
         rasters = explanatory_rasters if explanatory_rasters else []
@@ -864,7 +879,6 @@ class MLModel(object):
                 explain = False
                 explain_index = None
         if prediction_type in ["features", "dataframe"]:
-
             if input_features is None:
                 raise Exception("Feature Layer required for predict_features=True")
 
@@ -1030,7 +1044,6 @@ class MLModel(object):
         output_layer_name=None,
         gis=None,
     ):
-
         if not os.path.exists(os.path.dirname(output_folder_path)):
             raise Exception("Output directory doesn't exist")
 

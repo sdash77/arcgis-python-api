@@ -1,6 +1,3 @@
-import sys
-
-sys.path.insert(0, r"C:\SVN\geosaurus_master\src")
 import uuid
 import unittest
 from arcgis.gis import GIS, UserManager
@@ -10,9 +7,7 @@ class TestLicenseProvisions(unittest.TestCase):
     def test_assign_provisions(self):
         """tests assign provision"""
         gis = GIS(
-            url="https://devext.arcgis.com",
-            username="mtest_2_11_2022_11_13_25",
-            password="Testtest11",
+            profile="your_online_admin_profile",
             verify_cert=False,
         )
         um = gis.users
@@ -46,9 +41,7 @@ class TestLicenseProvisions(unittest.TestCase):
     def test_revoke_provisions(self):
         """tests revoke provision"""
         gis = GIS(
-            url="https://devext.arcgis.com",
-            username="mtest_2_11_2022_11_13_25",
-            password="Testtest11",
+            profile="your_online_admin_profile",
             verify_cert=False,
         )
         um = gis.users
@@ -85,9 +78,7 @@ class TestLicenseProvisions(unittest.TestCase):
 
     def test_lmgr_provisions(self):
         gis = GIS(
-            url="https://devext.arcgis.com",
-            username="mtest_2_11_2022_11_13_25",
-            password="Testtest11",
+            profile="your_online_admin_profile",
             verify_cert=False,
         )
         lm = gis.admin.license

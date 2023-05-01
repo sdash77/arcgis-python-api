@@ -8,6 +8,7 @@ from ...gis import GIS
 from ...gis import Group, GroupManager
 from ._base import BasePortalAdmin
 
+
 ########################################################################
 class LivingAtlas(BasePortalAdmin):
     """
@@ -74,7 +75,7 @@ class LivingAtlas(BasePortalAdmin):
     To create an instance directly:
 
     ===============     ====================================================
-    **Argument**        **Description**
+    **Parameter**        **Description**
     ---------------     ----------------------------------------------------
     url                 required string, the web address of the site to
                         manage licenses.
@@ -98,6 +99,7 @@ class LivingAtlas(BasePortalAdmin):
     _living_atlas_group = None
     _living_atlas_content_group = None
     _groups = None
+
     # ----------------------------------------------------------------------
     def __init__(self, url, gis):
         """Constructor"""
@@ -179,7 +181,7 @@ class LivingAtlas(BasePortalAdmin):
         Atlas with the group.
 
         ===============     ====================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     ----------------------------------------------------
         group               required string or Group object
         ===============     ====================================================
@@ -245,7 +247,7 @@ class LivingAtlas(BasePortalAdmin):
         The account must be an ArcGIS Online account.
 
         ===============     ====================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     ----------------------------------------------------
         username            Required string. The user who will be used for
                             to access the subscriber Living Atlas content.
@@ -280,7 +282,7 @@ class LivingAtlas(BasePortalAdmin):
         The account must be an ArcGIS Online account.
 
         ===============     ====================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     ----------------------------------------------------
         username            Required string. The user who will be used for
                             to access the subscriber Living Atlas content.
@@ -325,7 +327,7 @@ class LivingAtlas(BasePortalAdmin):
         ArcGIS Online Organization.
 
         ===============     ====================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     ----------------------------------------------------
         username            required string, username for ArcGIS Online
         ---------------     ----------------------------------------------------
@@ -366,7 +368,7 @@ class LivingAtlas(BasePortalAdmin):
         spatial analysis.
 
         ===============     ====================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     ----------------------------------------------------
         username            required string, username for ArcGIS Online
         ---------------     ----------------------------------------------------
@@ -461,7 +463,7 @@ class LivingAtlas(BasePortalAdmin):
         for use with analysis tools.
 
         ===============     ====================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     ----------------------------------------------------
         username            required string, username for ArcGIS Online
         ---------------     ----------------------------------------------------

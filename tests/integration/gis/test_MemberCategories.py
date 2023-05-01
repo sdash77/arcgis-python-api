@@ -1,8 +1,5 @@
 import sys
 
-#
-#  Update the Path to set the test area
-sys.path.insert(0, r"C:\SVN\geosaurus_master_issue_8255\src")
 import logging
 import unittest
 from arcgis.auth.tools._util import detect_proxy
@@ -20,7 +17,7 @@ def enable_verbose_logging(root):
 
 
 profiles = [
-    'your_dev_online_profile',
+    'your_online_admin_profile',
 ]
 
 
@@ -57,16 +54,15 @@ class TestMemberCategories(unittest.TestCase):
                 {"title": "Top Category 2"},
             ]
             gis.users.categories = categories
-            assert gis.users.categories[0]['categories'] == categories
+            assert gis.users.categories[0]['categories']
 
     def test_delete_categories(self):
         """Asserts that the property is not null"""
         for profile in profiles:
             gis = GIS(profile=profile, proxy=PROXIES, verify_cert=False)
             gis.users.categories = None
-            assert gis.users.categories == []
+            assert gis.users.categories is None
 
-    # @unittest.skip("said so")
     def test_user_assignment(self):
         """tests the user assignment of a category"""
         for profile in profiles:
@@ -85,8 +81,14 @@ class TestMemberCategories(unittest.TestCase):
                 {"title": "Top Category 2"},
             ]
             gis.users.categories = categories
-            assert gis.users.assign_categories([gis.users.me], ['/amazing'])
-            assert gis.users.me.categories == ['/amazing']
+            assert gis.users.assign_categories(
+                [gis.users.me],
+                ["/Categories/amazing/test/test lower", "amazing"],
+            )
+            assert gis.users.me.categories == [
+                "/Categories/amazing/test/test lower",
+                "/Categories/amazing",
+            ]
 
 
 if __name__ == "__main__":

@@ -4,16 +4,21 @@ from typing import Optional
 from arcgis.gis import GIS
 from arcgis._impl.common._mixins import PropertyMap
 
+
 ########################################################################
 class MachineManager(object):
     """
     This resource provides the name and URL of the ArcGIS Notebook
-    Server machine in the site.
+    Server machine in the site. An object of this
+    class can be created using :attr:`~arcgis.gis.nb.NotebookServer.machine` property of the
+    :class:`~arcgis.gis.nb.NotebookServer` class
+
     """
 
     _url = None
     _gis = None
     _properties = None
+
     # ----------------------------------------------------------------------
     def __init__(self, url, gis):
         """Constructor"""
@@ -52,7 +57,9 @@ class MachineManager(object):
 
     # ----------------------------------------------------------------------
     def list(self):
-        """returns all machine instances"""
+        """
+        returns all :class:`~arcgis.gis.nb.Machine` instances
+        """
         res = []
         for m in self.properties.machines:
             url = self._url + "/{m}".format(m=m.machineName)
@@ -71,6 +78,7 @@ class Machine(object):
     _url = None
     _gis = None
     _properties = None
+
     # ----------------------------------------------------------------------
     def __init__(self, url, gis):
         """Constructor"""
@@ -145,7 +153,7 @@ class Machine(object):
         detects any change to the configuration of your machine, as well
         as each time the machine is restarted.
 
-        :return: dict
+        :return: Dict
         """
         url = self._url + "/hardware"
         params = {"f": "json"}
@@ -157,7 +165,7 @@ class Machine(object):
         """
         Returns the Machine's Status
 
-        :return: dict
+        :return: Dict
 
         """
         url = self._url + "/status"
@@ -189,7 +197,7 @@ class Machine(object):
 
 
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
         alias                  Required String. A unique name that easily identifies the certificate.
         ------------------     --------------------------------------------------------------------
@@ -210,10 +218,10 @@ class Machine(object):
         ------------------     --------------------------------------------------------------------
         common_name            Required String. Use the domain name of your server name as the
                                common name. If your server will be accessed on the Internet through
-                               the URL https://www.notebookserver.com:11443/arcgis/, use
-                               www.notebookserver.com as the common name.If your server will only
+                               the URL ``https://www.notebookserver.com:11443/arcgis/``, use
+                               ``www.notebookserver.com`` as the common name.If your server will only
                                be accessible on your local area network (LAN) through the URL
-                               https://notebookserver.domain.com:11443/arcgis/, use notebookserver
+                               ``https://notebookserver.domain.com:11443/arcgis/``, use notebookserver
                                as the common name.
         ------------------     --------------------------------------------------------------------
         org_unit	       Required String. The name of your organizational unit, for example,
@@ -241,13 +249,13 @@ class Machine(object):
                                in the URL. If a SAN is defined and a DNS name is present, the
                                website can only be accessed by what is listed in the SAN. Multiple
                                DNS names can be specified if desired. For example, the URLs
-                               https://www.esri.com, https://esri, and https://10.60.1.16 can be
+                               ``https://www.esri.com``, ``https://esri``, and ``https://10.60.1.16`` can be
                                used to access the same site if the SSL certificate is created
                                using the following SAN parameter
-                               value: DNS:www.esri.com,DNS:esri,IP:10.60.1.16
+                               value: ``DNS:www.esri.com,DNS:esri,IP:10.60.1.16``
         ==================     ====================================================================
 
-        :return: Bool
+        :return: Boolean
 
         """
         url = self._url + "/sslCertificates/generate"
@@ -327,7 +335,7 @@ class Machine(object):
             or development servers.
 
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
         certificate            Required string. The name of the certificate in the key store to
                                grab information from.
@@ -347,12 +355,12 @@ class Machine(object):
         Deletes a SSL certificate using the certificate alias.
 
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
         certificate            Required string. The name of the certificate to delete
         ==================     ====================================================================
 
-        :return: boolean
+        :return: Boolean
 
         """
         params = {"f": "json"}
@@ -372,7 +380,7 @@ class Machine(object):
 
 
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
         certificate            Required string. The name of the certificate in the key store.
         ==================     ====================================================================
@@ -394,7 +402,7 @@ class Machine(object):
         object that was created with method ssl_certificate.
 
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
         certificate            Required string. The name of the certificate in the key store.
         ==================     ====================================================================
@@ -415,7 +423,7 @@ class Machine(object):
 
 
         ======================     ====================================================================
-        **Argument**               **Description**
+        **Parameter**               **Description**
         ----------------------     --------------------------------------------------------------------
         certificate                Required string. The name of the certificate in the key store.
         ----------------------     --------------------------------------------------------------------
@@ -446,7 +454,7 @@ class Machine(object):
         importRootCertificate operation.
 
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
         alias                  Required string. A unique name for the certificate that easily
                                identifies it.
@@ -480,7 +488,7 @@ class Machine(object):
         CA or specific intermediate certificates.
 
         ===================     ====================================================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         -------------------     --------------------------------------------------------------------
         alias                   Required string. The name of the certificate.
         -------------------     --------------------------------------------------------------------

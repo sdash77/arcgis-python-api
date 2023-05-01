@@ -2,8 +2,13 @@
 # Name:        Workforce Dispatchers tests
 # Purpose:     Sanity tests for ArcGIS Python API
 # -------------------------------------------------------------------------------
+import sys
+sys.path.insert(0, r"C:\ipython_workfolder\geosaurus\tests")
+sys.path.insert(1, r"C:\ipython_workfolder\geosaurus\src")
 import unittest
-from integration.dino_utils.dino_precondition_checks import PreconditionChecks
+from integration.dino_utils.dino_precondition_checks import (
+    PreconditionChecks,
+)
 from integration.dino_utils.dino_configs import DinoConfigs
 from configparser import ConfigParser
 import datetime
@@ -15,6 +20,10 @@ module_skip = False
 
 r1 = PreconditionChecks.check_API_import()
 r2 = PreconditionChecks.check_Python_version()
+
+from arcgis.auth.tools._util import detect_proxy
+
+PROXY = detect_proxy(True)
 
 if r1 & r2:
     print("## Precondition checks passed ##")
@@ -39,7 +48,8 @@ except ImportError:
 
 # TestModule
 @unittest.skipIf(
-    module_skip, "Precondition check failed. Skipping tests in Workforce Dispatchers"
+    module_skip,
+    "Precondition check failed. Skipping tests in Workforce Dispatchers",
 )
 def setUpModule():
     """
@@ -67,7 +77,8 @@ class Test_Workforce_Dispatchers(unittest.TestCase):
         self.project.dispatchers.batch_delete(
             self.project.dispatchers.search(
                 where="{} <> '{}'".format(
-                    self.project._dispatcher_schema.user_id, "ar_workforce_python_api"
+                    self.project._dispatcher_schema.user_id,
+                    "ar_workforce_python_api",
                 )
             )
         )
@@ -86,8 +97,16 @@ class Test_Workforce_Dispatchers(unittest.TestCase):
 
         cls.portal_url = _conf_reader["workforce_ago"]["url"]
         cls.portal_username = _conf_reader["workforce_ago"]["publisher_user"]
-        cls.portal_password = _conf_reader["workforce_ago"]["publisher_password"]
-        cls.gis = GIS(cls.portal_url, cls.portal_username, cls.portal_password)
+        cls.portal_password = _conf_reader["workforce_ago"][
+            "publisher_password"
+        ]
+        cls.gis = GIS(
+            cls.portal_url,
+            cls.portal_username,
+            cls.portal_password,
+            verify_cert=False,
+            proxy=PROXY,
+        )
         t = datetime.datetime.now()
         cls.time_stamp = str.format(
             "Time stamp: {0}_{1}_{2}_{3}_{4}_{5}",
@@ -103,7 +122,9 @@ class Test_Workforce_Dispatchers(unittest.TestCase):
         r1 = PreconditionChecks.can_ping_portal(cls.portal_url)
         if not r1:
             cls.class_skip = True
-        print("==================================================================")
+        print(
+            "=================================================================="
+        )
         print("Beginning tests in Test_Workforce_DispatcherManager class")
 
     def setUp(self):
@@ -126,7 +147,9 @@ class Test_Workforce_Dispatchers(unittest.TestCase):
         print("Time stamp: " + self.time_stamp)
 
     def tearDown(self):
-        print("------------------------------------------------------------------\n")
+        print(
+            "------------------------------------------------------------------\n"
+        )
 
     @classmethod
     def tearDownClass(cls):
@@ -134,24 +157,33 @@ class Test_Workforce_Dispatchers(unittest.TestCase):
             cls.project.delete()
         except Exception as e:
             print("Failed to delete project successfully!")
-        print("\n==================================================================")
+        print(
+            "\n=================================================================="
+        )
 
     def test_search_dispatcher(self):
         try:
             # 1=1 which is the default, appears to trigger some CDN caching, using 2>1 avoids this
             dispatchers = self.project.dispatchers.search("2>1")
-            self.assertEqual(len(dispatchers), 2, "Incorrect number of dispatchers")
+            self.assertEqual(
+                len(dispatchers), 2, "Incorrect number of dispatchers"
+            )
 
             dispatcher = self.project.dispatchers.search(
                 "{} = '{}'".format(
-                    self.project._dispatcher_schema.user_id, "ar_workforce_python_api"
+                    self.project._dispatcher_schema.user_id,
+                    "ar_workforce_python_api",
                 )
             )[0]
             self.assertEqual(
-                dispatcher.user_id, "ar_workforce_python_api", "Incorrect user id"
+                dispatcher.user_id,
+                "ar_workforce_python_api",
+                "Incorrect user id",
             )
             self.assertEqual(
-                dispatcher.name, "ar_workforce_python_api tester", "Incorrect name"
+                dispatcher.name,
+                "ar_workforce_python_api tester",
+                "Incorrect name",
             )
             self.assertEqual(
                 dispatcher.contact_number, None, "Incorrect contact number"
@@ -159,12 +191,17 @@ class Test_Workforce_Dispatchers(unittest.TestCase):
 
             dispatchers = self.project.dispatchers.search(
                 "{} = '{}'".format(
-                    self.project._dispatcher_schema.user_id, "ar_workforce_python_api2"
+                    self.project._dispatcher_schema.user_id,
+                    "ar_workforce_python_api2",
                 )
             )
-            self.assertEqual(len(dispatchers), 1, "Incorrect number of dispatchers")
             self.assertEqual(
-                dispatchers[0].user_id, "ar_workforce_python_api2", "Incorrect user id"
+                len(dispatchers), 1, "Incorrect number of dispatchers"
+            )
+            self.assertEqual(
+                dispatchers[0].user_id,
+                "ar_workforce_python_api2",
+                "Incorrect user id",
             )
 
         except AssertionError as assertErrorException:
@@ -183,18 +220,23 @@ class Test_Workforce_Dispatchers(unittest.TestCase):
                 user_id="ar_workforce_python_api2"
             )
             self.assertEqual(
-                dispatcher.user_id, "ar_workforce_python_api2", "Incorrect user id"
+                dispatcher.user_id,
+                "ar_workforce_python_api2",
+                "Incorrect user id",
             )
             self.assertEqual(
                 dispatcher.name, "ar_workforce_python_api2", "Incorrect name"
             )
             self.assertEqual(
-                dispatcher.contact_number, "123-456-7890", "Incorrect contact number"
+                dispatcher.contact_number,
+                "123-456-7890",
+                "Incorrect contact number",
             )
             dispatcher.update(name="tester2")
             dispatcher = self.project.dispatchers.search(
                 "{} = '{}'".format(
-                    self.project._dispatcher_schema.user_id, "ar_workforce_python_api2"
+                    self.project._dispatcher_schema.user_id,
+                    "ar_workforce_python_api2",
                 )
             )[0]
             self.assertEqual(dispatcher.name, "tester2", "Incorrect name")
@@ -215,19 +257,24 @@ class Test_Workforce_Dispatchers(unittest.TestCase):
                 user_id="ar_workforce_python_api2"
             )
             self.assertEqual(
-                dispatcher.user_id, "ar_workforce_python_api2", "Incorrect user id"
+                dispatcher.user_id,
+                "ar_workforce_python_api2",
+                "Incorrect user id",
             )
             self.assertEqual(
                 dispatcher.name, "ar_workforce_python_api2", "Incorrect name"
             )
             self.assertEqual(
-                dispatcher.contact_number, "123-456-7890", "Incorrect contact number"
+                dispatcher.contact_number,
+                "123-456-7890",
+                "Incorrect contact number",
             )
             dispatcher.name = "tester2"
             self.project.dispatchers.batch_update([dispatcher])
             dispatcher = self.project.dispatchers.search(
                 "{} = '{}'".format(
-                    self.project._dispatcher_schema.user_id, "ar_workforce_python_api2"
+                    self.project._dispatcher_schema.user_id,
+                    "ar_workforce_python_api2",
                 )
             )[0]
             self.assertEqual(dispatcher.name, "tester2", "Incorrect name")
@@ -246,17 +293,21 @@ class Test_Workforce_Dispatchers(unittest.TestCase):
         try:
             dispatcher = self.project.dispatchers.search(
                 "{} = '{}'".format(
-                    self.project._dispatcher_schema.user_id, "ar_workforce_python_api2"
+                    self.project._dispatcher_schema.user_id,
+                    "ar_workforce_python_api2",
                 )
             )[0]
             dispatcher.delete()
 
             dispatchers = self.project.dispatchers.search(
                 "{} = '{}'".format(
-                    self.project._dispatcher_schema.user_id, "ar_workforce_python_api2"
+                    self.project._dispatcher_schema.user_id,
+                    "ar_workforce_python_api2",
                 )
             )
-            self.assertEqual(len(dispatchers), 0, "Incorrect number of dispatchers")
+            self.assertEqual(
+                len(dispatchers), 0, "Incorrect number of dispatchers"
+            )
 
         except AssertionError as assertErrorException:
             test_skip = True
@@ -272,17 +323,21 @@ class Test_Workforce_Dispatchers(unittest.TestCase):
         try:
             dispatcher = self.project.dispatchers.search(
                 "{} = '{}'".format(
-                    self.project._dispatcher_schema.user_id, "ar_workforce_python_api2"
+                    self.project._dispatcher_schema.user_id,
+                    "ar_workforce_python_api2",
                 )
             )[0]
             self.project.dispatchers.batch_delete([dispatcher])
 
             dispatchers = self.project.dispatchers.search(
                 "{} = '{}'".format(
-                    self.project._dispatcher_schema.user_id, "ar_workforce_python_api2"
+                    self.project._dispatcher_schema.user_id,
+                    "ar_workforce_python_api2",
                 )
             )
-            self.assertEqual(len(dispatchers), 0, "Incorrect number of dispatchers")
+            self.assertEqual(
+                len(dispatchers), 0, "Incorrect number of dispatchers"
+            )
 
         except AssertionError as assertErrorException:
             test_skip = True
@@ -297,14 +352,17 @@ class Test_Workforce_Dispatchers(unittest.TestCase):
     def test_add_dispatcher(self):
         try:
 
-            self.project.dispatchers.add(name="test", user_id="ar_OpsDashAUITest")
+            self.project.dispatchers.add(
+                name="test", user_id="ar_OpsDashAUITest2"
+            )
             dispatcher = self.project.dispatchers.search(
                 where="{} = '{}'".format(
-                    self.project._dispatcher_schema.user_id, "ar_OpsDashAUITest"
+                    self.project._dispatcher_schema.user_id,
+                    "ar_OpsDashAUITest2",
                 )
             )[0]
             self.assertEqual(
-                dispatcher.user_id, "ar_OpsDashAUITest", "Incorrect user id"
+                dispatcher.user_id, "ar_OpsDashAUITest2", "Incorrect user id"
             )
             self.assertEqual(dispatcher.name, "test", "Incorrect name")
 
@@ -322,16 +380,17 @@ class Test_Workforce_Dispatchers(unittest.TestCase):
         try:
 
             dispatcher = Dispatcher(
-                self.project, name="test", user_id="ar_OpsDashAUITest"
+                self.project, name="test", user_id="ar_OpsDashAUITest2"
             )
             self.project.dispatchers.batch_add([dispatcher])
             dispatcher = self.project.dispatchers.search(
                 where="{} = '{}'".format(
-                    self.project._dispatcher_schema.user_id, "ar_OpsDashAUITest"
+                    self.project._dispatcher_schema.user_id,
+                    "ar_OpsDashAUITest2",
                 )
             )[0]
             self.assertEqual(
-                dispatcher.user_id, "ar_OpsDashAUITest", "Incorrect user id"
+                dispatcher.user_id, "ar_OpsDashAUITest2", "Incorrect user id"
             )
             self.assertEqual(dispatcher.name, "test", "Incorrect name")
 
@@ -355,7 +414,7 @@ class Test_Workforce_Dispatchers(unittest.TestCase):
             # no name
             with self.assertRaises(ValidationError):
                 self.project.dispatchers.add(
-                    user_id="ar_OpsDashAUITest",
+                    user_id="ar_OpsDashAUITest2",
                 )
             # duplicate user id
             with self.assertRaises(ValidationError):
@@ -380,3 +439,7 @@ class Test_Workforce_Dispatchers(unittest.TestCase):
 # TestModule
 def tearDownModule():
     print("**End Workforce DispatcherManager Tests**")
+
+
+if __name__ == "__main__":
+    unittest.main()

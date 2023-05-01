@@ -4,6 +4,7 @@ The root of all OAuth2 resources and operations.
 import os
 import json
 
+
 ########################################################################
 class OAuth(object):
     """
@@ -14,6 +15,7 @@ class OAuth(object):
     _con = None
     _portal = None
     _url = None
+
     # ----------------------------------------------------------------------
     def __init__(self, url, gis):
         """Constructor"""

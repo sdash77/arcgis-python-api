@@ -20,7 +20,7 @@ def build_collector_url(
     Creates a url that can be used to open ArcGIS Collector
 
     ==================     ====================================================================
-    **Argument**           **Description**
+    **Parameter**           **Description**
     ------------------     --------------------------------------------------------------------
     webmap                 Optional :class:`String`, :class:`~arcgis.mapping.WebMap`, :class:`~arcgis.gis.Item`.
                            The item id, webmap, or item representing the map to open in Collector.
@@ -288,7 +288,7 @@ def build_explorer_url(
     Creates a url that can be used to open ArcGIS Explorer
 
     ==================     ====================================================================
-    **Argument**           **Description**
+    **Parameter**           **Description**
     ------------------     --------------------------------------------------------------------
     webmap                 Optional :class:`String`, :class:`~arcgis.mapping.WebMap`, :class:`~arcgis.gis.Item`.
                            The item id, webmap, or item representing the map to open in Explorer.
@@ -404,7 +404,7 @@ def build_field_maps_url(
     Creates a url that can be used to open ArcGIS Field Maps
 
     ==================     ====================================================================
-    **Argument**           **Description**
+    **Parameter**           **Description**
     ------------------     --------------------------------------------------------------------
     portal                 Optional :class:`String`, :class:`~arcgis.gis.GIS`.
                            The URL of the portal the mobile worker must be connected to.
@@ -653,7 +653,7 @@ def build_navigator_url(
     Creates a url that can be used to open ArcGIS Navigator
 
     ==================     ====================================================================
-    **Argument**           **Description**
+    **Parameter**           **Description**
     ------------------     --------------------------------------------------------------------
     start                  Optional :class:`String` or :class:`Tuple`. The starting location.
                            Can be a single string such as '45,-77' or a tuple containing the
@@ -841,7 +841,7 @@ def build_survey123_url(survey=None, center=None, fields=None):
     Creates a url that can be used to open ArcGIS Survey123
 
     ==================     ====================================================================
-    **Argument**           **Description**
+    **Parameter**           **Description**
     ------------------     --------------------------------------------------------------------
     survey                 Optional :class:`String` or :class:`~arcgis.gis.Item`. The item id or
                            item representing the survey to open.
@@ -896,7 +896,7 @@ def build_tracker_url(portal_url=None, url_type="Web"):
     Creates a url that can be used to open ArcGIS Tracker
 
     ==================     ====================================================================
-    **Argument**           **Description**
+    **Parameter**           **Description**
     ------------------     --------------------------------------------------------------------
     portal_url             Optional :class:`String` The portal that should be used when tracker
                            is launched via the url scheme.
@@ -925,7 +925,7 @@ def build_workforce_url(
     Creates a url that can be used to open ArcGIS Workforce
 
     ==================     ====================================================================
-    **Argument**           **Description**
+    **Parameter**           **Description**
     ------------------     --------------------------------------------------------------------
     portal_url             Optional :class:`String` The portal that should be used when Workforce
                            is launched via the url scheme.

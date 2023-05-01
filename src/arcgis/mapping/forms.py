@@ -21,7 +21,7 @@ class FormCollection:
     as a list. You can then modify the :class:`~arcgis.mapping.forms.FormInfo` object to add and edit your form.
 
     ==================     ====================================================================
-    **Argument**           **Description**
+    **Parameter**           **Description**
     ------------------     --------------------------------------------------------------------
     parent                 Required :class:`~arcgis.mapping.WebMap` or :class:`~arcgis.gis.Item`.
                            This is the object which contains the layer, either an item of type
@@ -94,7 +94,7 @@ class FormCollection:
         operational layers. Pass one of the three parameters into the method to return the form.
 
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
         item_id                Optional :class:`str`. Pass the item_id for the layer or table whose
                                form you'd like to return.
@@ -172,13 +172,13 @@ class FormInfo:
     For more please see: https://developers.arcgis.com/web-map-specification/objects/formInfo/
 
     ==================     ====================================================================
-    **Argument**           **Description**
+    **Parameter**           **Description**
     ------------------     --------------------------------------------------------------------
     layer_data             Required :class:`PropertyMap` or :class:`dict`. This is the
                            operational layer which contains the formInfo dict. It can be
                            retrieved from a webmap using `arcgis.mapping.WebMap(item).layers[0]`
     ------------------     --------------------------------------------------------------------
-    parent                 Required :class:`arcgis.mapping.WebMap` or :class:`arcgis.gis.Item`.
+    parent                 Required :class:`~arcgis.mapping.WebMap` or :class:`~arcgis.gis.Item`.
                            This is the object which contains the layer, either an item of type
                            `Feature Layer Collection` or a webmap. This is needed to save your
                            form changes to the backend.
@@ -278,7 +278,7 @@ class FormInfo:
         return "None"
 
     def exists(self):
-        """Returns whether or not the form exists for that particular layer."""
+        """Returns whether the form exists for that particular layer or not."""
         return len(self._form_elements) > 0
 
     def clear(self):
@@ -293,15 +293,14 @@ class FormInfo:
         Returns a matching FormElement given a label
 
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
         label                  Optional :class:`str`
                                The label of the form element you want to return from the list of
                                form elements
         ==================     ====================================================================
 
-        :return: :class:`~arcgis.mapping.forms.FormFieldElement` or
-        :class:`~arcgis.mapping.forms.FormGroupElement`or `None`
+        :return: :class:`~arcgis.mapping.forms.FormFieldElement` or :class:`~arcgis.mapping.forms.FormGroupElement` or `None`
         """
         try:
             for el in self._form_elements:
@@ -338,13 +337,13 @@ class FormInfo:
 
     @property
     def elements(self):
-        """Returns elements in the form to the user - a list of :class:`arcgis.mapping.forms.FormElement`"""
+        """Returns elements in the form to the user - a list of :class:`~arcgis.mapping.forms.FormElement`"""
         return self._form_elements
 
     @property
     def expressions(self):
         """
-        Returns Arcade expressions used in the form to the user - a list of :class:`arcgis.mapping.forms.FormExpressionInfo`
+        Returns Arcade expressions used in the form to the user - a list of :class:`~arcgis.mapping.forms.FormExpressionInfo`
         """
         return self._expression_infos
 
@@ -417,18 +416,17 @@ class FormInfo:
         to add it to the form.
 
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
-        element                Optional :class:`arcgis.mapping.forms.FormFieldElement` or
-                               :class:`arcgis.mapping.forms.FormGroupElement`.
+        element                Optional :class:`~arcgis.mapping.forms.FormFieldElement` or
+                               :class:`~arcgis.mapping.forms.FormGroupElement`.
         ------------------     --------------------------------------------------------------------
         index                  Optional :class:`int`.
                                The index where you'd like the element in the form. If not provided,
                                this function will add the new element to the end of the form.
         ==================     ====================================================================
 
-        :return: The element that was added - :class:`arcgis.mapping.forms.FormFieldElement` or
-        :class:`arcgis.mapping.forms.FormGroupElement`
+        :return: The element that was added - :class:`~arcgis.mapping.forms.FormFieldElement` or :class:`~arcgis.mapping.forms.FormGroupElement`
         """
         self._validate_input(element=element)
         self._validate_element(element)
@@ -460,7 +458,7 @@ class FormInfo:
         For more please see: https://developers.arcgis.com/web-map-specification/objects/formFieldElement/
 
         ======================     ====================================================================
-        **Argument**               **Description**
+        **Parameter**               **Description**
         ----------------------     --------------------------------------------------------------------
         field_name                 Required :class:`str`.
                                    The field name the form element corresponds to (where the data
@@ -472,7 +470,7 @@ class FormInfo:
         description                Optional :class:`str`.
                                    The description of the form element
         ----------------------     --------------------------------------------------------------------
-        visibility_expression      Optional :class:`arcgis.mapping.forms.FormExpressionInfo`.
+        visibility_expression      Optional :class:`~arcgis.mapping.forms.FormExpressionInfo`.
                                    The conditional visibility Arcade expression determining the
                                    visibility of the form element during data collection
         ----------------------     --------------------------------------------------------------------
@@ -490,24 +488,24 @@ class FormInfo:
                                    Options include: "text-area", "text-box", "barcode-scanner",
                                    "combo-box", "radio-buttons", "datetime-picker"
         ----------------------     --------------------------------------------------------------------
-        required_expression        Optional :class:`arcgis.mapping.forms.FormExpressionInfo`.
+        required_expression        Optional :class:`~arcgis.mapping.forms.FormExpressionInfo`.
                                    The conditional visibility Arcade expression determining the
-                                   requiredness of the form element during data collection
+                                   necessity of the form element during data collection
         ----------------------     --------------------------------------------------------------------
         index                      Optional :class:`int`.
                                    The index where you'd like the element in the form. If not provided,
                                    this function will add the new element to the end of the form.
         ----------------------     --------------------------------------------------------------------
-        editable_expression        Optional :class:`arcgis.mapping.forms.FormExpressionInfo`.
+        editable_expression        Optional :class:`~arcgis.mapping.forms.FormExpressionInfo`.
                                    The Arcade expression determining the
                                    editablity of the form element during data collection
         ----------------------     --------------------------------------------------------------------
-        value_expression           Optional :class:`arcgis.mapping.forms.FormExpressionInfo`.
+        value_expression           Optional :class:`~arcgis.mapping.forms.FormExpressionInfo`.
                                    The Arcade expression which calculates a value for the form
                                    element during data collection
         ======================     ====================================================================
 
-        :return: The element that was added - :class:`arcgis.mapping.forms.FormGroupElement`
+        :return: The element that was added - :class:`~arcgis.mapping.forms.FormGroupElement`
         """
 
         element = FormFieldElement(
@@ -540,13 +538,13 @@ class FormInfo:
         Adds a single :class:`~arcgis.mapping.forms.GroupElement` to the form
 
         ======================     ====================================================================
-        **Argument**               **Description**
+        **Parameter**               **Description**
         ----------------------     --------------------------------------------------------------------
         label                      Required :class:`str`. The label of the group
         ----------------------     --------------------------------------------------------------------
         description                Optional :class:`str`. The description of the group
         ----------------------     --------------------------------------------------------------------
-        visibility_expression      Optional :class:`arcgis.mapping.forms.FormExpressionInfo`.
+        visibility_expression      Optional :class:`~arcgis.mapping.forms.FormExpressionInfo`.
                                    The conditional visibility Arcade expression determining the
                                    visibility of the form element during data collection
         ----------------------     --------------------------------------------------------------------
@@ -557,7 +555,7 @@ class FormInfo:
                                    this function will add the new element to the end of the form.
         ======================     ====================================================================
 
-        :return: The element that was added - :class:`arcgis.mapping.forms.FormGroupElement`
+        :return: The element that was added - :class:`~arcgis.mapping.forms.FormGroupElement`
         """
         group_el = FormGroupElement(
             label=label,
@@ -579,18 +577,18 @@ class FormInfo:
         form element you'd like to move into the label param.
 
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
-        element                Optional :class:`arcgis.mapping.forms.FormFieldElement` or
-                               :class:`arcgis.mapping.forms.FormGroupElement`
+        element                Optional :class:`~arcgis.mapping.forms.FormFieldElement` or
+                               :class:`~arcgis.mapping.forms.FormGroupElement`
         ------------------     --------------------------------------------------------------------
         label                  Optional :class:`str`.
                                An actual field name (not alias) corresponding to a field in the
                                form's feature layer
         ==================     ====================================================================
 
-        :return: :class:`arcgis.mapping.forms.FormFieldElement` or
-                 :class:`arcgis.mapping.forms.FormGroupElement`
+        :return: :class:`~arcgis.mapping.forms.FormFieldElement` or
+                 :class:`~arcgis.mapping.forms.FormGroupElement`
                  or `False`
         """
         self._validate_input(element=element, field=label)
@@ -616,10 +614,10 @@ class FormInfo:
         form element you'd like to move into the label param.
 
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
-        element                Optional :class:`arcgis.mapping.forms.FormFieldElement` or
-                               :class:`arcgis.mapping.forms.FormGroupElement`
+        element                Optional :class:`~arcgis.mapping.forms.FormFieldElement` or
+                               :class:`~arcgis.mapping.forms.FormGroupElement`
         ------------------     --------------------------------------------------------------------
         label                  Optional :class:`str`
                                The label of the form element you'd like to move to a new location
@@ -848,8 +846,9 @@ class FormInfo:
                     self._hydrate_element_expressions(el)
 
     def _hydrate_element_expressions(self, element):
-        """For each element's visibility and required expression, check if it exists in the expression info list. If it's a FormExpressionInfo object,
-        add it to the list. If it's not, remove the expression as it does not point to anything and we can't form a FormExpressionInfo"""
+        """For each element's visibility and required expression, check if it exists in the expression info list. If it's a :class:`~arcgis.mapping.forms.FormExpressionInfo` object,
+        add it to the list. If it's not, remove the expression as it does not point to anything and we can't form a :class:`~arcgis.mapping.forms.FormExpressionInfo`
+        """
         if element.visibility_expression:
             if isinstance(element.visibility_expression, FormExpressionInfo):
                 if (
@@ -943,7 +942,8 @@ class FormInfo:
 
 
 class FormElement:
-    """The superclass class for FormFieldElement and FormGroupElement. Contains properties common to
+    """
+    The superclass class for :class:`~arcgis.mapping.forms.FormFieldElement` and :class:`~arcgis.mapping.forms.FormGroupElement`. Contains properties common to
     the two types of field elements. Instantiate a FormFieldElement or FormGroupElement instead of this class.
     """
 
@@ -1030,9 +1030,9 @@ class FormFieldElement(FormElement):
     For more please see: https://developers.arcgis.com/web-map-specification/objects/formFieldElement/
 
     ======================     ====================================================================
-    **Argument**               **Description**
+    **Parameter**               **Description**
     ----------------------     --------------------------------------------------------------------
-    form                       Optional :class:`arcgis.mapping.forms.FormInfo`.
+    form                       Optional :class:`~arcgis.mapping.forms.FormInfo`.
                                The form which contains this field element.
     ----------------------     --------------------------------------------------------------------
 
@@ -1042,7 +1042,7 @@ class FormFieldElement(FormElement):
     label                      Optional :class:`str`.
                                The label of the form element
     ----------------------     --------------------------------------------------------------------
-    visibility_expression      Optional :class:`arcgis.mapping.forms.FormExpressionInfo`.
+    visibility_expression      Optional :class:`~arcgis.mapping.forms.FormExpressionInfo`.
                                The conditional visibility Arcade expression determining the
                                visibility of the form element during data collection
     ----------------------     --------------------------------------------------------------------
@@ -1061,12 +1061,13 @@ class FormFieldElement(FormElement):
     ----------------------     --------------------------------------------------------------------
     input_type                 Optional :class:`str` or :class:`dict`.
                                The input type for the form element in ArcGIS Field Maps.
-                               Options include: "text-area", "text-box", "barcode-scanner",
-                               "combo-box", "radio-buttons", "datetime-picker"
+
+                               Options include:
+                                    "text-area", "text-box", "barcode-scanner", "combo-box", "radio-buttons", "datetime-picker"
     ----------------------     --------------------------------------------------------------------
-    required_expression        Optional :class:`arcgis.mapping.forms.FormExpressionInfo`.
+    required_expression        Optional :class:`~arcgis.mapping.forms.FormExpressionInfo`.
                                The conditional visibility Arcade expression determining the
-                               requiredness of the form element during data collection
+                               necessity of the form element during data collection
     ======================     ====================================================================
 
     .. code-block:: python
@@ -1181,11 +1182,13 @@ class FormFieldElement(FormElement):
         Gets/sets the input type of the form element.
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         value               Required string or dictionary.
-                            Values: "text-area" | "text-box" | "barcode-scanner" | "combo-box" |
-                                    "radio-buttons" | "datetime-picker"
+
+                            Values:
+
+                                "text-area" | "text-box" | "barcode-scanner" | "combo-box" | "radio-buttons" | "datetime-picker"
         ===============     ====================================================================
 
         :return: dictionary that represents the input type
@@ -1207,7 +1210,7 @@ class FormFieldElement(FormElement):
 
     @property
     def required_expression(self):
-        """Gets/sets the required expression of the form element. Takes an object of FormExpressionInfo."""
+        """Gets/sets the required expression of the form element. Takes an object of :class:`~arcgis.mapping.forms.FormExpressionInfo` ."""
         return self._required_expression
 
     @required_expression.setter
@@ -1219,7 +1222,7 @@ class FormFieldElement(FormElement):
 
     @property
     def editable_expression(self):
-        """Gets/sets the editable expression of the form element. Takes an object of FormExpressionInfo."""
+        """Gets/sets the editable expression of the form element. Takes an object of :class:`~arcgis.mapping.forms.FormExpressionInfo` ."""
         return self._editable_expression
 
     @editable_expression.setter
@@ -1231,7 +1234,7 @@ class FormFieldElement(FormElement):
 
     @property
     def value_expression(self):
-        """Gets/sets the value expression of the form element. Takes an object of FormExpressionInfo."""
+        """Gets/sets the value expression of the form element. Takes an object of :class:`~arcgis.mapping.forms.FormExpressionInfo`  ."""
         return self._value_expression
 
     @value_expression.setter
@@ -1271,9 +1274,9 @@ class FormGroupElement(FormElement):
     For more please see: https://developers.arcgis.com/web-map-specification/objects/formGroupElement/
 
     ======================     ====================================================================
-    **Argument**               **Description**
+    **Parameter**               **Description**
     ----------------------     --------------------------------------------------------------------
-    form                       Optional :class:`arcgis.mapping.forms.FormInfo`.
+    form                       Optional :class:`~arcgis.mapping.forms.FormInfo`.
                                The form which contains this group element.
     ----------------------     --------------------------------------------------------------------
     description                Optional :class:`str`.
@@ -1282,7 +1285,7 @@ class FormGroupElement(FormElement):
     label                      Optional :class:`str`.
                                The label of the group element
     ----------------------     --------------------------------------------------------------------
-    visibility_expression      Optional :class:`arcgis.mapping.forms.FormExpressionInfo`.
+    visibility_expression      Optional :class:`~arcgis.mapping.forms.FormExpressionInfo`.
                                The conditional visibility Arcade expression determining the
                                visibility of the form element during data collection
     ----------------------     --------------------------------------------------------------------
@@ -1349,7 +1352,7 @@ class FormGroupElement(FormElement):
 
     @property
     def elements(self):
-        """Returns elements in the group to the user - a list of :class:`arcgis.mapping.forms.FormElement`."""
+        """Returns elements in the group to the user - a list of :class:`~arcgis.mapping.forms.FormElement`."""
         return self._form_elements
 
     @property
@@ -1358,10 +1361,13 @@ class FormGroupElement(FormElement):
         Gets/sets the initial state of the form element.
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         value               Required string.
-                            Values: "collapsed" | "expanded"
+
+                            Values:
+
+                                "collapsed" | "expanded"
         ===============     ====================================================================
         """
         return self._initial_state
@@ -1382,16 +1388,16 @@ class FormGroupElement(FormElement):
         to add it to the form.
 
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
-        element                Optional :class:`arcgis.mapping.forms.FormFieldElement`
+        element                Optional :class:`~arcgis.mapping.forms.FormFieldElement`
         ------------------     --------------------------------------------------------------------
         index                  Optional :class:`int`.
                                The index where you'd like the element in the group. If not provided,
                                this function will add the new element to the end of the group.
         ==================     ====================================================================
 
-        :return: The element that was added - :class:`arcgis.mapping.forms.FormFieldElement`
+        :return: The element that was added - :class:`~arcgis.mapping.forms.FormFieldElement`
         """
         self._validate_element(element)
         if index is None:
@@ -1422,7 +1428,7 @@ class FormGroupElement(FormElement):
         For more please see: https://developers.arcgis.com/web-map-specification/objects/formFieldElement/
 
         ======================     ====================================================================
-        **Argument**               **Description**
+        **Parameter**               **Description**
         ----------------------     --------------------------------------------------------------------
         field_name                 Required :class:`str`.
                                    The field name the form element corresponds to (where the data
@@ -1434,7 +1440,7 @@ class FormGroupElement(FormElement):
         description                Optional :class:`str`.
                                    The description of the form element
         ----------------------     --------------------------------------------------------------------
-        visibility_expression      Optional :class:`arcgis.mapping.forms.FormExpressionInfo`.
+        visibility_expression      Optional :class:`~arcgis.mapping.forms.FormExpressionInfo`.
                                    The conditional visibility Arcade expression determining the
                                    visibility of the form element during data collection
         ----------------------     --------------------------------------------------------------------
@@ -1452,19 +1458,18 @@ class FormGroupElement(FormElement):
                                    Options include: "text-area", "text-box", "barcode-scanner",
                                    "combo-box", "radio-buttons", "datetime-picker"
         ----------------------     --------------------------------------------------------------------
-        required_expression        Optional :class:`arcgis.mapping.forms.FormExpressionInfo`.
+        required_expression        Optional :class:`~arcgis.mapping.forms.FormExpressionInfo`.
                                    The conditional visibility Arcade expression determining the
-                                   requiredness of the form element during data collection
+                                   necessity of the form element during data collection
         ----------------------     --------------------------------------------------------------------
         index                      Optional :class:`int`.
                                    The index where you'd like the element in the form. If not provided,
                                    this function will add the new element to the end of the form.
         ----------------------     --------------------------------------------------------------------
-        editable_expression        Optional :class:`arcgis.mapping.forms.FormExpressionInfo`.
-                                   The Arcade expression determining the
-                                   editablity of the form element during data collection
+        editable_expression        Optional :class:`~arcgis.mapping.forms.FormExpressionInfo`.
+                                   The Arcade expression determining how much editable the form element is during data collection
         ----------------------     --------------------------------------------------------------------
-        value_expression           Optional :class:`arcgis.mapping.forms.FormExpressionInfo`.
+        value_expression           Optional :class:`~arcgis.mapping.forms.FormExpressionInfo`.
                                    The Arcade expression which calculates a value for the form
                                    element during data collection
         ======================     ====================================================================
@@ -1496,16 +1501,16 @@ class FormGroupElement(FormElement):
         form element you'd like to move into the label param.
 
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
-        element                Optional :class:`arcgis.mapping.forms.FormFieldElement`
+        element                Optional :class:`~arcgis.mapping.forms.FormFieldElement`
         ------------------     --------------------------------------------------------------------
         label                  Optional :class:`str`
                                An actual field name (not alias) corresponding to a field in the
                                form's feature layer
         ==================     ====================================================================
 
-        :return: The deleted element - :class:`arcgis.mapping.forms.FormFieldElement` or or `False`
+        :return: The deleted element - :class:`~arcgis.mapping.forms.FormFieldElement` or `False`
         """
         if label:
             element = self.get(label=label)
@@ -1524,18 +1529,18 @@ class FormGroupElement(FormElement):
     ):
         """
         Moves a form element in the group to a new location. You can use either the element param
-        with a form element you get using FormGroupElement.get() or you can pass the label
+        with a form element you get using `FormGroupElement.get() <:attr:`arcgis.mapping.forms.FormGroupElement.get`>` or you can pass the label
         of the form element you'd like to move into the label param.
 
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
-        element                Optional :class:`arcgis.mapping.forms.FormFieldElement`
+        element                Optional :class:`~arcgis.mapping.forms.FormFieldElement`
         ------------------     --------------------------------------------------------------------
         label                  Optional :class:`str`
                                The label of the form element you'd like to move to a new location
         ------------------     ----------------------------------------------------------------------
-        destination            Optional :class:`arcgis.mapping.forms.FormInfo` or
+        destination            Optional :class:`~arcgis.mapping.forms.FormInfo` or
                                `arcgis.mapping.forms.FormGroupElement`
                                If moving out of the group (to the form or to new group), please
                                provide this parameter. Otherwise, you will only be allowed to move
@@ -1545,7 +1550,7 @@ class FormGroupElement(FormElement):
                                The index where you'd like the element to move to in the group.
         ==================     ====================================================================
 
-        :return: The element that was moved - :class:`arcgis.mapping.forms.FormFieldElement`
+        :return: The element that was moved - :class:`~arcgis.mapping.forms.FormFieldElement`
         """
         if index is None:
             raise ValueError("Please provide an index")
@@ -1561,7 +1566,7 @@ class FormGroupElement(FormElement):
         Returns a matching FormFieldElement in the group given a label
 
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
         label                  Optional :class:`str`
                                The label of the form element you want to return from the list of
@@ -1600,7 +1605,7 @@ class FormExpressionInfo:
     For more please see: https://developers.arcgis.com/web-map-specification/objects/formExpressionInfo/
 
     ==================     ====================================================================
-    **Argument**           **Description**
+    **Parameter**           **Description**
     ------------------     --------------------------------------------------------------------
     expression             Optional :class:`str`
                            This is an Arcade expression which you want to evaluate in ArcGIS

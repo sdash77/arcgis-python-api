@@ -52,7 +52,10 @@ class MyFasterRCNN:
         These two arguments comes from dataset which you have prepared from prepare_data method above.
 
         """
-        (self.fasterrcnn_kwargs, kwargs,) = self.fastai.core.split_kwargs_by_func(
+        (
+            self.fasterrcnn_kwargs,
+            kwargs,
+        ) = self.fastai.core.split_kwargs_by_func(
             kwargs, self.torchvision.models.detection.FasterRCNN.__init__
         )
 
@@ -281,7 +284,6 @@ class MyFasterRCNN:
         return list(xb)  # model input require in the formate of list
 
     def transform_input_multispectral(self, xb, thresh=0.5, nms_overlap=0.1):
-
         self.model.roi_heads.train_val = False
         self.model.rpn.train_val = False
         self.model.train_val = False
@@ -334,7 +336,6 @@ class MyFasterRCNN:
 
         post_processed_pred = []
         for p in pred:
-
             bbox, label, score = p["boxes"], p["labels"], p["scores"]
             # convert bboxes in range -1 to 1.
             bbox = bbox / (chip_size / 2) - 1
@@ -351,7 +352,6 @@ class MyFasterRCNN:
 
 
 def forward_roi(self, features, proposals, image_shapes, targets=None):
-
     """
     Arguments:
         features (List[Tensor])
@@ -364,7 +364,6 @@ def forward_roi(self, features, proposals, image_shapes, targets=None):
 
     if targets is not None:
         for t in targets:
-
             floating_point_types = (torch.float, torch.double, torch.half)
             assert (
                 t["boxes"].dtype in floating_point_types
@@ -401,7 +400,6 @@ def forward_roi(self, features, proposals, image_shapes, targets=None):
             "loss_box_reg": loss_box_reg,
         }
     if not self.training or train_val:
-
         if train_val:
             box_features = self.box_roi_pool(features, original_prpsl, image_shapes)
             box_features = self.box_head(box_features)
@@ -427,7 +425,6 @@ def forward_roi(self, features, proposals, image_shapes, targets=None):
 
 
 def postprocess_transform(self, result, image_shapes, original_image_sizes):
-
     train_val = getattr(self, "train_val", False)
 
     if not self.training or train_val:
@@ -445,7 +442,6 @@ def postprocess_transform(self, result, image_shapes, original_image_sizes):
 
 
 def post_nms_top_n(self):
-
     train_val = getattr(self, "train_val", False)
 
     if train_val:
@@ -456,7 +452,6 @@ def post_nms_top_n(self):
 
 
 def pre_nms_top_n(self):
-
     train_val = getattr(self, "train_val", False)
 
     if train_val:
@@ -469,7 +464,6 @@ def pre_nms_top_n(self):
 if HAS_FASTAI:
 
     def eager_outputs_modified(self, losses, detections):
-
         train_val = getattr(self, "train_val", False)
 
         if train_val:
@@ -486,10 +480,10 @@ class FasterRCNN(ModelExtension):
     based on https://github.com/pytorch/vision/blob/master/torchvision/models/detection/faster_rcnn.py.
 
     =============================   =============================================
-    **Argument**                    **Description**
+    **Parameter**                    **Description**
     -----------------------------   ---------------------------------------------
     data                            Required fastai Databunch. Returned data object from
-                                    ``prepare_data`` function.
+                                    :meth:`~arcgis.learn.prepare_data`  function.
     -----------------------------   ---------------------------------------------
     backbone                        Optional string. Backbone convolutional neural network
                                     model used for feature extraction, which
@@ -504,7 +498,7 @@ class FasterRCNN(ModelExtension):
     **kwargs**
 
     =============================   =============================================
-    **Argument**                    **Description**
+    **Parameter**                    **Description**
     -----------------------------   ---------------------------------------------
     rpn_pre_nms_top_n_train         Optional int. Number of proposals to keep before
                                     applying NMS during training.
@@ -575,11 +569,12 @@ class FasterRCNN(ModelExtension):
                                     Default: 0.25
     =============================   =============================================
 
-    :return: ``FasterRCNN`` Object
+    :return:
+        :class:`~arcgis.learn.FasterRCNN` Object
+
     """
 
     def __init__(self, data, backbone="resnet50", pretrained_path=None, **kwargs):
-
         self._check_dataset_support(data)
         backbone_name = backbone if type(backbone) is str else backbone.__name__
         if backbone_name not in self.supported_backbones:
@@ -661,18 +656,19 @@ class FasterRCNN(ModelExtension):
         Creates a ``FasterRCNN`` object from an Esri Model Definition (EMD) file.
 
         =====================   ===========================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ---------------------   -------------------------------------------
         emd_path                Required string. Path to Deep Learning Package
                                 (DLPK) or Esri Model Definition(EMD) file.
         ---------------------   -------------------------------------------
         data                    Required fastai Databunch or None. Returned data
-                                object from ``prepare_data`` function or None for
+                                object from :meth:`~arcgis.learn.prepare_data`  function or None for
                                 inferencing.
 
         =====================   ===========================================
 
-        :return: `FasterRCNN` Object
+        :return:
+            :class:`~arcgis.learn.FasterRCNN` Object
         """
         emd_path = _get_emd_path(emd_path)
 
@@ -701,7 +697,6 @@ class FasterRCNN(ModelExtension):
 
         data_passed = True
         if data is None:
-
             data_passed = False
             train_tfms = []
             val_tfms = []
@@ -749,12 +744,11 @@ class FasterRCNN(ModelExtension):
         visualize=False,
         resize=False,
     ):
-
         """
         Runs prediction on an Image. This method is only supported for RGB images.
 
         =====================   ===========================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ---------------------   -------------------------------------------
         image_path              Required. Path to the image file to make the
                                 predictions on.
@@ -820,13 +814,12 @@ class FasterRCNN(ModelExtension):
         },
         resize=False,
     ):
-
         """
         Runs prediction on a video and appends the output VMTI predictions in the metadata file.
         This method is only supported for RGB images.
 
         =====================   ===========================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ---------------------   -------------------------------------------
         input_video_path        Required. Path to the video file to make the
                                 predictions on.
@@ -896,12 +889,11 @@ class FasterRCNN(ModelExtension):
         mean=False,
         show_progress=True,
     ):
-
         """
         Computes average precision on the validation set for each class.
 
         =====================   ===========================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ---------------------   -------------------------------------------
         detect_thresh           Optional float. The probability above which
                                 a detection will be considered for computing
@@ -921,12 +913,11 @@ class FasterRCNN(ModelExtension):
         """
 
     def show_results(self, rows=5, thresh=0.5, nms_overlap=0.1):
-
         """
         Displays the results of a trained model on a part of the validation set.
 
         =====================   ===========================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ---------------------   -------------------------------------------
         rows                    Optional int. Number of rows of results
                                 to be displayed.

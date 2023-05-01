@@ -1,10 +1,10 @@
-﻿"""
+"""
 The arcgis.tools module is used for consuming the GIS functionality exposed from ArcGIS Online
 or Portal web services. It has implementations for Spatial Analysis tools, GeoAnalytics tools,
 Raster Analysis tools, Geoprocessing tools, Geocoders and Geometry Utility services.
 These tools primarily operate on items and layers from the GIS.
 """
-from __future__ import absolute_import, division, print_function
+from __future__ import absolute_import, division, print_function, annotations
 
 import json
 import logging
@@ -21,8 +21,20 @@ from arcgis.gis import Item
 from arcgis._impl.common._mixins import PropertyMap
 from arcgis._impl.common._utils import _DisableLogger
 from arcgis.geocoding import Geocoder
-from arcgis.geometry import Point, MultiPoint, Polygon, Envelope, Polyline, Geometry
-from arcgis.features import Feature, FeatureSet, FeatureCollection, FeatureLayer
+from arcgis.geometry import (
+    Point,
+    MultiPoint,
+    Polygon,
+    Envelope,
+    Polyline,
+    Geometry,
+)
+from arcgis.features import (
+    Feature,
+    FeatureSet,
+    FeatureCollection,
+    FeatureLayer,
+)
 from urllib.error import HTTPError
 from arcgis.geoprocessing import import_toolbox
 from ._async.jobs import GeometryJob
@@ -30,6 +42,7 @@ from arcgis.raster._util import _set_context as _set_raster_context
 from arcgis._impl.common._utils import inspect_function_inputs
 from arcgis.geoprocessing._job import RAJob
 from functools import lru_cache
+from arcgis.raster import Raster, ImageryLayer, _ImageServerRaster
 
 _log = logging.getLogger(__name__)
 
@@ -71,6 +84,8 @@ __all__ = [
     "_GeometryService",
     "_RasterAnalysisTools",
 ]
+
+
 # --------------------------------------------------------------------------
 def _inspect_function_inputs(fn, **params):
     """
@@ -207,7 +222,10 @@ class BaseAnalytics(object):
                         "geometry": {
                             "x": 80.27032792000051,
                             "y": 13.085227147000467,
-                            "spatialReference": {"wkid": 4326, "latestWkid": 4326},
+                            "spatialReference": {
+                                "wkid": 4326,
+                                "latestWkid": 4326,
+                            },
                         },
                         "attributes": {
                             "description": "blayer desc",
@@ -247,7 +265,9 @@ class BaseAnalytics(object):
                             input_layer_url
                         )
                         if token and self._validate_token(
-                            input_layer._gis._con, url=input_layer_url, token=token
+                            input_layer._gis._con,
+                            url=input_layer_url,
+                            token=token,
                         ):
                             input_param.update({"serviceToken": token})
                 except:
@@ -281,7 +301,9 @@ class BaseAnalytics(object):
                 ):
                     token = input_layer._gis._con._create_token(input_layer_url)
                     if token and self._validate_token(
-                        input_layer._gis._con, url=input_layer_url, token=token
+                        input_layer._gis._con,
+                        url=input_layer_url,
+                        token=token,
                     ):
                         input_param.update({"serviceToken": token})
             except:
@@ -467,7 +489,8 @@ class _AsyncService(_GISService):
 
     def _analysis_job(self, task, params):
         """Submits an Analysis job and returns the job URL for monitoring the job
-        status in addition to the json response data for the submitted job."""
+        status in addition to the json response data for the submitted job.
+        """
 
         # Unpack the Analysis job parameters as a dictionary and add token and
         # formatting parameters to the dictionary. The dictionary is used in the
@@ -568,7 +591,6 @@ class _AsyncService(_GISService):
             raise Exception("Unable to get analysis job results.")
 
     def _feature_input(self, input_layer):
-
         point_fs = {
             "layerDefinition": {
                 "currentVersion": 10.11,
@@ -642,7 +664,10 @@ class _AsyncService(_GISService):
                         "geometry": {
                             "x": 80.27032792000051,
                             "y": 13.085227147000467,
-                            "spatialReference": {"wkid": 4326, "latestWkid": 4326},
+                            "spatialReference": {
+                                "wkid": 4326,
+                                "latestWkid": 4326,
+                            },
                         },
                         "attributes": {
                             "description": "blayer desc",
@@ -757,6 +782,7 @@ class _FeatureAnalysisTools(BaseAnalytics):
     _url = None
     _gis = None
     _properties = None
+
     # ----------------------------------------------------------------------
     def __init__(self, url, gis, verbose=False):
         """initializer"""
@@ -1082,7 +1108,7 @@ class _FeatureAnalysisTools(BaseAnalytics):
         with each location representing a given amount of demand.
 
         =====================================    =========================================================
-        **Argument**                             **Description**
+        **Parameter**                             **Description**
         -------------------------------------    ---------------------------------------------------------
         goal                                     Required string. Specify the goal that must be satisfied when allocating
                                                 demand locations to facilities.
@@ -1171,8 +1197,8 @@ class _FeatureAnalysisTools(BaseAnalytics):
                                                 To use live traffic when and where it is available,
                                                 choose a time and date and convert to datetime.
 
-                                                Esri saves live traffic data for 12 hours and references
-                                                predictive data extending 12 hours into the future. If the
+                                                Esri saves live traffic data for 4 hours and references
+                                                predictive data extending 4 hours into the future. If the
                                                 time and date you specify for this parameter is outside the
                                                 24-hour time window, or the travel time in the analysis
                                                 continues past the predictive data window, the task falls
@@ -1466,7 +1492,7 @@ class _FeatureAnalysisTools(BaseAnalytics):
         paired origins and destinations.
 
         ===================================     ===============================================================
-        **Argument**                            **Description**
+        **Parameter**                            **Description**
         -----------------------------------     ---------------------------------------------------------------
         origins_layer                           Required layer. The starting point or points of the
                                                 routes to be generated. See :ref:`Feature Input<FeatureInput>`.
@@ -1547,7 +1573,7 @@ class _FeatureAnalysisTools(BaseAnalytics):
 
                                                 To use live traffic when and where it is available, choose a time and date and convert to datetime.
 
-                                                Esri saves live traffic data for 12 hours and references predictive data extending 12 hours into the future. If the time and date you
+                                                Esri saves live traffic data for 4 hours and references predictive data extending 4 hours into the future. If the time and date you
                                                 specify for this parameter is outside the 24-hour time window, or the travel time in the analysis continues past the predictive data window, the task falls back to typical traffic speeds.
 
                                                 # Examples:
@@ -1871,7 +1897,7 @@ class _FeatureAnalysisTools(BaseAnalytics):
 
                                     To use live traffic when and where it is available, choose a time and date and convert to datetime.
 
-                                    Esri saves live traffic data for 12 hours and references predictive data extending 12 hours into the future. If the time and date you
+                                    Esri saves live traffic data for 4 hours and references predictive data extending 4 hours into the future. If the time and date you
                                     specify for this parameter is outside the 24-hour time window, or the travel time in the analysis continues past the predictive data window, the task falls back to typical traffic speeds.
 
                                     Examples:
@@ -2366,7 +2392,7 @@ class _FeatureAnalysisTools(BaseAnalytics):
         identify areas that are hospitable to grazing animals.
 
         =========================    =========================================================
-        **Argument**                 **Description**
+        **Parameter**                 **Description**
         -------------------------    ---------------------------------------------------------
         input_layer                  Required layer. The point or line features from which to calculate density. See :ref:`Feature Input<FeatureInput>`.
         -------------------------    ---------------------------------------------------------
@@ -2870,7 +2896,7 @@ class _FeatureAnalysisTools(BaseAnalytics):
         the parcel that is within the flood zone.
 
         =====================================    ======================================================================================================
-        **Argument**                             **Description**
+        **Parameter**                             **Description**
         -------------------------------------    ------------------------------------------------------------------------------------------------------
         input_layers                             Required list of feature layers. A list of layers that will be used in the expressions parameter.
                                                 Each layer in the list can be:
@@ -3457,7 +3483,7 @@ class _FeatureAnalysisTools(BaseAnalytics):
         File geodatabases and shapefiles are added to a zip file that can be downloaded.
 
         ===================================     =========================================================
-        **Argument**                            **Description**
+        **Parameter**                            **Description**
         -----------------------------------     ---------------------------------------------------------
         input_layers                            Required list of strings. A list of input layers to be extracted. See :ref:`Feature Input<FeatureInput>`.
         -----------------------------------     ---------------------------------------------------------
@@ -3547,7 +3573,17 @@ class _FeatureAnalysisTools(BaseAnalytics):
             params["outputName"] = {"itemProperties": output_name}
             output_name = params["outputName"]
         else:
-            params["outputName"] = {"serviceProperties": {"name": output_name}}
+            params["outputName"] = {
+                "serviceProperties": {"name": output_name},
+                "itemProperties": {
+                    "title": output_name,
+                    "description": "File generated from running the Extract Data solution.",
+                    "tags": "Analysis Result, Extract Data",
+                    "snippet": "Analysis File item generated from Extract Data",
+                    "folderId": "",
+                },
+            }
+
             output_name = params["outputName"]
         if context is not None:
             params["context"] = context
@@ -3560,7 +3596,7 @@ class _FeatureAnalysisTools(BaseAnalytics):
             input_layers=input_layers_param,
             extent=extent,
             clip=clip,
-            data_format=data_format,
+            data_format=data_format.upper(),
             output_name=output_name,
             context=context,
             gis=self._gis,
@@ -3654,7 +3690,7 @@ class _FeatureAnalysisTools(BaseAnalytics):
         For example, polygon features that contain demographic data can be converted to centroids that can be used in network analysis.
 
         ================    ===============================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ----------------    ---------------------------------------------------------------
         input_layer         Required feature layer. The multipoint, line, or polygon features that will be used to generate centroid point features. See :ref:`Feature Input<FeatureInput>`.
         ----------------    ---------------------------------------------------------------
@@ -3755,7 +3791,7 @@ class _FeatureAnalysisTools(BaseAnalytics):
         An example of a spatial expression is that the parcel must also be within a certain distance of a river (Parcels within a distance of 0.75 Miles from Rivers).
 
         =====================================    ======================================================================================================
-        **Argument**                             **Description**
+        **Parameter**                             **Description**
         -------------------------------------    ------------------------------------------------------------------------------------------------------
         input_layers                             Required list of feature layers. A list of layers that will be used in the expressions parameter.
                                                     Each layer in the list can be:
@@ -4057,7 +4093,7 @@ class _FeatureAnalysisTools(BaseAnalytics):
         be the result of random processes and random chance.
 
         ===================================================================     =========================================================
-        **Argument**                                                            **Description**
+        **Parameter**                                                            **Description**
         -------------------------------------------------------------------     ---------------------------------------------------------
         analysis_layer (Required if the analysis_layer contains polygons)       Required layer. The point or polygon feature layer for which hot spots will be calculated. See :ref:`Feature Input<FeatureInput>`.
         -------------------------------------------------------------------     ---------------------------------------------------------
@@ -4094,7 +4130,7 @@ class _FeatureAnalysisTools(BaseAnalytics):
 
                                                                                 - ``extent`` - a bounding box that defines the analysis area. Only those features in the input_layer that intersect the bounding box will be analyzed.
                                                                                 - ``outSR`` - the output features will be projected into the output spatial reference referred to by the `wkid`.
-                                                                                - ``overwrite`` - if True, then the feature layer in output_name will be overwritten with new feature layer. Available for ArcGIS Online Only.
+                                                                                - ``overwrite`` - if True, then the feature layer in output_name will be overwritten with new feature layer. Available for ArcGIS Online and ArcGIS Enterprise 11.1+.
 
                                                                                     .. code-block:: python
 
@@ -4139,7 +4175,7 @@ class _FeatureAnalysisTools(BaseAnalytics):
             bounding_polygon_layer = self._feature_input(bounding_polygon_layer)
         if aggregation_polygon_layer:
             aggregation_polygon_layer = self._feature_input(aggregation_polygon_layer)
-        if self._gis._is_agol:
+        if self._gis.version > [10, 3] or self._gis._is_agol:
             overwrite = context.pop("overwrite", False) if context else False
         else:
             # Remove if in context but default to False in all cases.
@@ -4293,7 +4329,7 @@ class _FeatureAnalysisTools(BaseAnalytics):
 
                                     To use live traffic when and where it is available, choose a time and date and convert to datetime.
 
-                                    Esri saves live traffic data for 12 hours and references predictive data extending 12 hours into the future. If the time and date you specify for this parameter is outside the 24-hour time window, or the travel time in the analysis continues past the predictive data window, the task falls back to typical traffic speeds.
+                                    Esri saves live traffic data for 4 hours and references predictive data extending 4 hours into the future. If the time and date you specify for this parameter is outside the 24-hour time window, or the travel time in the analysis continues past the predictive data window, the task falls back to typical traffic speeds.
 
                                     Examples:
                                     from datetime import datetime
@@ -4479,7 +4515,7 @@ class _FeatureAnalysisTools(BaseAnalytics):
         spatial pattern associated with these features could very likely be the result of random processes and random chance.
 
         ==================================================================  ===============================================================
-        **Argument**                                                        **Description**
+        **Parameter**                                                        **Description**
         ------------------------------------------------------------------  ---------------------------------------------------------------
         analysis_layer                                                      Required feature layer. The point or polygon feature layer for which outliers will be calculated. See :ref:`Feature Input<FeatureInput>`.
         ------------------------------------------------------------------  ---------------------------------------------------------------
@@ -4545,7 +4581,7 @@ class _FeatureAnalysisTools(BaseAnalytics):
 
                                                                             - ``extent`` - a bounding box that defines the analysis area. Only those features in the input_layer that intersect the bounding box will be analyzed.
                                                                             - ``outSR`` - the output features will be projected into the output spatial reference referred to by the `wkid`.
-                                                                            - ``overwrite`` - if True, then the feature layer in output_name will be overwritten with new feature layer. Available for ArcGIS Online or Enterprise 10.9.1+
+                                                                            - ``overwrite`` - if True, then the feature layer in output_name will be overwritten with new feature layer. Available for ArcGIS Online and ArcGIS Enterprise 11.1+.
 
                                                                                 .. code-block:: python
 
@@ -4580,7 +4616,7 @@ class _FeatureAnalysisTools(BaseAnalytics):
             bounding_polygon_layer = self._feature_input(bounding_polygon_layer)
         if aggregation_polygon_layer:
             aggregation_polygon_layer = self._feature_input(aggregation_polygon_layer)
-        if self._gis._is_agol:
+        if self._gis.version > [10, 3] or self._gis._is_agol:
             overwrite = context.pop("overwrite", False) if context else False
         else:
             # Remove if in context but default to False in all cases.
@@ -4671,7 +4707,7 @@ class _FeatureAnalysisTools(BaseAnalytics):
         of varying densities from sparser noise resulting in more data-driven clusters.
 
         ====================    =========================================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         --------------------    ---------------------------------------------------------
         analysis_layer          Required layer. The point feature layer for which
                                 density-based clustering will be calculated.
@@ -4801,7 +4837,7 @@ class _FeatureAnalysisTools(BaseAnalytics):
         candidate locations by how closely they match your reference locations across all of the fields you have selected.
 
         =======================     ===========================================================================================
-        **Argument**                **Description**
+        **Parameter**                **Description**
         -----------------------     -------------------------------------------------------------------------------------------
         input_layer                 Required feature layer. The ``input_layer`` contains one or more
                                     reference locations against which features in the ``search_layer``
@@ -4859,7 +4895,7 @@ class _FeatureAnalysisTools(BaseAnalytics):
 
                                     - ``extent`` - a bounding box that defines the analysis area. Only those features in the input_layer that intersect the bounding box will be analyzed.
                                     - ``outSR`` - the output features will be projected into the output spatial reference referred to by the `wkid`.
-                                    - ``overwrite`` - if True, then the feature layer in output_name will be overwritten with new feature layer. Available for ArcGIS Online Only.
+                                    - ``overwrite`` - if True, then the feature layer in output_name will be overwritten with new feature layer. Available for ArcGIS Online and ArcGIS Enterprise 11.1+.
 
                                         .. code-block:: python
 
@@ -4888,7 +4924,7 @@ class _FeatureAnalysisTools(BaseAnalytics):
         task = "FindSimilarLocations"
         input_layer = self._feature_input(input_layer)
         search_layer = self._feature_input(search_layer)
-        if self._gis._is_agol:
+        if self._gis.version > [10, 3] or self._gis._is_agol:
             overwrite = context.pop("overwrite", False) if context else False
         else:
             # Remove if in context but default to False in all cases.
@@ -5118,7 +5154,7 @@ class _FeatureAnalysisTools(BaseAnalytics):
         * nbrMax - 15
 
         ===========================  ===========================================================================================
-        **Argument**                 **Description**
+        **Parameter**                 **Description**
         ---------------------------  -------------------------------------------------------------------------------------------
         input_layer                  Required layer. The point layer whose features will be interpolated. See :ref:`Feature Input<FeatureInput>`.
         ---------------------------  -------------------------------------------------------------------------------------------
@@ -5479,7 +5515,7 @@ class _FeatureAnalysisTools(BaseAnalytics):
         * I have two layers containing parcel information for contiguous townships. I want to join them together into a single layer, keeping only the fields that have the same name and type on the two layers.
 
         ================    ===============================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ----------------    ---------------------------------------------------------------
         input_layer         Required feature layer. The point, line or polygon features with the ``merge_layer``. See :ref:`Feature Input<FeatureInput>`.
         ----------------    ---------------------------------------------------------------
@@ -5613,7 +5649,7 @@ class _FeatureAnalysisTools(BaseAnalytics):
         + What wells are within abandoned military bases?
 
         ================    ===============================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ----------------    ---------------------------------------------------------------
         input_layer         Required layer. The point, line, or polygon features that will be
                             overlayed with the ``overlay_layer``. See :ref:`Feature Input<FeatureInput>`.
@@ -6114,10 +6150,10 @@ class _FeatureAnalysisTools(BaseAnalytics):
         * Where is the center?
         * Which feature is the most accessible from all other features?
         * How dispersed, compact, or integrated are the features?
-        * Are there directional trends?s
+        * Are there directional trends?
 
         ====================    =========================================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         --------------------    ---------------------------------------------------------
         analysis_layer          Required feature layer. The point, line, or polygon features to be analyzed. See :ref:`Feature Input<FeatureInput>`.
         --------------------    ---------------------------------------------------------
@@ -6148,7 +6184,7 @@ class _FeatureAnalysisTools(BaseAnalytics):
 
                                 - ``extent`` - a bounding box that defines the analysis area. Only those features in the input_layer that intersect the bounding box will be analyzed.
                                 - ``outSR`` - the output features will be projected into the output spatial reference referred to by the `wkid`.
-                                - ``overwrite`` - if True, then the feature layer in output_name will be overwritten with new feature layer. Available for ArcGIS Online Only.
+                                - ``overwrite`` - if True, then the feature layer in output_name will be overwritten with new feature layer. Available for ArcGIS Online and ArcGIS Enterprise 11+.
 
                                     .. code-block:: python
 
@@ -6178,7 +6214,8 @@ class _FeatureAnalysisTools(BaseAnalytics):
 
         params = {}
         analysis_layer = self._feature_input(analysis_layer)
-        if self._gis._is_agol:
+
+        if self._gis.version > [10, 1] or self._gis._is_agol:
             overwrite = context.pop("overwrite", False) if context else False
         else:
             # Remove if in context but default to False in all cases.
@@ -6255,7 +6292,7 @@ class _FeatureAnalysisTools(BaseAnalytics):
         simple statistics about the attributes of the features in the ``summary_layer``, such as sum, mean, minimum, maximum, and so on.
 
         =====================================   =========================================================
-        **Argument**                            **Description**
+        **Parameter**                            **Description**
         -------------------------------------   ---------------------------------------------------------
         sum_within_layer                        Required feature layer. The polygon features. Features, or
                                                 portions of features, in the ``summary_layer`` (below) that fall within
@@ -6442,7 +6479,7 @@ class _FeatureAnalysisTools(BaseAnalytics):
         cases, if the total length of the trace path is returned, it will be from the source all the way to the ocean.
 
         =====================================   =========================================================
-        **Argument**                            **Description**
+        **Parameter**                            **Description**
         -------------------------------------   ---------------------------------------------------------
         input_layer                             Required feature layer. The point features used for the starting location of a downstream trace.
                                                 See :ref:`Feature Input<FeatureInput>`.
@@ -6681,7 +6718,7 @@ class _FeatureAnalysisTools(BaseAnalytics):
 
                                     To use live traffic when and where it is available, choose a time and date and convert to datetime.
 
-                                    Esri saves live traffic data for 12 hours and references predictive data extending 12 hours into the future. If the time and date you
+                                    Esri saves live traffic data for 4 hours and references predictive data extending 4 hours into the future. If the time and date you
                                     specify for this parameter is outside the 24-hour time window, or the travel time in the analysis continues past the predictive data window,
                                     the task falls back to typical traffic speeds.
 
@@ -6875,6 +6912,7 @@ class _PackagingTools(object):
     _url = None
     _gis = None
     _properties = None
+
     # ----------------------------------------------------------------------
     def __init__(self, url, gis, verbose=False):
         """initializer"""
@@ -6963,7 +7001,7 @@ class _PackagingTools(object):
         organization administrators.
 
         ========================   ====================================================================
-        **Argument**               **Description**
+        **Parameter**               **Description**
         ------------------------   --------------------------------------------------------------------
         map_item_id                    Required Item. The ID/Item of the web map item.
         ------------------------   --------------------------------------------------------------------
@@ -7073,7 +7111,7 @@ class _PackagingTools(object):
         The Refresh Map Area Package task refreshes existing map area packages to update them with changes made on the source data since the last time those packages were created or refreshed.
 
         =========================================================================   ===========================================================================
-        **Argument**                                                                **Description**
+        **Parameter**                                                                **Description**
         -------------------------------------------------------------------------   ---------------------------------------------------------------------------
         packages                                                                    List Items.  A JSON array consisting of packages that need to be refreshed, specified with the ID of each package item. Packages can belong to different map areas. A package item should only be listed if you are the owner of the package item or organization administrators.
         =========================================================================   ===========================================================================
@@ -7118,7 +7156,7 @@ class _PackagingTools(object):
         This task is available for the map area item owner and organization administrators in ArcGIS Online and ArcGIS Enterprise.
 
         =========================================================================   ===========================================================================
-        **Argument**                                                                **Description**
+        **Parameter**                                                                **Description**
         -------------------------------------------------------------------------   ---------------------------------------------------------------------------
         map_area_item_id                                                            Required String. Map area item ID, created by the Create Map Area tool.
         -------------------------------------------------------------------------   ---------------------------------------------------------------------------
@@ -7187,6 +7225,7 @@ class _HydrologyTool:
     _gis = None
     _properties = None
     _return_item = None
+
     # ----------------------------------------------------------------------
     def __init__(self, url, gis, verbose=False):
         """initializer"""
@@ -7298,7 +7337,7 @@ class _HydrologyTool:
         """
 
         =========================================================================   ===========================================================================
-        **Argument**                                                                **Description**
+        **Parameter**                                                                **Description**
         -------------------------------------------------------------------------   ---------------------------------------------------------------------------
         input_points                                                                Required FeatureSet. The point features used for calculating watersheds. These are referred to as pour points, because it is the location at which water pours out of the watershed.
         -------------------------------------------------------------------------   ---------------------------------------------------------------------------
@@ -7376,7 +7415,7 @@ class _HydrologyTool:
 
 
         =========================================================================   ===========================================================================
-        **Argument**                                                                **Description**
+        **Parameter**                                                                **Description**
         -------------------------------------------------------------------------   ---------------------------------------------------------------------------
         input_points                                                                Required FeatureSet. The point features used for calculating watersheds. These are referred to as pour points, because it is the location at which water pours out of the watershed.
         -------------------------------------------------------------------------   ---------------------------------------------------------------------------
@@ -7458,6 +7497,7 @@ class _OrthoMappingTools:
     _gis = None
     _properties = None
     _return_item = None
+
     # ----------------------------------------------------------------------
     def __init__(self, url, gis, verbose=False):
         """initializer"""
@@ -7624,7 +7664,10 @@ class _OrthoMappingTools:
         if output_name is None:
             output_name = str(task_name) + "_" + _id_generator()
             output_service = self._create_output_image_service(
-                output_name, task, folder=folder, output_properties=output_properties
+                output_name,
+                task,
+                folder=folder,
+                output_properties=output_properties,
             )
             output_raster = {
                 "serviceProperties": {
@@ -7635,7 +7678,10 @@ class _OrthoMappingTools:
             }
         elif isinstance(output_name, str):
             output_service = self._create_output_image_service(
-                output_name, task, folder=folder, output_properties=output_properties
+                output_name,
+                task,
+                folder=folder,
+                output_properties=output_properties,
             )
             output_raster = {
                 "serviceProperties": {
@@ -7658,7 +7704,12 @@ class _OrthoMappingTools:
     # ----------------------------------------------------------------------
 
     def alter_processing_states(
-        self, image_collection, new_states=None, gis=None, future=False, **kwargs
+        self,
+        image_collection,
+        new_states=None,
+        gis=None,
+        future=False,
+        **kwargs,
     ):
         """
         The `alter_processing_states` operation is a service tool that sets the processing states of
@@ -7667,7 +7718,7 @@ class _OrthoMappingTools:
         processes run on the image collection.
 
         =========================================================================   ===========================================================================
-        **Argument**                                                                **Description**
+        **Parameter**                                                                **Description**
         -------------------------------------------------------------------------   ---------------------------------------------------------------------------
         image_collection                                                            Required String/Item.  The image collection Item or URL to the service endpoint.
         -------------------------------------------------------------------------   ---------------------------------------------------------------------------
@@ -7730,7 +7781,7 @@ class _OrthoMappingTools:
         used for generating orthoimage mosaics typically have color correction computed.
 
         =========================================================================   ===========================================================================
-        **Argument**                                                                **Description**
+        **Parameter**                                                                **Description**
         -------------------------------------------------------------------------   ---------------------------------------------------------------------------
         image_collection                                                            Required String/Item.  The image collection Item or URL to the service endpoint.
         -------------------------------------------------------------------------   ---------------------------------------------------------------------------
@@ -7846,7 +7897,7 @@ class _OrthoMappingTools:
         The `compute_control_points` operation is a service tool that's used to compute matching control points between images in an image collection, and for matching control points between the image collection's images and the reference image.
 
         =========================================================================   ===========================================================================
-        **Argument**                                                                **Description**
+        **Parameter**                                                                **Description**
         -------------------------------------------------------------------------   ---------------------------------------------------------------------------
         image_collection                                                            Required String/Item.  The image collection Item or URL to the service endpoint.
         -------------------------------------------------------------------------   ---------------------------------------------------------------------------
@@ -7908,7 +7959,8 @@ class _OrthoMappingTools:
 
         if reference_image is not None:
             reference_image = self._set_image_collection_param(
-                image_collection=reference_image, param_name="reference_image"
+                image_collection=reference_image,
+                param_name="reference_image",
             )
 
         job = tool(
@@ -7943,7 +7995,7 @@ class _OrthoMappingTools:
         resulting mosaicked orthoimage.
 
         =========================================================================   ===========================================================================
-        **Argument**                                                                **Description**
+        **Parameter**                                                                **Description**
         -------------------------------------------------------------------------   ---------------------------------------------------------------------------
         image_collection                                                            Required String/Item.  The image collection Item or URL to the service endpoint.
         -------------------------------------------------------------------------   ---------------------------------------------------------------------------
@@ -8033,7 +8085,7 @@ class _OrthoMappingTools:
         The `compute_sensor_model` operation is a service that computes the bundle block adjustment for the image collection and applies the frame transformation to the images. It also generates the control point, solution, solution points, and flight path tables, though these tables are not published as portal items.
 
         =========================================================================   ===========================================================================
-        **Argument**                                                                **Description**
+        **Parameter**                                                                **Description**
         -------------------------------------------------------------------------   ---------------------------------------------------------------------------
         image_collection                                                            Required String/Item.  The image collection Item or URL to the service endpoint.
         -------------------------------------------------------------------------   ---------------------------------------------------------------------------
@@ -8133,7 +8185,7 @@ class _OrthoMappingTools:
         the point Id already exists.
 
         =========================================================================   ===========================================================================
-        **Argument**                                                                **Description**
+        **Parameter**                                                                **Description**
         -------------------------------------------------------------------------   ---------------------------------------------------------------------------
         image_collection                                                            Required String/Item.  The image collection Item or URL to the service endpoint.
         -------------------------------------------------------------------------   ---------------------------------------------------------------------------
@@ -8207,7 +8259,7 @@ class _OrthoMappingTools:
         to create DEM surface products using the designated method.
 
         =========================================================================   ===========================================================================
-        **Argument**                                                                **Description**
+        **Parameter**                                                                **Description**
         -------------------------------------------------------------------------   ---------------------------------------------------------------------------
         image_collection                                                            Required String/Item.  The image collection Item or URL to the service endpoint.
         -------------------------------------------------------------------------   ---------------------------------------------------------------------------
@@ -8314,7 +8366,9 @@ class _OrthoMappingTools:
                     output_dem = json.dumps({"itemId": output_dem_result.itemid})
                 else:
                     output_dem, output_service = self._set_output_raster(
-                        output_name=output_dem, task=task, output_properties=kwargs
+                        output_name=output_dem,
+                        task=task,
+                        output_properties=kwargs,
                     )
 
         job = tool(
@@ -8349,7 +8403,7 @@ class _OrthoMappingTools:
         The `generate_orthomosaic` is a service tool that's used to generate a single orthorectified, mosaicked image from an image collection after the block adjustment.
 
         =========================================================================   ===========================================================================
-        **Argument**                                                                **Description**
+        **Parameter**                                                                **Description**
         -------------------------------------------------------------------------   ---------------------------------------------------------------------------
         image_collection                                                            Required String/Item.  The image collection Item or URL to the service endpoint.
         -------------------------------------------------------------------------   ---------------------------------------------------------------------------
@@ -8418,7 +8472,8 @@ class _OrthoMappingTools:
                     output_ortho_image = json.dumps({"uri": output_ortho_image})
             else:
                 result = gis.content.search(
-                    "title:" + str(output_ortho_image), item_type="Imagery Layer"
+                    "title:" + str(output_ortho_image),
+                    item_type="Imagery Layer",
                 )
                 output_ortho_image_result = None
                 for element in result:
@@ -8429,7 +8484,10 @@ class _OrthoMappingTools:
                         {"itemId": output_ortho_image_result.itemid}
                     )
                 else:
-                    output_ortho_image, output_service = self._set_output_raster(
+                    (
+                        output_ortho_image,
+                        output_service,
+                    ) = self._set_output_raster(
                         output_name=output_ortho_image,
                         task=task,
                         output_properties=kwargs,
@@ -8451,7 +8509,12 @@ class _OrthoMappingTools:
 
     # ----------------------------------------------------------------------
     def generate_report(
-        self, image_collection, report_format=None, gis=None, future=False, **kwargs
+        self,
+        image_collection,
+        report_format=None,
+        gis=None,
+        future=False,
+        **kwargs,
     ):
         """
 
@@ -8461,7 +8524,7 @@ class _OrthoMappingTools:
         output of this service tool is a downloadable file.
 
         =========================================================================   ===========================================================================
-        **Argument**                                                                **Description**
+        **Parameter**                                                                **Description**
         -------------------------------------------------------------------------   ---------------------------------------------------------------------------
         image_collection                                                            Required String/Item.  The image collection Item or URL to the service endpoint.
         -------------------------------------------------------------------------   ---------------------------------------------------------------------------
@@ -8519,7 +8582,7 @@ class _OrthoMappingTools:
 
 
         =========================================================================   ===========================================================================
-        **Argument**                                                                **Description**
+        **Parameter**                                                                **Description**
         -------------------------------------------------------------------------   ---------------------------------------------------------------------------
         image_collection                                                            Required String/Item.  The image collection Item or URL to the service endpoint.
         -------------------------------------------------------------------------   ---------------------------------------------------------------------------
@@ -8559,7 +8622,7 @@ class _OrthoMappingTools:
         The `match_control_points` is a tool that takes a collection of ground control points in JSON as input, and at least on of the ground control points has matching tie points. The service will compute the remaining matching tie points.
 
         =========================================================================   ===========================================================================
-        **Argument**                                                                **Description**
+        **Parameter**                                                                **Description**
         -------------------------------------------------------------------------   ---------------------------------------------------------------------------
         image_collection                                                            Required String/Item.  The image collection Item or URL to the service endpoint.
         -------------------------------------------------------------------------   ---------------------------------------------------------------------------
@@ -8631,7 +8694,7 @@ class _OrthoMappingTools:
         that are used to capture drone images.
 
         =========================================================================   ===========================================================================
-        **Argument**                                                                **Description**
+        **Parameter**                                                                **Description**
         -------------------------------------------------------------------------   ---------------------------------------------------------------------------
         query                                                                       Optional String. This is a SQL query statement that can be used to filter a portion of the digital camera database.
         -------------------------------------------------------------------------   ---------------------------------------------------------------------------
@@ -8663,7 +8726,7 @@ class _OrthoMappingTools:
         points from the image collection's control point table.
 
         =========================================================================   ===========================================================================
-        **Argument**                                                                **Description**
+        **Parameter**                                                                **Description**
         -------------------------------------------------------------------------   ---------------------------------------------------------------------------
         image_collection                                                            Required String/Item.  The image collection Item or URL to the service endpoint.
         -------------------------------------------------------------------------   ---------------------------------------------------------------------------
@@ -8685,7 +8748,10 @@ class _OrthoMappingTools:
             image_collection=image_collection
         )
         job = self._tbx.query_control_points(
-            image_collection=image_collection, where=where, gis=gis, future=True
+            image_collection=image_collection,
+            where=where,
+            gis=gis,
+            future=True,
         )
         job._is_ortho = True
         if future:
@@ -8705,7 +8771,7 @@ class _OrthoMappingTools:
         adjustment settings and return the images to an unadjusted state.
 
         =========================================================================   ===========================================================================
-        **Argument**                                                                **Description**
+        **Parameter**                                                                **Description**
         -------------------------------------------------------------------------   ---------------------------------------------------------------------------
         image_collection                                                            Required String/Item.  The image collection Item or URL to the service endpoint.
         -------------------------------------------------------------------------   ---------------------------------------------------------------------------
@@ -8739,6 +8805,7 @@ class _RasterAnalysisTools(BaseAnalytics):
     _gis = None
     _properties = None
     _return_item = None
+
     # ----------------------------------------------------------------------
     def __init__(self, url, gis, verbose=False):
         """initializer"""
@@ -8893,7 +8960,10 @@ class _RasterAnalysisTools(BaseAnalytics):
 
                                 token = _generate_layer_token(input_layer, url)
                                 if token is not None:
-                                    url = input_param["url"] + "?token=" + token
+                                    if input_layer.type == "Feature Service":
+                                        input_param.update({"serviceToken": token})
+                                    else:
+                                        url = input_param["url"] + "?token=" + token
                                 input_param.update({"url": url})
                     except:
                         pass
@@ -9007,7 +9077,10 @@ class _RasterAnalysisTools(BaseAnalytics):
         if output_name is None:
             output_name = str(task_name) + "_" + _id_generator()
             output_service = self._create_output_image_service(
-                output_name, task, folder=folder, output_properties=output_properties
+                output_name,
+                task,
+                folder=folder,
+                output_properties=output_properties,
             )
             output_raster = {
                 "serviceProperties": {
@@ -9018,7 +9091,10 @@ class _RasterAnalysisTools(BaseAnalytics):
             }
         elif isinstance(output_name, str):
             output_service = self._create_output_image_service(
-                output_name, task, folder=folder, output_properties=output_properties
+                output_name,
+                task,
+                folder=folder,
+                output_properties=output_properties,
             )
             output_raster = {
                 "serviceProperties": {
@@ -9028,7 +9104,7 @@ class _RasterAnalysisTools(BaseAnalytics):
                 "itemProperties": {"itemId": output_service.itemid},
             }
         elif isinstance(output_name, arcgis.gis.Item):
-            output_service = None  # output_name
+            output_service = output_name
             output_raster = {"itemProperties": {"itemId": output_service.itemid}}
         else:
             raise TypeError("output_raster should be a string (service name) or Item")
@@ -9058,14 +9134,17 @@ class _RasterAnalysisTools(BaseAnalytics):
         self, output_name, task, folder=None, output_properties=None
     ):
         gis = self._gis
-        ok = gis.content.is_service_name_available(output_name, "Image Service")
+
+        ok = gis.content.is_service_name_available(
+            output_name.replace(" ", "_"), "Image Service"
+        )
         if not ok:
             raise RuntimeError(
                 "An Image Service by this name already exists: " + output_name
             )
 
         create_parameters = {
-            "name": output_name,
+            "name": output_name.replace(" ", "_"),
             "description": "",
             "capabilities": "Image, Metadata",
             "properties": {"path": "@", "description": "", "copyright": ""},
@@ -9091,6 +9170,7 @@ class _RasterAnalysisTools(BaseAnalytics):
             create_params=create_parameters,
             service_type="imageService",
             folder=folder,
+            item_properties={"title": output_name},
         )
         if output_service is None:
             raise RuntimeError("Unable to create service")
@@ -9145,7 +9225,13 @@ class _RasterAnalysisTools(BaseAnalytics):
                     item_id_list.append(item.itemid)
                 elif isinstance(item, str):
                     if "http:" in item or "https:" in item:
-                        if "blob.core" in item:
+                        if "blob.core" in item or all(
+                            blob_string in item
+                            for blob_string in [
+                                "stg-arcgisazure",
+                                "arcgis.com",
+                            ]
+                        ):
                             uri_list.append(item)
                         else:
                             url_list.append(item)
@@ -9210,7 +9296,10 @@ class _RasterAnalysisTools(BaseAnalytics):
             folderId = gis._portal.get_folder_id(owner, input_rasters)
             if folderId is None:
                 if "http:" in input_rasters or "https:" in input_rasters:
-                    if "blob.core" in input_rasters:
+                    if "blob.core" in input_rasters or all(
+                        blob_string in input_rasters
+                        for blob_string in ["stg-arcgisazure", "arcgis.com"]
+                    ):
                         input_rasters_dict = {"uri": input_rasters}
                     elif raster_type_name.lower() == "tiled imagery layer":
                         input_rasters_dict = {"tiled_url": input_rasters}
@@ -9381,7 +9470,6 @@ class _RasterAnalysisTools(BaseAnalytics):
         future=False,
         **kwargs,
     ):
-
         """
         Add a collection of images to an existing image_collection. Provides provision to use input rasters by reference
         and to specify image collection properties through context parameter.
@@ -9391,7 +9479,7 @@ class _RasterAnalysisTools(BaseAnalytics):
         the entire image collection must be reset to the original state.
 
         ==================                   ====================================================================
-        **Argument**                         **Description**
+        **Parameter**                         **Description**
         ------------------                   --------------------------------------------------------------------
         input_rasters                        Required, the list of input rasters to be added to
                                              the image collection being created. This parameter can
@@ -9548,7 +9636,12 @@ class _RasterAnalysisTools(BaseAnalytics):
 
     # ----------------------------------------------------------------------
     def build_overview(
-        self, image_collection, cell_size=None, context=None, future=False, **kwargs
+        self,
+        image_collection,
+        cell_size=None,
+        context=None,
+        future=False,
+        **kwargs,
     ):
         """
 
@@ -9604,7 +9697,6 @@ class _RasterAnalysisTools(BaseAnalytics):
         future=False,
         **kwargs,
     ):
-
         """
         input_point_or_line_features: inputPointOrLineFeatures (FeatureSet). Required parameter.
 
@@ -9693,7 +9785,6 @@ class _RasterAnalysisTools(BaseAnalytics):
         future=False,
         **kwargs,
     ):
-
         """
            input_source_raster_or_features: inputSourceRasterOrFeatures (str). Required parameter.
 
@@ -9757,19 +9848,34 @@ class _RasterAnalysisTools(BaseAnalytics):
                     input_barrier_raster_or_features
                 )
 
-        output_distance_raster, output_distance_service = self._set_output_raster(
-            output_name=output_distance_name, task=task, output_properties=kwargs
+        (
+            output_distance_raster,
+            output_distance_service,
+        ) = self._set_output_raster(
+            output_name=output_distance_name,
+            task=task,
+            output_properties=kwargs,
         )
         output_direction_raster = None
         if output_direction_name is not None:
-            output_direction_raster, output_direction_service = self._set_output_raster(
-                output_name=output_direction_name, task=task, output_properties=kwargs
+            (
+                output_direction_raster,
+                output_direction_service,
+            ) = self._set_output_raster(
+                output_name=output_direction_name,
+                task=task,
+                output_properties=kwargs,
             )
 
         output_allocation_raster = None
         if output_allocation_name is not None:
-            output_allocation_raster, out_allocation_service = self._set_output_raster(
-                output_name=output_allocation_name, task=task, output_properties=kwargs
+            (
+                output_allocation_raster,
+                out_allocation_service,
+            ) = self._set_output_raster(
+                output_name=output_allocation_name,
+                task=task,
+                output_properties=kwargs,
             )
 
         output_back_direction_raster = None
@@ -9822,9 +9928,13 @@ class _RasterAnalysisTools(BaseAnalytics):
 
     # ----------------------------------------------------------------------
     def calculate_statistics(
-        self, image_collection, skip_factors=None, context=None, future=False, **kwargs
+        self,
+        image_collection,
+        skip_factors=None,
+        context=None,
+        future=False,
+        **kwargs,
     ):
-
         """
         image_collection: imageCollection (str). Required parameter.
 
@@ -9887,7 +9997,6 @@ class _RasterAnalysisTools(BaseAnalytics):
         future=False,
         **kwargs,
     ):
-
         """ """
         task = "CalculateTravelCost"
         gis = self._gis
@@ -9897,7 +10006,10 @@ class _RasterAnalysisTools(BaseAnalytics):
         if "context" in context_param.keys():
             context = context_param["context"]
 
-        output_distance_raster, output_distance_service = self._set_output_raster(
+        (
+            output_distance_raster,
+            output_distance_service,
+        ) = self._set_output_raster(
             output_name=output_name, task=task, output_properties=kwargs
         )
 
@@ -9916,14 +10028,24 @@ class _RasterAnalysisTools(BaseAnalytics):
 
         output_backlink_raster = None
         if output_backlink_name is not None:
-            output_backlink_raster, output_backlink_service = self._set_output_raster(
-                output_name=output_backlink_name, task=task, output_properties=kwargs
+            (
+                output_backlink_raster,
+                output_backlink_service,
+            ) = self._set_output_raster(
+                output_name=output_backlink_name,
+                task=task,
+                output_properties=kwargs,
             )
 
         output_allocation_raster = None
         if output_allocation_name is not None:
-            output_allocation_raster, out_allocation_service = self._set_output_raster(
-                output_name=output_allocation_name, task=task, output_properties=kwargs
+            (
+                output_allocation_raster,
+                out_allocation_service,
+            ) = self._set_output_raster(
+                output_name=output_allocation_name,
+                task=task,
+                output_properties=kwargs,
             )
 
         gpjob = self._tbx.calculate_travel_cost(
@@ -9966,7 +10088,6 @@ class _RasterAnalysisTools(BaseAnalytics):
         future=False,
         **kwargs,
     ):
-
         """
         ----------
         input_raster : Required string
@@ -10033,14 +10154,13 @@ class _RasterAnalysisTools(BaseAnalytics):
         future=False,
         **kwargs,
     ):
-
         """
         Function to classify input imagery data using a deep learning model.
         Note that the deep learning library needs to be installed separately,
         in addition to the server's built in Python 3.x library.
 
         ====================================     ====================================================================
-        **Argument**                             **Description**
+        **Parameter**                             **Description**
         ------------------------------------     --------------------------------------------------------------------
         input_raster                             Required. raster layer that needs to be classified
         ------------------------------------     --------------------------------------------------------------------
@@ -10118,7 +10238,9 @@ class _RasterAnalysisTools(BaseAnalytics):
             context = context_param["context"]
 
         output_raster, output_service = self._set_output_raster(
-            output_name=output_classified_raster, task=task, output_properties=kwargs
+            output_name=output_classified_raster,
+            task=task,
+            output_properties=kwargs,
         )
 
         if (
@@ -10162,7 +10284,6 @@ class _RasterAnalysisTools(BaseAnalytics):
         future=False,
         **kwargs,
     ):
-
         """
         Parameters:
 
@@ -10375,14 +10496,13 @@ class _RasterAnalysisTools(BaseAnalytics):
         md_to_upload=None,
         **kwargs,
     ):
-
         """
         Create a collection of images that will participate in the ortho-mapping project.
         Provides provision to use input rasters by reference
         and to specify image collection properties through context parameter.
 
         ==================                   ====================================================================
-        **Argument**                         **Description**
+        **Parameter**                         **Description**
         ------------------                   --------------------------------------------------------------------
         image_collection                     Required, the name of the image collection to create.
 
@@ -10486,7 +10606,8 @@ class _RasterAnalysisTools(BaseAnalytics):
                     image_collection = json.dumps({"uri": image_collection})
             else:
                 result = gis.content.search(
-                    "title:" + str(image_collection), item_type="Imagery Layer"
+                    "title:" + str(image_collection),
+                    item_type="Imagery Layer",
                 )
                 image_collection_result = None
                 for element in result:
@@ -10497,7 +10618,10 @@ class _RasterAnalysisTools(BaseAnalytics):
                         {"itemId": image_collection_result.itemid}
                     )
                 else:
-                    image_collection, output_service = self._set_output_raster(
+                    (
+                        image_collection,
+                        output_service,
+                    ) = self._set_output_raster(
                         output_name=image_collection,
                         task=task,
                         output_properties=kwargs,
@@ -10534,7 +10658,11 @@ class _RasterAnalysisTools(BaseAnalytics):
 
         md_data_info = []
         if (isinstance(raster_type_name, str)) and raster_type_name == "mosaic_dataset":
-            input_rasters, raster_type, md_data_info = self._build_param_dictionary(
+            (
+                input_rasters,
+                raster_type,
+                md_data_info,
+            ) = self._build_param_dictionary(
                 input_rasters=input_rasters,
                 raster_type_name=raster_type_name,
                 raster_type_params=raster_type_params,
@@ -10577,7 +10705,10 @@ class _RasterAnalysisTools(BaseAnalytics):
             if len(md_data_path) == 1:
                 md_data_path = md_data_path[0]
             input_rasters.update(
-                {"mosaic_dataset": mosaic_dataset_uploaded, "data_path": md_data_info}
+                {
+                    "mosaic_dataset": mosaic_dataset_uploaded,
+                    "data_path": md_data_info,
+                }
             )
 
         if raster_type_name == "mosaic_dataset":
@@ -10594,7 +10725,6 @@ class _RasterAnalysisTools(BaseAnalytics):
         gpjob._is_ra = True
         gpjob._item_properties = True
         if future:
-
             return RAJob(gpjob, output_service)
         return RAJob(gpjob, output_service).result()
 
@@ -10622,7 +10752,6 @@ class _RasterAnalysisTools(BaseAnalytics):
         future=False,
         **kwargs,
     ):
-
         """ """
         task = "CreateViewshed"
 
@@ -10687,7 +10816,7 @@ class _RasterAnalysisTools(BaseAnalytics):
         source image.
 
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
         image_collection       Required, the input image collection from which to delete images
                                This can be the 'itemID' of an exisiting portal item or a url
@@ -10708,7 +10837,10 @@ class _RasterAnalysisTools(BaseAnalytics):
 
         image_collection = self._set_image_collection_param(image_collection)
         gpjob = self._tbx.delete_image(
-            image_collection=image_collection, where=where, gis=self._gis, future=True
+            image_collection=image_collection,
+            where=where,
+            gis=self._gis,
+            future=True,
         )
         gpjob._is_ra = True
         if future:
@@ -10724,7 +10856,7 @@ class _RasterAnalysisTools(BaseAnalytics):
         the source images that the image collection references.
 
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
         image_collection       Required, the input image collection to delete.
 
@@ -10775,7 +10907,7 @@ class _RasterAnalysisTools(BaseAnalytics):
         library needs to be installed separately, in addition to the server's built in Python 3.x library.
 
         ====================================     ====================================================================
-        **Argument**                             **Description**
+        **Parameter**                             **Description**
         ------------------------------------     --------------------------------------------------------------------
         input_raster                             Required. raster layer that contains objects that needs to be detected.
         ------------------------------------     --------------------------------------------------------------------
@@ -11180,7 +11312,7 @@ class _RasterAnalysisTools(BaseAnalytics):
         Calculates the least cost polyline path between sources and known destinations.
 
         ====================================     ====================================================================
-        **Argument**                             **Description**
+        **Parameter**                             **Description**
         ------------------------------------     --------------------------------------------------------------------
         input_source_raster_or_features                        The layer that identifies the cells to determine the least
                                                  costly path from. This parameter can have either a raster input or
@@ -11391,7 +11523,7 @@ class _RasterAnalysisTools(BaseAnalytics):
         where the output image chips, labels and metadata files are going to be stored.
 
         ====================================     ====================================================================
-        **Argument**                             **Description**
+        **Parameter**                             **Description**
         ------------------------------------     --------------------------------------------------------------------
         input_raster                             Required. Raster layer that needs to be exported for training
         ------------------------------------     --------------------------------------------------------------------
@@ -11813,13 +11945,20 @@ class _RasterAnalysisTools(BaseAnalytics):
             output_flow_direction_raster,
             output_flow_direction_service,
         ) = self._set_output_raster(
-            output_name=output_flow_direction_name, task=task, output_properties=kwargs
+            output_name=output_flow_direction_name,
+            task=task,
+            output_properties=kwargs,
         )
 
         output_drop_raster = None
         if output_drop_name is not None:
-            output_drop_raster, output_drop_service = self._set_output_raster(
-                output_name=output_drop_name, task=task, output_properties=kwargs
+            (
+                output_drop_raster,
+                output_drop_service,
+            ) = self._set_output_raster(
+                output_name=output_drop_name,
+                task=task,
+                output_properties=kwargs,
             )
 
         gpjob = self._tbx.flow_direction(
@@ -11837,7 +11976,8 @@ class _RasterAnalysisTools(BaseAnalytics):
         if future:
             if output_drop_raster:
                 return RAJob(
-                    gpjob, [output_flow_direction_service, output_drop_service]
+                    gpjob,
+                    [output_flow_direction_service, output_drop_service],
                 )
             return RAJob(gpjob, output_flow_direction_service)
         if output_drop_raster:
@@ -12037,7 +12177,7 @@ class _RasterAnalysisTools(BaseAnalytics):
 
 
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
         model_package           item id in the form {"itemId":"<id>"}
         ------------------     --------------------------------------------------------------------
@@ -12199,7 +12339,7 @@ class _RasterAnalysisTools(BaseAnalytics):
         List the contents of the datastore registered with the server (fileShares, cloudStores, rasterStores).
 
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
         datastore              Required. fileshare, rasterstore or cloudstore datastore from which the contents are to be listed.
                                It can be a string specifying the datastore path eg "/fileShares/SensorData", "/cloudStores/testcloud",
@@ -12232,7 +12372,10 @@ class _RasterAnalysisTools(BaseAnalytics):
                     data_store_name[i] = datastore_item.datapath
 
         gpjob = self._tbx.list_datastore_content(
-            data_store_name=data_store_name, filter=filter, gis=gis, future=True
+            data_store_name=data_store_name,
+            filter=filter,
+            gis=gis,
+            future=True,
         )
         gpjob._is_ra = True
         gpjob._item_properties = False
@@ -12304,7 +12447,7 @@ class _RasterAnalysisTools(BaseAnalytics):
 
 
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
         model           item id in the form {"itemId":"<id>"}
         ------------------     --------------------------------------------------------------------
@@ -12346,7 +12489,7 @@ class _RasterAnalysisTools(BaseAnalytics):
         segments, known as objects.
 
         ================================     ====================================================================
-        **Argument**                         **Description**
+        **Parameter**                         **Description**
         --------------------------------     --------------------------------------------------------------------
         input_raster                         Required ImageryLayer object
         --------------------------------     --------------------------------------------------------------------
@@ -12757,7 +12900,6 @@ class _RasterAnalysisTools(BaseAnalytics):
         future=False,
         **kwargs,
     ):
-
         """
         Transfer Files GP Tool
 
@@ -12806,13 +12948,12 @@ class _RasterAnalysisTools(BaseAnalytics):
     # ----------------------------------------------------------------------
     # TODO: Format Inputs/ Outputs, doc
     def uninstall_deep_learning_model(self, model_item_id, future=False, **kwargs):
-
         """
         Function is used to uninstall the uploaded model package that was installed using the install_model()
         This function will delete the named deep learning model from the server but not the portal item.
 
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
         model_item_id          item id in the form {"itemId":"<id>"}
         ------------------     --------------------------------------------------------------------
@@ -12950,7 +13091,11 @@ class _RasterAnalysisTools(BaseAnalytics):
             if (
                 isinstance(raster_type_name, str)
             ) and raster_type_name == "mosaic_dataset":
-                input_raster, raster_type, md_data_info = self._build_param_dictionary(
+                (
+                    input_raster,
+                    raster_type,
+                    md_data_info,
+                ) = self._build_param_dictionary(
                     input_rasters=input_raster,
                     raster_type_name=raster_type_name,
                     raster_type_params=raster_type_params,
@@ -13005,7 +13150,7 @@ class _RasterAnalysisTools(BaseAnalytics):
                     raster_type = json.loads(raster_type)
                 except:
                     pass
-            if raster_type_name is not None:
+            if raster_type_name:
                 if isinstance(input_raster, dict) and isinstance(raster_type, dict):
                     input_raster.update({"rasterType": raster_type})
 
@@ -13178,7 +13323,10 @@ class _RasterAnalysisTools(BaseAnalytics):
 
         percentile_interpolation_type_val = percentile_interpolation_type
         if percentile_interpolation_type is not None:
-            percentile_interpolation_type_allowed_values = ["NEAREST", "LINEAR"]
+            percentile_interpolation_type_allowed_values = [
+                "NEAREST",
+                "LINEAR",
+            ]
             if [
                 element.lower()
                 for element in percentile_interpolation_type_allowed_values
@@ -13788,6 +13936,9 @@ class _RasterAnalysisTools(BaseAnalytics):
         multiple_occurrence_value=None,
         ignore_nodata=True,
         context=None,
+        argument_value=None,
+        comparison="EQUAL_TO",
+        occurrence="FIRST_OCCURRENCE",
         future=False,
         **kwargs,
     ):
@@ -13808,7 +13959,7 @@ class _RasterAnalysisTools(BaseAnalytics):
         variables: variables (str). Optional parameter.
 
         statistics_type: statisticsType (str). Optional parameter.
-           Choice list:['ARGUMENT_MIN', 'ARGUMENT_MAX', 'ARGUMENT_MEDIAN', 'DURATION']
+           Choice list:['ARGUMENT_MIN', 'ARGUMENT_MAX', 'ARGUMENT_MEDIAN', 'DURATION', 'ARGUMENT_VALUE']
 
         min_value: minValue (float). Optional parameter.
 
@@ -13822,8 +13973,13 @@ class _RasterAnalysisTools(BaseAnalytics):
 
          gis: Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
 
-
          future: Optional, If True, a future object will be returns and the process will not wait for the task to complete. The default is False, which means wait for results.
+
+         argument_value: argumentValue (int). Optional parameter. Required when statistics_type is set to 'ARGUMENT_VALUE'.
+
+         comparison: comparison (str). Optional parameter.
+
+         occurrence: occurrence (str). Optional parameter.
 
         """
 
@@ -13888,6 +14044,7 @@ class _RasterAnalysisTools(BaseAnalytics):
                 "ARGUMENT_MAX",
                 "ARGUMENT_MEDIAN",
                 "DURATION",
+                "ARGUMENT_VALUE",
             ]
             if [element.lower() for element in statistics_type_allowed_values].count(
                 statistics_type.lower()
@@ -13901,26 +14058,74 @@ class _RasterAnalysisTools(BaseAnalytics):
                 if statistics_type.upper() == element:
                     statistics_type_val = element
 
+            if statistics_type.lower() == "argument_value" and argument_value is None:
+                raise RuntimeError(
+                    "argument_value is required when statistics_type is set to 'ARGUMENT_VALUE'."
+                )
+
+        comparison_val = comparison
+        if comparison is not None:
+            comparison_type_allowed_values = [
+                "EQUAL_TO",
+                "GREATER_THAN",
+                "SMALLER_THAN",
+            ]
+            if [element.lower() for element in comparison_type_allowed_values].count(
+                comparison.lower()
+            ) <= 0:
+                raise RuntimeError(
+                    "comparison can only be one of the following: "
+                    + str(comparison_type_allowed_values)
+                )
+
+            for element in comparison_type_allowed_values:
+                if comparison.upper() == element:
+                    comparison_val = element
+
+        occurrence_val = occurrence
+        if occurrence is not None:
+            occurrence_type_allowed_values = [
+                "FIRST_OCCURRENCE",
+                "LAST_OCCURRENCE",
+            ]
+            if [element.lower() for element in occurrence_type_allowed_values].count(
+                occurrence.lower()
+            ) <= 0:
+                raise RuntimeError(
+                    "occurrence can only be one of the following: "
+                    + str(occurrence_type_allowed_values)
+                )
+
+            for element in occurrence_type_allowed_values:
+                if occurrence.upper() == element:
+                    occurrence_val = element
+
         output_raster, output_service = self._set_output_raster(
             output_name=output_name, task=task, output_properties=kwargs
         )
 
-        gpjob = self._tbx.find_argument_statistics(
-            input_raster=input_raster,
-            output_name=output_raster,
-            dimension=dimension,
-            dimension_definition=dimension_definition_val,
-            interval_keyword=interval_keyword_val,
-            variables=variables,
-            statistics_type=statistics_type_val,
-            min_value=min_value,
-            max_value=max_value,
-            multiple_occurrence_value=multiple_occurrence_value,
-            ignore_nodata=ignore_nodata,
-            context=context,
-            gis=self._gis,
-            future=True,
-        )
+        params = {
+            "input_raster": input_raster,
+            "output_name": output_raster,
+            "dimension": dimension,
+            "dimension_definition": dimension_definition_val,
+            "interval_keyword": interval_keyword_val,
+            "variables": variables,
+            "statistics_type": statistics_type_val,
+            "min_value": min_value,
+            "max_value": max_value,
+            "multiple_occurrence_value": multiple_occurrence_value,
+            "ignore_nodata": ignore_nodata,
+            "context": context,
+            "argument_value": argument_value,
+            "comparison": comparison_val,
+            "occurrence": occurrence_val,
+            "gis": self._gis,
+        }
+        params = _inspect_function_inputs(self._tbx.find_argument_statistics, **params)
+        params["future"] = True
+        gpjob = self._tbx.find_argument_statistics(**params)
+
         gpjob._is_ra = True
         gpjob._item_properties = True
         item = None
@@ -14308,7 +14513,7 @@ class _RasterAnalysisTools(BaseAnalytics):
         information from overlapped imagery data using the designated deep learning model.
 
         ====================================     ====================================================================
-        **Argument**                             **Description**
+        **Parameter**                             **Description**
         ------------------------------------     --------------------------------------------------------------------
         input_raster                             Required. raster layer that contains objects that needs to be classified.
         ------------------------------------     --------------------------------------------------------------------
@@ -14925,10 +15130,17 @@ class _RasterAnalysisTools(BaseAnalytics):
         if future:
             return RAJob(
                 gpjob,
-                [output_optimal_lines_service, output_neighbor_connections_service],
+                [
+                    output_optimal_lines_service,
+                    output_neighbor_connections_service,
+                ],
             )
         return RAJob(
-            gpjob, [output_optimal_lines_service, output_neighbor_connections_service]
+            gpjob,
+            [
+                output_optimal_lines_service,
+                output_neighbor_connections_service,
+            ],
         ).result()
 
     def distance_accumulation(
@@ -14954,7 +15166,6 @@ class _RasterAnalysisTools(BaseAnalytics):
         future=False,
         **kwargs,
     ):
-
         """
         Parameters
         ----------
@@ -15147,7 +15358,6 @@ class _RasterAnalysisTools(BaseAnalytics):
         future=False,
         **kwargs,
     ):
-
         """
         Parameters
         ----------
@@ -16141,7 +16351,7 @@ class _RasterAnalysisTools(BaseAnalytics):
         Calculates  the values of a raster within the zones of another dataset and reports the results to a table.
 
         ====================================     ====================================================================
-        **Argument**                             **Description**
+        **Parameter**                             **Description**
         ------------------------------------     --------------------------------------------------------------------
         input_zone_raster_or_features            Required. The input that defines the zones. Both raster and feature
                                                  can be used for the zone input.
@@ -16422,7 +16632,7 @@ class _RasterAnalysisTools(BaseAnalytics):
         output_name: outputName (str). Required parameter.
 
         compute_change_method: computeChangeMethod (str). Optional parameter.
-           Choice list:DIFFERENCE,RELATIVE_DIFFERENCE,CATEGORICAL_DIFFERENCE
+           Choice list:DIFFERENCE,RELATIVE_DIFFERENCE,CATEGORICAL_DIFFERENCE, SPECTRAL_EUCLIDEAN_DISTANCE, SPECTRAL_ANGLE_DIFFERENCE, BAND_WITH_MOST_CHANGE
 
         from_classes: fromClasses (str). Optional parameter.
 
@@ -16572,7 +16782,7 @@ class _RasterAnalysisTools(BaseAnalytics):
         train_model function performs the training using the Raster Analytics server.
 
         ====================================     ====================================================================
-        **Argument**                             **Description**
+        **Parameter**                             **Description**
         ------------------------------------     --------------------------------------------------------------------
         in_folder                                Required string. This is the input location for the training sample data.
                                                  It can be the path of output location on the file share raster data store or a
@@ -16789,7 +16999,7 @@ class _RasterAnalysisTools(BaseAnalytics):
         Function available in ArcGIS Image Server 10.9.1 and higher.
 
         ====================================     ====================================================================
-        **Argument**                             **Description**
+        **Parameter**                             **Description**
         ------------------------------------     --------------------------------------------------------------------
         input_from_raster                        Required ImageryLayer object. The multidimensional, categorical raster to be summarized.
         ------------------------------------     --------------------------------------------------------------------
@@ -16947,7 +17157,7 @@ class _RasterAnalysisTools(BaseAnalytics):
         Function available in ArcGIS Image Server 10.9.1 and higher.
 
         ====================================     ====================================================================
-        **Argument**                             **Description**
+        **Parameter**                             **Description**
         ------------------------------------     --------------------------------------------------------------------
         input_rasters                            Required ImageryLayer object. The single-band, multidimensional, or
                                                  multiband raster datasets, or mosaic datasets, containing explanatory variables.
@@ -17162,7 +17372,10 @@ class _RasterAnalysisTools(BaseAnalytics):
             token = input_imagery_layer._gis._con._create_token(url)
             if token is not None:
                 url = url + "?token=" + token
-            input_imagery_layer = {"itemId": input_imagery_layer.itemid, "url": url}
+            input_imagery_layer = {
+                "itemId": input_imagery_layer.itemid,
+                "url": url,
+            }
         elif (isinstance(input_imagery_layer, str)) and (
             "http:" in input_imagery_layer or "https:" in input_imagery_layer
         ):
@@ -17184,6 +17397,318 @@ class _RasterAnalysisTools(BaseAnalytics):
         if future:
             return RAJob(gpjob)
 
+        return RAJob(gpjob).result()
+
+    def derive_continuous_flow(
+        self,
+        input_surface_raster,
+        input_depressions_data=None,
+        input_weight_raster=None,
+        flow_direction_type="D8",
+        force_flow=False,
+        output_flow_accumulation_raster_name=None,
+        output_flow_direction_raster_name=None,
+        context=None,
+        future=False,
+        **kwargs,
+    ):
+        """
+        Generates a raster of accumulated flow into each cell from an input surface raster with no prior sink or depression filling required.
+        
+        ====================================     ====================================================================
+        **Argument**                             **Description**
+        ------------------------------------     --------------------------------------------------------------------
+        input_surface_raster                     Required The input elevation surface.
+        ------------------------------------     --------------------------------------------------------------------
+        input_depressions_data                   Optional. A dataset that defines real depressions. The depressions can\
+                                                 be defined either through a raster or a feature layer.\
+                                                
+                                                 If input is a raster, the depression cells must take a valid value, including\
+                                                 zero, and the areas that are not depressions must be NoData.
+        ------------------------------------     --------------------------------------------------------------------
+        input_weight_raster                      Optional. A raster that defines the fraction of flow that contributes\
+                                                 to flow accumulation at each cell. The weight is only applied to flow accumulation.
+                                                
+                                                 If no weight raster is specified, a default weight of 1 will be applied to each cell. 
+        ------------------------------------     --------------------------------------------------------------------
+        flow_direction_type                      Optional string. Specifies the flow direction type to use.
+        
+                                                 Choice list: ['D8', 'MFD'] 
+        
+                                                    - D8 is for the D8 flow direction type. This is the default. 
+                                                    - MFD is for the Multi Flow Direction type.
+        ------------------------------------     --------------------------------------------------------------------
+        force_flow                               Optional string. Specifies if edge cells will always flow outward or follow normal flow rules.
+        
+                                                 Choice list: ['NORMAL', 'FORCE'] The default value is 'NORMAL'.
+        ------------------------------------     --------------------------------------------------------------------
+        output_flow_accumulation_raster_name     Optional. If not provided, an Image Service is created by the method and\
+                                                 used as the output raster.
+                                                
+                                                 The output raster representing flow accumulation (number of upstream cells\
+                                                 draining to each cell). The output raster is of floating-point type. You can pass\
+                                                 in an existing Image Service Item from your GIS to use that instead. 
+                                                
+                                                 Alternatively, you can pass in the name of the output Image Service that should be\
+                                                 created by this method to be used as the output for the tool. A RuntimeError is\
+                                                 raised if a service by that name already exists.
+        ------------------------------------     --------------------------------------------------------------------
+        output_flow_direction_raster_name        Optional string. Name of the flow_direction_raster. This parameter determines\
+                                                 whether flow_direction_raster should be generated or not. Set this parameter,\
+                                                 in order to generate the flow_direction_raster.
+        ------------------------------------     --------------------------------------------------------------------
+        context                                  Context contains additional settings that affect task execution.
+
+                                                 context parameter overwrites values set through arcgis.env parameter
+
+                                                 This function has the following settings:
+
+                                                  - Cell size (cellSize) - Set the output raster cell size, or resolution
+
+                                                  - Extent (extent): A bounding box that defines the analysis area.
+
+                                                    Example:
+                                                        {"extent: {"xmin": -122.68, 
+                                                        "ymin": 45.53,
+                                                        "xmax": -122.45,
+                                                        "ymax": 45.6,
+                                                        "spatialReference": {"wkid": 4326}}}
+
+                                                  - Output Spatial Reference (outSR): The output raster will be
+                                                    projected into the output spatial reference.
+
+                                                    Example:
+                                                        {"outSR": {spatial reference}}
+
+                                                  - Snap Raster (snapRaster): The output raster will have its
+                                                    cells aligned with the specified snap raster.
+
+                                                    Example:
+                                                        {'snapRaster': {'url': '<image_service_url>'}}
+
+                                                  - Cell Size (cellSize): The output raster will have the resolution
+                                                    specified by cell size.
+
+                                                    Example:
+                                                        {'cellSize': 11} or {'cellSize': {'url': <image_service_url>}}  or {'cellSize': 'MaxOfIn'}
+
+                                                  - Parallel Processing Factor (parallelProcessingFactor): controls
+                                                    Raster Processing (CPU) service instances.
+
+                                                    Example:
+                                                        Syntax example with a specified number of processing instances:
+
+                                                        {"parallelProcessingFactor": "2"}
+
+                                                        Syntax example with a specified percentage of total
+                                                        processing instances:
+
+                                                        {"parallelProcessingFactor": "60%"}
+        ------------------------------------     --------------------------------------------------------------------
+        gis                                      Optional GIS. The GIS on which this tool runs. If not specified, the active GIS is used.
+        ------------------------------------     --------------------------------------------------------------------
+        future                                   Keyword only parameter. Optional Boolean. If True, the result will be a GPJob object and
+                                                 results will be returned asynchronously.
+        ====================================     ====================================================================     
+
+        """
+
+        task = "DeriveContinuousFlow"
+
+        gis = self._gis
+
+        context_param = {}
+        _set_raster_context(context_param, context)
+        if "context" in context_param.keys():
+            context = context_param["context"]
+
+        input_surface_raster = self._layer_input(input_layer=input_surface_raster)
+
+        if isinstance(input_depressions_data, _FEATURE_INPUTS):
+            input_depressions_data = self._feature_input(
+                input_layer=input_depressions_data
+            )
+        elif isinstance(input_depressions_data, Item):
+            input_depressions_data = {"itemId": input_depressions_data.itemid}
+        elif input_depressions_data is not None:
+            input_depressions_data = self._layer_input(
+                input_layer=input_depressions_data
+            )
+
+        if input_weight_raster is not None:
+            input_weight_raster = self._layer_input(input_layer=input_weight_raster)
+
+        if flow_direction_type is not None:
+            flow_direction_type_allowed_values = (
+                self._tbx.choice_list.derive_continuous_flow["flow_direction_type"]
+            )
+            if [
+                element.lower() for element in flow_direction_type_allowed_values
+            ].count(flow_direction_type.lower()) <= 0:
+                raise RuntimeError(
+                    "flow_direction_type can only be one of the following: "
+                    + str(flow_direction_type_allowed_values)
+                )
+            for element in flow_direction_type_allowed_values:
+                if flow_direction_type.lower() == element.lower():
+                    flow_direction_type = element
+
+        if force_flow is not None:
+            if isinstance(force_flow, bool):
+                force_flow = force_flow
+            elif isinstance(force_flow, str):
+                if force_flow == "NORMAL":
+                    force_flow = False
+                elif force_flow == "FORCE":
+                    force_flow = True
+                else:
+                    raise RuntimeError(
+                        "force_flow can only be one of the following: ['NORMAL', 'FORCE']"
+                    )
+            else:
+                raise RuntimeError(
+                    "Invalid datatype given for force_flow. force_flow can only be one of the following: ['NORMAL', 'FORCE']"
+                )
+
+        (
+            output_accumulation_raster,
+            output_accumulation_service,
+        ) = self._set_output_raster(
+            output_name=output_flow_accumulation_raster_name,
+            task=task,
+            output_properties=kwargs,
+        )
+
+        output_direction_raster = None
+        if output_flow_direction_raster_name is not None:
+            (
+                output_direction_raster,
+                output_direction_service,
+            ) = self._set_output_raster(
+                output_name=output_flow_direction_raster_name,
+                task=task,
+                output_properties=kwargs,
+            )
+
+        gpjob = self._tbx.derive_continuous_flow(
+            input_surface_raster=input_surface_raster,
+            output_flow_accumulation_raster_name=output_accumulation_raster,
+            input_depressions_data=input_depressions_data,
+            input_weight_raster=input_weight_raster,
+            output_flow_direction_raster_name=output_direction_raster,
+            flow_direction_type=flow_direction_type,
+            force_flow=force_flow,
+            context=context,
+            gis=self._gis,
+            future=True,
+        )
+
+        gpjob._is_ra = True
+        gpjob._item_properties = True
+
+        if future:
+            if output_direction_raster:
+                return RAJob(
+                    gpjob, item=[output_accumulation_service, output_direction_service]
+                )
+            return RAJob(
+                gpjob,
+                item=output_accumulation_service,
+            )
+        if output_direction_raster:
+            return RAJob(
+                gpjob, item=[output_accumulation_service, output_direction_service]
+            ).result()
+        return RAJob(
+            gpjob,
+            item=output_accumulation_service,
+        ).result()
+
+    def mosaic_image(
+        self,
+        input_rasters,
+        target_raster,
+        mosaic_operator="LAST",
+        mosaic_colormap_mode="FIRST",
+        no_data_value=None,
+        context=None,
+        gis=None,
+        future=False,
+    ):
+        """
+        input_rasters: inputRasters (str). Required parameter.
+
+        target_raster: targetRaster (str). Required parameter.
+
+        mosaic_operator: mosaicOperator (str). Optional parameter.
+        Choice list:FIRST,LAST,BLEND,MEAN,MININUM,MAXIMUM,SUM
+
+        mosaic_colormap_mode: mosaicColormapMode (str). Optional parameter.
+        Choice list:FIRST,LAST,MATCH,REJECT
+
+        no_data_value: noDataValue (float). Optional parameter.
+
+        context: context (str). Optional parameter.
+
+        gis: Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
+
+
+        future: Optional, If True, a future object will be returns and the process will not wait for the task to complete. The default is False, which means wait for results.
+
+        """
+
+        gis = self._gis
+
+        context_param = {}
+        _set_raster_context(context_param, context)
+        if "context" in context_param.keys():
+            context = context_param["context"]
+
+        input_rasters = self._set_multiple_raster_inputs(input_rasters)
+
+        target_raster = self._layer_input(input_layer=target_raster)
+
+        mosaic_operator_allowed_values = self._tbx.choice_list.mosaic_image[
+            "mosaic_operator"
+        ]
+        mosaic_operator = (
+            mosaic_operator.upper()
+            if isinstance(mosaic_operator, str)
+            else mosaic_operator
+        )
+        if mosaic_operator not in mosaic_operator_allowed_values:
+            raise RuntimeError(
+                f"mosaic_operator can only be one of the following: {mosaic_operator_allowed_values}"
+            )
+
+        mosaic_colormap_mode_allowed_values = self._tbx.choice_list.mosaic_image[
+            "mosaic_colormap_mode"
+        ]
+        mosaic_colormap_mode = (
+            mosaic_colormap_mode.upper()
+            if isinstance(mosaic_colormap_mode, str)
+            else mosaic_colormap_mode
+        )
+        if mosaic_colormap_mode not in mosaic_colormap_mode_allowed_values:
+            raise RuntimeError(
+                f"mosaic_colormap_mode can only be one of the following: {mosaic_colormap_mode_allowed_values}"
+            )
+
+        gpjob = self._tbx.mosaic_image(
+            input_rasters=input_rasters,
+            target_raster=target_raster,
+            mosaic_operator=mosaic_operator,
+            mosaic_colormap_mode=mosaic_colormap_mode,
+            no_data_value=no_data_value,
+            context=context,
+            gis=gis,
+            future=True,
+        )
+
+        gpjob._is_ra = True
+        gpjob._item_properties = True
+        if future:
+            return RAJob(gpjob)
         return RAJob(gpjob).result()
 
 
@@ -17242,7 +17767,9 @@ class _GeoanalyticsTools(_AsyncService):
         }
 
         output_service = self._gis.content.create_service(
-            output_name, create_params=createParameters, service_type="featureService"
+            output_name,
+            create_params=createParameters,
+            service_type="featureService",
         )
         description = "Feature Service generated from running the " + task + " tool."
         item_properties = {
@@ -17388,7 +17915,12 @@ class _GeoanalyticsTools(_AsyncService):
             return arcgis.features.FeatureCollection(job_values["output"])
 
     def describe_dataset(
-        self, in_dataset, out_sr=None, out_extent=None, datastore="GDB", context=None
+        self,
+        in_dataset,
+        out_sr=None,
+        out_extent=None,
+        datastore="GDB",
+        context=None,
     ):
         """
 
@@ -18118,6 +18650,7 @@ class _GeoanalyticsTools(_AsyncService):
         out_extent=None,
         datastore="GDB",
         context=None,
+        output_name=None,
     ):
         """
 
@@ -18194,7 +18727,7 @@ class _GeoanalyticsTools(_AsyncService):
             params["gax:env:datastore"] = datastore
         if context is not None:
             params["context"] = context
-
+        output_service = self._create_output_service(output_name, task)
         task_url, job_info, job_id = super()._analysis_job(task, params)
 
         job_info = super()._analysis_job_status(task_url, job_info)
@@ -18225,6 +18758,7 @@ class _GeoanalyticsTools(_AsyncService):
         out_extent=None,
         datastore="GDB",
         context=None,
+        output_name=None,
     ):
         """
 
@@ -18264,7 +18798,7 @@ class _GeoanalyticsTools(_AsyncService):
             params["gax:env:datastore"] = datastore
         if context is not None:
             params["context"] = context
-
+        output_service = self._create_output_service(output_name, task)
         task_url, job_info, job_id = super()._analysis_job(task, params)
 
         job_info = super()._analysis_job_status(task_url, job_info)
@@ -18295,6 +18829,7 @@ class _GeoanalyticsTools(_AsyncService):
         out_extent=None,
         datastore="GDB",
         context=None,
+        output_name=None,
     ):
         """
 
@@ -18333,6 +18868,7 @@ class _GeoanalyticsTools(_AsyncService):
             params["gax:env:datastore"] = datastore
         if context is not None:
             params["context"] = context
+        output_service = self._create_output_service(output_name, task)
 
         task_url, job_info, job_id = super()._analysis_job(task, params)
 
@@ -18811,7 +19347,13 @@ class _GeometryService(_GISService):
 
     # ----------------------------------------------------------------------
     def areas_and_lengths(
-        self, polygons, lengthUnit, areaUnit, calculationType, sr=4326, future=False
+        self,
+        polygons,
+        lengthUnit,
+        areaUnit,
+        calculationType,
+        sr=4326,
+        future=False,
     ):
         """
         The areasAndLengths operation is performed on a geometry service
@@ -18906,7 +19448,8 @@ class _GeometryService(_GISService):
             return "No polygons provided, please submit a list of polygon geometries"
         executor = concurrent.futures.ThreadPoolExecutor(1)
         futureobj = executor.submit(
-            self._con.post, **{"path": url, "postdata": params, "token": self._token}
+            self._con.post,
+            **{"path": url, "postdata": params, "token": self._token},
         )
         executor.shutdown(False)
         job = GeometryJob(
@@ -18936,7 +19479,6 @@ class _GeometryService(_GISService):
         template = {"geometryType": None, "geometries": []}
         if isinstance(geometries, list) and len(geometries) > 0:
             for g in geometries:
-
                 if not isinstance(g, Geometry):
                     g = Geometry(g)
 
@@ -18992,7 +19534,6 @@ class _GeometryService(_GISService):
         """function to convert the geomtries to strings"""
         listGeoms = []
         for g in geometries:
-
             if not isinstance(g, Geometry):
                 g = Geometry(g)
             if isinstance(g, Point):
@@ -19001,6 +19542,8 @@ class _GeometryService(_GISService):
                 listGeoms.append(g)
             elif isinstance(g, Polyline):
                 listGeoms.append({"paths": g["paths"]})
+            elif isinstance(g, MultiPoint):
+                listGeoms.append({"points": g.get("points", [])})
         if returnType == "str":
             return json.dumps(listGeoms)
         elif returnType == "list":
@@ -19052,6 +19595,69 @@ class _GeometryService(_GISService):
         else:
             return results
 
+    # --------------------------------------------------------------------------
+    def _execute_by_chunk(self, url, params, number_executors, task_name, sr, future):
+        # create chunks and output the results
+        chunk = 65000
+        # gather all the geometries we will chunk
+        if task_name == "cut":
+            all_geometries = params["target"]["geometries"]
+            geom_type = params["target"]["geometryType"]
+            geom_param = "target"
+        else:
+            all_geometries = (
+                params["geometries"]["geometries"]
+                if "geometries" in params
+                else params["geometry"]["geometries"]
+            )
+            geom_type = (
+                params["geometries"]["geometryType"]
+                if "geometries" in params
+                else params["geometry"]["geometryType"]
+            )
+            geom_param = "geometries" if "geometries" in params else "geometry"
+        all_results = []
+        with concurrent.futures.ThreadPoolExecutor(number_executors) as executor:
+            # loop until all chunks reached
+            for i in range(0, len(all_geometries), chunk):
+                geoms = all_geometries[i : i + chunk]
+                params[geom_param] = {
+                    "geometryType": geom_type,
+                    "geometries": geoms,
+                }
+                f1 = executor.submit(
+                    self._con.post,
+                    **{
+                        "path": url,
+                        "postdata": params,
+                        "token": self._token,
+                    },
+                )
+                if number_executors == 2:
+                    f2 = executor.submit(
+                        self._process_results,
+                        **{"results": f1, "out_sr": sr},
+                    )
+                job = GeometryJob(
+                    future=f1 if number_executors == 1 else f2,
+                    task_name=task_name,
+                    jobid=None,
+                    task_url=url,
+                    notify=False,
+                    gis=self._gis,
+                    out_wkid=sr,
+                )
+                if future:
+                    return job
+                else:
+                    results = job.result()
+                    if isinstance(results, dict):
+                        all_results.append(results)
+                    else:
+                        for result in results:
+                            all_results.append(result)
+        return all_results
+
     # ----------------------------------------------------------------------
     def auto_complete(self, polygons=None, polylines=None, sr=None, future=False):
         """
@@ -19075,30 +19681,53 @@ class _GeometryService(_GISService):
             params["sr"] = sr
         if isinstance(polygons, list):
             params["polygons"] = polygons
+            all_geometries = polygons
+            geom_param = "polygons"
         elif isinstance(polygons, Polygon):
             params["polygons"] = [polygons]
+            all_geometries = [polygons]
+            geom_param = "polygons"
         if isinstance(polylines, Polyline):
             params["polylines"] = [polylines]
+            all_geometries = [polylines]
+            geom_param = "polylines"
         elif isinstance(polylines, list):
             params["polylines"] = polylines
-        executor = concurrent.futures.ThreadPoolExecutor(2)
-        f1 = executor.submit(
-            self._con.post, **{"path": url, "postdata": params, "token": self._token}
-        )
-        f2 = executor.submit(self._process_results, **{"results": f1, "out_sr": sr})
-        executor.shutdown(False)
-        job = GeometryJob(
-            future=f2,
-            task_name="auto_complete",
-            jobid=None,
-            task_url=url,
-            notify=False,
-            gis=self._gis,
-        )
-        if future:
-            return job
-        else:
-            return job.result()
+            all_geometries = polylines
+            geom_param = "polylines"
+        all_results = []
+        chunk = 65000
+        with concurrent.futures.ThreadPoolExecutor(2) as executor:
+            # loop until all chunks reached
+            for i in range(0, len(all_geometries), chunk):
+                geoms = all_geometries[i : i + chunk]
+                params[geom_param] = geoms
+                f1 = executor.submit(
+                    self._con.post,
+                    **{
+                        "path": url,
+                        "postdata": params,
+                        "token": self._token,
+                    },
+                )
+                f2 = executor.submit(
+                    self._process_results, **{"results": f1, "out_sr": sr}
+                )
+                job = GeometryJob(
+                    future=f2,
+                    task_name="auto_complete",
+                    jobid=None,
+                    task_url=url,
+                    notify=False,
+                    gis=self._gis,
+                )
+                if future:
+                    return job
+                else:
+                    results = job.result()
+                    for result in results:
+                        all_results.append(result)
+        return all_results
 
     # ----------------------------------------------------------------------
     def buffer(
@@ -19186,25 +19815,8 @@ class _GeometryService(_GISService):
             params["bufferSR"] = bufferSR
         if outSR is not None:
             params["outSR"] = outSR
-        executor = concurrent.futures.ThreadPoolExecutor(2)
-        f1 = executor.submit(
-            self._con.post, **{"path": url, "postdata": params, "token": self._token}
-        )
-        f2 = executor.submit(self._process_results, **{"results": f1, "out_sr": outSR})
-        executor.shutdown(False)
-        job = GeometryJob(
-            future=f2,
-            task_name="buffer",
-            jobid=None,
-            task_url=url,
-            notify=False,
-            gis=self._gis,
-            out_wkid=outSR or inSR,
-        )
-        if future:
-            return job
-        else:
-            return job.result()
+        sr = outSR or inSR
+        return self._execute_by_chunk(url, params, 2, "buffer", sr, future)
 
     # ----------------------------------------------------------------------
     def convex_hull(self, geometries, sr=None, future=False):
@@ -19227,7 +19839,7 @@ class _GeometryService(_GISService):
             if sr is not None:
                 params["sr"] = sr
             else:
-                params["sr"] = g.spatialreference
+                params["sr"] = g.spatial_reference
             if isinstance(g, Polygon):
                 params["geometries"] = {
                     "geometryType": "esriGeometryPolygon",
@@ -19243,28 +19855,14 @@ class _GeometryService(_GISService):
                     "geometryType": "esriGeometryPolyline",
                     "geometries": self.__geomToStringArray(geometries, "list"),
                 }
+            elif isinstance(g, MultiPoint):
+                params["geometries"] = {
+                    "geometryType": "esriGeometryMultipoint",
+                    "geometries": self.__geomToStringArray(geometries, "list"),
+                }
         else:
             return None
-
-        executor = concurrent.futures.ThreadPoolExecutor(2)
-        f1 = executor.submit(
-            self._con.post, **{"path": url, "postdata": params, "token": self._token}
-        )
-        f2 = executor.submit(self._process_results, **{"results": f1, "out_sr": sr})
-        executor.shutdown(False)
-        job = GeometryJob(
-            future=f2,
-            task_name="convex_hull",
-            jobid=None,
-            task_url=url,
-            notify=False,
-            gis=self._gis,
-            out_wkid=sr,
-        )
-        if future:
-            return job
-        else:
-            return job.result()
+        return self._execute_by_chunk(url, params, 2, "convex_hull", sr, future)
 
     # ----------------------------------------------------------------------
     def cut(self, cutter, target, sr=None, future=False):
@@ -19316,29 +19914,17 @@ class _GeometryService(_GISService):
             AttributeError(
                 "You must provide at least 1 Polygon/Polyline geometry in a list"
             )
-        executor = concurrent.futures.ThreadPoolExecutor(2)
-        f1 = executor.submit(
-            self._con.post, **{"path": url, "postdata": params, "token": self._token}
-        )
-        f2 = executor.submit(self._process_results, **{"results": f1, "out_sr": sr})
-        executor.shutdown(False)
-        job = GeometryJob(
-            future=f2,
-            task_name="cut",
-            jobid=None,
-            task_url=url,
-            notify=False,
-            gis=self._gis,
-            out_wkid=sr,
-        )
-        if future:
-            return job
-        else:
-            return job.result()
+        return self._execute_by_chunk(url, params, 2, "cut", sr, future)
 
     # ----------------------------------------------------------------------
     def densify(
-        self, geometries, sr, maxSegmentLength, lengthUnit, geodesic=False, future=False
+        self,
+        geometries,
+        sr,
+        maxSegmentLength,
+        lengthUnit,
+        geodesic=False,
+        future=False,
     ):
         """
         The densify operation is performed on a geometry service resource.
@@ -19380,7 +19966,6 @@ class _GeometryService(_GISService):
         }
         if isinstance(geometries, list) and len(geometries) > 0:
             for g in geometries:
-
                 if not isinstance(g, Geometry):
                     g = Geometry(g)
                 if isinstance(g, Polyline):
@@ -19393,7 +19978,6 @@ class _GeometryService(_GISService):
                 template["geometries"].append(g)
 
         elif isinstance(geometries, dict):
-
             if not isinstance(geometries, Geometry):
                 g = Geometry(geometries)
 
@@ -19403,25 +19987,8 @@ class _GeometryService(_GISService):
                 template["geometryType"] = "esriGeometryPolygon"
             template["geometries"].append(g)
         params["geometries"] = template
-        executor = concurrent.futures.ThreadPoolExecutor(2)
-        f1 = executor.submit(
-            self._con.post, **{"path": url, "postdata": params, "token": self._token}
-        )
-        f2 = executor.submit(self._process_results, **{"results": f1, "out_sr": sr})
-        executor.shutdown(False)
-        job = GeometryJob(
-            future=f2,
-            task_name="densify",
-            jobid=None,
-            task_url=url,
-            notify=False,
-            gis=self._gis,
-            out_wkid=sr,
-        )
-        if future:
-            return job
-        else:
-            return job.result()
+
+        return self._execute_by_chunk(url, params, 2, "densify", sr, future)
 
     # ----------------------------------------------------------------------
     def difference(self, geometries, sr, geometry, future=False):
@@ -19477,29 +20044,18 @@ class _GeometryService(_GISService):
             raise AttributeError("Invalid geometry type")
         geomTemplate["geometry"] = geometry
         params["geometry"] = geomTemplate
-        executor = concurrent.futures.ThreadPoolExecutor(2)
-        f1 = executor.submit(
-            self._con.post, **{"path": url, "postdata": params, "token": self._token}
-        )
-        f2 = executor.submit(self._process_results, **{"results": f1, "out_sr": sr})
-        executor.shutdown(False)
-        job = GeometryJob(
-            future=f2,
-            task_name="difference",
-            jobid=None,
-            task_url=url,
-            notify=False,
-            gis=self._gis,
-            out_wkid=sr,
-        )
-        if future:
-            return job
-        else:
-            return job.result()
+
+        return self._execute_by_chunk(url, params, 2, "difference", sr, future)
 
     # ----------------------------------------------------------------------
     def distance(
-        self, sr, geometry1, geometry2, distanceUnit="", geodesic=False, future=False
+        self,
+        sr,
+        geometry1,
+        geometry2,
+        distanceUnit="",
+        geodesic=False,
+        future=False,
     ):
         """
         The distance operation is performed on a geometry service resource.
@@ -19537,7 +20093,8 @@ class _GeometryService(_GISService):
         params["geometry2"] = geometry2
         executor = concurrent.futures.ThreadPoolExecutor(1)
         f1 = executor.submit(
-            self._con.post, **{"path": url, "postdata": params, "token": self._token}
+            self._con.post,
+            **{"path": url, "postdata": params, "token": self._token},
         )
         executor.shutdown(False)
         job = GeometryJob(
@@ -19555,7 +20112,12 @@ class _GeometryService(_GISService):
 
     # ----------------------------------------------------------------------
     def find_transformation(
-        self, inSR, outSR, extentOfInterest=None, numOfResults=1, future=False
+        self,
+        inSR,
+        outSR,
+        extentOfInterest=None,
+        numOfResults=1,
+        future=False,
     ):
         """
         The findTransformations operation is performed on a geometry
@@ -19598,7 +20160,8 @@ class _GeometryService(_GISService):
             params["extentOfInterest"] = extentOfInterest
         executor = concurrent.futures.ThreadPoolExecutor(1)
         f1 = executor.submit(
-            self._con.post, **{"path": url, "postdata": params, "token": self._token}
+            self._con.post,
+            **{"path": url, "postdata": params, "token": self._token},
         )
 
         executor.shutdown(False)
@@ -19674,7 +20237,8 @@ class _GeometryService(_GISService):
             params["conversionMode"] = conversionMode
         executor = concurrent.futures.ThreadPoolExecutor(1)
         f1 = executor.submit(
-            self._con.post, **{"path": url, "postdata": params, "token": self._token}
+            self._con.post,
+            **{"path": url, "postdata": params, "token": self._token},
         )
         executor.shutdown(False)
         job = GeometryJob(
@@ -19718,25 +20282,7 @@ class _GeometryService(_GISService):
             "maxDeviation": maxDeviation,
         }
         params["geometries"] = self.__geometryListToGeomTemplate(geometries=geometries)
-        executor = concurrent.futures.ThreadPoolExecutor(2)
-        f1 = executor.submit(
-            self._con.post, **{"path": url, "postdata": params, "token": self._token}
-        )
-        f2 = executor.submit(self._process_results, **{"results": f1, "out_sr": sr})
-        executor.shutdown(False)
-        job = GeometryJob(
-            future=f2,
-            task_name="generalize",
-            jobid=None,
-            task_url=url,
-            notify=False,
-            gis=self._gis,
-            out_wkid=sr,
-        )
-        if future:
-            return job
-        else:
-            return job.result()
+        return self._execute_by_chunk(url, params, 2, "generalize", sr, future)
 
     # ----------------------------------------------------------------------
     def intersect(self, sr, geometries, geometry, future=False):
@@ -19765,25 +20311,7 @@ class _GeometryService(_GISService):
             "geometries": self.__geometryListToGeomTemplate(geometries=geometries),
             "geometry": self.__geometryToGeomTemplate(geometry=geometry),
         }
-        executor = concurrent.futures.ThreadPoolExecutor(2)
-        f1 = executor.submit(
-            self._con.post, **{"path": url, "postdata": params, "token": self._token}
-        )
-        f2 = executor.submit(self._process_results, **{"results": f1, "out_sr": sr})
-        executor.shutdown(False)
-        job = GeometryJob(
-            future=f2,
-            task_name="intersect",
-            jobid=None,
-            task_url=url,
-            notify=False,
-            gis=self._gis,
-            out_wkid=sr,
-        )
-        if future:
-            return job
-        else:
-            return job.result()
+        return self._execute_by_chunk(url, params, 2, "intersect", sr, future)
 
     # ----------------------------------------------------------------------
     def label_points(self, sr, polygons, future=False):
@@ -19808,24 +20336,40 @@ class _GeometryService(_GISService):
                 geometries=polygons, returnType="list"
             ),
         }
-        executor = concurrent.futures.ThreadPoolExecutor(1)
-        f1 = executor.submit(
-            self._con.post, **{"path": url, "postdata": params, "token": self._token}
+        all_geometries = self.__geomToStringArray(
+            geometries=polygons, returnType="list"
         )
-        executor.shutdown(False)
-        job = GeometryJob(
-            future=f1,
-            task_name="label_points",
-            jobid=None,
-            task_url=url,
-            notify=False,
-            gis=self._gis,
-            out_wkid=sr,
-        )
-        if future:
-            return job
-        else:
-            return job.result()
+        chunk = 65000
+        all_results = []
+        with concurrent.futures.ThreadPoolExecutor(1) as executor:
+            # loop until all chunks reached
+            for i in range(0, len(all_geometries), chunk):
+                geoms = all_geometries[i : i + chunk]
+                params["polygons"] = geoms
+                f1 = executor.submit(
+                    self._con.post,
+                    **{
+                        "path": url,
+                        "postdata": params,
+                        "token": self._token,
+                    },
+                )
+                job = GeometryJob(
+                    future=f1,
+                    task_name="label_points",
+                    jobid=None,
+                    task_url=url,
+                    notify=False,
+                    gis=self._gis,
+                    out_wkid=sr,
+                )
+                if future:
+                    return job
+                else:
+                    results = job.result()
+                    for result in results:
+                        all_results.append(result)
+        return all_results
 
     # ----------------------------------------------------------------------
     def lengths(self, sr, polylines, lengthUnit, calculationType, future=False):
@@ -19875,24 +20419,39 @@ class _GeometryService(_GISService):
             "lengthUnit": lengthUnit,
             "calculationType": calculationType,
         }
-        executor = concurrent.futures.ThreadPoolExecutor(1)
-        f1 = executor.submit(
-            self._con.post, **{"path": url, "postdata": params, "token": self._token}
+        all_geometries = self.__geomToStringArray(
+            geometries=polylines, returnType="list"
         )
-
-        executor.shutdown(False)
-        job = GeometryJob(
-            future=f1,
-            task_name="lengths",
-            jobid=None,
-            task_url=url,
-            notify=False,
-            gis=self._gis,
-        )
-        if future:
-            return job
-        else:
-            return job.result()
+        chunk = 65000
+        all_results = []
+        with concurrent.futures.ThreadPoolExecutor(1) as executor:
+            # loop until all chunks reached
+            for i in range(0, len(all_geometries), chunk):
+                geoms = all_geometries[i : i + chunk]
+                params["polylines"] = geoms
+                f1 = executor.submit(
+                    self._con.post,
+                    **{
+                        "path": url,
+                        "postdata": params,
+                        "token": self._token,
+                    },
+                )
+                job = GeometryJob(
+                    future=f1,
+                    task_name="lengths",
+                    jobid=None,
+                    task_url=url,
+                    notify=False,
+                    gis=self._gis,
+                )
+                if future:
+                    return job
+                else:
+                    results = job.result()
+                    for result in results:
+                        all_results.append(result)
+        return all_results
 
     # ----------------------------------------------------------------------
     def offset(
@@ -19967,25 +20526,7 @@ class _GeometryService(_GISService):
             "bevelRatio": bevelRatio,
             "simplifyResult": json.dumps(simplifyResult),
         }
-        executor = concurrent.futures.ThreadPoolExecutor(2)
-        f1 = executor.submit(
-            self._con.post, **{"path": url, "postdata": params, "token": self._token}
-        )
-        f2 = executor.submit(self._process_results, **{"results": f1, "out_sr": sr})
-        executor.shutdown(False)
-        job = GeometryJob(
-            future=f2,
-            task_name="offset",
-            jobid=None,
-            task_url=url,
-            notify=False,
-            gis=self._gis,
-            out_wkid=sr,
-        )
-        if future:
-            return job
-        else:
-            return job.result()
+        return self._execute_by_chunk(url, params, 2, "offset", sr, future)
 
     # ----------------------------------------------------------------------
     def project(
@@ -20029,25 +20570,8 @@ class _GeometryService(_GISService):
             "transformation": transformation,
             "transformFoward": transformFoward,
         }
-        executor = concurrent.futures.ThreadPoolExecutor(2)
-        f1 = executor.submit(
-            self._con.post, **{"path": url, "postdata": params, "token": self._token}
-        )
-        f2 = executor.submit(self._process_results, **{"results": f1, "out_sr": outSR})
-        executor.shutdown(False)
-        job = GeometryJob(
-            future=f2,
-            task_name="project",
-            jobid=None,
-            task_url=url,
-            notify=False,
-            gis=self._gis,
-            out_wkid=outSR,
-        )
-        if future:
-            return job
-        else:
-            return job.result()
+        results = self._execute_by_chunk(url, params, 2, "project", outSR, future)
+        return results
 
     # ----------------------------------------------------------------------
     def relation(
@@ -20113,7 +20637,8 @@ class _GeometryService(_GISService):
         }
         executor = concurrent.futures.ThreadPoolExecutor(1)
         f1 = executor.submit(
-            self._con.post, **{"path": url, "postdata": params, "token": self._token}
+            self._con.post,
+            **{"path": url, "postdata": params, "token": self._token},
         )
 
         executor.shutdown(False)
@@ -20159,7 +20684,8 @@ class _GeometryService(_GISService):
             raise AttributeError("Invalid reshaper object, must be Polyline")
         executor = concurrent.futures.ThreadPoolExecutor(2)
         f1 = executor.submit(
-            self._con.post, **{"path": url, "postdata": params, "token": self._token}
+            self._con.post,
+            **{"path": url, "postdata": params, "token": self._token},
         )
         f2 = executor.submit(self._process_results, **{"results": f1, "out_sr": sr})
         executor.shutdown(False)
@@ -20196,25 +20722,7 @@ class _GeometryService(_GISService):
             "sr": sr,
             "geometries": self.__geometryListToGeomTemplate(geometries=geometries),
         }
-        executor = concurrent.futures.ThreadPoolExecutor(2)
-        f1 = executor.submit(
-            self._con.post, **{"path": url, "postdata": params, "token": self._token}
-        )
-        f2 = executor.submit(self._process_results, **{"results": f1, "out_sr": sr})
-        executor.shutdown(False)
-        job = GeometryJob(
-            future=f2,
-            task_name="simplify",
-            jobid=None,
-            task_url=url,
-            notify=False,
-            gis=self._gis,
-            out_wkid=sr,
-        )
-        if future:
-            return job
-        else:
-            return job.result()
+        return self._execute_by_chunk(url, params, 2, "simplify", sr, future)
 
     # ----------------------------------------------------------------------
     def to_geo_coordinate_string(
@@ -20299,7 +20807,8 @@ class _GeometryService(_GISService):
             params["addSpaces"] = addSpaces
         executor = concurrent.futures.ThreadPoolExecutor(1)
         f1 = executor.submit(
-            self._con.post, **{"path": url, "postdata": params, "token": self._token}
+            self._con.post,
+            **{"path": url, "postdata": params, "token": self._token},
         )
 
         executor.shutdown(False)
@@ -20365,25 +20874,43 @@ class _GeometryService(_GISService):
             "extendHow": extendHow,
             "trimExtendTo": trimExtendTo,
         }
-        executor = concurrent.futures.ThreadPoolExecutor(2)
-        f1 = executor.submit(
-            self._con.post, **{"path": url, "postdata": params, "token": self._token}
+        all_geometries = self.__geomToStringArray(
+            geometries=polylines, returnType="list"
         )
-        f2 = executor.submit(self._process_results, **{"results": f1, "out_sr": sr})
-        executor.shutdown(False)
-        job = GeometryJob(
-            future=f2,
-            task_name="trim_extend",
-            jobid=None,
-            task_url=url,
-            notify=False,
-            gis=self._gis,
-            out_wkid=sr,
-        )
-        if future:
-            return job
-        else:
-            return job.result()
+        chunk = 65000
+        all_results = []
+        with concurrent.futures.ThreadPoolExecutor(2) as executor:
+            # loop until all chunks reached
+            for i in range(0, len(all_geometries), chunk):
+                geoms = all_geometries[i : i + chunk]
+                params["polylines"] = geoms
+                f1 = executor.submit(
+                    self._con.post,
+                    **{
+                        "path": url,
+                        "postdata": params,
+                        "token": self._token,
+                    },
+                )
+                f2 = executor.submit(
+                    self._process_results, **{"results": f1, "out_sr": sr}
+                )
+                job = GeometryJob(
+                    future=f2,
+                    task_name="trim_extend",
+                    jobid=None,
+                    task_url=url,
+                    notify=False,
+                    gis=self._gis,
+                    out_wkid=sr,
+                )
+                if future:
+                    return job
+                else:
+                    results = job.result()
+                    for result in results:
+                        all_results.append(result)
+        return all_results
 
     # ----------------------------------------------------------------------
     def union(self, sr, geometries, future=False):
@@ -20403,20 +20930,126 @@ class _GeometryService(_GISService):
             "sr": sr,
             "geometries": self.__geometryListToGeomTemplate(geometries=geometries),
         }
-        executor = concurrent.futures.ThreadPoolExecutor(2)
-        f1 = executor.submit(
-            self._con.post, **{"path": url, "postdata": params, "token": self._token}
-        )
-        f2 = executor.submit(self._process_results, **{"results": f1, "out_sr": sr})
-        executor.shutdown(False)
-        job = GeometryJob(
-            future=f2,
-            task_name="auto_complete",
-            jobid=None,
-            task_url=url,
-            notify=False,
+        return self._execute_by_chunk(url, params, 2, "union", sr, future)
+
+
+class AGSSystemTools:
+    """
+    ArcGIS Server has System folder that have utility geop,rocessing tools to work
+    with multiple aspects of the system.
+    """
+
+    _properties = None
+    _gptbxs = None
+    _gpserver = None
+    _gpcatalogs = None
+
+    def __init__(self, gis: "GIS", verbose=False):
+        self._gis = gis
+        self._verbose = verbose
+        self.properties = {}
+
+    # ----------------------------------------------------------------------
+    @property
+    def _tbx(self):
+        """gets the toolbox"""
+        if self._gptbxs is None:
+            self._gptbxs = {}
+            for catalog in self._catalogs:
+                try:
+                    self._gptbxs[catalog._url.lower()] = catalog.get(
+                        "PublishingTools", "System"
+                    )
+                except:
+                    ...
+        return self._gptbxs
+
+    # ----------------------------------------------------------------------
+    @property
+    def _servers(self):
+        if self._gpserver is None:
+            self._gpserver = self._gis.admin.servers.list()
+        return self._gpserver
+
+    # ---------------------------------------------------------------------
+    @property
+    def _catalogs(self):
+        if self._gpcatalogs is None:
+            self._gpcatalogs = [server.content for server in self._servers]
+        return self._gpcatalogs
+
+    # ---------------------------------------------------------------------
+    def refresh_service(
+        self,
+        layer: ImageryLayer | Raster,
+        options: str | None = None,
+        future: bool = True,
+    ) -> bool:
+        """
+        Refresh Service is a new task in the existing out-of-the-box
+        PublishingTools geoprocessing service used by the service publisher
+        to refresh a GIS service to reflect back-end data changes.
+
+        At 10.3, only image services are supported by this tool. Valid
+        input image services must have been configured as
+        hasLiveData:true through ArcGIS Server Manager Manager.
+
+        =====================     ====================================================================
+        **Parameter**             **Description**
+        ---------------------     --------------------------------------------------------------------
+        layer                     Required ImageryLayer or Raster. The layer to refresh on the server.
+        ---------------------     --------------------------------------------------------------------
+        options                   Optional string. Additional options to refresh the service.
+        ---------------------     --------------------------------------------------------------------
+        future                    Optional Boolean. If True, the operation is completed in an asynchronous fashion, else, synchronous fashion.
+        =====================     ====================================================================
+
+        :returns: string
+
+        """
+
+        if isinstance(layer, ImageryLayer):
+            base_service_url: str = (
+                layer._url.split("/services/")[0].lower() + "/services"
+            )
+            path: str = layer._url.split("/services/")[-1]
+            service_type: str = os.path.basename(path)
+            service_name: str = os.path.basename(os.path.dirname(path))
+            folder: str = ""
+            if path.startswith(service_name) == False:
+                folder = path.split(f"/{service_name}/")[0]
+
+        elif isinstance(layer, Raster) and isinstance(
+            layer._engine_obj, _ImageServerRaster
+        ):
+            path: str = layer._engine_obj._url.split("/services/")[-1]
+            base_service_url: str = (
+                layer._engine_obj._url.split("/services/")[0].lower() + "/services"
+            )
+            service_type: str = os.path.basename(path)
+            service_name: str = os.path.basename(os.path.dirname(path))
+            folder: str = ""
+            if path.startswith(service_name) == False:
+                folder = path.split(f"/{service_name}/")[0]
+        else:
+            raise ValueError(
+                "Input must be a service based `Raster` class or `ImageryLayer`"
+            )
+        tbxs = self._tbx
+        if base_service_url in tbxs:
+            tbx = tbxs[base_service_url]
+        else:
+            raise ValueError(
+                "The service is not stored on a system where it can be refreshed"
+            )
+
+        job = tbx.refresh_service(
+            service_name=service_name,
+            service_type=service_type,
+            service_folder=folder,
+            refresh_options=options,
             gis=self._gis,
-            out_wkid=sr,
+            future=True,
         )
         if future:
             return job
@@ -20444,6 +21077,8 @@ class _Tools(object):
         self._geoanalytics = None
         self._orthomapping = None
         self._packaging = None
+        self._symbolservice = None
+        self._systemservice = None
 
     @lru_cache(maxsize=255)
     def _validate_url(self, url):
@@ -20453,6 +21088,36 @@ class _Tools(object):
         else:
             return res["serviceUrl"]
         return url
+
+    @property
+    @lru_cache(maxsize=255)
+    def system_service(self) -> AGSSystemTools:
+        """
+        the portal's AGS System Tools provides access to refresh_service
+        """
+        if self._systemservice is None:
+            self._systemservice = AGSSystemTools(gis=self._gis)
+        return self._systemservice
+
+    @property
+    @lru_cache(maxsize=255)
+    def symbol_service(self):
+        """the portal's symbol service if available and configured"""
+        if self._symbolservice is not None:
+            return self._symbolservice
+        try:
+            if self._gis._is_hosted_nb_home:
+                svcurl = self._validate_url(
+                    self._gis.properties["helperServices"]["symbols"]["url"]
+                )
+            else:
+                svcurl = self._gis.properties["helperServices"]["symbols"]["url"]
+            from arcgis.mapping._types import SymbolService
+
+            self._symbolservice = SymbolService(svcurl, self._gis)
+            return self._symbolservice
+        except KeyError:
+            return None
 
     @property
     @lru_cache(maxsize=255)
@@ -20572,7 +21237,6 @@ class _Tools(object):
         if self._packaging is not None:
             return self._packaging
         try:
-
             svcurl = self._gis.properties["helperServices"]["packaging"]["url"]
             if self._gis._is_hosted_nb_home:
                 svcurl = self._validate_url(svcurl)

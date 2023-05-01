@@ -7,12 +7,12 @@ from arcgis.apps.tracker import LocationTrackingError
 class LocationTrackingManager:
     """
     This manages Location Sharing for an organization.
-    It can be accessed from the gis as :py:attr:`~arcgis.gis.admin.location_tracking`
+    It can be accessed from the gis as `location_tracking`
 
-    Additional information can be found here: https://doc.arcgis.com/en/tracker/help/configure-location-tracking.htm
+    Additional information can be found `here <https://doc.arcgis.com/en/tracker/help/configure-location-tracking.htm>`_
 
     ==================     ====================================================================
-    **Argument**           **Description**
+    **Parameter**           **Description**
     ------------------     --------------------------------------------------------------------
     gis                    Required :class:`~arcgis.gis.GIS`. The GIS to configure location
                            sharing for.
@@ -64,7 +64,7 @@ class LocationTrackingManager:
         Enables location sharing for the organization.
 
         ===================================       ===============================================================
-        **Argument**                              **Description**
+        **Parameter**                              **Description**
         -----------------------------------       ---------------------------------------------------------------
         tracks_layer_shards                       The number of shards to use for the tracks layer. This only
                                                   applies for ArcGIS Enterprise.
@@ -257,9 +257,9 @@ class LocationTrackingManager:
         This creates a :class:`~arcgis.apps.tracker.TrackView`.
 
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
-        title                  Required :class:`String` The title of the Track View to create.
+        title                  Required String. The title of the Track View to create.
         ==================     ====================================================================
 
         :return: :class:`~arcgis.apps.tracker.TrackView`
@@ -323,7 +323,7 @@ class LocationTrackingManager:
     def retention_period(self):
         """
         The retention period of the Location Sharing Tracks Layer.
-        This is a positive integer whose units are defined by :py:attr:`~arcgis.gis.admin.location_tracking.retention_period_units`
+        This is a positive integer whose units are defined by :attr:`~arcgis.apps.tracker.LocationTrackingManager.retention_period_units`
         """
         try:
             return int(

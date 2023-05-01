@@ -1,6 +1,6 @@
 import sys
 
-sys.path.insert(0, r"c:\SVN\geosaurus_master_kubernetes\src")
+sys.path.insert(0, r"c:\ipython_workfolder\geosaurus\src")
 import unittest
 from arcgis.gis import GIS, ProfileManager
 from arcgis._impl.tools import _GeometryService
@@ -10,12 +10,12 @@ profiles = [
     None,
     "your_online_profile",
     "your_enterprise_profile",
-    "your_kubernetes_profile",
+    "your_kubernetes_profile"
 ]
 profiles_no_anon = [
     "your_online_profile",
     "your_enterprise_profile",
-    "your_kubernetes_profile",
+    "your_kubernetes_profile"
 ]
 
 if not "your_kubernetes_profile" in ProfileManager().list():
@@ -622,7 +622,7 @@ class TestGeometryService(unittest.TestCase):
                     assert isinstance(j, GeometryJob)
                     assert j.result()
                 else:
-                    assert gs.label_points(sr=sr, polygons=geoms, future=fut)
+                    assert isinstance(gs.label_points(sr=sr, polygons=geoms, future=fut), list)
 
     # ----------------------------------------------------------------------
     # @unittest.skip('said so')

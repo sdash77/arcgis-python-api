@@ -2,23 +2,23 @@
 # Name:        CertificateManager class tests
 # Purpose:     Sanity tests for ArcGIS Python API
 # -------------------------------------------------------------------------------
-import sys
 import unittest
-import pytest
+from pathlib import Path
 
 
 class TestCertificateMgr(unittest.TestCase):
     def test_certificate_manager(self):
         from arcgis.gis import GIS
 
-        profiles = ["your_online_profile"]
+        profiles = ["your_online_admin_profile"]
         for profile in profiles:
             gis = GIS(profile=profile, verify_cert=False)
             assert gis.admin.certificates
             cm = gis.admin.certificates
             assert cm.properties
             assert isinstance(gis.admin.certificates.certificates, (list, tuple))
-            with open(r"./cert_test.txt", "r") as reader:
+            data_dir = Path(Path.cwd(), "integration", "gis", "cert_test.txt")
+            with open(data_dir) as reader:
                 result = cm.add(
                     name="MYSELFSIGNEDCERT",
                     domain="esri.com",

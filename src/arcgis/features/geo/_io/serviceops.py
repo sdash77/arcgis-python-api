@@ -4,6 +4,7 @@ from arcgis.geometry import Geometry
 import numpy as np
 import pandas as pd
 
+
 # --------------------------------------------------------------------------
 def _chunks(l, n):
     """yield successive n-sized chunks from l."""
@@ -48,6 +49,7 @@ else:
         "esriFieldTypeXML": object,
     }
 
+
 # --------------------------------------------------------------------------
 def to_featureset(df):
     """converts a pd.DataFrame to a FeatureSet Object"""
@@ -89,12 +91,14 @@ def from_featureset(fset, sr=None):
 
         pandas_dtypes = {}
         for fld in fset.fields:
-            if "type" in fld:
-                pandas_dtypes[fld["name"]] = _look_up_types[fld["type"]]
-            elif "fieldType" in fld:
-                pandas_dtypes[fld["name"]] = _look_up_types[fld["fieldType"]]
-            else:
-                pandas_dtypes[fld["name"]] = "O"
+            if fld["name"].lower() != "shape":
+                if "type" in fld:
+                    pandas_dtypes[fld["name"]] = _look_up_types[fld["type"]]
+                elif "fieldType" in fld:
+                    pandas_dtypes[fld["name"]] = _look_up_types[fld["fieldType"]]
+                else:
+                    pandas_dtypes[fld["name"]] = "O"
+
         if sr is None:
             sr = {"wkid": 4326}
         for feat in fset.features:
@@ -113,11 +117,11 @@ def from_featureset(fset, sr=None):
 
         for fld in dt_fields:
             try:
-                df[fld] = pd.to_datetime(
-                    df[fld] / 1000, infer_datetime_format=True, unit="s"
-                )
+                df[fld] = pd.to_datetime(df[fld] / 1000, unit="s")
             except:
-                df[fld] = pd.to_datetime(df[fld], infer_datetime_format=True)
+                df[fld] = pd.to_datetime(
+                    df[fld],
+                )
         if gt and not "SHAPE" in df.columns:
             df["SHAPE"] = None
         if "SHAPE" in df.columns:

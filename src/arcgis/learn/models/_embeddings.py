@@ -126,19 +126,20 @@ class TextModule:
 
 class Embeddings:
     """
-    Creates an `Embeddings` Object. This object is capable of giving
+    Creates an :class:`~arcgis.learn.Embeddings` Object. This object is capable of giving
     embeddings for text as well as images. The image embeddings are
     currently supported for RGB images only
 
     =====================   ===========================================
-    **Argument**            **Description**
+    **Parameter**            **Description**
     ---------------------   -------------------------------------------
     dataset_type            Required string. The type of data for which
                             we would like to get the embedding vectors.
                             Valid values are `text` & `image`. Default
                             is set to `image`.
-                            **Note - The image embeddings are currently
-                            supported for `RGB` images only.
+
+                            .. note::
+                                The image embeddings are currently supported for `RGB` images only.
     ---------------------   -------------------------------------------
     backbone                Optional string. Specify the backbone/model-name
                             to be used to get the embedding vectors.
@@ -154,7 +155,7 @@ class Embeddings:
     **kwargs**
 
     =====================   ===========================================
-    **Argument**            **Description**
+    **Parameter**            **Description**
     ---------------------   -------------------------------------------
     working_dir             Option str. Path to a directory on local filesystem.
                             If directory is not present, it will be created.
@@ -162,7 +163,7 @@ class Embeddings:
                             model.
     =====================   ===========================================
 
-    :return: `Embeddings` Object
+    :return: :class:`~arcgis.learn.Embeddings` Object
     """
 
     def __init__(self, dataset_type="image", backbone=None, **kwargs):
@@ -206,7 +207,7 @@ class Embeddings:
         Get available backbones/model-name for the given `dataset-type`
 
         =====================   ===========================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ---------------------   -------------------------------------------
         dataset_type            Required string. The type of data for which
                                 we would like to get the embedding vectors.
@@ -317,7 +318,7 @@ class Embeddings:
         Method to get the embedding vectors for the image/text items.
 
         =====================   ===========================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ---------------------   -------------------------------------------
         text_or_list            Required string or List. String containing
                                 directory path or list of directory paths where
@@ -335,7 +336,7 @@ class Embeddings:
         **kwargs**
 
         =====================   ===========================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ---------------------   -------------------------------------------
         normalize               Optional boolean. If set to `true`, will normalize
                                 the image with `imagenet-stats` (mean and
@@ -349,9 +350,9 @@ class Embeddings:
                                 ['png', 'jpg', 'jpeg', 'tiff', 'tif', 'bmp']
                                 Allowed values for `dataset-type` text are -
                                 ['csv', 'txt', 'json']
-                                **Note - For json files, if we have nested json
-                                structures, then text will be extracted only from
-                                the 1st level.
+
+                                .. note::
+                                        For json files, if we have nested json structures, then text will be extracted only from the 1st level.
         ---------------------   -------------------------------------------
         chip_size               Optional integer. Resize the image to
                                 `chip_size X chip_size` pixels.
@@ -437,11 +438,11 @@ class Embeddings:
         Load the extracted embeddings from the H5 file
 
         =====================   ===========================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ---------------------   -------------------------------------------
         file_path               Required string. The path to the H5 file which
                                 gets auto generated after the call to the `get`
-                                method of the `Embeddings` class
+                                method of the :class:`~arcgis.learn.Embeddings` class
         ---------------------   -------------------------------------------
         load_to_memory          Optional Bool. whether or not to load the entire
                                 content of the H5 file to memory. Loading very large
@@ -788,7 +789,6 @@ class Embeddings:
             )
 
         def hover_fn(trace, points, state):
-
             ind = points.point_inds[0]
             item = cluster_dataframe["item"][ind]
             widget.value = image_data[item] if self._dataset_type == "image" else item
@@ -808,11 +808,11 @@ class Embeddings:
         caution for large H5 files.
 
         =====================   ===========================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ---------------------   -------------------------------------------
         file_path               Required string. The path to the H5 file which
                                 gets auto generated after the call to the `get`
-                                method of the `Embeddings` class.
+                                method of the :class:`~arcgis.learn.Embeddings` class.
         ---------------------   -------------------------------------------
         visualize_with_items    Optional Bool. Whether or not to visualize the
                                 embeddings with items. Default is set to True.

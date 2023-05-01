@@ -14,12 +14,14 @@ from cryptography.hazmat.primitives.serialization import (
 _crypto_version = [
     int(i) if i.isdigit() else i for i in cryptography.__version__.split(".")
 ]
+
+
 # ----------------------------------------------------------------------
 def pfx_to_pem(pfx_path, pfx_password, folder=None, use_openssl=False):
     """Decrypts the .pfx file to be used with requests.
 
     ===============     ====================================================================
-    **Argument**        **Description**
+    **Parameter**        **Description**
     ---------------     --------------------------------------------------------------------
     pfx_path            Required string.  File pathname to .pfx file to parse.
     ---------------     --------------------------------------------------------------------
@@ -43,7 +45,6 @@ def pfx_to_pem(pfx_path, pfx_password, folder=None, use_openssl=False):
     cert_file = tempfile.NamedTemporaryFile(suffix=".pem", delete=False, dir=folder)
     if use_openssl:
         try:
-
             import OpenSSL.crypto
 
             k = open(key_file.name, "wb")

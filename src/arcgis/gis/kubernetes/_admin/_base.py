@@ -1,6 +1,7 @@
 """
 Contains the base class that all server object inherit from.
 """
+from __future__ import annotations
 from __future__ import absolute_import
 import json
 from collections import OrderedDict
@@ -9,6 +10,7 @@ from urllib.request import HTTPError
 from arcgis.gis._impl._con import Connection
 from arcgis.gis import GIS
 from arcgis._impl.common._mixins import PropertyMap
+
 
 ###########################################################################
 class _BaseKube(object):

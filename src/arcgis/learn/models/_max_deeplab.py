@@ -27,7 +27,6 @@ class MaXDeepLabConfig:
         pass
 
     def on_batch_begin(self, learn, model_input_batch, model_target_batch, **kwargs):
-
         mask, label, semantic = model_target_batch
         semantic = semantic.squeeze(dim=1)
         model_target_batch = (mask, label, semantic)
@@ -35,11 +34,9 @@ class MaXDeepLabConfig:
         return model_input_batch, model_target_batch
 
     def transform_input(self, xb):
-
         return xb
 
     def transform_input_multispectral(self, xb):
-
         return xb
 
     def get_model(self, data, backbone, **kwargs):
@@ -84,13 +81,13 @@ class MaXDeepLabConfig:
 
 class MaXDeepLab(ModelExtension):
     """
-    Creates a ``MaXDeepLab`` panoptic segmentation model.
+    Creates a :class:`~arcgis.learn.MaXDeepLab` panoptic segmentation model.
 
     =====================   ===========================================
-    **Argument**            **Description**
+    **Parameter**            **Description**
     ---------------------   -------------------------------------------
     data                    Required fastai Databunch. Returned data
-                            object from ``prepare_data`` function.
+                            object from :meth:`~arcgis.learn.prepare_data`  function.
                             MaXDeepLab only supports image sizes in
                             multiples of 16 (e.g. 256, 416, etc.).
     ---------------------   -------------------------------------------
@@ -98,7 +95,7 @@ class MaXDeepLab(ModelExtension):
                             model is saved.
     =====================   ===========================================
 
-    :returns: ``MaXDeepLab`` Object
+    :return:  :class:`~arcgis.learn.MaXDeepLab` Object
     """
 
     def __init__(self, data, backbone=None, pretrained_path=None, **kwargs):
@@ -132,18 +129,18 @@ class MaXDeepLab(ModelExtension):
         Creates a ``MaXDeepLab Panoptic Segmentation`` object from an Esri Model Definition (EMD) file.
 
         =====================   ===========================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ---------------------   -------------------------------------------
         emd_path                Required string. Path to Deep Learning Package
                                 (DLPK) or Esri Model Definition(EMD) file.
         ---------------------   -------------------------------------------
         data                    Required fastai Databunch or None. Returned data
-                                object from ``prepare_data`` function or None for
+                                object from :meth:`~arcgis.learn.prepare_data`  function or None for
                                 inferencing.
 
         =====================   ===========================================
 
-        :returns: `MaXDeepLab Panoptic Segmentation` Object
+        :return:  `MaXDeepLab Panoptic Segmentation` Object
         """
         emd_path = _get_emd_path(emd_path)
 
@@ -173,6 +170,7 @@ class MaXDeepLab(ModelExtension):
             )
             data.class_mapping = class_mapping
             data.color_mapping = color_mapping
+            data._is_empty = True
             data.emd_path = emd_path
             data.emd = emd
             data.classes = ["background"]

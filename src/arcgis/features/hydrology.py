@@ -73,7 +73,7 @@ def trace_downstream(
     spatial scales.
 
     ==================     ====================================================================
-    **Argument**           **Description**
+    **Parameter**           **Description**
     ------------------     --------------------------------------------------------------------
     input_points           Required FeatureSet or Spatially Enabled DataFrame
                            Points delineating the starting location to calculate the downstream
@@ -106,7 +106,7 @@ def trace_downstream(
 
                            The default value is False.
     ------------------     --------------------------------------------------------------------
-    gis                    Optional GIS Object instance. If not provided as input, a GIS object instance logged into an
+    gis                    Optional :class:`~arcgis.gis.GIS` Object instance. If not provided as input, a GIS object instance logged into an
                            active portal with elevation helper services defined must already
                            be created in the active Python session. A GIS object instance can
                            also be optionally explicitly passed in through this parameter.
@@ -199,7 +199,7 @@ def watershed(
 
 
     ========================     ====================================================================
-    **Argument**                 **Description**
+    **Parameter**                 **Description**
     ------------------------     --------------------------------------------------------------------
     input_points                 Required FeatureSet or Spatially Enabled DataFrame. Points delineating the starting location to calculate the downstream
                                  location from. See :ref:`Feature Input<FeatureInput>`.
@@ -242,7 +242,7 @@ def watershed(
 
                                  The default value is False.
     ------------------------     --------------------------------------------------------------------
-    gis                          Optional GIS Object instance. If not provided as input, a GIS object instance logged into an
+    gis                          Optional :class:`~arcgis.gis.GIS` Object instance. If not provided as input, a GIS object instance logged into an
                                  active portal with elevation helper services defined must already
                                  be created in the active Python session. A GIS object instance can
                                  also be optionally explicitly passed in through this parameter.

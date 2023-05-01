@@ -59,19 +59,15 @@ class CustomBDCN:
         return model
 
     def on_batch_begin(self, learn, model_input_batch, model_target_batch, **kwargs):
-
         return model_input_batch, model_target_batch
 
     def transform_input(self, xb):
-
         return xb
 
     def transform_input_multispectral(self, xb):
-
         return xb
 
     def loss(self, model_output, *model_target):
-
         final_loss = self.bdcn.bdcn_loss(model_output, *model_target)
 
         return final_loss
@@ -111,13 +107,13 @@ class CustomBDCN:
 class BDCNEdgeDetector(ModelExtension):
     """
     Model architecture from https://arxiv.org/pdf/1902.10903.pdf.
-    Creates a ``Bi-Directional Cascade Network for Perceptual Edge Detection`` model
+    Creates a :class:`~arcgis.learn.BDCNEdgeDetector` model
 
     =====================   ===========================================
-    **Argument**            **Description**
+    **Parameter**            **Description**
     ---------------------   -------------------------------------------
     data                    Required fastai Databunch. Returned data object from
-                            ``prepare_data`` function.
+                            :meth:`~arcgis.learn.prepare_data`  function.
     ---------------------   -------------------------------------------
     backbone                Optional string. Backbone convolutional neural network
                             model used for feature extraction, which is `vgg19` by
@@ -129,11 +125,10 @@ class BDCNEdgeDetector(ModelExtension):
                             saved.
     =====================   ===========================================
 
-    :return: ``Bi-Directional Cascade Network for Perceptual Edge Detection`` Object
+    :return: :class:`~arcgis.learn.BDCNEdgeDetector` Object
     """
 
     def __init__(self, data, backbone="vgg19", pretrained_path=None):
-
         self._check_dataset_support(data)
         backbone_name = backbone if type(backbone) is str else backbone.__name__
         if backbone_name not in self.supported_backbones:
@@ -223,21 +218,21 @@ class BDCNEdgeDetector(ModelExtension):
     @classmethod
     def from_model(cls, emd_path, data=None):
         """
-        Creates a ``Bi-Directional Cascade Network for Perceptual Edge Detection`` object from an Esri Model Definition (EMD) file.
+        Creates a :class:`~arcgis.learn.BDCNEdgeDetector` object from an Esri Model Definition (EMD) file.
 
         =====================   ===========================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ---------------------   -------------------------------------------
         emd_path                Required string. Path to Deep Learning Package
                                 (DLPK) or Esri Model Definition(EMD) file.
         ---------------------   -------------------------------------------
         data                    Required fastai Databunch or None. Returned data
-                                object from ``prepare_data`` function or None for
+                                object from :meth:`~arcgis.learn.prepare_data`  function or None for
                                 inferencing.
 
         =====================   ===========================================
 
-        :return: `Bi-Directional Cascade Network for Perceptual Edge Detection` Object
+        :return: :class:`~arcgis.learn.BDCNEdgeDetector` Object
         """
         emd_path = _get_emd_path(emd_path)
 
@@ -267,6 +262,7 @@ class BDCNEdgeDetector(ModelExtension):
             )
             data.class_mapping = class_mapping
             data.color_mapping = color_mapping
+            data._is_empty = True
             data.emd_path = emd_path
             data.emd = emd
             data.classes = ["background"]
@@ -278,12 +274,11 @@ class BDCNEdgeDetector(ModelExtension):
         return cls(data, backbone, pretrained_path=str(model_file))
 
     def compute_precision_recall(self, thresh=0.5, buffer=3, show_progress=True):
-
         """
         Computes precision, recall and f1 score on validation set.
 
         =====================   ===========================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ---------------------   -------------------------------------------
         thresh                  Optional float. The probability on which
                                 the detection will be considered edge pixel.
@@ -296,7 +291,6 @@ class BDCNEdgeDetector(ModelExtension):
         """
 
     def show_results(self, rows=5, thresh=0.5, thinning=True, **kwargs):
-
         """
         Displays the results of a trained model on a part of the validation set.
         """

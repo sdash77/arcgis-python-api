@@ -35,11 +35,11 @@ class Pix2Pix(ArcGISModel):
     Creates a model object which generates fake images of type B from type A.
 
     =====================   ===========================================
-    **Argument**            **Description**
+    **Parameter**            **Description**
     ---------------------   -------------------------------------------
     data                    Required fastai Databunch with image chip sizes
                             in multiples of 256. Returned data object from
-                            `prepare_data` function.
+                            :meth:`~arcgis.learn.prepare_data` function.
     ---------------------   -------------------------------------------
     pretrained_path         Optional string. Path where pre-trained model is
                             saved.
@@ -48,13 +48,13 @@ class Pix2Pix(ArcGISModel):
                             Default set to False.
     =====================   ===========================================
 
-    :return: `Pix2Pix` Object
+    :return: :class:`~arcgis.learn.Pix2Pix` Object
     """
 
     def __init__(
         self, data, pretrained_path=None, perceptual_loss=False, *args, **kwargs
     ):
-        super().__init__(data)
+        super().__init__(data, pretrained_path=pretrained_path, **kwargs)
         self._check_dataset_support(data)
         if self._data.chip_size % 256 == 0:
             pix2pix_gan = pix2pix_model(
@@ -100,20 +100,20 @@ class Pix2Pix(ArcGISModel):
     @classmethod
     def from_model(cls, emd_path, data=None):
         """
-        Creates a Pix2Pix object from an Esri Model Definition (EMD) file.
+        Creates a :class:`~arcgis.learn.Pix2Pix` object from an Esri Model Definition (EMD) file.
 
         =====================   ===========================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ---------------------   -------------------------------------------
         emd_path                Required string. Path to Deep Learning Package
                                 (DLPK) or Esri Model Definition(EMD) file.
         ---------------------   -------------------------------------------
         data                    Required fastai Databunch or None. Returned data
-                                object from `prepare_data` function or None for
+                                object from :meth:`~arcgis.learn.prepare_data` function or None for
                                 inferencing.
         =====================   ===========================================
 
-        :return: `Pix2Pix` Object
+        :return: :class:`~arcgis.learn.Pix2Pix` Object
         """
         if not HAS_FASTAI:
             _raise_fastai_import_error(import_exception=import_exception)
@@ -208,11 +208,13 @@ class Pix2Pix(ArcGISModel):
         Displays the results of a trained model on a part of the validation set.
 
         =====================   ===========================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ---------------------   -------------------------------------------
         rows                    Optional int. Number of rows of results
                                 to be displayed.
         =====================   ===========================================
+
+
         **kwargs**
 
         =====================   ===========================================
@@ -228,7 +230,7 @@ class Pix2Pix(ArcGISModel):
         Predicts and display the image.
 
         =====================   ===========================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ---------------------   -------------------------------------------
         img_path                Required path of an image.
         =====================   ===========================================

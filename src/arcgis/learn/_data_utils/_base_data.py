@@ -55,7 +55,7 @@ class ArcgisData(object):
         different data object formt such as object detection, pixel classification etc.
 
         =====================   ===========================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ---------------------   -------------------------------------------
         path                    Required string. Path to data directory.
         ---------------------   -------------------------------------------
@@ -85,7 +85,7 @@ class ArcgisData(object):
                                 to `False` no transformation will take place and
                                 `chip_size` parameter will also not take effect.
                                 If the dataset_type is 'PointCloud', use
-                                `Transform3d` class from `arcgis.learn`.
+                                :class:`~arcgis.learn.Transform3d` .
         ---------------------   -------------------------------------------
         collate_fn              Optional function. Passed to PyTorch to collate data
                                 into batches(usually default works).
@@ -101,7 +101,7 @@ class ArcgisData(object):
         **Keyword Arguments**
 
         =====================   ===========================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ---------------------   -------------------------------------------
         imagery_type            Optional string. Type of imagery used to export
                                 the training data, valid values are:

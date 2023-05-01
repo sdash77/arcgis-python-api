@@ -12,6 +12,7 @@ from .._common import BaseServer
 from arcgis._impl.common._deprecate import deprecated
 from arcgis.gis import GIS
 
+
 ###########################################################################
 class Mode(BaseServer):
     """
@@ -30,6 +31,7 @@ class Mode(BaseServer):
     _siteMode = None
     _copyConfigLocal = None
     _lastModified = None
+
     # ----------------------------------------------------------------------
     def __init__(self, url: str, gis: GIS, initialize: bool = False):
         """Constructor"""
@@ -46,7 +48,7 @@ class Mode(BaseServer):
     @deprecated(
         deprecated_in="1.7.1",
         removed_in=None,
-        current_version="2.0.1",
+        current_version="2.2.0",
         details="Use `Mode.update_mode` instead.",
     )
     def update(self, siteMode: str, runAsync: bool = False) -> bool:
@@ -57,7 +59,7 @@ class Mode(BaseServer):
         services.
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         siteMode:           Required string. The mode you will set your site to. Values:
                             READ_ONLY or EDITABLE.
@@ -66,7 +68,7 @@ class Mode(BaseServer):
         ===============     ====================================================================
 
 
-        :return: boolean
+        :return: Boolean
 
         """
         params = {"siteMode": siteMode, "runAsync": runAsync, "f": "json"}
@@ -90,7 +92,7 @@ class Mode(BaseServer):
         services.
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         site_mode           Required string. The mode you will set your site to. Values:
                             READ_ONLY or EDITABLE.
@@ -102,7 +104,7 @@ class Mode(BaseServer):
         ===============     ====================================================================
 
 
-        :return: boolean
+        :return: Boolean
 
         """
         params = {

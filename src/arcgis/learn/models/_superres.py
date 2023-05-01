@@ -5,7 +5,7 @@ from ._arcgis_model import _EmptyData
 from .._data import _raise_fastai_import_error
 
 try:
-    from ._arcgis_model import ArcGISModel, _resnet_family
+    from ._arcgis_model import ArcGISModel, _resnet_family, _get_device
     from ._superres_utils import (
         FeatureLoss,
         gram_matrix,
@@ -42,13 +42,13 @@ class SuperResolution(ArcGISModel):
     Based on Fast.ai MOOC Lesson 7.
 
     =====================   ===========================================
-    **Argument**            **Description**
+    **Parameter**            **Description**
     ---------------------   -------------------------------------------
     data                    Required fastai Databunch. Returned data object from
-                            `prepare_data` function.
+                            :meth:`~arcgis.learn.prepare_data` function.
     ---------------------   -------------------------------------------
     backbone                Optional function. Backbone CNN model to be used for
-                            creating the base of the `SuperResolution`, which
+                            creating the base of the :class:`~arcgis.learn.SuperResolution`, which
                             is `resnet34` by default.
                             Compatible backbones: 'resnet18', 'resnet34', 'resnet50', 'resnet101', 'resnet152'
     ---------------------   -------------------------------------------
@@ -56,7 +56,7 @@ class SuperResolution(ArcGISModel):
                             saved.
     =====================   ===========================================
 
-    :return: `SuperResolution` Object
+    :return: :class:`~arcgis.learn.SuperResolution` Object
     """
 
     def __init__(self, data, backbone=None, pretrained_path=None, *args, **kwargs):
@@ -103,20 +103,20 @@ class SuperResolution(ArcGISModel):
     @classmethod
     def from_model(cls, emd_path, data=None):
         """
-        Creates a SuperResolution object from an Esri Model Definition (EMD) file.
+        Creates a :class:`~arcgis.learn.SuperResolution` object from an Esri Model Definition (EMD) file.
 
         =====================   ===========================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ---------------------   -------------------------------------------
         emd_path                Required string. Path to Deep Learning Package
                                 (DLPK) or Esri Model Definition(EMD) file.
         ---------------------   -------------------------------------------
         data                    Required fastai Databunch or None. Returned data
-                                object from `prepare_data` function or None for
+                                object from :meth:`~arcgis.learn.prepare_data` function or None for
                                 inferencing.
         =====================   ===========================================
 
-        :return: `SuperResolution` Object
+        :return: :class:`~arcgis.learn.SuperResolution` Object
         """
         return cls.from_emd(data, emd_path)
 
@@ -126,17 +126,17 @@ class SuperResolution(ArcGISModel):
         Creates a SuperResolution object from an Esri Model Definition (EMD) file.
 
         =====================   ===========================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ---------------------   -------------------------------------------
         data                    Required fastai Databunch or None. Returned data
-                                object from `prepare_data` function or None for
+                                object from :meth:`~arcgis.learn.prepare_data` function or None for
                                 inferencing.
         ---------------------   -------------------------------------------
         emd_path                Required string. Path to Esri Model Definition
                                 file.
         =====================   ===========================================
 
-        :return: `SuperResolution` Object
+        :return: :class:`~arcgis.learn.SuperResolution` Object
         """
 
         if not HAS_FASTAI:
@@ -155,7 +155,6 @@ class SuperResolution(ArcGISModel):
         downsample_factor = emd.get("downsample_factor")
         resize_to = emd.get("resize_to")
         chip_size = emd["ImageHeight"]
-        feat_loss = create_loss()
         if data is None:
             data = (
                 ImageImageList.from_folder(emd_path.parent.parent)
@@ -173,6 +172,7 @@ class SuperResolution(ArcGISModel):
             data.emd_path = emd_path
             data.downsample_factor = downsample_factor
             data.emd = emd
+            data.device = _get_device()
         data.resize_to = resize_to
 
         return cls(data, **model_params, pretrained_path=str(model_file))
@@ -210,7 +210,7 @@ class SuperResolution(ArcGISModel):
         Displays the results of a trained model on a part of the validation set.
 
         =====================   ===========================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ---------------------   -------------------------------------------
         rows                    Optional int. Number of rows of results
                                 to be displayed.
@@ -232,7 +232,7 @@ class SuperResolution(ArcGISModel):
         Predicts and display the image.
 
         =====================   ===========================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ---------------------   -------------------------------------------
         img_path                Required path of an image.
         ---------------------   -------------------------------------------

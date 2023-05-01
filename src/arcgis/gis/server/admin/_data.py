@@ -10,6 +10,7 @@ specific data item. This operation helps you determine if a
 particular data item can be safely deleted or refreshed.
 """
 from __future__ import absolute_import
+from __future__ import annotations
 import os
 import re
 import json
@@ -17,9 +18,11 @@ from .._common import BaseServer
 from ..._impl._con import Connection
 from .._common.util import contextmanager, _tempinput
 from arcgis.gis import GIS
-from typing import Optional
+from typing import Optional, Any
 
 ###########################################################################
+
+
 class Datastore(BaseServer):
     """
     Represents a single Datastore in the Data Store Manager.
@@ -71,7 +74,11 @@ class Datastore(BaseServer):
 
     # ----------------------------------------------------------------------
     def __repr__(self) -> str:
-        return '<%s title:"%s" type:"%s">' % (type(self).__name__, self._url, self.type)
+        return '<%s title:"%s" type:"%s">' % (
+            type(self).__name__,
+            self._url,
+            self.type,
+        )
 
     # ----------------------------------------------------------------------
     @property
@@ -100,7 +107,13 @@ class Datastore(BaseServer):
             with _tempinput(json.dumps(value)) as tempfilename:
                 # Build the files list (tuples)
                 files = []
-                files.append(("manifest", tempfilename, os.path.basename(tempfilename)))
+                files.append(
+                    (
+                        "manifest",
+                        tempfilename,
+                        os.path.basename(tempfilename),
+                    )
+                )
 
                 postdata = {"f": "pjson"}
 
@@ -134,7 +147,7 @@ class Datastore(BaseServer):
         share location.
 
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
         hints                  Required string. The hints file to be uploaded.
         ==================     ====================================================================
@@ -193,7 +206,7 @@ class Datastore(BaseServer):
         Edits this data item to update its connection information.
 
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
         item                   Required string. The dict representation of the updated item.
         ==================     ====================================================================
@@ -239,6 +252,17 @@ class Datastore(BaseServer):
             res = self._con.post(path, params, verify_cert=False)
 
         return res["status"] == "success"
+
+    # ----------------------------------------------------------------------
+    @property
+    def lifecycleinfos(self) -> dict[str, Any]:
+        """
+        Returns information regarding when the data store item was created and last edited.
+
+        """
+        url: str = f"{self._url}/lifecycleinfos"
+        params: dict[str, str] = {"f": "json"}
+        return self._con.get(url, params=params)
 
     # ----------------------------------------------------------------------
     def regenerate(self) -> bool:
@@ -295,11 +319,12 @@ class DataStoreManager(BaseServer):
 
 
     ==================     ====================================================================
-    **Argument**           **Description**
+    **Parameter**           **Description**
     ------------------     --------------------------------------------------------------------
     url                    Required string. The URL to the Data Store URL.
     ------------------     --------------------------------------------------------------------
-    gis                    Optional string. The GIS, Server, or ServicesDirectory object.
+    gis                    Optional string. The :class:`~arcgis.gis.GIS`, :class:`~arcgis.gis.server.Server`,
+                           or :class:`~arcgis.gis.server.catalog.ServicesDirectory` object.
     ==================     ====================================================================
 
     """
@@ -311,6 +336,7 @@ class DataStoreManager(BaseServer):
     _gis = None
     _datastores = None
     # ----------------------------------------------------------------------
+
     def __init__(self, url: str, gis: GIS = None, **kwargs):
         """Constructor
         Inputs:
@@ -344,7 +370,8 @@ class DataStoreManager(BaseServer):
         """Retrieves a list of datastore objects.
 
         :return:
-           The list of datastore items.
+           The list of :class:`~arcgis.gis.server.Datastore` objects.
+
         """
         self._datastores = None
         if self._datastores is None:
@@ -377,7 +404,7 @@ class DataStoreManager(BaseServer):
         to the server at publish time
 
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
         config                 Required string. A JSON string containing the data store configuration.
         ==================     ====================================================================
@@ -420,7 +447,7 @@ class DataStoreManager(BaseServer):
         `PortalDataStore.register` method.
 
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
         path                   Required string. The item path for the database, cloud, or file
                                share data store for which you want to create a data store item.
@@ -445,7 +472,7 @@ class DataStoreManager(BaseServer):
         Retrieves the data item object at the given path.
 
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
         path                   Required string. The path to the data item.
         ==================     ====================================================================
@@ -474,7 +501,7 @@ class DataStoreManager(BaseServer):
 
 
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
         name                   Required string. The unique fileshare name on the server.
         ------------------     --------------------------------------------------------------------
@@ -495,7 +522,10 @@ class DataStoreManager(BaseServer):
         item = {
             "type": "folder",
             "path": "/fileShares/" + name,
-            "info": {"path": server_path, "dataStoreConnectionType": conn_type},
+            "info": {
+                "path": server_path,
+                "dataStoreConnectionType": conn_type,
+            },
         }
         if client_path is not None:
             item["clientPath"] = client_path
@@ -512,7 +542,7 @@ class DataStoreManager(BaseServer):
         Registers a new data item with the data store.
 
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
         item                   Required String, Dict. The dictionary representing the data item.
                                See https://developers.arcgis.com/rest/enterprise-administration/server/dataitem.htm
@@ -524,10 +554,8 @@ class DataStoreManager(BaseServer):
         """
         res = self._register_data_item(item=item)
         if res["status"] == "success" or res["status"] == "exists":
-
             return Datastore(self, item["path"])
         else:
-
             return res
 
     # ----------------------------------------------------------------------
@@ -542,7 +570,7 @@ class DataStoreManager(BaseServer):
 
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         name                Required string. The unique bigdata fileshare name on the server.
         ---------------     --------------------------------------------------------------------
@@ -569,7 +597,10 @@ class DataStoreManager(BaseServer):
         item = {
             "path": "/bigDataFileShares/" + name,
             "type": "bigDataFileShare",
-            "info": {"connectionString": path_str, "connectionType": connection_type},
+            "info": {
+                "connectionString": path_str,
+                "connectionType": connection_type,
+            },
         }
         res = self._register_data_item(item=item)
 
@@ -584,21 +615,25 @@ class DataStoreManager(BaseServer):
 
 
         ===============   ====================================================
-        **Parameters**    **Description**
+        **Parameter**    **Description**
         ---------------   ----------------------------------------------------
         sde               required string.  Path to SDE connection file.
         ===============   ====================================================
 
-        returns: string on success, None on failure
+        :return:
+            string on success, None on failure
 
-        **Usage**:
+        .. code-block:: python
 
-        >>> con = dm.create_connection_string("c:\\myfolder\\postgres_db.sde")
-        >>> print(con)
-        'ENCRYPTED_PASSWORD=************************;SERVER=localhost;
-        INSTANCE=sde:postgresql:localhost,5432;DBCLIENT=postgresql;
-        DB_CONNECTION_PROPERTIES=localhost,5432;DATABASE=esri_spatial;
-        USER=sde;VERSION=sde.DEFAULT;AUTHENTICATION_MODE=DBMS'
+            # Usage
+
+            >>> con = dm.generate_connection_string("c:\\myfolder\\postgres_db.sde")
+            >>> print(con)
+            'ENCRYPTED_PASSWORD=************************;SERVER=localhost;
+            INSTANCE=sde:postgresql:localhost,5432;DBCLIENT=postgresql;
+            DB_CONNECTION_PROPERTIES=localhost,5432;DATABASE=esri_spatial;
+            USER=sde;VERSION=sde.DEFAULT;AUTHENTICATION_MODE=DBMS'
+
         """
         if str(sde).lower().endswith(".sde"):
             base_url = os.path.dirname(self._url)
@@ -614,11 +649,11 @@ class DataStoreManager(BaseServer):
                 sd_url = f"{os.path.dirname(base_url)}/rest/services"
                 d = ServicesDirectory(
                     url=sd_url,
-                    portal_connection=self._con._portal_connection,
+                    portal_connection=self._con._portal_connection or self._con,
                 )
             elif isinstance(self._con, Connection):
                 sd_url = f"{os.path.dirname(base_url)}/rest/services"
-                d = ServicesDirectory(url=sd_url)
+                d = ServicesDirectory(url=sd_url, portal_connection=self._con)
                 d._con = self._con
 
             try:
@@ -657,7 +692,7 @@ class DataStoreManager(BaseServer):
         store are optional.
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         name                Required string. The name of the cloud store.
         ---------------     --------------------------------------------------------------------
@@ -678,7 +713,8 @@ class DataStoreManager(BaseServer):
         ===============     ====================================================================
 
 
-        :return: DataStore
+        :return:
+            :class:`~arcgis.gis.server.Datastore` object or None
 
         """
         item = {
@@ -712,7 +748,7 @@ class DataStoreManager(BaseServer):
         Registers a database with the data store.
 
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
         name                   Required string. The unique database name on the server.
         ------------------     --------------------------------------------------------------------
@@ -763,7 +799,7 @@ class DataStoreManager(BaseServer):
         down for maintenance.
 
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
         path                   Required string. The complete hierarchical path to the item.
         ==================     ====================================================================
@@ -784,7 +820,7 @@ class DataStoreManager(BaseServer):
         existing primary machine is downgraded to a standby machine.
 
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
         item_name              Required string. The primary machine item name in the data store.
         ------------------     --------------------------------------------------------------------
@@ -815,11 +851,15 @@ class DataStoreManager(BaseServer):
         applications must provide when creating a Relational Database
         Connection portal item.
 
+        .. note::
+            This method only works if using ArcGIS Insights.
+
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
         type_id                Required string. The datastore type ID of interest.
-                               See https://developers.arcgis.com/rest/enterprise-administration/server/relational-data-store-types.htm
+                               See `Relational Data Store Types <https://developers.arcgis.com/rest/enterprise-administration/server/relational-data-store-types.htm>`_
+                               for details.
         ==================     ====================================================================
 
 
@@ -863,7 +903,7 @@ class DataStoreManager(BaseServer):
         Use this operation to search through the various data items that are registered in the server's data store.
 
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
         parent_path            Optional string. The path of the parent under which to find items.
         ------------------     --------------------------------------------------------------------
@@ -902,7 +942,7 @@ class DataStoreManager(BaseServer):
         Registers a new data item with the server's data store.
 
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
         item                   Required string. The JSON representing the data item.
                                See https://developers.arcgis.com/rest/enterprise-administration/server/dataitem.htm
@@ -944,7 +984,7 @@ class DataStoreManager(BaseServer):
         existing primary machine is downgraded to a standby machine.
 
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
         datastore_name         Required string. The primary machine name in the data store.
         ------------------     --------------------------------------------------------------------
@@ -970,7 +1010,7 @@ class DataStoreManager(BaseServer):
         not supported on the primary Data Store machine.
 
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
         item_name              Required string. The standby machine item name in the data store.
         ------------------     --------------------------------------------------------------------
@@ -994,7 +1034,7 @@ class DataStoreManager(BaseServer):
         Starts the database instance running on the Data Store machine.
 
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
         item_name              Required string. The database item name in the data store to start.
         ------------------     --------------------------------------------------------------------
@@ -1020,7 +1060,7 @@ class DataStoreManager(BaseServer):
 
 
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
         item_name              Required string. The database item name in the data store to stop.
         ------------------     --------------------------------------------------------------------
@@ -1047,7 +1087,7 @@ class DataStoreManager(BaseServer):
 
 
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
         path                   Required string. The path to the share folder.
         ==================     ====================================================================
@@ -1073,7 +1113,7 @@ class DataStoreManager(BaseServer):
         Checks the status of the given ArcGIS Data Store and provides a health check response.
 
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
         data_store_name        Required string. The item name of the data store.
         ------------------     --------------------------------------------------------------------
