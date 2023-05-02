@@ -1,6 +1,9 @@
 import traceback
+import warnings
 from .._data import _raise_fastai_import_error
 from ._inference_only_models import InferenceOnlyModel
+from functools import partial
+warnings.simplefilter('always', UserWarning)
 
 HAS_TRANSFORMER = True
 
@@ -73,7 +76,16 @@ class QuestionAnswering(InferenceOnlyModel):
             _raise_fastai_import_error(import_exception=transformer_exception)
         super().__init__(backbone=backbone, task="question-answering", **kwargs)
 
-    def get_answer(self, text_or_list, context, show_progress=True, **kwargs):
+    def get_answer(
+        self,
+        text_or_list,
+        context,
+        show_progress=True,
+        explain=False,
+        explain_start_word=True,
+        explain_index=None,
+        **kwargs,
+    ):
         """
         Find answers for the asked questions from the given passage/context
 
@@ -88,6 +100,30 @@ class QuestionAnswering(InferenceOnlyModel):
         ---------------------   -------------------------------------------
         show_progress           optional Bool. If set to True, will display a
                                 progress bar depicting the items processed so far.
+        ---------------------   -------------------------------------------
+        explain                 optional Bool. If set to True, will generate
+                                a shap based explanation
+        ---------------------   -------------------------------------------
+        explain_start_word      optional Bool.
+                                E.g. Context: Point cloud datasets are typically
+                                collected using Lidar sensors (
+                                light detection and ranging )
+                                Question: "How is Point cloud dataset collected?"
+                                Answer: Lidar Sensors
+
+                                If set to True, will generate
+                                a shap based explanation for start word. if set
+                                to False, will generate explanation for last word
+                                of the answer.
+
+                                In the above example, if the value of `explain_start_word`
+                                is `True`, it will generate the importance of different context
+                                words that leads to selection of "Lidar" as a starting word
+                                of the span. If `explain_start_word` is set to `False`
+                                then it will generate explanation for the word `sensors`
+        ---------------------   -------------------------------------------
+        explain_index           optional List. Index of the question for which answer
+                                needs to be generated
         =====================   ===========================================
 
         **kwargs**
@@ -130,6 +166,54 @@ class QuestionAnswering(InferenceOnlyModel):
             results.append(
                 self.model(question=text_or_list[i], context=context, **kwargs_dict)
             )
+        try:
+            if explain:
+                temp_text_or_list = []
+                if explain_index is not None:
+                    if isinstance(explain_index, list):
+                        # validate the index
+                        temp_index = []
+                        invalid_index = []
+                        for index in explain_index:
+                            if isinstance(index, int):
+                                temp_index.append(index)
+                            else:
+                                invalid_index.append(index)
+
+                        if invalid_index:
+                            warnings.warn(
+                                f"Index {invalid_index} are not valid. Indices/index must be integer. Ignoring "
+                                f"{invalid_index} for processing.")
+
+                        if temp_index:
+                            for i in temp_index:
+                                if i < len(text_or_list):
+                                    temp_text_or_list.append(text_or_list[i])
+                                else:
+                                    warnings.warn(
+                                        f"Value of index {explain_index} should be less than {len(text_or_list) - 1}."
+                                    )
+                        else:
+                            warnings.warn(
+                                f"No valid indices were supplied. Please change your input to list of integers")
+
+                    elif isinstance(explain_index, int):
+                        if explain_index < len(text_or_list):
+                            temp_text_or_list = [text_or_list[explain_index]]
+                        else:
+                            warnings.warn(
+                                f"Value of index {explain_index} should be less than {len(text_or_list) - 1}."
+                            )
+                else:
+                    temp_text_or_list = text_or_list
+
+                if len(temp_text_or_list) > 0:
+                    if explain_start_word:
+                        self._explain(temp_text_or_list, context, True)
+                    else:
+                        self._explain(temp_text_or_list, context, False)
+        except:
+            warnings.warn(f"SHAP workflow has encountered an error. Failed to generate an explanation.")
 
         return self._process_result(results, text_or_list)
 
@@ -156,3 +240,60 @@ class QuestionAnswering(InferenceOnlyModel):
                 processed_results.append(item_list)
 
         return processed_results
+
+    def _logit_wrapper(self, part_start, questions):
+        outs = []
+        for q in questions:
+            question, context = q.split("[SEP]")
+            d = self.model.tokenizer(question, context, truncation="only_second")
+            out = self.model.model.forward(
+                **{k: torch.tensor(d[k]).reshape(1, -1).to(self._device) for k in d}
+            )
+            logits = out.start_logits if part_start else out.end_logits
+            outs.append(logits.reshape(-1).detach().cpu().numpy())
+        return outs
+
+    def _output_token_decode(self, inputs):
+        question, context = inputs.split("[SEP]")
+        d = self.model.tokenizer(question, context, truncation="only_second")
+        return [self.model.tokenizer.decode([id]) for id in d["input_ids"]]
+
+    def _explain(self, questions, context, explain_start_token=True):
+        IS_SHAP = True
+        try:
+            import shap
+        except:
+            IS_SHAP = False
+        if IS_SHAP:
+            logit_start = partial(self._logit_wrapper, True)
+            logit_end = partial(self._logit_wrapper, False)
+            notify = []
+            for i in questions:
+                try:
+                    val = i + "[SEP]" + context
+                    if explain_start_token:
+                        explainer_start = shap.Explainer(
+                            logit_start,
+                            self.model.tokenizer,
+                            output_names=self._output_token_decode(val),
+                        )
+                    else:
+                        explainer_start = shap.Explainer(
+                            logit_end,
+                            self.model.tokenizer,
+                            output_names=self._output_token_decode(
+                                i + "[SEP]" + context
+                            ),
+                        )
+                    shap_values_start = explainer_start([val])
+                    shap.plots.text(shap_values_start)
+                except ValueError as err:
+                    notify.append(
+                        f"SHAP based explanation failed for question {i} due to internal error."
+                    )
+
+            if len(notify):
+                for i in notify:
+                    print(i)
+        else:
+            warnings.warn("SHAP is not installed.")
