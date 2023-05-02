@@ -9084,85 +9084,41 @@ class _OrthoRealityMappingTools:
             correction_feature = _RasterAnalysisTools._feature_input(correction_feature)
 
         output_products = {}
-        if scenario in ("DEFAULT", "AERIAL_OBLIQUE"):
-            # Generate Point Cloud and Mesh output by default
+        if output_dsm_name is not None:
             (
-                output_point_cloud_raster,
-                output_point_cloud_service,
+                output_dsm_raster,
+                output_dsm_service,
             ) = self._set_output_raster(
-                output_name=output_point_cloud_name, task=task, output_properties=kwargs
+                output_name=output_dsm_name,
+                task=task,
+                output_properties=kwargs,
             )
-            output_mesh_raster, output_mesh_service = self._set_output_raster(
-                output_name=output_mesh_name, task=task, output_properties=kwargs
-            )
-            output_products["Point_Cloud"] = output_point_cloud_raster
-            output_products["Mesh"] = output_mesh_raster
-
-            if output_dsm_mesh_name is not None:
-                (
-                    output_dsm_mesh_raster,
-                    output_dsm_mesh_service,
-                ) = self._set_output_raster(
-                    output_name=output_dsm_mesh_name,
-                    task=task,
-                    output_properties=kwargs,
-                )
-                output_products["DSM_Mesh"] = output_dsm_mesh_raster
-            if output_true_ortho_name is not None:
-                (
-                    output_true_ortho_raster,
-                    output_true_ortho_service,
-                ) = self._set_output_raster(
-                    output_name=output_true_ortho_name,
-                    task=task,
-                    output_properties=kwargs,
-                )
-                output_products["True_Ortho"] = output_true_ortho_raster
-            if output_dsm_name is not None:
-                output_dsm_raster, output_dsm_service = self._set_output_raster(
-                    output_name=output_dsm_name, task=task, output_properties=kwargs
-                )
-                output_products["DSM"] = output_dsm_raster
-        else:
-            # scenario is AERIAL_NADIR
-            # set default values for forward_overlap and sideward_overlap if not specified.
-            if forward_overlap is None:
-                forward_overlap = 60
-            if sideward_overlap is None:
-                sideward_overlap = 30
-
-            # Generate DSM, true ortho and DSM Mesh out by default
-            output_dsm_raster, output_dsm_service = self._set_output_raster(
-                output_name=output_dsm_name, task=task, output_properties=kwargs
-            )
+            output_products["DSM"] = output_dsm_raster
+        if output_true_ortho_name is not None:
             (
                 output_true_ortho_raster,
                 output_true_ortho_service,
             ) = self._set_output_raster(
-                output_name=output_true_ortho_name, task=task, output_properties=kwargs
+                output_name=output_true_ortho_name,
+                task=task,
+                output_properties=kwargs,
             )
-            output_dsm_mesh_raster, output_dsm_mesh_service = self._set_output_raster(
-                output_name=output_dsm_mesh_name, task=task, output_properties=kwargs
-            )
-            output_products["DSM"] = output_dsm_raster
             output_products["True_Ortho"] = output_true_ortho_raster
+        if output_dsm_mesh_name is not None:
+            output_dsm_mesh_raster = {
+                "name": output_dsm_mesh_name
+            }
             output_products["DSM_Mesh"] = output_dsm_mesh_raster
-
-            if output_point_cloud_name is not None:
-                (
-                    output_point_cloud_raster,
-                    output_point_cloud_service,
-                ) = self._set_output_raster(
-                    output_name=output_point_cloud_name,
-                    task=task,
-                    output_properties=kwargs,
-                )
-                output_products["Point_Cloud"] = output_point_cloud_raster
-            if output_mesh_name is not None:
-                output_mesh_raster, output_mesh_service = self._set_output_raster(
-                    output_name=output_mesh_name, task=task, output_properties=kwargs
-                )
-                output_products["Mesh"] = output_mesh_raster
+        if output_point_cloud_name is not None:
+            output_point_cloud_raster = {
+                "name": output_point_cloud_name
+            }
+            output_products["Point_Cloud"] = output_point_cloud_raster
+        if output_mesh_name is not None:
+            output_mesh_raster = {
+                "name": output_mesh_name
+            }
+            output_products["Mesh"] = output_mesh_raster
 
         job = self._tbx.reconstruct_surface(
             image_collection=image_collection,
@@ -21144,7 +21100,7 @@ class _Tools(object):
             try:
                 # svcurl = self._gis.properties.helperServices["realityMapping"]["url"]
                 # svcurl = "https://svrcluster-sha.esri.com/server/rest/services/System/RealitymappingTools/GPServer"
-                svcurl = "https://sha-97611-d02.esri.com/server/rest/services/RealityMappingTools/GPServer"
+                svcurl = "https://sha-97611-d02.esri.com/server/rest/services/System/RealityMappingTools/GPServer"
                 if self._gis._is_hosted_nb_home:
                     svcurl = self._validate_url(svcurl)
             except:
