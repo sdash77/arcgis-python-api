@@ -324,6 +324,37 @@ class GPJob(object):
                 )
             elif isinstance(value, dict) and "featureSet" in value:
                 return arcgis.features.FeatureCollection(value)
+            elif self.task == "ReconstructSurface":
+                r = {}
+                iids = []
+                for key in result:
+                    val = result[key]
+                    if (
+                        isinstance(val, dict)
+                        and "itemId" in val
+                        and len(val["itemId"]) > 0
+                    ):
+                        if not val["itemId"] in iids:
+                            r[key] = arcgis.gis.Item(self._gis, val["itemId"])
+                            if self._item_properties:
+                                _item_properties = {
+                                    "properties": {
+                                        "jobUrl": self._url + "/jobs/" + self._jobid,
+                                        "jobType": "GPServer",
+                                        "jobId": self._jobid,
+                                        "jobStatus": "completed",
+                                    }
+                                }
+                                r[key].update(item_properties=_item_properties)
+                            iids.append(val["itemId"])
+
+                import collections
+
+                key_names = list(r.keys())
+                NamedTuple = collections.namedtuple("FunctionOutput", key_names)
+                function_output = NamedTuple(**r)
+                return function_output
+
             return value
 
     def _process_ra(self, result):
