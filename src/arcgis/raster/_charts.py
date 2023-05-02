@@ -358,7 +358,7 @@ def temporal_profile(
                     x_trend, y_trend = _harmonic_regression(
                         sample_size, date_list, t1[i]["x"], t1[i]["y"], trend_order
                     )
-                label_string = f"Location {str(t1[i]['point'])}-{str(t1[i]['variable'])}-band{str(t1[i]['band'])}-{trend_type.lower()} trend"
+                label_string = f"Location {str(t1[i]['point'])}-{str(t1[i]['variable'])}-band {str(t1[i]['band'])}-{trend_type.lower()} trend"
                 _plt.plot(x_trend, y_trend, c=c, linestyle='dashed', label=label_string)
                 _plt.legend(loc='center left', bbox_to_anchor=(1, 0.5))
 
@@ -384,11 +384,6 @@ def temporal_profile(
         xx = []
         yy = []
         d1 = []
-
-        n_bands = 1 if len(bands) == 0 else len(bands)
-        n_colors = len(variables) * len(points) * n_bands
-        if trend_type is not None:
-            n_colors = (n_colors * 2)
 
         mosaic_rule = {
             "mosaicMethod": "esriMosaicAttribute",
@@ -484,7 +479,7 @@ def temporal_profile(
             )
             # label_string =  "Location "+ str(t1[i]["point"])+"-"
             if "band" in t1[i].keys():
-                label_string = label_string + "-" + "band = " + str(t1[i]["band"])
+                label_string = label_string + "-" + "band " + str(t1[i]["band"])
             c = next(color)
             _plt.plot(t1[i]["x"], t1[i]["y"], c=c, label=label_string)
             _plt.scatter(t1[i]["x"], t1[i]["y"], c=[c])
