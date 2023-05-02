@@ -3,7 +3,8 @@ import warnings
 from .._data import _raise_fastai_import_error
 from ._inference_only_models import InferenceOnlyModel
 from functools import partial
-warnings.simplefilter('always', UserWarning)
+
+warnings.simplefilter("always", UserWarning)
 
 HAS_TRANSFORMER = True
 
@@ -183,7 +184,8 @@ class QuestionAnswering(InferenceOnlyModel):
                         if invalid_index:
                             warnings.warn(
                                 f"Index {invalid_index} are not valid. Indices/index must be integer. Ignoring "
-                                f"{invalid_index} for processing.")
+                                f"{invalid_index} for processing."
+                            )
 
                         if temp_index:
                             for i in temp_index:
@@ -195,7 +197,8 @@ class QuestionAnswering(InferenceOnlyModel):
                                     )
                         else:
                             warnings.warn(
-                                f"No valid indices were supplied. Please change your input to list of integers")
+                                f"No valid indices were supplied. Please change your input to list of integers"
+                            )
 
                     elif isinstance(explain_index, int):
                         if explain_index < len(text_or_list):
@@ -213,7 +216,9 @@ class QuestionAnswering(InferenceOnlyModel):
                     else:
                         self._explain(temp_text_or_list, context, False)
         except:
-            warnings.warn(f"SHAP workflow has encountered an error. Failed to generate an explanation.")
+            warnings.warn(
+                f"SHAP workflow has encountered an error. Failed to generate an explanation."
+            )
 
         return self._process_result(results, text_or_list)
 
