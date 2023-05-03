@@ -4,7 +4,6 @@ from .._data import _raise_fastai_import_error
 from ._inference_only_models import InferenceOnlyModel
 from functools import partial
 
-warnings.simplefilter("always", UserWarning)
 
 HAS_TRANSFORMER = True
 
@@ -182,31 +181,37 @@ class QuestionAnswering(InferenceOnlyModel):
                                 invalid_index.append(index)
 
                         if invalid_index:
-                            warnings.warn(
-                                f"Index {invalid_index} are not valid. Indices/index must be integer. Ignoring "
-                                f"{invalid_index} for processing."
-                            )
+                            with warnings.catch_warnings():
+                                warnings.simplefilter("always", UserWarning)
+                                warnings.warn(
+                                    f"Index {invalid_index} are not valid. Indices/index must be integer. Ignoring "
+                                    f"{invalid_index} for processing.")
 
                         if temp_index:
                             for i in temp_index:
                                 if i < len(text_or_list):
                                     temp_text_or_list.append(text_or_list[i])
                                 else:
-                                    warnings.warn(
-                                        f"Value of index {explain_index} should be less than {len(text_or_list) - 1}."
-                                    )
+                                    with warnings.catch_warnings():
+                                        warnings.simplefilter("always", UserWarning)
+                                        warnings.warn(
+                                            f"Value of index {i} should be less than/equal to {len(text_or_list) - 1}."
+                                        )
                         else:
-                            warnings.warn(
-                                f"No valid indices were supplied. Please change your input to list of integers"
-                            )
+                            with warnings.catch_warnings():
+                                warnings.simplefilter("always", UserWarning)
+                                warnings.warn(
+                                    f"No valid indices were supplied. Please change your input to list of integers")
 
                     elif isinstance(explain_index, int):
                         if explain_index < len(text_or_list):
                             temp_text_or_list = [text_or_list[explain_index]]
                         else:
-                            warnings.warn(
-                                f"Value of index {explain_index} should be less than {len(text_or_list) - 1}."
-                            )
+                            with warnings.catch_warnings():
+                                warnings.simplefilter("always", UserWarning)
+                                warnings.warn(
+                                    f"Value of index {explain_index} should be less than/equal to {len(text_or_list) - 1}."
+                                )
                 else:
                     temp_text_or_list = text_or_list
 
@@ -216,9 +221,9 @@ class QuestionAnswering(InferenceOnlyModel):
                     else:
                         self._explain(temp_text_or_list, context, False)
         except:
-            warnings.warn(
-                f"SHAP workflow has encountered an error. Failed to generate an explanation."
-            )
+            with warnings.catch_warnings():
+                warnings.simplefilter("always", UserWarning)
+                warnings.warn(f"SHAP workflow has encountered an error. Failed to generate an explanation.")
 
         return self._process_result(results, text_or_list)
 
@@ -269,6 +274,7 @@ class QuestionAnswering(InferenceOnlyModel):
             import shap
         except:
             IS_SHAP = False
+
         if IS_SHAP:
             logit_start = partial(self._logit_wrapper, True)
             logit_end = partial(self._logit_wrapper, False)
