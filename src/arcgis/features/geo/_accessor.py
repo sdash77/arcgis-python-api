@@ -2503,6 +2503,22 @@ class GeoAccessor(object):
             if gis is None:
                 raise ValueError("GIS object must be provided")
         content = gis.content
+
+        # Check that the user is the owner of both the source and the published item
+        user = gis._username
+        if isinstance(feature_service, str):
+            service = content.get(feature_service)
+
+        if service.owner != user:
+            raise AssertionError("You must own the service to insert data to it.")
+        # Get the data related
+        related_items = service.related_items(rel_type="Service2Data")
+        for item in related_items:
+            if item.owner != user:
+                raise AssertionError(
+                    "You must own the service data to insert data to it."
+                )
+
         origin_columns = self._data.columns.tolist()
         origin_index = copy.deepcopy(self._data.index)
         if isinstance(feature_service, _gis.Item):
