@@ -1609,7 +1609,7 @@ def enrich(
                                   kilometer, this value will be ``kilometers``. Default is
                                   ``kilometers``.
     -------------------------     --------------------------------------------------------------------
-    normalize_columns:            Optional boolean. Convert output column names to python-ish style.
+    normalize_columns             Optional boolean. Convert output column names to python-ish style.
                                   Default is ``True``.
     =========================     ====================================================================
 
