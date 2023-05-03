@@ -404,6 +404,7 @@ class UX(object):
             }
         elif "group" in content and isinstance(content["group"], Group):
             gid = content["group"].groupid
+            content.pop("group")
             content["homePageFeaturedContent"] = gid
             content["featuredGroupsId"] = f"id:{gid}"
             content["featuredItemsGroupQuery"] = f"id:{gid}"
@@ -540,7 +541,11 @@ class UX(object):
         shared_theme = {
             "header": {"background": "no-color", "text": "no-color"},
             "button": {"background": "no-color", "text": "no-color"},
-            "body": {"background": "no-color", "text": "no-color", "link": "no-color"},
+            "body": {
+                "background": "no-color",
+                "text": "no-color",
+                "link": "no-color",
+            },
             "logo": {"small": ""},
         }
         if "sharedTheme" in portal_properties:
@@ -1145,7 +1150,8 @@ class HomePageSettings(object):
                         # see if named something else
                         hp = json.loads(
                             open(
-                                self._portal_resources.get("home.page.json"), "r"
+                                self._portal_resources.get("home.page.json"),
+                                "r",
                             ).read()
                         )
                         background = hp["header"]["coverImg"]
@@ -1241,7 +1247,11 @@ class HomePageSettings(object):
                         "color:#369;'>{}</span></div>".format(self._gis.properties.name)
                     )
             return self._gis.update_properties(
-                {"clearEmptyFields": True, "thumbnail": "", "rotatorPanels": rp}
+                {
+                    "clearEmptyFields": True,
+                    "thumbnail": "",
+                    "rotatorPanels": rp,
+                }
             )
 
     # ----------------------------------------------------------------------
@@ -1380,7 +1390,8 @@ class HomePageSettings(object):
 ##############################################################################
 class MapSettings(object):
     """Helper class that can be called off of UX class using the 'map_settings' property.
-    Edit org map settings such as the default extent, default basemap, etc."""
+    Edit org map settings such as the default extent, default basemap, etc.
+    """
 
     # ----------------------------------------------------------------------
     def __init__(self, gis):
@@ -1863,7 +1874,8 @@ class ItemSettings(object):
 #############################################################################
 class SecuritySettings(object):
     """Helper class that can be called off of UX class using the 'security_settings' property.
-    Edit org item settings such as the informational banner, password policy, etc."""
+    Edit org item settings such as the informational banner, password policy, etc.
+    """
 
     # ----------------------------------------------------------------------
     def __init__(self, gis):
@@ -2392,7 +2404,11 @@ class SecuritySettings(object):
         # perform update
 
         return self._gis.update_properties(
-            {"mfaEnabled": enabled, "mfaAdmins": admins, "clearEmptyFields": True}
+            {
+                "mfaEnabled": enabled,
+                "mfaAdmins": admins,
+                "clearEmptyFields": True,
+            }
         )
 
     # ----------------------------------------------------------------------
@@ -2582,7 +2598,10 @@ class SecuritySettings(object):
         """
         if self._gis._is_agol is True:
             url = self._portal.resturl + "portals/self/setSigninSettings"
-            params = {"f": "json", "blockUnapprovedThirdpartyApps": block_unapproved}
+            params = {
+                "f": "json",
+                "blockUnapprovedThirdpartyApps": block_unapproved,
+            }
 
             return self._gis._con.post(url, params)
         else:
@@ -2671,7 +2690,12 @@ class SecuritySettings(object):
                         "f": "json",
                         "signinOptionsOrder": {
                             "logins": ["arcgis", "social"],
-                            "social": ["facebook", "google", "github", "apple"],
+                            "social": [
+                                "facebook",
+                                "google",
+                                "github",
+                                "apple",
+                            ],
                         },
                     }
                 # specify order if passed in
@@ -2681,7 +2705,12 @@ class SecuritySettings(object):
                 # configure the social providers
                 for network in social_networks:
                     networks = []
-                    if network.lower() in ["facebook", "google", "github", "apple"]:
+                    if network.lower() in [
+                        "facebook",
+                        "google",
+                        "github",
+                        "apple",
+                    ]:
                         networks.append(network)
                 url = self._portal.resturl + "portals/self/socialProviders/configure"
                 params = {
