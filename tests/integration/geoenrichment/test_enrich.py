@@ -711,6 +711,24 @@ class TestEnrichOnline(unittest.TestCase):
             assert isinstance(buffer_df, pd.DataFrame)
             assert _is_geoenabled(buffer_df)
 
+    @skip_if_no_agol
+    def test_enrich_save_original_column_names(self):
+        from arcgis.geoenrichment import enrich, BufferStudyArea
+
+        with does_not_raise():
+            buffered = BufferStudyArea(
+                area="380 New York St Redlands CA 92373",
+                radii=[3],
+                units="Miles",
+                overlap=False,
+            )
+            enrich_res = enrich(study_areas=[buffered], gis=self.usa_agol_inst._gis, normalize_columns=False)
+            assert isinstance(enrich_res, pd.DataFrame)
+            assert _is_geoenabled(enrich_res)
+            enrich_res_cols = list(enrich_res.columns)
+            normalized_enrich_var_cols = [pep8ify(val) for val in enrich_res_cols if pep8ify(val) != val]
+            assert all([(enrich_col not in enrich_res_cols) for enrich_col in normalized_enrich_var_cols])
+
 
 if __name__ == "__main__":
 

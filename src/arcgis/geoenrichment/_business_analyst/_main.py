@@ -1856,9 +1856,13 @@ class BusinessAnalyst(object):
         enrich_df.columns = [
             self._standardize_enrich_column_name(c, country) for c in enrich_df.columns
         ]
-        enrich_df.columns = [pep8ify(c) for c in enrich_df.columns if c != "SHAPE"] + [
-            "SHAPE"
-        ]
+
+        # default value set to True to keep backward compatibility
+        normalize_columns = kwargs.pop("normalize_columns", True)
+        if normalize_columns:
+            enrich_df.columns = [pep8ify(c) for c in enrich_df.columns if c != "SHAPE"] + [
+                "SHAPE"
+            ]
 
         # start creating a list of columns to remove - beginning with the OBJECTID field
         drop_cols = [
@@ -2182,9 +2186,13 @@ class BusinessAnalyst(object):
         enrich_df.columns = [
             self._standardize_enrich_column_name(c, country) for c in enrich_df.columns
         ]
-        enrich_df.columns = [
-            pep8ify(c) if c != "SHAPE" else c for c in enrich_df.columns
-        ]
+
+        # default value set to True to keep backward compatibility
+        normalize_columns = kwargs.pop("normalize_columns", True)
+        if normalize_columns:
+            enrich_df.columns = [
+                pep8ify(c) if c != "SHAPE" else c for c in enrich_df.columns
+            ]
 
         # stash useful pieces for potential later access in metadata
         enrich_df.attrs["arcgis_ba"] = self
