@@ -2000,18 +2000,16 @@ class FeatureLayerCollectionManager(_GISResource):
                     "preserveLayerIds": preserve_layer_ids,
                 }
             ),
+            "tags": tags if tags else item.tags,
+            "snippet": snippet if snippet else item.snippet,
+            "description": description if description else item.description,
             "outputType": "featureService",
         }
         if set_item_id:
             params["itemIdToCreate"] = set_item_id
-        if tags:
-            params["tags"] = tags
-        if snippet:
-            params["snippet"] = snippet
         if not overwrite is None:
             params["overwrite"] = overwrite
-        if description:
-            params["description"] = description
+
         res = gis._con.post(path=url, postdata=params)
         view = content.get(res["itemId"])
         fs_view = FeatureLayerCollection(url=view.url, gis=gis)
@@ -2231,13 +2229,7 @@ class FeatureLayerCollectionManager(_GISResource):
                 view.update(data=item_upd_dict)
         else:
             view.update(data=item.get_data())
-        view.update(
-            {
-                "tags": ",".join(item.tags),
-                "description": item.description or "",
-                "snippet": item.snippet or "",
-            }
-        )
+
         return content.get(res["itemId"])
 
     # ----------------------------------------------------------------------
