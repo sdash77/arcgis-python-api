@@ -1860,7 +1860,7 @@ class WebMap(HasTraits, collections.OrderedDict):
         else:
             # Check spatial reference of a layer type (Layer, Map Service Layer, Vector Tile Layer, etc)
             if "spatialReference" in service.properties:
-                layer_sr = service["spatialReference"]
+                layer_sr = service.properties["spatialReference"]
             elif (
                 "extent" in service.properties
                 and "spatialReference" in service.properties["extent"]
