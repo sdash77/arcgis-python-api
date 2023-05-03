@@ -3627,7 +3627,9 @@ class UserManager(object):
                 and "groups" in self.user_settings
                 and self.user_settings["groups"]
             ):
-                groups = [self._gis.groups.get(g) for g in self.user_settings["groups"]]
+                groups = [
+                    self._gis.groups.get(g).id for g in self.user_settings["groups"]
+                ]
             params = {
                 "f": "json",
                 "invitationList": {
