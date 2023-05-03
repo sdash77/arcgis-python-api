@@ -6,6 +6,7 @@ import json
 import warnings
 import traceback
 from ..models._arcgis_model import ArcGISModel, model_characteristics_folder
+
 HAS_FASTAI = True
 
 try:
@@ -571,8 +572,10 @@ class SequenceToSequence(ArcGISModel):
                     if invalid_index:
                         with warnings.catch_warnings():
                             warnings.simplefilter("always", UserWarning)
-                            warnings.warn(f"Index {invalid_index} are not valid. Indices/index must be integer. Ignoring "
-                                          f"{invalid_index} for processing.")
+                            warnings.warn(
+                                f"Index {invalid_index} are not valid. Indices/index must be integer. Ignoring "
+                                f"{invalid_index} for processing."
+                            )
 
                     if temp_index:
                         for i in temp_index:
@@ -587,7 +590,9 @@ class SequenceToSequence(ArcGISModel):
                     else:
                         with warnings.catch_warnings():
                             warnings.simplefilter("always", UserWarning)
-                            warnings.warn(f"No valid indices were supplied. Please change your input to list of integers")
+                            warnings.warn(
+                                f"No valid indices were supplied. Please change your input to list of integers"
+                            )
 
                 elif isinstance(explain_index, int):
                     if explain_index < len(text_or_list):
@@ -604,7 +609,9 @@ class SequenceToSequence(ArcGISModel):
                         text_list_for_exp.append(text_or_list[i])
                     with warnings.catch_warnings():
                         warnings.simplefilter("always", UserWarning)
-                        warnings.warn(f"Generating explanation for first {exp_rows} rows ")
+                        warnings.warn(
+                            f"Generating explanation for first {exp_rows} rows "
+                        )
 
             if explain and len(text_list_for_exp):
                 self._explain(text_list_for_exp, **kwargs)
@@ -612,7 +619,9 @@ class SequenceToSequence(ArcGISModel):
         except:
             with warnings.catch_warnings():
                 warnings.simplefilter("always", UserWarning)
-                warnings.warn(f"SHAP workflow has encountered an error. Failed to generate an explanation.")
+                warnings.warn(
+                    f"SHAP workflow has encountered an error. Failed to generate an explanation."
+                )
 
         return list(zip(text_or_list, preds))
 
