@@ -79,7 +79,7 @@ class StoryMap(object):
         if gis is None or gis._portal.is_logged_in is False:
             # Check to see if user is authenticated
             raise Exception("Must be logged into a Portal Account")
-        
+
         # Section: Set up existing story
         if item and isinstance(item, str):
             # Get item using the item id
@@ -112,40 +112,40 @@ class StoryMap(object):
     # ----------------------------------------------------------------------
     def _create_existing_storymap(self):
         # Get properties from most recent resource file.
-            # Can have multiple drafts so need to account for this.
-            # Draft file will be of form: draft_{13 digit timestamp}.json or draft.json
-            saved_drafts = []
-            for resource in self._resources:
-                for key, val in resource.items():
-                    # Find all drafts in the resources and add to a list
-                    if key == "resource" and (
-                        re.match("draft_[0-9]{13}.json", val)
-                        or re.match("draft.json", val)
-                    ):
-                        saved_drafts.append(val)
-            # Find the correct draft to use
-            if len(saved_drafts) == 1:
-                # Only one draft saved
-                # Open JSON draft file for properties
-                data = self._item.resources.get(saved_drafts[0], try_json=True)
-                self._properties = data
-            else:
-                # Multiple drafts saved
-                # Remove draft.json because oldest one
-                if "draft.json" in saved_drafts:
-                    idx = saved_drafts.index("draft.json")
-                    del saved_drafts[idx]
-                # check remaining to find most recent
-                start = saved_drafts[0][6:19]  # get only timestamp
-                current = saved_drafts[0]
-                for draft in saved_drafts:
-                    compare = draft[6:19]
-                    if start < compare:
-                        start = compare
-                        current = draft
-                # Open most recent JSON draft file for properties
-                data = self._item.resources.get(current, try_json=True)
-                self._properties = data
+        # Can have multiple drafts so need to account for this.
+        # Draft file will be of form: draft_{13 digit timestamp}.json or draft.json
+        saved_drafts = []
+        for resource in self._resources:
+            for key, val in resource.items():
+                # Find all drafts in the resources and add to a list
+                if key == "resource" and (
+                    re.match("draft_[0-9]{13}.json", val) or re.match("draft.json", val)
+                ):
+                    saved_drafts.append(val)
+        # Find the correct draft to use
+        if len(saved_drafts) == 1:
+            # Only one draft saved
+            # Open JSON draft file for properties
+            data = self._item.resources.get(saved_drafts[0], try_json=True)
+            self._properties = data
+        else:
+            # Multiple drafts saved
+            # Remove draft.json because oldest one
+            if "draft.json" in saved_drafts:
+                idx = saved_drafts.index("draft.json")
+                del saved_drafts[idx]
+            # check remaining to find most recent
+            start = saved_drafts[0][6:19]  # get only timestamp
+            current = saved_drafts[0]
+            for draft in saved_drafts:
+                compare = draft[6:19]
+                if start < compare:
+                    start = compare
+                    current = draft
+            # Open most recent JSON draft file for properties
+            data = self._item.resources.get(current, try_json=True)
+            self._properties = data
+
     # ----------------------------------------------------------------------
     def _create_new_storymap(self):
         # Get template from _ref folder
@@ -351,7 +351,7 @@ class StoryMap(object):
     @property
     def nodes(self):
         """
-        Get main nodes in order of appearance in the story. This will return a list 
+        Get main nodes in order of appearance in the story. This will return a list
         of dictionaries specifying the node ids and the class content they correspond to.
         If there is no class for the content, a string is returned with the content type.
         """
@@ -548,7 +548,8 @@ class StoryMap(object):
         ---------------     --------------------------------------------------------------------
         by_line             Optional string. Crediting the author(s).
         ---------------     --------------------------------------------------------------------
-        image               Optional :class:`~arcgis.apps.storymap.story_content.Image` object. The cover image for the story cover.
+        image               Optional url or file path or :class:`~arcgis.apps.storymap.story_content.Image`
+                            object. The cover image for the story cover.
         ===============     ====================================================================
 
         :return: Dictionary representation of the story cover node.
@@ -586,11 +587,12 @@ class StoryMap(object):
 
         # set the cover image
         if image is not None:
-            if isinstance(image, Content.Image):
-                if image.node not in self._properties["nodes"]:
-                    # must be added to story resources
-                    image._add_image(story=self)
-                self._properties["nodes"][story_cover_node]["children"] = [image.node]
+            if not isinstance(image, Content.Image):
+                image = Content.Image(image)
+            if image.node not in self._properties["nodes"]:
+                # must be added to story resources
+                image._add_image(story=self)
+            self._properties["nodes"][story_cover_node]["children"] = [image.node]
         else:
             # get original image
             if "children" in self._properties["nodes"][story_cover_node]:

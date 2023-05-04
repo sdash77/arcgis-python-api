@@ -75,7 +75,7 @@ class Image:
     ==================      ====================================================================
     **Parameter**            **Description**
     ------------------      --------------------------------------------------------------------
-    path                    Required String. The file path to the image that will be added.
+    path                    Required String. The file path or url to the image that will be added.
     ==================      ====================================================================
     """
 
@@ -456,6 +456,7 @@ class Video:
     # ----------------------------------------------------------------------
     def __repr__(self) -> str:
         return "Video"
+
     # ----------------------------------------------------------------------
     @property
     def properties(self):
@@ -761,6 +762,7 @@ class Audio:
     # ----------------------------------------------------------------------
     def __repr__(self) -> str:
         return "Audio"
+
     # ----------------------------------------------------------------------
     @property
     def properties(self):
@@ -1008,7 +1010,7 @@ class Embed:
     # ----------------------------------------------------------------------
     def __repr__(self) -> str:
         return "Embed"
-    
+
     # ----------------------------------------------------------------------
     @property
     def link(self):
@@ -1325,6 +1327,7 @@ class Map:
     # ----------------------------------------------------------------------
     def __repr__(self):
         return self._type
+
     # ----------------------------------------------------------------------
     @property
     def properties(self):
@@ -1895,7 +1898,7 @@ class Text:
     # ----------------------------------------------------------------------
     def __repr__(self) -> str:
         return "Text"
-    
+
     # ----------------------------------------------------------------------
     @property
     def properties(self):
@@ -2017,7 +2020,7 @@ class Button:
     # ----------------------------------------------------------------------
     def __repr__(self) -> str:
         return "Button"
-    
+
     # ----------------------------------------------------------------------
     @property
     def properties(self):
@@ -2156,6 +2159,7 @@ class Gallery:
     # ----------------------------------------------------------------------
     def __repr__(self) -> str:
         return "Image Gallery"
+
     # ----------------------------------------------------------------------
     @property
     def properties(self):
@@ -2181,7 +2185,7 @@ class Gallery:
         ==================      ====================================================================
         **Parameter**            **Description**
         ------------------      --------------------------------------------------------------------
-        node_list               List of node ids for the images in the gallery. Nodes must already be
+        images                  List of node ids for the images in the gallery. Nodes must already be
                                 in the gallery and this list will adjust the order of the images.
 
                                 To add new images to the gallery use:
@@ -2197,7 +2201,10 @@ class Gallery:
         if self._existing:
             # Update incase addition or removal was made in between last check.
             self._children = self._story._properties["nodes"][self.node]["children"]
-            return self._children
+            images = []
+            for child in self._children:
+                images.append(Image(story=self._story, node_id=child))
+            return images
         else:
             raise Warning(
                 "Image Gallery must be added to the story before adding Images."
@@ -2205,10 +2212,17 @@ class Gallery:
 
     # ----------------------------------------------------------------------
     @images.setter
-    def images(self, node_list):
+    def images(self, images):
         if self._existing:
-            self._children = node_list
-            self._story._properties["nodes"][self.node]["children"] = node_list
+            if images != self.images:
+                raise ValueError(
+                    "You cannot add or remove images through this method, only rearrange them."
+                )
+            children = []
+            for image in images:
+                children.append(image.node)
+            self._children = children
+            self._story._properties["nodes"][self.node]["children"] = children
         return self.images
 
     # ----------------------------------------------------------------------
@@ -2411,6 +2425,7 @@ class Swipe:
     # ----------------------------------------------------------------------
     def __repr__(self) -> str:
         return "Swipe"
+
     # ----------------------------------------------------------------------
     @property
     def properties(self):
@@ -2588,9 +2603,9 @@ class Swipe:
 ###############################################################################################################
 class Sidecar:
     """
-    Create an Sidecar immersive object from a pre-existing ``immersive`` node.
+    Create an Sidecar immersive object.
 
-    A sidecar is composed of slides. Slides are composed of two nodes: a narrative panel and a media node.
+    A sidecar is composed of slides. Slides are composed of two sub structures: a narrative panel and a media panel.
     The media node can be a(n): Image, Video, Embed, Map, or Swipe.
     The narrative panel can contain mulitple types of content including Image, Video, Embed, Button, Text, Map, and more.
 
@@ -2641,6 +2656,7 @@ class Sidecar:
     # ----------------------------------------------------------------------
     def __repr__(self) -> str:
         return "Sidecar"
+
     # ----------------------------------------------------------------------
     def _add_sidecar(
         self,
@@ -2710,33 +2726,38 @@ class Sidecar:
     @property
     def content_list(self):
         """
-        Get a list of all the content instances within the sidecar in order of appearance.
+        Get a list of all the content within the sidecar in order of appearance.
         The content will be displayed in the following order:
-        Slide 1 narrative panel children, followed by slide 1 media, then slide 2 narrative panel children,
-        then slide 2 media, and so on.
+        A list of the content in slide 1, a list of the content in slide 2, etc.
+        Each sub-list will contain content found in the narrative panel, if any, and the media content, if any.
         """
         contents = []
         # get the values from the nodes list and return only these
-        nodes = self.properties
-        for slide_dict in nodes:
+        sidecar_dict = self.properties
+        for slide in sidecar_dict:
+            content = []
             # get the entire slide dict
-            slide = list(slide_dict.values())[0]
-            if "narrative_panel" in slide and "children" in slide["narrative_panel"] and len(slide["narrative_panel"]["children"]) > 1:
+            slide_dict = list(slide.values())[0]
+            if (
+                "narrative_panel" in slide_dict
+                and "children" in slide_dict["narrative_panel"]
+                and len(slide_dict["narrative_panel"]["children"]) > 0
+            ):
                 # Get the content that are children of the narrative panel
-                children = slide["narrative_panel"]["children"]
+                children = slide_dict["narrative_panel"]["children"]
                 for child in children:
                     # Get each class from the node value
-                    content = self.get(list(child.values())[0])
-                    # Add to content list
-                    contents.append(content)
-            if "media" in slide and (slide["media"] is not None or slide["media"] != {}):
+                    content.append(self.get(list(child.values())[0]))
+            if "media" in slide_dict and (
+                slide_dict["media"] is not None or slide_dict["media"] != {}
+            ):
                 # Get the media content for the slide
-                media = list(slide["media"].values())[0]
+                media = list(slide_dict["media"].values())[0]
                 # Get the class using the node value
-                content = self.get(media)
-                # Add to the content list
-                contents.append(content)
+                content.append(self.get(media))
+            contents.append(content)
         return contents
+
     # ----------------------------------------------------------------------
     def edit(
         self,
@@ -2744,7 +2765,7 @@ class Sidecar:
         slide_number: int,
     ):
         """
-        Edit method can be used to edit the type of media in a slide of the Sidecar.
+        Edit method can be used to edit the **type** of media in a slide of the Sidecar.
         This is done by specifying the slide number and the media content to be added.
         The media can only be of type: Image, Video, Map, or Embed.
 
@@ -2881,7 +2902,7 @@ class Sidecar:
                                     "ymax": 3915378.269425899
                                 }
         ---------------     --------------------------------------------------------------------
-        mapLayers           Optional list of dictionaries. Each dictionary represents a map layer
+        map_layers          Optional list of dictionaries. Each dictionary represents a map layer
                             and the parameters set on the map layer.
 
                             Example:
@@ -3211,6 +3232,7 @@ class Timeline:
     # ----------------------------------------------------------------------
     def __repr__(self) -> str:
         return "Timeline"
+
     # ----------------------------------------------------------------------
     def _add_timeline(
         self,
@@ -3539,6 +3561,7 @@ class MapTour:
     # ----------------------------------------------------------------------
     def __repr__(self) -> str:
         return "Map Tour"
+
     # ----------------------------------------------------------------------
     @property
     def _children(self) -> list:
@@ -3654,11 +3677,12 @@ class MapAction:
 
     # ----------------------------------------------------------------------
     def __str__(self) -> str:
-        return "Map Action: " + str(self.text)
+        return "Map Action"
 
     # ----------------------------------------------------------------------
     def __repr__(self) -> str:
-        return "Map Action: " + str(self.text)
+        return "Map Action"
+
     # ----------------------------------------------------------------------
     @property
     def viewpoint(self) -> dict:
@@ -3762,3 +3786,6 @@ class MapAction:
             return False
         else:
             return True
+
+
+###############################################################################################################
