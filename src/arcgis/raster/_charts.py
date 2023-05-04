@@ -36,7 +36,7 @@ def temporal_profile(
     dimension_values: list[int] = [],
     show_values: bool = False,
     trend_type: Optional[str] = None,
-    trend_order: Optional[int] = None,
+    trend_order: Optional[int] = 1,
     plot_properties: dict[str, Any] = {},
 ):
     """
@@ -472,6 +472,12 @@ def temporal_profile(
             title_string = title_string + " " + str(ele + ",")
         title_string = title_string + " over " + x_var
         _plt.title(title_string)
+
+        n_bands = 1 if len(bands) == 0 else len(bands)
+        n_colors = len(variables) * len(points) * n_bands
+        if trend_type is not None:
+            n_colors = (n_colors * 2)
+
         color = iter(_cm.rainbow(_np.linspace(0, 1, n_colors)))
         for i in range(0, len(t1)):
             label_string = (
@@ -484,6 +490,42 @@ def temporal_profile(
             _plt.plot(t1[i]["x"], t1[i]["y"], c=c, label=label_string)
             _plt.scatter(t1[i]["x"], t1[i]["y"], c=[c])
             _plt.legend(loc='center left', bbox_to_anchor=(1, 0.5))
+
+            if trend_type is not None:
+                c = next(color)
+                date_list = []
+                for date in t1[i]["x"]:
+                    ole_date = _datetime2ole(date)
+                    date_list.append(ole_date)
+                sample_size = len(date_list)
+                if sample_size != len(t1[i]["y"]):
+                    print("error")
+                if trend_type.lower() == "linear":
+                    x_trend, y_trend = _linear_regression(
+                        sample_size, date_list, t1[i]["x"], t1[i]["y"]
+                    )
+                elif trend_type.lower() == "harmonic":
+                    if trend_order is None:
+                        _LOGGER.warning(
+                            "Trend line cannot be drawn. Please enter a trend order value from 1 to 3."
+                        )
+                    if trend_order < 1:
+                        trend_order = 1
+                        _LOGGER.warning(
+                            "Invalid Argument - trend order is less than 1. Setting trend order as 1 to plot the trend line"
+                        )
+                    if trend_order > 3:
+                        trend_order = 3
+                        _LOGGER.warning(
+                            "Invalid Argument - trend order is greater than 3. Setting trend order as 3 to plot the trend line"
+                        )
+                    x_trend, y_trend = _harmonic_regression(
+                        sample_size, date_list, t1[i]["x"], t1[i]["y"], trend_order
+                    )
+                label_string = f"Location {str(t1[i]['point'])}-{str(t1[i]['variable'])}-band {str(t1[i]['band'])}-{trend_type.lower()} trend"
+                _plt.plot(x_trend, y_trend, c=c, linestyle='dashed', label=label_string)
+                _plt.legend(loc='center left', bbox_to_anchor=(1, 0.5))
+
 
             if show_values:
                 for x, y in zip(t1[i]["x"], t1[i]["y"]):
