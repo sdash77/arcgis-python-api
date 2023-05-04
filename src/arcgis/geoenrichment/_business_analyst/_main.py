@@ -1858,8 +1858,8 @@ class BusinessAnalyst(object):
         ]
 
         # default value set to True to keep backward compatibility
-        normalize_columns = kwargs.pop("normalize_columns", True)
-        if normalize_columns:
+        pep8ify_columns = kwargs.pop("pep8ify_columns", True)
+        if pep8ify_columns:
             enrich_df.columns = [pep8ify(c) for c in enrich_df.columns if c != "SHAPE"] + [
                 "SHAPE"
             ]
@@ -2188,8 +2188,8 @@ class BusinessAnalyst(object):
         ]
 
         # default value set to True to keep backward compatibility
-        normalize_columns = kwargs.pop("normalize_columns", True)
-        if normalize_columns:
+        pep8ify_columns = kwargs.pop("pep8ify_columns", True)
+        if pep8ify_columns:
             enrich_df.columns = [
                 pep8ify(c) if c != "SHAPE" else c for c in enrich_df.columns
             ]
