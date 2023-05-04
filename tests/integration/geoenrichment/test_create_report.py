@@ -61,6 +61,9 @@ class Test_GE_CreateReport(unittest.TestCase):
             out_name="profile.pdf",
         )
         assert os.path.isfile(pt_report)
+        with open(pt_report, "rb") as f:
+            report_content_start_bytes = f.read(4)
+        assert report_content_start_bytes == b"%PDF"
         if os.path.isfile(pt_report):
             os.remove(pt_report)
 
@@ -76,6 +79,9 @@ class Test_GE_CreateReport(unittest.TestCase):
             out_name="profile.pdf",
         )
         assert os.path.isfile(pt_report)
+        with open(pt_report, "rb") as f:
+            report_content_start_bytes = f.read(4)
+        assert report_content_start_bytes == b"%PDF"
         if os.path.isfile(pt_report):
             os.remove(pt_report)
 

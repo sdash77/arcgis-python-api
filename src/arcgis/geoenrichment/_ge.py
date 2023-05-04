@@ -1,4 +1,5 @@
 import json
+import os
 from typing import Optional, Union
 import pandas as pd
 import arcgis
@@ -105,6 +106,7 @@ class _GeoEnrichment(object):
     _url_list_reports = "/Geoenrichment/Reports"
     _url_enrich_data = "/Geoenrichment/Enrich"
     _url_data_collection = "/Geoenrichment/dataCollections"
+    _valid_report_file_threshold = 300  # number of bytes for a valid report file
 
     # ----------------------------------------------------------------------
     def __init__(
@@ -957,13 +959,29 @@ class _GeoEnrichment(object):
             params["inSR"] = in_sr
         if use_data is not None:
             params["useData"] = use_data
-        return self._gis._con.post(
+        report_file_path =  self._gis._con.post(
             path=url,
             out_folder=out_folder,
             file_name=out_name,
             postdata=params,
             try_json=False,
         )
+        # validate response that it does not contain an error message
+        error_message = error_code = None
+        if self._valid_report_file_threshold > os.path.getsize(report_file_path):
+            with open(report_file_path, "r") as f:
+                try:
+                    # try to parse file as an error response
+                    json_content = json.load(f)
+                    error_code = json_content['error']['code']
+                    error_message = json_content['error']['message']
+                except:
+                    pass
+        if error_code and error_message:
+            os.remove(report_file_path)
+            raise Exception("Failed to create report: {}\nGeoEnrichment service error code: {}".format(error_message, error_code))
+
+        return report_file_path
 
     # ----------------------------------------------------------------------
     def standard_geography_levels(self, country: str):
