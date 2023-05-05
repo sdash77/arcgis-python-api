@@ -959,12 +959,13 @@ class _GeoEnrichment(object):
             params["inSR"] = in_sr
         if use_data is not None:
             params["useData"] = use_data
+        # result is always a file path because error response will be parsed inside the method due to try_json=True
         report_file_path =  self._gis._con.post(
             path=url,
             out_folder=out_folder,
             file_name=out_name,
             postdata=params,
-            try_json=False,
+            try_json=True,
         )
         # validate response that it does not contain an error message
         error_message = error_code = None
