@@ -15,6 +15,7 @@ from arcgis.geometry import (
     Polyline,
     Polygon,
     Point,
+    MultiPoint,
 )
 from arcgis.gis import GIS
 from arcgis import env as _env
@@ -1306,10 +1307,13 @@ def _create_report_gis(
             area, str
         ):  # street address - {"address":{"text":"380 New York St Redlands CA 92373"}}
             area_dict = {"address": {"text": area}}
+
+        elif isinstance(
+            area, (Point, Polygon, Polyline, MultiPoint)
+        ):  # geometry, polygons, points
+            area_dict = {"geometry": dict(area)}
         elif isinstance(area, dict):  # pass through - user knows what they're sending
             pass
-        elif isinstance(area, Geometry):  # geometry, polygons, points
-            area_dict = {"geometry": dict(area)}
         elif isinstance(area, BufferStudyArea):
             # namedtuple('BufferStudyArea', 'area radii units overlap travel_mode')
             g = area.area
@@ -1846,6 +1850,8 @@ def _preproces_data_colletions_and_analysis_variables(
 
     # if variables provided, prep as well
     if enrich_vars is not None and not isinstance(enrich_vars, pd.DataFrame):
+        if isinstance(src, Country):
+            src = src._ba_cntry  # change to business analyst country class
         av_vars = src.get_enrich_variables_from_iterable(enrich_vars, **kwargs)
     else:
         av_vars = None

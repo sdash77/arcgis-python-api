@@ -14,6 +14,7 @@ from fastai.vision.learner import ClassificationInterpretation
 import random
 import string
 import glob
+import gc
 from sys import platform
 import pandas as pd
 from integration.arcgis_learn.properties import (
@@ -23,15 +24,16 @@ from integration.arcgis_learn.properties import (
         data_folder_ms,
         data_inference_only
     )
-from arcgis.learn import classify_pixels, detect_objects, classify_objects, ImageryModel
+from arcgis.learn import classify_pixels, detect_objects, classify_objects
 from arcgis.learn import prepare_data, prepare_tabulardata, prepare_textdata
+from arcgis.learn import AutoDL,ImageryModel
+
+
 
 import_exception = None
 
 try:
-    import fastai
     import torch
-    import torchvision
 
     HAS_DEPS = True
     print(" ================= Modules Imported ==============")
@@ -48,6 +50,7 @@ parameter_fl = []
 parameter_df = []
 # parameter_autodl = []
 parameter_text = []
+parameter_autodl = []
 authorization_data = {}
 check_ms = False
 current_path = ""
@@ -88,6 +91,7 @@ accuracy_values = {
         "changedetection": 0,
         "mtre": 0,
         "sequencetosequence": 0,
+        "textclassifier": 0,
         "timeseriesmodel": 0,
         "zeroshotclassifier": 0,
         "questionanswering": 0,
@@ -117,7 +121,7 @@ success_stat = {
         "pc": 0,
         "co_total": 1,
         "co": 0,
-        "text_total": 8,
+        "text_total": 9,
         "text": 0,
         "others_total": 10,
         "others": 0,
@@ -305,27 +309,19 @@ def CommonTestUsingDF(
         os.path.join(data_folder_path, data_path, f"{model_test}/{model_test}.emd")
     )
 
-# def CommonTestAutoDL(
-#     model_name,
-#     datapath,
-#     datapath_ms,
-#     model,
-#     model_test,
-#     prepare_data_rgb,
-#     prepare_data_ms,
-#     network,
-#     time,
-# ):
-#     data = prepare_data(**prepare_data_rgb)
-#     model_object = model(data, total_time_limit=1)
-#     model_object.fit()
-#     best_model_path = os.path.join(data_folder, datapath, 'models', '*AutoDL_'+model_object.best_model+'*', '*emd')
-#     emd_path = glob.glob(best_model_path)[0]
-#     img_model = ImageryModel()
-#     img_model.load(emd_path, data)
-#     img_model.fit()
-#     fine_tuned_model = os.path.join(data_folder, datapath, 'models', 'fine_tuned_model')
-#     img_model.save(fine_tuned_model)
+def CommonTestAutoDL(
+    prepare_data_rgb, model, network, time, datapath
+):
+    data = prepare_data(**prepare_data_rgb)
+    model_object = model(data, total_time_limit=time, network=network)
+    model_object.fit()
+    best_model_path = os.path.join(data_folder, datapath, 'models', '*AutoDL_'+model_object.best_model+'*', '*emd')
+    emd_path = glob.glob(best_model_path)[0]
+    img_model = ImageryModel()
+    img_model.load(emd_path, data)
+    img_model.fit()
+    fine_tuned_model = os.path.join(data_folder, datapath, 'models', 'fine_tuned_model')
+    img_model.save(fine_tuned_model)
 
 # def CommonTestAutoDLMS(
 #     model_name,
@@ -464,7 +460,7 @@ def commonTestCases(
     global success_flag
     success_flag = False
     from arcgis.learn import prepare_data
-    if model_test == "sequencetosequence_test":
+    if model_test == "sequencetosequence_test" or model_test == "textclassifier_test":
         data = prepare_textdata(**preparedata)
     elif model_test == "timeseriesmodel_test":
         from arcgis.learn import prepare_tabulardata
@@ -489,6 +485,8 @@ def commonTestCases(
     elif model_test == "mmsegmentation_test" or model_test == "mmdetection_test":
         all_models = model_type.supported_models
         model_object = model_type(data, model=all_models[0])
+    elif model_test == "psetae_test":
+        model_object = model_type(data, gamma=2, dropout=0.2)
     else:
         model_object = model_type(data)
 
@@ -515,6 +513,7 @@ def commonTestCases(
             model_object = model_type(data, backbone=str(backbone))
             model_object.fit(1)
             model_object.save(model_test + "_" + str(backbone))
+            gc.collect()
             torch.cuda.empty_cache()
 
     if os.environ.get("run_nightly") == "1":
@@ -917,6 +916,58 @@ def text_models():
         )
     return parameter_text
 
+def autodl_main():
+    autodl_data = [r"/home/administrator/Raster/Test_Data/data_for_testing_1/train_model/autodl_data/classified_tiles", 
+    r"/home/administrator/Raster/Test_Data/data_for_testing_1/train_model/autodl_data/palm_trees"]
+    autodl_pretrained_model = [r"/home/administrator/Raster/Test_Data/data_for_testing_1/train_model/autodl_data/unet_model/AutoDL_UnetClassifier_resnet34.emd",
+    r"/home/administrator/Raster/Test_Data/data_for_testing_1/train_model/autodl_data/ssd_model/AutoDL_SingleShotDetector_resnet34.emd"]
+    autodl_model = ["DeepLab", "SingleShotDetector"]
+    for ind in range(0,2):
+        path = autodl_data[ind]
+        data = prepare_data(path, batch_size=None)
+        dl = AutoDL(data, total_time_limit=0.25, verbose=True, network=[autodl_model[ind]],mode='basic')
+        dl.fit()
+        dl.score()
+        dl.supported_classification_models()
+        dl.supported_detection_models()
+        dl.average_precision_score()
+        dl.lr_find()
+        dl.BestPerformingModel
+        dl.mIOU()
+        del dl
+        gc.collect()
+        torch.cuda.empty_cache()
+        im = ImageryModel()
+        im.load(autodl_pretrained_model[ind], data)
+        im.fit(3)
+        im.save("test_dl")
+        del im
+        gc.collect()
+        torch.cuda.empty_cache()
+
+# def efficientnet_main():
+#     os.environ['ARCGIS_ENABLE_TF_BACKEND'] = '1'
+#     data_path =  r"/home/administrator/Raster/Test_Data/data_for_testing_1/train_model/efficientnet_data"
+#     voc = prepare_data(data_path, batch_size=2, val_split_pct=0.2)
+#     import arcgis
+#     from arcgis.learn import EfficientDet
+#     detector = EfficientDet(voc)
+#     lr_val = detector.lr_find()
+#     detector.fit(1, lr=lr_val)
+#     score = detector.average_precision_score()
+#     detector.save("efficient",framework="tflite", compute_metrics=False, save_optimizer=True, save_inference_file=True)
+
+#     load_model = r"/home/administrator/Raster/notebooks/efficientnet_data/imagechips/models/efficient/efficient.emd"
+#     detector.load(load_model)
+#     detector.fit(1)
+
+
+#     from_model = EfficientDet.from_model(load_model)
+#     del detector
+#     del from_model
+#     gc.collect()
+#     torch.cuda.empty_cache()
+#     os.environ['ARCGIS_ENABLE_TF_BACKEND'] = '0'
 
 class TestTraining(unittest.TestCase):
     @classmethod
@@ -957,6 +1008,7 @@ class TestTraining(unittest.TestCase):
             elif test_name in [
                 "ner",
                 "sequencetosequence",
+                "textclassifer",
                 "zeroshotclassifier",
                 "questionanswering",
                 "textsummarizer",
@@ -988,6 +1040,7 @@ class TestTraining(unittest.TestCase):
             success_stat["attributes"]["fail"] = success_stat["attributes"]["fail"] + 1
             print("Method is a failure")
             print(self._testMethodName)
+        gc.collect()
         torch.cuda.empty_cache()
         for key, val in data.items():
             os.system(
@@ -1100,7 +1153,7 @@ class TestTraining(unittest.TestCase):
     @parameterized.expand(text_models, skip_on_empty=True)
     def test_text_models(self, key, model_name, model, data, labels):
         CommonTestTextModels(model_name, model, data, labels)
-
+    
     @unittest.skipIf(module_skip, "Preconditions not met, skipping test")
     @parameterized.expand(update_parameter_df, skip_on_empty=True)
     def test_automl(
@@ -1127,10 +1180,17 @@ class TestTraining(unittest.TestCase):
                 data_folder_path,
                 self
             )
+    
+    def test_autodl(self):
+        autodl_main()
+
+    # def test_efficientnet(self):
+    #     efficientnet_main()
 
 
     @classmethod
     def tearDownClass(cls):
+        gc.collect()
         torch.cuda.empty_cache()
         for key, val in data.items():
             try:
@@ -1149,6 +1209,7 @@ class TestTraining(unittest.TestCase):
 
 ## Remove all model directories
 def tearDownModule():
+    gc.collect()
     torch.cuda.empty_cache()
     if os.environ.get("run_nightly") == "1":
         print("Updating feature layer for accuracy dashboard\n")

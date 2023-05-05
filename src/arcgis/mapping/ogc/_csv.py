@@ -307,7 +307,6 @@ class CSVLayer(BaseOpenData):
                 self._url,
                 sep=self.delimiter,
                 nrows=nrows,
-                infer_datetime_format=True,
                 parse_dates=True,
             )
         elif self._item:
@@ -319,7 +318,6 @@ class CSVLayer(BaseOpenData):
                 url,
                 sep=self.delimiter,
                 nrows=nrows,
-                infer_datetime_format=True,
                 parse_dates=True,
             )
         else:

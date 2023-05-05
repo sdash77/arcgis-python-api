@@ -170,7 +170,16 @@ class Test_geometry_functions_portal(unittest.TestCase):
                     {"x": -157.8201333369876, "y": 21.306233559873714},
                 ]
                 self.assertEqual(
-                    project_return, correct_geometries, "Project values mismatch"
+                    project_return[0]["x"], correct_geometries[0]["x"], "Project values mismatch"
+                )
+                self.assertEqual(
+                    project_return[0]["y"], correct_geometries[0]["y"], "Project values mismatch"
+                )
+                self.assertEqual(
+                    project_return[1]["x"], correct_geometries[1]["x"], "Project values mismatch"
+                )
+                self.assertEqual(
+                    project_return[1]["y"], correct_geometries[1]["y"], "Project values mismatch"
                 )
 
         except AssertionError as assertErrorException:
@@ -300,7 +309,16 @@ class Test_geometry_functions_AGO(unittest.TestCase):
                     {"x": -157.8201333369876, "y": 21.306233559873714},
                 ]
                 self.assertEqual(
-                    project_return, correct_geometries, "Project values mismatch"
+                    project_return[0]["x"], correct_geometries[0]["x"], "Project values mismatch"
+                )
+                self.assertEqual(
+                    project_return[0]["y"], correct_geometries[0]["y"], "Project values mismatch"
+                )
+                self.assertEqual(
+                    project_return[1]["x"], correct_geometries[1]["x"], "Project values mismatch"
+                )
+                self.assertEqual(
+                    project_return[1]["y"], correct_geometries[1]["y"], "Project values mismatch"
                 )
 
         except AssertionError as assertErrorException:

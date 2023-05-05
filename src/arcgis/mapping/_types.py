@@ -1894,17 +1894,20 @@ class WebMap(HasTraits, collections.OrderedDict):
         gallery.
         """
         if self._gis:
-            bmquery = self._gis.properties["basemapGalleryGroupQuery"]
-            basemapsgrp = self._gis.groups.search(bmquery, outside_org=True)
-            if len(basemapsgrp) == 1:
-                for bm in basemapsgrp[0].content():
-                    if bm.type.lower() == "web map":  # Only use WebMaps
-                        item_data = bm.get_data()
-                        bm_title = bm.title.lower().replace(" ", "_")
-                        self._gallery_basemaps[bm_title] = item_data["baseMap"]
-                return list(self._gallery_basemaps.keys())
-            else:
-                return list(self._gallery_basemaps.keys())
+            try:
+                bmquery = self._gis.properties["basemapGalleryGroupQuery"]
+                basemapsgrp = self._gis.groups.search(bmquery, outside_org=True)
+                if len(basemapsgrp) == 1:
+                    for bm in basemapsgrp[0].content():
+                        if bm.type.lower() == "web map":  # Only use WebMaps
+                            item_data = bm.get_data()
+                            bm_title = bm.title.lower().replace(" ", "_")
+                            self._gallery_basemaps[bm_title] = item_data["baseMap"]
+                    return list(self._gallery_basemaps.keys())
+                else:
+                    return list(self._gallery_basemaps.keys())
+            except:
+                return []
         else:
             return []
 

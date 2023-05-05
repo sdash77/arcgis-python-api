@@ -207,3 +207,7 @@ export_to_tile_package
 mosaic_image
 ----------------------
 .. autofunction:: arcgis.raster.analytics.mosaic_image
+
+derive_continuous_flow
+----------------------
+.. autofunction:: arcgis.raster.analytics.derive_continuous_flow

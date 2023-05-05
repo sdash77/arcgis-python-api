@@ -3627,7 +3627,9 @@ class UserManager(object):
                 and "groups" in self.user_settings
                 and self.user_settings["groups"]
             ):
-                groups = [self._gis.groups.get(g) for g in self.user_settings["groups"]]
+                groups = [
+                    self._gis.groups.get(g).id for g in self.user_settings["groups"]
+                ]
             params = {
                 "f": "json",
                 "invitationList": {
@@ -5843,7 +5845,7 @@ class ContentManager(object):
         commentsEnabled             Optional boolean. Default is true, controls whether comments are allowed (true)
                                     or not allowed (false).
         --------------------------  ---------------------------------------------------------------------
-        culture                     Optional string. Language and country information.
+        access                      Optional string. Valid values are private, org, or public. Defaults to private.
         --------------------------  ---------------------------------------------------------------------
         overwrite                   Optional boolean. Default is `false`. Controls whether item can be overwritten.
         ==========================  =====================================================================
@@ -6009,7 +6011,7 @@ class ContentManager(object):
                 folder=folder,
             )
 
-            # Update the thumbnail and return the item
+            # Update the thumbnail
             item = Item(gis=self._gis, itemid=itemid)
             if item.type == "KML":
                 item.update(
@@ -6018,6 +6020,15 @@ class ContentManager(object):
                     }
                 )
             item.update(thumbnail=thumbnail)
+
+            # Update the access and return the item
+            if item_properties and "access" in item_properties:
+                if item_properties["access"] == "public":
+                    item.share(everyone=True)
+                elif item_properties["access"] == "org":
+                    item.share(org=True)
+                elif item_properties["access"] == "private":
+                    item.share(everyone=False, org=False)
             return item
         else:
             if filetype:
@@ -6041,6 +6052,15 @@ class ContentManager(object):
                         "url": f"{self._gis._portal.resturl}content/items/{item.itemid}/data"
                     }
                 )
+
+            # Update access
+            if item_properties and "access" in item_properties:
+                if item_properties["access"] == "public":
+                    item.share(everyone=True)
+                elif item_properties["access"] == "org":
+                    item.share(org=True)
+                elif item_properties["access"] == "private":
+                    item.share(everyone=False, org=False)
             return item
         else:
             return None
@@ -6401,6 +6421,11 @@ class ContentManager(object):
                     item.share(everyone=True)
                 elif item_properties["access"] == "org":
                     item.share(org=True)
+                elif item_properties["access"] == "private":
+                    item.share(everyone=False, org=False)
+                elif item_properties["access"] == "shared":
+                    groups = item.shared_with["groups"]
+                    item.share(groups=groups)
             return item
         else:
             return None
@@ -9701,7 +9726,7 @@ class Group(dict):
 
             # Usage Example
 
-            >>> group.notify(users="User1234", subject= "Test Message", message="Testing the notification system",
+            >>> group.notify(users=["User1234"], subject= "Test Message", message="Testing the notification system",
             >>>              method="email"
 
         """
@@ -14014,6 +14039,18 @@ class Item(dict):
             ):
                 metadata = item_properties.metadata
 
+            if "access" in item_properties:
+                access = item_properties.pop("access")
+                if access == "private":
+                    self.share(everyone=False, org=False)
+                if access == "org":
+                    self.share(everyone=False, org=True)
+                if access == "public":
+                    self.share(everyone=True)
+                if access == "shared":
+                    groups = self.shared_with["groups"]
+                    self.share(groups=groups)
+
             item_properties = item_properties.to_dict()
             item_properties.pop("metadata", None)
             item_properties.pop("thumbnail", None)
@@ -14105,6 +14142,17 @@ class Item(dict):
                 if "tags" in item_properties:
                     if type(item_properties["tags"]) is list:
                         item_properties["tags"] = ",".join(item_properties["tags"])
+                if "access" in item_properties:
+                    access = item_properties.pop("access")
+                    if access == "private":
+                        self.share(everyone=False, org=False)
+                    if access == "org":
+                        self.share(everyone=False, org=True)
+                    if access == "public":
+                        self.share(everyone=True)
+                    if access == "shared":
+                        groups = self.shared_with["groups"]
+                        self.share(groups=groups)
 
             if data is not None and isinstance(data, (io.StringIO, io.BytesIO)):
                 if item_properties is None:
@@ -15849,6 +15897,8 @@ class Item(dict):
 
         :return: An :class:`~arcgis.gis.Item` object
         """
+        if tags and type(tags) is list:
+            tags = ",".join(tags)
 
         url = "%s/sharing/rest/content/users/%s/items/%s/copy" % (
             self._portal.url,

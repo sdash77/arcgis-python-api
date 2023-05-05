@@ -2327,13 +2327,12 @@ class FeatureLayer(Layer):
                         if fld in df.columns:
                             df[fld] = pd.to_datetime(
                                 df[fld] / 1000,
-                                infer_datetime_format=True,
                                 unit="s",
                             )
                     except:
                         if fld in df.columns:
                             df[fld] = pd.to_datetime(
-                                df[fld], infer_datetime_format=True
+                                df[fld],
                             )
                 return df
 
@@ -2413,13 +2412,11 @@ class FeatureLayer(Layer):
                     try:
                         df[fld] = pd.to_datetime(
                             df[fld] / 1000,
-                            infer_datetime_format=True,
                             unit="s",
                         )
                     except:
                         df[fld] = pd.to_datetime(
                             df[fld],
-                            infer_datetime_format=True,
                             errors="coerce",
                         )
             return df
@@ -3803,13 +3800,13 @@ class FeatureLayer(Layer):
                 try:
                     df[fld] = pd.to_datetime(
                         df[fld] / 1000,
-                        infer_datetime_format=True,
                         errors="coerce",
                         unit="s",
                     )
                 except:
                     df[fld] = pd.to_datetime(
-                        df[fld], errors="coerce", infer_datetime_format=True
+                        df[fld],
+                        errors="coerce",
                     )
         return df
 
@@ -4219,13 +4216,12 @@ class Table(FeatureLayer):
                         if fld in df.columns:
                             df[fld] = pd.to_datetime(
                                 df[fld] / 1000,
-                                infer_datetime_format=True,
                                 unit="s",
                             )
                     except:
                         if fld in df.columns:
                             df[fld] = pd.to_datetime(
-                                df[fld], infer_datetime_format=True
+                                df[fld],
                             )
                 return df
 
@@ -4302,11 +4298,11 @@ class Table(FeatureLayer):
                 df.spatial._meta.source = self
             for fld in dt_fields:
                 try:
-                    df[fld] = pd.to_datetime(
-                        df[fld] / 1000, infer_datetime_format=True, unit="s"
-                    )
+                    df[fld] = pd.to_datetime(df[fld] / 1000, unit="s")
                 except:
-                    df[fld] = pd.to_datetime(df[fld], infer_datetime_format=True)
+                    df[fld] = pd.to_datetime(
+                        df[fld],
+                    )
             return df
         return result
 
@@ -5335,6 +5331,7 @@ class FeatureLayerCollection(_GISResource):
 
         """
         url = "{url}/cleanupChangeTracking".format(url=self._url)
+        url = url.replace("/rest/services/", "/rest/admin/services/")
         params = {
             "f": "json",
             "layers": layers,

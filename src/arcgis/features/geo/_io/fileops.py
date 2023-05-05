@@ -540,15 +540,22 @@ def to_table(geo, location, overwrite=True, sanitize_columns=False):
                 pass
             elif col.lower() in ["fid", "oid", "objectid"]:
                 dtypes.append((col, np.int32))
-            elif df[col].dtype.name == "datetime64[ns]":
+            elif df[col].dtype.name.find("datetime") > -1:
                 dtypes.append((col, "<M8[us]"))
                 df[col] = df[col].dt.to_pydatetime()
+            elif df[col].dtype.name.find("timedelta") > -1:
+                dtypes.append((col, float))
+                df[col] = df[col].dt.total_seconds() * 1000
             elif df[col].dtype.name == "object":
                 try:
                     u = type(df[col][df[col].first_valid_index()])
                 except:
                     u = pd.unique(df[col].apply(type)).tolist()[0]
-                if issubclass(u, str):
+                if u is None:
+                    dtypes.append((col, "<U254"))
+                elif u == type(None):
+                    dtypes.append((col, "<U254"))
+                elif issubclass(u, str):
                     mlen = df[col].str.len().max()
                     dtypes.append((col, "<U%s" % int(mlen)))
                 else:
@@ -561,7 +568,9 @@ def to_table(geo, location, overwrite=True, sanitize_columns=False):
                     u = type(df[col][df[col].first_valid_index()])
                 except:
                     u = pd.unique(df[col].apply(type)).tolist()[0]
-                if issubclass(u, str):
+                if u is None:
+                    dtypes.append((col, "<U254"))
+                elif issubclass(u, str):
                     mlen = df[col].str.len().max()
                     if int(mlen) == 0:
                         mlen = 1
@@ -575,6 +584,8 @@ def to_table(geo, location, overwrite=True, sanitize_columns=False):
                 dtypes.append((col, np.float64))
             elif df[col].dtype.name == "bool":
                 dtypes.append((col, np.int32))
+            elif df[col].dtype.name == "boolean":
+                dtypes.append((col, np.int32))
             elif isinstance(df[col].dtype, pd.CategoricalDtype):
                 dtype = df[col].dtype
                 if dtype.categories.dtype.name == "object":
@@ -583,7 +594,7 @@ def to_table(geo, location, overwrite=True, sanitize_columns=False):
                     except:
                         msize = 254
                     dtypes.append((col, "<U%s" % msize))
-                elif dtype.categories.dtype.name == "datetime64[ns]":
+                elif dtype.categories.dtype.name.find("datetime") > -1:
                     dtypes.append((col, "<M8[us]"))
                 else:
                     dtypes.append((col, dtype.categories.dtype))
@@ -606,11 +617,17 @@ def to_table(geo, location, overwrite=True, sanitize_columns=False):
             if fld.type not in ["OID", "Geometry", "FID"] and fld.name in df.columns
         ]
         with arcpy.da.InsertCursor(fc, icols) as irows:
+            bool_fld_idx = [
+                irows.fields.index(col)
+                for col in df.select_dtypes(pd.BooleanDtype()).columns.tolist()
+            ]
             dt_fld_idx = [
                 irows.fields.index(col)
                 for col in df.columns
-                if df[col].dtype.name.startswith("datetime64[ns")
+                if df[col].dtype.name.startswith("datetime")
             ]
+            if len(bool_fld_idx) > 0:
+                df = df.replace({pd.NA: None})
             if len(dt_fld_idx) > 0:
                 df = df.replace({pd.NaT: None})
             for idx, row in df[dfcols].iterrows():
@@ -620,6 +637,10 @@ def to_table(geo, location, overwrite=True, sanitize_columns=False):
                         for idx in dt_fld_idx:
                             if row[idx]:
                                 row[idx] = row[idx].to_pydatetime()
+                    if len(bool_fld_idx) > 0:
+                        for idx in bool_fld_idx:
+                            if row[idx]:
+                                row[idx] = int(row[idx])
                     irows.insertRow(row)
 
                 except:
@@ -1029,14 +1050,19 @@ def to_featureclass(
             for col in columns[:]:
                 if col.lower() in ["fid", "oid", "objectid"]:
                     dtypes.append((col, np.int32))
-                elif df[col].dtype.name.startswith("datetime64[ns"):
+                elif df[col].dtype.name.startswith("datetime"):
                     dtypes.append((col, "<M8[us]"))
+                elif df[col].dtype.name.find("timedelta") > -1:
+                    dtypes.append((col, float))
+                    df[col] = df[col].dt.total_seconds() * 1000
                 elif df[col].dtype.name == "object":
                     try:
                         u = type(df[col][df[col].first_valid_index()])
                     except:
                         u = pd.unique(df[col].apply(type)).tolist()[0]
-                    if issubclass(u, str):
+                    if u is None:
+                        dtypes.append((col, "<U254"))
+                    elif issubclass(u, str):
                         mlen = df[col].str.len().max()
                         dtypes.append((col, "<U%s" % int(mlen)))
                     elif u is datetime.datetime:
@@ -1053,6 +1079,8 @@ def to_featureclass(
                     dtypes.append((col, np.float64))
                 elif df[col].dtype.name == "bool":
                     dtypes.append((col, np.int32))
+                elif df[col].dtype.name == "boolean":
+                    dtypes.append((col, np.int32))
                 elif isinstance(df[col].dtype, pd.CategoricalDtype):
                     dtype = df[col].dtype
                     if dtype.categories.dtype.name == "object":
@@ -1061,7 +1089,7 @@ def to_featureclass(
                         except:
                             msize = 254
                         dtypes.append((col, "<U%s" % msize))
-                    elif dtype.categories.dtype.name == "datetime64[ns]":
+                    elif dtype.categories.dtype.name.find("datetime") > -1:
                         dtypes.append((col, "<M8[us]"))
                     else:
                         dtypes.append((col, dtype.categories.dtype))
@@ -1103,13 +1131,23 @@ def to_featureclass(
                 dt_fld_idx = [
                     irows.fields.index(col)
                     for col in df.columns
-                    if df[col].dtype.name.startswith("datetime64[ns")
+                    if df[col].dtype.name.startswith("datetime")
                 ]
+                bool_fld_idx = [
+                    irows.fields.index(col)
+                    for col in df.select_dtypes(pd.BooleanDtype()).columns.tolist()
+                ]
+                if len(bool_fld_idx) > 0:
+                    df = df.replace({pd.NA: None})
+                if len(dt_fld_idx) > 0:
+                    df = df.replace({pd.NaT: None})
 
                 def _insert_row(row):
                     row[-1] = pd.io.json.dumps(row[-1])
-                    for idx in dt_fld_idx:
-                        if isinstance(row[idx], type(pd.NaT)):
+                    for idx in bool_fld_idx:
+                        if isinstance(row[idx], (int, bool)):
+                            row[idx] = int(row[idx])
+                        else:
                             row[idx] = None
                     try:
                         irows.insertRow(row)
@@ -1231,7 +1269,7 @@ def _pyshp_to_shapefile(df, out_path, out_name):
                                 df[c].loc[idx],
                                 (datetime.datetime, np.datetime64),
                             )
-                            or df[c].dtype.name == "datetime64[ns]"
+                            or df[c].dtype.name.find("datetime") > -1
                         ):
                             shpfile.field(name=c, fieldType="D", size=8)
                             dfields.append(c)
@@ -1358,7 +1396,7 @@ def _pyshp2(df, out_path, out_name):
                             df[c].loc[idx],
                             (datetime.datetime, np.datetime64),
                         )
-                        or df[c].dtype.name == "datetime64[ns]"
+                        or df[c].dtype.name.find("datetime") > -1
                     ):
                         shpfile.field(name=c, fieldType="D", size=8)
                         dfields.append(c)

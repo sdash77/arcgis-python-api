@@ -17,10 +17,10 @@ requirements:
   - setuptools
   - notebook
   - jupyter_client <=6.1.12
-  - ipywidgets >=7
+  - ipywidgets >=7,<8
   - widgetsnbextension >=3
   - pandas >=2.0.0
-  - numpy >=1.16.2
+  - numpy >=1.20.3
   - matplotlib
   - keyring >=23.3.0
   - pyshp >=2
@@ -33,22 +33,22 @@ requirements:
   - cryptography
   - lxml
   - certifi
-  - dask
+  - dask >=2023.3.2
   - geomet
   - python-gssapi
   - requests-gssapi
-  - pyspnego
+  - pyspnego >=0.8.0
   run:
   - python
   - pillow
   - cachetools
   - notebook
   - jupyter_client <=6.1.12
-  - ipywidgets >=7
+  - ipywidgets >=7,<8
   - widgetsnbextension >=3
   - pandas >=2.0.0
   - ujson >=3
-  - numpy >=1.16.2
+  - numpy >=1.20.3
   - pyshp >=2
   - matplotlib
   - keyring >=23.3.0
@@ -62,11 +62,11 @@ requirements:
   - cryptography
   - lxml
   - certifi
-  - dask
+  - dask >=2023.3.2
   - geomet
   - python-gssapi
   - requests-gssapi
-  - pyspnego
+  - pyspnego >=0.8.0
 source:
   path: ../../src
 test:
