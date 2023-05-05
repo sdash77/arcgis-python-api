@@ -166,6 +166,7 @@ def _update_flight_info(
     except:
         raise RuntimeError("Error updating the flight resource")
 
+
 def _create_project(
     name: str,
     definition: Optional[dict[str, Any]] = None,
@@ -237,6 +238,7 @@ def _create_project(
     item_properties["text"] = json.dumps(definition)
     item = gis.content.add(item_properties, folder=folder)
     return item
+
 
 def _add_mission(
     project,
@@ -480,14 +482,15 @@ def _add_mission(
         mission_json.update({"rasterType": raster_type_name})
 
         def get_camera_props(cam_props):
-            cam_props_lower = dict((k.lower(),v) for k,v in cam_props.items())
-            cam_dict = {"make":cam_props_lower.get("maker",""),
-                        "focalLength":cam_props_lower.get("focallength",""),
-                        "model":cam_props_lower.get("model",""),
-                        "cols":cam_props_lower.get("columns",""),
-                        "rows":cam_props_lower.get("rows",""),
-                        "pixelSize":cam_props_lower.get("pixelsize","")
-                        }
+            cam_props_lower = dict((k.lower(), v) for k, v in cam_props.items())
+            cam_dict = {
+                "make": cam_props_lower.get("maker", ""),
+                "focalLength": cam_props_lower.get("focallength", ""),
+                "model": cam_props_lower.get("model", ""),
+                "cols": cam_props_lower.get("columns", ""),
+                "rows": cam_props_lower.get("rows", ""),
+                "pixelSize": cam_props_lower.get("pixelsize", ""),
+            }
             return cam_dict
 
         cam_props = get_camera_props(raster_type_params["cameraProperties"])
@@ -505,13 +508,14 @@ def _add_mission(
             gps_info = lyr.query_gps_info()
             for img_info in gps_info:
                 from arcgis.raster._util import _to_datetime
+
                 acq = _to_datetime(img_info["acquisitionDate"]).isoformat()
                 gps = img_info["gps"]
                 name = img_info["name"]
                 lat = gps["latitude"]
                 long = gps["longitude"]
-                alt = gps["altitude"]                
-                gps_val = [name, lat, long,alt, acq]
+                alt = gps["altitude"]
+                gps_val = [name, lat, long, alt, acq]
                 dict_gps = dict(zip(gps_info_list, gps_val))
                 gps_data.append(dict_gps)
 
@@ -637,6 +641,7 @@ def _add_mission(
         raise RuntimeError("Error updating the mission JSON")
     return output_collection, mission_name
 
+
 ###################################################################################################
 ###
 ### PUBLIC API
@@ -652,6 +657,7 @@ def is_supported(gis=None):
         return True
     else:
         return False
+
 
 ###################################################################################################
 ## Compute Sensor model
@@ -684,7 +690,7 @@ def compute_sensor_model(
 
                            If a project item is specified using the project parameter, then the image_collection
                            parameter can be used to specify the flight name. If the value to the image_collection
-                           parameter is not specified, then the image collection of the last flight in the project 
+                           parameter is not specified, then the image collection of the last flight in the project
                            will be used.
     ------------------     --------------------------------------------------------------------
     mode                   Optional string.  the mode to be used for bundle block adjustment
@@ -738,6 +744,7 @@ def compute_sensor_model(
     update_flight_json = False
     flight_json_details = {}
     from ._mission import Mission
+
     if isinstance(image_collection, Mission):
         mission = image_collection
         image_collection = image_collection.image_collection
@@ -863,6 +870,7 @@ def alter_processing_states(
     """
     gis = arcgis.env.active_gis if gis is None else gis
     from ._mission import Mission
+
     if isinstance(image_collection, Mission):
         mission = image_collection
         image_collection = image_collection.image_collection
@@ -930,6 +938,7 @@ def get_processing_states(
 
     gis = arcgis.env.active_gis if gis is None else gis
     from ._mission import Mission
+
     if isinstance(image_collection, Mission):
         mission = image_collection
         image_collection = image_collection.image_collection
@@ -1165,6 +1174,7 @@ def match_control_points(
     update_flight_json = False
     flight_json_details = {}
     from ._mission import Mission
+
     if isinstance(image_collection, Mission):
         mission = image_collection
         image_collection = image_collection.image_collection
@@ -1338,6 +1348,7 @@ def color_correction(
     update_flight_json = False
     flight_json_details = {}
     from ._mission import Mission
+
     if isinstance(image_collection, Mission):
         mission = image_collection
         image_collection = image_collection.image_collection
@@ -1507,6 +1518,7 @@ def compute_control_points(
     update_flight_json = False
     flight_json_details = {}
     from ._mission import Mission
+
     if isinstance(image_collection, Mission):
         mission = image_collection
         image_collection = image_collection.image_collection
@@ -1644,6 +1656,7 @@ def compute_seamlines(
     update_flight_json = False
     flight_json_details = {}
     from ._mission import Mission
+
     if isinstance(image_collection, Mission):
         mission = image_collection
         image_collection = image_collection.image_collection
@@ -1802,6 +1815,7 @@ def edit_control_points(
     update_flight_json = False
     flight_json_details = {}
     from ._mission import Mission
+
     if isinstance(image_collection, Mission):
         mission = image_collection
         image_collection = image_collection.image_collection
@@ -1954,6 +1968,7 @@ def generate_dem(
     update_flight_json = False
     flight_json_details = {}
     from ._mission import Mission
+
     if isinstance(image_collection, Mission):
         mission = image_collection
         image_collection = image_collection.image_collection
@@ -2218,6 +2233,7 @@ def generate_orthomosaic(
 
     update_flight_json = False
     from ._mission import Mission
+
     if isinstance(image_collection, Mission):
         mission = image_collection
         image_collection = image_collection.image_collection
@@ -2454,6 +2470,7 @@ def generate_report(
     update_flight_json = False
     flight_json_details = {}
     from ._mission import Mission
+
     if isinstance(image_collection, Mission):
         mission = image_collection
         image_collection = image_collection.image_collection
@@ -2604,6 +2621,7 @@ def query_control_points(
     update_flight_json = False
     flight_json_details = {}
     from ._mission import Mission
+
     if isinstance(image_collection, Mission):
         mission = image_collection
         image_collection = image_collection.image_collection
@@ -2683,6 +2701,7 @@ def reset_image_collection(
 
     gis = arcgis.env.active_gis if gis is None else gis
     from ._mission import Mission
+
     if isinstance(image_collection, Mission):
         mission = image_collection
         image_collection = image_collection.image_collection
@@ -2690,7 +2709,7 @@ def reset_image_collection(
 
         flight_json_details = {
             "update_flight_json": update_flight_json,
-             "mission": mission,
+            "mission": mission,
             "item_name": "reset",
         }
 
@@ -2760,10 +2779,10 @@ def compute_spatial_reference_factory_code(latitude: float, longitude: float):
     return factory_code
 
 
-class Project():
+class Project:
     """
 
-    Project represents an Orthomapping Project Item in the portal. 
+    Project represents an Orthomapping Project Item in the portal.
 
     Usage: ``arcgis.raster.Project(project, gis=gis)``
 
@@ -2780,7 +2799,7 @@ class Project():
                                                 project = om_item
     ------------------------------------     --------------------------------------------------------------------
     gis                                      Optional `~arcgis.gis.GIS`. Repesents the GIS object of the Orthomapping
-                                             Project item. 
+                                             Project item.
     ====================================     ====================================================================
 
     .. code-block:: python
@@ -2796,23 +2815,20 @@ class Project():
 
     """
 
-    def __init__(self, project = None,definition=None, *, gis: Optional[GIS] = None, **kwargs):
-
+    def __init__(
+        self, project=None, definition=None, *, gis: Optional[GIS] = None, **kwargs
+    ):
         if not isinstance(project, Item):
             try:
-                project = _create_project(name=project,
-                                               definition=definition
-                                               )
+                project = _create_project(name=project, definition=definition)
             except:
                 raise RuntimeError("Creation of orthompping project failed.")
 
         self._project_item = project
         self._project_name = self._project_item.name
-        self._mission_list=[]
+        self._mission_list = []
         gis = arcgis.env.active_gis if gis is None else gis
         self._gis = gis
-
-
 
     @property
     def missions(self):
@@ -2822,12 +2838,15 @@ class Project():
         :return: A list of missions of the orthomapping project
         """
         from ._mission import Mission
+
         res_list = self._project_item.resources.list()
-        self._mission_list  =[]
+        self._mission_list = []
         for resource in res_list:
             full_res_name = resource["resource"]
-            res_name = full_res_name[full_res_name.find('/')+1:full_res_name.find('.')]
-            self._mission_list.append(Mission(mission_name=res_name,project=self))
+            res_name = full_res_name[
+                full_res_name.find("/") + 1 : full_res_name.find(".")
+            ]
+            self._mission_list.append(Mission(mission_name=res_name, project=self))
 
         return self._mission_list
 
@@ -2841,7 +2860,7 @@ class Project():
         res_list = self._project_item.resources.list()
         return len(res_list)
 
-    #def create_project(self, name, definition: Optional[dict[str, Any]] = None):
+    # def create_project(self, name, definition: Optional[dict[str, Any]] = None):
     #    try:
     #        project_item = _create_project(name=name,
     #                                       definition=definition
@@ -2857,8 +2876,8 @@ class Project():
         mission_name: Optional[str] = None,
         image_collection: Optional[str] = None,
         raster_type_name: Optional[str] = None,
-        raster_type_params: Optional[dict[str, Any]] = None):
-
+        raster_type_params: Optional[dict[str, Any]] = None,
+    ):
         """
         Add missions to the orthomapping project item. You can add imagery from one or more drone flights 
         to your orthomapping project item.
@@ -2995,22 +3014,23 @@ class Project():
 
         try:
             from ._mission import Mission
+
             collection, mission_name = _add_mission(
-            project=self,
-            image_list=image_list,
-            mission_name=mission_name,
-            image_collection= image_collection,
-            raster_type_name= raster_type_name,
-            raster_type_params= raster_type_params)
-            return Mission(mission_name=mission_name,project=self)
+                project=self,
+                image_list=image_list,
+                mission_name=mission_name,
+                image_collection=image_collection,
+                raster_type_name=raster_type_name,
+                raster_type_params=raster_type_params,
+            )
+            return Mission(mission_name=mission_name, project=self)
 
         except:
             raise RuntimeError("Failed to add the mission to the project")
 
-
     def get_mission(self, name):
         """
-        Returns a Mission object with the name specified using the name parameter. 
+        Returns a Mission object with the name specified using the name parameter.
 
         ==================                   ====================================================================
         **Parameter**                         **Description**
@@ -3023,14 +3043,15 @@ class Project():
 
         """
         from ._mission import Mission
+
         res_list = self._project_item.resources.list()
         for resource in res_list:
             full_res_name = resource["resource"]
-            res_name = full_res_name[full_res_name.find('/')+1:full_res_name.find('.')]
+            res_name = full_res_name[
+                full_res_name.find("/") + 1 : full_res_name.find(".")
+            ]
             if name == res_name:
-                return Mission(mission_name=name,project=self)
+                return Mission(mission_name=name, project=self)
 
     def __repr__(self):
         return "<%s - %s>" % (type(self).__name__, self._project_name)
-
-

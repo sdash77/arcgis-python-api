@@ -4715,11 +4715,11 @@ class ImageryLayer(Layer):
         time_filter: Optional[
             Union[datetime.date, datetime.datetime, list[int], str]
         ] = None,
-        geometry_filter: Optional[dict] = None
+        geometry_filter: Optional[dict] = None,
     ):
         """
         The ``query_gps_info`` method queries an :class:`~arcgis.raster.ImageryLayer` by applying the filter specified by
-        the user. The result of this operation is the gps and orientation information for image collections created by 
+        the user. The result of this operation is the gps and orientation information for image collections created by
         OrthoMapping REST/Python API or Ortho Maker.
 
         ==============================  ====================================================================
@@ -4772,9 +4772,7 @@ class ImageryLayer(Layer):
                 "This operation cannot be performed on a datastore raster"
             )
 
-        params = {
-            "f": "json"
-        }
+        params = {"f": "json"}
         if object_ids:
             params["objectIds"] = object_ids
 
@@ -4811,12 +4809,10 @@ class ImageryLayer(Layer):
             if "inSR" in gf:
                 params["inSR"] = gf["inSR"]
 
-
         url = self._url + "/queryGPSInfo"
         res = self._con.post(path=url, postdata=params, timeout=None)
 
         return res["images"]
-
 
     def _compute_multidimensional_info(
         self,

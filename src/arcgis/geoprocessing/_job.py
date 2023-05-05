@@ -903,7 +903,7 @@ class OMJob(GPJob):
         flight_json_details = self._flight_details
         update_flight_json = False
         if isinstance(flight_json_details, dict):
-            #project_item = flight_json_details.get("project_item", None)
+            # project_item = flight_json_details.get("project_item", None)
             item_name = flight_json_details.get("item_name", None)
             mission = flight_json_details.get("mission", None)
             update_flight_json = flight_json_details.get("update_flight_json", None)
@@ -937,7 +937,9 @@ class OMJob(GPJob):
                 }
             )
             if processing_states is not None:
-                mission_json["processingSettings"].update({item_name: processing_states})
+                mission_json["processingSettings"].update(
+                    {item_name: processing_states}
+                )
             if adjust_settings is not None:
                 mode = adjust_settings.pop("mode", None)
                 mission_json["jobs"][item_name].update({"mode": mode})
@@ -948,7 +950,9 @@ class OMJob(GPJob):
             if self._item:
                 url = json.loads(self._item)["serviceProperties"]["serviceUrl"]
                 itemid = json.loads(self._item)["itemProperties"]["itemId"]
-                mission_json["items"].update({item_name: {"itemId": itemid, "url": url}})
+                mission_json["items"].update(
+                    {item_name: {"itemId": itemid, "url": url}}
+                )
 
                 properties = json.loads(resource["properties"])
                 properties_items = properties["items"]

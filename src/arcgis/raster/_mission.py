@@ -5,7 +5,8 @@ from arcgis.gis import GIS, Item
 
 from arcgis.raster.orthomapping import Project
 
-class Mission():
+
+class Mission:
     """
 
     Mission represents a mission in an Orthomapping Project.
@@ -15,7 +16,7 @@ class Mission():
     ====================================     ====================================================================
     **Parameter**                             **Description**
     ------------------------------------     --------------------------------------------------------------------
-    mission_name                             Required string representing the mission name. 
+    mission_name                             Required string representing the mission name.
 
                                              Example:
 
@@ -35,36 +36,51 @@ class Mission():
 
 
     """
-    def __init__(self, mission_name, project = None):
-            self._mission_name = mission_name
-            if isinstance(project, Project):
-                self._project = project
-            elif isinstance(project, Item):
-                if project.type == "Ortho Mapping Project":
-                    self._project = Project(project, gis=gis)
 
-            self._project_item = project._project_item
-            self._gis = project._gis
-            self._mission_json = self._get_mission_json(self._mission_name)
-            self._collection = None
-            self._resource_info = self._resource_info(self._mission_name)
+    def __init__(self, mission_name, project=None):
+        self._mission_name = mission_name
+        if isinstance(project, Project):
+            self._project = project
+        elif isinstance(project, Item):
+            if project.type == "Ortho Mapping Project":
+                self._project = Project(project, gis=gis)
 
-            import types
-            from arcgis.raster.orthomapping import compute_sensor_model, alter_processing_states, get_processing_states, match_control_points, color_correction,  compute_control_points,compute_seamlines, edit_control_points, generate_dem, generate_orthomosaic, generate_report,query_control_points, reset_image_collection 
-            self.compute_sensor_model = types.MethodType(compute_sensor_model, self)
-            self.alter_processing_states = types.MethodType(alter_processing_states, self)
-            self.get_processing_states = types.MethodType(get_processing_states, self)
-            self.match_control_points = types.MethodType(match_control_points, self)
-            self.color_correction = types.MethodType(color_correction, self)
-            self.compute_control_points = types.MethodType(compute_control_points, self)
-            self.compute_seamlines = types.MethodType(compute_seamlines, self)
-            self.edit_control_points = types.MethodType(edit_control_points, self)
-            self.generate_dem = types.MethodType(generate_dem, self)
-            self.generate_orthomosaic = types.MethodType(generate_orthomosaic, self)
-            self.generate_report = types.MethodType(generate_report, self)
-            self.query_control_points = types.MethodType(query_control_points, self)
-            self.reset_processing = types.MethodType(reset_image_collection, self)
+        self._project_item = project._project_item
+        self._gis = project._gis
+        self._mission_json = self._get_mission_json(self._mission_name)
+        self._collection = None
+        self._resource_info = self._resource_info(self._mission_name)
 
+        import types
+        from arcgis.raster.orthomapping import (
+            compute_sensor_model,
+            alter_processing_states,
+            get_processing_states,
+            match_control_points,
+            color_correction,
+            compute_control_points,
+            compute_seamlines,
+            edit_control_points,
+            generate_dem,
+            generate_orthomosaic,
+            generate_report,
+            query_control_points,
+            reset_image_collection,
+        )
+
+        self.compute_sensor_model = types.MethodType(compute_sensor_model, self)
+        self.alter_processing_states = types.MethodType(alter_processing_states, self)
+        self.get_processing_states = types.MethodType(get_processing_states, self)
+        self.match_control_points = types.MethodType(match_control_points, self)
+        self.color_correction = types.MethodType(color_correction, self)
+        self.compute_control_points = types.MethodType(compute_control_points, self)
+        self.compute_seamlines = types.MethodType(compute_seamlines, self)
+        self.edit_control_points = types.MethodType(edit_control_points, self)
+        self.generate_dem = types.MethodType(generate_dem, self)
+        self.generate_orthomosaic = types.MethodType(generate_orthomosaic, self)
+        self.generate_report = types.MethodType(generate_report, self)
+        self.query_control_points = types.MethodType(query_control_points, self)
+        self.reset_processing = types.MethodType(reset_image_collection, self)
 
     @property
     def products(self):
@@ -75,10 +91,11 @@ class Mission():
         """
         items_prods = self._mission_json.get("items", None)
         import copy
+
         mission_product = copy.deepcopy(items_prods)
         for key, val in mission_product.items():
             if "itemId" in val.keys():
-                if(key == "imageCollection"):
+                if key == "imageCollection":
                     key = "image_collection"
                     mission_product[key] = self._gis.content.get(val["itemId"])
                     del mission_product["imageCollection"]
@@ -88,7 +105,7 @@ class Mission():
 
     @property
     def processing_states(self):
-        return self._mission_json['processingSettings']
+        return self._mission_json["processingSettings"]
 
     @property
     def image_count(self):
@@ -97,12 +114,12 @@ class Mission():
 
         :return: An integer representing the number of images
         """
-        if "sourceData" in self._mission_json.keys():   
-            source_data =  self._mission_json['sourceData']
+        if "sourceData" in self._mission_json.keys():
+            source_data = self._mission_json["sourceData"]
             if "imageCount" in source_data.keys():
-                return source_data['imageCount']
+                return source_data["imageCount"]
             else:
-                return 0 
+                return 0
         return 0
 
     @property
@@ -112,23 +129,23 @@ class Mission():
 
         :return: An integer representing the number of images
         """
-        if "sourceData" in self._mission_json.keys():   
-            source_data =  self._mission_json['sourceData']
+        if "sourceData" in self._mission_json.keys():
+            source_data = self._mission_json["sourceData"]
             if "flightDate" in source_data.keys():
                 from datetime import datetime
-                datetime_obj = datetime.strptime(source_data['flightDate'], "%Y-%m-%d")
+
+                datetime_obj = datetime.strptime(source_data["flightDate"], "%Y-%m-%d")
                 return datetime_obj
             else:
-                return None 
+                return None
         return None
-
 
     @property
     def image_collection(self):
         """
         The ``image_collection`` property returns the image collection associated with the mission
 
-        :return: image collection item 
+        :return: image collection item
         """
         if self._collection is not None:
             return self._collection
@@ -138,14 +155,15 @@ class Mission():
                 if key == "imageCollection":
                     item_id = val["itemId"]
                 image_collection_item = self._gis.content.get(item_id)
-                self._collection = image_collection_item 
+                self._collection = image_collection_item
                 return image_collection_item
 
-    def add_image(self,
+    def add_image(
+        self,
         input_rasters: list,
         raster_type_name: Optional[str] = None,
         raster_type_params: Optional[dict[str, Any]] = None,
-        context: Optional[dict[str, Any]] = None
+        context: Optional[dict[str, Any]] = None,
     ):
         """
         Add a collection of images to existing image collection of the mission. It provides provision to specify image collection properties through context parameter.
@@ -256,27 +274,28 @@ class Mission():
             mission = self
             image_collection = self.image_collection
 
-
         from arcgis.raster.analytics import add_image
-        gis=self._gis
-        gpjob = add_image(image_collection=image_collection,
-                        input_rasters=input_rasters,
-                        raster_type_name=raster_type_name,
-                        raster_type_params= raster_type_params,
-                        context = context,
-                        gis =  gis,
-                        future = True)
 
-        while(not gpjob.done()):
+        gis = self._gis
+        gpjob = add_image(
+            image_collection=image_collection,
+            input_rasters=input_rasters,
+            raster_type_name=raster_type_name,
+            raster_type_params=raster_type_params,
+            context=context,
+            gis=gis,
+            future=True,
+        )
+
+        while not gpjob.done():
             continue
 
         if gpjob.done():
             try:
-
                 gps_data = []
                 gps_info_list = ["name", "lat", "long", "alt", "acq"]
 
-                #if "gps" in raster_type_params:
+                # if "gps" in raster_type_params:
                 #    for ele in raster_type_params["gps"]:
                 #        dict_gps = dict(zip(gps_info_list, ele))
                 #        gps_data.append(dict_gps)
@@ -285,13 +304,14 @@ class Mission():
                     gps_info = lyr.query_gps_info()
                     for img_info in gps_info:
                         from arcgis.raster._util import _to_datetime
+
                         acq = _to_datetime(img_info["acquisitionDate"]).isoformat()
                         gps = img_info["gps"]
                         name = img_info["name"]
                         lat = gps["latitude"]
                         long = gps["longitude"]
                         alt = gps["altitude"]
-                        gps_val = [name, lat, long,alt, acq]
+                        gps_val = [name, lat, long, alt, acq]
                         dict_gps = dict(zip(gps_info_list, gps_val))
                         gps_data.append(dict_gps)
 
@@ -336,31 +356,33 @@ class Mission():
                     pass
 
                 try:
-
                     import json
 
                     job_messages = gpjob.messages
                     rm = mission._project_item.resources
-                    #mission_json = mission._mission_json
+                    # mission_json = mission._mission_json
                     resource = mission._resource_info
                     resource_name = resource["resource"]
 
                     start_time = (
-                        gpjob._gpjob._start_time.isoformat(timespec="milliseconds") + "Z"
+                        gpjob._gpjob._start_time.isoformat(timespec="milliseconds")
+                        + "Z"
                     )
-                    end_time = gpjob._gpjob._end_time.isoformat(timespec="milliseconds") + "Z"
+                    end_time = (
+                        gpjob._gpjob._end_time.isoformat(timespec="milliseconds") + "Z"
+                    )
                     job_id = gpjob._gpjob._jobid
 
                     mission_json["jobs"].update(
                         {
-                            'addImages': {
+                            "addImages": {
                                 "messages": job_messages,
                                 "checked": True,
                                 "progress": 100,
                                 "success": True,
                                 "startTime": start_time,
                                 "completionTime": end_time,
-                                 "jobId":job_id
+                                "jobId": job_id,
                             }
                         }
                     )
@@ -406,11 +428,7 @@ class Mission():
                 raise RuntimeError("Error updating the mission JSON")
         return image_collection.url
 
-
-
-    def delete_image(self,
-        where: str
-    ):
+    def delete_image(self, where: str):
         """
 
         ``delete_image`` allows users to remove existing images from the image collection (mosaic dataset) of a mission.
@@ -431,21 +449,18 @@ class Mission():
             mission = self
             image_collection = self.image_collection
 
-
         gis = self._gis
         from arcgis.raster.analytics import delete_image
 
-        gpjob = delete_image(image_collection=image_collection,
-                        where=where,
-                        gis =  gis,
-                        future = True)
+        gpjob = delete_image(
+            image_collection=image_collection, where=where, gis=gis, future=True
+        )
 
-        while(not gpjob.done()):
+        while not gpjob.done():
             continue
 
         if gpjob.done():
             try:
-
                 from datetime import datetime
 
                 lyr = image_collection.layers[0]
@@ -487,31 +502,33 @@ class Mission():
                     pass
 
                 try:
-
                     import json
 
                     job_messages = gpjob.messages
                     rm = mission._project_item.resources
-                    #mission_json = mission._mission_json
+                    # mission_json = mission._mission_json
                     resource = mission._resource_info
                     resource_name = resource["resource"]
 
                     start_time = (
-                        gpjob._gpjob._start_time.isoformat(timespec="milliseconds") + "Z"
+                        gpjob._gpjob._start_time.isoformat(timespec="milliseconds")
+                        + "Z"
                     )
-                    end_time = gpjob._gpjob._end_time.isoformat(timespec="milliseconds") + "Z"
+                    end_time = (
+                        gpjob._gpjob._end_time.isoformat(timespec="milliseconds") + "Z"
+                    )
 
                     job_id = gpjob._gpjob._jobid
                     mission_json["jobs"].update(
                         {
-                            'deleteImages': {
+                            "deleteImages": {
                                 "messages": job_messages,
                                 "checked": True,
                                 "progress": 100,
                                 "success": True,
                                 "startTime": start_time,
                                 "completionTime": end_time,
-                                "jobId":job_id
+                                "jobId": job_id,
                             }
                         }
                     )
@@ -557,14 +574,14 @@ class Mission():
                 raise RuntimeError("Error updating the mission JSON")
         return image_collection.url
 
-
-
     def _resource_info(self, name):
         res_manager = self._project._project_item.resources
         res_list = res_manager.list()
         for resource in res_list:
             full_res_name = resource["resource"]
-            res_name = full_res_name[full_res_name.find('/')+1:full_res_name.find('.')]
+            res_name = full_res_name[
+                full_res_name.find("/") + 1 : full_res_name.find(".")
+            ]
             if name == res_name:
                 return resource
 
@@ -575,7 +592,9 @@ class Mission():
         res_list = res_manager.list()
         for resource in res_list:
             full_res_name = resource["resource"]
-            res_name = full_res_name[full_res_name.find('/')+1:full_res_name.find('.')]
+            res_name = full_res_name[
+                full_res_name.find("/") + 1 : full_res_name.find(".")
+            ]
             if name == res_name:
                 mission_json = res_manager.get(full_res_name)
                 return mission_json
