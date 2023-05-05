@@ -73,7 +73,7 @@ else:
         "widgetsnbextension >=3",
         "jupyter-client <=6.1.12",
         "pandas >=2.0.0",
-        "numpy >=1.16.2",
+        "numpy >=1.20.3",
         "matplotlib",
         "keyring >=23.3.0",
         "lerc",
@@ -90,7 +90,7 @@ else:
         "requests-kerberos",
         "requests-gssapi",
         "gssapi>=1.8.1,<2",
-        "dask",
+        "dask >=2023.3.2",
     ]
 
 
