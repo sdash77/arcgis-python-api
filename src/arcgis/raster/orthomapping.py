@@ -479,10 +479,22 @@ def _add_mission(
 
         mission_json.update({"rasterType": raster_type_name})
 
-        mission_json.update({"cameraInfo": raster_type_params["cameraProperties"]})
+        def get_camera_props(cam_props):
+            cam_props_lower = dict((k.lower(),v) for k,v in cam_props.items())
+            cam_dict = {"make":cam_props_lower.get("maker",""),
+                        "focalLength":cam_props_lower.get("focallength",""),
+                        "model":cam_props_lower.get("model",""),
+                        "cols":cam_props_lower.get("columns",""),
+                        "rows":cam_props_lower.get("rows",""),
+                        "pixelSize":cam_props_lower.get("pixelsize","")
+                        }
+            return cam_dict
+
+        cam_props = get_camera_props(raster_type_params["cameraProperties"])
+        mission_json.update({"cameraInfo": cam_props})
 
         gps_data = []
-        gps_info_list = ["name", "lat", "long", "alt"]
+        gps_info_list = ["name", "lat", "long", "alt", "acq"]
 
         if "gps" in raster_type_params:
             for ele in raster_type_params["gps"]:
@@ -492,12 +504,14 @@ def _add_mission(
             lyr = output_collection.layers[0]
             gps_info = lyr.query_gps_info()
             for img_info in gps_info:
+                from arcgis.raster._util import _to_datetime
+                acq = _to_datetime(img_info["acquisitionDate"]).isoformat()
                 gps = img_info["gps"]
                 name = img_info["name"]
                 lat = gps["latitude"]
                 long = gps["longitude"]
-                alt = gps["altitude"]
-                gps_val = [name, lat, long,alt]
+                alt = gps["altitude"]                
+                gps_val = [name, lat, long,alt, acq]
                 dict_gps = dict(zip(gps_info_list, gps_val))
                 gps_data.append(dict_gps)
 
