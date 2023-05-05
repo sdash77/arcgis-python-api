@@ -25,42 +25,17 @@ def get_kube_server(site="https://rpublicservers.esri.com/AEoK1110.php", row=3):
     server_url = links[0][2]
     return server_url
 
-
 # scrape credentials page for Kubernetes credentials
+# https://ragsreports.ags.esri.com/information/11.1_users.htm is mirrored
+# to http://geosaurus.esri.com/testing/ragsreports/11.1_users.htm (updated hourly)
 def get_kube_credentials(
-    site="https://ragsreports.ags.esri.com/information/11.1_users.htm", row=5
+    site="http://geosaurus.esri.com/testing/ragsreports/11.1_users.htm", row=5
 ):
-
-    # for non-Windows users, you will either have to set environment
-    # variables for your AVWORLD username & password, or enter them
-    # in via the command line every time you run the methods
-
-    if platform.system() == "Windows" and os.environ.get("userdomain") == "AVWORLD":
-        from requests_negotiate_sspi import HttpNegotiateAuth
-        page = requests.get(site, auth=HttpNegotiateAuth())
-    else:
-        from requests_ntlm2 import HttpNtlmAuth
-
-        env_dict = os.environ
-
-        # check if env variables exist, if not set them
-        # note: this does not set them permanently
-        if not "AVWORLD_USERNAME" in env_dict:
-            inp = input("Please enter your AVWORLD username: ")
-            os.environ["AVWORLD_USERNAME"] = inp
-
-        if not "AVWORLD_PASSWORD" in env_dict:
-            inp = input("Please enter your AVWORLD password: ")
-            os.environ["AVWORLD_PASSWORD"] = inp
-
-        av_username = env_dict.get("AVWORLD_USERNAME")
-        av_password = env_dict.get("AVWORLD_PASSWORD")
-        page = requests.get(site, auth=HttpNtlmAuth(av_username, av_password))
+    page = requests.get(site)
 
     # Important note: code is based off of current ragsreports page. If page
     # format or data gets changed, row parameter may have to be altered.
     # Currently set up to get apps0001 credentials.
-
     html = lxml.html.fromstring(page.content)
     table = html.xpath("//table")[0]
     row_list = table.xpath("//tr")[row]

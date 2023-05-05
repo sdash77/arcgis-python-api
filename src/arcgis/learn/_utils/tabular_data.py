@@ -568,6 +568,14 @@ class TabularDataObject(object):
 
         try:
             processed_data = _procs.fit_transform(dataframe)
+            if self._procs:
+                list_of_transformed_cols = []
+                for cnt, transform in enumerate(self._procs.transformers):
+                    for col in self._procs.transformers[cnt][-1]:
+                        list_of_transformed_cols.append(col)
+                processed_orig_data = dataframe.copy()
+                processed_orig_data[list_of_transformed_cols] = processed_data
+                processed_data = processed_orig_data
         except:
             msg = arcpy_localization_helper(
                 "Unable to fit transforms. This could be because some of the columns in your dataset have multiple datatypes.",
@@ -1060,6 +1068,14 @@ class TabularDataObject(object):
             processed_data = _procs.fit_transform(dataframe)
         else:
             processed_data = _procs.transform(dataframe)
+        if self._procs:
+            list_of_transformed_cols = []
+            for cnt, transform in enumerate(self._procs.transformers):
+                for col in self._procs.transformers[cnt][-1]:
+                    list_of_transformed_cols.append(col)
+            processed_orig_data = dataframe.copy()
+            processed_orig_data[list_of_transformed_cols] = processed_data
+            processed_data = processed_orig_data
 
         return processed_data
 
