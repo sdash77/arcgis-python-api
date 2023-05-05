@@ -35,7 +35,6 @@ requirements:
   - certifi
   - dask >=2023.3.2
   - geomet
-  - python-gssapi
   - requests-gssapi
   - pyspnego >=0.8.0
   run:
@@ -64,7 +63,6 @@ requirements:
   - certifi
   - dask >=2023.3.2
   - geomet
-  - python-gssapi
   - requests-gssapi
   - pyspnego >=0.8.0
 source:
