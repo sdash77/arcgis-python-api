@@ -36,7 +36,7 @@ def temporal_profile(
     dimension_values: list[int] = [],
     show_values: bool = False,
     trend_type: Optional[str] = None,
-    trend_order: Optional[int] = 1,
+    trend_order: Optional[int] = None,
     plot_properties: dict[str, Any] = {},
 ):
     """
@@ -137,6 +137,29 @@ def temporal_profile(
             raise RuntimeError("Specify time_field to plot the temporal profile.")
     else:
         x_var = time_field
+
+    if trend_type is not None:
+        if trend_type.lower() in ["linear","harmonic"]:
+            if trend_type.lower() == "harmonic":
+                if trend_order is None:
+                    trend_order = 1
+                    _LOGGER.warning(
+                        "Invalid Argument - trend order is None. Setting trend order as 1 to plot the trend line"
+                    )
+                elif trend_order < 1:
+                    trend_order = 1
+                    _LOGGER.warning(
+                        "Invalid Argument - trend order is less than 1. Setting trend order as 1 to plot the trend line"
+                    )
+                elif trend_order > 3:
+                    trend_order = 3
+                    _LOGGER.warning(
+                        "Invalid Argument - trend order is greater than 3. Setting trend order as 3 to plot the trend line"
+                    )
+        else:
+            _LOGGER.warning(
+                        "Trend line cannot be drawn. Trend type should be one of the following: linear, harmonic "
+                    )
 
     if (
         "hasMultidimensions" in raster.properties
@@ -327,7 +350,7 @@ def temporal_profile(
             # plt.gcf().autofmt_xdate()
             # print(t1[i]["x"]," < ", t1[i]["y"])
 
-            if trend_type is not None:
+            if trend_type is not None and trend_type.lower() in ["linear","harmonic"]:
                 c = next(color)
                 date_list = []
                 for date in t1[i]["x"]:
@@ -341,26 +364,13 @@ def temporal_profile(
                         sample_size, date_list, t1[i]["x"], t1[i]["y"]
                     )
                 elif trend_type.lower() == "harmonic":
-                    if trend_order is None:
-                        _LOGGER.warning(
-                            "Trend line cannot be drawn. Please enter a trend order value from 1 to 3."
-                        )
-                    if trend_order < 1:
-                        trend_order = 1
-                        _LOGGER.warning(
-                            "Invalid Argument - trend order is less than 1. Setting trend order as 1 to plot the trend line"
-                        )
-                    if trend_order > 3:
-                        trend_order = 3
-                        _LOGGER.warning(
-                            "Invalid Argument - trend order is greater than 3. Setting trend order as 3 to plot the trend line"
-                        )
                     x_trend, y_trend = _harmonic_regression(
                         sample_size, date_list, t1[i]["x"], t1[i]["y"], trend_order
                     )
-                label_string = f"Location {str(t1[i]['point'])}-{str(t1[i]['variable'])}-band {str(t1[i]['band'])}-{trend_type.lower()} trend"
-                _plt.plot(x_trend, y_trend, c=c, linestyle='dashed', label=label_string)
-                _plt.legend(loc='center left', bbox_to_anchor=(1, 0.5))
+                if x_trend!=[] and y_trend!=[]:
+                    label_string = f"Location {str(t1[i]['point'])}-{str(t1[i]['variable'])}-band {str(t1[i]['band'])}-{trend_type.lower()} trend"
+                    _plt.plot(x_trend, y_trend, c=c, linestyle='dashed', label=label_string)
+                    _plt.legend(loc='center left', bbox_to_anchor=(1, 0.5))
 
             if show_values:
                 for x, y in zip(t1[i]["x"], t1[i]["y"]):
@@ -491,7 +501,7 @@ def temporal_profile(
             _plt.scatter(t1[i]["x"], t1[i]["y"], c=[c])
             _plt.legend(loc='center left', bbox_to_anchor=(1, 0.5))
 
-            if trend_type is not None:
+            if trend_type is not None and trend_type.lower() in ["linear","harmonic"]:
                 c = next(color)
                 date_list = []
                 for date in t1[i]["x"]:
@@ -505,27 +515,13 @@ def temporal_profile(
                         sample_size, date_list, t1[i]["x"], t1[i]["y"]
                     )
                 elif trend_type.lower() == "harmonic":
-                    if trend_order is None:
-                        _LOGGER.warning(
-                            "Trend line cannot be drawn. Please enter a trend order value from 1 to 3."
-                        )
-                    if trend_order < 1:
-                        trend_order = 1
-                        _LOGGER.warning(
-                            "Invalid Argument - trend order is less than 1. Setting trend order as 1 to plot the trend line"
-                        )
-                    if trend_order > 3:
-                        trend_order = 3
-                        _LOGGER.warning(
-                            "Invalid Argument - trend order is greater than 3. Setting trend order as 3 to plot the trend line"
-                        )
                     x_trend, y_trend = _harmonic_regression(
                         sample_size, date_list, t1[i]["x"], t1[i]["y"], trend_order
                     )
-                label_string = f"Location {str(t1[i]['point'])}-{str(t1[i]['variable'])}-band {str(t1[i]['band'])}-{trend_type.lower()} trend"
-                _plt.plot(x_trend, y_trend, c=c, linestyle='dashed', label=label_string)
-                _plt.legend(loc='center left', bbox_to_anchor=(1, 0.5))
-
+                if x_trend!=[] and y_trend!=[]:
+                    label_string = f"Location {str(t1[i]['point'])}-{str(t1[i]['variable'])}-band {str(t1[i]['band'])}-{trend_type.lower()} trend"
+                    _plt.plot(x_trend, y_trend, c=c, linestyle='dashed', label=label_string)
+                    _plt.legend(loc='center left', bbox_to_anchor=(1, 0.5))
 
             if show_values:
                 for x, y in zip(t1[i]["x"], t1[i]["y"]):
