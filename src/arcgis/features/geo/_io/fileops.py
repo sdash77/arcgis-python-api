@@ -1100,6 +1100,11 @@ def to_featureclass(
                         and isinstance(df[col][idx], datetime.datetime)
                     ):
                         dtypes.append((col, "<M8[us]"))
+                    elif df[col].dtype.type == str:
+                        mlen = df[col].str.len().max()
+                        if mlen == 0:
+                            mlen = 254
+                        dtypes.append((col, "<U%s" % int(mlen)))
                     else:
                         dtypes.append((col, df[col].dtype.type))
             from arcgis._impl.common._utils import chunks as _chunks
