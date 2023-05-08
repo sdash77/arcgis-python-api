@@ -1043,11 +1043,12 @@ def to_featureclass(
             idx = df[df.spatial.name][notnull].first_valid_index()
             if idx is None:
                 gt, sr = _examine_meta(df.spatial._meta)
-                # sr = arcgis.geometry.SpatialReference(sr).as_arcpy
             else:
-                sr = df[df.spatial.name][idx]["spatialReference"]
+                sr = arcgis.geometry.SpatialReference(
+                    df[df.spatial.name][idx]["spatialReference"]
+                )
                 gt = df[df.spatial.name][idx].geometry_type.upper()
-                #
+
             null_geom = {
                 "point": pd.io.json.dumps(
                     {"x": None, "y": None, "spatialReference": sr}
