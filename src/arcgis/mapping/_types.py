@@ -1755,8 +1755,10 @@ class WebMap(HasTraits, collections.OrderedDict):
             }
             self._webmapdict["baseMap"] = self._basemap
         elif value in self.gallery_basemaps:
-            self._basemap = self._gallery_basemaps[value]
-            self._webmapdict["baseMap"] = self._basemap
+            basemap_dict = self._gallery_basemaps[value]
+            self._check_spatial_reference(basemap_dict)
+            self._basemap = basemap_dict
+            self._webmapdict["baseMap"] = basemap_dict
         elif isinstance(value, _gis.Item) and value.type.title() == "Web Map":
             self._basemap = value.get_data()["baseMap"]
             self._webmapdict["baseMap"] = self._basemap
@@ -1845,7 +1847,22 @@ class WebMap(HasTraits, collections.OrderedDict):
         wm_sr = self.definition["spatialReference"]["wkid"]
         layer_sr = None
 
-        if isinstance(service, _gis.Item):
+        if isinstance(service, dict):
+            for layer in service["baseMapLayers"]:
+                if layer["layerType"] == "VectorTileLayer":
+                    # Vector Tile layer always has spatial reference of 4326
+                    layer_sr = 4326
+            if not layer_sr:
+                # If none of the layers are vector tile layers, get the layer from it's itemid or url and then continue
+                if "itemId" in service["baseMapLayers"][0]:
+                    service = self._gis.content.get(
+                        service["baseMapLayers"][0]["itemId"]
+                    )
+                    return self._check_spatial_reference(service)
+                elif "url" in service["baseMapLayers"][0]:
+                    service = _gis.Layer(service["baseMapLayers"][0]["url"])
+                    return self._check_spatial_reference(service)
+        elif isinstance(service, _gis.Item):
             # Checking spatial reference of an existing WebMap item or of an existing basemap layer in our webmap
             # If existing basemap layer, it is because user is moving it to first index position
             if isinstance(service, _gis.Item):
@@ -1885,14 +1902,15 @@ class WebMap(HasTraits, collections.OrderedDict):
             layer_sr = int(layer_sr)
         elif isinstance(layer_sr, dict):
             layer_sr = layer_sr["wkid"]
-        else:
+        elif isinstance(layer_sr, _mixins.PropertyMap):
             # property map
             layer_sr = dict(layer_sr)["wkid"]
 
         # Check
         if wm_sr != layer_sr:
-            raise AssertionError(
-                f"The layer's spatial reference does not match that of the webmap. It cannot be set as the first basemap layer. Layer: {service._url}"
+            self._webmapdict["spatialReference"] = {"wkid": layer_sr}
+            logging.warning(
+                f"The layer's spatial reference does not match that of the webmap. The spatial reference of the webmap will be updated but this might affect the rendering of layers."
             )
 
     @property
