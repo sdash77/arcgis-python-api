@@ -62,6 +62,43 @@ class Scales(Enum):
 
 
 ###############################################################################################################
+class Separator:
+    """
+    Class representing a `separator`. You can use this class to edit and remove separators from a storymap.
+    """
+
+    def __init__(self, **kwargs) -> None:
+        # Can be created from scratch or already exist in story
+        # Separator is not an immersive node
+        self._story = kwargs.pop("story", None)
+        self._type = "separator"
+        self.node = kwargs.pop("node_id", "n-" + uuid.uuid4().hex[0:6])
+
+    # ----------------------------------------------------------------------
+    def __repr__(self) -> str:
+        return "Image"
+
+    # ----------------------------------------------------------------------
+    def _add_separator(self, story=None):
+        # Assign the story
+        self._story = story
+
+        # Create separator nodes.
+        self._story._properties["nodes"][self.node] = {
+            "type": "separator",
+        }
+
+    # ----------------------------------------------------------------------
+    def delete(self):
+        """
+        Delete the node
+
+        :return: True if successful.
+        """
+        return self._story._delete(self.node)
+
+
+###############################################################################################################
 class Image:
     """
     Class representing an `image` from a url or file.
@@ -2380,7 +2417,7 @@ class Swipe:
         >>> my_story.nodes #use to find swipe node id
 
         # Method 1: Use the Swipe Class
-        >>> swipe = Swipe(my_story, <node_id>)
+        >>> swipe = Swipe()
 
         # Method 2: Use the get method in story
         >>> swipe = my_story.get(node = <node_id>)
@@ -2405,10 +2442,31 @@ class Swipe:
                 self._slides = self._story._properties["nodes"][self.node]["data"][
                     "contents"
                 ]
+                # get the media for the swipe (image or map)
                 media_node = self._story._properties["nodes"][self.node]["data"][
                     "contents"
                 ]["0"]
-                self._media_type = self._story._properties["nodes"][media_node]["type"]
+
+                # Find the type, this is important since swipe must only have one media type
+                if media_node == "":
+                    # First position is empty
+                    # Check the second position
+                    second_media = self._story._properties["nodes"][self.node]["data"][
+                        "contents"
+                    ]["1"]
+                    if second_media == "":
+                        # No media set yet, type is empty
+                        self._media_type = ""
+                    else:
+                        self._media_type = self._story._properties["nodes"][
+                            second_media
+                        ]["type"]
+                else:
+                    # Use the media type of the first position
+                    self._media_type = self._story._properties["nodes"][media_node][
+                        "type"
+                    ]
+
             else:
                 # Empty swipe node
                 self._slides = []
@@ -2624,10 +2682,10 @@ class Sidecar:
         >>> my_story.nodes #use to find sidecar node id
 
         # Method 1: Use the Sidecar Class
-        >>> sidecar = Sidecar(my_story, <node_id>)
+        >>> sidecar = Sidecar("floating-panel") # create from scratch
 
         # Method 2: Use the get method in story
-        >>> sidecar = my_story.get(node = <node_id>)
+        >>> sidecar = my_story.content_list()[3] # sidecar is fourth item in story
     """
 
     def __init__(self, style: Optional[str] = None, **kwargs):

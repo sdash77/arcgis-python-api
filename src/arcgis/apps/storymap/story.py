@@ -929,8 +929,7 @@ class StoryMap(object):
         elif isinstance(content, Content.Swipe):
             content._add_swipe(caption, alt_text, display, self)
         else:
-            # If no content passed, separator is added
-            self._properties["nodes"][node_id] = {"type": "separator"}
+            content._add_separator(story=self)
 
         # Add to story children
         self._add_child(node_id=node_id, position=position)
@@ -1548,7 +1547,9 @@ class StoryMap(object):
         # Find the node type to assign to correct class
         node_type = self._properties["nodes"][node_id]["type"]
         # Create an instance of this class using existing node properties
-        if node_type == "image":
+        if node_type == "separator":
+            node = Content.Separator(story=self, node_id=node_id)
+        elif node_type == "image":
             node = Content.Image(story=self, node_id=node_id)
         elif node_type == "video":
             node = Content.Video(story=self, node_id=node_id)
