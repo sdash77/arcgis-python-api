@@ -499,9 +499,11 @@ class MapView(widgets.DOMWidget):
                     )
             self._basemap = value
             self.webmap.basemap = value
+            self._webmap = self.webmap._webmapdict
         elif value in self.gallery_basemaps:
             self._basemap = value
             self.webmap.basemap = value
+            self._webmap = self.webmap._webmapdict
         else:
             try:
                 self.webmap.basemap = value
@@ -512,6 +514,7 @@ class MapView(widgets.DOMWidget):
                 copy_gallery = dict(self._gallery_basemaps)
                 self._gallery_basemaps = {}
                 self._gallery_basemaps = copy_gallery
+                self._webmap = self.webmap._webmapdict
             except Exception:
                 raise RuntimeError("Basemap '{}' isn't valid".format(value))
 

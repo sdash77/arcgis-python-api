@@ -7,7 +7,6 @@ import warnings
 import traceback
 from ..models._arcgis_model import ArcGISModel, model_characteristics_folder
 
-warnings.simplefilter("always", UserWarning)
 HAS_FASTAI = True
 
 try:
@@ -571,44 +570,58 @@ class SequenceToSequence(ArcGISModel):
                             invalid_index.append(index)
 
                     if invalid_index:
-                        warnings.warn(
-                            f"Index {invalid_index} are not valid. Indices/index must be integer. Ignoring "
-                            f"{invalid_index} for processing."
-                        )
+                        with warnings.catch_warnings():
+                            warnings.simplefilter("always", UserWarning)
+                            warnings.warn(
+                                f"Index {invalid_index} are not valid. Indices/index must be integer. Ignoring "
+                                f"{invalid_index} for processing."
+                            )
 
                     if temp_index:
                         for i in temp_index:
                             if i < len(text_or_list):
                                 text_list_for_exp.append(text_or_list[i])
                             else:
-                                warnings.warn(
-                                    f"Value of index {explain_index} should be less than {len(text_or_list) -1}."
-                                )
+                                with warnings.catch_warnings():
+                                    warnings.simplefilter("always", UserWarning)
+                                    warnings.warn(
+                                        f"Value of index {i} should be less than/equal to {len(text_or_list) -1}."
+                                    )
                     else:
-                        warnings.warn(
-                            f"No valid indices were supplied. Please change your input to list of integers"
-                        )
+                        with warnings.catch_warnings():
+                            warnings.simplefilter("always", UserWarning)
+                            warnings.warn(
+                                f"No valid indices were supplied. Please change your input to list of integers"
+                            )
 
                 elif isinstance(explain_index, int):
                     if explain_index < len(text_or_list):
                         text_list_for_exp = text_or_list[explain_index]
                     else:
-                        warnings.warn(
-                            f"Value of index {explain_index} should be less than {len(text_or_list) - 1}."
-                        )
+                        with warnings.catch_warnings():
+                            warnings.simplefilter("always", UserWarning)
+                            warnings.warn(
+                                f"Value of index {explain_index} should be less than/equal to {len(text_or_list) - 1}."
+                            )
                 else:
                     exp_rows = 5 if len(text_or_list) > 5 else len(text_or_list)
                     for i in range(exp_rows):
                         text_list_for_exp.append(text_or_list[i])
-                    warnings.warn(f"Generating explanation for first {exp_rows} rows ")
+                    with warnings.catch_warnings():
+                        warnings.simplefilter("always", UserWarning)
+                        warnings.warn(
+                            f"Generating explanation for first {exp_rows} rows "
+                        )
 
             if explain and len(text_list_for_exp):
                 self._explain(text_list_for_exp, **kwargs)
 
         except:
-            warnings.warn(
-                f"SHAP workflow has encountered an error. Failed to generate an explanation."
-            )
+            with warnings.catch_warnings():
+                warnings.simplefilter("always", UserWarning)
+                warnings.warn(
+                    f"SHAP workflow has encountered an error. Failed to generate an explanation."
+                )
 
         return list(zip(text_or_list, preds))
 
