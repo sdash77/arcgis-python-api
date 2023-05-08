@@ -1,6 +1,6 @@
 import sys
 
-sys.path.insert(0, r"c:\SVN\geosaurus_issue_9708\src")
+sys.path.insert(0, r"/Users/cowboy/GitHub/geosaurus/src")
 import platform
 import unittest
 from arcgis.auth import EsriKerberosAuth, EsriSession, EsriWindowsAuth
@@ -13,8 +13,22 @@ try:
 except:
     from ._config_utils import get_config_parser
 
+iwa_url = "https://rqawiniwa02pt.ags.esri.com/gis"
+iwa_user = "avworld\creator2"
+iwa_pw = "portalaccount1"
 
-if "iwa" in get_config_parser():
+ker_url = "https://rqawinkb08pt.ags.esri.com/gis"
+
+ldap_url = "https://rpubrh8212.ags.esri.com/portal"
+ldap_user = "creator1"
+ldap_pw = "portalaccount1"
+
+multiiwa_url = "https://rqawinmiwa05pt.ags.esri.com/gis"
+multiiwa_user = "avworld\creator2"
+multiiwa_pw = "portalaccount1"
+
+
+"""if "iwa" in get_config_parser():
     SKIP_IWA = False
     iwa_url = get_config_parser()["iwa"]["url"]
     iwa_user = get_config_parser()["iwa"]["username"]
@@ -63,7 +77,9 @@ except:
 
 @unittest.skipIf(
     WINDOWS == False or SKIP_IWA == True, "Operating System is not Windows"
-)
+)"""
+
+
 class TestWinAuth(unittest.TestCase):
     def test_win_auth(self):
         auth = EsriWindowsAuth(username=iwa_user, password=iwa_pw)
@@ -73,7 +89,7 @@ class TestWinAuth(unittest.TestCase):
                 params={"f": "json"},
             )
             data = resp.json()
-            assert 'creator2' in data["user"]["username"]
+            assert "creator2" in data["user"]["username"]
 
     def test_win_auth_no_user(self):
         url = iwa_url
@@ -89,9 +105,9 @@ class TestWinAuth(unittest.TestCase):
         auth = EsriWindowsAuth()
         with EsriSession(auth=auth) as session:
             resp = session.get(url=url)
-            server_url = [
-                s["url"] for s in resp.json()["servers"] if s["isHosted"]
-            ][0] + "/rest/services/System"
+            server_url = [s["url"] for s in resp.json()["servers"] if s["isHosted"]][
+                0
+            ] + "/rest/services/System"
             resp2 = session.get(server_url + "?f=json")
             data = resp2.json()
             assert data
@@ -104,10 +120,11 @@ class TestWinAuth(unittest.TestCase):
                 params={"f": "json"},
             )
             data = resp.json()
-            assert 'creator2' in data["user"]["username"]
+            assert "creator2" in data["user"]["username"]
 
     def test_multi_win_auth_no_user(self):
-        url = "https://rqawintest99pt.ags.esri.com/gis"  # multiiwa_url
+        # url = "https://rqawintest99pt.ags.esri.com/gis"  # multiiwa_url
+        url = multiiwa_url
         auth = EsriWindowsAuth()
         with EsriSession(auth=auth) as session:
             resp = session.get(url=url + "/sharing/rest/portals/self?f=json")
@@ -116,38 +133,40 @@ class TestWinAuth(unittest.TestCase):
 
     def test_multiiwa_no_user_server(self):
         url = "https://rqawintest99pt.ags.esri.com/gis"  # multiiwa_url
-        url = f"{url}/sharing/rest/portals/self/servers?f=json"
+        url = f"{multiiwa_url}/sharing/rest/portals/self/servers?f=json"
 
         auth = EsriWindowsAuth()
         with EsriSession(auth=auth) as session:
             resp = session.get(url=url)
-            server_url = [
-                s["url"] for s in resp.json()["servers"] if s["isHosted"]
-            ][0] + "/rest/services/System"
+            server_url = [s["url"] for s in resp.json()["servers"] if s["isHosted"]][
+                0
+            ] + "/rest/services/System"
             resp2 = session.get(server_url + "?f=json")
             data = resp2.json()
             assert data
 
     def test_iwa_no_user_forced_sspi(self):
         url = "https://rqawintest99pt.ags.esri.com/gis"  # multiiwa_url
-        url = f"{url}/sharing/rest/portals/self/servers?f=json"
+        url = f"{multiiwa_url}/sharing/rest/portals/self/servers?f=json"
         import copy
 
         auth = EsriWindowsAuth()
         with EsriSession(auth=auth) as session:
             resp = session.get(url=url)
-            server_url = [
-                s["url"] for s in resp.json()["servers"] if s["isHosted"]
-            ][0] + "/rest/services/System"
+            server_url = [s["url"] for s in resp.json()["servers"] if s["isHosted"]][
+                0
+            ] + "/rest/services/System"
             resp2 = session.get(server_url + "?f=json")
             data = resp2.json()
             assert data
 
 
-@unittest.skipIf(
+"""@unittest.skipIf(
     WINDOWS == False or SKIP_KERBEROS == True,
     "Operating System is not Windows",
-)
+)"""
+
+
 class TestKerberos(unittest.TestCase):
     def test_kerberos(self):
         """Tests the Kerberos"""
@@ -159,9 +178,9 @@ class TestKerberos(unittest.TestCase):
             resp = session.get(url=url)
             data = resp.json()
             assert data
-            server_url = [
-                s["url"] for s in resp.json()["servers"] if s["isHosted"]
-            ][0] + "/rest/services/System"
+            server_url = [s["url"] for s in resp.json()["servers"] if s["isHosted"]][
+                0
+            ] + "/rest/services/System"
             resp2 = session.get(server_url + "?f=json")
             data = resp2.json()
             assert data
@@ -176,17 +195,19 @@ class TestKerberos(unittest.TestCase):
             resp = session.get(url=url)
             data = resp.json()
             assert data
-            server_url = [
-                s["url"] for s in resp.json()["servers"] if s["isHosted"]
-            ][0] + "/rest/services/System"
+            server_url = [s["url"] for s in resp.json()["servers"] if s["isHosted"]][
+                0
+            ] + "/rest/services/System"
             resp2 = session.get(server_url + "?f=json")
             data = resp2.json()
             assert data
 
 
-@unittest.skipIf(
+"""@unittest.skipIf(
     WINDOWS == False or SKIP_LDAP == True, "Operating System is not Windows"
-)
+)"""
+
+
 class TestLDAPAuth(unittest.TestCase):
     """LDAP Test"""
 
@@ -200,9 +221,9 @@ class TestLDAPAuth(unittest.TestCase):
             assert data["user"]
             resp = session.get(url=server_url)
             data = resp.json()
-            server_url = [
-                s["url"] for s in resp.json()["servers"] if s["isHosted"]
-            ][0] + "/rest/services/System"
+            server_url = [s["url"] for s in resp.json()["servers"] if s["isHosted"]][
+                0
+            ] + "/rest/services/System"
             resp = session.get(server_url + "?f=json")
             data = resp.json()
             assert data["services"]
