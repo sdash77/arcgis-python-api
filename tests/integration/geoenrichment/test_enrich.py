@@ -697,7 +697,7 @@ class TestEnrichOnline(unittest.TestCase):
             assert _is_geoenabled(counties_df)
 
     @skip_if_no_agol
-    def test_enrich_buffer_study_areas(self):
+    def test_enrich_buffer_study_area_driving_time(self):
         from arcgis.geoenrichment import enrich, BufferStudyArea
 
         with does_not_raise():
@@ -706,10 +706,55 @@ class TestEnrichOnline(unittest.TestCase):
                 radii=[3],
                 units="Miles",
                 overlap=False,
+                travel_mode="driving",
             )
             buffer_df = enrich(study_areas=[buffered], gis=self.usa_agol_inst._gis)
             assert isinstance(buffer_df, pd.DataFrame)
             assert _is_geoenabled(buffer_df)
+            assert buffer_df.iloc[0]["buffer_units_alias"] == "Drive Distance Miles"
+
+    @skip_if_no_agol
+    def test_enrich_buffer_study_area_walking_time(self):
+        from arcgis.geoenrichment import enrich, BufferStudyArea
+
+        with does_not_raise():
+            buffered = BufferStudyArea(
+                area="380 New York St Redlands CA 92373",
+                radii=[30],
+                units="Minutes",
+                overlap=False,
+                travel_mode="walking",
+            )
+            buffer_df = enrich(study_areas=[buffered], gis=self.usa_agol_inst._gis)
+            assert isinstance(buffer_df, pd.DataFrame)
+            assert _is_geoenabled(buffer_df)
+            assert buffer_df.iloc[0]["buffer_units_alias"] == "Walk Time Minutes"
+
+    @skip_if_no_agol
+    def test_enrich_buffer_study_area_walking_time_option2(self):
+        from arcgis.geoenrichment import enrich, BufferStudyArea
+
+        with does_not_raise():
+            buffered = BufferStudyArea(
+                area="380 New York St Redlands CA 92373",
+                radii=[30],
+                units="Minutes",
+                overlap=False,
+                travel_mode="walking_time",
+            )
+            buffer_df = enrich(study_areas=[buffered], gis=self.usa_agol_inst._gis)
+            assert isinstance(buffer_df, pd.DataFrame)
+            assert _is_geoenabled(buffer_df)
+            assert buffer_df.iloc[0]["buffer_units_alias"] == "Walk Time Minutes"
+
+    @skip_if_no_agol
+    def test_travel_modes(self):
+        with does_not_raise():
+            # One named area
+            usa = Country.get("US")
+            travel_modes = usa.travel_modes
+
+            assert isinstance(travel_modes, pd.DataFrame)
 
 
 if __name__ == "__main__":

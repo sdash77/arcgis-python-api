@@ -742,14 +742,22 @@ def add_proximity_to_enrich_feature(
     # otherwise, doing a network type and need to figure out what the travel mode is
     else:
         feature["areaType"] = "NetworkServiceArea"
+        trvl_md_typ = None
 
-        # scrub the travel mode
-        travel_mode = validate_network_travel_mode(source, travel_mode)
+        if travel_mode in ["driving", "walking", "trucking"]:
+            # GeoEnrichment service constants
+            feature["travel_mode"] = travel_mode
+        else:
+            # scrub the travel mode
+            travel_mode = validate_network_travel_mode(source, travel_mode)
 
-        # pull out the category from the travel modes and set the travel mode flat (temporal or distance)
-        trvl_md_typ = source.travel_modes[
-            source.travel_modes["alias"] == travel_mode
-        ].iloc[0]["impedance_category"]
+            # pull out the category from the travel modes and set the travel mode flat (temporal or distance)
+            source_travel_mode = source.travel_modes[
+                source.travel_modes["alias"] == travel_mode
+            ]
+            trvl_md_typ = source_travel_mode.iloc[0]["impedance_category"]
+
+            feature["travel_mode"] = source_travel_mode.iloc[0]["travel_mode_dict"]
 
         # tack on polygon area overlap
         if proximity_area_overlap:
@@ -758,10 +766,11 @@ def add_proximity_to_enrich_feature(
             feature["networkOptions"] = {"polygon_overlap_type": "Rings"}
 
     # if no proximity metric provided, provide default based on travel mode, and also validate if provided
-    if proximity_metric is None and trvl_md_typ == "distance":
-        proximity_metric = "kilometers"
-    elif proximity_metric is None and trvl_md_typ == "temporal":
-        proximity_metric = "minutes"
+    if proximity_metric is None:
+        if trvl_md_typ == "distance":
+            proximity_metric = "kilometers"
+        elif trvl_md_typ == "temporal":
+            proximity_metric = "minutes"
 
     # set the buffer units if now populated
     if proximity_metric is not None:
