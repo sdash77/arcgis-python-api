@@ -503,7 +503,10 @@ class Connection(object):
             cert = None
 
         self._session = EsriSession(
-            cert=cert, verify_cert=self._verify_cert, proxies=proxies
+            cert=cert,
+            verify_cert=self._verify_cert,
+            proxies=proxies,
+            retries=5,
         )
         self._session.verify = self._verify_cert
         self._session.stream = True
@@ -512,28 +515,9 @@ class Connection(object):
         self._session.proxies = proxies
 
         from urllib3.util import Retry
+        from urllib3 import __version__ as __urllib3_version__
 
-        if self._custom_adapter is None:
-            a = requests.adapters.HTTPAdapter(
-                max_retries=Retry(
-                    total=2,
-                    backoff_factor=1,
-                    method_whitelist=frozenset(
-                        [
-                            "POST",
-                            "DELETE",
-                            "GET",
-                            "HEAD",
-                            "OPTIONS",
-                            "PUT",
-                            "TRACE",
-                        ]
-                    ),
-                )
-            )
-            self._session.mount("http://", a)
-            self._session.mount("https://", a)
-        else:
+        if self._custom_adapter:
             for k, v in self._custom_adapter.items():
                 self._session.mount(k, v)
 
