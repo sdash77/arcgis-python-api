@@ -1516,23 +1516,14 @@ def enrich(
                                   * addresses, points of interest, place names or other supported locations as strings.
 
                                   * dicts for multiple field addresses such as:
-                                    Example:
-
-                                        [{
-                                            "address":{
-                                                "Address":"380 New York St.",
-                                                "Admin1":"Redlands",
-                                                "Admin2":"CA",
-                                                "Postal":"92373",
-                                                "CountryCode":"USA"}
-                                        }]
+                                    Example: [{"address": "Address":"380 New York St.", "Postal":"92373", "CountryCode":"USA"}]
 
                                   * :class:`~arcgis.geometry.Geometry` instances
 
                                   * BufferStudyArea instances. By default, one-mile ring
                                     buffers are created around the points to collect and append
                                     enrichment data. You can use BufferStudyArea to change the ring
-                                    buffer size or create drive-time service areas around the points.
+                                    buffer size or create network service areas around the points.
 
                                   * NamedArea instances to support standard geography. They are
                                     obtained using Country.subgeographies()/search(). When
