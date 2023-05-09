@@ -149,14 +149,16 @@ class WebExperience(object):
             self._create_new_experience(template=template, name=name)
 
     # -----------------------------------------------------------------------------------
-    def _create_new_experience(self, config = None, template="blank fullscreen", name=None, gis = None):
+    def _create_new_experience(
+        self, config=None, template="blank fullscreen", name=None, gis=None
+    ):
         """
         If no experience is specified when creating a WebExperience, this helper function
         creates a new experience and saves it as an item to the active GIS. Users can specify
         a template from the experience builder to create their template, in addition to a custom
         item name (done as arguments in the initial creation of the WebExperience).
         """
-        
+
         if config is None:
             if isinstance(template, Templates):
                 template = template.value
@@ -167,7 +169,9 @@ class WebExperience(object):
 
             temp_low = template.lower()
             if temp_low in arcgis.apps.expbuilder._ref.templates:
-                temp_dict = copy.deepcopy(arcgis.apps.expbuilder._ref.templates[temp_low])
+                temp_dict = copy.deepcopy(
+                    arcgis.apps.expbuilder._ref.templates[temp_low]
+                )
             else:
                 temp_dict = copy.deepcopy(
                     arcgis.apps.expbuilder._ref.templates["blank fullscreen"]
@@ -180,11 +184,12 @@ class WebExperience(object):
                 title = "Experience via Python %s" % uuid.uuid4().hex[:10]
             else:
                 title = name
-        
+
         else:
             temp_dict = config
+            temp_dict["attributes"]["portalUrl"] = self._gis.url
             if name is None:
-                title = config["attributes"]["portalUrl"]
+                title = "Experience via Python %s" % uuid.uuid4().hex[:10]
             else:
                 title = name
 
@@ -293,9 +298,7 @@ class WebExperience(object):
                     + self.item.itemid
                 )
             item_properties["url"] = url
-            return self.item.update(
-                item_properties=item_properties, data=self._expdict
-            )
+            return self.item.update(item_properties=item_properties, data=self._expdict)
             # self.publish(item_properties = item_properties, data = self._expdict)
         else:
             item_properties["typeKeywords"] = keywords
@@ -438,14 +441,43 @@ class WebExperience(object):
 
     # ----------------------------------------------------------------------
     def add_to_portal(
-        self, 
+        self,
         gis,
-        publish = False,
-        name = None,
+        publish=False,
+        name=None,
         item_mapping: Optional[dict] = None,
         auto_remap: Optional[bool] = False,
     ):
+        """
+        Adds a WebExperience created locally through the Developer Edition to a specified
+        portal. After doing this, the WebExperience object will obtain item and itemid
+        properties. Gives users options to remap their experience's datasources to items
+        present in the portal, both manually or automatically
 
+        ===============     ====================================================================
+        **Argument**        **Description**
+        ---------------     --------------------------------------------------------------------
+        gis                 Required GIS object. The portal to add the WebExperience to.
+        ---------------     --------------------------------------------------------------------
+        publish             Optional boolean. Publishes the experience when adding it to the
+                            portal. Default is `False`.
+        ---------------     --------------------------------------------------------------------
+        name                Optional string. Allows a user to specify the name of their new
+                            experience in the portal.
+        ---------------     --------------------------------------------------------------------
+        item_mapping        Optional dictionary. Allows users to manually remap the datasources
+                            of their experience to datasources present in the portal. See
+                            example dictionary below.
+        ---------------     --------------------------------------------------------------------
+        auto_remap          Optional boolean. Searches the portal for matching datasources and
+                            automatically remaps the experience to use those accordingly.
+                            Default is `False`.
+        ===============     ====================================================================
+
+        :return:
+            An IFrame display of the story map if possible, else the item url is returned to be
+            clicked on.
+        """
         # this will be the config file that dictates our new portal experience
         new_config = self.draft
 
@@ -455,7 +487,7 @@ class WebExperience(object):
             for source in sources:
                 # first, see if we can already access each one anonymously
                 # CHECK FOR CASE IF PRIVATE ITEM BUT PASSED in GIS CAN ACCESS
-                url = sources[source]['portalUrl']
+                url = sources[source]["portalUrl"]
                 test_gis = GIS(url=url)
                 try:
                     targ_item = test_gis.content.get(sources[source]["itemId"])
@@ -465,13 +497,13 @@ class WebExperience(object):
                     # if available, match item in target GIS based on title and type
                     source_title = sources[source]["sourceLabel"]
                     source_type = sources[source]["type"]
-                    source_reg = re.sub('[^A-Za-z0-9]+', '', source_type).lower()
+                    source_reg = re.sub("[^A-Za-z0-9]+", "", source_type).lower()
                     query = 'title:"' + source_title + '"'
 
                     for item in gis.content.search(query=query):
                         target_title = item.title
                         target_type = item.type
-                        target_reg = re.sub('[^A-Za-z0-9]+', '', target_type).lower()
+                        target_reg = re.sub("[^A-Za-z0-9]+", "", target_type).lower()
 
                         # must be exact match on both
                         if source_title == target_title and source_reg == target_reg:
@@ -486,14 +518,14 @@ class WebExperience(object):
                 new_config["dataSources"][k]["portalUrl"] = v[1]
 
         # create a new portal experience using the config
-        self._create_new_experience(config = new_config, name = name, gis = gis)
-        
+        self._create_new_experience(config=new_config, name=name, gis=gis)
+        self._local = False
+
         # if wish for item to be published, save/publish
         if publish:
             self.save(publish=True)
-        
 
-        
+        return self.item
 
     # ----------------------------------------------------------------------
     def publish(self, access: str = None):

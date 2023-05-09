@@ -1,17 +1,19 @@
 import sys
 
-sys.path.insert(0, r"YOUR PATH HERE")
+sys.path.insert(0, r"/Users/cowboy/GitHub/geosaurus/src")
 import unittest
 from arcgis.gis import GIS, Item
 from arcgis.apps.expbuilder import WebExperience
 from arcgis.apps.expbuilder._ref import templates
+import pathlib
 
-profiles = ["your_online_profile", "your_enterprise_profile"]
+profiles = ["your_online_profile", "np_playground"]
 
 
 class TestExperience(unittest.TestCase):
     """Test Basic WebExperience Methods"""
 
+    # @unittest.skip("focusing elsewhere")
     def test_new_experience(self):
         """Make a new experience, reset save, save, publish, delete"""
         for profile in profiles:
@@ -22,41 +24,42 @@ class TestExperience(unittest.TestCase):
             # assert some properties
             with self.subTest(msg=profile + " properties"):
                 assert exp._gis
-                assert exp._item
-                assert exp._itemid
+                assert exp.item
+                assert exp.itemid
                 assert exp._expdict["template"] == "blankfullscreen"
-                assert exp._draft["template"] == "blankfullscreen"
+                assert exp.draft["template"] == "blankfullscreen"
                 assert isinstance(exp._resources, list)
 
             # test reset save
             with self.subTest(msg=profile + " reset save"):
-                exp._draft = templates["foldable"]
-                assert exp.reset_save()
-                assert exp._draft == exp._expdict
-                assert exp._draft["template"] == "blankfullscreen"
+                exp.draft = templates["foldable"]
+                assert exp.reset()
+                assert exp.draft == exp._expdict
+                assert exp.draft["template"] == "blankfullscreen"
 
             # test save
             with self.subTest(msg=profile + " save"):
-                exp._draft = templates["foldable"]
+                exp.draft = templates["foldable"]
                 assert exp.save(title="pikachu", tags="ash, misty, brock")
                 assert exp._expdict["template"] == "foldable"
-                assert exp._item.title == "pikachu"
-                assert exp._item.tags == ["ash", "misty", "brock"]
+                assert exp.item.title == "pikachu"
+                assert exp.item.tags == ["ash", "misty", "brock"]
 
             # test publish
             with self.subTest(msg=profile + " publish"):
-                assert exp._item.get_data() == {}
+                assert exp.item.get_data() == {}
                 assert exp.publish(access="org")
-                assert exp._item.get_data()["template"] == "foldable"
-                # assert exp._item.access == "org"
+                assert exp.item.get_data()["template"] == "foldable"
+                # assert exp.item.access == "org"
 
             # test delete
             with self.subTest(msg=profile + " delete"):
-                exp_id = exp._itemid
+                exp_id = exp.itemid
                 assert gis.content.get(exp_id)
-                assert exp.delete_experience()
+                assert exp.delete()
                 assert not gis.content.get(exp_id)
 
+    # @unittest.skip("focusing elsewhere")
     def test_duplicate_clone(self):
         """Assert existing experiences are able to be duplicated and cloned"""
         # get our online and enterprise experiences and assert they're as expected
@@ -74,12 +77,12 @@ class TestExperience(unittest.TestCase):
                     title="rhyperior", tags=["jesse", "james", "meowth"]
                 )
                 assert exp2
-                assert exp2._item.title == "rhyperior"
-                # assert exp2._item.tags == ["jesse", "james", "meowth"]
+                assert exp2.item.title == "rhyperior"
+                # assert exp2.item.tags == ["jesse", "james", "meowth"]
                 assert exp2._expdict == exp._expdict
-                assert exp2._draft == exp._draft
-                assert exp2._item.get_data() == exp._item.get_data()
-                assert exp2.delete_experience()
+                assert exp2.draft == exp.draft
+                assert exp2.item.get_data() == exp.item.get_data()
+                assert exp2.delete()
 
         # test cloning from online to enterprise
         # admin privileges needed for this
@@ -88,13 +91,13 @@ class TestExperience(unittest.TestCase):
             assert to_ent
             assert to_ent.title == "rhydon"
             assert (
-                to_ent.get_data()["template"] == online_exp._item.get_data()["template"]
+                to_ent.get_data()["template"] == online_exp.item.get_data()["template"]
             )
             assert (
                 WebExperience(to_ent)._expdict["template"]
                 == online_exp._expdict["template"]
             )
-            assert WebExperience(to_ent).delete_experience()
+            assert WebExperience(to_ent).delete()
 
         # test cloning from enterprise to online
         # admin privileges needed for this
@@ -102,13 +105,14 @@ class TestExperience(unittest.TestCase):
             to_onl = ent_exp.clone(target=online, owner=online.users.me.username)
             assert to_onl
             assert to_onl.title == "rhyhorn"
-            assert to_onl.get_data()["template"] == ent_exp._item.get_data()["template"]
+            assert to_onl.get_data()["template"] == ent_exp.item.get_data()["template"]
             assert (
                 WebExperience(to_onl)._expdict["template"]
                 == ent_exp._expdict["template"]
             )
-            assert WebExperience(to_onl).delete_experience()
+            assert WebExperience(to_onl).delete()
 
+    # @unittest.skip("focusing elsewhere")
     def test_views(self):
         """Assert an IFrame is returned for the previewing methods"""
         from IPython.display import IFrame
@@ -129,7 +133,70 @@ class TestExperience(unittest.TestCase):
                 view = exp.view()
                 assert isinstance(view, IFrame)
 
-            assert exp.delete_experience()
+            assert exp.delete()
+
+    # @unittest.skip("focusing elsewhere")
+    def test_local_experience(self):
+        """Make a new experience from local JSON and test properties/methods"""
+        path_root = str(pathlib.Path(__file__).parent.resolve())
+        path = path_root + "/testconfig.json"
+        for profile in profiles:
+            # path = "/Users/cowboy/GitHub/geosaurus/tests/integration/apps/expbuilder/testconfig.json"
+            gis = GIS(profile=profile, verify_cert=False)
+
+            with self.subTest(msg=profile + " creating"):
+                exp = WebExperience(path=path, gis=gis)
+                assert exp.draft
+                assert exp._gis
+                assert exp.item == None
+                assert exp.itemid == None
+
+            with self.subTest(msg=profile + " adding to portal"):
+                exp = WebExperience(path=path, gis=gis)
+                item = exp.add_to_portal(gis=gis, name="test exp")
+                assert isinstance(item, Item)
+                assert item["title"] == "test exp"
+                assert exp.draft["attributes"]["portalUrl"] == gis.url
+                assert exp.item == item
+                assert exp.itemid
+                assert exp.delete()
+
+            with self.subTest(msg=profile + " manually remapping data"):
+                exp = WebExperience(path=path, gis=gis)
+                remap_dict = {
+                    "dataSource_1": ["c50de463235e4161b206d000587af18b", gis.url]
+                }
+                item = exp.add_to_portal(
+                    gis=gis, name="test exp", item_mapping=remap_dict
+                )
+                assert isinstance(item, Item)
+                assert item["title"] == "test exp"
+                assert exp.draft["attributes"]["portalUrl"] == gis.url
+                assert (
+                    exp.draft["dataSources"]["dataSource_1"]["itemId"]
+                    == "c50de463235e4161b206d000587af18b"
+                )
+                assert exp.draft["dataSources"]["dataSource_1"]["portalUrl"] == gis.url
+                assert exp.item == item
+                assert exp.itemid
+                assert exp.delete()
+
+            with self.subTest(msg=profile + " auto remapping data"):
+                exp = WebExperience(path=path, gis=gis)
+                exp.draft["dataSources"]["dataSource_1"]["sourceLabel"] = "Giraffes"
+                exp.draft["dataSources"]["dataSource_1"][
+                    "itemId"
+                ] = "123hehethiswontwork"
+                item = exp.add_to_portal(gis=gis, name="test exp", auto_remap=True)
+                assert isinstance(item, Item)
+                assert item["title"] == "test exp"
+                assert (
+                    exp.draft["dataSources"]["dataSource_1"]["itemId"]
+                    != "123hehethiswontwork"
+                )
+                assert exp.item == item
+                assert exp.itemid
+                assert exp.delete()
 
 
 if __name__ == "__main__":
