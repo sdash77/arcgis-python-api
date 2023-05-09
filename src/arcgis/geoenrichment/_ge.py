@@ -106,7 +106,6 @@ class _GeoEnrichment(object):
     _url_list_reports = "/Geoenrichment/Reports"
     _url_enrich_data = "/Geoenrichment/Enrich"
     _url_data_collection = "/Geoenrichment/dataCollections"
-    _valid_report_file_threshold = 300  # number of bytes for a valid report file
 
     # ----------------------------------------------------------------------
     def __init__(
@@ -959,28 +958,21 @@ class _GeoEnrichment(object):
             params["inSR"] = in_sr
         if use_data is not None:
             params["useData"] = use_data
-        # result is always a file path because error response will be parsed inside the method due to try_json=True
+        # result is always a file path because error response will be parsed inside the method
+        # due to try_json=True and file_name=None parameters
         report_file_path =  self._gis._con.post(
             path=url,
             out_folder=out_folder,
-            file_name=out_name,
             postdata=params,
             try_json=True,
         )
-        # validate response that it does not contain an error message
-        error_message = error_code = None
-        if self._valid_report_file_threshold > os.path.getsize(report_file_path):
-            with open(report_file_path, "r") as f:
-                try:
-                    # try to parse file as an error response
-                    json_content = json.load(f)
-                    error_code = json_content['error']['code']
-                    error_message = json_content['error']['message']
-                except:
-                    pass
-        if error_code and error_message:
-            os.remove(report_file_path)
-            raise Exception("Failed to create report: {}\nGeoEnrichment service error code: {}".format(error_message, error_code))
+        if out_name:
+            # rename created file
+            updated_report_file_path = os.path.join(out_folder, out_name)
+            if os.path.isfile(updated_report_file_path):
+                os.remove(updated_report_file_path)
+            os.rename(report_file_path, updated_report_file_path)
+            return updated_report_file_path
 
         return report_file_path
 

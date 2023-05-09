@@ -7,6 +7,8 @@ import os
 import logging
 import tempfile
 import unittest
+
+from arcgis._impl.common._utils import is_pdf_file
 from arcgis.auth.tools._util import detect_proxy
 from arcgis.gis import GIS
 from arcgis.geometry import Point
@@ -61,9 +63,7 @@ class Test_GE_CreateReport(unittest.TestCase):
             out_name="profile.pdf",
         )
         assert os.path.isfile(pt_report)
-        with open(pt_report, "rb") as f:
-            report_content_start_bytes = f.read(4)
-        assert report_content_start_bytes == b"%PDF"
+        assert is_pdf_file(pt_report)
         if os.path.isfile(pt_report):
             os.remove(pt_report)
 
@@ -79,9 +79,7 @@ class Test_GE_CreateReport(unittest.TestCase):
             out_name="profile.pdf",
         )
         assert os.path.isfile(pt_report)
-        with open(pt_report, "rb") as f:
-            report_content_start_bytes = f.read(4)
-        assert report_content_start_bytes == b"%PDF"
+        assert is_pdf_file(pt_report)
         if os.path.isfile(pt_report):
             os.remove(pt_report)
 
