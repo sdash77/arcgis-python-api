@@ -375,7 +375,8 @@ class UX(object):
 
 
         .. code-block:: python
-            *Usage Example*
+
+            #Usage Example
             >>> data = ux.get_featured_content()
             >>> ux.set_featured_content = data
             True

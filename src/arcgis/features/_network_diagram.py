@@ -1096,6 +1096,7 @@ class Diagram(object):
                                             all the diagram features in the resource diagram.
 
                                             .. code-block:: python
+
                                                 {
                                                     "xmin": <xmin>,
                                                     "ymin": <ymin>,

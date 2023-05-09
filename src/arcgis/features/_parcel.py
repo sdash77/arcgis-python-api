@@ -1470,6 +1470,7 @@ class ParcelFabricManager(object):
                                     Only one parcel can be specified as the transfer parcel.
 
                                     .. code-block:: python
+
                                         # Example Usage:
 
                                         >>> transfer_parcel_feature={"id":"<guid>","layerId":"<layerID>"}
@@ -1479,6 +1480,7 @@ class ParcelFabricManager(object):
                                     parcel and will become larger.
 
                                     .. code-block:: python
+
                                         # Example Usage:
 
                                         >>> target_parcel_features=[{"id":"<guid>","layerId":"<layerID>"},{...}]
@@ -1492,6 +1494,7 @@ class ParcelFabricManager(object):
                                     domain.
 
                                     .. code-block:: python
+
                                         #Example Usage:
 
                                         #Square feet
@@ -1505,6 +1508,7 @@ class ParcelFabricManager(object):
                                     become smaller.
 
                                     .. code-block:: python
+
                                         # Example Usage:
 
                                         >>> source_parcel_features=[{"id":"<guid>","layerId":"<layerID>"},{...}]
