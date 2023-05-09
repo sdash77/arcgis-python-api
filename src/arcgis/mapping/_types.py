@@ -1716,6 +1716,11 @@ class WebMap(HasTraits, collections.OrderedDict):
             wm.basemap = wm2.basemap
             wm.basemap = wm2
 
+        .. note::
+            If you set a basemap that does not have the same spatial reference as the map, the map's
+            spatial reference will be updated to reflect this. However, any operational layers will not be
+            re-projected.
+
         """
         if "baseMap" in self._webmapdict.keys():
             self._basemap = self._webmapdict["baseMap"]
@@ -1842,12 +1847,15 @@ class WebMap(HasTraits, collections.OrderedDict):
     def _check_spatial_reference(self, service):
         """
         The first basemap layer must match the spatial reference of the webmap.
+
+        This method will update the spatial reference of the webmap but will not reproject the layers within
+        the webmap. Users are responsible for understanding how their layers will interact.
         """
         # Get the spatial reference from the webmap
         wm_sr = self.definition["spatialReference"]["wkid"]
         layer_sr = None
 
-        if isinstance(service, dict):
+        if isinstance(service, dict) and not isinstance(service, _gis.Item):
             for layer in service["baseMapLayers"]:
                 if layer["layerType"] == "VectorTileLayer":
                     # Vector Tile layer always has spatial reference of 4326
@@ -1868,7 +1876,7 @@ class WebMap(HasTraits, collections.OrderedDict):
             if isinstance(service, _gis.Item):
                 # Existing web map item is being used to set basemap, we only care about first layer
                 service = service.get_data()["baseMap"]["baseMapLayers"][0]
-            if "itemid" in service:
+            if "itemId" in service:
                 service = self._gis.content.get(service["itemId"])
                 return self._check_spatial_reference(service)
             elif "url" in service:
