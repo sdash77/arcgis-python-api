@@ -138,8 +138,10 @@ def temporal_profile(
     else:
         x_var = time_field
 
+    draw_trend = False
     if trend_type is not None:
         if trend_type.lower() in ["linear","harmonic"]:
+            draw_trend = True
             if trend_type.lower() == "harmonic":
                 if trend_order is None:
                     trend_order = 1
@@ -350,7 +352,7 @@ def temporal_profile(
             # plt.gcf().autofmt_xdate()
             # print(t1[i]["x"]," < ", t1[i]["y"])
 
-            if trend_type is not None and trend_type.lower() in ["linear","harmonic"]:
+            if draw_trend:
                 c = next(color)
                 date_list = []
                 for date in t1[i]["x"]:
@@ -501,7 +503,7 @@ def temporal_profile(
             _plt.scatter(t1[i]["x"], t1[i]["y"], c=[c])
             _plt.legend(loc='center left', bbox_to_anchor=(1, 0.5))
 
-            if trend_type is not None and trend_type.lower() in ["linear","harmonic"]:
+            if draw_trend:
                 c = next(color)
                 date_list = []
                 for date in t1[i]["x"]:
