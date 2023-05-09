@@ -393,9 +393,8 @@ class GeoSeriesAccessor:
         ---------------     --------------------------------------------------------------------
         method              Optional String. `PLANAR` measurements reflect the projection of geographic
                             data onto the 2D surface (in other words, they will not take into
-                            account the curvature of the earth). `GEODESIC`, `GREAT_ELLIPTIC`,
-                            `LOXODROME`, and `PRESERVE_SHAPE` measurement types may be chosen as
-                            an alternative, if desired.
+                            account the curvature of the earth). `GEODESIC`, `GREAT_ELLIPTIC`, and
+                            `LOXODROME` measurement types may be chosen as an alternative, if desired.
         ===============     ====================================================================
 
         :return:
