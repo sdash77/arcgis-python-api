@@ -48,7 +48,7 @@ class TestExperience(unittest.TestCase):
             # test publish
             with self.subTest(msg=profile + " publish"):
                 assert exp.item.get_data() == {}
-                assert exp.publish(access="org")
+                assert exp.save(publish=True, access="org")
                 assert exp.item.get_data()["template"] == "foldable"
                 # assert exp.item.access == "org"
 
@@ -73,8 +73,11 @@ class TestExperience(unittest.TestCase):
         # test duplicating
         for exp in [online_exp, ent_exp]:
             with self.subTest(msg="duplicate " + exp._gis.url):
-                exp2 = exp.duplicate(
+                """exp2 = exp._duplicate(
                     title="rhyperior", tags=["jesse", "james", "meowth"]
+                )"""
+                exp2 = exp.save(
+                    title="rhyperior", tags=["jesse", "james", "meowth"], duplicate=True
                 )
                 assert exp2
                 assert exp2.item.title == "rhyperior"
@@ -129,7 +132,7 @@ class TestExperience(unittest.TestCase):
 
             # test view method
             with self.subTest(msg=profile + " view"):
-                assert exp.publish()
+                assert exp._publish()
                 view = exp.view()
                 assert isinstance(view, IFrame)
 

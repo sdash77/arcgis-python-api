@@ -52,7 +52,7 @@ class Templates(Enum):
         try:
             temp = WebExperience(template=self.value)
             temp.item.share(everyone=True)
-            temp.publish()
+            temp.save(publish=True)
             from IPython.display import IFrame
 
             frame = IFrame(
@@ -235,6 +235,8 @@ class WebExperience(object):
         tags: Optional[list] = None,
         access: str = None,
         publish: bool = False,
+        duplicate: bool = False,
+        include_private: Optional[bool] = None,
     ):
         """
         This method will save your Web Experience to your active GIS. The experience will be saved
@@ -261,11 +263,27 @@ class WebExperience(object):
         publish             Optional boolean. If True, the experience is saved and also
                             published. Default is False, meaning the experience is saved with
                             unpublished changes.
+        ---------------     --------------------------------------------------------------------
+        duplicate           Optional boolean. If True, the experience is duplicated and a new
+                            WebExperience object is saved with any specified changes to
+                            title, tags, access, or publish included. Essentially functions as a
+                            "Save As" method. Default is False, meaning changes are saved to the
+                            original object.
+        ---------------     --------------------------------------------------------------------
+        include_private     Optional boolean. Only to be included when duplicate is `True`.
+                            If True, the private resources of the original item will be included
+                            in the new item.
         ===============     ====================================================================
 
 
         :return: A boolean indicating the success of the operation.
         """
+        if duplicate:
+            new_exp = self._duplicate(
+                title=title, tags=tags, include_private=include_private
+            )
+            new_exp.save(access=access, publish=publish)
+            return new_exp
 
         keywords = self.item.typeKeywords
         for i in range(len(keywords)):
@@ -299,7 +317,7 @@ class WebExperience(object):
                 )
             item_properties["url"] = url
             return self.item.update(item_properties=item_properties, data=self._expdict)
-            # self.publish(item_properties = item_properties, data = self._expdict)
+            # self._publish(item_properties = item_properties, data = self._expdict)
         else:
             item_properties["typeKeywords"] = keywords
             return self.item.update(item_properties=item_properties)
@@ -399,7 +417,7 @@ class WebExperience(object):
         return resp
 
     # ----------------------------------------------------------------------
-    def duplicate(
+    def _duplicate(
         self,
         title: Optional[str] = None,
         tags: Optional[Union[list[str], str]] = None,
@@ -528,7 +546,7 @@ class WebExperience(object):
         return self.item
 
     # ----------------------------------------------------------------------
-    def publish(self, access: str = None):
+    def _publish(self, access: str = None):
         """
         Publishes the last saved version of the experience. Leaves unsaved changes intact,
         but doesn't publish them. Also allows user to set access level of published experience.
@@ -584,7 +602,7 @@ class WebExperience(object):
             item.delete()
 
         try:
-            dummy_exp = self.duplicate()
+            dummy_exp = self._duplicate()
             dummy_exp.item.share(everyone=True)
             dummy_exp.save(publish=True)
             from IPython.display import IFrame
