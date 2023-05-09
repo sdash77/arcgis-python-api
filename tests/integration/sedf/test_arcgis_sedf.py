@@ -1,6 +1,9 @@
 """
 Tests Related to Spatially Enabled Data Frame
 """
+import sys
+
+sys.path.insert(0, r"c:\SVN\geosaurus_issue_9169\src")
 import ssl
 from arcgis.geometry import _types, Geometry
 from arcgis.features.geo import _is_geoenabled
@@ -29,7 +32,7 @@ DATA_PATH = os.path.join(
 print(DATA_PATH)
 
 fs_urls = [
-    "https://services.arcgis.com/P3ePLMYs2RVChkJx/ArcGIS/rest/services/World_Cities/FeatureServer/0",  # Point
+    "https://services7.arcgis.com/JEwYeAy2cc8qOe3o/arcgis/rest/services/amazingtimes/FeatureServer/0",  # "https://services.arcgis.com/P3ePLMYs2RVChkJx/ArcGIS/rest/services/World_Cities/FeatureServer/0",  # Point
     "https://services.arcgis.com/P3ePLMYs2RVChkJx/ArcGIS/rest/services/USA_Railroads/FeatureServer/0",  # Polyline
     "https://services.arcgis.com/P3ePLMYs2RVChkJx/ArcGIS/rest/services/World_Countries_(Generalized)/FeatureServer/0",
 ]  # polygon
@@ -855,7 +858,7 @@ if HAS_ARCPY:
             geom = sdf[sdf.spatial.name].geom
             isinstance(geom, GeoSeriesAccessor)
             r1 = geom.point_from_angle_and_distance(
-                angle=0.10, distance=1, method="PRESERVE_SHAPE"
+                angle=0.10, distance=1, method="GEODESIC"
             )
             assert isinstance(r1, pd.Series)
             assert r1.isnull().all() == False
