@@ -17132,6 +17132,9 @@ class Layer(_GISResource):
 
             >>> layer.fromitem(item="9311d21a9a2047d19c0faaebd6f2cca6", index=3)
         """
+        if isinstance(item, str):
+            gis = arcgis_env.active_gis
+            item = gis.content.get(item)
         return item.layers[index]
 
     @property
