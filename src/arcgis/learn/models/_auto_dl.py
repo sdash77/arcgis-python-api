@@ -10,7 +10,12 @@ try:
     import torch, sys
     from . import MMSegmentation, MMDetection
     import matplotlib.pyplot as plt
-    from ._autodl_utils import train_callback, ToolIsCancelled, _train_exhaust_mode, _get_emd_path
+    from ._autodl_utils import (
+        train_callback,
+        ToolIsCancelled,
+        _train_exhaust_mode,
+        _get_emd_path,
+    )
     from ._arcgis_model import ArcGISModel
     from .._data import prepare_data
     import numpy as np
@@ -25,6 +30,7 @@ except Exception as e:
     HAS_FASTAI = False
 
 self_obj = None
+
 
 class RedirectedStdout:
     def __init__(self):
@@ -183,7 +189,6 @@ class ImageryModel(ArcGISModel):
             print("Load the model first using load()")
 
     def show_results(self, rows=5, **kwargs):
-
         """
         Displays the results of a trained model on a part of the validation set.
 
@@ -391,12 +396,10 @@ class ImageryModel(ArcGISModel):
             return
 
 
-
 all_val_losses, all_train_losses, dice, temp_log_msg = [], [], [], []
 BestPerformingModel, best_backbone, best_model = None, None, None
 
 # Build neural network model
-
 
 
 class AutoDL:
@@ -471,7 +474,7 @@ class AutoDL:
 
         if verbose:
             self._logger_dict = []
-        
+
         prepare_data_args = data.arcgis_init_kwargs
         prepare_data_args["batch_size"] = None
         self._data = prepare_data(**prepare_data_args)
@@ -493,19 +496,19 @@ class AutoDL:
             "CCNet",
             "CGNet",
             "HRNet",
-            'DeepLabV3Plus',
-            'DMNet',
-            'DNLNet',
-            'EMANet',
-            'FastSCNN',
-            'FCN',
-            'GCNet',
-            'MobileNetV2',
-            'NonLocalNet',
-            'OCRNet',
-            'PSANet',
-            'SemFPN',
-            'UperNet',
+            "DeepLabV3Plus",
+            "DMNet",
+            "DNLNet",
+            "EMANet",
+            "FastSCNN",
+            "FCN",
+            "GCNet",
+            "MobileNetV2",
+            "NonLocalNet",
+            "OCRNet",
+            "PSANet",
+            "SemFPN",
+            "UperNet",
             "SingleShotDetector",
             "MaskRCNN",
             "DETReg",
@@ -517,23 +520,23 @@ class AutoDL:
             "CascadeRPN",
             "CascadeRCNN",
             "DCN",
-            'Detectors',
-            'DoubleHeads',
-            'DynamicRCNN',
-            'EmpiricalAttention',
-            'FCOS',
-            'FoveaBox',
-            'FSAF',
-            'GHM',
-            'LibraRCNN',
-            'PaFPN',
-            'PISA',
-            'RegNet',
-            'RepPoints',
-            'Res2Net',
-            'SABL',
-            'VFNet',
-            "MaskRCNN"
+            "Detectors",
+            "DoubleHeads",
+            "DynamicRCNN",
+            "EmpiricalAttention",
+            "FCOS",
+            "FoveaBox",
+            "FSAF",
+            "GHM",
+            "LibraRCNN",
+            "PaFPN",
+            "PISA",
+            "RegNet",
+            "RepPoints",
+            "Res2Net",
+            "SABL",
+            "VFNet",
+            "MaskRCNN",
         ]
         self._all_mm_algorithms = [
             "ANN",
@@ -546,36 +549,36 @@ class AutoDL:
             "CascadeRCNN",
             "CascadeRPN",
             "DCN",
-            'Detectors',
-            'DoubleHeads',
-            'DynamicRCNN',
-            'EmpiricalAttention',
-            'FCOS',
-            'FoveaBox',
-            'FSAF',
-            'GHM',
-            'LibraRCNN',
-            'PaFPN',
-            'PISA',
-            'RegNet',
-            'RepPoints',
-            'Res2Net',
-            'SABL',
-            'VFNet',
-            'DeepLabV3Plus',
-            'DMNet',
-            'DNLNet',
-            'EMANet',
-            'FastSCNN',
-            'FCN',
-            'GCNet',
-            'MobileNetV2',
-            'NonLocalNet',
-            'OCRNet',
-            'PSANet',
-            'SemFPN',
-            'UperNet',
-            'MaskRCNN'
+            "Detectors",
+            "DoubleHeads",
+            "DynamicRCNN",
+            "EmpiricalAttention",
+            "FCOS",
+            "FoveaBox",
+            "FSAF",
+            "GHM",
+            "LibraRCNN",
+            "PaFPN",
+            "PISA",
+            "RegNet",
+            "RepPoints",
+            "Res2Net",
+            "SABL",
+            "VFNet",
+            "DeepLabV3Plus",
+            "DMNet",
+            "DNLNet",
+            "EMANet",
+            "FastSCNN",
+            "FCN",
+            "GCNet",
+            "MobileNetV2",
+            "NonLocalNet",
+            "OCRNet",
+            "PSANet",
+            "SemFPN",
+            "UperNet",
+            "MaskRCNN",
         ]
         self._train_df = None
         self._average_precision_score_df = None
@@ -589,7 +592,7 @@ class AutoDL:
         self._all_detection_data = [
             "PASCAL_VOC_rectangles",
             "KITTI_rectangles",
-            "RCNN_Masks"
+            "RCNN_Masks",
         ]
         if total_time_limit < 0.25:
             raise Exception(
@@ -645,7 +648,9 @@ class AutoDL:
                     if algo == "MMDetection":
                         self._algos.extend(MMDetection.supported_models)
                     if algo == "MaskRCNN":
-                        error = algo + " is only compatible with RCNN_Masks dataset type."
+                        error = (
+                            algo + " is only compatible with RCNN_Masks dataset type."
+                        )
                         raise Exception(error)
                     else:
                         self._algos.append(algo)
@@ -653,19 +658,17 @@ class AutoDL:
             raise Exception("Data must be in ESRI defined format")
         model_stats = self._model_stats()
 
-        if "MaskRCNN" in algorithms and mode=="basic":
+        if "MaskRCNN" in algorithms and mode == "basic":
             raise Exception("MaskRCNN is only supported with advanced mode.")
-
 
         for algo in self._algos:
             if algo in self._all_algorithms:
                 self._total_training_time += int(model_stats[algo]["time"])
 
-
         self._total_training_time //= 60
         if self._total_training_time == 0:
             self._total_training_time = 1
-     
+
         self._algos = self._sort_algos(self._algos)
 
         if total_time_limit is None:
@@ -715,7 +718,6 @@ class AutoDL:
             "hours",
         )
 
-
     def _get_max_epochs(self, total_time, required_time):
         self._remaining_time = total_time - required_time
         model_stats = self._model_stats()
@@ -759,7 +761,6 @@ class AutoDL:
             print(log_msg)
             self._logger_dict.append(log_msg)
 
-        
         if self.verbose:
             log_msg = "{date}: finding desired batch size for the data object.".format(
                 date=dt.now().strftime("%d-%m-%Y %H:%M:%S"),
@@ -777,20 +778,39 @@ class AutoDL:
                     )
                 ]
             else:
-                model_with_underscore = ["CascadeRCNN", "CascadeRPN", "EmpiricalAttention", 
-                "MobileNetV2", "NonLocalNet", "SemFPN", "DoubleHeads", "DynamicRCNN",
-                "LibraRCNN", "NasFcos"]
-                paired_model = ["Cascade_RCNN", "Cascade_RPN", "Empirical_Attention", 
-                                "MobileNet_V2", "NonLocal_Net", "Sem_FPN", "Double_Heads", "Dynamic_RCNN",
-                                "Libra_RCNN", "Nas_Fcos"]
+                model_with_underscore = [
+                    "CascadeRCNN",
+                    "CascadeRPN",
+                    "EmpiricalAttention",
+                    "MobileNetV2",
+                    "NonLocalNet",
+                    "SemFPN",
+                    "DoubleHeads",
+                    "DynamicRCNN",
+                    "LibraRCNN",
+                    "NasFcos",
+                ]
+                paired_model = [
+                    "Cascade_RCNN",
+                    "Cascade_RPN",
+                    "Empirical_Attention",
+                    "MobileNet_V2",
+                    "NonLocal_Net",
+                    "Sem_FPN",
+                    "Double_Heads",
+                    "Dynamic_RCNN",
+                    "Libra_RCNN",
+                    "Nas_Fcos",
+                ]
 
-                
                 if model in model_with_underscore:
                     index = model_with_underscore.index(model)
                     setattr(
                         self,
                         model,
-                        getattr(ag.learn, mm_model)(self._data, model=paired_model[index]),
+                        getattr(ag.learn, mm_model)(
+                            self._data, model=paired_model[index]
+                        ),
                     )
                 else:
                     setattr(
@@ -817,20 +837,39 @@ class AutoDL:
                     )
                 ]
             else:
-                model_with_underscore = ["CascadeRCNN", "CascadeRPN", "EmpiricalAttention", 
-                "MobileNetV2", "NonLocalNet", "SemFPN", "DoubleHeads", "DynamicRCNN",
-                "LibraRCNN", "NasFcos"]
-                paired_model = ["Cascade_RCNN", "Cascade_RPN", "Empirical_Attention", 
-                                "MobileNet_V2", "NonLocal_Net", "Sem_FPN", "Double_Heads", "Dynamic_RCNN",
-                                "Libra_RCNN", "Nas_Fcos"]
+                model_with_underscore = [
+                    "CascadeRCNN",
+                    "CascadeRPN",
+                    "EmpiricalAttention",
+                    "MobileNetV2",
+                    "NonLocalNet",
+                    "SemFPN",
+                    "DoubleHeads",
+                    "DynamicRCNN",
+                    "LibraRCNN",
+                    "NasFcos",
+                ]
+                paired_model = [
+                    "Cascade_RCNN",
+                    "Cascade_RPN",
+                    "Empirical_Attention",
+                    "MobileNet_V2",
+                    "NonLocal_Net",
+                    "Sem_FPN",
+                    "Double_Heads",
+                    "Dynamic_RCNN",
+                    "Libra_RCNN",
+                    "Nas_Fcos",
+                ]
 
-                
                 if model in model_with_underscore:
                     index = model_with_underscore.index(model)
                     setattr(
                         self,
                         model,
-                        getattr(ag.learn, mm_model)(self._data, model=paired_model[index]),
+                        getattr(ag.learn, mm_model)(
+                            self._data, model=paired_model[index]
+                        ),
                     )
                 else:
                     setattr(
@@ -861,7 +900,9 @@ class AutoDL:
             self._logger_dict.append(log_msg)
 
             log_msg = "{date}: Optimized batch size for {network} with the selected backbone is {lr}".format(
-                date=dt.now().strftime("%d-%m-%Y %H:%M:%S"), network=model, lr=getattr(self, model)._data.batch_size
+                date=dt.now().strftime("%d-%m-%Y %H:%M:%S"),
+                network=model,
+                lr=getattr(self, model)._data.batch_size,
             )
             print(log_msg)
             self._logger_dict.append(log_msg)
@@ -980,8 +1021,8 @@ class AutoDL:
                     "lr": [lr_val],
                     "training time": [t],
                     "backbone": [backbone],
-                    "timing":[name_time],
-                    "optuna_study":[False]
+                    "timing": [name_time],
+                    "optuna_study": [False],
                 }
             )
             self._train_df = pd.concat([self._train_df, df], ignore_index=True)
@@ -1007,8 +1048,8 @@ class AutoDL:
                     "lr": [lr_val],
                     "training time": [t],
                     "backbone": [backbone],
-                    "timing":[name_time],
-                    "optuna_study":[False]
+                    "timing": [name_time],
+                    "optuna_study": [False],
                 }
             )
             self._train_df = pd.concat([self._train_df, df], ignore_index=True)
@@ -1043,7 +1084,9 @@ class AutoDL:
                     + "AutoDL_"
                     + str(model)
                     + "_"
-                    + backbone+"_"+name_time
+                    + backbone
+                    + "_"
+                    + name_time
                 )
                 if self.verbose:
                     log_msg = "{date}: model saved at {path}".format(
@@ -1051,20 +1094,22 @@ class AutoDL:
                         path=os.path.join(
                             self._output_path,
                             "models",
-                            "AutoDL_" + str(model) + "_" + backbone+"_"+name_time,
+                            "AutoDL_" + str(model) + "_" + backbone + "_" + name_time,
                         ),
                     )
                     print(log_msg)
                     self._logger_dict.append(log_msg)
             else:
-                getattr(self, model).save("AutoDL_" + str(model) + "_" + backbone+"_"+name_time)
+                getattr(self, model).save(
+                    "AutoDL_" + str(model) + "_" + backbone + "_" + name_time
+                )
                 if self.verbose:
                     log_msg = "{date}: model saved at {path}".format(
                         date=dt.now().strftime("%d-%m-%Y %H:%M:%S"),
                         path=os.path.join(
                             self._data.path,
                             "models",
-                            "AutoDL_" + str(model) + "_" + backbone+"_"+name_time,
+                            "AutoDL_" + str(model) + "_" + backbone + "_" + name_time,
                         ),
                     )
                     print(log_msg)
@@ -1114,7 +1159,7 @@ class AutoDL:
                     "training time",
                     "backbone",
                     "timing",
-                    "optuna_study"
+                    "optuna_study",
                 ]
             )
         elif self._model_type in self._all_detection_data:
@@ -1129,7 +1174,7 @@ class AutoDL:
                     "training time",
                     "backbone",
                     "timing",
-                    "optuna_study"
+                    "optuna_study",
                 ]
             )
 
@@ -1141,7 +1186,7 @@ class AutoDL:
             )
             print(log_msg)
             self._logger_dict.append(log_msg)
-        
+
         for model in self._algos:
             # self._max_epochs = int(self._epoch_obj[model])
             if self.verbose:
@@ -1150,9 +1195,7 @@ class AutoDL:
                 )
                 print(log_msg)
                 self._logger_dict.append(log_msg)
-            
-            
-            
+
             model_time = self._model_stats()[model]["time"]
             model_time = (model_time * self._tiles_required) // self._max_image_set
             mt = str(datetime.timedelta(seconds=model_time))
@@ -1224,14 +1267,13 @@ class AutoDL:
                 self._logger_dict.append(log_msg)
             compare_time = self._time_in_sec
 
-
             # Edited
             top_models = list(self._train_df.head(2)["Model"])
             all_trained_models = list(self._train_df["Model"])
 
             # top_models = ["SingleShotDetector", "RetinaNet"]
             # all_trained_models = ["SingleShotDetector", "RetinaNet"]
-            
+
             if self.verbose:
                 log_msg = (
                     """{date}: Top two performing models are - {network}""".format(
@@ -1254,11 +1296,11 @@ class AutoDL:
             for model in all_trained_models:
                 if counter >= 2:
                     break
-                
+
                 all_val_losses = []
                 all_train_losses = []
                 dice = []
-                if self._model_stats()[model]["is_mm"] or model=="YOLOv3":
+                if self._model_stats()[model]["is_mm"] or model == "YOLOv3":
                     log_msg = """{date}: {model} does not have additional parameters to tune, skipping.""".format(
                         date=dt.now().strftime("%d-%m-%Y %H:%M:%S"),
                         model=model,
@@ -1266,53 +1308,62 @@ class AutoDL:
                     print(log_msg)
                     self._logger_dict.append(log_msg)
                     continue
-                current_study, self, all_val_losses, all_train_losses, dice, timing = _train_exhaust_mode(self,
-                                                                                                            time_for_each_model,
-                                                                                                            model,
-                                                                                                            all_val_losses, 
-                                                                                                            all_train_losses,
-                                                                                                            dice)
+                (
+                    current_study,
+                    self,
+                    all_val_losses,
+                    all_train_losses,
+                    dice,
+                    timing,
+                ) = _train_exhaust_mode(
+                    self,
+                    time_for_each_model,
+                    model,
+                    all_val_losses,
+                    all_train_losses,
+                    dice,
+                )
                 df = current_study.trials_dataframe()
-                
+
                 current_study._timing = timing
                 df["valid_loss"] = all_val_losses
                 df["train_loss"] = all_train_losses
                 df["timing"] = timing
-                df["optuna_study"]= [True] * len(all_val_losses)
+                df["optuna_study"] = [True] * len(all_val_losses)
                 if self._dataset_type == "classification":
                     df["dice"] = dice
-                sorted_df = df.sort_values(by=['value'], ascending=False)
+                sorted_df = df.sort_values(by=["value"], ascending=False)
                 # sorted_df = sorted_df.drop_duplicates('params_backbones', keep='first')
-                sorted_df["duration"] = sorted_df["duration"].apply(lambda x : str(x).split(" ")[-1].split(".")[0])
+                sorted_df["duration"] = sorted_df["duration"].apply(
+                    lambda x: str(x).split(" ")[-1].split(".")[0]
+                )
 
                 if self._dataset_type == "classification":
                     updated_df = {
-                            "Model": list([model] * sorted_df.shape[0]),
-                            "train_loss": list(sorted_df["train_loss"]),
-                            "valid_loss": list(sorted_df["valid_loss"]),
-                            "accuracy": list(sorted_df["value"]),
-                            "dice": list(sorted_df["dice"]),
-                            "lr": list(sorted_df["params_lr"]),
-                            "training time": list(sorted_df["duration"]),
-                            "backbone": list(sorted_df["params_backbones"]),
-                            "timing": list(sorted_df["timing"]),
-                            "optuna_study": list(sorted_df["optuna_study"]),
+                        "Model": list([model] * sorted_df.shape[0]),
+                        "train_loss": list(sorted_df["train_loss"]),
+                        "valid_loss": list(sorted_df["valid_loss"]),
+                        "accuracy": list(sorted_df["value"]),
+                        "dice": list(sorted_df["dice"]),
+                        "lr": list(sorted_df["params_lr"]),
+                        "training time": list(sorted_df["duration"]),
+                        "backbone": list(sorted_df["params_backbones"]),
+                        "timing": list(sorted_df["timing"]),
+                        "optuna_study": list(sorted_df["optuna_study"]),
                     }
                 else:
                     updated_df = {
-                            "Model": list([model] * sorted_df.shape[0]),
-                            "train_loss": list(sorted_df["train_loss"]),
-                            "valid_loss": list(sorted_df["valid_loss"]),
-                            "average_precision_score": list(sorted_df["value"]),
-                            "lr": list(sorted_df["params_lr"]),
-                            "training time": list(sorted_df["duration"]),
-                            "backbone": list(sorted_df["params_backbones"]),
-                            "timing": list(sorted_df["timing"]),
-                            "optuna_study": list(sorted_df["optuna_study"]),
+                        "Model": list([model] * sorted_df.shape[0]),
+                        "train_loss": list(sorted_df["train_loss"]),
+                        "valid_loss": list(sorted_df["valid_loss"]),
+                        "average_precision_score": list(sorted_df["value"]),
+                        "lr": list(sorted_df["params_lr"]),
+                        "training time": list(sorted_df["duration"]),
+                        "backbone": list(sorted_df["params_backbones"]),
+                        "timing": list(sorted_df["timing"]),
+                        "optuna_study": list(sorted_df["optuna_study"]),
                     }
-                df_new = pd.DataFrame(
-                    updated_df
-                )
+                df_new = pd.DataFrame(updated_df)
                 self._train_df = pd.concat([self._train_df, df_new], ignore_index=True)
                 self._exhaustive_mode_studies.append(current_study)
                 counter += 1
@@ -1322,14 +1373,14 @@ class AutoDL:
                 #     self._best_backbone = best_backbone
                 #     self.best_model = best_model
                 #     self.name_time = time.strftime("%Y-%m-%d_%H-%M-%S")
-            
+
         if self.verbose:
             log_msg = """{date}: Collating and evaluating model performances.""".format(
                 date=dt.now().strftime("%d-%m-%Y %H:%M:%S")
             )
             print(log_msg)
             self._logger_dict.append(log_msg)
-        
+
         self.name_time = time.strftime("%Y-%m-%d_%H-%M-%S")
         if not self._save_evaluated_models:
             if self._save_to_folder:
@@ -1341,7 +1392,9 @@ class AutoDL:
                     + "AutoDL_"
                     + str(self.best_model)
                     + "_"
-                    + self._best_backbone+"_"+ self.name_time
+                    + self._best_backbone
+                    + "_"
+                    + self.name_time
                 )
                 if self.verbose:
                     log_msg = "{date}: Saving best performing model at {path}".format(
@@ -1352,14 +1405,21 @@ class AutoDL:
                             "AutoDL_"
                             + str(self.best_model)
                             + "_"
-                            + self._best_backbone+"_"+self.name_time,
+                            + self._best_backbone
+                            + "_"
+                            + self.name_time,
                         ),
                     )
                     print(log_msg)
                     self._logger_dict.append(log_msg)
             else:
                 self.BestPerformingModel.save(
-                    "AutoDL_" + str(self.best_model) + "_" + self._best_backbone+"_"+self.name_time
+                    "AutoDL_"
+                    + str(self.best_model)
+                    + "_"
+                    + self._best_backbone
+                    + "_"
+                    + self.name_time
                 )
                 if self.verbose:
                     log_msg = "{date}: model saved at {path}".format(
@@ -1367,12 +1427,17 @@ class AutoDL:
                         path=os.path.join(
                             self._data.path,
                             "models",
-                            "AutoDL_" + str(model) + "_" + self._best_backbone+"_"+self.name_time,
+                            "AutoDL_"
+                            + str(model)
+                            + "_"
+                            + self._best_backbone
+                            + "_"
+                            + self.name_time,
                         ),
                     )
                     print(log_msg)
                     self._logger_dict.append(log_msg)
-        
+
         if m_type == "classification":
             self._train_df = self._train_df.sort_values(
                 "accuracy", ascending=False
@@ -1457,16 +1522,20 @@ class AutoDL:
         """
         from IPython.display import HTML
         from ._autodl_utils import generate_output_report
+
         if self._train_df is None:
             raise Exception("Train a model using fit() before getting the scores.")
         else:
-            generate_output_report(self._train_df, self._output_path, 
-                self._exhaustive_mode_studies, self._training_mode,
-                self._save_to_folder)
+            generate_output_report(
+                self._train_df,
+                self._output_path,
+                self._exhaustive_mode_studies,
+                self._training_mode,
+                self._save_to_folder,
+            )
             # clear_output(wait=True)
-            rel_report_path = os.path.join(self._output_path, 'README.html')
+            rel_report_path = os.path.join(self._output_path, "README.html")
             return HTML(rel_report_path)
-            
 
     def average_precision_score(self):
         """
@@ -1505,86 +1574,100 @@ class AutoDL:
         Shows the model stats
         """
         details = {
-            "DeepLab": {"time": 1600, "is_mm": False, "executed": False,"params":{
-            "type_list":{
-                    "backbones":['resnet18',
-                                'resnet34',
-                                'resnet50',
-                                'resnet101',
-                                'resnet152',
-                                'densenet121',
-                                'densenet169',
-                                'densenet161',
-                                'densenet201',
-                                'vgg11',
-                                'vgg11_bn',
-                                'vgg13',
-                                'vgg13_bn',
-                                'vgg16',
-                                'vgg16_bn',
-                                'vgg19',
-                                'vgg19_bn'],
+            "DeepLab": {
+                "time": 1600,
+                "is_mm": False,
+                "executed": False,
+                "params": {
+                    "type_list": {
+                        "backbones": [
+                            "resnet18",
+                            "resnet34",
+                            "resnet50",
+                            "resnet101",
+                            "resnet152",
+                            "densenet121",
+                            "densenet169",
+                            "densenet161",
+                            "densenet201",
+                            "vgg11",
+                            "vgg11_bn",
+                            "vgg13",
+                            "vgg13_bn",
+                            "vgg16",
+                            "vgg16_bn",
+                            "vgg19",
+                            "vgg19_bn",
+                        ],
                         "dice_loss_average": ["micro", "macro"],
                         "pointrend": [True, False],
                         "class_balancing": [True, False],
                         "mixup": [True, False],
                         "focal_loss": [True, False],
-                        "keep_dilation": [True, False]
+                        "keep_dilation": [True, False],
                     },
-                    "type_float":{
-                        "dice_loss_fraction":(0,1)
-                    }
-                }
-        },
-            "UnetClassifier": {"time": 1600, "is_mm": False, "executed": False,
-            "params":{
-            "type_list":{
-                    "backbones":['resnet18', 'resnet34', 'resnet50', 'resnet101', 'resnet152'],
+                    "type_float": {"dice_loss_fraction": (0, 1)},
+                },
+            },
+            "UnetClassifier": {
+                "time": 1600,
+                "is_mm": False,
+                "executed": False,
+                "params": {
+                    "type_list": {
+                        "backbones": [
+                            "resnet18",
+                            "resnet34",
+                            "resnet50",
+                            "resnet101",
+                            "resnet152",
+                        ],
                         # "backend": ["pytorch", "tensorflow"],
                         "use_unet": [True, False],
                         "pointrend": [True, False],
                         "class_balancing": [True, False],
                         "mixup": [True, False],
                         "focal_loss": [True, False],
-                        "keep_dilation": [True, False]
+                        "keep_dilation": [True, False],
                     },
-                    "type_float":{
-                        "dice_loss_fraction":(0,1)
-                    }
-                }
+                    "type_float": {"dice_loss_fraction": (0, 1)},
+                },
             },
-            "PSPNetClassifier": {"time": 1600, "is_mm": False, "executed": False,
-            "params":{
-                    "type_list":{
-                    "backbones":['resnet18',
-                                'resnet34',
-                                'resnet50',
-                                'resnet101',
-                                'resnet152',
-                                'densenet121',
-                                'densenet169',
-                                'densenet161',
-                                'densenet201',
-                                'vgg11',
-                                'vgg11_bn',
-                                'vgg13',
-                                'vgg13_bn',
-                                'vgg16',
-                                'vgg16_bn',
-                                'vgg19',
-                                'vgg19_bn'],
+            "PSPNetClassifier": {
+                "time": 1600,
+                "is_mm": False,
+                "executed": False,
+                "params": {
+                    "type_list": {
+                        "backbones": [
+                            "resnet18",
+                            "resnet34",
+                            "resnet50",
+                            "resnet101",
+                            "resnet152",
+                            "densenet121",
+                            "densenet169",
+                            "densenet161",
+                            "densenet201",
+                            "vgg11",
+                            "vgg11_bn",
+                            "vgg13",
+                            "vgg13_bn",
+                            "vgg16",
+                            "vgg16_bn",
+                            "vgg19",
+                            "vgg19_bn",
+                        ],
                         "dice_loss_average": ["micro", "macro"],
                         "use_unet": [True, False],
                         "pointrend": [True, False],
                         "class_balancing": [True, False],
                         "mixup": [True, False],
                         "focal_loss": [True, False],
-                        "keep_dilation": [True, False]
+                        "keep_dilation": [True, False],
                     },
-                    "type_float":{
-                        "dice_loss_fraction":(0,1)
-                    }
-                }
+                    "type_float": {"dice_loss_fraction": (0, 1)},
+                },
             },
             "ANN": {
                 "time": 1600,
@@ -1658,98 +1741,115 @@ class AutoDL:
                 "time": 4200,
                 "is_mm": True,
             },
-            "SingleShotDetector": {"time": 1600, "is_mm": False, "executed": False,
-            "params":{
-            "type_list":{
-                    "backbones":['resnet18',
-                                'resnet34',
-                                'resnet50',
-                                'resnet101',
-                                'resnet152',
-                                'densenet121',
-                                'densenet169',
-                                'densenet161',
-                                'densenet201',
-                                'vgg11',
-                                'vgg11_bn',
-                                'vgg13',
-                                'vgg13_bn',
-                                'vgg16',
-                                'vgg16_bn',
-                                'vgg19',
-                                'vgg19_bn',
-                                'mobilenet_v2'],
+            "SingleShotDetector": {
+                "time": 1600,
+                "is_mm": False,
+                "executed": False,
+                "params": {
+                    "type_list": {
+                        "backbones": [
+                            "resnet18",
+                            "resnet34",
+                            "resnet50",
+                            "resnet101",
+                            "resnet152",
+                            "densenet121",
+                            "densenet169",
+                            "densenet161",
+                            "densenet201",
+                            "vgg11",
+                            "vgg11_bn",
+                            "vgg13",
+                            "vgg13_bn",
+                            "vgg16",
+                            "vgg16_bn",
+                            "vgg19",
+                            "vgg19_bn",
+                            "mobilenet_v2",
+                        ],
                         "bias": [True, False],
-                        "mixup": [True, False]
+                        "mixup": [True, False],
                     },
-                    "type_float":{
-                        "dropout":(0.2,0.8),
-                        "location_loss_factor":(0,1),
-                        
-                    }
-                }
+                    "type_float": {
+                        "dropout": (0.2, 0.8),
+                        "location_loss_factor": (0, 1),
+                    },
+                },
             },
-            "MaskRCNN": {"time": 1600, "is_mm": False, "executed": False,
-            "params":{
-            "type_list":{
-                    "backbones":['resnet18',
-                                'resnet34',
-                                'resnet50',
-                                'resnet101',
-                                'resnet152',
-                                ],
-                        "pointrend": [True, False]
+            "MaskRCNN": {
+                "time": 1600,
+                "is_mm": False,
+                "executed": False,
+                "params": {
+                    "type_list": {
+                        "backbones": [
+                            "resnet18",
+                            "resnet34",
+                            "resnet50",
+                            "resnet101",
+                            "resnet152",
+                        ],
+                        "pointrend": [True, False],
                     },
-                    "type_int":{
+                    "type_int": {
                         "rpn_pre_nms_top_n_train": (1000, 5000),
                         "rpn_pre_nms_top_n_test": (500, 1000),
-                    }
-                }
-            },
-            "RetinaNet": {"time": 3000, "is_mm": False, "executed": False,
-                "params":{
-                "type_list":{
-                        "backbones":['resnet18',
-                                    'resnet34',
-                                    'resnet50',
-                                    'resnet101',
-                                    'resnet152',
-                                    ]
-                        }
-                    }
-            },
-            "DETReg": {"time": 1600, "is_mm": False, "executed": False,
-                "params":{
-                "type_list":{
-                        "backbones":['resnet18',
-                                    'resnet34',
-                                    'resnet50',
-                                    'resnet101',
-                                    'resnet152',
-                                    ]
-                        }
-                    }
-            },
-            "FasterRCNN": {"time": 3000, "is_mm": False, "executed": False,
-                "params":{
-                    "type_list":{
-                    "backbones":['resnet18',
-                                'resnet34',
-                                'resnet50',
-                                'resnet101',
-                                'resnet152',
-                                ]
                     },
-                    "type_int":{
+                },
+            },
+            "RetinaNet": {
+                "time": 3000,
+                "is_mm": False,
+                "executed": False,
+                "params": {
+                    "type_list": {
+                        "backbones": [
+                            "resnet18",
+                            "resnet34",
+                            "resnet50",
+                            "resnet101",
+                            "resnet152",
+                        ]
+                    }
+                },
+            },
+            "DETReg": {
+                "time": 1600,
+                "is_mm": False,
+                "executed": False,
+                "params": {
+                    "type_list": {
+                        "backbones": [
+                            "resnet18",
+                            "resnet34",
+                            "resnet50",
+                            "resnet101",
+                            "resnet152",
+                        ]
+                    }
+                },
+            },
+            "FasterRCNN": {
+                "time": 3000,
+                "is_mm": False,
+                "executed": False,
+                "params": {
+                    "type_list": {
+                        "backbones": [
+                            "resnet18",
+                            "resnet34",
+                            "resnet50",
+                            "resnet101",
+                            "resnet152",
+                        ]
+                    },
+                    "type_int": {
                         "rpn_pre_nms_top_n_train": (1000, 5000),
                         "rpn_pre_nms_top_n_test": (500, 1000),
-                    }
-                }
+                    },
+                },
             },
-            "YOLOv3": {
-                "time": 6500,
-                "is_mm": False
-            },
+            "YOLOv3": {"time": 6500, "is_mm": False},
             "ATSS": {
                 "time": 1650,
                 "is_mm": True,
@@ -1861,19 +1961,19 @@ class AutoDL:
             "CCNet",
             "CGNet",
             "HRNet",
-            'DeepLabV3Plus',
-            'DMNet',
-            'DNLNet',
-            'EMANet',
-            'FastSCNN',
-            'FCN',
-            'GCNet',
-            'MobileNetV2',
-            'NonLocalNet',
-            'OCRNet',
-            'PSANet',
-            'SemFPN',
-            'UperNet'
+            "DeepLabV3Plus",
+            "DMNet",
+            "DNLNet",
+            "EMANet",
+            "FastSCNN",
+            "FCN",
+            "GCNet",
+            "MobileNetV2",
+            "NonLocalNet",
+            "OCRNet",
+            "PSANet",
+            "SemFPN",
+            "UperNet",
         ]
 
     def supported_detection_models(self):
@@ -1893,22 +1993,22 @@ class AutoDL:
             "CascadeRCNN",
             "CascadeRPN",
             "DCN",
-            'Detectors',
-            'DoubleHeads',
-            'DynamicRCNN',
-            'EmpiricalAttention',
-            'FCOS',
-            'FoveaBox',
-            'FSAF',
-            'GHM',
-            'LibraRCNN',
-            'PaFPN',
-            'PISA',
-            'RegNet',
-            'RepPoints',
-            'Res2Net',
-            'SABL',
-            'VFNet'
+            "Detectors",
+            "DoubleHeads",
+            "DynamicRCNN",
+            "EmpiricalAttention",
+            "FCOS",
+            "FoveaBox",
+            "FSAF",
+            "GHM",
+            "LibraRCNN",
+            "PaFPN",
+            "PISA",
+            "RegNet",
+            "RepPoints",
+            "Res2Net",
+            "SABL",
+            "VFNet",
         ]
 
     def lr_find(self):
