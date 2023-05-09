@@ -1237,9 +1237,10 @@ def create_report(
                            stream. The attributes are used by Portal to determine where and how
                            an item is stored. Parameter attributes include: user, folder,
                            title, item_properties, URL, token, and referrer.
-                           Example
 
-                           Creating a new output in a Portal for ArcGIS Instance:
+                           Example:
+
+                                Creating a new output in a Portal for ArcGIS Instance:
                                 return_type = {
                                     "user": "testUser",
                                     "folder": "FolderName",
@@ -1515,14 +1516,16 @@ def enrich(
                                   * addresses, points of interest, place names or other supported locations as strings.
 
                                   * dicts for multiple field addresses such as:
-                                    [{
-                                        "address":{
-                                            "Address":"380 New York St.",
-                                            "Admin1":"Redlands",
-                                            "Admin2":"CA",
-                                            "Postal":"92373",
-                                            "CountryCode":"USA"}
-                                    }]
+                                    Example:
+
+                                        [{
+                                            "address":{
+                                                "Address":"380 New York St.",
+                                                "Admin1":"Redlands",
+                                                "Admin2":"CA",
+                                                "Postal":"92373",
+                                                "CountryCode":"USA"}
+                                        }]
 
                                   * :class:`~arcgis.geometry.Geometry` instances
 
