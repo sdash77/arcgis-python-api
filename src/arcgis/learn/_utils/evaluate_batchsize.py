@@ -53,6 +53,7 @@ unsupported_models = [
     "_SpacyEntityRecognizer",
     "_TransformerEntityRecognizer",
     "TextClassifier",
+    "MMDetection3D",
 ]
 
 
@@ -287,7 +288,10 @@ def estimate_batch_size(model, mode="train"):
         max_batchsize = max_batchsize // 2
         if model.__class__.__name__ == "MaXDeepLab":
             max_batchsize = max_batchsize // 2
-    model._data.train_dl.batch_size = max_batchsize
+
+    if mode == "train" or mode == "none":
+        model._data.train_dl.batch_size = max_batchsize
+
     if (mode == "train" or mode == "none") and max_batchsize > 64:
         batch_size = output(64, max_batchsize)
     else:
