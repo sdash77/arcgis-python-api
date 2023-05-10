@@ -383,8 +383,8 @@ class AveragePrecision(Callback):
 
         if self.mode_3d:
             tps, p_scores, clas, self.n_gts = confusion_matrix3d(
-            last_output, last_target, self.n_gts, self.classes
-        )
+                last_output, last_target, self.n_gts, self.classes
+            )
         else:
             tps, p_scores, clas, self.n_gts = compute_cm(
                 self.model, last_output, last_target, self.n_gts, self.classes
