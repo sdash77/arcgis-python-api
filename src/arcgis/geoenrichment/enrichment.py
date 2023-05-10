@@ -1516,7 +1516,7 @@ def enrich(
                                   * addresses, points of interest, place names or other supported locations as strings.
 
                                   * dicts for multiple field addresses such as:
-                                    Example: [{"address": "Address":"380 New York St.", "Postal":"92373", "CountryCode":"USA"}]
+                                    Example: [{"address": {"Address":"380 New York St.", "Postal":"92373", "CountryCode":"USA"}}, {"address": {"text": "380 New York St Redlands CA 92373"}}]
 
                                   * :class:`~arcgis.geometry.Geometry` instances
 
@@ -1526,11 +1526,7 @@ def enrich(
                                     buffer size or create network service areas around the points.
 
                                   * NamedArea instances to support standard geography. They are
-                                    obtained using Country.subgeographies()/search(). When
-                                    the NamedArea instances should be combined together (union), a list
-                                    of such NamedArea instances should constitute a study area in the
-                                    list of requested study areas. Otherwise, pass in the result of subgeographies
-                                    as a dictionary.
+                                    obtained using Country.subgeographies()/search().
 
                                         .. code-block:: python
 
