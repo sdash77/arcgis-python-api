@@ -1,13 +1,11 @@
 import torch
 from torch import nn, LongTensor
 import torch.nn.functional as F
-from fastai.vision import imagenet_stats
-from fastai.vision.image import ImageBBox
-from fastai.vision.data import ObjectCategoryList, ObjectItemList
 from fastai.core import split_kwargs_by_func
 from fastprogress.fastprogress import progress_bar
 from fastai.basic_train import Callback
 from fastai.torch_core import add_metrics
+from .._utils.pointcloud_od import confusion_matrix3d
 
 import numpy as np
 import random
@@ -364,9 +362,10 @@ def postprocess(
 
 
 class AveragePrecision(Callback):
-    def __init__(self, model, n_classes):
+    def __init__(self, model, n_classes, mode_3d=False):
         self.model = model
         self.n_classes = n_classes
+        self.mode_3d = mode_3d
 
     def on_epoch_begin(self, **kwargs):
         self.tps, self.clas, self.p_scores = [], [], []
@@ -382,16 +381,21 @@ class AveragePrecision(Callback):
         ):
             last_output = last_output[0]
 
-        tps, p_scores, clas, self.n_gts = compute_cm(
-            self.model, last_output, last_target, self.n_gts, self.classes
+        if self.mode_3d:
+            tps, p_scores, clas, self.n_gts = confusion_matrix3d(
+            last_output, last_target, self.n_gts, self.classes
         )
+        else:
+            tps, p_scores, clas, self.n_gts = compute_cm(
+                self.model, last_output, last_target, self.n_gts, self.classes
+            )
         self.tps.extend(tps)
         self.p_scores.extend(p_scores)
         self.clas.extend(clas)
 
     def on_epoch_end(self, last_metrics, **kwargs):
         aps = compute_ap_score(
-            self.tps, self.p_scores, self.clas, self.n_gts, self.n_classes
+            self.tps, self.p_scores, self.clas, self.n_gts, self.n_classes, self.mode_3d
         )
         aps = torch.mean(torch.tensor(aps))
         return add_metrics(last_metrics, aps)
@@ -504,10 +508,10 @@ def compute_cm(
     return tps, p_scores, clas, n_gts
 
 
-def compute_ap_score(tps, p_scores, clas, n_gts, n_classes):
+def compute_ap_score(tps, p_scores, clas, n_gts, n_classes, mode_3d=False):
     # If no true positives are found return an average precision score of 0.
     if len(tps) == 0:
-        return [0.0 for cls in range(1, n_classes + 1)]
+        return [0.0 for _ in range(n_classes)]
 
     tps, p_scores, clas = torch.tensor(tps), torch.cat(p_scores, 0), torch.cat(clas, 0)
     fps = 1 - tps
@@ -515,6 +519,8 @@ def compute_ap_score(tps, p_scores, clas, n_gts, n_classes):
     tps, fps, clas = tps[idx], fps[idx], clas[idx]
     aps = []
     for cls in range(1, n_classes + 1):
+        if mode_3d:
+            cls -= 1
         tps_cls, fps_cls = (
             tps[clas == cls].float().cumsum(0),
             fps[clas == cls].float().cumsum(0),

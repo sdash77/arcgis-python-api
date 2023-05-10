@@ -1260,22 +1260,23 @@ def prepare_data(
     class_mapping           Optional dictionary. Mapping from id to
                             its string label.
     ---------------------   -------------------------------------------
-    chip_size               Optional integer, default 224. Size of the image to train the model.
-                            Images are cropped to the specified chip_size.
+    chip_size               Optional integer, default 224. Size of the image to train
+                            the model. Images are cropped to the specified chip_size.
                             If image size is less than chip_size, the image size is
-                            used as chip_size. A chip size that is a multiple of 32 pixels
-                            is recommended. Not supported for SuperResolution,
+                            used as chip_size. A chip size that is a multiple of 32
+                            pixels is recommended. Not supported for SuperResolution,
                             SiamMask, WNet_cGAN, Pix2Pix and CycleGAN.
     ---------------------   -------------------------------------------
     val_split_pct           Optional float. Percentage of training data to keep
                             as validation.
     ---------------------   -------------------------------------------
-    batch_size              Optional integer. Default 64. Batch size for mini batch gradient
-                            descent (Reduce it if getting CUDA Out of Memory
-                            Errors). Batch size is required to be greater than 1. If None is
-                            provided, a recommended batch size is used. This is estimated based
-                            on GPU capacity, size of model and data. To explicitly find the
-                            recommended batch_size, use arcgis.learn.estimate_batch_size() method.
+    batch_size              Optional integer. Default 64. Batch size for mini batch
+                            gradient descent (Reduce it if getting CUDA Out of Memory
+                            Errors). Batch size is required to be greater than 1. If
+                            None is provided, a recommended batch size is used. This is
+                            estimated based on GPU capacity, size of model and data.
+                            To explicitly find the recommended batch_size,
+                            use arcgis.learn.estimate_batch_size() method.
     ---------------------   -------------------------------------------
     transforms              Optional tuple. Fast.ai transforms for data
                             augmentation of training and validation datasets
@@ -1292,19 +1293,20 @@ def prepare_data(
     seed                    Optional integer. Random seed for reproducible
                             train-validation split.
     ---------------------   -------------------------------------------
-    dataset_type            Optional string. :meth:`~arcgis.learn.prepare_data`  function will infer
-                            the `dataset_type` on its own if it contains a
-                            map.txt file. If the path does not contain the
-                            map.txt file pass one of 'PASCAL_VOC_rectangles',
+    dataset_type            Optional string. :meth:`~arcgis.learn.prepare_data`
+                            function will infer the `dataset_type` on its own if
+                            it contains a map.txt file. If the path does not contain
+                            the map.txt file pass one of 'PASCAL_VOC_rectangles',
                             'KITTI_rectangles', 'RCNN_Masks', 'Classified_Tiles',
                             'Labeled_Tiles', 'MultiLabeled_Tiles', 'Imagenet',
-                            'PointCloud', 'ImageCaptioning', 'ChangeDetection',
-                            'superres', 'CycleGAN', 'Pix2Pix', 'WNet_cGAN',
-                            'Panoptic_Segmentation', and 'ObjectTracking'.
+                            'PointCloud', 'PointCloudOD', 'ImageCaptioning',
+                            'ChangeDetection', 'superres', 'CycleGAN', 'Pix2Pix',
+                            'WNet_cGAN', 'Panoptic_Segmentation', and 'ObjectTracking'.
                             This parameter is mandatory for data which are not
                             exported by ArcGIS Pro / Enterprise which includes
-                            'PointCloud', 'ImageCaptioning', 'ChangeDetection',
-                            'CycleGAN', 'Pix2Pix', 'WNet_cGAN' and 'ObjectTracking'.
+                            'PointCloud', 'PointCloudOD','ImageCaptioning',
+                            'ChangeDetection', 'CycleGAN', 'Pix2Pix', 'WNet_cGAN'
+                            and 'ObjectTracking'.
     ---------------------   -------------------------------------------
     resize_to               Optional integer or tuple of integers.
                             A tuple should be of the form (height, width).
@@ -1345,46 +1347,67 @@ def prepare_data(
                             Optional int. Number of pixels equal to or multiples
                             of 64 to sample from the each masked region of training
                             data i.e. 64, 128 etc. Applicable only for
-                            dataset_type='PointCloud' and 'PSETAE'
-    ---------------------   -------------------------------------------
-    classes_of_interest     Optional string. List of classes of interest.
-                            This will filter blocks based on `classes_of_interest`.
-                            If we have classes [1, 3, 5, 7] in our dataset,
-                            but we are mainly interested in 1 and 3,
-                            Set `classes_of_interest=[1,3]`. Only those blocks
-                            will be considered for training which either have
-                            class 1 or 3 in them, rest of the blocks will
-                            be filtered out.
-                            If remapping of rest of the classes is required
-                            set `background_classcode` to some value.
-                            Applicable only for dataset_type='PointCloud'
+                            dataset_type='PointCloud', 'PointCloudOD', and 'PSETAE'.
     ---------------------   -------------------------------------------
     extra_features          Optional List. Contains a list of strings
-                            which tells which extra features to use to
-                            train PointCNN. By default only x,y and z
-                            are considered for training irrespective
-                            of what features were exported.
-                            Set this to be a subset of
-                            ['intensity', 'numberOfReturns', 'returnNumber',
+                            which mentions extra features to be used for
+                            training, applicable with dataset_type 'PointCloud'
+                            and 'PointCloudOD'. By default only x, y, and z are
+                            considered for training irrespective of what features
+                            were exported.
+                            For example: ['intensity', 'numberOfReturns', 'returnNumber',
                             'red', 'green', 'blue', 'nearInfrared'].
-                            For data exported from `export_point_dataset` set
-                            this to ['intensity', 'num_returns', 'return_num',
-                            'red', 'green', 'blue', 'nir'].
     ---------------------   -------------------------------------------
     remap_classes           Optional dictionary {int:int}. Mapping from
                             class values to user defined values.
-                            If we have [1, 3, 5, 7] in our dataset
-                            and we want to map class 5 to 3. Set this
-                            parameter to `remap_classes={5:3}`.
-                            In training then 5 will also be considered as 3.
-                            Applicable only for dataset_type='PointCloud'
+                            Applicable with dataset_type='PointCloud'
+                            for remapping LAS classcode structure.
+                            And with dataset_type='PointCloudOD' for
+                            remapping object class structure.
+                            When this parameter is set as `remap_classes={5:3}`,
+                            then '5' class value will be considered as '3',
+                            in both training and validation blocks.
     ---------------------   -------------------------------------------
-    background_classcode    Optional int. Default None.
-                            If this is defined it will remap other
-                            class except `classes_of_interest` to
-                            `background_classcode` value. Only applicable
-                            when specifying `classes_of_interest`.
-                            Applicable only for dataset_type='PointCloud'.
+    classes_of_interest     Optional list of int.
+                            For dataset_type='PointCloud':
+                            This will filter training blocks based on
+                            `classes_of_interest`. If we have "1, 3, 5, 7"
+                            LAS classcodes in our dataset, but we are mainly
+                            interested in 1 and 3 classcodes, Set
+                            `classes_of_interest=[1,3]`. Only those blocks
+                            will be considered for training which either have
+                            1 or 3 LAS classcodes in them, rest of the blocks will
+                            be filtered out. If remapping of rest of the classcodes
+                            is required, set `background_classcode` to some value.
+
+                            For dataset_type='PointCloudOD':
+                            This will filter training blocks based on
+                            `classes_of_interest`. If we have "2, 3, 10, 16"
+                            object classes in the 3d feature class, but we are
+                            mainly interested in 2 and 10 object classes,
+                            Set `classes_of_interest=[2,10]`. Only those blocks
+                            will be considered for training which either have
+                            2 or 10 object classes in them, the rest of the blocks will
+                            be filtered out. Set `background_classcode` as `True`
+                            to discard other classes.
+
+                            Note: `classes_of_interest` is applied on the
+                            remapped class structure,
+                            if `remap_classes` is also used.
+    ---------------------   -------------------------------------------
+    background_classcode    This parameter is only applicable when
+                            `classes_of_interest` is specified.
+
+                            For dataset_type='PointCloud':
+                            Optional int. Default: None.
+                            This will remap other class values, except
+                            `classes_of_interest` to `background_classcode`.
+
+                            For dataset_type='PointCloudOD':
+                            Optional Bool. Default: False.
+                            If set to 'True', only `classes_of_interest`
+                            class values will be considered and rest of
+                            the class values will be discarded.
     ---------------------   -------------------------------------------
     stratify                Optional boolean, default False.
                             If True, prepare_data
@@ -2702,6 +2725,19 @@ def prepare_data(
             data.path = Path(os.path.abspath(working_dir))
         _prepare_working_dir(data.path)
         data._estimate_batch = _estimate_batch
+        return data
+
+    elif dataset_type == "PointCloudOD":
+        from ._utils.pointcloud_od import pointcloud_od
+
+        data = pointcloud_od(
+            path, class_mapping, batch_size, databunch_kwargs, **kwargs
+        )
+        data._data_path = data.path
+        if working_dir is not None:
+            data.path = Path(os.path.abspath(working_dir))
+        _prepare_working_dir(data.path)
+        data.pc_type = dataset_type
         return data
 
     elif dataset_type == "ImageCaptioning":

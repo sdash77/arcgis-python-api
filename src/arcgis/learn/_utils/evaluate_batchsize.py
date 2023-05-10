@@ -53,6 +53,7 @@ unsupported_models = [
     "_SpacyEntityRecognizer",
     "_TransformerEntityRecognizer",
     "TextClassifier",
+    "MMDetection3D",
 ]
 
 
