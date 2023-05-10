@@ -1537,8 +1537,8 @@ def enrich(
                                             counties_df = enrich(study_areas=ca_counties, data_collections=['Age'])
                                             counties_df
 
-                                            # Pass as a list
-                                            counties_df = enrich(study_areas=list(ca_counties.values()), data_collections=['Age'])
+
+                                  For more information and example see: https://developers.arcgis.com/python/guide/part2-where-to-enrich-study-areas/#enriching-study-areas
     -------------------------     --------------------------------------------------------------------
     data_collections              Optional list. A Data Collection is a preassembled list of
                                   attributes that will be used to enrich the input features.
