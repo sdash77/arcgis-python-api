@@ -83,6 +83,21 @@ class Test_GE_CreateReport(unittest.TestCase):
         if os.path.isfile(pt_report):
             os.remove(pt_report)
 
+    def test_create_report_empty_out_name(self):
+        """tests the create report logic"""
+        address = "380 New York Street Redlands, California"
+
+        pt_report = create_report(
+            study_areas=[address],
+            report="business_loc",
+            export_format="PDF",
+            out_folder=tempfile.gettempdir(),
+        )
+        assert os.path.isfile(pt_report)
+        assert is_pdf_file(pt_report)
+        if os.path.isfile(pt_report):
+            os.remove(pt_report)
+
 
 if __name__ == "__main__":
     unittest.main()
