@@ -721,6 +721,7 @@ class TestEnrichOnline(unittest.TestCase):
                 radii=[3],
                 units="Miles",
                 overlap=False,
+                travel_mode="driving",
             )
             enrich_res = enrich(study_areas=[buffered], gis=self.usa_agol_inst._gis, pep8ify_columns=False)
             assert isinstance(enrich_res, pd.DataFrame)
