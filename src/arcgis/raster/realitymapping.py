@@ -104,7 +104,7 @@ def is_supported(gis=None):
 ## Compute Sensor model
 ###################################################################################################
 def compute_sensor_model(
-    image_collection,
+    mission,
     mode: str = "Quick",
     location_accuracy: str = "High",
     context: Optional[dict[str, Any]] = None,
@@ -122,7 +122,7 @@ def compute_sensor_model(
     ==================     ====================================================================
     **Parameter**           **Description**
     ------------------     --------------------------------------------------------------------
-    image_collection       Required, the input image collection on which to compute
+    mission                Required, the input image collection on which to compute
                            the sensor model.
                            The image_collection can be a portal Item or an image service URL or a URI
 
@@ -178,7 +178,7 @@ def compute_sensor_model(
     gis = arcgis.env.active_gis if gis is None else gis
 
     return gis._tools.realitymapping.compute_sensor_model(
-        image_collection=image_collection,
+        image_collection=mission,
         mode=mode,
         location_accuracy=location_accuracy,
         context=context,
@@ -220,7 +220,7 @@ def compute_sensor_model(
 ## Alter processing states
 ###################################################################################################
 def alter_processing_states(
-    image_collection,
+    mission,
     new_states: dict[str, Any],
     *,
     gis: Optional[GIS] = None,
@@ -237,7 +237,7 @@ def alter_processing_states(
     ==================     ====================================================================
     **Parameter**           **Description**
     ------------------     --------------------------------------------------------------------
-    image_collection       Required, This is the image collection that will be adjusted.
+    mission                Required, This is the image collection that will be adjusted.
 
                            The image_collection can be a portal Item or an image service URL or URI
 
@@ -268,7 +268,7 @@ def alter_processing_states(
     gis = arcgis.env.active_gis if gis is None else gis
 
     return gis._tools.realitymapping.alter_processing_states(
-        image_collection=image_collection,
+        image_collection=mission,
         new_states=new_states,
         future=future,
         **kwargs,
@@ -303,7 +303,7 @@ def alter_processing_states(
 ## Get processing states
 ###################################################################################################
 def get_processing_states(
-    image_collection, *, gis: Optional[GIS] = None, future: bool = False, **kwargs
+    mission, *, gis: Optional[GIS] = None, future: bool = False, **kwargs
 ):
     """
     Retrieve the processing states of the image collection
@@ -311,7 +311,7 @@ def get_processing_states(
     ==================     ====================================================================
     **Parameter**           **Description**
     ------------------     --------------------------------------------------------------------
-    image_collection       Required, This is the image collection that will be adjusted.
+    mission                Required, This is the image collection that will be adjusted.
 
                            The image_collection can be a portal Item or an image service URL or URI
 
@@ -328,7 +328,7 @@ def get_processing_states(
     gis = arcgis.env.active_gis if gis is None else gis
 
     return gis._tools.realitymapping.get_processing_states(
-        image_collection=image_collection, future=future, **kwargs
+        image_collection=mission, future=future, **kwargs
     )
     """
 
@@ -425,7 +425,7 @@ def append_control_points(image_collection, control_points, gis = None):
 ## Match control points
 ###################################################################################################
 def match_control_points(
-    image_collection,
+    mission,
     control_points: list[dict[str, Any]],
     similarity: str = "High",
     context: Optional[dict[str, Any]] = None,
@@ -443,7 +443,7 @@ def match_control_points(
     ==================     ====================================================================
     **Parameter**           **Description**
     ------------------     --------------------------------------------------------------------
-    image_collection       Required, the input image collection that will be adjusted.
+    mission                Required, the input image collection that will be adjusted.
 
                            The image_collection can be a portal Item or an image service URL or a URI
                             
@@ -554,7 +554,7 @@ def match_control_points(
     gis = arcgis.env.active_gis if gis is None else gis
 
     return gis._tools.realitymapping.match_control_points(
-        image_collection=image_collection,
+        image_collection=mission,
         control_points=control_points,
         similarity=similarity,
         context=context,
@@ -596,178 +596,10 @@ def match_control_points(
 
 
 ###################################################################################################
-## Color Correction
-###################################################################################################
-def color_correction(
-    image_collection,
-    color_correction_method: str,
-    dodging_surface_type: str,
-    target_image=None,
-    context: Optional[dict[str, Any]] = None,
-    *,
-    gis: Optional[GIS] = None,
-    future: bool = False,
-    **kwargs,
-):
-    """
-    Color balance the image collection. 
-    Refer to the `Color Balance Mosaic Dataset <https://pro.arcgis.com/en/pro-app/tool-reference/data-management/color-balance-mosaic-dataset.htm>`_ GP tool for
-    documentation on color balancing mosaic datasets.
-
-
-    ====================================     ====================================================================
-    **Parameter**                             **Description**
-    ------------------------------------     --------------------------------------------------------------------
-    image_collection                         Required. This is the image collection that will be adjusted.
-
-                                             The image_collection can be a portal Item or an image service URL or a URI
-                            
-                                             The image_collection must exist.
-    ------------------------------------     --------------------------------------------------------------------
-    color_correction_method                  Required string. This is the method that will be used for color
-                                             correction computation. The available options are:
-
-                                             - Dodging-Change each pixel's value toward a target color. \
-                                             With this technique, you must also choose \
-                                             the type of target color surface, which \
-                                             affects the target color. Dodging tends \
-                                             to give the best result in most cases. 
-
-                                             - Histogram-Change each pixel's value according \
-                                             to its relationship with a target histogram. \
-                                             The target histogram can be derived from \
-                                             all of the rasters, or you can specify a \
-                                             raster. This technique works well when \
-                                             all of the rasters have a similar histogram.
-                                    
-                                             - Standard_Deviation-Change each of the pixel's \
-                                             values according to its relationship with the \
-                                             histogram of the target raster, within one \
-                                             standard deviation. The standard deviation can be \
-                                             calculated from all of the rasters in the mosaic \
-                                             dataset, or you can specify a target raster. \
-                                             This technique works best when all of the \
-                                             rasters have normal distributions.
-    ------------------------------------     --------------------------------------------------------------------
-    dodging_surface_type                     Required string.When using the Dodging balance method, 
-                                             each pixel needs a target color, which is determined by 
-                                             the surface type.
-
-                                             - Single_Color-Use when there are only a small \
-                                             number of raster datasets and a few different \
-                                             types of ground objects. If there are too many \
-                                             raster datasets or too many types of ground \
-                                             surfaces, the output color may become blurred. \
-                                             All the pixels are altered toward a single \
-                                             color point-the average of all pixels. 
-                                    
-                                             - Color_Grid- Use when you have a large number \
-                                             of raster datasets, or areas with a large \
-                                             number of diverse ground objects. Pixels \
-                                             are altered toward multiple target colors, \
-                                             which are distributed across the mosaic dataset. 
-
-                                             - First_Order- This technique tends to create a \
-                                             smoother color change and uses less storage in \
-                                             the auxiliary table, but it may take longer to \
-                                             process compared to the color grid surface. \
-                                             All pixels are altered toward many points obtained \
-                                             from the two-dimensional polynomial slanted plane. 
-
-                                             - Second_Order-This technique tends to create a \
-                                             smoother color change and uses less storage in \
-                                             the auxiliary table, but it may take longer to \
-                                             process compared to the color grid surface. \
-                                             All input pixels are altered toward a set of \
-                                             multiple points obtained from the two-dimensional \
-                                             polynomial parabolic surface. 
-
-                                             - Third_Order-This technique tends to create a \
-                                             smoother color change and uses less storage in \
-                                             the auxiliary table, but it may take longer to \
-                                             process compared to the color grid surface. \
-                                             All input pixels are altered toward multiple \
-                                             points obtained from the cubic surface.
-    ------------------------------------     --------------------------------------------------------------------
-    target_image                             Optional. The image service you want to use to color balance 
-                                             the images in the image collection.
-                                             It can be a portal Item or an image service URL or a URI
-    ------------------------------------     --------------------------------------------------------------------
-    context                                  Optional dictionary. It contains additional settings that allows
-                                             users to customize the statistics computation settings.
-
-                                             Example:
-
-                                                {"skipRows": 10, "skipCols": 10, "reCalculateStats": "OVERWRITE"}
-    ------------------------------------     --------------------------------------------------------------------
-    gis                                      Optional :class:`~arcgis.gis.GIS` . the GIS on which this tool runs. If not specified, the active GIS is used.
-    ====================================     ====================================================================
-
-    :return:
-        The imagery layer url
-
-    """
-
-    gis = arcgis.env.active_gis if gis is None else gis
-
-    return gis._tools.realitymapping.compute_color_correction(
-        image_collection=image_collection,
-        color_correction_method=color_correction_method,
-        dodging_surface=dodging_surface_type,
-        target_image=target_image,
-        context=context,
-        future=future,
-        **kwargs,
-    )
-
-    """
-
-    gis = arcgis.env.active_gis if gis is None else gis
-
-    params = {}
-    _set_image_collection_param(gis,params, image_collection)
-
-    color_correction_allowed_values = ['Dodging', 'Histogram', 'Standard_Deviation']
-    if [element.lower() for element in color_correction_allowed_values].count(color_correction_method.lower()) <= 0 :
-        raise RuntimeError('color_correction_method can only be one of the following: '+str(color_correction_allowed_values))
-    for element in color_correction_allowed_values:
-        if color_correction_method.lower() == element.lower():
-            params['colorCorrectionMethod'] = element
-
-    dodging_surface_type_allowed_values = ['Single_Color', 'Color_Grid', 'First_Order','Second_Order','Third_Order']
-    if [element.lower() for element in dodging_surface_type_allowed_values].count(dodging_surface_type.lower()) <= 0 :
-        raise RuntimeError('dodging_surface_type can only be one of the following:  '+str(dodging_surface_type_allowed_values))
-    for element in dodging_surface_type_allowed_values:
-        if dodging_surface_type.lower() == element.lower():
-            params['dodgingSurface'] = element
-
-    if target_image is not None:
-        if isinstance(target_image, str):
-            if 'http:' in target_image or 'https:' in target_image:
-                params['targetImage'] = json.dumps({ 'url' : target_image })
-            else:
-                params['targetImage'] = json.dumps({ 'uri' : target_image })
-        elif isinstance(target_image, Item):
-                params['targetImage'] = json.dumps({ "itemId" : target_image.itemid })
-        else:
-            raise TypeError("target_image should be a string (url or uri) or Item")
-    
-    _set_context(params, context)        
-    
-    task = 'ComputeColorCorrection'
-    job_values = _execute_task(gis, task, params)
-
-
-    return job_values["result"]["url"]
-
-    """
-
-
-###################################################################################################
 ## Compute Control Points
 ###################################################################################################
 def compute_control_points(
-    image_collection,
+    mission,
     reference_image=None,
     image_location_accuracy: str = "High",
     context: Optional[dict[str, Any]] = None,
@@ -785,7 +617,7 @@ def compute_control_points(
     ====================================    ====================================================================
     **Parameter**                            **Description**
     ------------------------------------    --------------------------------------------------------------------
-    image_collection                        Required. This is the image collection that will be adjusted.
+    mission                                 Required. This is the image collection that will be adjusted.
 
                                             The image_collection can be a portal Item or an image service URL or a URI
                             
@@ -862,7 +694,7 @@ def compute_control_points(
     gis = arcgis.env.active_gis if gis is None else gis
 
     return gis._tools.realitymapping.compute_control_points(
-        image_collection=image_collection,
+        image_collection=mission,
         reference_image=reference_image,
         image_location_accuracy=image_location_accuracy,
         context=context,
@@ -905,121 +737,10 @@ def compute_control_points(
 
 
 ###################################################################################################
-## Compute Seamlines
-###################################################################################################
-def compute_seamlines(
-    image_collection,
-    seamlines_method: str,
-    context: Optional[dict[str, Any]] = None,
-    *,
-    gis: Optional[GIS] = None,
-    future: bool = False,
-    **kwargs,
-):
-    """
-    Compute seamlines on the image collection. This service tool is used to compute
-    seamlines for the image collection, usually after the image collection has been
-    block adjusted. Seamlines are helpful for generating the seamless mosaicked 
-    display of overlapped images in image collection. The seamlines are computed
-    only for candidates that will eventually be used for generating the result
-    ortho-mosaicked image.
-
-    `Build Seamlines <https://pro.arcgis.com/en/pro-app/tool-reference/data-management/build-seamlines.htm>`_
-
-    ==================     ====================================================================
-    **Parameter**           **Description**
-    ------------------     --------------------------------------------------------------------
-    image_collection       Required, the input image collection that will be adjusted.
-                           The image_collection can be a portal Item or an image service URL or a URI
-                           The image_collection must exist.
-    ------------------     --------------------------------------------------------------------
-    seamlines_method       Required string. These are supported methods for generated seamlines for the image collection.
-    
-                           - VORONOI-Generate seamlines using the area Voronoi diagram.
-
-                           - DISPARITY-Generate seamlines based on the disparity images of stereo pairs.
-
-                           - GEOMETRY - Generate seamlines for overlapping areas based on the intersection \
-                             of footprints. Areas with no overlapping imagery will merge the footprints.
-
-                           - RADIOMETRY - Generate seamlines based on the spectral patterns of features \
-                             within the imagery.
-
-                           - EDGE_DETECTION - Generate seamlines over intersecting areas based on the \
-                             edges of features in the area.
-
-                             This method can avoid seamlines cutting through buildings.
-    ------------------     --------------------------------------------------------------------
-    context                Optional dictionary. Context contains additional settings that allows users to customize
-                           the seamlines generation. 
-                           Example:
-
-                               {"minRegionSize": 100,
-                               "pixelSize": "",
-                               "blendType": "Both",
-                               "blendWidth": null,
-                               "blendUnit": "Pixels",
-                               "requestSizeType": "Pixels",
-                               "requestSize": 1000,
-                               "minThinnessRatio": 0.05,
-                               "maxSilverSize": 20
-                               }
-
-                           Allowed keys are:
-                           "minRegionSize", "pixelSize", "blendType", "blendWidth", 
-                           "blendUnit", "requestSizeType", "requestSize", 
-                           "minThinnessRatio", "maxSilverSize"
-    ------------------     --------------------------------------------------------------------
-    gis                    Optional :class:`~arcgis.gis.GIS` . The GIS on which this tool runs. If not specified, the active GIS is used.
-    ==================     ====================================================================
-
-    :return:
-        The Imagery layer url
-
-    """
-
-    gis = arcgis.env.active_gis if gis is None else gis
-
-    return gis._tools.realitymapping.compute_seamlines(
-        image_collection=image_collection,
-        seamlines_method=seamlines_method,
-        context=context,
-        future=future,
-        **kwargs,
-    )
-
-    """
-    gis = arcgis.env.active_gis if gis is None else gis
-
-    params = {}
-    _set_image_collection_param(gis, params, image_collection)
-
-    contextAllowedValues= {"minRegionSize", "pixelSize", "blendType", "blendWidth", 
-                           "blendUnit", "requestSizeType", "requestSize", 
-                           "minThinnessRatio", "maxSilverSize"
-                           }
-
-    seamlines_method_allowed_values = ['VORONOI', 'DISPARITY','GEOMETRY', 'RADIOMETRY', 'EDGE_DETECTION']
-    if [element.lower() for element in seamlines_method_allowed_values].count(seamlines_method.lower()) <= 0 :
-        raise RuntimeError('seamlines_method can only be one of the following: '+str(seamlines_method_allowed_values))
-    for element in seamlines_method_allowed_values:
-        if seamlines_method.lower() == element.lower():
-            params["seamlinesMethod"]=element
-
-    _set_context(params, context)
-
-    task = 'ComputeSeamlines'
-    job_values = _execute_task(gis, task, params)
-
-    return job_values["result"]["url"]
-    """
-
-
-###################################################################################################
 ## Edit control points
 ###################################################################################################
 def edit_control_points(
-    image_collection,
+    mission,
     control_points: list[dict[str, Any]],
     *,
     gis: Optional[GIS] = None,
@@ -1037,7 +758,7 @@ def edit_control_points(
     ==================     ====================================================================
     **Parameter**           **Description**
     ------------------     --------------------------------------------------------------------
-    image_collection       Required.
+    mission                Required.
                            The image_collection can be a portal Item or an image service URL or a URI
                            The image_collection must exist.
     ------------------     --------------------------------------------------------------------
@@ -1122,7 +843,7 @@ def edit_control_points(
     gis = arcgis.env.active_gis if gis is None else gis
 
     return gis._tools.realitymapping.edit_control_points(
-        image_collection=image_collection,
+        image_collection=mission,
         input_control_points=control_points,
         future=future,
         **kwargs,
@@ -1145,210 +866,10 @@ def edit_control_points(
 
 
 ###################################################################################################
-## Generate DEM
-###################################################################################################
-def generate_dem(
-    image_collection,
-    out_dem: str,
-    cell_size: dict[str, int],
-    surface_type: str,
-    matching_method: Optional[str] = None,
-    context: Optional[dict[str, Any]] = None,
-    *,
-    gis: Optional[GIS] = None,
-    future: bool = False,
-    **kwargs,
-):
-    """
-    Generate a DEM from the image collection. Refer to `Interpolate From Point Cloud <http://pro.arcgis.com/en/pro-app/tool-reference/data-management/interpolate-from-point-cloud.htm>`_
-    GP tool for more documentation
-
-    
-    ==================     ====================================================================
-    **Parameter**           **Description**
-    ------------------     --------------------------------------------------------------------
-    image_collection       Required. The input image collection that will be used
-                           to generate the DEM from.
-                           The image_collection can be a portal Item or an image service URL or a URI
-                           The image_collection must exist.
-    ------------------     --------------------------------------------------------------------
-    out_dem                This is the output digital elevation model.
-                           It can be a url, uri, portal item, or string representing the name of output dem 
-                           (either existing or to be created.)
-                           Like Raster Analysis services, the service can be an existing multi-tenant service URL.
-    ------------------     --------------------------------------------------------------------
-    cell_size              Required, The cell size of the output raster dataset. This is a single numeric input. 
-                           Rectangular cell size such as {"x": 10, "y": 10} is not supported. 
-                           The cell size unit will be the unit used by the image collection's spatial reference.
-    ------------------     --------------------------------------------------------------------
-    surface_type           Required string. Create a digital terrain model or a digital surface model. Refer
-                           to "surface_type" parameter of the GP tool.
-                           
-                           The available choices are:
-
-                           - DTM - Digital Terrain Model, the elevation is only the elevation of the bare earth, not including structures above the surface.
-
-                           - DSM - Digital Surface Model, the elevation includes the structures above the surface, for example, buildings, trees, bridges.
-    ------------------     --------------------------------------------------------------------
-    matching_method        Optional string. The method used to generate 3D points. 
-
-                           - ETM-A feature-based stereo matching that uses the Harris operator to \
-                           detect feature points. It is recommended for DTM generation.  
-
-                           - SGM- Produces more points and more detail than the ETM method. It is \
-                           suitable for generating a DSM for urban areas. This is more \
-                           computationally intensive than the ETM method1.  
-
-                           - MVM (Multi-view image matching (MVM) - is based on the SGM matching method followed by a fusion step in which \
-                           the redundant depth estimations across single stereo model are merged. \
-                           It produces dense 3D points and is computationally efficient
-
-                           References:  
-                           Heiko Hirschmuller et al., "Memory Efficient Semi-Global Matching," 
-                           ISPRS Annals of the Photogrammetry, Remote Sensing and Spatial 
-                           Information Sciences, Volume 1-3, (2012): 371-376. 
-
-                           Refer to the documentation
-                           of "matching_method" parameter of the `Generate Point Cloud <http://pro.arcgis.com/en/pro-app/tool-reference/data-management/generate-point-cloud.htm>`_
-                           GP tool
-    ------------------     --------------------------------------------------------------------
-    context                Optional dictionary. Additional allowed point cloud generation parameter and DEM 
-                           interpolation parameter can be assigned here.  
-                           
-                           For Example:
-
-                                | Point cloud generation parameters -  
-                                | {"maxObjectSize": 50, 
-                                | "groundSpacing": None, 
-                                | "minAngle": 10, 
-                                | "maxAngle": 70, 
-                                | "minOverlap": 0.6, 
-                                | "maxOmegaPhiDif": 8, 
-                                | "maxGSDDif": 2, 
-                                | "numImagePairs": 2, 
-                                | "adjQualityThreshold": 0.2, 
-                                | "regenPointCloud": False 
-                                | } 
-                                | 
-                                | DEM interpolation parameters -  
-                                | {"method": "TRIANGULATION", 
-                                | "smoothingMethod": "GAUSS5x5", 
-                                | "applyToOrtho": True, 
-                                | "fillDEM": "``https://....``"
-                                | } 
- 
-                           Note:  
-                           The "applyToOrtho" flag can apply the generated DEM back into the 
-                           mosaic dataset's geometric function to achieve more accurate 
-                           orthorectification result.  
-                           The "fillDEM" flag allows the user to specify an elevation service URL as 
-                           background elevation to fill the area when elevation model pixels cannot be 
-                           interpolated from the point cloud.  
-    ------------------     --------------------------------------------------------------------
-    gis                    Optional :class:`~arcgis.gis.GIS` . The GIS on which this tool runs. If not specified, the active GIS is used.
-    ==================     ====================================================================
-
-    :return:
-        The DEM layer item
-
-    """
-    gis = arcgis.env.active_gis if gis is None else gis
-
-    return gis._tools.realitymapping.generate_dem(
-        image_collection=image_collection,
-        cell_size=cell_size,
-        output_dem=out_dem,
-        surface_type=surface_type,
-        matching_method=matching_method,
-        context=context,
-        future=future,
-        **kwargs,
-    )
-
-    """
-    gis = arcgis.env.active_gis if gis is None else gis
-
-    task = 'GenerateDEM'
-
-    contextAllowedValues= ["maxObjectSize", "groundSpacing", "minAngle", "maxAngle", "minOverlap", "maxOmegaPhiDif", 
-                            "maxGSDDif", "numImagePairs", "adjQualityThreshold", "method", "smoothingMethod", "applyToOrtho"]
-    params = {}
-    folder = None
-    folderId = None
-    _set_image_collection_param(gis, params, image_collection)
-
-    if isinstance(out_dem, Item):
-        params["outputDEM"] = json.dumps({"itemId": out_dem.itemid})
-    elif isinstance(out_dem, str):
-        if ("/") in out_dem or ("\\") in out_dem:
-            if 'http:' in out_dem or 'https:' in out_dem:
-                params['outputDEM'] = json.dumps({ 'url' : out_dem })
-            else:
-                params['outputDEM'] = json.dumps({ 'uri' : out_dem })
-        else:
-            result = gis.content.search("title:"+str(out_dem), item_type = "Imagery Layer")
-            out_dem_result = None
-            for element in result:
-                if str(out_dem) == element.title:
-                    out_dem_result = element
-            if out_dem_result is not None:
-                params["outputDEM"]= json.dumps({"itemId": out_dem_result.itemid})
-            else:
-                doesnotexist = gis.content.is_service_name_available(out_dem, "Image Service") 
-                if doesnotexist:
-                    if kwargs is not None:
-                        if "folder" in kwargs:
-                            folder = kwargs["folder"]
-                    if folder is not None:
-                        if isinstance(folder, dict):
-                            if "id" in folder:
-                                folderId = folder["id"]
-                                folder=folder["title"]
-                        else:
-                            owner = gis.properties.user.username
-                            folderId = gis._portal.get_folder_id(owner, folder)
-                        if folderId is None:
-                            folder_dict = gis.content.create_folder(folder, owner)
-                            folder = folder_dict["title"]
-                            folderId = folder_dict["id"]
-                        params["outputDEM"] = json.dumps({"serviceProperties": {"name" : out_dem}, "itemProperties": {"folderId" : folderId}})
-                    else:
-                        params["outputDEM"] = json.dumps({"serviceProperties": {"name" : out_dem}})
-              
-
-
-    params['cellSize'] = cell_size
-
-    surface_type_allowed_values = ['DTM', 'DSM']
-    if [element.lower() for element in surface_type_allowed_values].count(surface_type.lower()) <= 0 :
-        raise RuntimeError('surface_type can only be one of the following: '+str(surface_type_allowed_values))
-    for element in surface_type_allowed_values:
-        if surface_type.lower() == element.lower():
-            params["surfaceType"]=element
-
-    if matching_method is not None:
-        matching_method_allowed_values = ['ETM', 'SGM', 'MVM']
-        if [element.lower() for element in matching_method_allowed_values].count(matching_method.lower()) <= 0 :
-            raise RuntimeError('matching_method can only be one of the following: '+str(matching_method_allowed_values))
-        for element in matching_method_allowed_values:
-            if matching_method.lower() == element.lower():
-                params["matchingMethod"]=element
-
-    _set_context(params, context)  
-    
-    job_values = _execute_task(gis, task, params)
-
-    output_service= gis.content.get(job_values["result"]["itemId"])
-
-    return  output_service 
-    """
-
-
-###################################################################################################
 ## Generate orthomosaic
 ###################################################################################################
 def generate_orthomosaic(
-    image_collection,
+    mission,
     out_ortho,
     regen_seamlines: bool = True,
     recompute_color_correction: bool = True,
@@ -1365,7 +886,7 @@ def generate_orthomosaic(
     ===================================    ====================================================================
     **Parameter**                           **Description**
     -----------------------------------    --------------------------------------------------------------------
-    image_collection                       Required. The input image collection that will be used
+    mission                                Required. The input image collection that will be used
                                            to generate the ortho-mosaic from.
                                            The image_collection can be a portal Item or an image service URL or a URI
                                            The image_collection must exist.
@@ -1449,7 +970,7 @@ def generate_orthomosaic(
     gis = arcgis.env.active_gis if gis is None else gis
 
     return gis._tools.realitymapping.generate_orthomosaic(
-        image_collection=image_collection,
+        image_collection=mission,
         output_ortho_image=out_ortho,
         regen_seamlines=regen_seamlines,
         recompute_color_correction=recompute_color_correction,
@@ -1530,7 +1051,7 @@ def generate_orthomosaic(
 ## Generate report
 ###################################################################################################
 def generate_report(
-    image_collection,
+    mission,
     report_format: str = "PDF",
     *,
     gis: Optional[GIS] = None,
@@ -1546,7 +1067,7 @@ def generate_report(
     ===================    ====================================================================
     **Parameter**           **Description**
     -------------------    --------------------------------------------------------------------
-    image_collection       Required. The input image collection that should be
+    mission                Required. The input image collection that should be
                            used to generate a report from.
                            The image_collection can be a portal Item or an image service URL or a URI
                            The image_collection must exist.
@@ -1563,7 +1084,7 @@ def generate_report(
     gis = arcgis.env.active_gis if gis is None else gis
 
     return gis._tools.realitymapping.generate_report(
-        image_collection=image_collection,
+        image_collection=mission,
         report_format=report_format,
         future=future,
         **kwargs,
@@ -1657,7 +1178,7 @@ def query_camera_info(
 ## query control points
 ###################################################################################################
 def query_control_points(
-    image_collection,
+    mission,
     query: str,
     *,
     gis: Optional[GIS] = None,
@@ -1671,7 +1192,7 @@ def query_control_points(
     ==================     ====================================================================
     **Parameter**           **Description**
     ------------------     --------------------------------------------------------------------
-    image_collection       Required, the input image collection on which to query
+    mission                Required, the input image collection on which to query
                            the the control points.
 
                            The image_collection can be a portal Item or an image service URL or a URI.
@@ -1695,7 +1216,7 @@ def query_control_points(
     gis = arcgis.env.active_gis if gis is None else gis
 
     return gis._tools.realitymapping.query_control_points(
-        image_collection=image_collection, where=query, future=future, **kwargs
+        image_collection=mission, where=query, future=future, **kwargs
     )
 
     """
@@ -1728,7 +1249,7 @@ def query_control_points(
 ## Reset image collection
 ###################################################################################################
 def reset_image_collection(
-    image_collection, *, gis: Optional[GIS] = None, future: bool = False, **kwargs
+    mission, *, gis: Optional[GIS] = None, future: bool = False, **kwargs
 ):
     """
     Reset the image collection. It is used to reset the image collection to its
@@ -1740,7 +1261,7 @@ def reset_image_collection(
     ==================     ====================================================================
     **Parameter**           **Description**
     ------------------     --------------------------------------------------------------------
-    image_collection       Required, the input image collection to reset
+    mission                Required, the input image collection to reset
                            The image_collection can be a portal Item or an image service URL or a URI.
 
                            The image_collection must exist.
@@ -1755,7 +1276,7 @@ def reset_image_collection(
     gis = arcgis.env.active_gis if gis is None else gis
 
     return gis._tools.realitymapping.reset_image_collection(
-        image_collection=image_collection, future=future, **kwargs
+        image_collection=mission, future=future, **kwargs
     )
     """
     gis = arcgis.env.active_gis if gis is None else gis
@@ -1864,7 +1385,7 @@ def query_exif_info(
 ## Reconstruct surface
 ###################################################################################################
 def reconstruct_surface(
-    image_collection,
+    mission,
     scenario: Optional[str] = "DEFAULT",
     forward_overlap: Optional[int] = None,
     sideward_overlap: Optional[int] = None,
@@ -1891,7 +1412,7 @@ def reconstruct_surface(
     =========================================================================   ===========================================================================
     **Parameter**                                                                **Description**
     -------------------------------------------------------------------------   ---------------------------------------------------------------------------
-    input_image_collection                                                      Required String/Item. The adjusted input mosaic dataset.
+    mission                                                                     Required String/Item. The adjusted input image collection.
     -------------------------------------------------------------------------   ---------------------------------------------------------------------------
     scenario                                                                    Optional String. Specifies the type of imagery that will be used to generate the output products.
 
@@ -2020,7 +1541,7 @@ def reconstruct_surface(
     gis = arcgis.env.active_gis if gis is None else gis
 
     return gis._tools.realitymapping.reconstruct_surface(
-        image_collection=image_collection,
+        image_collection=mission,
         scenario=scenario,
         forward_overlap=forward_overlap,
         sideward_overlap=sideward_overlap,

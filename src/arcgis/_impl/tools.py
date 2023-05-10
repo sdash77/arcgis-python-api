@@ -8908,7 +8908,7 @@ class _OrthoRealityMappingTools:
         =========================================================================   ===========================================================================
         **Parameter**                                                                **Description**
         -------------------------------------------------------------------------   ---------------------------------------------------------------------------
-        input_image_collection                                                      Required String/Item. The adjusted input mosaic dataset.
+        image_collection                                                            Required String/Item. The adjusted input mosaic dataset.
         -------------------------------------------------------------------------   ---------------------------------------------------------------------------
         scenario                                                                    Optional String. Specifies the type of imagery that will be used to generate the output products.
 
@@ -9037,6 +9037,10 @@ class _OrthoRealityMappingTools:
         task = "ReconstructSurface"
         gis = self._gis
 
+        image_collection = self._set_image_collection_param(
+            image_collection=image_collection
+        )
+
         context_param = {}
         _set_raster_context(context_param, context)
         if "context" in context_param.keys():
@@ -9083,12 +9087,28 @@ class _OrthoRealityMappingTools:
         if correction_feature is not None:
             correction_feature = _RasterAnalysisTools._feature_input(correction_feature)
 
+        folder = None
+        folderId = None
+
+        if kwargs is not None:
+            if "folder" in kwargs:
+                folder = kwargs["folder"]
+        if folder is not None:
+            if isinstance(folder, dict):
+                if "id" in folder:
+                    folderId = folder["id"]
+                    folder = folder["title"]
+            else:
+                owner = gis.properties.user.username
+                folderId = gis._portal.get_folder_id(owner, folder)
+            if folderId is None:
+                folder_dict = gis.content.create_folder(folder, owner)
+                folder = folder_dict["title"]
+                folderId = folder_dict["id"]
+
         output_products = {}
         if output_dsm_name is not None:
-            (
-                output_dsm_raster,
-                output_dsm_service,
-            ) = self._set_output_raster(
+            (output_dsm_raster, output_dsm_service,) = self._set_output_raster(
                 output_name=output_dsm_name,
                 task=task,
                 output_properties=kwargs,
@@ -9105,20 +9125,20 @@ class _OrthoRealityMappingTools:
             )
             output_products["True_Ortho"] = output_true_ortho_raster
         if output_dsm_mesh_name is not None:
-            output_dsm_mesh_raster = {
-                "name": output_dsm_mesh_name
-            }
-            output_products["DSM_Mesh"] = output_dsm_mesh_raster
+            output_dsm_mesh_dict = {"name": output_dsm_mesh_name}
+            if folderId is not None:
+                output_dsm_mesh_dict["folderId"] = folderId
+            output_products["DSM_Mesh"] = output_dsm_mesh_dict
         if output_point_cloud_name is not None:
-            output_point_cloud_raster = {
-                "name": output_point_cloud_name
-            }
-            output_products["Point_Cloud"] = output_point_cloud_raster
+            output_point_cloud_dict = {"name": output_point_cloud_name}
+            if folderId is not None:
+                output_point_cloud_dict["folderId"] = folderId
+            output_products["Point_Cloud"] = output_point_cloud_dict
         if output_mesh_name is not None:
-            output_mesh_raster = {
-                "name": output_mesh_name
-            }
-            output_products["Mesh"] = output_mesh_raster
+            output_mesh_dict = {"name": output_mesh_name}
+            if folderId is not None:
+                output_point_cloud_dict["folderId"] = folderId
+            output_products["Mesh"] = output_mesh_dict
 
         job = self._tbx.reconstruct_surface(
             image_collection=image_collection,
