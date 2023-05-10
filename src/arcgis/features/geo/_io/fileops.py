@@ -16,7 +16,7 @@ from contextlib import closing
 import zipfile
 from arcgis.geometry import Geometry
 
-
+arcgis = LazyLoader("arcgis")
 try:
     arcpy = LazyLoader("arcpy", strict=True)
     HASARCPY = True
@@ -913,6 +913,34 @@ def from_featureclass(filename, **kwargs):
 
 
 # --------------------------------------------------------------------------
+import functools
+
+
+@functools.lru_cache(maxsize=255)
+def _examine_meta(meta):
+    gt_lu: dict[str, str] = {
+        "esriGeometryPoint": "point",
+        "esriGeometryLine": "polyline",
+        "esriGeometryPolyline": "polyline",
+        "esriGeometryPath": "polyline",
+        "esriGeometryPolygon": "polygon",
+        "esriGeometryMultiPatch": "polygon",
+        "esriGeometryMultipoint": "multipoint",
+    }
+    sr = arcgis.geometry.SpatialReference({"wkid": 4326})
+    if isinstance(meta.source, arcgis.features.FeatureLayer):
+        try:
+            sr = arcgis.geometry.SpatialReference(
+                meta.source.properties["extent"]["spatialReference"]
+            )
+        except:
+            sr = arcgis.geometry.SpatialReference({"wkid": 4326})
+
+        return (gt_lu[meta.source.properties.geometryType], sr)
+    return "point", sr
+
+
+# --------------------------------------------------------------------------
 def to_featureclass(
     geo,
     location,
@@ -1013,8 +1041,14 @@ def to_featureclass(
 
             notnull = df[df.spatial.name].notnull()
             idx = df[df.spatial.name][notnull].first_valid_index()
-            sr = df[df.spatial.name][idx]["spatialReference"]
-            gt = df[df.spatial.name][idx].geometry_type.upper()
+            if idx is None:
+                gt, sr = _examine_meta(df.spatial._meta)
+            else:
+                sr = arcgis.geometry.SpatialReference(
+                    df[df.spatial.name][idx]["spatialReference"]
+                )
+                gt = df[df.spatial.name][idx].geometry_type.upper()
+
             null_geom = {
                 "point": pd.io.json.dumps(
                     {"x": None, "y": None, "spatialReference": sr}
@@ -1023,9 +1057,9 @@ def to_featureclass(
                 "polygon": pd.io.json.dumps({"rings": [], "spatialReference": sr}),
                 "multipoint": pd.io.json.dumps({"points": [], "spatialReference": sr}),
             }
-            sr = df[df.spatial.name][idx].spatial_reference.as_arcpy
-            null_geom = null_geom[gt.lower()]
 
+            null_geom = null_geom[gt.lower()]
+            sr = sr.as_arcpy
             if has_m == True:
                 has_m = "ENABLED"
             else:
@@ -1100,6 +1134,13 @@ def to_featureclass(
                         and isinstance(df[col][idx], datetime.datetime)
                     ):
                         dtypes.append((col, "<M8[us]"))
+                    elif df[col].dtype.type == str:
+                        mlen = df[col].str.len().max()
+                        if pd.isna(mlen):
+                            mlen = 254
+                        elif mlen == 0:
+                            mlen = 254
+                        dtypes.append((col, "<U%s" % int(mlen)))
                     else:
                         dtypes.append((col, df[col].dtype.type))
             from arcgis._impl.common._utils import chunks as _chunks
@@ -1115,6 +1156,8 @@ def to_featureclass(
                     print(e)
 
             # 3. Insert the Data
+            if len(df) == 0:
+                return fc
             fields = arcpy.ListFields(fc)
             icols = [
                 fld.name

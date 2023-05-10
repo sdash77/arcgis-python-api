@@ -59,22 +59,27 @@ unsupported_models = [
 def estimate_batch_size(model, mode="train"):
     """
     Function to calculate estimated batch size based on GPU capacity, size of model and data.
+
     =====================   ===========================================
     **Parameter**           **Description**
     ---------------------   -------------------------------------------
-    model                   Required arcgis.learn imagery model. Model instance for which batch size should be estimated.
-                            Not supported for text, tabular, timeseries or tracking models such as FullyConnectedNetwork,
-                            MLModel, TimeSeriesModel, SiamMask, PSETAE and EfficientDet models.
+    model                   Required arcgis.learn imagery model. Model
+                            instance for which batch size should be estimated.
+                            Not supported for text, tabular, timeseries
+                            or tracking models such as FullyConnectedNetwork,
+                            MLModel, TimeSeriesModel, SiamMask, PSETAE
+                            and EfficientDet models.
     ---------------------   -------------------------------------------
-    mode                    Optional string. Default train. The mode for which batch size is estimated.
-                            Supported 'train' and 'eval' mode for calculating batch size in training mode
-                            and evaluation mode respectively.
-                            Note: max_batchsize is capped at 1024 for train and eval mode and
-                            recommended_batchsize is capped at 64 for train mode
+    mode                    Optional string. Default train. The mode for
+                            which batch size is estimated. Supported 'train'
+                            and 'eval' mode for calculating batch size in
+                            training mode and evaluation mode respectively.
+                            Note: max_batchsize is capped at 1024 for train
+                            and eval mode and recommended_batchsize is
+                            capped at 64 for train mode.
     =====================   ===========================================
-    :return the following as a named tuple:
-        recommended_batchsize, max_batchsize
 
+    :return: Named tuple of recommended_batchsize and max_batchsize
     """
 
     mode = mode.lower()
