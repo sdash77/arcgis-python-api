@@ -135,7 +135,7 @@ class PointCloudOD(Dataset):
                 if v in self.classes_of_interest:
                     self.classes_of_interest.append(k)
                     self.class2idx[k] = self.class2idx[v]
-                if self.classes_of_interest==[] or not bg_code:
+                if self.classes_of_interest == [] or not bg_code:
                     self.class2idx[k] = self.class2idx[v]
 
             self.classes_of_interest = sorted(list(set(self.classes_of_interest)))
