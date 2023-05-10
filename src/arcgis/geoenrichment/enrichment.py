@@ -1609,8 +1609,11 @@ def enrich(
                                   kilometer, this value will be ``kilometers``. Default is
                                   ``kilometers``.
     -------------------------     --------------------------------------------------------------------
-    pep8ify_columns               Optional boolean. Convert output column names to python-ish style.
+    pep8ify_columns               Optional boolean. Convert output column names to snake case python style.
                                   Default is ``True``.
+                                  Examples:
+                                  Value is ``True``: ['source_country', 'area_type', 'aggregation_method', 'totpop']
+                                  Value is ``False``: ['sourceCountry', 'areaType', 'aggregationMethod', 'TOTPOP']
     =========================     ====================================================================
 
     :return:
