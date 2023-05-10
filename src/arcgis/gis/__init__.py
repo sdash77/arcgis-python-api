@@ -4984,9 +4984,8 @@ class Role(object):
 class GroupManager(object):
     """
     The ``GroupManager`` class is a helper class for managing GIS groups.
-    An instance of this class, called :attr:`~arcgis.gis.GIS.groups`, is available as a property of the
-    :class:`~arcgis.gis.GIS` object.
-    Users call methods on this 'groups' object to manipulate (create, get, search, etc) users.
+    An instance of this class, called :attr:`~arcgis.gis.GIS.groups`, is available
+    as a property of the :class:`~arcgis.gis.GIS` object.
 
     .. note::
         This class is not created by users directly.
@@ -5021,14 +5020,18 @@ class GroupManager(object):
         autojoin: bool = False,
     ):
         """
-        The ``create`` method creates a group with the values for any particular arguments that are specified.
+        The ``create`` method creates a group with the values for any particular
+        arguments that are specified. The user who creates the group automatically
+        becomes the owner of the group, and the owner automatically becomes an
+        administrator. Use :attr:`~arcgis.gis.Group.reassign_to` to change the
+        owner.
 
         .. note::
             Only title and tags are required.
 
 
         ====================  =========================================================
-        **Parameter**          **Description**
+        **Parameter**         **Description**
         --------------------  ---------------------------------------------------------
         title                 Required string. The name of the group.
         --------------------  ---------------------------------------------------------
@@ -5060,7 +5063,6 @@ class GroupManager(object):
         auto_join             Optional boolean. Only applies to org accounts. If True,
                               this group will allow joining without requesting
                               membership approval. Default is False.
-
         --------------------  ---------------------------------------------------------
         provider_group_name   Optional string. The name of the domain group.
                               Create an association between a Portal group and an
@@ -5092,11 +5094,11 @@ class GroupManager(object):
                               from choosing to leave the group. If True, only an
                               administrator can remove them from the group. The default
                               is False.
-        ------------------    ---------------------------------------------------------
+        --------------------  ---------------------------------------------------------
         hidden_members        Optional Boolean. Only applies to org accounts. If true,
                               only the group owner, group managers, and default
                               administrators can see all members of the group.
-        ------------------    ---------------------------------------------------------
+        --------------------  ---------------------------------------------------------
         membership_access     Optional String. Sets the membership access for the group.
                               Setting to `org` restricts group access to members of
                               your organization. Setting to `collaboration` restricts the
@@ -5105,7 +5107,7 @@ class GroupManager(object):
                               will have access. `None` is the default.
 
                               Values: `org`, `collaboration`, or `None`
-        ------------------    ---------------------------------------------------------
+        --------------------  ---------------------------------------------------------
         autojoin              Optional Boolean. The default is `False`. Only applies to
                               org accounts. If `True`, this group will allow joined
                               without requesting membership approval.
@@ -5117,8 +5119,10 @@ class GroupManager(object):
         .. code-block:: python
 
             # Usage Example
-            >>> gis.groups.create(title = "New Group", tags = "new, group, USA",
-            >>>                     description = "a new group in the USA", access = "public")
+            >>> gis.groups.create(title = "New Group",
+                                  tags = "new, group, USA",
+                                  description = "a new group in the USA",
+                                  access = "public")
         """
         display_settings_lu = {
             "apps": {"itemTypes": "Application"},
