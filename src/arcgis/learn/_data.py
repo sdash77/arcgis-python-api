@@ -176,6 +176,16 @@ class _ImagenetCollater:
         return _xb, _yb
 
 
+def classified_tiles_collate_fn(
+    samples,
+):  # The default fastai collate_fn was causing memory leak on tensors
+    r = (
+        torch.stack([x[0].data for x in samples]),
+        torch.stack([x[1].data for x in samples]),
+    )
+    return r
+
+
 def _bb_pad_collate(samples, pad_idx=0):
     "Function that collect `samples` of labelled bboxes and adds padding with `pad_idx`."
     if isinstance(samples[0][1], int):
@@ -1458,6 +1468,11 @@ def prepare_data(
                             For example, If we have stacked imagery of n bands each
                             from two dates then, ['YYYY-MM-DD','YYYY-MM-DD'].
                             Applicable only for dataset_type='PSETAE'.
+    ---------------------   -------------------------------------------
+    num_workers             Optional int. Default ``0``.
+                            number of subprocesses to use for data loading on the
+                            Windows operating system. ``0`` means that the data will
+                            be loaded in the main process.
     =====================   ===========================================
 
     :return:
@@ -1503,7 +1518,10 @@ def prepare_data(
         _estimate_batch = True
         batch_size = 2
 
-    databunch_kwargs = {"num_workers": 0} if sys.platform == "win32" else {}
+    num_workers = kwargs.get("num_workers", 0)  # min(16, (os.cpu_count() // 2) - 1)
+    databunch_kwargs = {"num_workers": num_workers} if sys.platform == "win32" else {}
+    if sys.platform == "win32" and num_workers > 0:
+        databunch_kwargs["persistent_workers"] = True
     databunch_kwargs["bs"] = batch_size
 
     force_cpu = arcgis.learn.models._arcgis_model._device_check()
@@ -2334,15 +2352,6 @@ def prepare_data(
             data = src
         #
         _show_batch_multispectral = show_batch_classified_tiles
-
-        def classified_tiles_collate_fn(
-            samples,
-        ):  # The default fastai collate_fn was causing memory leak on tensors
-            r = (
-                torch.stack([x[0].data for x in samples]),
-                torch.stack([x[1].data for x in samples]),
-            )
-            return r
 
         databunch_kwargs["collate_fn"] = classified_tiles_collate_fn
 
