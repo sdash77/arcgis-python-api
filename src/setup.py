@@ -73,7 +73,7 @@ else:
         "widgetsnbextension >=3",
         "jupyter-client <=6.1.12",
         "pandas >=2.0.0",
-        "numpy >=1.20.3",
+        "numpy >=1.21.6",
         "matplotlib",
         "keyring >=23.3.0",
         "lerc",

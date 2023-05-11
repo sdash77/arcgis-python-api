@@ -1,6 +1,4 @@
-import sys, os, uuid
-
-sys.path.insert(0, r"C:\SVN\geosaurus_master_issue_8791\src")
+import os, uuid
 import unittest
 
 from arcgis.gis import GIS
@@ -26,9 +24,9 @@ except Exception as e:
     msg = f"An Error Occured {str(e)}"
 
 try:
-    from utils import NOTEBOOK_TESTS_DIR
+    from utils import INTEGRATION_TESTS_DIR
 
-    fp = os.path.join(NOTEBOOK_TESTS_DIR, "webhook_data.zip")
+    fp = os.path.join(INTEGRATION_TESTS_DIR, "features", "webhook_data.zip")
     if os.path.isfile(fp) == False:
         SKIPIF = True
         msg = "Missing file"
