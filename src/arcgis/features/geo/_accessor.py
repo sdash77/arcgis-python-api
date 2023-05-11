@@ -1317,7 +1317,7 @@ class GeoAccessor(object):
             def fn(g, n):
                 return getattr(g, n, None)() if g is not None else None
 
-            vals = np.vectorize(fn, otypes="O")(self._data["SHAPE"], "svg")
+            vals = np.vectorize(fn, otypes="O")(self._data[self.name], "svg")
             svg = "\n".join(vals.tolist())
             svg_top = (
                 '<svg xmlns="http://www.w3.org/2000/svg" '
