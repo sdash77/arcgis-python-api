@@ -1,7 +1,7 @@
 """
 Allows access to the Portal Logs
 """
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Optional, Union
 from .. import GIS
 from ._base import BasePortalAdmin
@@ -213,7 +213,7 @@ class Logs(BasePortalAdmin):
                     "Invalid start_time string, must be in the format YYYY-MM-DDTHH:MM:SS"
                 )
         elif isinstance(start_time, tuple(list(int) + [float])):
-            start_time = datetime.utcfromtimestamp(start_time).strftime(
+            start_time = datetime.fromtimestamp(start_time, tz=timezone.utc).strftime(
                 "%Y-%m-%dT%H:%M:%S"
             )
         if end_time is None:
@@ -228,7 +228,9 @@ class Logs(BasePortalAdmin):
                     "Invalid end_time string, must be in the format YYYY-MM-DDTHH:MM:SS"
                 )
         elif isinstance(end_time, tuple(list(int) + [float])):
-            end_time = datetime.utcfromtimestamp(end_time).strftime("%Y-%m-%dT%H:%M:%S")
+            end_time = datetime.fromtimestamp(end_time, tz=timezone.utc).strftime(
+                "%Y-%m-%dT%H:%M:%S"
+            )
         if query_filter == "*":
             query_filter = {"codes": [], "users": [], "source": "*"}
         params = {
