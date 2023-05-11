@@ -772,6 +772,19 @@ class TestEnrichOnline(unittest.TestCase):
             travel_modes = usa.travel_modes
 
             assert isinstance(travel_modes, pd.DataFrame)
+    
+    @skip_if_no_agol
+    def test_analysis_variables(self):
+        from arcgis.geoenrichment import enrich, BufferStudyArea
+
+        with does_not_raise():
+            buffer_area = BufferStudyArea(area=Point({"x":-117.146007, "y":34.079086, "spatialReference": {"wkid":4326}}))
+            assert buffer_area
+
+            enriched_areas = enrich(study_areas=[buffer_area], analysis_variables=["KeyGlobalFacts.TOTPOP"])
+            assert enriched_areas
+            assert isinstance(enriched_areas, pd.DataFrame)
+            assert _is_geoenabled(enriched_areas)
 
 
 if __name__ == "__main__":

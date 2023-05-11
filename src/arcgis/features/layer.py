@@ -2272,7 +2272,7 @@ class FeatureLayer(Layer):
                 "esriFieldTypeDouble": pd.Float64Dtype(),
                 "esriFieldTypeFloat": pd.Float64Dtype(),
                 "esriFieldTypeString": pd.StringDtype(),
-                "esriFieldTypeDate": np.datetime64,
+                "esriFieldTypeDate": "datetime64[ns]",  # np.datetime64,
                 "esriFieldTypeOID": pd.Int64Dtype(),
                 "esriFieldTypeGeometry": object,
                 "esriFieldTypeBlob": object,
