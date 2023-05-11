@@ -12729,18 +12729,7 @@ class Item(dict):
             >>> item.download("C:\ARCGIS\Projects\", "hurricane_data")
 
         """
-        if self._gis._con.token:
-            data_path = (
-                "content/items/"
-                + self.itemid
-                + f"/data"  # "?token={self._gis._con.token}"
-            )
-        else:
-            data_path = (
-                "content/items/"
-                + self.itemid
-                + f"/data"  # "?token={self._gis._con.token}"
-            )
+        data_path = "content/items/" + self.itemid + f"/data"
         if file_name is None:
             if "name" in self or "title" in self:
                 file_name = self.name or self.title
@@ -12749,7 +12738,7 @@ class Item(dict):
         try:
             url = self._gis._portal.resturl + data_path
             con = self._gis._con
-            resp = self._portal.con.get(
+            resp = con.get(
                 path=url,
                 file_name=file_name,
                 out_folder=save_path,
@@ -12760,7 +12749,7 @@ class Item(dict):
             )
             if resp.status_code >= 300 and resp.status_code < 400:
                 url = resp.headers["location"]
-                resp = self._portal.con.get(
+                resp = con.get(
                     path=url,
                     file_name=file_name,
                     out_folder=save_path,
