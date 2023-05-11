@@ -77,11 +77,8 @@ class EsriWindowsAuth(AuthBase, SupportMultiAuth):
 
         try:
             if not username and not password and HAS_SSPI:
-                import requests_negotiate_sspi
-
                 self.auth = EsriHttpNegotiateAuth()
-                # requests_negotiate_sspi.HttpNegotiateAuth()
-                #
+
             elif username and password and HAS_SSPI:
                 self.auth = EsriHttpNegotiateAuth(username=username, password=password)
             elif WINDOWS == True and HAS_KERBEROS:
