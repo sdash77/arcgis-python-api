@@ -723,7 +723,7 @@ class TestEnrichOnline(unittest.TestCase):
                 overlap=False,
                 travel_mode="driving",
             )
-            enrich_res = enrich(study_areas=[buffered], gis=self.usa_agol_inst._gis, pep8ify_columns=False)
+            enrich_res = enrich(study_areas=[buffered], gis=self.usa_agol_inst._gis, sanitize_columns=False)
             assert isinstance(enrich_res, pd.DataFrame)
             assert _is_geoenabled(enrich_res)
             enrich_res_cols = list(enrich_res.columns)

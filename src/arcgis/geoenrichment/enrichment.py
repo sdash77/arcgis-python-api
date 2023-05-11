@@ -1482,7 +1482,7 @@ def enrich(
     proximity_type=None,
     proximity_value=None,
     proximity_metric=None,
-    pep8ify_columns=True,
+    sanitize_columns=True,
 ):
     """
     Enrich provides access to a massive dataset describing exactly who people are
@@ -1609,7 +1609,7 @@ def enrich(
                                   kilometer, this value will be ``kilometers``. Default is
                                   ``kilometers``.
     -------------------------     --------------------------------------------------------------------
-    pep8ify_columns               Optional boolean. Convert output column names to snake case python style.
+    sanitize_columns              Optional boolean. Convert output column names to snake case python style.
                                   Default is ``True``.
                                   Examples:
                                   Value is ``True``: ['source_country', 'area_type', 'aggregation_method', 'totpop']
@@ -1733,7 +1733,7 @@ def enrich(
                     proximity_metric=proximity_metric,
                     standard_geography_level=standard_geography_level,
                     return_geometry=return_geometry,
-                    pep8ify_columns=pep8ify_columns,
+                    sanitize_columns=sanitize_columns,
                 )
 
                 enrich_res = pd.concat([enrich_res, enrich_df], ignore_index=True)
@@ -1752,7 +1752,7 @@ def enrich(
                 proximity_metric=proximity_metric,
                 standard_geography_level=standard_geography_level,
                 return_geometry=return_geometry,
-                pep8ify_columns=pep8ify_columns,
+                sanitize_columns=sanitize_columns,
             )
     # check if data collections used as input parameter against available data collections
     elif data_collections is not None:
@@ -1784,7 +1784,7 @@ def enrich(
                         proximity_metric=proximity_metric,
                         standard_geography_level=standard_geography_level,
                         return_geometry=return_geometry,
-                        pep8ify_columns=pep8ify_columns,
+                        sanitize_columns=sanitize_columns,
                     )
                     enrich_res = pd.concat([enrich_res, enrich_df], ignore_index=True)
                 else:
@@ -1837,7 +1837,7 @@ def enrich(
                 proximity_metric=proximity_metric,
                 standard_geography_level=standard_geography_level,
                 return_geometry=return_geometry,
-                pep8ify_columns=pep8ify_columns,
+                sanitize_columns=sanitize_columns,
             )
 
     return enrich_res
