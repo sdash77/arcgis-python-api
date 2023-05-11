@@ -117,6 +117,7 @@ class EsriHttpNtlmAuth(AuthBase):
             or r.text.lower().find("invalid token") > -1
             or r.text.lower().find("token not found") > -1
             or r.text.lower().find("Access to admin resources are not allowed".lower())
+            > -1
         ):
             resp = requests.get(
                 f"{server_url}/rest/info",

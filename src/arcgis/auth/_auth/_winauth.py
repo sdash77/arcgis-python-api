@@ -77,7 +77,11 @@ class EsriWindowsAuth(AuthBase, SupportMultiAuth):
 
         try:
             if not username and not password and HAS_SSPI:
+                import requests_negotiate_sspi
+
                 self.auth = EsriHttpNegotiateAuth()
+                # requests_negotiate_sspi.HttpNegotiateAuth()
+                #
             elif username and password and HAS_SSPI:
                 self.auth = EsriHttpNegotiateAuth(username=username, password=password)
             elif WINDOWS == True and HAS_KERBEROS:
@@ -287,6 +291,7 @@ class EsriKerberosAuth(AuthBase, SupportMultiAuth):
             or r.text.lower().find("token required") > -1
             or r.text.lower().find("token not found") > -1
             or r.text.lower().find("Access to admin resources are not allowed".lower())
+            > -1
         ) or server_url in self._server_log:
             expiration = 16000
 

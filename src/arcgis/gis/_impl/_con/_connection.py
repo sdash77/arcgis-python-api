@@ -49,7 +49,6 @@ from urllib3 import exceptions as _exceptions
 
 # from requests import Session
 from requests_toolbelt.downloadutils import stream
-from requests_toolbelt.multipart.encoder import MultipartEncoder
 from json import JSONDecodeError
 from ._helpers import _filename_from_headers, _filename_from_url
 from ._authguess import GuessAuth
@@ -1167,8 +1166,8 @@ class Connection(object):
                         params[k] = v.json
             # When data and files are present, they need to be combined
             # https://stackoverflow.com/a/12385661
+
             params.update(fields)
-            mp_encoder = MultipartEncoder(fields=params)
             if self._session.auth and drop_auth:
                 auth = self._session.auth
                 self._session.auth
@@ -1195,24 +1194,28 @@ class Connection(object):
                         files=files,
                     )
             else:
-                # data=mp_encoder
+                if files is None:
+                    files = {}
+                multipart_form_data = {
+                    k: (None, v) for k, v in params.items() if not k in files
+                }
+                multipart_form_data.update(fields)
+
                 if timeout:
                     resp = self._session.post(
                         url=url,
-                        data=mp_encoder,
+                        files=multipart_form_data,
                         cert=cert,
                         allow_redirects=allow_redirects,
                         timeout=timeout,
-                        headers={"Content-Type": mp_encoder.content_type},
                         verify=self._verify_cert,
                     )
                 else:
                     resp = self._session.post(
                         url=url,
-                        data=mp_encoder,
                         cert=cert,
+                        files=multipart_form_data,
                         allow_redirects=allow_redirects,
-                        headers={"Content-Type": mp_encoder.content_type},
                         verify=self._verify_cert,
                     )
             if auth and drop_auth:

@@ -192,7 +192,7 @@ class EsriHttpNegotiateAuth(AuthBase, SupportMultiAuth):
             token_str = resp["token"]
             request.headers["X-Esri-Authorization"] = f"Bearer {token_str}"
 
-            return request
+            return request.copy()
         else:
             return r
 
@@ -407,7 +407,7 @@ class EsriHttpNegotiateAuth(AuthBase, SupportMultiAuth):
                     scheme.lower()
                     in r.headers.get("WWW-Authenticate", "Negotiate").lower()
                 ):
-                    request = self.generate_token(r, "NTLM", kwargs)
+                    request: requests.Request = self.generate_token(r, "NTLM", kwargs)
                     response4 = r.connection.send(request, **kwargs)
                     response4.history.append(r)
                     return response4
