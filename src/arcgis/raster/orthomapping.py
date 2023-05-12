@@ -506,7 +506,7 @@ def _add_mission(
         if not gps_data:
             try:
                 lyr = output_collection.layers[0]
-                gps_info = lyr.query_gps_info()
+                gps_info = lyr._query_gps_info()
                 for img_info in gps_info:
                     from arcgis.raster._util import _to_datetime
 

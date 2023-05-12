@@ -4708,7 +4708,7 @@ class ImageryLayer(Layer):
 
         return self._con.post(path=url, postdata=params, timeout=None)
 
-    def query_gps_info(
+    def _query_gps_info(
         self,
         where: Optional[str] = None,
         object_ids: Optional[list[int]] = None,

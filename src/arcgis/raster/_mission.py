@@ -302,7 +302,7 @@ class Mission:
                 if not gps_data:
                     try:
                         lyr = image_collection.layers[0]
-                        gps_info = lyr.query_gps_info()
+                        gps_info = lyr._query_gps_info()
                         for img_info in gps_info:
                             from arcgis.raster._util import _to_datetime
 
