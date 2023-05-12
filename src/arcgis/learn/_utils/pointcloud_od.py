@@ -25,8 +25,9 @@ try:
     from IPython.display import display
     from fastai.core import listify, recurse
     from fastai.torch_core import ifnone
+    HAS_FASTAI = True
 except Exception as e:
-    raise Exception(e)
+    HAS_FASTAI = False
 
 
 class PointCloudOD(Dataset):
