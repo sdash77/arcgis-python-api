@@ -7465,7 +7465,7 @@ class _HydrologyTool:
 
 
 ###########################################################################
-class _OrthoRealityMappingTools:
+class _OrthoRealityMappingTools(BaseAnalytics):
     """Exposes the Orthmapping and Realitymapping Geoprocessing tools"""
 
     _gptbx = None
@@ -8887,7 +8887,7 @@ class _OrthoRealityMappingTools:
         forward_overlap=None,
         sideward_overlap=None,
         quality="ULTRA",
-        area_of_interest=None,
+        area_of_interest="AUTO",
         waterbody_features=None,
         correction_feature=None,
         reconstruct_options=None,
@@ -8931,7 +8931,7 @@ class _OrthoRealityMappingTools:
         -------------------------------------------------------------------------   ---------------------------------------------------------------------------
         area_of_interest                                                            Optional :class:`~arcgis.features.FeatureLayer`. The area of interest that will
                                                                                     be used to select images for processing. The area of interest can be computed automatically
-                                                                                    or defined using an input shapefile.
+                                                                                    or defined using an input feature.
                                                                                     If the value contains 3D geometries, the z-component will be ignored. If the value includes
                                                                                     overlapping features, the union of these features will be computed.
 
@@ -9080,12 +9080,15 @@ class _OrthoRealityMappingTools:
             if isinstance(reconstruct_options, str):
                 reconstruct_options = {"uri": reconstruct_options}
 
-        if area_of_interest is not None:
-            area_of_interest = _RasterAnalysisTools._feature_input(area_of_interest)
+        if not isinstance(area_of_interest, str) or (
+            isinstance(area_of_interest, str)
+            and area_of_interest.lower() not in ["auto", "none"]
+        ):
+            area_of_interest = self._feature_input(area_of_interest)
         if waterbody_features is not None:
-            waterbody_features = _RasterAnalysisTools._feature_input(waterbody_features)
+            waterbody_features = self._feature_input(waterbody_features)
         if correction_feature is not None:
-            correction_feature = _RasterAnalysisTools._feature_input(correction_feature)
+            correction_feature = self._feature_input(correction_feature)
 
         folder = None
         folderId = None
@@ -9107,14 +9110,23 @@ class _OrthoRealityMappingTools:
                 folderId = folder_dict["id"]
 
         output_products = {}
-        if output_dsm_name is not None:
-            (output_dsm_raster, output_dsm_service,) = self._set_output_raster(
+        if scenario.lower() in ["aerial_nadir"]:
+            # Generate DSM, True Ortho & DSM Mesh by default
+            if forward_overlap is None:
+                forward_overlap = 60
+            if sideward_overlap is None:
+                sideward_overlap = 30
+
+            (
+                output_dsm_raster,
+                output_dsm_service,
+            ) = self._set_output_raster(
                 output_name=output_dsm_name,
                 task=task,
                 output_properties=kwargs,
             )
             output_products["DSM"] = output_dsm_raster
-        if output_true_ortho_name is not None:
+
             (
                 output_true_ortho_raster,
                 output_true_ortho_service,
@@ -9124,21 +9136,75 @@ class _OrthoRealityMappingTools:
                 output_properties=kwargs,
             )
             output_products["True_Ortho"] = output_true_ortho_raster
-        if output_dsm_mesh_name is not None:
-            output_dsm_mesh_dict = {"name": output_dsm_mesh_name}
+
+            if output_dsm_mesh_name is None:
+                output_dsm_mesh_name = task + "_" + _id_generator()
+                output_dsm_mesh_dict = {"name": output_dsm_mesh_name}
+            else:
+                output_dsm_mesh_dict = {"name": output_dsm_mesh_name}
             if folderId is not None:
                 output_dsm_mesh_dict["folderId"] = folderId
             output_products["DSM_Mesh"] = output_dsm_mesh_dict
-        if output_point_cloud_name is not None:
-            output_point_cloud_dict = {"name": output_point_cloud_name}
+
+            if output_point_cloud_name is not None:
+                output_point_cloud_dict = {"name": output_point_cloud_name}
+                if folderId is not None:
+                    output_point_cloud_dict["folderId"] = folderId
+                output_products["Point_Cloud"] = output_point_cloud_dict
+
+            if output_mesh_name is not None:
+                output_mesh_dict = {"name": output_mesh_name}
+                if folderId is not None:
+                    output_mesh_dict["folderId"] = folderId
+                output_products["Mesh"] = output_mesh_dict
+        else:
+            # Scenario is DEFAULT or AERIAL_OBLIQUE
+            # Generate Point Cloud & Mesh by default
+            if output_point_cloud_name is None:
+                output_point_cloud_name = task + "_" + _id_generator()
+                output_point_cloud_dict = {"name": output_point_cloud_name}
+            else:
+                output_point_cloud_dict = {"name": output_point_cloud_name}
             if folderId is not None:
                 output_point_cloud_dict["folderId"] = folderId
             output_products["Point_Cloud"] = output_point_cloud_dict
-        if output_mesh_name is not None:
-            output_mesh_dict = {"name": output_mesh_name}
+
+            if output_mesh_name is None:
+                output_mesh_name = task + "_" + _id_generator()
+                output_mesh_dict = {"name": output_mesh_name}
+            else:
+                output_mesh_dict = {"name": output_mesh_name}
             if folderId is not None:
-                output_point_cloud_dict["folderId"] = folderId
+                output_mesh_dict["folderId"] = folderId
             output_products["Mesh"] = output_mesh_dict
+
+            if output_dsm_name is not None:
+                (
+                    output_dsm_raster,
+                    output_dsm_service,
+                ) = self._set_output_raster(
+                    output_name=output_dsm_name,
+                    task=task,
+                    output_properties=kwargs,
+                )
+                output_products["DSM"] = output_dsm_raster
+
+            if output_true_ortho_name is not None:
+                (
+                    output_true_ortho_raster,
+                    output_true_ortho_service,
+                ) = self._set_output_raster(
+                    output_name=output_true_ortho_name,
+                    task=task,
+                    output_properties=kwargs,
+                )
+                output_products["True_Ortho"] = output_true_ortho_raster
+
+            if output_dsm_mesh_name is not None:
+                output_dsm_mesh_dict = {"name": output_dsm_mesh_name}
+                if folderId is not None:
+                    output_dsm_mesh_dict["folderId"] = folderId
+                output_products["DSM_Mesh"] = output_dsm_mesh_dict
 
         job = self._tbx.reconstruct_surface(
             image_collection=image_collection,
@@ -21120,7 +21186,8 @@ class _Tools(object):
             try:
                 # svcurl = self._gis.properties.helperServices["realityMapping"]["url"]
                 # svcurl = "https://svrcluster-sha.esri.com/server/rest/services/System/RealitymappingTools/GPServer"
-                svcurl = "https://sha-97611-d02.esri.com/server/rest/services/System/RealityMappingTools/GPServer"
+                # svcurl = "https://sha-97611-d02.esri.com/server/rest/services/System/RealityMappingTools/GPServer"
+                svcurl = "https://sha-97462-d01.esri.com/server/rest/services/System/RealityMappingTools/GPServer"
                 if self._gis._is_hosted_nb_home:
                     svcurl = self._validate_url(svcurl)
             except:

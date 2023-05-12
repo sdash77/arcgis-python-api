@@ -7,7 +7,7 @@ For more information about realitymapping workflows in ArcGIS, please visit the 
 """
 
 from __future__ import annotations
-from typing import Any, Optional
+from typing import Any, Optional, Union
 import arcgis
 import json
 from arcgis.gis import GIS, Item
@@ -1390,7 +1390,7 @@ def reconstruct_surface(
     forward_overlap: Optional[int] = None,
     sideward_overlap: Optional[int] = None,
     quality: Optional[str] = "ULTRA",
-    area_of_interest: Optional[FeatureLayer] = None,
+    area_of_interest: Optional[Union[str, FeatureLayer]] = "AUTO",
     waterbody_features: Optional[FeatureLayer] = None,
     correction_feature: Optional[FeatureLayer] = None,
     reconstruct_options: Optional[str] = None,
@@ -1421,9 +1421,11 @@ def reconstruct_surface(
                                                                                 - AERIAL_OBLIQUE: The input imagery will be defined as having been acquired with oblique camera systems.
     -------------------------------------------------------------------------   ---------------------------------------------------------------------------
     forward_overlap                                                             Optional Integer. The forward (in-strip) overlap percentage that will be used between the images.
+                                                                                The default is 60.
                                                                                 This parameter is enabled when the scenario parameter is set to AERIAL_NADIR.
     -------------------------------------------------------------------------   ---------------------------------------------------------------------------
     sideward_overlap                                                            Optional Integer. The sideward (cross-strip) overlap percentage that will be used between the images.
+                                                                                The default is 30.
                                                                                 This parameter is enabled when the scenario parameter is set to AERIAL_NADIR.
     -------------------------------------------------------------------------   ---------------------------------------------------------------------------
     quality                                                                     Optional String. Specifies the quality of the final product.
@@ -1433,9 +1435,9 @@ def reconstruct_surface(
                                                                                 - MEDIUM - Input images will be downsampled four times.
                                                                                 - LOW - Input images will be downsampled eight times.
     -------------------------------------------------------------------------   ---------------------------------------------------------------------------
-    area_of_interest                                                            Optional :class:`~arcgis.features.FeatureLayer`. The area of interest that will
+    area_of_interest                                                            Optional :class:`~arcgis.features.FeatureLayer` or String. The area of interest that will
                                                                                 be used to select images for processing. The area of interest can be computed automatically
-                                                                                or defined using an input shapefile.
+                                                                                or defined using an input feature.
                                                                                 If the value contains 3D geometries, the z-component will be ignored. If the value includes
                                                                                 overlapping features, the union of these features will be computed.
 
@@ -1447,6 +1449,12 @@ def reconstruct_surface(
     -------------------------------------------------------------------------   ---------------------------------------------------------------------------
     correction_features                                                         Optional :class:`~arcgis.features.FeatureLayer`. A polygon that will define the extent of all surfaces that are not water bodies.
                                                                                 The value must be a 3D feature.
+    -------------------------------------------------------------------------   ---------------------------------------------------------------------------
+    reconstruction_options                                                      Optional dict or shared data path (this path must be accessible by the server).
+                                                                                This specifies the values for the tool parameters. If this parameter is specified, the properties of
+                                                                                the file or dictionary will set the default values for the remaining optional parameters.
+                                                                                The list of keywords and an example of this JSON can be found here:
+                                                                                `Reconstruct Surface tool <https://pro.arcgis.com/en/pro-app/latest/tool-reference/reality-mapping/reconstruct-surface.htm>`_
     -------------------------------------------------------------------------   ---------------------------------------------------------------------------
     output_dsm_name                                                             Optional String. If not provided, an Image Service is created by the method and used as the output raster.
                                                                                 This output will be created by default when the scenario type is set to "AERIAL_NADIR".
