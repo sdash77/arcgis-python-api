@@ -504,21 +504,24 @@ def _add_mission(
                 dict_gps = dict(zip(gps_info_list, ele))
                 gps_data.append(dict_gps)
         if not gps_data:
-            lyr = output_collection.layers[0]
-            gps_info = lyr.query_gps_info()
-            for img_info in gps_info:
-                from arcgis.raster._util import _to_datetime
+            try:
+                lyr = output_collection.layers[0]
+                gps_info = lyr.query_gps_info()
+                for img_info in gps_info:
+                    from arcgis.raster._util import _to_datetime
 
-                acq = _to_datetime(img_info["acquisitionDate"]).isoformat()
-                gps = img_info["gps"]
-                name = img_info["name"]
-                lat = gps["latitude"]
-                long = gps["longitude"]
-                alt = gps["altitude"]
-                gps_val = [name, lat, long, alt, acq]
-                dict_gps = dict(zip(gps_info_list, gps_val))
-                gps_data.append(dict_gps)
-
+                    acq = _to_datetime(img_info["acquisitionDate"]).isoformat()
+                    gps = img_info["gps"]
+                    name = img_info["name"]
+                    lat = gps["latitude"]
+                    long = gps["longitude"]
+                    alt = gps["altitude"]
+                    gps_val = [name, lat, long, alt, acq]
+                    dict_gps = dict(zip(gps_info_list, gps_val))
+                    gps_data.append(dict_gps)
+            except:
+                # older servers may not have query gps info rest end point
+                pass
         from datetime import datetime
 
         try:
