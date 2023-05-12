@@ -305,7 +305,7 @@ def temporal_profile(
             _plt.figure(**plot_properties)
         _plt.xlabel(x_var)
         if len(variables) == 1:
-            if variable_unit is not None:
+            if variable_unit is not None and variable_unit.lower() != "none":
                 _plt.ylabel(variables[0] + " (in " + variable_unit + ")")
             else:
                 _plt.ylabel(variables[0])
