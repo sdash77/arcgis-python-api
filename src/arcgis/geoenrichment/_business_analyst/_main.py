@@ -1857,20 +1857,25 @@ class BusinessAnalyst(object):
             self._standardize_enrich_column_name(c, country) for c in enrich_df.columns
         ]
 
+        column_candidates_to_remove = ["Shape_Area", "Shape_Length"]
         # default value set to True to keep backward compatibility
         sanitize_columns = kwargs.pop("sanitize_columns", True)
         if sanitize_columns:
             enrich_df.columns = [pep8ify(c) for c in enrich_df.columns if c != "SHAPE"] + [
                 "SHAPE"
             ]
+            column_candidates_to_remove = [pep8ify(c) for c in column_candidates_to_remove]
 
         # start creating a list of columns to remove - beginning with the OBJECTID field
         drop_cols = [
-            c for c in enrich_df.columns if c in ["shape_area", "shape_length"]
+            c for c in enrich_df.columns if c in column_candidates_to_remove
         ]
 
         if not use_arrow:
-            drop_cols.append(pep8ify(arcpy.Describe(enrich_res).OIDFieldName))
+            if sanitize_columns:
+                drop_cols.append(pep8ify(arcpy.Describe(enrich_res).OIDFieldName))
+            else:
+                drop_cols.append(arcpy.Describe(enrich_res).OIDFieldName)
 
         if not use_arrow:
             # get rid of the temporary output to save memory
