@@ -10338,9 +10338,9 @@ class _ImageServerRaster(ImageryLayer, Raster):
 
         # transpose
         if (not self._do_not_hydrate) and self.is_multidimensional:
-            if len(data) == 2:
+            if len(data.shape) == 2:
                 data = np.expand_dims(np.expand_dims(data, axis=2), axis=0)
-            elif len(data) == 3:
+            elif len(data.shape) == 3:
                 if len(self.slices) == 1:
                     data = np.expand_dims(np.transpose(data, [1, 2, 0]), axis=0)
                 else:
@@ -10349,7 +10349,7 @@ class _ImageServerRaster(ImageryLayer, Raster):
                 assert len(data.shape) == 4
                 data = np.transpose(data, [3, 1, 2, 0])
         else:
-            if len(data) == 2:
+            if len(data.shape) == 2:
                 data = np.expand_dims(data, axis=2)
             else:
                 data = np.transpose(data, axes=[1, 2, 0])
