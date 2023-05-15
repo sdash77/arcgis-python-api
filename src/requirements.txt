@@ -11,14 +11,14 @@ keyring >=23.3.0
 lerc
 ujson >=3
 jupyterlab
-python-certifi-win32
+python-certifi-win32;python_version<3.10
+truststore>=0.7.0;python_version>3.9
 pywin32 >=223;platform_system=="Windows"
 pyshp >=2
 geomet
 requests >=2.27.1
 requests-oauthlib
 requests_toolbelt
-requests-ntlm2
 requests-negotiate-sspi;platform_system=="Windows"
 requests-kerberos
 winkerberos;platform_system=="Windows"

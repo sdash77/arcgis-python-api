@@ -3,6 +3,7 @@ Connection Object that uses Python Requests
 """
 from arcgis.auth.tools import LazyLoader
 from typing import Union
+from arcgis.auth.tools._util import check_module_exists
 
 try:
     arcpy = LazyLoader("arcpy", strict=True)
@@ -21,7 +22,7 @@ except:
 
 import sys
 
-if sys.platform == "win32":
+if sys.platform == "win32" and check_module_exists("certifi_win32"):
     try:
         import certifi_win32
 
@@ -31,6 +32,15 @@ if sys.platform == "win32":
             certifi_win32.generate_pem()
 
     except ImportError:
+        pass
+elif check_module_exists("truststore"):  # pragma: no cover
+    try:
+        import truststore
+
+        truststore.inject_into_ssl()
+    except ImportError as ie:
+        pass
+    except Exception as e:
         pass
 
 import os
