@@ -113,8 +113,10 @@ class PointCloudOD(Dataset):
                 raise Exception(
                     "background_classcode can only be used when `classes_of_interest` is passed."
                 )
-            if type(bg_code) is not bool:
-                raise Exception("Please enter a boolean value (True or False).")
+            if bg_code is not None and type(bg_code) is not bool:
+                raise Exception(
+                    "Please enter a boolean value (True or False) for background_classcode."
+                )
 
             if self.classes_of_interest != [] and bg_code:
                 class_mapping = {
@@ -679,8 +681,9 @@ def predict_batch_h5(self, dl, output_path, progressor):
                 h5_file = h5py.File(current_file_name, "r")
                 batch_num, _ = h5_file["xyz"].shape
                 h5_file.close()
-                point_labels_pred = []
-                point_confidences_pred = []
+                boxes_pred = []
+                labels_pred = []
+                confidence_pred = []
                 point_box_ids = np.full(batch_num, 0, dtype=np.uint32)
                 low = high = 0
                 start_box_id = [1]
@@ -692,27 +695,47 @@ def predict_batch_h5(self, dl, output_path, progressor):
                 start_box_id,
             )
 
-            high = low + predictions[2].shape[0]
-            point_labels_pred.extend(predictions[0])
-            point_confidences_pred.extend(predictions[1])
-            point_box_ids[low:high] = predictions[2]
+            boxes_pred.extend(predictions[0])
+            labels_pred.extend(predictions[1])
+            confidence_pred.extend(predictions[2])
+            high = low + predictions[3].shape[0]
+            point_box_ids[low:high] = predictions[3]
 
             if high == batch_num:
                 save_h5(
                     output_path / dl.dataset.filenames[int(tile[unique_index[i]][0])],
-                    np.array(point_labels_pred),
-                    np.array(point_confidences_pred),
+                    np.array(boxes_pred),
+                    np.array(labels_pred),
+                    np.array(confidence_pred),
                     point_box_ids,
                 )
             low = high
 
         if progressor is not None:
-            progressor.current_block(tile_index[0].item())
+            progressor.current_block(tile_index[0])
+
+
+def export_boxes(bboxes, scale_factor):
+    """
+    input: [center_x, center_y, z_min, x_size, y_size, z_size, yaw]
+    return: [center_x, center_y, direction_x, direction_y, half_size_x, half_size_y, z_min, z_max]
+    """
+    bboxes[:, :6] /= scale_factor
+    cenetr_xy = bboxes[:, [0, 1]]
+    z_min = bboxes[:, [2]]
+    z_max = z_min + bboxes[:, [5]]
+    half_size_xy = bboxes[:, [3, 4]] / 2
+    direction_x, direction_y = np.cos(bboxes[:, [6]]), np.sin(bboxes[:, [6]])
+
+    return np.concatenate(
+        (cenetr_xy, direction_x, direction_y, half_size_xy, z_min, z_max), axis=1
+    ).tolist()
 
 
 def split_prediction(model, preds, points, start_box_id):
-    batch_point_labels = []
-    batch_point_confidance = []
+    batch_export_bboxs = []
+    batch_labels = []
+    batch_confidance = []
     batch_point_box_ids = []
     for idx, pred in enumerate(preds):
         boxes = pred["boxes_3d"]
@@ -726,26 +749,29 @@ def split_prediction(model, preds, points, start_box_id):
         start_box_id[0] += no_of_detbox
         tile_box_ids[point_box_ids == -1] = 0
 
-        batch_point_labels.extend(
+        batch_export_bboxs.extend(export_boxes(boxes.tensor, model._data.scale_factor))
+        batch_labels.extend(
             np.array(list(model._data.idx2class.values()))[labels.tolist()]
         )
-        batch_point_confidance.extend(scores.tolist())
+        batch_confidance.extend(scores.tolist())
         batch_point_box_ids.extend(tile_box_ids.tolist())
 
     return (
-        batch_point_labels,
-        batch_point_confidance,
+        batch_export_bboxs,
+        batch_labels,
+        batch_confidance,
         np.array(batch_point_box_ids),
     )
 
 
-def save_h5(filename, labels_pred, confidences_pred, box_ids):
+def save_h5(filename, boxes_pred, labels_pred, confidences_pred, box_ids):
     filename = Path(filename)
     if not filename.parent.exists():
         filename.parent.mkdir(parents=True, exist_ok=True)
 
     filename_pred = filename.parent / (filename.stem + "_pred.h5")
     with h5py.File(filename_pred, "w") as file:
-        file.create_dataset("point_box_labels", data=labels_pred)
-        file.create_dataset("point_box_confidence", data=confidences_pred)
+        file.create_dataset("pred_boxes", data=boxes_pred)
+        file.create_dataset("pred_labels", data=labels_pred)
+        file.create_dataset("pred_confidence", data=confidences_pred)
         file.create_dataset("point_box_ids", data=box_ids)
