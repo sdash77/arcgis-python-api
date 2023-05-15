@@ -6493,7 +6493,7 @@ class ImageryLayer(Layer):
                                                  Set this parameter to True to display the values at each point in the line graph.
         ------------------------------------     --------------------------------------------------------------------
         trend_type                               Optional string. Default None.
-                                                 Set the trend_type parameter eith with linear or harmonic to draw the trend line
+                                                 Set the trend_type parameter to either linear or harmonic to draw the trend line.
                                                  linear : Fits the pixel values for a variable along a linear trend line.
                                                  harmonic : Fits the pixel values for a variable along a harmonic trend line.
         ------------------------------------     --------------------------------------------------------------------
@@ -7023,15 +7023,15 @@ class ImageryLayer(Layer):
         time_field                               Optional string. The time field that will be used for plotting dimension profile.
                                                  If not specified the time field is obtained from the timeInfo of the image service.
         ------------------------------------     --------------------------------------------------------------------
-        show_values                              Optional bool. Default False.
+        show_values                              Optional bool. Default value is False.
                                                  Set this parameter to True to display the values at each point in the line graph.
         ------------------------------------     --------------------------------------------------------------------
-        show_trend_line                          Optional string. Default False.
+        show_trend_line                          Optional string. Default value is False.
                                                  Set this parameter to True to add a linear trend line to the dimension profile chart.
                                                  One trend line will be drawn for each location when charting multiple locations, 
                                                  or each variable when charting multiple variables.
         ------------------------------------     --------------------------------------------------------------------
-        plot_properties                          Optional dict. This parameter can be used to set the figure
+        plot_properties                          Optional dictionary. This parameter can be used to set the figure
                                                  properties. These are the matplotlib.pyplot.figure() parameters and values
                                                  specified in dict format.
 
