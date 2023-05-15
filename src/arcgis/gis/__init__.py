@@ -651,6 +651,9 @@ class GIS(object):
             force_refresh = True
 
         # If a token was injected, then force refresh to get updated properties
+        self._properties = _mixins.PropertyMap(
+            self._portal.get_properties(force=force_refresh)
+        )
         self._lazy_properties = _mixins.PropertyMap(
             self._portal.get_properties(force=force_refresh)
         )
