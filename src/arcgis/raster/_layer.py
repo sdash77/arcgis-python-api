@@ -6980,7 +6980,7 @@ class ImageryLayer(Layer):
         )
 
     def dimension_profile(self,
-                          dimension: [str],
+                          dimension: str,
                           time : datetime.datetime,
                           points: list[Point],
                           variables: list[str] = [],
@@ -7007,33 +7007,30 @@ class ImageryLayer(Layer):
         ====================================     ====================================================================
         **Parameter**                             **Description**
         ------------------------------------     --------------------------------------------------------------------
-        raster                                   Required Imagery Layer object.
-        ------------------------------------     --------------------------------------------------------------------
-        dimension                                Required dimension name. Use this parameter to set the field that 
+        dimension                                Required string. Dimension name. Use this parameter to set the field that 
                                                  represents the dimension field in the image service.
         ------------------------------------     --------------------------------------------------------------------
-        time                                     Required datetime.date, datetime.datetime or timestamp string. 
-                                                 The time slice that will be used for plotting dimension profile.
+        time                                     Required datetime object. The time slice that will be used for plotting dimension profile.
         ------------------------------------     --------------------------------------------------------------------
-        points                                   Required list of point Geometry objects.
+        points                                   Required list of :class:`~arcgis.geometry.Point` objects.
         ------------------------------------     --------------------------------------------------------------------
-        variables                                Required list of variable names.
-                                                 The Dimension profile chart allows a maximum of two variables to be displayed.
+        variables                                Required list of strings. The variables that will be used for plotting dimension profile.
+                                                 The dimension profile chart allows a maximum of two variables to be displayed.
         ------------------------------------     --------------------------------------------------------------------
         time_field                               Optional string. The time field that will be used for plotting dimension profile.
                                                  If not specified the time field is obtained from the timeInfo of the image service.
         ------------------------------------     --------------------------------------------------------------------
-        show_values                              Optional bool. Default value is False.
+        show_values                              Optional boolean. Default value is False.
                                                  Set this parameter to True to display the values at each point in the line graph.
         ------------------------------------     --------------------------------------------------------------------
-        show_trend_line                          Optional string. Default value is False.
+        show_trend_line                          Optional boolean. Default value is False.
                                                  Set this parameter to True to add a linear trend line to the dimension profile chart.
                                                  One trend line will be drawn for each location when charting multiple locations, 
                                                  or each variable when charting multiple variables.
         ------------------------------------     --------------------------------------------------------------------
         plot_properties                          Optional dictionary. This parameter can be used to set the figure
-                                                 properties. These are the matplotlib.pyplot.figure() parameters and values
-                                                 specified in dict format.
+                                                 properties. These are the `matplotlib.pyplot.figure() <https://matplotlib.org/stable/api/_as_gen/matplotlib.pyplot.figure.html#matplotlib-pyplot-figure>`_
+                                                 parameters and values specified in dictionary format.
 
                                                  eg: {"figsize":(15,15)}
         ====================================     ====================================================================
