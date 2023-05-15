@@ -140,7 +140,7 @@ def temporal_profile(
 
     draw_trend = False
     if trend_type is not None:
-        if trend_type.lower() in ["linear","harmonic"]:
+        if trend_type.lower() in ["linear", "harmonic"]:
             draw_trend = True
             if trend_type.lower() == "harmonic":
                 if trend_order is None:
@@ -160,8 +160,8 @@ def temporal_profile(
                     )
         else:
             _LOGGER.warning(
-                        "Trend line cannot be drawn. Trend type should be one of the following: linear, harmonic "
-                    )
+                "Trend line cannot be drawn. Trend type should be one of the following: linear, harmonic "
+            )
 
     if (
         "hasMultidimensions" in raster.properties
@@ -218,8 +218,7 @@ def temporal_profile(
         n_bands = 1 if len(bands) == 0 else len(bands)
         n_colors = n_dim_val * len(variables) * len(points) * n_bands
         if trend_type is not None:
-            n_colors = (n_colors * 2)
-
+            n_colors = n_colors * 2
 
         if len(variables) == 1:
             variable_unit = None
@@ -340,7 +339,7 @@ def temporal_profile(
             c = next(color)
             _plt.plot(t1[i]["x"], t1[i]["y"], c=c, label=label_string)
             _plt.scatter(t1[i]["x"], t1[i]["y"], c=[c])
-            _plt.legend(loc='center left', bbox_to_anchor=(1, 0.5))
+            _plt.legend(loc="center left", bbox_to_anchor=(1, 0.5))
 
             # for i in range(0,len(t1)):
             #    label_string =  "Location "+ str(t1[i]["point"])+"-"+ str(t1[i]["variable"])
@@ -369,10 +368,12 @@ def temporal_profile(
                     x_trend, y_trend = _harmonic_regression(
                         sample_size, date_list, t1[i]["x"], t1[i]["y"], trend_order
                     )
-                if x_trend!=[] and y_trend!=[]:
+                if x_trend != [] and y_trend != []:
                     label_string = f"Location {str(t1[i]['point'])}-{str(t1[i]['variable'])}-band {str(t1[i]['band'])}-{trend_type.lower()} trend"
-                    _plt.plot(x_trend, y_trend, c=c, linestyle='dashed', label=label_string)
-                    _plt.legend(loc='center left', bbox_to_anchor=(1, 0.5))
+                    _plt.plot(
+                        x_trend, y_trend, c=c, linestyle="dashed", label=label_string
+                    )
+                    _plt.legend(loc="center left", bbox_to_anchor=(1, 0.5))
 
             if show_values:
                 for x, y in zip(t1[i]["x"], t1[i]["y"]):
@@ -488,7 +489,7 @@ def temporal_profile(
         n_bands = 1 if len(bands) == 0 else len(bands)
         n_colors = len(variables) * len(points) * n_bands
         if trend_type is not None:
-            n_colors = (n_colors * 2)
+            n_colors = n_colors * 2
 
         color = iter(_cm.rainbow(_np.linspace(0, 1, n_colors)))
         for i in range(0, len(t1)):
@@ -501,7 +502,7 @@ def temporal_profile(
             c = next(color)
             _plt.plot(t1[i]["x"], t1[i]["y"], c=c, label=label_string)
             _plt.scatter(t1[i]["x"], t1[i]["y"], c=[c])
-            _plt.legend(loc='center left', bbox_to_anchor=(1, 0.5))
+            _plt.legend(loc="center left", bbox_to_anchor=(1, 0.5))
 
             if draw_trend:
                 c = next(color)
@@ -520,10 +521,12 @@ def temporal_profile(
                     x_trend, y_trend = _harmonic_regression(
                         sample_size, date_list, t1[i]["x"], t1[i]["y"], trend_order
                     )
-                if x_trend!=[] and y_trend!=[]:
+                if x_trend != [] and y_trend != []:
                     label_string = f"Location {str(t1[i]['point'])}-{str(t1[i]['variable'])}-band {str(t1[i]['band'])}-{trend_type.lower()} trend"
-                    _plt.plot(x_trend, y_trend, c=c, linestyle='dashed', label=label_string)
-                    _plt.legend(loc='center left', bbox_to_anchor=(1, 0.5))
+                    _plt.plot(
+                        x_trend, y_trend, c=c, linestyle="dashed", label=label_string
+                    )
+                    _plt.legend(loc="center left", bbox_to_anchor=(1, 0.5))
 
             if show_values:
                 for x, y in zip(t1[i]["x"], t1[i]["y"]):
@@ -941,27 +944,29 @@ def spectral_profile(
     _plt.xticks(rotation=25)
     _plt.show()
     # plt.legend()
-        
-def dimension_profile(raster,
-                      dimension: [str],
-                      time : _datetime.datetime,
-                      points: list[Point],
-                      variables: list[str] = [],
-                      time_field: Optional[str] = None,
-                      show_values: bool = False,
-                      show_trend_line : bool = False,
-                      plot_properties: dict[str, Any] = {},
-                     ):
+
+
+def dimension_profile(
+    raster,
+    dimension: [str],
+    time: _datetime.datetime,
+    points: list[Point],
+    variables: list[str] = [],
+    time_field: Optional[str] = None,
+    show_values: bool = False,
+    show_trend_line: bool = False,
+    plot_properties: dict[str, Any] = {},
+):
     """
-    Dimension profile chart visualizes change along a vertical dimension, such as depth or height, 
+    Dimension profile chart visualizes change along a vertical dimension, such as depth or height,
     using a multidimensional raster dataset with a z-dimension.
     Dimension Profile is only available for multidimensional datasets that contain a z-dimension.
-    Change is plotted in the form of a line graph for a given location and date or time. This allows 
-    trends in two variables to be displayed and compared simultaneously, while taking into account 
-    different unit scales. 
+    Change is plotted in the form of a line graph for a given location and date or time. This allows
+    trends in two variables to be displayed and compared simultaneously, while taking into account
+    different unit scales.
 
-    The x-axis of the dimension profile displays the values of the variable. Default minimum and 
-    maximum x-axis bounds are set based on the range of data values represented on the axis. 
+    The x-axis of the dimension profile displays the values of the variable. Default minimum and
+    maximum x-axis bounds are set based on the range of data values represented on the axis.
 
     The y-axis of the dimension profile displays the vertical dimension value.
 
@@ -971,10 +976,10 @@ def dimension_profile(raster,
     ------------------------------------     --------------------------------------------------------------------
     raster                                   Required Imagery Layer object.
     ------------------------------------     --------------------------------------------------------------------
-    dimension                                Required dimension name. Use this parameter to set the field that 
+    dimension                                Required dimension name. Use this parameter to set the field that
                                              represents the dimension field in the image service.
     ------------------------------------     --------------------------------------------------------------------
-    time                                     Required datetime.date, datetime.datetime or timestamp string. 
+    time                                     Required datetime.date, datetime.datetime or timestamp string.
                                              The time slice that will be used for plotting dimension profile.
     ------------------------------------     --------------------------------------------------------------------
     points                                   Required list of point Geometry objects.
@@ -990,7 +995,7 @@ def dimension_profile(raster,
     ------------------------------------     --------------------------------------------------------------------
     show_trend_line                          Optional string. Default False.
                                              Set this parameter to True to add a linear trend line to the dimension profile chart.
-                                             One trend line will be drawn for each location when charting multiple locations, 
+                                             One trend line will be drawn for each location when charting multiple locations,
                                              or each variable when charting multiple variables.
     ------------------------------------     --------------------------------------------------------------------
     plot_properties                          Optional dict. This parameter can be used to set the figure
@@ -1013,7 +1018,7 @@ def dimension_profile(raster,
     if len(variables) > 2:
         _LOGGER.warning(
             "Dimension profile chart allows a maximum of two variables to be displayed. Plotting chart for first two variables in list."
-            )
+        )
         variables = variables[0:2]
 
     if not isinstance(points, list):
@@ -1023,17 +1028,19 @@ def dimension_profile(raster,
         try:
             time_field = raster.properties.timeInfo["startTimeField"]
         except:
-            raise RuntimeError("Unable to retrieve time field. Specify time_field to plot the dimension profile.")
+            raise RuntimeError(
+                "Unable to retrieve time field. Specify time_field to plot the dimension profile."
+            )
 
     if (
         "hasMultidimensions" in raster.properties
         and raster.properties["hasMultidimensions"] == True
     ):
-        #add check if variable has StdZ dimension
+        # add check if variable has StdZ dimension
         mosaic_rule = {
             "mosaicMethod": "esriMosaicAttribute",
             "ascending": True,
-            "mosaicOperation" : "MT_FIRST",
+            "mosaicOperation": "MT_FIRST",
             "multidimensionalDefinition": [
                 {"variableName": "", "dimensionName": dimension}
             ],
@@ -1048,42 +1055,35 @@ def dimension_profile(raster,
                         variable_unit[ele["name"]] = ele["unit"]
 
         res = []
-        var_plot = {} 
+        var_plot = {}
         x = []
         y = []
         ax2 = None
         for variable in variables:
             all_plot_points = []
             for index, point in enumerate(points):
-                x=[]
-                y=[]
+                x = []
+                y = []
                 for md_def in mosaic_rule["multidimensionalDefinition"]:
                     md_def["variableName"] = variable
-                    
+
                     res = raster.get_samples(
                         geometry=point,
                         return_first_value_only=False,
                         out_fields="*",
                         mosaic_rule=mosaic_rule,
-                        time=time
+                        time=time,
                     )
                     for ele in res:
-                        x.append(ele["values"][0]) 
-                        y.append(ele["attributes"][dimension]) 
-                    all_plot_points.append(
-                        {
-                            "y": y,
-                            "x": x,
-                            "point": index
-                        }
-                    )
+                        x.append(ele["values"][0])
+                        y.append(ele["attributes"][dimension])
+                    all_plot_points.append({"y": y, "x": x, "point": index})
             var_plot[variable] = all_plot_points
 
         x = []
         y = []
         t1 = []
         d1 = []
-        
 
         if plot_properties is None:
             plot_properties = {}
@@ -1106,22 +1106,27 @@ def dimension_profile(raster,
         if len(variables) > 1:
             ax2 = ax1.twiny()
             if variables[1] in variable_unit.keys():
-                ax2.set_xlabel(variables[1] + " (in " + variable_unit[variables[1]] + ")")
+                ax2.set_xlabel(
+                    variables[1] + " (in " + variable_unit[variables[1]] + ")"
+                )
             else:
                 ax2.set_xlabel(variables[1])
 
-        title_string = f"Change in {', '.join(variables)} at {time_field} over {dimension}"
+        title_string = (
+            f"Change in {', '.join(variables)} at {time_field} over {dimension}"
+        )
         _plt.title(title_string)
 
-        #print(t1)
-        no_of_colors = 2 * len(points) if show_trend_line == False else 4 * (len(points))
+        # print(t1)
+        no_of_colors = (
+            2 * len(points) if show_trend_line == False else 4 * (len(points))
+        )
         lines = []
         color = iter(_cm.rainbow(_np.linspace(0, 1, no_of_colors)))
 
         t1 = var_plot[variables[0]]
         for i in range(0, len(t1)):
-            label_string = (
-                f"Location {str(t1[i]['point'])} - {variables[0]}")
+            label_string = f"Location {str(t1[i]['point'])} - {variables[0]}"
 
             c = next(color)
             lines += ax1.plot(t1[i]["x"], t1[i]["y"], c=c, label=label_string)
@@ -1141,48 +1146,57 @@ def dimension_profile(raster,
             if show_trend_line is True:
                 c = next(color)
                 y1_trend, x_trend = _linear_regression(
-                            len(t1[i]["y"]), t1[i]["y"], t1[i]["x"], t1[i]["x"]
-                        )
+                    len(t1[i]["y"]), t1[i]["y"], t1[i]["x"], t1[i]["x"]
+                )
                 y_trend = t1[i]["y"]
-                lines +=  ax1.plot(x_trend, y_trend, c=c, linestyle='dashed', label=f"Location {str(t1[i]['point'])} - {variables[0]} trend")
-                ax1.plot(x_trend, y_trend, c=c, linestyle='dashed')
+                lines += ax1.plot(
+                    x_trend,
+                    y_trend,
+                    c=c,
+                    linestyle="dashed",
+                    label=f"Location {str(t1[i]['point'])} - {variables[0]} trend",
+                )
+                ax1.plot(x_trend, y_trend, c=c, linestyle="dashed")
 
-
-        if len(variables) > 1: 
+        if len(variables) > 1:
             t1 = var_plot[variables[1]]
             for i in range(0, len(t1)):
-                label_string = (
-                    f"Location {str(t1[i]['point'])} - {variables[1]}")
+                label_string = f"Location {str(t1[i]['point'])} - {variables[1]}"
 
                 c = next(color)
-                lines +=  ax2.plot(t1[i]["x"], t1[i]["y"], c=c, label=label_string)
+                lines += ax2.plot(t1[i]["x"], t1[i]["y"], c=c, label=label_string)
                 ax2.scatter(t1[i]["x"], t1[i]["y"], c=[c])
 
                 if show_values:
                     for x, y in zip(t1[i]["x"], t1[i]["y"]):
                         label = "{:.2f}".format(x)
                         ax2.annotate(
-                            label, 
-                            (x, y),  
-                            textcoords="offset points",  
-                            xytext=(10, 5),  
+                            label,
+                            (x, y),
+                            textcoords="offset points",
+                            xytext=(10, 5),
                             ha="center",
                         )
 
                 if show_trend_line is True:
                     c = next(color)
                     y1_trend, x_trend = _linear_regression(
-                            len(t1[i]["y"]), t1[i]["y"], t1[i]["x"], t1[i]["x"]
-                        )
+                        len(t1[i]["y"]), t1[i]["y"], t1[i]["x"], t1[i]["x"]
+                    )
                     y_trend = t1[i]["y"]
-                    lines +=  ax2.plot(x_trend, y_trend, c=c, linestyle='dashed', label=f"Location {str(t1[i]['point'])} - {variables[1]} trend")
-                    ax2.plot(x_trend, y_trend, c=c, linestyle='dashed')
+                    lines += ax2.plot(
+                        x_trend,
+                        y_trend,
+                        c=c,
+                        linestyle="dashed",
+                        label=f"Location {str(t1[i]['point'])} - {variables[1]} trend",
+                    )
+                    ax2.plot(x_trend, y_trend, c=c, linestyle="dashed")
 
             ax2.xaxis.grid()
 
         labels = [line.get_label() for line in lines]
-        ax1.legend(lines, labels, loc='center left', bbox_to_anchor=(1, 0.5))
+        ax1.legend(lines, labels, loc="center left", bbox_to_anchor=(1, 0.5))
         ax1.xaxis.grid()
 
         _plt.show()
-
