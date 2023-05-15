@@ -1,7 +1,7 @@
 import sys
 import logging
 from typing import Dict, Any, Tuple
-from .auth.tools._util import check_module_exists
+from .tools._util import check_module_exists
 
 __log__ = logging.getLogger()
 
