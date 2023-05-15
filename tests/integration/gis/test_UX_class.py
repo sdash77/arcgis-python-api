@@ -105,6 +105,19 @@ class Test_UXClass(unittest.TestCase):
                 assert ux.description == "Python API Test"
                 ux.description = desc
 
+                # featured content
+                # get the groups
+                featured_groups = ux.featured_content
+                orig_len = len(featured_groups)
+                # add a group
+                featured_groups.append(gis.groups.search()[1])
+                ux.featured_content = featured_groups
+                assert len(ux.featured_content) == orig_len + 1
+                # remove the group we added
+                del featured_groups[-1]
+                ux.featured_content = featured_groups
+                assert len(ux.featured_content) == orig_len
+
     def test_logo(self):
         for profile in PROFILES:
             with self.subTest(msg=profile):

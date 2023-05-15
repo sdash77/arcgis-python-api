@@ -1232,7 +1232,7 @@ class GIS(object):
 
         resp = self._portal.con.post("portals/self/update", postdata)
         if resp:
-            self._lazy_properties = _mixins.PropertyMap(
+            self._properties = _mixins.PropertyMap(
                 self._portal.get_properties(force=True)
             )
             # delattr(self, '_lazy_properties') # force refresh of properties when queried next

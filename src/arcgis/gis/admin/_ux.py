@@ -361,14 +361,24 @@ class UX(object):
         """
         Gets/Sets the featured content group information.
 
+        If you set the featured content, reinstantiate to update the gis properties and see the updated
+        list of featured_content.
+
         ================  ===============================================================
         **Parameter**      **Description**
         ----------------  ---------------------------------------------------------------
-        content           Required dictionary, defines the group and count of the feature
+        content           Required list or dictionary, defines the group(s) of the feature
                           content area on an organizational site.  A value of None will
-                          reset the value back to the install defaults.
+                          reset the value back to no featured groups.
+
+                          To add a new group to the list you must pass in the list of current
+                          featured content and include the new group in the list. "id" key must be in
+                          the dictionary, extra keys are ok.
+
+                          It is also acceptable to pass a list of Group class instances.
+
                           Example:
-                          {'group': <group id>, 'count' : 12}
+                          [{"id": <group_id>}, {"id": <group_id>}, etc.]
         ================  ===============================================================
 
         :return: dictionary
@@ -376,64 +386,61 @@ class UX(object):
 
         .. code-block:: python
             *Usage Example*
-            >>> data = ux.get_featured_content()
-            >>> ux.set_featured_content = data
+            >>> data = ux.featured_content
+            >>> ux.featured_content = data
             True
 
         """
-        return {
-            "group": self._gis.properties["homePageFeaturedContent"],
-            "count": self._gis.properties["homePageFeaturedContentCount"],
-        }
+        return self._gis.properties["featuredGroups"]
 
     # ----------------------------------------------------------------------
     @featured_content.setter
-    def featured_content(self, content: dict):
+    def featured_content(self, contents: dict):
         """
         See main ``featured_content`` property docstring
         """
         from .. import Group
 
-        if content is None:
-            content = {
-                "homePageFeaturedContent": "",
-                "homePageFeaturedContentCount": 12,
-                "featuredItemsGroupQuery": "",
-                "featuredGroupsId": "",
-                "clearEmptyFields": True,
-            }
-        elif "group" in content and isinstance(content["group"], Group):
-            gid = content["group"].groupid
-            content.pop("group")
-            content["homePageFeaturedContent"] = gid
-            content["featuredGroupsId"] = f"id:{gid}"
-            content["featuredItemsGroupQuery"] = f"id:{gid}"
+        featured_groups = []
+        if isinstance(contents, list):
+            for content in contents:
+                if isinstance(content, Group):
+                    group_id = content.id
+                    group_title = content.title
+                    group_owner = content.owner
+                    featured_groups.append(
+                        {"id": group_id, "title": group_title, "owner": group_owner}
+                    )
+                elif (
+                    isinstance(contents, dict)
+                    and "id" in contents
+                    and isinstance(contents["id"], str)
+                ) or isinstance(contents, str):
+                    if isinstance(contents, dict):
+                        contents = contents["id"]
+                    group = Group(self._gis, contents)
+                    group_id = group.id
+                    group_title = group.title
+                    group_owner = group.owner
+                    featured_groups.append(
+                        {"id": group_id, "title": group_title, "owner": group_owner}
+                    )
         elif (
-            isinstance(content, dict)
-            and "group" in content
-            and isinstance(content["group"], str)
-        ):
-            c = {}
-            c["homePageFeaturedContent"] = content["group"]
-            c["featuredItemsGroupQuery"] = f"id:{content['group']}"
-            c["featuredGroupsId"] = f"id:{content['group']}"
-            if "count" in content:
-                c["homePageFeaturedContentCount"] = content["count"]
-            else:
-                c["homePageFeaturedContentCount"] = 12
-            content = c
-        elif isinstance(content, str):
-            c = {}
-            c["homePageFeaturedContent"] = content
-            c["homePageFeaturedContentCount"] = 12
-            c["featuredItemsGroupQuery"] = f"id:{content}"
-            c["featuredGroupsId"] = f"id:{content}"
-            content = c
-        if not "featuredItemsGroupQuery" in self._gis.properties:
-            content.pop("featuredItemsGroupQuery", None)
-        if not "featuredGroupsId" in self._gis.properties:
-            content.pop("featuredGroupsId", None)
-        self._gis.update_properties(content)
+            isinstance(contents, dict)
+            and "id" in contents
+            and isinstance(contents["id"], str)
+        ) or isinstance(contents, str):
+            if isinstance(contents, dict):
+                contents = contents["id"]
+            group = Group(self._gis, contents)
+            group_id = group.id
+            group_title = group.title
+            group_owner = group.owner
+            featured_groups.append(
+                {"id": group_id, "title": group_title, "owner": group_owner}
+            )
+
+        self._gis.update_properties({"featuredGroups": featured_groups})
 
     # ----------------------------------------------------------------------
     def navigation_bar(
