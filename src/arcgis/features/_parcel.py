@@ -1180,6 +1180,7 @@ class ParcelFabricManager(object):
         divide_distribute_remainder: bool,
         default_area_unit: int | str | None = None,
         divide_cogo_line_bearing: float = None,
+        future: bool = False,
     ):
         """
         .. note::
@@ -1256,6 +1257,12 @@ class ParcelFabricManager(object):
         divide_cogo_line_bearing    Optional Float. Parameter representing the COGO direction
                                     (in decimal degrees) that will be stored in the COGO Direction field
                                     of the dividing lines.
+        -----------------------     --------------------------------------------------------------------
+        future                      Optional boolean. If `True`, the request is processed as an asynchronous
+                                    job and a URL is returned that points a location displaying the status
+                                    of the job.
+
+                                    The default is `False`.
         =========================== ====================================================================
 
         :return: Dictionary indicating 'success' or 'error'
@@ -1287,9 +1294,20 @@ class ParcelFabricManager(object):
             "divideDistributeRemainder": divide_distribute_remainder,
             "defaultAreaUnit": default_area_unit,
             "divideCogoLineBearing": divide_cogo_line_bearing,
+            "async": future,
             "f": "json",
         }
-        return self._con.post(url, params)
+        if future:
+            res = self._con.post(path=url, postdata=params)
+            f = self._run_async(
+                self._status_via_url,
+                con=self._con,
+                url=res["statusUrl"],
+                params={"f": "json"},
+            )
+            return f
+        else:
+            return self._con.post(url, params)
 
     # ----------------------------------------------------------------------
 

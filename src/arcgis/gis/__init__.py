@@ -3627,7 +3627,9 @@ class UserManager(object):
                 and "groups" in self.user_settings
                 and self.user_settings["groups"]
             ):
-                groups = [self._gis.groups.get(g) for g in self.user_settings["groups"]]
+                groups = [
+                    self._gis.groups.get(g).id for g in self.user_settings["groups"]
+                ]
             params = {
                 "f": "json",
                 "invitationList": {
@@ -4982,9 +4984,8 @@ class Role(object):
 class GroupManager(object):
     """
     The ``GroupManager`` class is a helper class for managing GIS groups.
-    An instance of this class, called :attr:`~arcgis.gis.GIS.groups`, is available as a property of the
-    :class:`~arcgis.gis.GIS` object.
-    Users call methods on this 'groups' object to manipulate (create, get, search, etc) users.
+    An instance of this class, called :attr:`~arcgis.gis.GIS.groups`, is available
+    as a property of the :class:`~arcgis.gis.GIS` object.
 
     .. note::
         This class is not created by users directly.
@@ -5019,14 +5020,18 @@ class GroupManager(object):
         autojoin: bool = False,
     ):
         """
-        The ``create`` method creates a group with the values for any particular arguments that are specified.
+        The ``create`` method creates a group with the values for any particular
+        arguments that are specified. The user who creates the group automatically
+        becomes the owner of the group, and the owner automatically becomes an
+        administrator. Use :attr:`~arcgis.gis.Group.reassign_to` to change the
+        owner.
 
         .. note::
             Only title and tags are required.
 
 
         ====================  =========================================================
-        **Parameter**          **Description**
+        **Parameter**         **Description**
         --------------------  ---------------------------------------------------------
         title                 Required string. The name of the group.
         --------------------  ---------------------------------------------------------
@@ -5058,7 +5063,6 @@ class GroupManager(object):
         auto_join             Optional boolean. Only applies to org accounts. If True,
                               this group will allow joining without requesting
                               membership approval. Default is False.
-
         --------------------  ---------------------------------------------------------
         provider_group_name   Optional string. The name of the domain group.
                               Create an association between a Portal group and an
@@ -5090,11 +5094,11 @@ class GroupManager(object):
                               from choosing to leave the group. If True, only an
                               administrator can remove them from the group. The default
                               is False.
-        ------------------    ---------------------------------------------------------
+        --------------------  ---------------------------------------------------------
         hidden_members        Optional Boolean. Only applies to org accounts. If true,
                               only the group owner, group managers, and default
                               administrators can see all members of the group.
-        ------------------    ---------------------------------------------------------
+        --------------------  ---------------------------------------------------------
         membership_access     Optional String. Sets the membership access for the group.
                               Setting to `org` restricts group access to members of
                               your organization. Setting to `collaboration` restricts the
@@ -5103,7 +5107,7 @@ class GroupManager(object):
                               will have access. `None` is the default.
 
                               Values: `org`, `collaboration`, or `None`
-        ------------------    ---------------------------------------------------------
+        --------------------  ---------------------------------------------------------
         autojoin              Optional Boolean. The default is `False`. Only applies to
                               org accounts. If `True`, this group will allow joined
                               without requesting membership approval.
@@ -5115,8 +5119,10 @@ class GroupManager(object):
         .. code-block:: python
 
             # Usage Example
-            >>> gis.groups.create(title = "New Group", tags = "new, group, USA",
-            >>>                     description = "a new group in the USA", access = "public")
+            >>> gis.groups.create(title = "New Group",
+                                  tags = "new, group, USA",
+                                  description = "a new group in the USA",
+                                  access = "public")
         """
         display_settings_lu = {
             "apps": {"itemTypes": "Application"},
@@ -5843,7 +5849,7 @@ class ContentManager(object):
         commentsEnabled             Optional boolean. Default is true, controls whether comments are allowed (true)
                                     or not allowed (false).
         --------------------------  ---------------------------------------------------------------------
-        culture                     Optional string. Language and country information.
+        access                      Optional string. Valid values are private, org, or public. Defaults to private.
         --------------------------  ---------------------------------------------------------------------
         overwrite                   Optional boolean. Default is `false`. Controls whether item can be overwritten.
         ==========================  =====================================================================
@@ -6009,7 +6015,7 @@ class ContentManager(object):
                 folder=folder,
             )
 
-            # Update the thumbnail and return the item
+            # Update the thumbnail
             item = Item(gis=self._gis, itemid=itemid)
             if item.type == "KML":
                 item.update(
@@ -6018,6 +6024,15 @@ class ContentManager(object):
                     }
                 )
             item.update(thumbnail=thumbnail)
+
+            # Update the access and return the item
+            if item_properties and "access" in item_properties:
+                if item_properties["access"] == "public":
+                    item.share(everyone=True)
+                elif item_properties["access"] == "org":
+                    item.share(org=True)
+                elif item_properties["access"] == "private":
+                    item.share(everyone=False, org=False)
             return item
         else:
             if filetype:
@@ -6041,6 +6056,15 @@ class ContentManager(object):
                         "url": f"{self._gis._portal.resturl}content/items/{item.itemid}/data"
                     }
                 )
+
+            # Update access
+            if item_properties and "access" in item_properties:
+                if item_properties["access"] == "public":
+                    item.share(everyone=True)
+                elif item_properties["access"] == "org":
+                    item.share(org=True)
+                elif item_properties["access"] == "private":
+                    item.share(everyone=False, org=False)
             return item
         else:
             return None
@@ -6401,6 +6425,11 @@ class ContentManager(object):
                     item.share(everyone=True)
                 elif item_properties["access"] == "org":
                     item.share(org=True)
+                elif item_properties["access"] == "private":
+                    item.share(everyone=False, org=False)
+                elif item_properties["access"] == "shared":
+                    groups = item.shared_with["groups"]
+                    item.share(groups=groups)
             return item
         else:
             return None
@@ -14014,6 +14043,18 @@ class Item(dict):
             ):
                 metadata = item_properties.metadata
 
+            if "access" in item_properties:
+                access = item_properties.pop("access")
+                if access == "private":
+                    self.share(everyone=False, org=False)
+                if access == "org":
+                    self.share(everyone=False, org=True)
+                if access == "public":
+                    self.share(everyone=True)
+                if access == "shared":
+                    groups = self.shared_with["groups"]
+                    self.share(groups=groups)
+
             item_properties = item_properties.to_dict()
             item_properties.pop("metadata", None)
             item_properties.pop("thumbnail", None)
@@ -14105,6 +14146,17 @@ class Item(dict):
                 if "tags" in item_properties:
                     if type(item_properties["tags"]) is list:
                         item_properties["tags"] = ",".join(item_properties["tags"])
+                if "access" in item_properties:
+                    access = item_properties.pop("access")
+                    if access == "private":
+                        self.share(everyone=False, org=False)
+                    if access == "org":
+                        self.share(everyone=False, org=True)
+                    if access == "public":
+                        self.share(everyone=True)
+                    if access == "shared":
+                        groups = self.shared_with["groups"]
+                        self.share(groups=groups)
 
             if data is not None and isinstance(data, (io.StringIO, io.BytesIO)):
                 if item_properties is None:
@@ -15849,6 +15901,8 @@ class Item(dict):
 
         :return: An :class:`~arcgis.gis.Item` object
         """
+        if tags and type(tags) is list:
+            tags = ",".join(tags)
 
         url = "%s/sharing/rest/content/users/%s/items/%s/copy" % (
             self._portal.url,

@@ -1,17 +1,14 @@
-import sys
-
-sys.path.insert(0, r"C:\ipython_workfolder\geosaurus\src")
 import unittest
 from arcgis.gis import GIS
 from arcgis.features._utility import UtilityNetworkManager
 from arcgis.features._trace_configuration import TraceConfiguration
 
-gis = GIS("https://utilitynetwork.esri.com/portal", "AChapkowski", "AChapkowski1")
+gis = GIS("https://utilitynetwork.esri.com/portal", "python_api_team", "python_api_team.109")
 # Create Topographic Service
 try:
     # Server gets updated at 2:30PM PST Everyday. Do not test around then.
     utility_nm = UtilityNetworkManager(
-        "https://utilitynetwork.esri.com/server/rest/services/NapervilleElectric_SQLServer/UtilityNetworkServer",
+        "https://utilitynetwork.esri.com/server/rest/services/NapervilleElectric31_SQLServer/UtilityNetworkServer",
         gis=gis,
     )
     assert utility_nm
@@ -25,7 +22,7 @@ except:
 class TestUtilityNetworkManager(unittest.TestCase):
     """Tests the Utility Network Service"""
 
-    def associations(self):
+    def test_associations(self):
         """Test getting associations, querying, and traversing them"""
         assert utility_nm.associations()
 
@@ -54,7 +51,7 @@ class TestUtilityNetworkManager(unittest.TestCase):
         assert traverse
         assert traverse["success"] is True
 
-    def locations(self):
+    def test_locations(self):
         """Test getting locations, and querying them."""
         assert utility_nm.locations()
 
@@ -71,7 +68,7 @@ class TestUtilityNetworkManager(unittest.TestCase):
         assert locations
         assert locations["success"] is True
 
-    def trace_configurations(self):
+    def test_trace_configurations(self):
         """Test getting trace configurations and the methods associated with them."""
         # Get trace config manager
         manager = utility_nm.trace_configurations()
@@ -176,7 +173,7 @@ class TestUtilityNetworkManager(unittest.TestCase):
         updated_query = manager.query()
         assert len(updated_query["traceConfigurations"]) == number_trace_configs
 
-    def validate_topology(self):
+    def test_validate_topology(self):
         """Test validate topology method. Validate edit made to network. If improper then gets marked as dirty rather than clean."""
         validate = utility_nm.validate_topology(
             envelope={
@@ -189,7 +186,7 @@ class TestUtilityNetworkManager(unittest.TestCase):
             return_edits=True,
         )
 
-    def query_network(self):
+    def test_query_network(self):
         """Test query network method"""
         query1 = utility_nm.query_network_moments(
             moments_to_return=["enableTopology", "initialEnableTopology"]
@@ -201,7 +198,7 @@ class TestUtilityNetworkManager(unittest.TestCase):
         assert query2
         assert len(query2["networkMoments"]) == 8
 
-    def synthesize_association_geometries(self):
+    def test_synthesize_association_geometries(self):
         """Test the method"""
         sag = utility_nm.synthesize_association_geometries(
             connectivity_associations=True,
@@ -217,7 +214,7 @@ class TestUtilityNetworkManager(unittest.TestCase):
         assert sag
         assert sag["success"] is True
 
-    def trace_test(self):
+    def test_trace_test(self):
         """
         Test using trace method with the Utility Network Service
         """
@@ -257,7 +254,7 @@ class TestUtilityNetworkManager(unittest.TestCase):
         assert trace
         assert trace["success"] is True
 
-    def export_subnetwork(self):
+    def test_export_subnetwork(self):
         """Test export of subnetwork"""
         export = utility_nm.export_subnetwork(
             domain_name="electric",

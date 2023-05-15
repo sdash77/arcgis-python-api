@@ -7,10 +7,11 @@ import warnings
 import traceback
 from ..models._arcgis_model import ArcGISModel, model_characteristics_folder
 
-
 HAS_FASTAI = True
 
 try:
+    import shap
+    import transformers
     import torch
     import torch.nn as nn
     import pandas as pd
@@ -120,6 +121,7 @@ class SequenceToSequence(ArcGISModel):
         super().__init__(data, model_backbone)
         self._mixed_precision = kwargs.get("mixed_precision", False)
         self._seq_len = kwargs.get("seq_len", transformer_seq_length)
+        self.shap_values = None
         self._create_text_learner_object(
             data,
             backbone,
@@ -491,7 +493,15 @@ class SequenceToSequence(ArcGISModel):
             }
         return metrics
 
-    def predict(self, text_or_list, batch_size=64, show_progress=True, **kwargs):
+    def predict(
+        self,
+        text_or_list,
+        batch_size=64,
+        show_progress=True,
+        explain=False,
+        explain_index=None,
+        **kwargs,
+    ):
         """
         Predicts the translated outcome.
 
@@ -509,6 +519,15 @@ class SequenceToSequence(ArcGISModel):
         show_progress           Optional bool.
                                 To show or not to show the progress of prediction task.
                                 Default value : True
+        ---------------------   -------------------------------------------
+        explain                 Optional bool.
+                                To enable shap based importance
+                                Default value : False
+        ---------------------   -------------------------------------------
+        explain_index           Optional list.
+                                Index of the input rows for which the importance score will
+                                be generated
+                                Default value : None
         =====================   ===========================================
 
         **kwargs**
@@ -535,6 +554,75 @@ class SequenceToSequence(ArcGISModel):
         if isinstance(text_or_list, str):
             text_or_list = [text_or_list]
         preds = self.learn.predict(text_or_list, batch_size, show_progress, **kwargs)
+
+        # select the specific rows for the explanation
+        text_list_for_exp = []
+        try:
+            if explain:
+                if isinstance(explain_index, list):
+                    # validate the index
+                    temp_index = []
+                    invalid_index = []
+                    for index in explain_index:
+                        if isinstance(index, int):
+                            temp_index.append(index)
+                        else:
+                            invalid_index.append(index)
+
+                    if invalid_index:
+                        with warnings.catch_warnings():
+                            warnings.simplefilter("always", UserWarning)
+                            warnings.warn(
+                                f"Index {invalid_index} are not valid. Indices/index must be integer. Ignoring "
+                                f"{invalid_index} for processing."
+                            )
+
+                    if temp_index:
+                        for i in temp_index:
+                            if i < len(text_or_list):
+                                text_list_for_exp.append(text_or_list[i])
+                            else:
+                                with warnings.catch_warnings():
+                                    warnings.simplefilter("always", UserWarning)
+                                    warnings.warn(
+                                        f"Value of index {i} should be less than/equal to {len(text_or_list) -1}."
+                                    )
+                    else:
+                        with warnings.catch_warnings():
+                            warnings.simplefilter("always", UserWarning)
+                            warnings.warn(
+                                f"No valid indices were supplied. Please change your input to list of integers"
+                            )
+
+                elif isinstance(explain_index, int):
+                    if explain_index < len(text_or_list):
+                        text_list_for_exp = text_or_list[explain_index]
+                    else:
+                        with warnings.catch_warnings():
+                            warnings.simplefilter("always", UserWarning)
+                            warnings.warn(
+                                f"Value of index {explain_index} should be less than/equal to {len(text_or_list) - 1}."
+                            )
+                else:
+                    exp_rows = 5 if len(text_or_list) > 5 else len(text_or_list)
+                    for i in range(exp_rows):
+                        text_list_for_exp.append(text_or_list[i])
+                    with warnings.catch_warnings():
+                        warnings.simplefilter("always", UserWarning)
+                        warnings.warn(
+                            f"Generating explanation for first {exp_rows} rows "
+                        )
+
+            if explain and len(text_list_for_exp):
+                self._explain(text_list_for_exp, **kwargs)
+
+        except:
+            with warnings.catch_warnings():
+                warnings.simplefilter("always", UserWarning)
+                warnings.warn(
+                    f"SHAP workflow has encountered an error. Failed to generate an explanation."
+                )
+
         return list(zip(text_or_list, preds))
 
     def _save_df_to_html(self, path):
@@ -593,6 +681,69 @@ class SequenceToSequence(ArcGISModel):
         if return_fig:
             plt.close()
             return fig
+
+    def _explain(self, text_list_for_exp, **kwargs):
+        """
+        Generates SHAP based explanation.
+
+        =====================   ===========================================
+        **Argument**            **Description**
+        ---------------------   -------------------------------------------
+        text_list_for_exp       Required input string or list of input strings.
+        =====================   ===========================================
+
+        **kwargs**
+
+        =====================   ===========================================
+        **Argument**            **Description**
+        ---------------------   -------------------------------------------
+        num_beams               Optional integer.
+                                Number of beams for beam search. 1 means no beam search.
+                                Default value is set to 1
+        ---------------------   -------------------------------------------
+        max_length              Optional integer.
+                                The maximum length of the sequence to be generated.
+                                Default value is set to 20
+        ---------------------   -------------------------------------------
+        min_length              Optional integer.
+                                The minimum length of the sequence to be generated.
+                                Default value is set to 10
+        =====================   ===========================================
+
+        :return: list of tuples(input , predicted output strings).
+        """
+
+        if isinstance(text_list_for_exp, str):
+            text_list_for_exp = [text_list_for_exp]
+
+        # collect the model and tokenizer
+        emodel = self.learn.model._transformer
+        emask = self.learn.model._tokenizer
+
+        ###
+        # There is an issue with the fast tokenizer. So selecting the slow tokenizer
+        ###
+        if isinstance(emask, transformers.PreTrainedTokenizerFast):
+            if emask.name_or_path.find("T5"):
+                emask = transformers.T5TokenizerFast.from_pretrained(
+                    "google/t5-v1_1-base", from_slow=True
+                )
+
+        # initialize the explainer.
+        explainer = shap.Explainer(emodel, emask)
+
+        # validated the kwargs. So that we can match maximum length as passed to inference model
+        try:
+            for key, val in kwargs.items():
+                if hasattr(explainer.masker.model.inner_model.config, key):
+                    explainer.masker.model.inner_model.config.__dict__[key] = val
+        except:
+            pass
+
+        # generate shap values and generate plot.
+        for record in text_list_for_exp:
+            self.shap_values = explainer([record], fixed_context=0)
+            shap.plots.text(self.shap_values)
 
     # def summarize(self, text_or_list, num_beams=4, max_len=50):
     #     if self._model_type not in['t5']:
