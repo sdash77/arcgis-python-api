@@ -13,7 +13,7 @@ from arcgis.gis.admin import (
     MapSettings,
     ItemSettings,
     SecuritySettings,
-    StockImage
+    StockImage,
 )
 import tempfile
 import requests
@@ -37,7 +37,7 @@ def enable_verbose_logging(root):
     root.addHandler(handler)
 
 
-PROFILES = [ "your_enterprise_profile"]
+PROFILES = ["your_online_profile", "your_enterprise_profile", "your_dev_profile"]
 PROXIES = detect_proxy(True)  # Handles Fiddler when True
 enable_verbose_logging(__logger__)
 
@@ -586,8 +586,7 @@ class Test_SecuritySettingsClass(unittest.TestCase):
                     assert ss.delete_email_settings()
                 except:
                     # Mulitfactor authentication turned on so cannot delete org email settings
-                    assert 1==1
-    
+                    assert 1 == 1
 
     def test_signin_settings(self):
         for profile in PROFILES:
