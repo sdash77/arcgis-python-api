@@ -614,7 +614,11 @@ class UX(object):
         group = self._gis.properties["featuredItemsGroupQuery"]
         if "id:" in group:
             # must use [3::] to slice string since format of: "id:123abc"
-            return self._gis.groups.search(group[3::])[0]
+            gallery_grps = self._gis.groups.search(group[3::])
+            if len(gallery_grps) > 0:
+                return gallery_grps[0]
+            else:
+                return group
         else:
             return group
 
