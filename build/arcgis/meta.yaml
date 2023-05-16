@@ -31,10 +31,10 @@ requirements:
   - requests-toolbelt
   - requests-kerberos
   - requests-oauthlib
-  - pywin32-security # [win]
+  - pywin32-security [win]
   - lerc
-  - python-certifi-win32 # [win and py<310]
-  - truststore # [py>=310]
+  - python-certifi-win32 [win and py<310]
+  - truststore [py>=310]
   - cryptography
   - lxml
   - certifi
