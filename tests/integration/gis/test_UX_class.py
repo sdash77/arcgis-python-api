@@ -13,6 +13,7 @@ from arcgis.gis.admin import (
     MapSettings,
     ItemSettings,
     SecuritySettings,
+    StockImage
 )
 import tempfile
 import requests
@@ -36,7 +37,7 @@ def enable_verbose_logging(root):
     root.addHandler(handler)
 
 
-PROFILES = ["your_online_profile", "your_enterprise_profile", "your_dev_profile"]
+PROFILES = [ "your_enterprise_profile"]
 PROXIES = detect_proxy(True)  # Handles Fiddler when True
 enable_verbose_logging(__logger__)
 
@@ -213,6 +214,7 @@ class Test_HomePageSettingsClass(unittest.TestCase):
 
                 # get background, if default then None will be returned
                 bck = hps.get_background(tempfile.gettempdir())
+
                 if bck:
                     assert bck
                 else:
@@ -221,6 +223,11 @@ class Test_HomePageSettingsClass(unittest.TestCase):
                 assert hps.set_background(image_file.name)
                 # get background, this time there will be a file
                 assert hps.get_background(tempfile.gettempdir())
+
+                # determine if stock image before reset
+                names = [member.name for member in StockImage]
+                if bck in names:
+                    bck = StockImage[bck]
                 # reset original background
                 assert hps.set_background(bck)
 

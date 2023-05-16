@@ -1,4 +1,5 @@
 from __future__ import annotations
+from enum import Enum
 import os
 import json
 from arcgis._impl.common._deprecate import deprecated
@@ -6,6 +7,15 @@ from arcgis.auth.tools import LazyLoader
 from arcgis.gis import Group, User
 
 _basemap_definitions = LazyLoader("arcgis.mapping._basemap_definitions")
+
+
+class StockImage(Enum):
+    RIVERVIOLET = "1"
+    RIVEREMERALD = "2"
+    GEOLOGYAMBER = "3"
+    GEOLOGYLILAC = "4"
+    SOILGOLD = "5"
+    SOILSILVER = "6"
 
 
 ###########################################################################
@@ -1031,7 +1041,7 @@ class HomePageSettings(object):
 
     # ----------------------------------------------------------------------
     def set_background(
-        self, background_file: str | None = None, is_built_in: bool = True
+        self, background_file: str | StockImage | None = None, is_built_in: bool = True
     ):
         """
         Configure your home page by setting the organization's background image. You can choose no image, a built-in image
@@ -1048,6 +1058,7 @@ class HomePageSettings(object):
         background_file     Optional string. If using a custom background, specify path to image file.
                             To remove an existing background, specify None for this argument and
                             False for is_built_in argument.
+                            If you want to set a stock image, use the StockImage class.
         ----------------    ---------------------------------------------------------------
         is_built_in         Optional bool, default=True. The built-in background is set by default.
                             If uploading a custom image, this parameter is ignored.
@@ -1088,7 +1099,7 @@ class HomePageSettings(object):
                 {"backgroundImage": background_update_val}
             )
         elif self._new_hp:
-            if background_file:
+            if background_file and not isinstance(background_file, StockImage):
                 fpath = Path(background_file)
                 f_splits = fpath.name.split(".")
                 if len(f_splits) > 1 and f_splits[1] == "png":
@@ -1105,15 +1116,18 @@ class HomePageSettings(object):
                     )
                 background_update_val = key_val
                 cover_type = "custom"
+                cover_image_stock = ""
             elif is_built_in:
                 cover_type = "stock"
                 background_update_val = ""
+                cover_image_stock = background_file.value
             hp = json.loads(
                 open(self._portal_resources.get("home.page.json"), "r").read()
             )
 
             hp["header"]["coverImg"] = background_update_val
             hp["header"]["coverType"] = cover_type
+            hp["header"]["coverImgStock"] = cover_image_stock
             params = {
                 "key": "home.page.json",
                 "text": hp,
@@ -1134,44 +1148,57 @@ class HomePageSettings(object):
         ================  ===============================================================
         **Parameter**      **Description**
         ----------------  ---------------------------------------------------------------
-        download_path     required string. Folder path to download the background file.
+        download_path     Required string. Folder path to download the background file.
         ================  ===============================================================
 
-        :return: Path to downloaded background file. If None, then background is not set and nothing was downloaded.
+        :return: Path to downloaded background file. If the cover image is a stock image then the stock image's name from the StockImage class will be returned.
         """
 
         # create a portal resource manager obj
         # find existing banner resource file
         bckgrnd_path = None
         if self._new_hp:
-            resource_list = self._portal_resources.list()
-            e_background = [
-                banner
-                for banner in resource_list
-                if banner["key"].startswith("background")
-            ]
-            for background in e_background:
-                try:
-                    bckgrnd_path = self._portal_resources.get(
-                        background["key"], download_path
-                    )
-
-                except:
-                    if self._new_hp:
-                        # see if named something else
-                        hp = json.loads(
-                            open(
-                                self._portal_resources.get("home.page.json"),
-                                "r",
-                            ).read()
+            # Need to read the homepage settings
+            hp = json.loads(
+                open(
+                    self._portal_resources.get("home.page.json"),
+                    "r",
+                ).read()
+            )
+            # Have to check the cover type first
+            cover_type = hp["header"]["coverType"]
+            if cover_type == "stock":
+                return StockImage(hp["header"]["coverImgStock"]).name
+            else:
+                # If not stock then image is set
+                resource_list = self._portal_resources.list()
+                e_background = [
+                    banner
+                    for banner in resource_list
+                    if banner["key"].startswith("background")
+                ]
+                for background in e_background:
+                    try:
+                        bckgrnd_path = self._portal_resources.get(
+                            background["key"], download_path
                         )
-                        background = hp["header"]["coverImg"]
-                        if background:
-                            bckgrnd_path = self._portal_resources.get(
-                                background["key"], download_path
+
+                    except:
+                        if self._new_hp:
+                            # see if named something else
+                            hp = json.loads(
+                                open(
+                                    self._portal_resources.get("home.page.json"),
+                                    "r",
+                                ).read()
                             )
-                    else:
-                        continue
+                            background = hp["header"]["coverImg"]
+                            if background:
+                                bckgrnd_path = self._portal_resources.get(
+                                    background["key"], download_path
+                                )
+                        else:
+                            continue
         return bckgrnd_path
 
     # ----------------------------------------------------------------------
