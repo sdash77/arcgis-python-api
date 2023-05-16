@@ -1143,7 +1143,7 @@ class HomePageSettings(object):
         # create a portal resource manager obj
         # find existing banner resource file
         bckgrnd_path = None
-        if self._new_hp is False:
+        if self._new_hp:
             resource_list = self._portal_resources.list()
             e_background = [
                 banner
