@@ -66,9 +66,9 @@ class Test_UXClass(unittest.TestCase):
 
                 # summary property
                 summary = ux.summary
-                try:
+                if summary:
                     assert summary
-                except:
+                else:
                     continue
                 ux.summary = "Python API Test"
                 assert ux.summary == "Python API Test"
@@ -76,10 +76,10 @@ class Test_UXClass(unittest.TestCase):
 
                 # contact link property
                 contact_link = ux.contact_link
-                try:
+                if contact_link:
                     assert contact_link
-                except:
-                    continue
+                else:
+                    assert contact_link is None
                 ux.contact_link = "www.test_it.com"
                 assert ux.contact_link == "www.test_it.com"
                 ux.contact_link = contact_link
@@ -126,9 +126,9 @@ class Test_UXClass(unittest.TestCase):
 
                 # get orig logo, if none then None is returned
                 logo = ux.get_logo(tempfile.gettempdir())
-                try:
+                if logo:
                     assert logo
-                except:
+                else:
                     continue
                 # set logo
                 assert ux.set_logo(image_file.name, show_logo=True)
@@ -180,9 +180,9 @@ class Test_UXClass(unittest.TestCase):
 
                 # get gallery group
                 gall_grp = ux.gallery_group
-                try:
+                if gall_grp:
                     assert gall_grp
-                except:
+                else:
                     assert gall_grp == ""
                 # set new group
                 group_id = gis.groups.search()[10].id
@@ -213,10 +213,10 @@ class Test_HomePageSettingsClass(unittest.TestCase):
 
                 # get background, if default then None will be returned
                 bck = hps.get_background(tempfile.gettempdir())
-                try:
+                if bck:
                     assert bck
-                except:
-                    continue
+                else:
+                    assert bck == None
                 # set background to new image
                 assert hps.set_background(image_file.name)
                 # get background, this time there will be a file
@@ -232,9 +232,9 @@ class Test_HomePageSettingsClass(unittest.TestCase):
 
                 # get title
                 orig_title = hps.get_title()
-                try:
+                if orig_title:
                     assert orig_title["title"]
-                except:
+                else:
                     continue
                 # set title
                 assert hps.set_title(
@@ -254,19 +254,19 @@ class Test_HomePageSettingsClass(unittest.TestCase):
                 hps = gis.admin.ux.homepage_settings
 
                 # get contact email, if none then None is returned
-                cnt_email = hps.get_contact_email()
-                try:
-                    assert cnt_email["email"]
-                except:
+                contact_email = hps.get_contact_email()
+                if contact_email:
+                    assert contact_email["email"]
+                else:
                     continue
                 # set contact email
                 assert hps.set_contact_email("test@esri.com", show_email=True)
                 assert hps.get_contact_email()["email"] == "test@esri.com"
                 # reset email
-                if cnt_email:
-                    assert hps.set_contact_email(cnt_email["email"])
+                if contact_email:
+                    assert hps.set_contact_email(contact_email["email"])
                 else:
-                    assert hps.set_contact_email(cnt_email)
+                    assert hps.set_contact_email(contact_email)
 
 
 class Test_MapSettingsClass(unittest.TestCase):
@@ -347,9 +347,9 @@ class Test_MapSettingsClass(unittest.TestCase):
 
                 # analysis group layer
                 analysis_layer_group = ms.analysis_layer_group
-                try:
+                if analysis_layer_group:
                     assert analysis_layer_group
-                except:
+                else:
                     assert analysis_layer_group == ""
                 group_id = gis.groups.search()[10].id
                 ms.analysis_layer_group = group_id
@@ -443,10 +443,10 @@ class Test_SecuritySettingsClass(unittest.TestCase):
 
                 # get current banner, or None
                 ib = ss.get_informational_banner()
-                try:
+                if ib:
                     assert ib
-                except:
-                    continue
+                else:
+                    assert ib == None
                 # set informational banner
                 assert ss.set_informational_banner(
                     text="Test For Python API",
@@ -489,10 +489,10 @@ class Test_SecuritySettingsClass(unittest.TestCase):
                 ss = gis.admin.ux.security_settings
 
                 orig = ss.get_org_access_notice()
-                try:
+                if orig:
                     assert orig
-                except:
-                    assert orig is None
+                else:
+                    assert orig == None
 
                 # Set a test notice
                 assert ss.set_org_access_notice(
@@ -512,10 +512,10 @@ class Test_SecuritySettingsClass(unittest.TestCase):
                 ss = gis.admin.ux.security_settings
 
                 orig = ss.get_anonymous_access_notice()
-                try:
+                if orig:
                     assert orig
-                except:
-                    assert orig is None
+                else:
+                    assert orig == None
 
                 # Set a test notice
                 assert ss.set_anonymous_access_notice(
