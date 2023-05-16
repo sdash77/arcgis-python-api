@@ -55,6 +55,7 @@ if not _LAMBDA_TEXT_CLASSIFICATION:
         EfficientDet,
         SQNSeg,
         PSETAE,
+        MMDetection3D,
     )
 
     from ._object_tracker import ObjectTracker
