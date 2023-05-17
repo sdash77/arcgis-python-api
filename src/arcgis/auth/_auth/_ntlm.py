@@ -112,7 +112,13 @@ class EsriHttpNtlmAuth(AuthBase):
         token_url: str = None
         if server_url in self._server_log:
             token_url: str = self._server_log[server_url]
-        elif r.text.lower().find("token required") > -1:
+        elif (
+            r.text.lower().find("token required") > -1
+            or r.text.lower().find("invalid token") > -1
+            or r.text.lower().find("token not found") > -1
+            or r.text.lower().find("Access to admin resources are not allowed".lower())
+            > -1
+        ):
             resp = requests.get(
                 f"{server_url}/rest/info",
                 params={"f": "json"},

@@ -10,6 +10,7 @@ from arcgis.features.layer import FeatureLayer
 from arcgis.gis import Error, Item
 from arcgis.geoprocessing import import_toolbox
 from arcgis.auth.tools import LazyLoader
+from datetime import timezone
 
 collections = LazyLoader("collections")
 json = LazyLoader("json")
@@ -3648,7 +3649,10 @@ class OfflineMapAreaManager(object):
                     if "minute" in refresh_rates:
                         minute = refresh_rates["minute"]
                     map_area_refresh_params = {
-                        "startDate": int(datetime.datetime.utcnow().timestamp()) * 1000,
+                        "startDate": int(
+                            datetime.datetime.now(tz=timezone.utc).timestamp()
+                        )
+                        * 1000,
                         "type": "daily",
                         "nthDay": 1,
                         "dayOfWeek": 0,
@@ -3656,7 +3660,10 @@ class OfflineMapAreaManager(object):
                     refresh_schedule = "0 {m} {hour} * * ?".format(m=minute, hour=hour)
                 else:
                     map_area_refresh_params = {
-                        "startDate": int(datetime.datetime.utcnow().timestamp()) * 1000,
+                        "startDate": int(
+                            datetime.datetime.now(tz=timezone.utc).timestamp()
+                        )
+                        * 1000,
                         "type": "daily",
                         "nthDay": 1,
                         "dayOfWeek": 0,
@@ -3674,7 +3681,10 @@ class OfflineMapAreaManager(object):
                     if "day_of_week" in refresh_rates:
                         dayOfWeek = refresh_rates["day_of_week"]
                     map_area_refresh_params = {
-                        "startDate": int(datetime.datetime.utcnow().timestamp()) * 1000,
+                        "startDate": int(
+                            datetime.datetime.now(tz=timezone.utc).timestamp()
+                        )
+                        * 1000,
                         "type": "weekly",
                         "nthDay": 1,
                         "dayOfWeek": dayOfWeek,
@@ -3684,7 +3694,10 @@ class OfflineMapAreaManager(object):
                     )
                 else:
                     map_area_refresh_params = {
-                        "startDate": int(datetime.datetime.utcnow().timestamp()) * 1000,
+                        "startDate": int(
+                            datetime.datetime.now(tz=timezone.utc).timestamp()
+                        )
+                        * 1000,
                         "type": "weekly",
                         "nthDay": 1,
                         "dayOfWeek": 1,
@@ -3705,7 +3718,10 @@ class OfflineMapAreaManager(object):
                     if "day_of_week" in refresh_rates:
                         dayOfWeek = refresh_rates["day_of_week"]
                     map_area_refresh_params = {
-                        "startDate": int(datetime.datetime.utcnow().timestamp()) * 1000,
+                        "startDate": int(
+                            datetime.datetime.now(tz=timezone.utc).timestamp()
+                        )
+                        * 1000,
                         "type": "monthly",
                         "nthDay": nthday,
                         "dayOfWeek": dayOfWeek,
@@ -3715,7 +3731,10 @@ class OfflineMapAreaManager(object):
                     )
                 else:
                     map_area_refresh_params = {
-                        "startDate": int(datetime.datetime.utcnow().timestamp()) * 1000,
+                        "startDate": int(
+                            datetime.datetime.now(tz=timezone.utc).timestamp()
+                        )
+                        * 1000,
                         "type": "monthly",
                         "nthDay": 3,
                         "dayOfWeek": 3,
@@ -4063,7 +4082,8 @@ class OfflineMapAreaManager(object):
             if "minute" in refresh_rates:
                 minute = refresh_rates["minute"]
             map_area_refresh_params = {
-                "startDate": int(datetime.datetime.utcnow().timestamp()) * 1000,
+                "startDate": int(datetime.datetime.now(tz=timezone.utc).timestamp())
+                * 1000,
                 "type": "daily",
                 "nthDay": 1,
                 "dayOfWeek": 0,
@@ -4077,7 +4097,8 @@ class OfflineMapAreaManager(object):
             if "day_of_week" in refresh_rates:
                 dayOfWeek = refresh_rates["day_of_week"]
             map_area_refresh_params = {
-                "startDate": int(datetime.datetime.utcnow().timestamp()) * 1000,
+                "startDate": int(datetime.datetime.now(tz=timezone.utc).timestamp())
+                * 1000,
                 "type": "weekly",
                 "nthDay": 1,
                 "dayOfWeek": dayOfWeek,
@@ -4095,7 +4116,8 @@ class OfflineMapAreaManager(object):
             if "day_of_week" in refresh_rates:
                 dayOfWeek = refresh_rates["day_of_week"]
             map_area_refresh_params = {
-                "startDate": int(datetime.datetime.utcnow().timestamp()) * 1000,
+                "startDate": int(datetime.datetime.now(tz=timezone.utc).timestamp())
+                * 1000,
                 "type": "monthly",
                 "nthDay": nthday,
                 "dayOfWeek": dayOfWeek,

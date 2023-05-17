@@ -2,6 +2,19 @@ import typing
 import urllib.parse as urllib_parse
 import urllib.request
 from functools import lru_cache
+import importlib
+
+
+@lru_cache(maxsize=255)
+def check_module_exists(name: str) -> bool:
+    """Checks if a module exists"""
+    try:
+        res = importlib.util.find_spec(name)
+        if res is None:
+            return False
+        return True
+    except:
+        return False
 
 
 @lru_cache(maxsize=255)

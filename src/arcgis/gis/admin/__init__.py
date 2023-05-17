@@ -22,7 +22,14 @@ from ._system import Directory, Licenses, System, Indexer, EmailManager
 from ._system import PortalLicense
 from ._system import WebAdaptor, WebAdaptors
 from ._collaboration import Collaboration, CollaborationManager
-from ._ux import UX, MapSettings, HomePageSettings, ItemSettings, SecuritySettings
+from ._ux import (
+    UX,
+    MapSettings,
+    HomePageSettings,
+    ItemSettings,
+    SecuritySettings,
+    StockImage,
+)
 from ._creditmanagement import CreditManager
 from ._security import PasswordPolicy
 from ._resources import PortalResourceManager
