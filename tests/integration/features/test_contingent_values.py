@@ -1,9 +1,5 @@
 import sys
 import os
-
-#
-#  Update the Path to set the test area
-sys.path.insert(0, r"C:\SVN\geosaurus_issue_9564\src")
 import logging
 import unittest
 from arcgis.auth.tools._util import detect_proxy

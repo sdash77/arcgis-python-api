@@ -1,8 +1,5 @@
-import sys
 import unittest
 import pandas as pd
-
-sys.path.insert(0, r"C:\SVN\geosaurus_master_issue_7999\src")
 from arcgis.gis import GIS
 
 proxies = None
@@ -1803,7 +1800,7 @@ class TestFeatureLayerDeleteFeatures(unittest.TestCase):
                 sdf = pd.DataFrame(data)
                 item = gis.content.import_data(sdf)
                 flyr = item.layers[0]
-                where = "OBJECTID=2"
+                where = "FID=2"
                 d = flyr.delete_features(
                     deletes=None,
                     where=where,
@@ -1853,7 +1850,7 @@ class TestFeatureLayerDeleteFeatures(unittest.TestCase):
                 sdf = pd.DataFrame(data)
                 item = gis.content.import_data(sdf)
                 flyr = item.layers[0]
-                where = "OBJECTID=2"
+                where = "FID=2"
                 d = flyr.delete_features(
                     deletes=None,
                     where=where,

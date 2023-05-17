@@ -264,6 +264,13 @@ SQNSeg
     :inherited-members:
     :undoc-members:
 
+MMDetection3D
+^^^^^^^^
+.. autoclass:: arcgis.learn.MMDetection3D
+    :members:
+    :inherited-members:
+    :undoc-members:
+
 Object Tracking Models
 ------------------------
 SiamMask

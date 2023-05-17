@@ -65,27 +65,20 @@ class Test_FeatureLayer_portal(unittest.TestCase):
 
         # region Read config data
         _conf_reader = ConfigParser()
-        _conf_reader.read(DinoConfigs.portal_list_file, "UTF-8")
+        _conf_reader.read(DinoConfigs.root_init_file, "UTF-8")
 
-        cls.portal_url = _conf_reader["datascienceqa"]["url"]
-        cls.portal_username = _conf_reader["datascienceqa"]["admin_user"]
-        cls.portal_password = _conf_reader["datascienceqa"]["admin_password"]
-
-        _conf_reader2 = ConfigParser()
-        _conf_reader2.read(DinoConfigs.root_init_file, "UTF-8")
-
-        cls.qalab_base_path = _conf_reader2["test_data"]["qalab_base_path"]
+        cls.qalab_base_path = _conf_reader["test_data"]["qalab_base_path"]
         cls.qalab_cls_path = (
-            cls.qalab_base_path + _conf_reader2["test_data"]["qalab_FeatureLayer_cls"]
+            cls.qalab_base_path + _conf_reader["test_data"]["qalab_FeatureLayer_cls"]
         )
         # endregion
 
         # region precondition checks and sign in
-        r1 = PreconditionChecks.can_ping_portal(cls.portal_url)
+        r1 = PreconditionChecks.can_ping_portal(GIS(profile="your_ent_admin_profile").url)
         if not r1:
             cls.class_skip = True
 
-        cls.gis = GIS(cls.portal_url, cls.portal_username, cls.portal_password)
+        cls.gis = GIS(profile="your_ent_admin_profile")
         if cls.gis is None:
             cls.class_skip = True
         # endregion
@@ -834,13 +827,6 @@ class Test_FeatureLayer_online(unittest.TestCase):
         """
 
         # region Read config data
-        _conf_reader = ConfigParser()
-        _conf_reader.read(DinoConfigs.portal_list_file, "UTF-8")
-
-        cls.portal_url = _conf_reader["arcgiscom"]["url"]
-        cls.portal_username = _conf_reader["arcgiscom"]["admin_user"]
-        cls.portal_password = _conf_reader["arcgiscom"]["admin_password"]
-
         _conf_reader2 = ConfigParser()
         _conf_reader2.read(DinoConfigs.root_init_file, "UTF-8")
 
@@ -851,11 +837,11 @@ class Test_FeatureLayer_online(unittest.TestCase):
         # endregion
 
         # region precondition checks and sign in
-        r1 = PreconditionChecks.can_ping_portal(cls.portal_url)
+        r1 = PreconditionChecks.can_ping_portal(GIS(profile="your_online_admin_profile").url)
         if not r1:
             cls.class_skip = True
 
-        cls.gis = GIS(cls.portal_url, cls.portal_username, cls.portal_password)
+        cls.gis = GIS(profile="your_online_admin_profile")
         if cls.gis is None:
             cls.class_skip = True
         # endregion

@@ -2007,8 +2007,10 @@ class FeatureLayerCollectionManager(_GISResource):
         }
         if set_item_id:
             params["itemIdToCreate"] = set_item_id
-        if not overwrite is None:
-            params["overwrite"] = overwrite
+        if overwrite:
+            logging.warning(
+                "overwrite is currently not supported on this platform, and will not be honored"
+            )
 
         res = gis._con.post(path=url, postdata=params)
         view = content.get(res["itemId"])

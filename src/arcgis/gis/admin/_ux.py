@@ -1,4 +1,5 @@
 from __future__ import annotations
+from enum import Enum
 import os
 import json
 from arcgis._impl.common._deprecate import deprecated
@@ -6,6 +7,15 @@ from arcgis.auth.tools import LazyLoader
 from arcgis.gis import Group, User
 
 _basemap_definitions = LazyLoader("arcgis.mapping._basemap_definitions")
+
+
+class StockImage(Enum):
+    RIVERVIOLET = "1"
+    RIVEREMERALD = "2"
+    GEOLOGYAMBER = "3"
+    GEOLOGYLILAC = "4"
+    SOILGOLD = "5"
+    SOILSILVER = "6"
 
 
 ###########################################################################
@@ -361,14 +371,24 @@ class UX(object):
         """
         Gets/Sets the featured content group information.
 
+        If you set the featured content, reinstantiate to update the gis properties and see the updated
+        list of featured_content.
+
         ================  ===============================================================
         **Parameter**      **Description**
         ----------------  ---------------------------------------------------------------
-        content           Required dictionary, defines the group and count of the feature
+        content           Required list or dictionary, defines the group(s) of the feature
                           content area on an organizational site.  A value of None will
-                          reset the value back to the install defaults.
+                          reset the value back to no featured groups.
+
+                          To add a new group to the list you must pass in the list of current
+                          featured content and include the new group in the list. "id" key must be in
+                          the dictionary, extra keys are ok.
+
+                          It is also acceptable to pass a list of Group class instances.
+
                           Example:
-                          {'group': <group id>, 'count' : 12}
+                          [{"id": <group_id>}, {"id": <group_id>}, etc.]
         ================  ===============================================================
 
         :return: dictionary
@@ -376,63 +396,61 @@ class UX(object):
 
         .. code-block:: python
             *Usage Example*
-            >>> data = ux.get_featured_content()
-            >>> ux.set_featured_content = data
+            >>> data = ux.featured_content
+            >>> ux.featured_content = data
             True
 
         """
-        return {
-            "group": self._gis.properties["homePageFeaturedContent"],
-            "count": self._gis.properties["homePageFeaturedContentCount"],
-        }
+        return self._gis.properties["featuredGroups"]
 
     # ----------------------------------------------------------------------
     @featured_content.setter
-    def featured_content(self, content: dict):
+    def featured_content(self, contents: dict):
         """
         See main ``featured_content`` property docstring
         """
         from .. import Group
 
-        if content is None:
-            content = {
-                "homePageFeaturedContent": "",
-                "homePageFeaturedContentCount": 12,
-                "featuredItemsGroupQuery": "",
-                "featuredGroupsId": "",
-                "clearEmptyFields": True,
-            }
-        elif "group" in content and isinstance(content["group"], Group):
-            gid = content["group"].groupid
-            content["homePageFeaturedContent"] = gid
-            content["featuredGroupsId"] = f"id:{gid}"
-            content["featuredItemsGroupQuery"] = f"id:{gid}"
+        featured_groups = []
+        if isinstance(contents, list):
+            for content in contents:
+                if isinstance(content, Group):
+                    group_id = content.id
+                    group_title = content.title
+                    group_owner = content.owner
+                    featured_groups.append(
+                        {"id": group_id, "title": group_title, "owner": group_owner}
+                    )
+                elif (
+                    isinstance(contents, dict)
+                    and "id" in contents
+                    and isinstance(contents["id"], str)
+                ) or isinstance(contents, str):
+                    if isinstance(contents, dict):
+                        contents = contents["id"]
+                    group = Group(self._gis, contents)
+                    group_id = group.id
+                    group_title = group.title
+                    group_owner = group.owner
+                    featured_groups.append(
+                        {"id": group_id, "title": group_title, "owner": group_owner}
+                    )
         elif (
-            isinstance(content, dict)
-            and "group" in content
-            and isinstance(content["group"], str)
-        ):
-            c = {}
-            c["homePageFeaturedContent"] = content["group"]
-            c["featuredItemsGroupQuery"] = f"id:{content['group']}"
-            c["featuredGroupsId"] = f"id:{content['group']}"
-            if "count" in content:
-                c["homePageFeaturedContentCount"] = content["count"]
-            else:
-                c["homePageFeaturedContentCount"] = 12
-            content = c
-        elif isinstance(content, str):
-            c = {}
-            c["homePageFeaturedContent"] = content
-            c["homePageFeaturedContentCount"] = 12
-            c["featuredItemsGroupQuery"] = f"id:{content}"
-            c["featuredGroupsId"] = f"id:{content}"
-            content = c
-        if not "featuredItemsGroupQuery" in self._gis.properties:
-            content.pop("featuredItemsGroupQuery", None)
-        if not "featuredGroupsId" in self._gis.properties:
-            content.pop("featuredGroupsId", None)
-        self._gis.update_properties(content)
+            isinstance(contents, dict)
+            and "id" in contents
+            and isinstance(contents["id"], str)
+        ) or isinstance(contents, str):
+            if isinstance(contents, dict):
+                contents = contents["id"]
+            group = Group(self._gis, contents)
+            group_id = group.id
+            group_title = group.title
+            group_owner = group.owner
+            featured_groups.append(
+                {"id": group_id, "title": group_title, "owner": group_owner}
+            )
+
+        self._gis.update_properties({"featuredGroups": featured_groups})
 
     # ----------------------------------------------------------------------
     def navigation_bar(
@@ -540,7 +558,11 @@ class UX(object):
         shared_theme = {
             "header": {"background": "no-color", "text": "no-color"},
             "button": {"background": "no-color", "text": "no-color"},
-            "body": {"background": "no-color", "text": "no-color", "link": "no-color"},
+            "body": {
+                "background": "no-color",
+                "text": "no-color",
+                "link": "no-color",
+            },
             "logo": {"small": ""},
         }
         if "sharedTheme" in portal_properties:
@@ -602,7 +624,11 @@ class UX(object):
         group = self._gis.properties["featuredItemsGroupQuery"]
         if "id:" in group:
             # must use [3::] to slice string since format of: "id:123abc"
-            return self._gis.groups.search(group[3::])[0]
+            gallery_grps = self._gis.groups.search(group[3::])
+            if len(gallery_grps) > 0:
+                return gallery_grps[0]
+            else:
+                return group
         else:
             return group
 
@@ -1015,7 +1041,7 @@ class HomePageSettings(object):
 
     # ----------------------------------------------------------------------
     def set_background(
-        self, background_file: str | None = None, is_built_in: bool = True
+        self, background_file: str | StockImage | None = None, is_built_in: bool = True
     ):
         """
         Configure your home page by setting the organization's background image. You can choose no image, a built-in image
@@ -1032,6 +1058,7 @@ class HomePageSettings(object):
         background_file     Optional string. If using a custom background, specify path to image file.
                             To remove an existing background, specify None for this argument and
                             False for is_built_in argument.
+                            If you want to set a stock image, use the StockImage class.
         ----------------    ---------------------------------------------------------------
         is_built_in         Optional bool, default=True. The built-in background is set by default.
                             If uploading a custom image, this parameter is ignored.
@@ -1072,7 +1099,7 @@ class HomePageSettings(object):
                 {"backgroundImage": background_update_val}
             )
         elif self._new_hp:
-            if background_file:
+            if background_file and not isinstance(background_file, StockImage):
                 fpath = Path(background_file)
                 f_splits = fpath.name.split(".")
                 if len(f_splits) > 1 and f_splits[1] == "png":
@@ -1089,15 +1116,18 @@ class HomePageSettings(object):
                     )
                 background_update_val = key_val
                 cover_type = "custom"
+                cover_image_stock = ""
             elif is_built_in:
                 cover_type = "stock"
                 background_update_val = ""
+                cover_image_stock = background_file.value
             hp = json.loads(
                 open(self._portal_resources.get("home.page.json"), "r").read()
             )
 
             hp["header"]["coverImg"] = background_update_val
             hp["header"]["coverType"] = cover_type
+            hp["header"]["coverImgStock"] = cover_image_stock
             params = {
                 "key": "home.page.json",
                 "text": hp,
@@ -1118,43 +1148,57 @@ class HomePageSettings(object):
         ================  ===============================================================
         **Parameter**      **Description**
         ----------------  ---------------------------------------------------------------
-        download_path     required string. Folder path to download the background file.
+        download_path     Required string. Folder path to download the background file.
         ================  ===============================================================
 
-        :return: Path to downloaded background file. If None, then background is not set and nothing was downloaded.
+        :return: Path to downloaded background file. If the cover image is a stock image then the stock image's name from the StockImage class will be returned.
         """
 
         # create a portal resource manager obj
         # find existing banner resource file
         bckgrnd_path = None
-        if self._new_hp is False:
-            resource_list = self._portal_resources.list()
-            e_background = [
-                banner
-                for banner in resource_list
-                if banner["key"].startswith("background")
-            ]
-            for background in e_background:
-                try:
-                    bckgrnd_path = self._portal_resources.get(
-                        background["key"], download_path
-                    )
-
-                except:
-                    if self._new_hp:
-                        # see if named something else
-                        hp = json.loads(
-                            open(
-                                self._portal_resources.get("home.page.json"), "r"
-                            ).read()
+        if self._new_hp:
+            # Need to read the homepage settings
+            hp = json.loads(
+                open(
+                    self._portal_resources.get("home.page.json"),
+                    "r",
+                ).read()
+            )
+            # Have to check the cover type first
+            cover_type = hp["header"]["coverType"]
+            if cover_type == "stock":
+                return StockImage(hp["header"]["coverImgStock"]).name
+            else:
+                # If not stock then image is set
+                resource_list = self._portal_resources.list()
+                e_background = [
+                    banner
+                    for banner in resource_list
+                    if banner["key"].startswith("background")
+                ]
+                for background in e_background:
+                    try:
+                        bckgrnd_path = self._portal_resources.get(
+                            background["key"], download_path
                         )
-                        background = hp["header"]["coverImg"]
-                        if background:
-                            bckgrnd_path = self._portal_resources.get(
-                                background["key"], download_path
+
+                    except:
+                        if self._new_hp:
+                            # see if named something else
+                            hp = json.loads(
+                                open(
+                                    self._portal_resources.get("home.page.json"),
+                                    "r",
+                                ).read()
                             )
-                    else:
-                        continue
+                            background = hp["header"]["coverImg"]
+                            if background:
+                                bckgrnd_path = self._portal_resources.get(
+                                    background["key"], download_path
+                                )
+                        else:
+                            continue
         return bckgrnd_path
 
     # ----------------------------------------------------------------------
@@ -1241,7 +1285,11 @@ class HomePageSettings(object):
                         "color:#369;'>{}</span></div>".format(self._gis.properties.name)
                     )
             return self._gis.update_properties(
-                {"clearEmptyFields": True, "thumbnail": "", "rotatorPanels": rp}
+                {
+                    "clearEmptyFields": True,
+                    "thumbnail": "",
+                    "rotatorPanels": rp,
+                }
             )
 
     # ----------------------------------------------------------------------
@@ -1380,7 +1428,8 @@ class HomePageSettings(object):
 ##############################################################################
 class MapSettings(object):
     """Helper class that can be called off of UX class using the 'map_settings' property.
-    Edit org map settings such as the default extent, default basemap, etc."""
+    Edit org map settings such as the default extent, default basemap, etc.
+    """
 
     # ----------------------------------------------------------------------
     def __init__(self, gis):
@@ -1863,7 +1912,8 @@ class ItemSettings(object):
 #############################################################################
 class SecuritySettings(object):
     """Helper class that can be called off of UX class using the 'security_settings' property.
-    Edit org item settings such as the informational banner, password policy, etc."""
+    Edit org item settings such as the informational banner, password policy, etc.
+    """
 
     # ----------------------------------------------------------------------
     def __init__(self, gis):
@@ -2392,7 +2442,11 @@ class SecuritySettings(object):
         # perform update
 
         return self._gis.update_properties(
-            {"mfaEnabled": enabled, "mfaAdmins": admins, "clearEmptyFields": True}
+            {
+                "mfaEnabled": enabled,
+                "mfaAdmins": admins,
+                "clearEmptyFields": True,
+            }
         )
 
     # ----------------------------------------------------------------------
@@ -2582,7 +2636,10 @@ class SecuritySettings(object):
         """
         if self._gis._is_agol is True:
             url = self._portal.resturl + "portals/self/setSigninSettings"
-            params = {"f": "json", "blockUnapprovedThirdpartyApps": block_unapproved}
+            params = {
+                "f": "json",
+                "blockUnapprovedThirdpartyApps": block_unapproved,
+            }
 
             return self._gis._con.post(url, params)
         else:
@@ -2671,7 +2728,12 @@ class SecuritySettings(object):
                         "f": "json",
                         "signinOptionsOrder": {
                             "logins": ["arcgis", "social"],
-                            "social": ["facebook", "google", "github", "apple"],
+                            "social": [
+                                "facebook",
+                                "google",
+                                "github",
+                                "apple",
+                            ],
                         },
                     }
                 # specify order if passed in
@@ -2681,7 +2743,12 @@ class SecuritySettings(object):
                 # configure the social providers
                 for network in social_networks:
                     networks = []
-                    if network.lower() in ["facebook", "google", "github", "apple"]:
+                    if network.lower() in [
+                        "facebook",
+                        "google",
+                        "github",
+                        "apple",
+                    ]:
                         networks.append(network)
                 url = self._portal.resturl + "portals/self/socialProviders/configure"
                 params = {

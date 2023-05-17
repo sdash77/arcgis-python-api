@@ -1969,6 +1969,7 @@ class BusinessAnalyst(object):
         params = {
             "f": "json",
             "analysisVariables": evars,
+            "appID": "esripythonapi",
         }
 
         # if any legacy parameters provided, add them to the payload
