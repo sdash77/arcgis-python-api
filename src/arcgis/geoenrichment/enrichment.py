@@ -1237,16 +1237,19 @@ def create_report(
                            stream. The attributes are used by Portal to determine where and how
                            an item is stored. Parameter attributes include: user, folder,
                            title, item_properties, URL, token, and referrer.
-                           Example
 
-                           Creating a new output in a Portal for ArcGIS Instance:
+                           Example:
 
-                           | return_type = {'user' : 'testUser',
-                           |               'folder' : 'FolderName',
-                           |               'title' : 'Report Title',
-                           |               'item_properties' : '<properties>',
-                           |               'url' : '``https://hostname.domain.com/webadaptor``',
-                           |               'token' : 'token', 'referrer' : 'referrer'}
+                                Creating a new output in a Portal for ArcGIS Instance:
+                                return_type = {
+                                    "user": "testUser",
+                                    "folder": "FolderName",
+                                    "title": "Report Title",
+                                    "item_properties": {...},
+                                    "url": "https://hostname.domain.com/webadaptor",
+                                    "token": "...",
+                                    "referrer": "..."
+                                }
     ------------------     --------------------------------------------------------------------
     use_data               Optional dictionary. This parameter explicitly specify the country
                            or dataset to query. When all input features specified in the
@@ -1507,40 +1510,35 @@ def enrich(
     study_areas                   Required list, dictionary, :class:`~arcgis.features.FeatureSet`
                                   or SpatiallyEnabledDataFrame containing the input areas to be enriched.
 
-                                  study_areas can be a SpatiallyEnabledDataFrame, :class:`~arcgis.features.FeatureSet` or a
+                                  `study_areas` can be a Spatially Enabled DataFrame, :class:`~arcgis.features.FeatureSet` or a
                                   lists of the following types:
 
-                                  * addresses, points of interest, place names or other
-                                  supported locations as strings.
+                                  * addresses, points of interest, place names or other supported locations as strings.
 
-                                  * dicts such as [{"address":{"Address":"380 New York St.",
-                                  "Admin1":"Redlands","Admin2":"CA","Postal":"92373",
-                                  "CountryCode":"USA"}}] for multiple field addresses
+                                  * dicts for multiple field addresses such as:
+                                    Example: [{"address": {"Address":"380 New York St.", "Postal":"92373", "CountryCode":"USA"}}, {"address": {"text": "380 New York St Redlands CA 92373"}}]
 
                                   * :class:`~arcgis.geometry.Geometry` instances
 
                                   * BufferStudyArea instances. By default, one-mile ring
-                                  buffers are created around the points to collect and append
-                                  enrichment data. You can use BufferStudyArea to change the ring
-                                  buffer size or create drive-time service areas around the points.
+                                    buffers are created around the points to collect and append
+                                    enrichment data. You can use BufferStudyArea to change the ring
+                                    buffer size or create network service areas around the points.
 
                                   * NamedArea instances to support standard geography. They are
-                                  obtained using Country.subgeographies()/search(). When
-                                  the NamedArea instances should be combined together (union), a list
-                                  of such NamedArea instances should constitute a study area in the
-                                  list of requested study areas. Otherwise, pass in the result of subgeographies
-                                  as a dictionary.
+                                    obtained using Country.subgeographies()/search().
 
-                                    .. code-block:: python
-                                        usa = Country("USA")
-                                        ca_counties = usa.subgeographies.states['California'].counties
+                                        .. code-block:: python
 
-                                        # Pass as a dictionary
-                                        counties_df = enrich(study_areas=ca_counties, data_collections=['Age'])
-                                        counties_df
+                                            usa = Country("USA")
+                                            ca_counties = usa.subgeographies.states['California'].counties
 
-                                        # Pass as a list
-                                        counties_df = enrich(study_areas=list(ca_counties.values()), data_collections=['Age'])
+                                            # Pass as a dictionary
+                                            counties_df = enrich(study_areas=ca_counties, data_collections=['Age'])
+                                            counties_df
+
+
+                                  For more information and example see: https://developers.arcgis.com/python/guide/part2-where-to-enrich-study-areas/#enriching-study-areas
     -------------------------     --------------------------------------------------------------------
     data_collections              Optional list. A Data Collection is a preassembled list of
                                   attributes that will be used to enrich the input features.
@@ -1850,6 +1848,8 @@ def _preproces_data_colletions_and_analysis_variables(
 
     # if variables provided, prep as well
     if enrich_vars is not None and not isinstance(enrich_vars, pd.DataFrame):
+        if isinstance(src, Country):
+            src = src._ba_cntry  # change to business analyst country class
         av_vars = src.get_enrich_variables_from_iterable(enrich_vars, **kwargs)
     else:
         av_vars = None

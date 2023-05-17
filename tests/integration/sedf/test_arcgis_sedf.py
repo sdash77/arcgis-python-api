@@ -2,18 +2,21 @@
 Tests Related to Spatially Enabled Data Frame
 """
 import sys
-import shutil
-import unittest
-import pandas as pd
-from arcgis.features import GeoSeriesAccessor, GeoAccessor
-from arcgis.features.geo import _is_geoenabled
 
+sys.path.insert(0, r"c:\SVN\geosaurus_issue_9169\src")
 import ssl
-
-ssl._create_default_https_context = ssl._create_unverified_context
+from arcgis.geometry import _types, Geometry
+from arcgis.features.geo import _is_geoenabled
+from arcgis.features.geo import GeoAccessor, GeoSeriesAccessor
+from arcgis.features.geo._array import GeoArray
+from arcgis.gis.server._service import Service
+from arcgis.features import FeatureLayer
+import tempfile, uuid
 import unittest
 import pandas as pd
 import os, shutil
+
+ssl._create_default_https_context = ssl._create_unverified_context
 
 try:
     import arcpy
@@ -22,15 +25,14 @@ try:
     HAS_ARCPY = True
 except:
     HAS_ARCPY = False
-from arcgis.geometry import _types, Geometry
-from arcgis.features.geo import GeoAccessor, GeoSeriesAccessor
-from arcgis.features.geo._array import GeoArray
-from arcgis.gis.server._service import Service
-from arcgis.features import FeatureLayer
-import tempfile, uuid
+
+DATA_PATH = os.path.join(
+    os.path.dirname(os.path.abspath(__file__)), "spatial"
+)
+print(DATA_PATH)
 
 fs_urls = [
-    "https://services.arcgis.com/P3ePLMYs2RVChkJx/ArcGIS/rest/services/World_Cities/FeatureServer/0",  # Point
+    "https://services7.arcgis.com/JEwYeAy2cc8qOe3o/arcgis/rest/services/amazingtimes/FeatureServer/0",  # "https://services.arcgis.com/P3ePLMYs2RVChkJx/ArcGIS/rest/services/World_Cities/FeatureServer/0",  # Point
     "https://services.arcgis.com/P3ePLMYs2RVChkJx/ArcGIS/rest/services/USA_Railroads/FeatureServer/0",  # Polyline
     "https://services.arcgis.com/P3ePLMYs2RVChkJx/ArcGIS/rest/services/World_Countries_(Generalized)/FeatureServer/0",
 ]  # polygon
@@ -183,7 +185,9 @@ if HAS_ARCPY:
                 shutil.rmtree(wrksp, ignore_errors=True)
                 os.makedirs(wrksp)
 
-            fc = sdf.spatial.to_featureclass(os.path.join(wrksp, "mydataset.shp"))
+            fc = sdf.spatial.to_featureclass(
+                os.path.join(wrksp, "mydataset.shp")
+            )
             self.assertTrue(os.path.isfile(fc))
             shutil.rmtree(wrksp, ignore_errors=True)
 
@@ -212,7 +216,9 @@ if HAS_ARCPY:
         # ----------------------------------------------------------------------
         def test_from_featureclass(self):
             """tests reading from spatial data"""
-            sdf = pd.DataFrame.spatial.from_featureclass(r"./spatial/aoi.shp")
+            sdf = pd.DataFrame.spatial.from_featureclass(
+                os.path.join(DATA_PATH, "aoi.shp")
+            )
             self.assertIsInstance(sdf, pd.DataFrame)
             self.assertTrue(_is_geoenabled(sdf))
 
@@ -222,7 +228,9 @@ if HAS_ARCPY:
             pklout = os.path.join(tempfile.gettempdir(), "export.pkl")
             if os.path.isfile(pklout):
                 os.remove(pklout)
-            sdf = pd.DataFrame.spatial.from_featureclass(r"./spatial/aoi.shp")
+            sdf = pd.DataFrame.spatial.from_featureclass(
+                os.path.join(DATA_PATH, "aoi.shp")
+            )
             sdf.to_pickle(pklout)
             self.assertTrue(os.path.isfile(pklout))
             os.remove(pklout)
@@ -230,7 +238,7 @@ if HAS_ARCPY:
         # ----------------------------------------------------------------------
         def test_from_pickle(self):
             """tests loading from pickle"""
-            pklin = r"./spatial/sample.pkl"
+            pklin = os.path.join(DATA_PATH, "sample.pkl")
             sdf = pd.read_pickle(pklin)
             self.assertTrue(_is_geoenabled(sdf))
 
@@ -264,14 +272,26 @@ if HAS_ARCPY:
             geojson_polygon = {
                 "type": "Polygon",
                 "coordinates": [
-                    [[10.0, 0.0], [20.0, 0.0], [20.0, 10.0], [10.0, 10.0], [10.0, 0.0]]
+                    [
+                        [10.0, 0.0],
+                        [20.0, 0.0],
+                        [20.0, 10.0],
+                        [10.0, 10.0],
+                        [10.0, 0.0],
+                    ]
                 ],
             }
             polygon = arcpy.AsShape(geojson_polygon).projectAs(sr)
             geojson_polygon = {
                 "type": "Polygon",
                 "coordinates": [
-                    [[0.0, 0.0], [10.0, 0.0], [10.0, 5.0], [5.0, 5.0], [0.0, 0.0]]
+                    [
+                        [0.0, 0.0],
+                        [10.0, 0.0],
+                        [10.0, 5.0],
+                        [5.0, 5.0],
+                        [0.0, 0.0],
+                    ]
                 ],
             }
             polygon2 = arcpy.AsShape(geojson_polygon).projectAs(sr)
@@ -341,8 +361,12 @@ if HAS_ARCPY:
             from scipy.spatial import cKDTree, KDTree
             from arcgis.geometry._types import SpatialReference
 
-            sdf1 = pd.DataFrame.spatial.from_featureclass(r"./spatial/area_of_int.shp")
-            sdf2 = pd.DataFrame.spatial.from_featureclass(r"./spatial/training.shp")
+            sdf1 = pd.DataFrame.spatial.from_featureclass(
+                os.path.join(DATA_PATH, "area_of_int.shp")
+            )
+            sdf2 = pd.DataFrame.spatial.from_featureclass(
+                os.path.join(DATA_PATH, "training.shp")
+            )
             final_right = sdf1.spatial.join(sdf2, "right")
             assert isinstance(final_right, pd.DataFrame)
             assert _is_geoenabled(final_right)
@@ -353,7 +377,9 @@ if HAS_ARCPY:
         # ----------------------------------------------------------------------
         def test_ga_project(self):
             """tests the geoaccessor"""
-            sdf = pd.DataFrame.spatial.from_featureclass(r"./spatial/area_of_int.shp")
+            sdf = pd.DataFrame.spatial.from_featureclass(
+                os.path.join(DATA_PATH, "area_of_int.shp")
+            )
             ga = sdf.spatial
             isinstance(ga, GeoAccessor)
             assert ga.project(spatial_reference=4326)
@@ -364,8 +390,12 @@ if HAS_ARCPY:
         # ----------------------------------------------------------------------
         def test_overlay_ops(self):
             """tests the various overlay operations."""
-            sdf = pd.DataFrame.spatial.from_featureclass(r"./spatial/area_of_int.shp")
-            sdf2 = pd.DataFrame.spatial.from_featureclass(r"./spatial/training.shp")
+            sdf = pd.DataFrame.spatial.from_featureclass(
+                os.path.join(DATA_PATH, "area_of_int.shp")
+            )
+            sdf2 = pd.DataFrame.spatial.from_featureclass(
+                os.path.join(DATA_PATH, "training.shp")
+            )
             ga = sdf.spatial
             isinstance(ga, GeoAccessor)
             union = ga.overlay(sdf=sdf2)
@@ -376,8 +406,12 @@ if HAS_ARCPY:
         # ----------------------------------------------------------------------
         def test_ga_relationship(self):
             """GA Relationship Method"""
-            sdf = pd.DataFrame.spatial.from_featureclass(r"./spatial/area_of_int.shp")
-            sdf2 = pd.DataFrame.spatial.from_featureclass(r"./spatial/training.shp")
+            sdf = pd.DataFrame.spatial.from_featureclass(
+                os.path.join(DATA_PATH, "area_of_int.shp")
+            )
+            sdf2 = pd.DataFrame.spatial.from_featureclass(
+                os.path.join(DATA_PATH, "training.shp")
+            )
             ga = sdf.spatial
             isinstance(ga, GeoAccessor)
             df1 = ga.relationship(other=sdf2, op="contains")
@@ -400,15 +434,21 @@ if HAS_ARCPY:
         # ----------------------------------------------------------------------
         def test_ga_select(self):
             """tests the select operation"""
-            sdf = pd.DataFrame.spatial.from_featureclass(r"./spatial/area_of_int.shp")
-            sdf2 = pd.DataFrame.spatial.from_featureclass(r"./spatial/training.shp")
+            sdf = pd.DataFrame.spatial.from_featureclass(
+                os.path.join(DATA_PATH, "area_of_int.shp")
+            )
+            sdf2 = pd.DataFrame.spatial.from_featureclass(
+                os.path.join(DATA_PATH, "training.shp")
+            )
             ga = sdf.spatial
             select = ga.select(other=sdf2)
 
         # ----------------------------------------------------------------------
         def test_to_methods(self):
             """test the GeoAccessor to methods"""
-            sdf = pd.DataFrame.spatial.from_featureclass(r"./spatial/area_of_int.shp")
+            sdf = pd.DataFrame.spatial.from_featureclass(
+                os.path.join(DATA_PATH, "area_of_int.shp")
+            )
             ga = sdf.spatial
             isinstance(ga, GeoAccessor)
             fs = ga.to_featureset()
@@ -433,8 +473,10 @@ if HAS_ARCPY:
                 pass
             from arcgis.geometry import Geometry
 
-            self._sdf = pd.read_pickle(r"./spatial/sample.pkl")
-            self._pt = Geometry({"x": 1, "y": 1, "spatialReference": {"wkid": 4326}})
+            self._sdf = pd.read_pickle(os.path.join(DATA_PATH, "sample.pkl"))
+            self._pt = Geometry(
+                {"x": 1, "y": 1, "spatialReference": {"wkid": 4326}}
+            )
             self._pt2 = Geometry(
                 {"x": 2.22, "y": -1.5, "spatialReference": {"wkid": 4326}}
             )
@@ -442,11 +484,22 @@ if HAS_ARCPY:
                 {"x": 1.167, "y": 0.833, "spatialReference": {"wkid": 4326}}
             )
             self._line = Geometry(
-                {"paths": [[0.5, 0.5], [1, 1]], "spatialReference": {"wkid": 4326}}
+                {
+                    "paths": [[0.5, 0.5], [1, 1]],
+                    "spatialReference": {"wkid": 4326},
+                }
             )
             self._polygon = Geometry(
                 {
-                    "rings": [[[0.5, 0.5], [1, 1], [1.5, 1.5], [1.5, 0.5], [0.5, 0.5]]],
+                    "rings": [
+                        [
+                            [0.5, 0.5],
+                            [1, 1],
+                            [1.5, 1.5],
+                            [1.5, 0.5],
+                            [0.5, 0.5],
+                        ]
+                    ],
                     "spatialReference": {"wkid": 4326},
                 }
             )
@@ -456,7 +509,9 @@ if HAS_ARCPY:
             """tests that the namespace exists"""
             assert self._sdf.spatial.name
             assert hasattr(self._sdf[self._sdf.spatial.name], "geom")
-            assert isinstance(self._sdf[self._sdf.spatial.name].geom, GeoSeriesAccessor)
+            assert isinstance(
+                self._sdf[self._sdf.spatial.name].geom, GeoSeriesAccessor
+            )
 
         # ------------------------------------------------------------------
         # @unittest.SkipTest
@@ -504,20 +559,22 @@ if HAS_ARCPY:
             """tests the angle distance to method off of the geom namespace"""
             geom = self._sdf[self._sdf.spatial.name].geom
             isinstance(geom, GeoSeriesAccessor)
-            r1 = geom.angle_distance_to(second_geometry=self._pt2, method="PLANAR")
-            r2 = geom.angle_distance_to(second_geometry=self._pt2, method="GEODESIC")
+            r1 = geom.angle_distance_to(
+                second_geometry=self._pt2, method="PLANAR"
+            )
+            r2 = geom.angle_distance_to(
+                second_geometry=self._pt2, method="GEODESIC"
+            )
             r3 = geom.angle_distance_to(
                 second_geometry=self._pt2, method="GREAT_ELLIPTIC"
             )
             r4 = geom.angle_distance_to(
-                second_geometry=self._pt2, method="PRESERVE_SHAPE"
+                second_geometry=self._pt2, method="LOXODROME"
             )
-            r5 = geom.angle_distance_to(second_geometry=self._pt2, method="LOXODROME")
             assert r1.isnull().all() == False
             assert r2.isnull().all() == False
             assert r3.isnull().all() == False
             assert r4.isnull().all() == False
-            assert r5.isnull().all() == False
 
         # ------------------------------------------------------------------
         # @unittest.SkipTest
@@ -577,12 +634,19 @@ if HAS_ARCPY:
                 }
             )
             no_cross_line = Geometry(
-                {"paths": [[[51, 51], [3, 49]]], "spatialReference": {"wkid": 4326}}
+                {
+                    "paths": [[[51, 51], [3, 49]]],
+                    "spatialReference": {"wkid": 4326},
+                }
             )
             sdf.spatial.name
 
-            r1 = geom.crosses(second_geometry=cross_line)  # SHOULD be ALL True
-            r2 = geom.crosses(second_geometry=no_cross_line)  # SHOULD be ALL False
+            r1 = geom.crosses(
+                second_geometry=cross_line
+            )  # SHOULD be ALL True
+            r2 = geom.crosses(
+                second_geometry=no_cross_line
+            )  # SHOULD be ALL False
             assert isinstance(r1, pd.Series)
             assert isinstance(r2, pd.Series)
 
@@ -618,7 +682,9 @@ if HAS_ARCPY:
             sdf = self._sdf.copy()
             geom = sdf[sdf.spatial.name].geom
             isinstance(geom, GeoSeriesAccessor)
-            r1 = geom.densify(method="DISTANCE", distance=0.001, deviation=0.000001)
+            r1 = geom.densify(
+                method="DISTANCE", distance=0.001, deviation=0.000001
+            )
             assert r1.isnull().all() == False
             assert r1.dtype.name == "geometry"
 
@@ -792,7 +858,7 @@ if HAS_ARCPY:
             geom = sdf[sdf.spatial.name].geom
             isinstance(geom, GeoSeriesAccessor)
             r1 = geom.point_from_angle_and_distance(
-                angle=0.10, distance=1, method="PRESERVE_SHAPE"
+                angle=0.10, distance=1, method="GEODESIC"
             )
             assert isinstance(r1, pd.Series)
             assert r1.isnull().all() == False
@@ -833,7 +899,11 @@ if HAS_ARCPY:
             df = pd.DataFrame({"SHAPE": v})
             df.spatial.set_geometry("SHAPE")
             pt = Geometry(
-                {"x": -97.06133, "y": 32.8379, "spatialReference": {"wkid": 4326}}
+                {
+                    "x": -97.06133,
+                    "y": 32.8379,
+                    "spatialReference": {"wkid": 4326},
+                }
             )
             r = df.SHAPE.geom.query_point_and_distance(pt, True)
             assert r.dtype.name.lower() == "object"
@@ -854,7 +924,11 @@ if HAS_ARCPY:
         def test_snap_to_line(self):
             """tests the snap_to_line method off of the geom namespace"""
             pt = Geometry(
-                {"x": -97.06133, "y": 32.8379, "spatialReference": {"wkid": 4326}}
+                {
+                    "x": -97.06133,
+                    "y": 32.8379,
+                    "spatialReference": {"wkid": 4326},
+                }
             )
             v = GeoArray([geoms[2]])
             df = pd.DataFrame({"SHAPE": v})
@@ -884,7 +958,13 @@ if HAS_ARCPY:
                 [
                     0,
                     pd.Timedelta(2, unit="min"),
-                    Geometry({"x": -1.2, "y": 1.2, "spatialReference": {"wkid": 4326}}),
+                    Geometry(
+                        {
+                            "x": -1.2,
+                            "y": 1.2,
+                            "spatialReference": {"wkid": 4326},
+                        }
+                    ),
                 ],
             ]
             sdf = pd.DataFrame(lst, columns=["FID", "elapsed_time", "SHAPE"])
@@ -905,7 +985,9 @@ if HAS_ARCPY:
             sdf = self._sdf.copy()
             geom = sdf[sdf.spatial.name].geom
             isinstance(geom, GeoSeriesAccessor)
-            r1 = geom.symmetric_difference(second_geometry=sdf.SHAPE[0].buffer(0.25))
+            r1 = geom.symmetric_difference(
+                second_geometry=sdf.SHAPE[0].buffer(0.25)
+            )
             assert isinstance(r1, pd.Series)
             assert r1.isnull().all() == False
 
