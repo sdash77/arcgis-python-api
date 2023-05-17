@@ -119,7 +119,10 @@ class _DeepCloner:
         self._create_graph()
 
     def _clone_dashboard(self, dashboard_item):
-        widgets = dashboard_item.get_data()["desktopView"]["widgets"]
+        if "desktopView" in dashboard_item.get_data():
+            widgets = dashboard_item.get_data()["desktopView"]["widgets"]
+        else:
+            widgets = dashboard_item.get_data()["widgets"]
         item_list = []
         cloned_item_list = []
         map_dict = {}
@@ -463,11 +466,11 @@ class _DeepCloner:
 
             for layer in featurelayer_services:
                 try:
-                    item = arcgis.gis.Item(item._gis, layer["itemId"])
+                    lay_item = arcgis.gis.Item(item._gis, layer["itemId"])
                 except:
-                    item = {}
+                    lay_item = {}
                 if (
-                    getattr(item, "groupDesignations", "notlivingatlas")
+                    getattr(lay_item, "groupDesignations", "notlivingatlas")
                     != "livingatlas"
                 ):
                     service_url = os.path.dirname(layer["url"])
@@ -519,7 +522,6 @@ class _DeepCloner:
                             )
                             if vector_tile_item is None:
                                 continue
-
                             if vector_tile_item["owner"] == item["owner"]:
                                 item_definition.add_child(
                                     self._get_item_definitions(vector_tile_item)

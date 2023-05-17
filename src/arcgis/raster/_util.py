@@ -120,7 +120,7 @@ def _to_datetime(dt):
                 seconds=(dt / 1000)
             )
         else:
-            return datetime.datetime.utcfromtimestamp(dt / 1000)
+            return datetime.datetime.fromtimestamp(dt / 1000, tz=datetime.timezone.utc)
     except:
         return dt
 
@@ -141,7 +141,7 @@ def _ole2datetime(oledt):
     try:
         return OLE_TIME_ZERO + datetime.timedelta(days=float(oledt))
     except:
-        return datetime.datetime.utcfromtimestamp(oledt / 1000)
+        return datetime.datetime.fromtimestamp(oledt / 1000, tz=datetime.timezone.utc)
 
 
 def _iso_to_datetime(timestamp):
@@ -303,7 +303,7 @@ def _ole2datetime(oledt):
     try:
         return OLE_TIME_ZERO + datetime.timedelta(days=float(oledt))
     except:
-        return datetime.datetime.utcfromtimestamp(oledt / 1000)
+        return datetime.datetime.fromtimestamp(oledt / 1000, tz=datetime.timezone.utc)
 
 
 def _iso_to_datetime(timestamp):
@@ -348,7 +348,9 @@ def _check_if_iso_format(timestamp):
 
 
 def _local_function_template(
-    operation_number=None, percentile_value=None, percentile_interpolation_type=None
+    operation_number=None,
+    percentile_value=None,
+    percentile_interpolation_type=None,
 ):
     template_dict = {
         "name": "max_rft",
@@ -363,7 +365,11 @@ def _local_function_template(
         "arguments": {
             "Rasters": {
                 "name": "Rasters",
-                "value": {"elements": [], "type": "ArgumentArray", "_object_id": 2},
+                "value": {
+                    "elements": [],
+                    "type": "ArgumentArray",
+                    "_object_id": 2,
+                },
                 "aliases": ["__IsRasterArray__"],
                 "isDataset": False,
                 "isPublic": False,
@@ -825,7 +831,11 @@ class _ImageryUploaderAGOL:
             self.ClientAuthenticationError,
             self.ServiceResponseError,
             self.ServiceRequestError,
-        ) = (ClientAuthenticationError, ServiceResponseError, ServiceRequestError)
+        ) = (
+            ClientAuthenticationError,
+            ServiceResponseError,
+            ServiceRequestError,
+        )
 
         self.file_list = file_list
         self.container = container
@@ -952,7 +962,10 @@ class _ImageryUploaderAGOL:
                                         )
                                     )
 
-                                data_path = {"source": source, "target": target}
+                                data_path = {
+                                    "source": source,
+                                    "target": target,
+                                }
                                 if data_path not in self.mosaic_data_info:
                                     self.mosaic_data_info.append(data_path)
 
@@ -1147,7 +1160,13 @@ def _upload_imagery_agol(
             file["prefix"] = file_list[0]["prefix"]
 
     uploader = _ImageryUploaderAGOL(
-        file_list, container, auto_renew, upload_properties, task, raster_type, gis
+        file_list,
+        container,
+        auto_renew,
+        upload_properties,
+        task,
+        raster_type,
+        gis,
     )
     mosaic_data_info = []
     url_list, mosaic_data_info = uploader.upload_all_files()
@@ -1199,7 +1218,10 @@ def _upload_imagery_enterprise(files, raster_type_name=None, gis=None):
 
                         if item_id is not None:
                             if append_path:
-                                item_id_dict = {"itemId": item_id, "path": path}
+                                item_id_dict = {
+                                    "itemId": item_id,
+                                    "path": path,
+                                }
                                 item_ids_list.append(item_id_dict)
                                 item_id_dict = {}
                             else:
@@ -1241,7 +1263,11 @@ def _upload(path, description=None, gis=None):
     ra_url = gis.properties.helperServices["rasterAnalytics"]["url"]
     if (os.path.getsize(path)) < 1000000000:
         url = ra_url + "/uploads/upload"
-        params = {"f": "json", "filename": os.path.basename(path), "overwrite": True}
+        params = {
+            "f": "json",
+            "filename": os.path.basename(path),
+            "overwrite": True,
+        }
         files = {}
         files["file"] = path
         if description:

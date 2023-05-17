@@ -64,7 +64,7 @@ if conda_install_mode:
 else:
     dependencies = [
         "pillow",
-        "urllib3",
+        "urllib3>=1.21.1,<2",
         "cachetools",
         "lxml",
         "notebook",
@@ -79,7 +79,8 @@ else:
         "lerc",
         "ujson >=3",
         "jupyterlab",
-        "python-certifi-win32",
+        "python-certifi-win32;python_version<'3.10'",
+        "truststore>=0.7.0;python_version>'3.9'",
         'pywin32 >=223;platform_system=="Windows"',
         "pyshp >=2",
         "geomet",
@@ -273,9 +274,9 @@ kwargs = {
         # Specify the Python versions you support here. In particular, ensure
         # that you indicate whether you support Python 2, Python 3 or both.
         "Programming Language :: Python :: 3 :: Only",
-        "Programming Language :: Python :: 3.7",
-        "Programming Language :: Python :: 3.8",
         "Programming Language :: Python :: 3.9",
+        "Programming Language :: Python :: 3.10",
+        "Programming Language :: Python :: 3.11",
     ],
     # What does your project relate to?
     "keywords": "gis arcgis geographic spatial spatial-data "
@@ -287,7 +288,7 @@ kwargs = {
     # Alternatively, if you want to distribute just a my_module.py, uncomment
     # this:
     "packages": find_packages(),
-    "python_requires": ">=3.7, <3.10",
+    "python_requires": ">=3.9, <3.12",
     "include_package_data": True,
     "data_files": data_files,
     # List run-time dependencies here.  These will be installed by pip when
