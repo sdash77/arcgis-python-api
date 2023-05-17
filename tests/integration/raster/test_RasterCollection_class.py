@@ -8,7 +8,6 @@ from integration.dino_utils.dino_precondition_checks import PreconditionChecks
 from integration.dino_utils.dino_precondition_checks import PortalUtils
 from integration.dino_utils.dino_configs import DinoConfigs
 from configparser import ConfigParser
-from pathlib import Path
 import datetime
 
 # region PreCondition check
@@ -64,13 +63,6 @@ class Test_RasterCollection_localfile(unittest.TestCase):
         """
 
         # region Read config data
-        _conf_reader = ConfigParser()
-        _conf_reader.read(DinoConfigs.portal_list_file, "UTF-8")
-
-        cls.portal_url = _conf_reader["arcgiscom"]["url"]
-        cls.portal_username = _conf_reader["arcgiscom"]["apidataowner_user"]
-        cls.portal_password = _conf_reader["arcgiscom"]["apidataowner_password"]
-
         _conf_reader2 = ConfigParser()
         _conf_reader2.read(DinoConfigs.root_init_file, "UTF-8")
 
@@ -88,12 +80,12 @@ class Test_RasterCollection_localfile(unittest.TestCase):
         # endregion
 
         # region precondition checks and sign in
-        r1 = PreconditionChecks.can_ping_portal(cls.portal_url)
+        r1 = PreconditionChecks.can_ping_portal(GIS(profile="your_online_api_data_owner_profile").url)
         if not r1:
             cls.class_skip = True
 
         cls.gis = GIS(
-            cls.portal_url, cls.portal_username, cls.portal_password, verify_cert=False
+            profile="your_online_api_data_owner_profile", verify_cert=False
         )
         if cls.gis is None:
             cls.class_skip = True

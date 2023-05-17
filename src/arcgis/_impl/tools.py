@@ -928,7 +928,7 @@ class _FeatureAnalysisTools(BaseAnalytics):
                                                 group_by_field is specified. If true, the minority (least dominant) or
                                                 the majority (most dominant) attribute values for each group field
                                                 within each boundary are calculated. Two new fields are added to the
-                                                aggregated_layer prefixed with Majority_ and Minority_.
+                                                aggregated_layer prefixed with `Majority_` and `Minority_`.
                                                 The default is false.
         ------------------------------------    --------------------------------------------------------------------
         percent_points                          Optional boolean. This boolean parameter is applicable only when a
@@ -4976,6 +4976,7 @@ class _FeatureAnalysisTools(BaseAnalytics):
         context=None,
         estimate=False,
         future=False,
+        bin_resolution=None,
     ):
         """
         Generates a tessellated grid of regular polygons.
@@ -5028,6 +5029,11 @@ class _FeatureAnalysisTools(BaseAnalytics):
         estimate                                 Optional Boolean. If True, the number of credits to run the operation will be returned.
         ------------------------------------     --------------------------------------------------------------------
         future                                   Optional boolean. If True, the result will be a GPJob object and results will be returned asynchronously.
+        ------------------------------------     --------------------------------------------------------------------
+        bin_resolution                           Optional Integer. This becomes required when H3_HEXAGON is used.
+                                                 The H3 resolution of the hexagons. Resolution ranges from 0 to 15.
+                                                 With each increasing resolution size, the area of the polygons will
+                                                 be one seventh the size.
         ====================================     ====================================================================
 
         .. note::
@@ -5057,6 +5063,8 @@ class _FeatureAnalysisTools(BaseAnalytics):
                 params["binSize"] = bin_size
             if bin_size_unit:
                 params["binSizeUnit"] = bin_size_unit
+            if bin_resolution:
+                params["binResolution"] = bin_resolution
             if extent_layer:
                 params["extentLayer"] = extent_layer
             params["intersectStudyArea"] = intersect_study_area
@@ -5077,6 +5085,7 @@ class _FeatureAnalysisTools(BaseAnalytics):
             context=context,
             gis=self._gis,
             future=True,
+            bin_resolution=bin_resolution,
         )
         gpjob._is_fa = True
         if future:
@@ -6327,7 +6336,7 @@ class _FeatureAnalysisTools(BaseAnalytics):
         -------------------------------------   ---------------------------------------------------------
         minority_majority                       Optional boolean. This boolean parameter is applicable only when a ``group_by_field`` is specified.
                                                 If true, the minority (least dominant) or the majority (most dominant) attribute values for each group
-                                                field are calculated. Two new fields are added to the ``result_layer`` prefixed with Majority_ and Minority_.
+                                                field are calculated. Two new fields are added to the ``result_layer`` prefixed with `Majority_` and `Minority_`.
 
                                                 The default is False.
         -------------------------------------   ---------------------------------------------------------
@@ -6782,7 +6791,7 @@ class _FeatureAnalysisTools(BaseAnalytics):
         -------------------------   --------------------------------------------------------------------------------------------------------------------
         minority_majority           Optional boolean. This boolean parameter is applicable only when a ``group_by_field`` is specified. If true, the minority (least dominant) or the
                                     majority (most dominant) attribute values for each group field within each nearby area are calculated. Two new fields are added to
-                                    the ``result_layer`` prefixed with Majority_ and Minority_.
+                                    the ``result_layer`` prefixed with `Majority_` and `Minority_`.
 
                                     The default is False.
         -------------------------   --------------------------------------------------------------------------------------------------------------------
@@ -17595,7 +17604,11 @@ class _RasterAnalysisTools(BaseAnalytics):
         if future:
             if output_direction_raster:
                 return RAJob(
-                    gpjob, item=[output_accumulation_service, output_direction_service]
+                    gpjob,
+                    item=[
+                        output_accumulation_service,
+                        output_direction_service,
+                    ],
                 )
             return RAJob(
                 gpjob,
@@ -17603,7 +17616,8 @@ class _RasterAnalysisTools(BaseAnalytics):
             )
         if output_direction_raster:
             return RAJob(
-                gpjob, item=[output_accumulation_service, output_direction_service]
+                gpjob,
+                item=[output_accumulation_service, output_direction_service],
             ).result()
         return RAJob(
             gpjob,

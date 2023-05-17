@@ -192,7 +192,7 @@ class EsriHttpNegotiateAuth(AuthBase, SupportMultiAuth):
             token_str = resp["token"]
             request.headers["X-Esri-Authorization"] = f"Bearer {token_str}"
 
-            return request
+            return request.copy()
         else:
             return r
 

@@ -69,7 +69,7 @@ except ImportError as e:
 try:
     # register with dask
     from .features.geo import _dask  # noqa
-except ImportError:
+except Exception as e:
     pass
 
 
