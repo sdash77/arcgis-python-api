@@ -2,17 +2,35 @@ from __future__ import annotations
 import platform
 from requests.auth import AuthBase
 from urllib.parse import parse_qs
-from ._schain import SupportMultiAuth
-from ..tools._lazy import LazyLoader
-from ..tools import parse_url
+from arcgis.auth._auth._schain import SupportMultiAuth
+
+from arcgis.auth.tools._lazy import LazyLoader
+from arcgis.auth.tools import parse_url
+
+HAS_KERBEROS = False
+try:
+    requests_kerberos = LazyLoader("requests_kerberos", strict=True)
+    HAS_KERBEROS = True
+except:
+    HAS_KERBEROS = False
+
+
+requests = LazyLoader("requests")
+
+from ._utils import _split_username
+
+__all__ = ["EsriKerberosAuth", "EsriWindowsAuth"]
 
 HAS_SSPI = False
 HAS_GSSAPI = False
 HAS_KERBEROS = False
+WINDOWS = False
 
 if platform.platform().lower().find("windows") > -1:
+    WINDOWS = True
     try:
-        requests_negotiate_sspi = LazyLoader("requests_negotiate_sspi", strict=True)
+        from ._negotiate import EsriHttpNegotiateAuth
+
         HAS_SSPI = True
     except:
         HAS_SSPI = False
@@ -59,41 +77,36 @@ class EsriWindowsAuth(AuthBase, SupportMultiAuth):
 
         try:
             if not username and not password and HAS_SSPI:
-                self.auth = requests_negotiate_sspi.HttpNegotiateAuth()
+                self.auth = EsriHttpNegotiateAuth()
+
+            elif username and password and HAS_SSPI:
+                self.auth = EsriHttpNegotiateAuth(username=username, password=password)
+            elif WINDOWS == True and HAS_KERBEROS:
+                uname_format = _split_username(username)
+                prin = uname_format[0] + "@" + uname_format[1]
+                self.auth = requests_kerberos.HTTPKerberosAuth(
+                    principal=f"{prin}:{password}",
+                )
             elif HAS_GSSAPI:
                 if not username or not password:
                     self.auth = requests_gssapi.HTTPSPNEGOAuth()
                 else:
                     try:
-                        import gssapi
+                        from ._ntlm import EsriHttpNtlmAuth
 
-                        user = gssapi.Name(
-                            base=username, name_type=gssapi.NameType.user
+                        self.auth = EsriHttpNtlmAuth(
+                            username=username, password=password
                         )
-                        bpass = password.encode("utf-8")
-                        creds = gssapi.raw.acquire_cred_with_password(
-                            user, bpass, usage="initiate"
-                        )
-                        creds = creds.creds
-                        self.auth = requests_gssapi.HTTPSPNEGOAuth(
-                            creds=creds,
-                            opportunistic_auth=True,
-                        )
-                    except:
-                        raise Exception("Please ensure gssapi is installed")
-            elif username and password and HAS_SSPI:
-                domain, user = username.split("\\")
-                self.auth = requests_negotiate_sspi.HttpNegotiateAuth(
-                    username=user, password=password, domain=domain
-                )
+
+                    except Exception as ex:
+                        raise ex
+
             else:
                 raise ValueError(
-                    "Could not login, please ensure requests_negotiate_sspi and requests_gssapi are installed."
+                    "Could not login, please ensure pywin32>225 and pyspnego are installed."
                 )
         except ImportError:
-            raise Exception(
-                "NTLM authentication requires requests_negotiate_sspi module."
-            )
+            raise Exception("NTLM authentication requires pyspnego module.")
 
     # ----------------------------------------------------------------------
     def __str__(self):
@@ -117,6 +130,8 @@ class EsriWindowsAuth(AuthBase, SupportMultiAuth):
             or r.text.lower().find("token required") > -1
             or r.text.lower().find("token not found") > -1
             or r.status_code == 401
+            or r.text.lower().find("Access to admin resources are not allowed".lower())
+            > -1
         ) or server_url in self._server_log:
             expiration = 16000
 
@@ -193,6 +208,7 @@ class EsriWindowsAuth(AuthBase, SupportMultiAuth):
         return r
 
 
+###########################################################################
 class EsriKerberosAuth(AuthBase, SupportMultiAuth):
     _token_url = None
     _server_log = None
@@ -219,13 +235,13 @@ class EsriKerberosAuth(AuthBase, SupportMultiAuth):
         self._tokens = {}
         self._token_url = None
         self.verify_cert = verify_cert
-
+        self._session: requests.Session = kwargs.pop("session", requests.Session())
         mutual_auth_lu = {
             1: requests_kerberos.REQUIRED,
             2: requests_kerberos.OPTIONAL,
             3: requests_kerberos.DISABLED,
         }
-        mutual_auth = mutual_auth_lu[kwargs.pop("mutual_authentication", 2)]
+        mutual_auth = mutual_auth_lu[kwargs.pop("mutual_authentication", 3)]
         if referer is None:
             self.referer = "http"
         else:
@@ -233,10 +249,11 @@ class EsriKerberosAuth(AuthBase, SupportMultiAuth):
 
         try:
             if username and password:
-                domain, username = username.split("\\")
+                uname_format = _split_username(username)
+                prin = uname_format[0] + "@" + uname_format[1]
                 self.auth = requests_kerberos.HTTPKerberosAuth(
                     mutual_authentication=mutual_auth,
-                    principal=f"{username}@{domain}:{password}",
+                    principal=f"{prin}:{password}",
                     **kwargs,
                 )
             else:
@@ -270,6 +287,8 @@ class EsriKerberosAuth(AuthBase, SupportMultiAuth):
             r.text.lower().find("invalid token") > -1
             or r.text.lower().find("token required") > -1
             or r.text.lower().find("token not found") > -1
+            or r.text.lower().find("Access to admin resources are not allowed".lower())
+            > -1
         ) or server_url in self._server_log:
             expiration = 16000
 
@@ -284,7 +303,7 @@ class EsriKerberosAuth(AuthBase, SupportMultiAuth):
             if server_url in self._server_log:
                 token_url = self._server_log[server_url]
             else:
-                info = requests.get(
+                info = self._session.get(
                     server_url + "/rest/info?f=json",
                     auth=self.auth,
                     verify=self.verify_cert,
@@ -295,7 +314,7 @@ class EsriKerberosAuth(AuthBase, SupportMultiAuth):
             if server_url in self._tokens:
                 token_str = self._tokens[server_url]
             else:
-                token = requests.post(
+                token = self._session.post(
                     token_url,
                     data=postdata,
                     auth=self.auth,
@@ -326,6 +345,9 @@ class EsriKerberosAuth(AuthBase, SupportMultiAuth):
             _r.headers["referer"] = self.referer or "http"
             _r.headers["X-Esri-Authorization"] = f"Bearer {token_str}"
             _r.history.append(r)
+            if _r.status_code == 401:
+                _r2 = self.auth.authenticate_user(_r)
+                return _r2
             return _r
         return r
 

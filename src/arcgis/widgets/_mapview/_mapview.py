@@ -262,7 +262,6 @@ class MapView(widgets.DOMWidget):
 
     """
 
-    # region Class, instance and interop variables
     _view_name = Unicode("ArcGISMapIPyWidgetView").tag(sync=True)
     _model_name = Unicode("ArcGISMapIPyWidgetModel").tag(sync=True)
     _view_module = Unicode("arcgis-map-ipywidget").tag(sync=True)
@@ -500,9 +499,11 @@ class MapView(widgets.DOMWidget):
                     )
             self._basemap = value
             self.webmap.basemap = value
+            self._webmap = self.webmap._webmapdict
         elif value in self.gallery_basemaps:
             self._basemap = value
             self.webmap.basemap = value
+            self._webmap = self.webmap._webmapdict
         else:
             try:
                 self.webmap.basemap = value
@@ -513,6 +514,7 @@ class MapView(widgets.DOMWidget):
                 copy_gallery = dict(self._gallery_basemaps)
                 self._gallery_basemaps = {}
                 self._gallery_basemaps = copy_gallery
+                self._webmap = self.webmap._webmapdict
             except Exception:
                 raise RuntimeError("Basemap '{}' isn't valid".format(value))
 
@@ -1288,7 +1290,7 @@ class MapView(widgets.DOMWidget):
 
     def _get_portal_url(self):
         try:
-            return self.gis._portal.resturl.split("sharing")[0]
+            return self.gis._portal._public_rest_url.split("sharing")[0]
         except Exception as e:
             return self.gis.url
 
@@ -1788,7 +1790,7 @@ class MapView(widgets.DOMWidget):
             elif is_numpy_array(item):
                 return get_hash_numpy_array(item)
             elif isinstance(item, Raster):
-                return str(hash(item.path))
+                return str(hash(item.catalog_path))
             elif isinstance(item, ImageryLayer):
                 return str(hash(item.url))
             else:

@@ -1,15 +1,11 @@
 import sys
-
-sys.path.insert(0, r"C:\SVN\geosaurus_master_issue_8061\src")
 import unittest
 
 from arcgis.auth.tools._util import detect_proxy
 from arcgis.gis import GIS
 from arcgis.gis.sharing._dependency import DependencyManager
 
-PROFILES = [
-    "your_enterprise_profile",
-]
+PROFILES = ["your_ent_admin_profile"]
 ALL_HTTP = True
 
 

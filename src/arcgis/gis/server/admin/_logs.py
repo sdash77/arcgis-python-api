@@ -293,7 +293,7 @@ class LogManager(BaseServer):
         # for the next request to get the next set of records
         loop = 0
         new_logs = {}
-        while max_records_return > 1:
+        while max_records_return > 1 and has_more:
             if has_more:
                 # get new start time from logs endTime in first loop then from new_logs endTime after
                 params["startTime"] = (

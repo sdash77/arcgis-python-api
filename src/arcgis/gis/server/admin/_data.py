@@ -10,6 +10,7 @@ specific data item. This operation helps you determine if a
 particular data item can be safely deleted or refreshed.
 """
 from __future__ import absolute_import
+from __future__ import annotations
 import os
 import re
 import json
@@ -17,7 +18,7 @@ from .._common import BaseServer
 from ..._impl._con import Connection
 from .._common.util import contextmanager, _tempinput
 from arcgis.gis import GIS
-from typing import Optional
+from typing import Optional, Any
 
 ###########################################################################
 
@@ -73,7 +74,11 @@ class Datastore(BaseServer):
 
     # ----------------------------------------------------------------------
     def __repr__(self) -> str:
-        return '<%s title:"%s" type:"%s">' % (type(self).__name__, self._url, self.type)
+        return '<%s title:"%s" type:"%s">' % (
+            type(self).__name__,
+            self._url,
+            self.type,
+        )
 
     # ----------------------------------------------------------------------
     @property
@@ -102,7 +107,13 @@ class Datastore(BaseServer):
             with _tempinput(json.dumps(value)) as tempfilename:
                 # Build the files list (tuples)
                 files = []
-                files.append(("manifest", tempfilename, os.path.basename(tempfilename)))
+                files.append(
+                    (
+                        "manifest",
+                        tempfilename,
+                        os.path.basename(tempfilename),
+                    )
+                )
 
                 postdata = {"f": "pjson"}
 
@@ -241,6 +252,17 @@ class Datastore(BaseServer):
             res = self._con.post(path, params, verify_cert=False)
 
         return res["status"] == "success"
+
+    # ----------------------------------------------------------------------
+    @property
+    def lifecycleinfos(self) -> dict[str, Any]:
+        """
+        Returns information regarding when the data store item was created and last edited.
+
+        """
+        url: str = f"{self._url}/lifecycleinfos"
+        params: dict[str, str] = {"f": "json"}
+        return self._con.get(url, params=params)
 
     # ----------------------------------------------------------------------
     def regenerate(self) -> bool:
@@ -500,7 +522,10 @@ class DataStoreManager(BaseServer):
         item = {
             "type": "folder",
             "path": "/fileShares/" + name,
-            "info": {"path": server_path, "dataStoreConnectionType": conn_type},
+            "info": {
+                "path": server_path,
+                "dataStoreConnectionType": conn_type,
+            },
         }
         if client_path is not None:
             item["clientPath"] = client_path
@@ -572,7 +597,10 @@ class DataStoreManager(BaseServer):
         item = {
             "path": "/bigDataFileShares/" + name,
             "type": "bigDataFileShare",
-            "info": {"connectionString": path_str, "connectionType": connection_type},
+            "info": {
+                "connectionString": path_str,
+                "connectionType": connection_type,
+            },
         }
         res = self._register_data_item(item=item)
 

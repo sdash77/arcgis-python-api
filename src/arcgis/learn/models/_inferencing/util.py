@@ -560,10 +560,10 @@ def pixel_classify_ts_image(model, tiles, device, model_info):
     model = model.to(device)
     pred_list = []
     for i in normalized_ts:
-        sim = torch.ones(i.shape[0], i.shape[1], 1).cuda()
+        sim = torch.ones(i.shape[0], i.shape[1], 1).to(device)
         model.eval()
         with torch.no_grad():
-            prediction = model(i.float().cuda(), sim)
+            prediction = model(i.float().to(device), sim)
 
         pred_out = prediction.argmax(dim=1).cpu()
         pred_list.append(pred_out)
