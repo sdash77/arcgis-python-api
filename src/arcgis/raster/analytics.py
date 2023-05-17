@@ -8807,93 +8807,93 @@ def analyze_changes_using_landtrendr(
     )
 
 
-# def transfer_files(input_files,
-#                   output_datastore=None,
-#                   tf_filter=None,
-#                   return_first_file=False,
-#                   context=None,
-#                   *,
-#                   gis=None,
-#                   future=False,
-#                   **kwargs):
+def transfer_files(input_files,
+                   output_datastore=None,
+                   filter=None,
+                   return_first_file=False,
+                   context=None,
+                   *,
+                   gis=None,
+                   future=False,
+                   **kwargs):
 
-#    """
-#    Transfers files between datastores.
-#    The tool does not support file transfers to or from geodatabases.
+    """
+    Transfers files between datastores.
+    The tool does not support file transfers to or from geodatabases.
 
-#    ====================================     ====================================================================
-#    **Parameter**                             **Description**
-#    ------------------------------------     --------------------------------------------------------------------
-#    input_files                              Required str or list, input files or folders that will be copied to the output folder.
-#                                             It can be a string specifying the datastore path.
+    ====================================     ====================================================================
+    **Parameter**                             **Description**
+    ------------------------------------     --------------------------------------------------------------------
+    input_files                              Required str or list, input files or folders that will be copied to the output folder.
+                                             It can be a string specifying the datastore path.
 
-#                                             Example:
-#                                             "/rasterStores/testcloudstore/datafolder"
-#                                             "/fileShares/testfolder/raster.tif"
-#                                             "/cloudStores/testcloud/raster.tif"
-#    ------------------------------------     --------------------------------------------------------------------
-#    output_datastore                         Optional str, datastore path of the output folder where the files will be copied.
-#                                             If not specified, the data is copied to the rasterstore.
+                                             Example:
+                                             "/rasterStores/testcloudstore/datafolder"
+                                             "/fileShares/testfolder/raster.tif"
+                                             "/cloudStores/testcloud/raster.tif"
+    ------------------------------------     --------------------------------------------------------------------
+    output_datastore                         Optional str, datastore path of the output folder where the files will be copied.
+                                             If not specified, the data is copied to the rasterstore.
 
-#                                             Example:
-#                                             "/rasterStores/s3cloudstore/datafolder"
-#    ------------------------------------     --------------------------------------------------------------------
-#    tf_filter                                Optional str, to specify the filter while transfering files.
+                                             Example:
+                                             "/rasterStores/s3cloudstore/datafolder"
+    ------------------------------------     --------------------------------------------------------------------
+    filter                                   Optional str, to specify the filter while transfering files.
 
-#                                             Example:
-#                                             "*.tif"
-#    ------------------------------------     --------------------------------------------------------------------
-#    return_first_file                        Optional bool. Available in ArcGIS Image Server 10.8.1 and higher.
-#    ------------------------------------     --------------------------------------------------------------------
-#    context                                  Context contains additional settings that affect task execution.
+                                             Example:
+                                             "*.tif"
+    ------------------------------------     --------------------------------------------------------------------
+    return_first_file                        Optional bool. Available in ArcGIS Image Server 10.8.1 and higher.
+    ------------------------------------     --------------------------------------------------------------------
+    context                                  Context contains additional settings that affect task execution.
 
-#                                             context parameter overwrites values set through arcgis.env parameter
+                                             context parameter overwrites values set through arcgis.env parameter
 
-#                                             This function has the following settings:
+                                             This function has the following settings:
 
-#                                              - Parallel Processing Factor (parallelProcessingFactor): controls
-#                                                Raster Processing (CPU) service instances.
+                                              - Parallel Processing Factor (parallelProcessingFactor): controls
+                                                Raster Processing (CPU) service instances.
 
-#                                                Example:
-#                                                    Syntax example with a specified number of processing instances:
+                                                Example:
+                                                    Syntax example with a specified number of processing instances:
 
-#                                                    {"parallelProcessingFactor": "2"}
+                                                    {"parallelProcessingFactor": "2"}
 
-#                                                    Syntax example with a specified percentage of total
-#                                                    processing instances:
+                                                    Syntax example with a specified percentage of total
+                                                    processing instances:
 
-#                                                    {"parallelProcessingFactor": "60%"}
-#    ------------------------------------     --------------------------------------------------------------------
-#    gis                                      Optional GIS object. If not specified, the currently active connection
-#                                             is used.
-#    ------------------------------------     --------------------------------------------------------------------
-#    future                                   Keyword only parameter. Optional boolean. If True, the result will be a GPJob object and
-#                                             results will be returned asynchronously.
-#    ====================================     ====================================================================
+                                                    {"parallelProcessingFactor": "60%"}
+    ------------------------------------     --------------------------------------------------------------------
+    gis                                      Optional GIS object. If not specified, the currently active connection
+                                             is used.
+    ------------------------------------     --------------------------------------------------------------------
+    future                                   Keyword only parameter. Optional boolean. If True, the result will be a GPJob object and
+                                             results will be returned asynchronously.
+    ====================================     ====================================================================
 
-#    :return: Output location
+    :return: Output location
 
-#    .. code-block:: python
+    .. code-block:: python
 
-#        # Usage Example 1: This example transfers raster.tif from a cloudstore location to a fileshare location.
+        # Usage Example 1: This example transfers raster.tif from a cloudstore location to a fileshare location.
 
-#        transfer_file = transfer_files(input_files="/cloudStores/testcloud/raster.tif",
-#                                       output_datastore="/fileShares/testfolder",
-#                                       tf_filter=None,
-#                                       gis=gis)
+        transfer_file = transfer_files(input_files="/cloudStores/testcloud/raster.tif",
+                                       output_datastore="/fileShares/testfolder",
+                                       filter=None,
+                                       gis=gis)
 
-#    """
+    """
 
-#    gis = _arcgis.env.active_gis if gis is None else gis
+    gis = _arcgis.env.active_gis if gis is None else gis
 
 
-#    return gis._tools.rasteranalysis.transfer_files(input_files=input_files,
-#                                                    output_datastore=output_datastore,
-#                                                    tf_filter=tf_filter,
-#                                                    return_first_file=return_first_file,
-#                                                    context=context,
-#                                                    future=future,
-#                                                    **kwargs)
+    return gis._tools.rasteranalysis.transfer_files(input_files=input_files,
+                                                    output_datastore=output_datastore,
+                                                    tf_filter=filter,
+                                                    return_first_file=return_first_file,
+                                                    context=context,
+                                                    future=future,
+                                                    **kwargs)
 def zonal_statistics_as_table(
     input_zone_raster_or_features,
     input_value_raster,

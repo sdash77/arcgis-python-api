@@ -12922,11 +12922,13 @@ class _RasterAnalysisTools(BaseAnalytics):
             _set_raster_context(params)
             context.update(params["context"])
 
-        if isinstance(input_files, str):
-            input_files = {"uri": input_files}
+        input_data, rt_info =self._build_param_dictionary(input_rasters=input_files, raster_type_name = "Raster Dataset")
+
+        if (return_first_file is not None) and not isinstance(return_first_file , bool):
+            raise RuntimeError("return_first_file must be an instance of boolean")
 
         gpjob = self._tbx.transfer_files(
-            input_files=input_files,
+            input_files=input_data,
             output_datastore=output_datastore,
             filter=tf_filter,
             return_first_file=return_first_file,
