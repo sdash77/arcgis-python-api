@@ -17118,7 +17118,7 @@ class Layer(_GISResource):
         ==================     ====================================================================
         **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
-        item                   Required string. An item ID representing a layer.
+        item                   Required Item. An item containing layers.
         ------------------     --------------------------------------------------------------------
         index                  Optional int. The index of the layer amongst the item's layers
         ==================     ====================================================================
@@ -17132,9 +17132,6 @@ class Layer(_GISResource):
 
             >>> layer.fromitem(item="9311d21a9a2047d19c0faaebd6f2cca6", index=3)
         """
-        if isinstance(item, str):
-            gis = arcgis_env.active_gis
-            item = gis.content.get(item)
         return item.layers[index]
 
     @property
