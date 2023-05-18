@@ -78,6 +78,7 @@ class EsriWindowsAuth(AuthBase, SupportMultiAuth):
         try:
             if not username and not password and HAS_SSPI:
                 self.auth = EsriHttpNegotiateAuth()
+
             elif username and password and HAS_SSPI:
                 self.auth = EsriHttpNegotiateAuth(username=username, password=password)
             elif WINDOWS == True and HAS_KERBEROS:
@@ -129,6 +130,8 @@ class EsriWindowsAuth(AuthBase, SupportMultiAuth):
             or r.text.lower().find("token required") > -1
             or r.text.lower().find("token not found") > -1
             or r.status_code == 401
+            or r.text.lower().find("Access to admin resources are not allowed".lower())
+            > -1
         ) or server_url in self._server_log:
             expiration = 16000
 
@@ -284,6 +287,8 @@ class EsriKerberosAuth(AuthBase, SupportMultiAuth):
             r.text.lower().find("invalid token") > -1
             or r.text.lower().find("token required") > -1
             or r.text.lower().find("token not found") > -1
+            or r.text.lower().find("Access to admin resources are not allowed".lower())
+            > -1
         ) or server_url in self._server_log:
             expiration = 16000
 

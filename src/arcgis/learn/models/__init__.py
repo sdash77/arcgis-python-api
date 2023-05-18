@@ -39,3 +39,4 @@ if not _LAMBDA_TEXT_CLASSIFICATION:
     from ._efficientdet import EfficientDet
     from ._SQNSeg import SQNSeg
     from ._psetae import PSETAE
+    from ._mmdet3d import MMDetection3D
