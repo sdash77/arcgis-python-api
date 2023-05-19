@@ -35,6 +35,7 @@ except ImportError:
     raise (exit())
 # endregion PreCondition Check
 
+
 # TestModule
 @unittest.skipIf(
     module_skip, "Precondition check failed. Skipping tests in Features module"
@@ -74,7 +75,9 @@ class Test_FeatureLayer_portal(unittest.TestCase):
         # endregion
 
         # region precondition checks and sign in
-        r1 = PreconditionChecks.can_ping_portal(GIS(profile="your_ent_admin_profile").url)
+        r1 = PreconditionChecks.can_ping_portal(
+            GIS(profile="your_ent_admin_profile").url
+        )
         if not r1:
             cls.class_skip = True
 
@@ -452,7 +455,9 @@ class Test_FeatureLayer_kubernetes(unittest.TestCase):
         # endregion
 
         # region precondition checks and sign in
-        r1 = PreconditionChecks.can_ping_portal(GIS(profile="your_kubernetes_profile").url)
+        r1 = PreconditionChecks.can_ping_portal(
+            GIS(profile="your_kubernetes_profile").url
+        )
         if not r1:
             cls.class_skip = True
 
@@ -830,7 +835,9 @@ class Test_FeatureLayer_online(unittest.TestCase):
         # endregion
 
         # region precondition checks and sign in
-        r1 = PreconditionChecks.can_ping_portal(GIS(profile="your_online_admin_profile").url)
+        r1 = PreconditionChecks.can_ping_portal(
+            GIS(profile="your_online_admin_profile").url
+        )
         if not r1:
             cls.class_skip = True
 
