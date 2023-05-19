@@ -1,3 +1,4 @@
+import sys
 import logging
 import unittest
 from arcgis.auth.tools._util import detect_proxy
