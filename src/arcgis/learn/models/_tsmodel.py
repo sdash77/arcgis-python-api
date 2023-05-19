@@ -1,4 +1,5 @@
 import os
+import sys
 import tempfile
 import traceback
 import json
@@ -21,6 +22,7 @@ try:
     from fastai.torch_core import split_model_idx
     import torch
     from fastai.metrics import r2_score
+    from sklearn.preprocessing import LabelEncoder
     from ._tsmodel_archs._InceptionTime import _TSInceptionTime
     from ._tsmodel_archs._Resnet import _TSResNet
     from ._tsmodel_archs._ResCNN import _TSResCNN
@@ -28,7 +30,7 @@ try:
     from ._tsmodel_archs._LSTM import _TSLSTM
     from .._utils.TSData import To3dTensor, ToTensor
     from .._utils.common import _get_emd_path
-    from arcgis.learn.models._tsmodel_archs._TST import TST
+    from ._tsmodel_archs._TST import TST
 
     _model_arch = {
         "inceptiontime": _TSInceptionTime,
@@ -38,6 +40,7 @@ try:
         "lstm": _TSLSTM,
         "timeseriestransformer": TST,
     }
+
 except Exception as e:
     import_exception = "\n".join(
         traceback.format_exception(type(e), e, e.__traceback__)
@@ -92,19 +95,35 @@ class TimeSeriesModel(ArcGISModel):
     location_var            Optional string. Location variable in case of
                             NetCDF dataset.
     ---------------------   -------------------------------------------
+    multistep               Optional string. It will set the model to generate
+                            more than one time-step as output in multivariate scenario.
+                            Compared to current auto-regressive fashion, it will generate
+                            multi-step output in single pass.
+                            This option is only  applicable in multivariate
+                            scenario. Univariate implementation will ignore this flag.
+                            Default value is `False`
+    ---------------------   -------------------------------------------
     ``**kwargs``            Optional kwargs.
+    ---------------------   -------------------------------------------
     =====================   ===========================================
 
     :return: :class:`~arcgis.learn.TimeSeriesModel` Object
     """
 
     def __init__(
-        self, data, seq_len, model_arch="InceptionTime", location_var=None, **kwargs
+        self,
+        data,
+        seq_len,
+        model_arch="InceptionTime",
+        location_var=None,
+        multistep=False,
+        **kwargs,
     ):
-
         data_bunch = None
         if not data._is_empty:
-            data_bunch = data._time_series_bunch(seq_len, location_var)
+            data_bunch = data._time_series_bunch(
+                seq_len, location_var, multistep=multistep
+            )
 
         super().__init__(data, None)
         self.multistep = multistep
@@ -191,6 +210,9 @@ class TimeSeriesModel(ArcGISModel):
             emd = json.load(f)
 
         dependent_variable = emd["dependent_variable"]
+        # added reverse support to the EMD params.
+        if isinstance(dependent_variable, str):
+            dependent_variable = [dependent_variable]
         categorical_variables = emd["categorical_variables"]
         continuous_variables = emd["continuous_variables"]
 
@@ -203,6 +225,8 @@ class TimeSeriesModel(ArcGISModel):
         seq_len = emd["seq_len"]
         index_field = emd.get("index_field", None)
         test_size = emd.get("test_size", None)
+        step = emd.get("step", 1)
+        multistep = emd.get("multistep", False)
         # encoder_path = os.path.join(os.path.dirname(emd_path),
         #                             os.path.basename(emd_path).split('.')[0] + '_encoders.pkl')
 
@@ -241,6 +265,8 @@ class TimeSeriesModel(ArcGISModel):
                 seq_len,
                 model_arch=model_arch,
                 pretrained_path=emd_path,
+                step=step,
+                multistep=multistep,
                 **model_params,
             )
             class_object._data.emd = emd
@@ -252,6 +278,8 @@ class TimeSeriesModel(ArcGISModel):
             seq_len,
             model_arch=model_arch,
             pretrained_path=emd_path,
+            step=step,
+            multistep=multistep,
             **model_params,
         )
 
@@ -354,9 +382,16 @@ class TimeSeriesModel(ArcGISModel):
         _emd_template["model_arch"] = self._model_arch
         _emd_template["model_params"] = self._kwargs
         _emd_template["seq_len"] = self._seq_len
-        _emd_template["dependent_variable"] = self._data._dependent_variable
+        # Added this for backward compatibility.
+        # Added the logic to enable compatibility with current ArcgisPro
+        if len(self._data._dependent_variable) == 1:
+            _emd_template["dependent_variable"] = self._data._dependent_variable[0]
+        else:
+            _emd_template["dependent_variable"] = self._data._dependent_variable
         _emd_template["categorical_variables"] = self._data._categorical_variables
         _emd_template["continuous_variables"] = self._data._continuous_variables
+        _emd_template["multistep"] = self.multistep
+        _emd_template["step"] = self.step
 
         if self._data._index_field:
             _emd_template["index_field"] = self._data._index_field
@@ -381,7 +416,7 @@ class TimeSeriesModel(ArcGISModel):
         model.eval()
 
         with torch.no_grad():
-            output = model(seq_arr).item()
+            output = model(seq_arr).cpu().numpy()
 
         return output
 
@@ -448,6 +483,9 @@ class TimeSeriesModel(ArcGISModel):
         number_of_predictions               Optional int for univariate time series.
                                             Specify the number of predictions to make, adds new rows to the dataframe.
                                             For multivariate or if None, it expects the dataframe to have empty rows.
+                                            if multi-step is set to True during training then it does not need empty
+                                            rows. If multi-step is set to False then dataframe needs to have rows with
+                                            `NA` values in `variable predict` and non-NA values in `explnatory_varibles`
                                             For prediction_type='raster', a new raster is created.
         =================================   =========================================================================
 
@@ -457,7 +495,6 @@ class TimeSeriesModel(ArcGISModel):
 
         rasters = explanatory_rasters if explanatory_rasters else []
         if prediction_type in ["features", "dataframe"]:
-
             if input_features is None:
                 raise Exception("Feature Layer required for predict_features=True")
 
@@ -687,52 +724,27 @@ class TimeSeriesModel(ArcGISModel):
         else:
             orig_dataframe = input_features.copy()
 
+        # Dtype conversion because native pandas format will break the plotting libraries
+        for i in orig_dataframe.columns:
+            if isinstance(orig_dataframe.loc[:, i].dtype, pd.Float64Dtype):
+                orig_dataframe.loc[:, i] = orig_dataframe.loc[:, i].astype(np.float64)
+
         if match_field_names is None:
             match_field_names = {}
 
-        from pandas.api.types import is_datetime64_any_dtype as is_datetime
-
-        if number_of_predictions is not None and number_of_predictions > 0:
-            delta = None
-            index_field_name = None
-            end_value = None
-            if self._data._index_field is not None:
-                index_field_name = match_field_names.get(
-                    self._data._index_field, self._data._index_field
-                )
-                if index_field_name in list(orig_dataframe.columns) and is_datetime(
-                    orig_dataframe[index_field_name]
-                ):
-                    delta = (
-                        orig_dataframe[index_field_name].iloc[1]
-                        - orig_dataframe[index_field_name].iloc[0]
-                    )
-                    end_value = None
-                    if delta is not None:
-                        end_value = orig_dataframe[index_field_name].iloc[
-                            len(orig_dataframe) - 1
-                        ]
-            for i in range(number_of_predictions):
-                orig_dataframe = orig_dataframe.append(pd.Series(), ignore_index=True)
-                if delta is not None:
-                    orig_dataframe.loc[len(orig_dataframe) - 1, index_field_name] = (
-                        end_value + delta.to_timedelta64()
-                    )
-                    end_value = end_value + delta.to_timedelta64()
-
-        if match_field_names and match_field_names.get(self._data._dependent_variable):
-            prediction_sequence_orig = orig_dataframe[
-                match_field_names.get(self._data._dependent_variable)
-            ]
-        else:
-            prediction_sequence_orig = orig_dataframe[self._data._dependent_variable]
+        (
+            orig_dataframe,
+            single_swap_pred,
+            number_of_predictions,
+        ) = self._infer_number_of_pred(
+            orig_dataframe, number_of_predictions, match_field_names
+        )
 
         dataframe = orig_dataframe.copy()
-
         fields_needed = (
             self._data._categorical_variables
             + self._data._continuous_variables
-            + [self._data._dependent_variable]
+            + self._data._dependent_variable
         )
         distance_feature_layers = distance_features if distance_features else []
 
@@ -742,7 +754,6 @@ class TimeSeriesModel(ArcGISModel):
         for column in dataframe.columns:
             column_name = column
             categorical = False
-
             if column_name in fields_needed:
                 if column_name not in continuous_variables:
                     categorical = True
@@ -795,9 +806,20 @@ class TimeSeriesModel(ArcGISModel):
             if column not in fields_needed:
                 processed_dataframe = processed_dataframe.drop(column, axis=1)
 
-        processed_dataframe = processed_dataframe.reindex(
-            sorted(processed_dataframe.columns), axis=1
+        # preserve the ordering of the column, It is required because sorting tends to change the order and ultimately
+        # affects different transforms.
+
+        order_columns = (
+            self._data._dependent_variable
+            + self._data._continuous_variables
+            + self._data._categorical_variables
         )
+
+        processed_dataframe = processed_dataframe.loc[:, order_columns]
+
+        # processed_dataframe = processed_dataframe.reindex(
+        #     sorted(processed_dataframe.columns), axis=1
+        # )
 
         index = self._seq_len
         processed_dataframe[self._data._dependent_variable] = processed_dataframe[
@@ -806,56 +828,57 @@ class TimeSeriesModel(ArcGISModel):
 
         processed_dataframe_transform = processed_dataframe.copy()
 
-        if number_of_predictions is not None and number_of_predictions > 0:
-            for col in list(processed_dataframe.columns):
-                transformed_data = processed_dataframe[col]
-                for transform in self._data._column_transforms_mapping.get(col, []):
-                    transformed_data = transform.fit_transform(
-                        np.array(
-                            transformed_data[:-number_of_predictions],
-                            dtype=type(processed_dataframe[col][0]),
-                        ).reshape(-1, 1)
-                    )
-                    transformed_data = transformed_data.squeeze(1)
-                processed_dataframe_transform[col][:-number_of_predictions] = np.array(
-                    transformed_data, dtype=type(processed_dataframe[col][0])
-                )
-        big_bunch = []
-        prediction_sequence_list = None
-        processed_dataframe_transform = processed_dataframe_transform.values
+        processed_dataframe_transform = self._apply_transform(
+            processed_dataframe, processed_dataframe_transform
+        )
 
+        big_bunch = []
+        prediction_sequence_list = []
+        processed_dataframe_transform = processed_dataframe_transform.values
         with warnings.catch_warnings():
             warnings.simplefilter("ignore", UserWarning)
             for col in range(len(processed_dataframe.columns.values)):
                 if (
                     list(processed_dataframe.columns.values)[col]
-                    == self._data._dependent_variable
+                    in self._data._dependent_variable
                 ):
-                    # big_bunch.append(prediction_sequence_list[index - self._seq_len:(index - self._seq_len + self._seq_len)])
-                    prediction_sequence_list = processed_dataframe_transform[:, col]
-                    big_bunch.append(prediction_sequence_list[0 : self._seq_len])
+                    prediction_sequence_list.append(
+                        processed_dataframe_transform[:, col]
+                    )
+                    ind = len(prediction_sequence_list) - 1
+                    big_bunch.append(prediction_sequence_list[ind][0 : self._seq_len])
                 else:
                     big_bunch.append(
                         processed_dataframe_transform[:, col][0 : self._seq_len]
                     )
-
-        if len(prediction_sequence_list) < self._seq_len:
+        # checking the first array because the changes would force this to be of type List[List]
+        prediction_sequence_list = np.stack(prediction_sequence_list, axis=1)
+        if prediction_sequence_list.shape[0] < self._seq_len:
             raise Exception("Basic Sequence not found!")
-
+        # modified below column so that multivariates can be captured
         while index < len(prediction_sequence_list):
-            if (
-                pd.isna(prediction_sequence_list[index])
-                or prediction_sequence_list[index]
-                in [
-                    "",
-                    None,
-                    "null",
-                    "None",
+            if pd.isna(prediction_sequence_list[index]).any() or any(
+                [
+                    True
+                    if i
+                    in [
+                        "",
+                        None,
+                        "null",
+                        "None",
+                    ]
+                    else False
+                    for i in prediction_sequence_list[index]
                 ]
-                or np.isnan(prediction_sequence_list[index])
             ):
                 value = self._predict(np.array(big_bunch))
-                prediction_sequence_list[index] = value
+                # Now the predicted value will have the shape of 1 * [self.step * len(variable_predict)
+                if not single_swap_pred:
+                    prediction_sequence_list[index] = value.reshape(self.step, -1).mean(
+                        axis=0
+                    )
+                else:
+                    prediction_sequence_list[index:] = value.reshape(self.step, -1)
 
             index = index + 1
             big_bunch = []
@@ -864,10 +887,13 @@ class TimeSeriesModel(ArcGISModel):
                 for col in range(len(processed_dataframe.columns.values)):
                     if (
                         list(processed_dataframe.columns.values)[col]
-                        == self._data._dependent_variable
+                        in self._data._dependent_variable
                     ):
+                        idx = self._data._dependent_variable.index(
+                            list(processed_dataframe.columns.values)[col]
+                        )
                         big_bunch.append(
-                            prediction_sequence_list[
+                            prediction_sequence_list[:, idx][
                                 index
                                 - self._seq_len : (
                                     index - self._seq_len + self._seq_len
@@ -883,20 +909,11 @@ class TimeSeriesModel(ArcGISModel):
                                 )
                             ]
                         )
-
         transformed_results = prediction_sequence_list
-        if self._data._column_transforms_mapping.get(self._data._dependent_variable):
-            for transform in self._data._column_transforms_mapping.get(
-                self._data._dependent_variable
-            ):
-                transformed_results = transform.inverse_transform(
-                    np.array(transformed_results).reshape(-1, 1)
-                )
-                transformed_results = transformed_results.squeeze(1)
+        transformed_results_col = self._apply_inverse_transform(transformed_results)
+        for idx, col in enumerate(self._data._dependent_variable):
+            orig_dataframe[col + "_results"] = transformed_results_col[:, idx]
 
-        orig_dataframe[
-            self._data._dependent_variable + "_results"
-        ] = transformed_results
         if prediction_type == "dataframe":
             return orig_dataframe
 
@@ -912,6 +929,157 @@ class TimeSeriesModel(ArcGISModel):
                     {"type": "Microsoft Excel", "overwrite": True}, table_file
                 )
                 return online_table.publish(overwrite=True)
+
+    def _apply_inverse_transform(self, transformed_results):
+        # Apply inverse transform to generate the main data
+        transformed_results_ret = []
+        for idx, col in enumerate(self._data._dependent_variable):
+            if self._data._column_transforms_mapping.get(col):
+                for transform in self._data._column_transforms_mapping.get(col):
+                    transformed_results_col = transform.inverse_transform(
+                        np.array(transformed_results[:, idx]).reshape(-1, 1)
+                    )
+                    transformed_results_col = transformed_results_col.squeeze(1)
+                transformed_results_ret.append(transformed_results_col)
+        return np.stack(transformed_results_ret, axis=1)
+
+    def _add_predict_rows(
+        self, number_of_predictions, orig_dataframe, match_field_names
+    ):
+        # Changed to make code future ready as the previous method of adding
+        # pandas series will be deprecated.
+        #
+        from pandas.api.types import is_datetime64_any_dtype as is_datetime
+
+        delta = None
+        index_field_name = None
+        end_value = None
+        if self._data._index_field is not None:
+            index_field_name = match_field_names.get(
+                self._data._index_field, self._data._index_field
+            )
+            if index_field_name in list(orig_dataframe.columns) and is_datetime(
+                orig_dataframe[index_field_name]
+            ):
+                delta = (
+                    orig_dataframe[index_field_name].iloc[1]
+                    - orig_dataframe[index_field_name].iloc[0]
+                )
+                end_value = None
+                if delta is not None:
+                    end_value = orig_dataframe[index_field_name].iloc[
+                        len(orig_dataframe) - 1
+                    ]
+        pred_temp_df = pd.DataFrame(
+            np.full([number_of_predictions, orig_dataframe.shape[1]], np.NAN)
+        )
+        pred_temp_df.columns = orig_dataframe.columns
+        # preserve the indexes. Need to adjust 1 because new index will start from 0
+        pred_temp_df.index += orig_dataframe.index[-1] + 1
+        orig_dataframe = pd.concat([orig_dataframe, pred_temp_df])
+        if delta is not None:
+            tindex = pd.period_range(
+                end_value, freq=delta, periods=number_of_predictions + 1
+            )
+            orig_dataframe.loc[
+                orig_dataframe.tail(number_of_predictions).index, index_field_name
+            ] = tindex[1:]
+
+        return orig_dataframe
+
+    def _infer_number_of_pred(
+        self, orig_dataframe, number_of_predictions, match_field_names
+    ):
+        # Type of inference
+        #     ├── Multivariate
+        #     │   ├── MultiStep
+        #     │   │   ├── NA rec in df>0 then num_of_pred= Number of NA rec/ otherwise warning
+        #     │   │   └── Number_of_pred=0 or None and NA rec in df is 0 then seq_len//2
+        #     │   └── Number of NA records in df will be honored
+        #     │       └── Number_of_pred>0 then infer using NA in df warning
+        #     └── Univariate
+        #         └── Number_of_pred is honored
+        ###
+
+        single_swap_pred = False
+        if self.multistep:
+            df_na_count = len(orig_dataframe[orig_dataframe.isna().any(axis=1)])
+
+            if df_na_count == 0:
+                if not (number_of_predictions is None or number_of_predictions == 0):
+                    warnings.warn(
+                        f"Number of predictions is supplied in multivariate scenario. Overriding the value\
+                                  with step value {self.step} "
+                    )
+                number_of_predictions = self.step
+                single_swap_pred = True
+                add_na_rec = True
+            else:
+                if not (number_of_predictions is None or number_of_predictions == 0):
+                    warnings.warn(
+                        f"Both Number of predictions and dataframe with NA is supplied.\
+                                  Using dataframe NA count as number of predictions {df_na_count}"
+                    )
+                number_of_predictions = df_na_count
+                add_na_rec = False
+                warnings.warn(
+                    "The model is trained with multistep objective. Setting NA values will result "
+                    "in Auto-regressive mode of inference. This may lead to low accuracy."
+                )
+
+        else:
+            if len(self._data._dependent_variable):
+                number_of_predictions = number_of_predictions
+                add_na_rec = True
+            else:
+                # multivariate case
+                number_of_predictions = len(
+                    orig_dataframe[orig_dataframe.isna().any(axis=1)]
+                )
+                add_na_rec = False
+
+        if number_of_predictions is None:
+            number_of_predictions = 0
+
+        if add_na_rec:
+            orig_dataframe = self._add_predict_rows(
+                orig_dataframe=orig_dataframe,
+                match_field_names=match_field_names,
+                number_of_predictions=number_of_predictions,
+            )
+        return orig_dataframe, single_swap_pred, number_of_predictions
+
+    def _apply_transform(self, processed_dataframe, processed_dataframe_transform):
+        # changed to function because the transformation needs to handle the categorical variable case.
+        # In such a scenario, the NaN is treated as label and label encoder fails because train data did not
+        # have any NA label while the test data has because of nature of prediction.
+        for col in list(processed_dataframe.columns):
+            if col in self._data._categorical_variables:
+                transformed_data = processed_dataframe[col].dropna()
+            else:
+                transformed_data = processed_dataframe[col]
+            for transform in self._data._column_transforms_mapping.get(col, []):
+                if isinstance(transform, LabelEncoder):
+                    transformed_data = transform.transform(
+                        np.array(
+                            transformed_data,
+                            dtype=type(processed_dataframe[col][0]),
+                        )
+                    )
+                    transformed_data = transformed_data.reshape(-1, 1)
+                else:
+                    transformed_data = transform.transform(
+                        np.array(
+                            transformed_data,
+                            dtype=type(processed_dataframe[col][0]),
+                        ).reshape(-1, 1)
+                    )
+
+                transformed_data = transformed_data.squeeze(1)
+            processed_dataframe_transform[col].head(len(transformed_data)).loc[
+                :
+            ] = np.array(transformed_data, dtype=type(processed_dataframe[col][0]))
+        return processed_dataframe_transform
 
     def score(self):
         """
@@ -931,40 +1099,32 @@ class TimeSeriesModel(ArcGISModel):
         targets = []
         predictions = []
         for i in range(len(dl.x.items)):
-            prediction = self._predict(dl.x.items[i])
+            prediction = self._predict(dl.x.items[i])[0]
             target = dl.y.items[i]
-            targets.append(target)
+            # targets.append(target)
+            if isinstance(target, (list, np.ndarray)):
+                targets.append(target)
+            else:
+                targets.append([target])
             predictions.append(prediction)
 
-        transformed_results = targets
-        if self._data._column_transforms_mapping.get(self._data._dependent_variable):
-            for transform in self._data._column_transforms_mapping.get(
-                self._data._dependent_variable
-            ):
-                transformed_results = transform.inverse_transform(
-                    np.array(transformed_results).reshape(-1, 1)
-                )
-                transformed_results = transformed_results.squeeze(1)
-        targets = transformed_results
+        targets = np.array(targets, dtype="float64")
+        predictions = np.array(predictions, dtype="float64")
 
-        transformed_results = predictions
-        if self._data._column_transforms_mapping.get(self._data._dependent_variable):
-            for transform in self._data._column_transforms_mapping.get(
-                self._data._dependent_variable
-            ):
-                transformed_results = transform.inverse_transform(
-                    np.array(transformed_results).reshape(-1, 1)
-                )
-                transformed_results = transformed_results.squeeze(1)
-        predictions = transformed_results
+        transformed_results = np.stack(targets, axis=0)
+        transformed_results = self._apply_inverse_transform(transformed_results)
+        targets_inversed = transformed_results
+
+        transformed_results = np.stack(predictions, axis=0)
+
+        transformed_results = self._apply_inverse_transform(transformed_results)
+        predictions_inversed = transformed_results
 
         if self._data._is_classification:
             return (np.array(predictions) == np.array(targets)).mean()
         else:
-            targets = torch.tensor(np.array(targets, dtype="float64")).to(self._device)
-            predictions = torch.tensor(np.array(predictions, dtype="float64")).to(
-                self._device
-            )
+            targets = torch.tensor(targets_inversed).to(self._device)
+            predictions = torch.tensor(predictions_inversed).to(self._device)
             return float(r2_score(predictions, targets))
 
     def show_results(self, rows=5):
@@ -978,11 +1138,6 @@ class TimeSeriesModel(ArcGISModel):
                                 Number of rows to print.
         =====================   ===========================================
         """
-        self._check_requisites()
-
-        if not HAS_NUMPY:
-            raise Exception("This function requires numpy.")
-
         model = self.learn.model
 
         model.eval()
@@ -993,43 +1148,39 @@ class TimeSeriesModel(ArcGISModel):
         predictions = []
         sequence = []
         for i in range(len(dl.x.items)):
-            prediction = self._predict(dl.x.items[i])
+            prediction = self._predict(dl.x.items[i])[0]
             target = dl.y.items[i]
-            targets.append(target)
+            if isinstance(target, (list, np.ndarray)):
+                targets.append(target)
+            else:
+                targets.append([target])
             predictions.append(prediction)
             sequence.append(dl.x.items[i])
 
         targets = np.array(targets, dtype="float64")
         predictions = np.array(predictions, dtype="float64")
 
-        transformed_results = targets
-        if self._data._column_transforms_mapping.get(self._data._dependent_variable):
-            for transform in self._data._column_transforms_mapping.get(
-                self._data._dependent_variable
-            ):
-                transformed_results = transform.inverse_transform(
-                    np.array(transformed_results).reshape(-1, 1)
-                )
-                transformed_results = transformed_results.squeeze(1)
-
+        transformed_results = np.stack(targets, axis=0)
+        transformed_results = self._apply_inverse_transform(transformed_results)
         targets_inversed = transformed_results
 
-        transformed_results = predictions
-        if self._data._column_transforms_mapping.get(self._data._dependent_variable):
-            for transform in self._data._column_transforms_mapping.get(
-                self._data._dependent_variable
-            ):
-                transformed_results = transform.inverse_transform(
-                    np.array(transformed_results).reshape(-1, 1)
-                )
-                transformed_results = transformed_results.squeeze(1)
-
+        transformed_results = np.stack(predictions, axis=0)
+        transformed_results = self._apply_inverse_transform(transformed_results)
         predictions_inversed = transformed_results
-
         column_transforms_mapping = self._data._column_transforms_mapping.copy()
         # del column_transforms_mapping[self._data._dependent_variable]
         sequence_inversed = []
-        keys = list(column_transforms_mapping.keys())
+        keys_bk = list(column_transforms_mapping.keys())
+        order_columns = (
+            self._data._dependent_variable
+            + self._data._continuous_variables
+            + self._data._categorical_variables
+        )
+        keys = []
+        for key in order_columns:
+            if key in keys_bk:
+                keys.append(key)
+
         for seq in sequence:
             seq_inverse = []
             index = 0
@@ -1037,16 +1188,20 @@ class TimeSeriesModel(ArcGISModel):
                 transformed_data = col_data
                 if len(keys) > index:
                     for transform in column_transforms_mapping.get(keys[index]):
-                        transformed_data = transform.inverse_transform(
-                            np.array(transformed_data).reshape(-1, 1)
-                        )
-                        transformed_data = transformed_data.squeeze(1)
+                        if isinstance(transform, LabelEncoder):
+                            transformed_data = transform.inverse_transform(
+                                np.array(transformed_data, dtype=int)
+                            )
+                        else:
+                            transformed_data = transform.inverse_transform(
+                                np.array(transformed_data).reshape(-1, 1)
+                            )
+                            transformed_data = transformed_data.squeeze(1)
 
                 seq_inverse.append(transformed_data)
                 index = index + 1
 
             sequence_inversed.append(seq_inverse)
-
         if self._data._index_seq is not None:
             validation_index_seq = self._data._index_seq.take(
                 self._data._validation_indexes_ts, axis=0
@@ -1066,7 +1221,7 @@ class TimeSeriesModel(ArcGISModel):
         fig.suptitle("Ground truth vs Predictions\n\n", fontsize=16)
 
         for i in range(rows):
-            for seq_plot in sequence_inversed[i]:
+            for idx, seq_plot in enumerate(sequence_inversed[i]):
                 if self._data._index_seq is not None:
                     axs[i, 0].plot(validation_index_seq[i], seq_plot)
                     axs[i, 1].plot(validation_index_seq[i], seq_plot)
@@ -1076,9 +1231,12 @@ class TimeSeriesModel(ArcGISModel):
 
                 axs[i, 0].tick_params(axis="x", labelrotation=60)
                 axs[i, 1].tick_params(axis="x", labelrotation=60)
-
-            axs[i, 0].set_title(targets_inversed[i])
-            axs[i, 1].set_title(predictions_inversed[i])
+                axs[i, 0].set_title(
+                    ",".join([f"{val :4f}" for val in targets_inversed[i]])
+                )
+                axs[i, 1].set_title(
+                    ",".join([f"{val :4f}" for val in predictions_inversed[i]])
+                )
 
         plt.tight_layout()
         plt.show()
