@@ -13,7 +13,6 @@ from arcgis.gis import ProfileManager
 
 
 def get_kube_server(site="https://rpublicservers.esri.com/AEoK1110.php", row=3):
-
     # Important note: code is based off of current rpublicservers page. If
     # page format or data gets changed, row parameter may have to be altered.
     # currently set up to find 1110publdapwa server.
@@ -22,9 +21,9 @@ def get_kube_server(site="https://rpublicservers.esri.com/AEoK1110.php", row=3):
     html = lxml.html.fromstring(page.content)
     table = html.xpath("//table")[0]
     links = list(table[row].iterlinks())
-    print(links)
     server_url = links[1][2]
     return server_url
+
 
 # scrape credentials page for Kubernetes credentials
 # https://ragsreports.ags.esri.com/information/11.1_users.htm is mirrored
