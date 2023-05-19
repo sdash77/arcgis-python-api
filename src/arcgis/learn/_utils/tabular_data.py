@@ -49,7 +49,7 @@ try:
 except:
     HAS_SK_LEARN = False
 
-warnings.formatwarning = lambda msg, *args, **kwargs: f'{msg}\n'
+warnings.formatwarning = lambda msg, *args, **kwargs: f"{msg}\n"
 
 
 class DummyTransform(object):
@@ -983,8 +983,8 @@ class TabularDataObject(object):
                 if col not in self._categorical_variables:
                     warnings.warn(
                         f"Field {col} is not marked as categorical. But, "
-                                  f"we inferred it as categorical variable. Treating it as categorical variable"
-                                  f" for processing. "
+                        f"we inferred it as categorical variable. Treating it as categorical variable"
+                        f" for processing. "
                     )
                     self._categorical_variables.append(col)
                     if col in self._continuous_variables:
@@ -1185,7 +1185,7 @@ class TabularDataObject(object):
                         axs[i, j].plot(batched_index[i + j], predictor)
 
                     if isinstance(y_train_sample[i + j], (list, np.ndarray)):
-                        val = ','.join([str(i) for i in y_train_sample[i + j]])
+                        val = ",".join([str(i) for i in y_train_sample[i + j]])
                     else:
                         val = y_train_sample[i + j]
 
@@ -2433,4 +2433,3 @@ def global_interpretation(model, plot_type="bar", method="KernelRegressor"):
             explainer.expected_value[0], shap_values, df, matplotlib=True
         )
     return
-

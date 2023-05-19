@@ -1626,7 +1626,13 @@ def enrich(
 
     if isinstance(study_areas, BufferStudyArea):
         study_areas = list(study_areas)
-
+    # Process the study areas for extent values
+    #
+    # [f(x) if condition else g(x) for x in sequence]
+    study_areas = [
+        Geometry(area).polygon if isinstance(area, dict) and "xmin" in area else area
+        for area in study_areas
+    ]
     # keep list of countries for data_collection check
     sa_to_country = {}
 
@@ -1669,6 +1675,12 @@ def enrich(
                         value = value["geometry"]
                     # geocode the geom and extract the country
                     geocoded_area = reverse_geocode(value)
+                    cntry = Country(geocoded_area["address"]["CountryCode"])
+                elif isinstance(value, dict) and "xmin" in value:
+                    extent = Geometry(value)
+                    centroid = extent.polygon.true_centroid
+                    value = extent.polygon
+                    geocoded_area = reverse_geocode(centroid)
                     cntry = Country(geocoded_area["address"]["CountryCode"])
             if index == 0:
                 # if the first instance is a geocoded area, assign enrich_src
