@@ -1016,9 +1016,10 @@ def prepare_tabulardata(
                             This contains features denoting the value of the dependent variable.
                             Leave empty for using rasters with MLModel.
     ---------------------   -------------------------------------------
-    variable_predict        Optional String, denoting the field_name of
+    variable_predict        Optional String or List, denoting the field_names of
                             the variable to predict.
-                            Keep none for unsupervised training using MLModel.
+                            Keep none for unsupervised training using ML Model. For timeseries it
+                            will work for continuous variable
     ---------------------   -------------------------------------------
     explanatory_variables   Optional list containing field names from input_features
                             By default the field type is continuous.
