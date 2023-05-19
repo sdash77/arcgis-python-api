@@ -1809,7 +1809,7 @@ class ArcGISModel(object):
             "<TextClassifier>",
             "<TransformerEntityRecognizer>",
             "<SequenceToSequence>",
-            "<TimeSeriesModel>"
+            "<TimeSeriesModel>",
         ]:
             pass
         elif hasattr(self, "show_results"):
