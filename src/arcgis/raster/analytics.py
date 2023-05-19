@@ -8807,16 +8807,17 @@ def analyze_changes_using_landtrendr(
     )
 
 
-def transfer_files(input_files,
-                   output_datastore=None,
-                   filter=None,
-                   return_first_file=False,
-                   context=None,
-                   *,
-                   gis=None,
-                   future=False,
-                   **kwargs):
-
+def transfer_files(
+    input_files,
+    output_datastore=None,
+    filter=None,
+    return_first_file=False,
+    context=None,
+    *,
+    gis=None,
+    future=False,
+    **kwargs,
+):
     """
     Transfers files between datastores.
     The tool does not support file transfers to or from geodatabases.
@@ -8886,14 +8887,17 @@ def transfer_files(input_files,
 
     gis = _arcgis.env.active_gis if gis is None else gis
 
+    return gis._tools.rasteranalysis.transfer_files(
+        input_files=input_files,
+        output_datastore=output_datastore,
+        tf_filter=filter,
+        return_first_file=return_first_file,
+        context=context,
+        future=future,
+        **kwargs,
+    )
 
-    return gis._tools.rasteranalysis.transfer_files(input_files=input_files,
-                                                    output_datastore=output_datastore,
-                                                    tf_filter=filter,
-                                                    return_first_file=return_first_file,
-                                                    context=context,
-                                                    future=future,
-                                                    **kwargs)
+
 def zonal_statistics_as_table(
     input_zone_raster_or_features,
     input_value_raster,
