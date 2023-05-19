@@ -272,14 +272,16 @@ class Survey:
         save_folder: Optional[str] = None,
     ) -> str:
         """
-        The `generate_report` method allows users to either save a report to the ArcGIS organization
-        or export it directly to disk. Creates a file :class:`~arcgis.gis.Item`,
-        Microsoft Word or PDF file, or zipped package of files. The report service outputs one ore more report files, 
-        or a zipped package of these files. The output format depends on the number and size of the generated files. 
-        For more information, see the `packageFiles` parameter in the Create Report documentation linked
-        below. 
-
-        For additional information on parameters, see `Create Report <https://developers.arcgis.com/survey123/api-reference/rest/report/#create-report>`_.
+        The `generate_report` method allows users to create Microsoft Word and PDF reports 
+        from a survey using a report template. Reports are saved as an :class:`~arcgis.gis.Item` in an ArcGIS
+        content folder or saved locally on disk. For additional information on parameters, 
+        see `Create Report <https://developers.arcgis.com/survey123/api-reference/rest/report/#create-report>`. 
+        
+        .. note::
+            The Survey123 report service may output one or more `.docx` or `.pdf` files, or a zipped
+            package of these files. Whether the output is contained in a `.zip` file depends
+            on the number of files generated and their size. For more information, see the 
+            `packageFiles` parameter in the `Create Report <https://developers.arcgis.com/survey123/api-reference/rest/report/#request-parameters-3>`_ documentation.
 
         .. note::
             To save to disk, do not specify a `folder_id` argument.
@@ -295,7 +297,7 @@ class Survey:
                           
                           Query the `parent_fl_url` property of the
                           :class:`~arcgis.apps.survey123.Survey` object to get the
-                          feature layer URL and get field name options.
+                          feature layer URL and retrieve a list of fields.
                           
                           .. code-block:: python
                           
@@ -310,10 +312,8 @@ class Survey:
                               >>> print([f["name"] for f in survey_fl.properties.fields])
         ----------------  ---------------------------------------------------------------
         utc_offset        Optional String.  Time offset from UTC. This offset is applied to 
-                          all `date`, `time`, and `dateTime` questions that appear in the
-                          report output. 
-                          
-                          Example: `EST - "+04:00"`
+                          all `date`, `time`, and `dateTime` questions that appear in the report output. 
+                          Example: EST - "+04:00"
         ----------------  ---------------------------------------------------------------
         report_title      Optional String. If `folder_id` is provided, the result is an
                           :class:`~arcgis.gis.Item` with this argument as the title. If
@@ -323,19 +323,21 @@ class Survey:
                           chose to zip up the output (depends upon the size and number
                           of files that would result).
 
+
                           .. note::
                               If `merge_files` is either `nextPage` or `continuous`,
                               `report_title` is the output file name.
         ----------------  ---------------------------------------------------------------
         package_name      Optional String. Specify the file name (without extension) of the
-                          packaged ZIP file. If multiple files are packaged, the `report_title`
+                          packaged `.zip` file. If multiple files are packaged, the `report_title`
                           argument will be used to name individual files in the package.
-                          Whether the output files are a file or a zip file is
-                          automatically determined by the server-side component of the
-                          Web GIS and is not set by this method. See the `packageFiles`
-                          parameter description in the
-                          `Create Report Request parameters <https://developers.arcgis.com/survey123/api-reference/rest/report/#request-parameters-3>`_
-                          documentation for details.
+
+
+                          .. note::
+                            The Survey123 report service automatically decides whether to package
+                            generated reports as a `.zip` file, depending on the output file count.
+                            See the `packageFiles` parameter description in the `Create Report Request parameters <https://developers.arcgis.com/survey123/api-reference/rest/report/#request-parameters-3>`_
+                            documentation for details.
         ----------------  ---------------------------------------------------------------
         save_folder       Optional String. Specify the folder location where the output
                           file or zipped file should be stored. If `folder_id` argument
@@ -356,7 +358,7 @@ class Survey:
                           + `nextPage` - Print multiple records in a single document.
                             Each record starts on a new page. 
                           + `continuous` - Print multiple records in a single document.
-                            Each records starts on the same page of the previous record. 
+                            EAch records starts on the same page of the previous record. 
                           
                           .. note::
                               A merged file larger than 500 MB will be split into multiple
@@ -365,12 +367,13 @@ class Survey:
         survey_item       Optional survey :class:`~arcgis.gis.Item` to provide
                           additional information on survey structure.
         ----------------  ---------------------------------------------------------------
-        webmap_item       Optional web map :class:`~arcgis.gis.Item`. Specify the basemap when
-                          printing a map question. This takes
-                          precedence over the map set for each question inside a survey.
+        webmap_item       Optional web map :class:`~arcgis.gis.Item`. Specify the basemap for all 
+                          map questions in the report. This takes precedence over the map set for 
+                          each question in the report template.
         ----------------  ---------------------------------------------------------------
         map_scale         Optional Float. Specify the map scale for all map questions in the report. 
-                          The map will center on the feature geometry.
+                          The map will center on the feature geometry. This takes precedence over the 
+                          scale set for each question in the report template.
         ----------------  ---------------------------------------------------------------
         locale            Optional String. Specify the locale to format number
                           and date values.
@@ -793,7 +796,7 @@ class Survey:
         ================  ===============================================================
         **Parameter**      **Description**
         ----------------  ---------------------------------------------------------------
-        report_template   Required :class:`~arcgis.gis.Item`, The report template Item.
+        report_template   Required :class:`~arcgis.gis.Item`. The report template Item.
         ----------------  ---------------------------------------------------------------
         where             Optional String. This is the select statement used to export
                           part or whole of the dataset.  If the record count is > 1, then
@@ -802,27 +805,37 @@ class Survey:
         utc_offset        Optional String.  This is the time offset from UTC to match the
                           users timezone. Example: EST - "+04:00"
         ----------------  ---------------------------------------------------------------
-        report_title      Optional String. Specify the file name (without extension) of the
-                          result report file. For example, if outputFormat is .pdf, input:
-                          "abc" -> output: "abc.pdf"; input: "abc.docx" -> output: "abc.docx.pdf".
+        report_title      Optional String. An :class:`~arcgis.gis.Item` with this argument
+                          as the title if no `save_folder` argument. If `save_folder`
+                          argument is provided, this argument will be the name of the 
+                          output file, or the base name for files in the output zipped
+                          package if the server-side component chose to zip up the output
+                          (depends upon the size and number of files that would result).
 
-                          If packageFiles is true, outputReportName will be used for report files
-                          inside the packaged file. If mergeFiles is either nextPage or continuous,
-                          outputReportName will be used as the merged file name.
+                          .. note::
+                              If `merge_files` is either `nextPage` or `continuous`,
+                              `report_title` is the output file name.
         ----------------  ---------------------------------------------------------------
-        merge_files       Optional String. Specify if print multiple records into a single
-                          report file (merged mode) or multiple files (split mode), and if
-                          in merge mode, start the next record on a new page or continue
-                          with the current page. Note: A merged file larger than 500MB
-                          will be split into multiple files.
+        merge_files       Optional String. Specify if output is a single file containing individual 
+                          records on multiple pages (`nextPage` or `continuous`) or
+                          multiple files (`none`).  
 
-                          + `none` - Print multiple records in split mode, each record becomes a separated report file. This is the default value.
-                          + `nextPage` - Print multiple records in merge mode, the content of the next record starts on the next new page.
-                          + `continuous` - Print multiple records in merge mode, the content of the next record starts on the same page of the previous record.
+                          + `none` - Print multiple records in split mode. Each record
+                            is a separate file. This is the default value.
+                          + `nextPage` - Print multiple records in a single document.
+                            Each record starts on a new page. 
+                          + `continuous` - Print multiple records in a single document.
+                            EAch records starts on the same page of the previous record. 
+                          
+                          .. note::
+                              A merged file larger than 500 MB will be split into multiple
+                              files.
         ----------------  ---------------------------------------------------------------
-        save_folder       Optional String. Specify the folder location where the output file should be stored.
+        save_folder       Optional String. Specify the folder location where the output
+                          file should be stored.
         ----------------  ---------------------------------------------------------------
-        survey_item       Optional :class:`~arcgis.gis.Item` . Survey `Item`, to make the operation survey awareness.
+        survey_item       Optional survey :class:`~arcgis.gis.Item` to provide additional
+                          information on the survey structure.
         ----------------  ---------------------------------------------------------------
         webmap_item       Optional :class:`~arcgis.gis.Item` . Specify the base map for printing task when printing
                           a point/polyline/polygon. This takes precedence over the map set for
