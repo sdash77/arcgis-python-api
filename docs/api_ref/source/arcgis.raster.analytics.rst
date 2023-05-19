@@ -211,3 +211,7 @@ mosaic_image
 derive_continuous_flow
 ----------------------
 .. autofunction:: arcgis.raster.analytics.derive_continuous_flow
+
+transfer_files
+--------------
+.. autofunction:: arcgis.raster.analytics.transfer_files
