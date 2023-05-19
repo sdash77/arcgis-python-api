@@ -22,7 +22,8 @@ def get_kube_server(site="https://rpublicservers.esri.com/AEoK1110.php", row=3):
     html = lxml.html.fromstring(page.content)
     table = html.xpath("//table")[0]
     links = list(table[row].iterlinks())
-    server_url = links[0][2]
+    print(links)
+    server_url = links[1][2]
     return server_url
 
 # scrape credentials page for Kubernetes credentials
