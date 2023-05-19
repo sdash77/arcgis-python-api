@@ -3,6 +3,7 @@ import uuid
 import copy
 import shutil
 import tempfile
+import json
 from arcgis._impl.common._clone import CloneNode, _deep_get
 from arcgis._impl.common._clone import (
     _search_org_for_existing_item,
@@ -236,6 +237,11 @@ class _StoryMapDefinition(CloneNode):
             new_item = self._add_new_item(item_properties)
             if self.resources:
                 new_item.resources.add(self.resources, archive=True)
+            for resource in new_item.resources.list():
+                res = json.dumps(new_item.resources.get(resource["resource"]))
+                for k, v in webmap_mapper.items():
+                    res = res.replace(k, v)
+                new_item.resources.update(file_name=resource["resource"], text=res)
             new_item.update(
                 {"url": new_item.url.replace(self.portal_item.id, new_item.id)}
             )
