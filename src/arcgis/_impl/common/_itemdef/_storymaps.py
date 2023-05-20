@@ -84,7 +84,6 @@ class _StoryMapDefinition(CloneNode):
         item_id = None
         if self._preserve_item_id and self.target._portal.is_arcgisonline:
             item_id = self.portal_item.itemid
-
         new_item = self.target.content.add(
             item_properties=item_properties,
             data=data,
@@ -99,7 +98,6 @@ class _StoryMapDefinition(CloneNode):
             else:
                 url = f"{self.target._portal.url}/apps/storymaps/stories/{new_item.id}"
             new_item.update({"url": url})
-
         self.created_items.append(new_item)
         self._clone_resources(new_item)
         return new_item
@@ -197,22 +195,28 @@ class _StoryMapDefinition(CloneNode):
         if not new_item:
             # Get the item properties from the original item to be applied when the new item is created
             item_properties = self._get_item_properties(self.item_extent)
-            data = self.data
+            # data = self.data
+            resources = self.portal_item.resources
+            for res in resources.list():
+                if "draft" in res["resource"] and "express" not in res["resource"]:
+                    draft_name = res["resource"]
+
+            draft = resources.get(draft_name)
+
             web_maps = set(
                 [
                     v["data"]["itemId"]
-                    for k, v in data["resources"].items()
+                    for k, v in draft["resources"].items()
                     if v["type"].lower().find("webmap") > -1
                 ]
             )
             express_maps = set(
                 [
                     v["data"]["itemId"]
-                    for k, v in data["resources"].items()
+                    for k, v in draft["resources"].items()
                     if v["type"].lower().find("expressmap") > -1
                 ]
             )
-
             webmap_mapper = {}
             for wm in web_maps:
                 webmap_to_copy = self.portal_item._gis.content.get(wm)
@@ -220,17 +224,19 @@ class _StoryMapDefinition(CloneNode):
                     [webmap_to_copy], search_existing_items=False
                 )  # Clones the WebMap
                 webmap_mapper[webmap_to_copy.id] = [
-                    i.id for i in cloned_webmaps if i.type == "Web Map"
+                    i.id
+                    for i in cloned_webmaps
+                    if (i.type == "Web Map" or i.type == "Web Scene")
                 ]
                 if len(webmap_mapper[webmap_to_copy.id]) == 1:
                     webmap_mapper[webmap_to_copy.id] = webmap_mapper[webmap_to_copy.id][
                         0
                     ]
-
-            story_map_text = json.dumps(data)
-            for k, v in webmap_mapper.items():
-                story_map_text = story_map_text.replace(k, v)  # replace the IDs
-
+            story_map_text = ""
+            if self.data:
+                story_map_text = json.dumps(self.data)
+                for k, v in webmap_mapper.items():
+                    story_map_text = story_map_text.replace(k, v)  # replace the IDs
             if story_map_text:
                 item_properties["text"] = story_map_text
             # Add the new item
