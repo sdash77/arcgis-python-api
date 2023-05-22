@@ -32,6 +32,7 @@ from ._business_analyst._utils import (
     avail_arcpy,
 )
 from ._ge import _GeoEnrichment
+from ._helper import service_properties
 
 
 def _check_gis_source(gis=None):
@@ -2235,8 +2236,19 @@ def interesting_facts(
     """
     if gis is None:
         gis: GIS = _env.active_gis
+    if (
+        "supportedOperations" in service_properties(gis=gis)
+        and not "InterestingFacts" in service_properties(gis=gis)["supportedOperations"]
+    ):
+        raise Exception(
+            "Interesting Facts functionality is not supported. Please make "
+            "sure you are using ArcGIS Online or Enterprise version the supports "
+            "interesting facts and check with your administrator to enable this functi"
+            "onality."
+        )
     if out_sr is None:
         out_sr = {"wkid": 3857}
+
     url: str = f"{gis.properties.helperServices.geoenrichment.url}/Geoenrichment/InterestingFacts"
     study_areas = _process_study_areas(areas=study_areas)
     params = {
