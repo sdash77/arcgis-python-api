@@ -2242,8 +2242,8 @@ def interesting_facts(
     ):
         raise Exception(
             "Interesting Facts functionality is not supported. Please make "
-            "sure you are using ArcGIS Online or Enterprise version x.x and "
-            "higher and check with your administrator to enable this functi"
+            "sure you are using ArcGIS Online or Enterprise version the supports "
+            "interesting facts and check with your administrator to enable this functi"
             "onality."
         )
     if out_sr is None:
