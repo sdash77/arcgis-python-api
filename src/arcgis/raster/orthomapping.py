@@ -247,6 +247,7 @@ def _add_mission(
     image_collection: Optional[str] = None,
     raster_type_name: Optional[str] = None,
     raster_type_params: Optional[dict[str, Any]] = None,
+    context: Optional[dict[str, Any]] = None,
     *,
     gis: Optional[GIS] = None,
     **kwargs,
@@ -412,6 +413,7 @@ def _add_mission(
         input_rasters=image_list,
         raster_type_name=raster_type_name,
         raster_type_params=raster_type_params,
+        context=context,
         gis=gis,
         folder=folder,
     )
@@ -2880,6 +2882,7 @@ class Project:
         image_collection: Optional[str] = None,
         raster_type_name: Optional[str] = None,
         raster_type_params: Optional[dict[str, Any]] = None,
+        context: Optional[dict[str, Any]] = None,
     ):
         """
         Add missions to the orthomapping project item. You can add imagery from one or more drone flights 
@@ -2958,17 +2961,6 @@ class Project:
                                                 "pansharpenType":"Gram-Schmidt","filter":"SharpenMore",
                                                 "pansharpenWeights":"0.85 0.7 0.35 1","constantZ":-9999}
         ----------------------               --------------------------------------------------------------------
-        out_sr                               Optional integer. Additional parameters of the service.
-                            
-                                             The following additional parameters can be specified:
-
-                                             - Spatial reference of the image_collection; The well-known ID of \
-                                             the spatial reference or a spatial reference dictionary object for the \
-                                             input geometries.
-
-                                             If the raster type name is set to "UAV/UAS", the spatial reference of the
-                                             output image collection will be determined by the raster type parameters defined.
-        ----------------------               --------------------------------------------------------------------
         context                              Optional dict. The context parameter is used to provide additional input parameters.
     
                                              Syntax: {"image_collection_properties": {"imageCollectionType":"Satellite"},"byref":True}
@@ -3025,6 +3017,7 @@ class Project:
                 image_collection=image_collection,
                 raster_type_name=raster_type_name,
                 raster_type_params=raster_type_params,
+                context=context,
             )
             return Mission(mission_name=mission_name, project=self)
 
