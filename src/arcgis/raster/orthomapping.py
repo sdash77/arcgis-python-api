@@ -247,6 +247,7 @@ def _add_mission(
     image_collection: Optional[str] = None,
     raster_type_name: Optional[str] = None,
     raster_type_params: Optional[dict[str, Any]] = None,
+    out_sr: Optional[dict[str, Any]] = None,
     context: Optional[dict[str, Any]] = None,
     *,
     gis: Optional[GIS] = None,
@@ -413,6 +414,7 @@ def _add_mission(
         input_rasters=image_list,
         raster_type_name=raster_type_name,
         raster_type_params=raster_type_params,
+        out_sr =out_sr,
         context=context,
         gis=gis,
         folder=folder,
@@ -2882,6 +2884,7 @@ class Project:
         image_collection: Optional[str] = None,
         raster_type_name: Optional[str] = None,
         raster_type_params: Optional[dict[str, Any]] = None,
+        out_sr: Optional[dict[str, Any]] = None,
         context: Optional[dict[str, Any]] = None,
     ):
         """
@@ -3017,6 +3020,7 @@ class Project:
                 image_collection=image_collection,
                 raster_type_name=raster_type_name,
                 raster_type_params=raster_type_params,
+                out_sr=out_sr,
                 context=context,
             )
             return Mission(mission_name=mission_name, project=self)
