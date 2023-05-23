@@ -978,7 +978,9 @@ def update_pixels_img_trans(self, tlc, shape, props, **pixelBlocks):
             self.model, patches, self.device, model_info=self.json_info
         )
     elif model_name == "SuperResolution":
-        prediction = pixel_classify_superres_image(self.model, patches, self.device, model_info=self.json_info)
+        prediction = pixel_classify_superres_image(
+            self.model, patches, self.device, model_info=self.json_info
+        )
     elif model_name == "WNetcGAN":
         prediction = pixel_classify_wnet_image(
             self.model, patches, self.device, model_info=self.json_info
