@@ -222,6 +222,7 @@ class _StoryMapDefinition(CloneNode):
                     v["data"]["themeItemId"]
                     for k, v in draft["resources"].items()
                     if v["type"].lower().find("story-theme") > -1
+                    and "themeItemId" in v["data"].keys()
                 ]
             )
             webmap_mapper = {}
