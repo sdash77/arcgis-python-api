@@ -217,6 +217,13 @@ class _StoryMapDefinition(CloneNode):
                     if v["type"].lower().find("expressmap") > -1
                 ]
             )
+            themes = set(
+                [
+                    v["data"]["themeItemId"]
+                    for k, v in draft["resources"].items()
+                    if v["type"].lower().find("story-theme") > -1
+                ]
+            )
             webmap_mapper = {}
             for wm in web_maps:
                 webmap_to_copy = self.portal_item._gis.content.get(wm)
@@ -232,6 +239,19 @@ class _StoryMapDefinition(CloneNode):
                     webmap_mapper[webmap_to_copy.id] = webmap_mapper[webmap_to_copy.id][
                         0
                     ]
+            if themes:
+                for theme in themes:
+                    theme_to_copy = self.portal_item._gis.content.get(theme)
+                    cloned_theme = self.target.content.clone_items(
+                        [theme_to_copy], search_existing_items=False
+                    )
+                    webmap_mapper[theme_to_copy.id] = [
+                        i.id for i in cloned_theme if (i.type == "StoryMap Theme")
+                    ]
+                    if len(webmap_mapper[theme_to_copy.id]) == 1:
+                        webmap_mapper[theme_to_copy.id] = webmap_mapper[
+                            theme_to_copy.id
+                        ][0]
             story_map_text = ""
             if self.data:
                 story_map_text = json.dumps(self.data)
@@ -244,13 +264,15 @@ class _StoryMapDefinition(CloneNode):
             if self.resources:
                 new_item.resources.add(self.resources, archive=True)
             for resource in new_item.resources.list():
-                res = json.dumps(new_item.resources.get(resource["resource"]))
-                for k, v in webmap_mapper.items():
-                    res = res.replace(k, v)
-                new_item.resources.update(file_name=resource["resource"], text=res)
-            new_item.update(
-                {"url": new_item.url.replace(self.portal_item.id, new_item.id)}
-            )
+                if ".json" in resource["resource"]:
+                    res = json.dumps(new_item.resources.get(resource["resource"]))
+                    for k, v in webmap_mapper.items():
+                        res = res.replace(k, v)
+                    new_item.resources.update(file_name=resource["resource"], text=res)
+            if new_item.url:
+                new_item.update(
+                    {"url": new_item.url.replace(self.portal_item.id, new_item.id)}
+                )
             with tempfile.NamedTemporaryFile(
                 mode="w", suffix=".json", dir=tempfile.gettempdir(), delete=False
             ) as jsonfile:
