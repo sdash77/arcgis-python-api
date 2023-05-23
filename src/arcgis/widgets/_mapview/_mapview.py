@@ -16,8 +16,18 @@ import dateutil.parser
 import tempfile
 
 from arcgis.geometry import Point, Polygon, Polyline, MultiPoint, Geometry
-from arcgis.features import FeatureSet, Feature, FeatureCollection, FeatureLayer
-from arcgis.raster import ImageryLayer, Raster, _ImageServerRaster, _ArcpyRaster
+from arcgis.features import (
+    FeatureSet,
+    Feature,
+    FeatureCollection,
+    FeatureLayer,
+)
+from arcgis.raster import (
+    ImageryLayer,
+    Raster,
+    _ImageServerRaster,
+    _ArcpyRaster,
+)
 from arcgis.gis import Layer
 from arcgis.gis import Item
 
@@ -29,7 +39,9 @@ from traitlets import Unicode, List, Bool, Dict, Tuple, Float, observe
 Datetime = ipywidgets.trait_types.Datetime
 from IPython.display import display, HTML
 
-from arcgis.widgets._mapview._webscene_utils import DEFAULT_WEBSCENE_TEXT_PROPERTY
+from arcgis.widgets._mapview._webscene_utils import (
+    DEFAULT_WEBSCENE_TEXT_PROPERTY,
+)
 from arcgis.widgets._mapview._loading_icon_str import _loading_icon_str
 from arcgis.widgets._mapview._raster import LocalRasterOverlayManager
 from arcgis.widgets._mapview._raster._numpy_utils import *
@@ -108,7 +120,12 @@ def _get_extent(item):
         return dict(item.properties.layerDefinition.extent)
     elif isinstance(item, Layer):
         try:
-            return dict(item.properties.extent)
+            if "extent" in item.properties:
+                return dict(item.properties.extent)
+            elif "fullExtent" in item.properties:
+                return dict(item.properties["fullExtent"])
+            elif "initialExtent" in item.properties:
+                return dict(item.properties["initialExtent"])
         except:
             ext = item.extent
             return {
@@ -1238,7 +1255,8 @@ class MapView(widgets.DOMWidget):
                 display(
                     HTML(
                         self._assemble_html_embed_html_str(
-                            iframe_srcdoc_html, class_id_root="map-html-embed-in-cell-"
+                            iframe_srcdoc_html,
+                            class_id_root="map-html-embed-in-cell-",
                         )
                     )
                 )
@@ -1937,7 +1955,12 @@ class MapView(widgets.DOMWidget):
             )
 
     def _save_as_webmap(
-        self, item_properties, thumbnail=None, metadata=None, owner=None, folder=None
+        self,
+        item_properties,
+        thumbnail=None,
+        metadata=None,
+        owner=None,
+        folder=None,
     ):
         from arcgis.mapping import WebMap
 
@@ -2017,7 +2040,8 @@ class MapView(widgets.DOMWidget):
 
                         # Add to webmap
                         self.webmap.add_layer(
-                            fset, {"title": "Notes from ArcGIS API for Python"}
+                            fset,
+                            {"title": "Notes from ArcGIS API for Python"},
                         )
 
     def _check_if_graphic_already_saved(self, geom):
@@ -2030,7 +2054,12 @@ class MapView(widgets.DOMWidget):
         return False
 
     def _save_as_webscene(
-        self, item_properties, thumbnail=None, metadata=None, owner=None, folder=None
+        self,
+        item_properties,
+        thumbnail=None,
+        metadata=None,
+        owner=None,
+        folder=None,
     ):
         self.mode = "3D"
         self._check_item_properties(item_properties)
@@ -2147,12 +2176,16 @@ class MapView(widgets.DOMWidget):
         if mode == "2D" or "webmap" in mode.lower():
             self.mode = "2D"
             return self._update_as_webmap(
-                item_properties=item_properties, thumbnail=thumbnail, metadata=metadata
+                item_properties=item_properties,
+                thumbnail=thumbnail,
+                metadata=metadata,
             )
         elif mode == "3D" or "webscene" in mode.lower():
             self.mode = "3D"
             return self._update_as_webscene(
-                item_properties=item_properties, thumbnail=thumbnail, metadata=metadata
+                item_properties=item_properties,
+                thumbnail=thumbnail,
+                metadata=metadata,
             )
 
     def _update_as_webmap(self, item_properties, thumbnail, metadata):
@@ -2195,7 +2228,10 @@ class MapView(widgets.DOMWidget):
         return result
 
     def export_to_html(
-        self, path_to_file, title="Exported ArcGIS Map Widget", credentials_prompt=False
+        self,
+        path_to_file,
+        title="Exported ArcGIS Map Widget",
+        credentials_prompt=False,
     ):
         """
         The ``export_to_html`` method takes the current state of the map widget and exports it to a
@@ -2381,7 +2417,9 @@ class MapView(widgets.DOMWidget):
                 self._add_graphic(graphic)
                 f = Feature(shape)
                 fset = FeatureSet(
-                    [f], geometry_type=geometry_kind, spatial_reference={"wkid": 4326}
+                    [f],
+                    geometry_type=geometry_kind,
+                    spatial_reference={"wkid": 4326},
                 )
 
             # Now that the `fset` is set, add to webmap
@@ -2855,45 +2893,53 @@ class MapView(widgets.DOMWidget):
             their_dlinks = []
             self_dlinks.append(
                 ipywidgets.dlink(
-                    (self, "_readonly_extent"), (mapview, "_link_writeonly_extent")
+                    (self, "_readonly_extent"),
+                    (mapview, "_link_writeonly_extent"),
                 )
             )
             their_dlinks.append(
                 ipywidgets.dlink(
-                    (mapview, "_readonly_extent"), (self, "_link_writeonly_extent")
+                    (mapview, "_readonly_extent"),
+                    (self, "_link_writeonly_extent"),
                 )
             )
 
             self_dlinks.append(
                 ipywidgets.dlink(
-                    (self, "_readonly_rotation"), (mapview, "_link_writeonly_rotation")
+                    (self, "_readonly_rotation"),
+                    (mapview, "_link_writeonly_rotation"),
                 )
             )
             their_dlinks.append(
                 ipywidgets.dlink(
-                    (mapview, "_readonly_rotation"), (self, "_link_writeonly_rotation")
+                    (mapview, "_readonly_rotation"),
+                    (self, "_link_writeonly_rotation"),
                 )
             )
 
             self_dlinks.append(
                 ipywidgets.dlink(
-                    (self, "_readonly_heading"), (mapview, "_link_writeonly_heading")
+                    (self, "_readonly_heading"),
+                    (mapview, "_link_writeonly_heading"),
                 )
             )
             their_dlinks.append(
                 ipywidgets.dlink(
-                    (mapview, "_readonly_heading"), (self, "_link_writeonly_heading")
+                    (mapview, "_readonly_heading"),
+                    (self, "_link_writeonly_heading"),
                 )
             )
 
             self_dlinks.append(
                 ipywidgets.dlink(
-                    (self, "_readonly_tilt"), (mapview, "_link_writeonly_tilt")
+                    (self, "_readonly_tilt"),
+                    (mapview, "_link_writeonly_tilt"),
                 )
             )
             their_dlinks.append(
                 ipywidgets.dlink(
-                    (mapview, "_readonly_tilt"), (self, "_link_writeonly_tilt")
+                    (mapview, "_readonly_tilt"),
+                    (self, "_link_writeonly_tilt"),
                 )
             )
             self._mapview_uuid_to_dlinks[mapview._uuid] = self_dlinks
