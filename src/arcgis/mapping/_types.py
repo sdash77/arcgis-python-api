@@ -657,8 +657,23 @@ class WebMap(HasTraits, collections.OrderedDict):
                         layer_type = "ArcGISImageServiceLayer"
                     # todo : get renderer info
 
-                elif isinstance(layer, _arcgis_mapping.MapImageLayer):
-                    layer_type = "ArcGISMapServiceLayer"
+                elif isinstance(layer, _arcgis_mapping.MapImageLayer) or isinstance(
+                    layer, _arcgis_mapping.MapRasterLayer
+                ):
+                    try:
+                        if layer.container is not None:
+                            if (
+                                "TilesOnly"
+                                in layer.container.properties["capabilities"]
+                            ):
+                                layer_type = "ArcGISTiledMapServiceLayer"
+                            else:
+                                layer_type = "ArcGISMapServiceLayer"
+                    except:
+                        if "TilesOnly" in layer.properties["capabilities"]:
+                            layer_type = "ArcGISTiledMapServiceLayer"
+                        else:
+                            layer_type = "ArcGISMapServiceLayer"
                 elif isinstance(layer, _arcgis_mapping.VectorTileLayer):
                     layer_type = "VectorTileLayer"
                 elif isinstance(layer, _realtime.StreamLayer):
