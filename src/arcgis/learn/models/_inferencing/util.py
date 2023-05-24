@@ -458,16 +458,27 @@ def pixel_classify_image(model, tiles, device, classes, predict_bg, model_info):
     return semantic_predictions
 
 
-def pixel_classify_superres_image(model, tiles, device):
+def pixel_classify_superres_image(model, tiles, device, model_info):
     tile_height, tile_width = tiles.shape[2], tiles.shape[3]
-    tiles = tensor(tiles)
-    img_normed = norm(tiles.permute(0, 2, 3, 1)).permute(0, 3, 1, 2)
+    tiles, is_multispec = tensor(tiles), model_info.get("is_multispec")
+    if is_multispec:
+        n_mean, n_std = np.array(
+            model_info.get("image_stats")[0], dtype=np.float32
+        ), np.array(model_info.get("image_stats")[1], dtype=np.float32)
+        dn_mean, dn_std = (
+            model_info.get("image_stats2")[0],
+            model_info.get("image_stats2")[1],
+        )
+        nrm = lambda x, m, s: (x - m) / s
+        img_normed = nrm(tiles.permute(0, 2, 3, 1), n_mean, n_std).permute(0, 3, 1, 2)
+    else:
+        img_normed = norm(tiles.permute(0, 2, 3, 1)).permute(0, 3, 1, 2)
+        dn_mean, dn_std = imagenet_stats[0], imagenet_stats[1]
     superres_predictions = superres_image(model, img_normed, device)
     superres_predictions = (
         superres_predictions
-        * torch.tensor(imagenet_stats[1]).view(1, -1, 1, 1).to(superres_predictions)
-    ) + torch.tensor(imagenet_stats[0]).view(1, -1, 1, 1).to(superres_predictions)
-    superres_predictions = superres_predictions.clamp(0, 1)
+        * torch.tensor(dn_std).view(1, -1, 1, 1).to(superres_predictions)
+    ) + torch.tensor(dn_mean).view(1, -1, 1, 1).to(superres_predictions)
     return superres_predictions
 
 
@@ -967,7 +978,9 @@ def update_pixels_img_trans(self, tlc, shape, props, **pixelBlocks):
             self.model, patches, self.device, model_info=self.json_info
         )
     elif model_name == "SuperResolution":
-        prediction = pixel_classify_superres_image(self.model, patches, self.device)
+        prediction = pixel_classify_superres_image(
+            self.model, patches, self.device, model_info=self.json_info
+        )
     elif model_name == "WNetcGAN":
         prediction = pixel_classify_wnet_image(
             self.model, patches, self.device, model_info=self.json_info

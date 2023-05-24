@@ -1,31 +1,27 @@
 from ._codetemplate import super_resolution
-import json
-import traceback
-from ._arcgis_model import _EmptyData
-from .._data import _raise_fastai_import_error
+import torch, json, traceback
+from .._data import prepare_data, _raise_fastai_import_error
 
 try:
-    from ._arcgis_model import ArcGISModel, _resnet_family, _get_device
+    from ._arcgis_model import ArcGISModel, _resnet_family, _EmptyData, _get_device
     from ._superres_utils import (
-        FeatureLoss,
-        gram_matrix,
         compute_metrics,
-        get_resize,
         create_loss,
+        UNet,
     )
-    from fastai.vision.learner import unet_learner
+    from fastai.vision.learner import unet_learner, cnn_config
     from fastai.vision import (
         nn,
-        ImageImageList,
-        get_transforms,
-        imagenet_stats,
         NormType,
-        open_image,
+        Learner,
     )
     from fastai.callbacks import LossMetrics
     from fastai.utils.mem import Path
-    from .._utils.common import _get_emd_path
+    from .._utils.common import _get_emd_path, ArcGISMSImage
     from .._utils.env import is_arcgispronotebook
+    from fastai.core import ifnone
+    from .._utils.superres import show_results
+    from .._data_utils.pix2pix_data import normalize, denormalize
 
     HAS_FASTAI = True
 except Exception as e:
@@ -60,19 +56,48 @@ class SuperResolution(ArcGISModel):
     """
 
     def __init__(self, data, backbone=None, pretrained_path=None, *args, **kwargs):
+        data_bunch = None
+        if data.train_ds.__class__.__name__ == "Pix2PixHDDataset":
+            data_bunch = prepare_data(
+                path=data.path,
+                batch_size=data.batch_size,
+                downsample_factor=data._downsampling_factor,
+                val_split_pct=data.val_split_pct,
+                seed=data.seed,
+                dataset_type="superres",
+            )
         super().__init__(data, backbone, **kwargs)
-        self._check_dataset_support(data)
-        feat_loss = create_loss(self._device.type)
-        data.c = 3
-        self.learn = unet_learner(
-            data,
-            arch=self._backbone,
-            wd=1e-3,
-            loss_func=feat_loss,
-            callback_fns=LossMetrics,
-            blur=True,
-            norm_type=NormType.Weight,
-        )
+        self._data = data_bunch if data_bunch else data
+        self._data._extract_bands = list(range(self._data._n_channel))
+        feat_loss = create_loss(self._data._n_channel, self._device.type)
+        self._check_dataset_support(self._data)
+        if self._data._is_multispec:
+            model = UNet(
+                self._data,
+                arch=self._backbone,
+                norm_type=NormType.Weight,
+            )
+            self.learn = Learner(
+                self._data,
+                model,
+                wd=1e-3,
+                loss_func=feat_loss,
+                callback_fns=LossMetrics,
+            )
+            self.learn.split(ifnone(None, cnn_config(self._backbone)["split"]))
+        else:
+            self._data.c = self._data._n_channel
+            self.learn = unet_learner(
+                self._data,
+                arch=self._backbone,
+                wd=1e-3,
+                loss_func=feat_loss,
+                callback_fns=LossMetrics,
+                blur=True,
+                self_attention=True,
+                norm_type=NormType.Weight,
+            )
+        self.learn.data = self._data
         self.learn.model = self.learn.model.to(self._device)
         if pretrained_path is not None:
             self.load(pretrained_path)
@@ -141,37 +166,38 @@ class SuperResolution(ArcGISModel):
 
         if not HAS_FASTAI:
             _raise_fastai_import_error(import_exception=import_exception)
-
         emd_path = _get_emd_path(emd_path)
         with open(emd_path) as f:
             emd = json.load(f)
-
         model_file = Path(emd["ModelFile"])
-
         if not model_file.is_absolute():
             model_file = emd_path.parent / model_file
 
         model_params = emd["ModelParameters"]
         downsample_factor = emd.get("downsample_factor")
+        n_channel = emd.get("n_channel")
         resize_to = emd.get("resize_to")
         chip_size = emd["ImageHeight"]
         if data is None:
-            data = (
-                ImageImageList.from_folder(emd_path.parent.parent)
-                .split_none()
-                .label_from_func(lambda x: x)
-                .transform(
-                    get_transforms(do_flip=False),
-                    size=(chip_size, chip_size),
-                    tfm_y=True,
+            if emd.get("is_multispec", False):
+                data = _EmptyData(
+                    path=emd_path.parent, loss_func=None, c=2, chip_size=chip_size
                 )
-                .databunch(bs=2, no_check=True)
-                .normalize(imagenet_stats, do_y=True)
-            )
+                data._train_tail = False
+                data._image_stats = emd.get("image_stats")
+                data._image_stats2 = emd.get("image_stats2", None)
+            else:
+                data = _EmptyData(
+                    path=emd_path.parent, loss_func=None, c=2, chip_size=chip_size
+                )
+            data._is_multispec = emd.get("is_multispec")
+            data._n_channel = n_channel
             data._is_empty = True
             data.emd_path = emd_path
             data.downsample_factor = downsample_factor
             data.emd = emd
+            data._extract_bands = emd.get("extract_bands", None)
+            data._bands = emd.get("bands", None)
             data.device = _get_device()
         data.resize_to = resize_to
 
@@ -193,6 +219,12 @@ class SuperResolution(ArcGISModel):
             ] = "[Functions]System\\DeepLearning\\ArcGISLearn\\ArcGISSuperResolution.py"
         _emd_template["ModelType"] = "SuperResolution"
         _emd_template["downsample_factor"] = self._data.downsample_factor
+        _emd_template["n_channel"] = self._data._n_channel
+        _emd_template["is_multispec"] = self._data._is_multispec
+        _emd_template["image_stats"] = self._data._image_stats
+        _emd_template["image_stats2"] = self._data._image_stats2
+        _emd_template["extract_bands"] = self._data._extract_bands
+        _emd_template["bands"] = self._data._bands
         return _emd_template
 
     def compute_metrics(self, accuracy=True, show_progress=True):
@@ -205,7 +237,7 @@ class SuperResolution(ArcGISModel):
         psnr, ssim = compute_metrics(self, self._data.valid_dl, show_progress)
         return {"PSNR": "{0:1.4e}".format(psnr), "SSIM": "{0:1.4e}".format(ssim)}
 
-    def show_results(self, rows=5):
+    def show_results(self, rows=5, **kwargs):
         """
         Displays the results of a trained model on a part of the validation set.
 
@@ -221,13 +253,13 @@ class SuperResolution(ArcGISModel):
             rows = len(self._data.valid_ds)
 
         self._check_requisites()
-        self.learn.show_results(rows=rows)
+        show_results(self, rows, **kwargs)
         if is_arcgispronotebook():
             from matplotlib import pyplot as plt
 
             plt.show()
 
-    def predict(self, img_path, width=None, height=None):
+    def predict(self, img_path):
         """
         Predicts and display the image.
 
@@ -235,41 +267,33 @@ class SuperResolution(ArcGISModel):
         **Parameter**            **Description**
         ---------------------   -------------------------------------------
         img_path                Required path of an image.
-        ---------------------   -------------------------------------------
-        width                   Optional int. Width of the predicted
-                                output image.
-        ---------------------   -------------------------------------------
-        height                  Optional int. Height of the predicted
-                                output image.
         =====================   ===========================================
 
         """
+        from ..models._inferencing.util import mean, std
+
         img_path = Path(img_path)
-        img = open_image(img_path)
-        temp_databunch = self.learn.data
-        if width is not None or height is not None:
-            if width is None:
-                width = height
-            elif height is None:
-                height = width
-        elif width is None and height is None:
-            _, width, height = img.shape
+        raw_img = ArcGISMSImage.open(img_path)
+        raw_img = raw_img.resize(self._data.chip_size)
+        d_mean, d_std = mean, std
 
-        y_new, z_new = width, height
-        pred_databunch = (
-            ImageImageList.from_folder(img_path.parent)
-            .split_none()
-            .label_from_func(lambda x: x)
-            .transform(get_transforms(do_flip=False), size=(height, width), tfm_y=True)
-            .databunch(bs=2, no_check=True)
-            .normalize(imagenet_stats, do_y=True)
-        )
+        if self._data._is_multispec:
+            mean, std = self._data._image_stats[0], self._data._image_stats[1]
+            d_mean, d_std = (
+                self._data._image_stats2[0],
+                self._data._image_stats2[1],
+            )
 
-        self.learn.data = pred_databunch
+        raw_img_tensor = normalize(raw_img.px, mean, std)
+        raw_img_tensor = raw_img_tensor[None].to(self._device)
 
-        pred_img = self.learn.predict(img)[0]
-        self.learn.data = temp_databunch
-        return pred_img
+        self.learn.model.eval()
+        with torch.no_grad():
+            prediction = self.learn.model(raw_img_tensor)[0].detach()[0].cpu()
+
+        pred_denorm = ArcGISMSImage(denormalize(prediction, d_mean, d_std))
+        pred_denorm = pred_denorm.show()
+        return pred_denorm
 
     @property
     def supported_datasets(self):
