@@ -53,6 +53,9 @@ try:
     from ._pointcnn_utils import AverageMetric
     from fastai.core import camel2snake
     import timm
+    from .._utils.evaluate_batchsize import estimate_batch_size
+    from .._utils.evaluate_batchsize import unsupported_models
+    from .._data import prepare_data
 
     # EarlyStoppingCallback should run as one
     # of the first callback so that stop training flag is set
@@ -605,6 +608,16 @@ class ArcGISModel(object):
         self._slice_lr = True
         self._pretrained_path = kwargs.get("pretrained_path", None)
         self._check_data_support_with_pretrained_path()
+        self._model_kwargs = kwargs
+        if self.__class__.__name__ not in unsupported_models:
+            if not getattr(data, "_is_empty", False) and data._estimate_batch:
+                try:
+                    data._estimate_batch = False
+                    batch_size = estimate_batch_size(self, mode="none")
+                    self._data.train_dl.batch_size = batch_size.recommended_batchsize
+                    self._data.valid_dl.batch_size = batch_size.recommended_batchsize
+                except Exception as e:
+                    data._estimate_batch = True
 
     def _check_data_support_with_pretrained_path(self):
         if self._data is not None and self._pretrained_path is not None:
@@ -1165,22 +1178,23 @@ class ArcGISModel(object):
             _emd_template["ImageryType"] = self._data._imagery_type
             if getattr(self._data, "_dataset_type", None) != "ChangeDetection":
                 _emd_template["ExtractBands"] = self._data._extract_bands
-            _emd_template["NormalizationStats"] = {
-                "band_min_values": self._data._band_min_values,
-                "band_max_values": self._data._band_max_values,
-                "band_mean_values": self._data._band_mean_values,
-                "band_std_values": self._data._band_std_values,
-                "scaled_min_values": self._data._scaled_min_values,
-                "scaled_max_values": self._data._scaled_max_values,
-                "scaled_mean_values": self._data._scaled_mean_values,
-                "scaled_std_values": self._data._scaled_std_values,
-            }
-            for _stat in _emd_template["NormalizationStats"]:
-                if _emd_template["NormalizationStats"][_stat] is not None:
-                    _emd_template["NormalizationStats"][_stat] = _emd_template[
-                        "NormalizationStats"
-                    ][_stat].tolist()
-            _emd_template["DoNormalize"] = self._data._do_normalize
+            if not getattr(self._data, "_dataset_type", None) == "SuperResolution":
+                _emd_template["NormalizationStats"] = {
+                    "band_min_values": self._data._band_min_values,
+                    "band_max_values": self._data._band_max_values,
+                    "band_mean_values": self._data._band_mean_values,
+                    "band_std_values": self._data._band_std_values,
+                    "scaled_min_values": self._data._scaled_min_values,
+                    "scaled_max_values": self._data._scaled_max_values,
+                    "scaled_mean_values": self._data._scaled_mean_values,
+                    "scaled_std_values": self._data._scaled_std_values,
+                }
+                for _stat in _emd_template["NormalizationStats"]:
+                    if _emd_template["NormalizationStats"][_stat] is not None:
+                        _emd_template["NormalizationStats"][_stat] = _emd_template[
+                            "NormalizationStats"
+                        ][_stat].tolist()
+                _emd_template["DoNormalize"] = self._data._do_normalize
         if (
             getattr(self._data, "_dataset_type", None) == "Pix2Pix"
             or getattr(self._data, "_dataset_type", None) == "CycleGAN"
@@ -1785,12 +1799,18 @@ class ArcGISModel(object):
             except:
                 plt.close()
 
-        if self.__str__() in ["<PointCNN>", "<RandLANet>", "<SQNSeg>"]:
+        if self.__str__() in [
+            "<PointCNN>",
+            "<RandLANet>",
+            "<SQNSeg>",
+            "<MMDetection3D>",
+        ]:
             self.show_results(save_html=True, save_path=model_characteristics_dir)
         elif self.__str__() in [
             "<TextClassifier>",
             "<TransformerEntityRecognizer>",
             "<SequenceToSequence>",
+            "<TimeSeriesModel>",
         ]:
             pass
         elif hasattr(self, "show_results"):
@@ -1931,11 +1951,16 @@ class ArcGISModel(object):
                                 Only models saved with the default framework
                                 (PyTorch) can be loaded using `from_model`.
                                 ``tflite`` framework (experimental support) is
-                                supported by :class:`~arcgis.learn.SingleShotDetector` - tensorflow backend only,
-                                :class:`~arcgis.learn.FeatureClassifier` and :class:`~arcgis.learn.RetinaNet` - tensorflow backend only.
-                                ``torchscript`` format is supported by
-                                :class:`~arcgis.learn.SiamMask`, :class:`~arcgis.learn.MaskRCNN`, :class:`~arcgis.learn.SingleShotDetector`,
-                                :class:`~arcgis.learn.YOLOv3` and :class:`~arcgis.learn.RetinaNet`.
+                                supported by :class:`~arcgis.learn.SingleShotDetector`
+                                - tensorflow backend only,
+                                :class:`~arcgis.learn.FeatureClassifier`and
+                                :class:`~arcgis.learn.RetinaNet` - tensorflow
+                                backend only.``torchscript`` format is supported by
+                                :class:`~arcgis.learn.SiamMask`,
+                                :class:`~arcgis.learn.MaskRCNN`,
+                                :class:`~arcgis.learn.SingleShotDetector`,
+                                :class:`~arcgis.learn.YOLOv3` and
+                                :class:`~arcgis.learn.RetinaNet`.
                                 For usage of SiamMask model in ArcGIS Pro >= 2.8,
                                 load the ``PyTorch`` framework saved model
                                 and export it with ``torchscript`` framework
@@ -1945,13 +1970,15 @@ class ArcGISModel(object):
                                 model files additionally generated inside
                                 'torch_scripts' folder.
                                 If framework is ``TF-ONNX`` (Only supported for
-                                :class:`~arcgis.learn.SingleShotDetector`), ``batch_size`` can
-                                be passed as an optional keyword argument.
+                                :class:`~arcgis.learn.SingleShotDetector`),
+                                ``batch_size`` can be passed as an optional
+                                keyword argument.
         ---------------------   -------------------------------------------
         publish                 Optional boolean. Publishes the DLPK as an item.
         ---------------------   -------------------------------------------
-        gis                     Optional :class:`~arcgis.gis.GIS`  Object. Used for publishing the item.
-                                If not specified then active gis user is taken.
+        gis                     Optional :class:`~arcgis.gis.GIS`  Object.
+                                Used for publishing the item. If not specified
+                                then active gis user is taken.
         ---------------------   -------------------------------------------
         compute_metrics         Optional boolean. Used for computing model
                                 metrics.

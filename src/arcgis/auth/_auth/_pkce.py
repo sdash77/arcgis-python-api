@@ -8,6 +8,7 @@ import datetime as _dt
 import secrets
 import hashlib
 import base64
+import requests
 from arcgis.auth.tools import parse_url
 from urllib.parse import parse_qs
 
@@ -32,7 +33,13 @@ class EsriPKCEAuth(BaseEsriAuth):
 
     # ---------------------------------------------------------------------
     def __init__(
-        self, url: str, username: str, password: str, *, legacy: bool = False, **kwargs
+        self,
+        url: str,
+        username: str,
+        password: str,
+        *,
+        legacy: bool = False,
+        **kwargs,
     ):
         """initializer"""
         self._no_go_token = set()
@@ -71,6 +78,7 @@ class EsriPKCEAuth(BaseEsriAuth):
     # ---------------------------------------------------------------------
     def _signin(self, username: str, password: str) -> dict:
         """Signs into the enterprise or online site"""
+
         params = {
             "client_id": self._client_id,
             "redirect_uri": self._redirect_url,
@@ -101,6 +109,17 @@ class EsriPKCEAuth(BaseEsriAuth):
             proxies=self._proxies,
             allow_redirects=False,
         )
+        if response.headers["Location"].lower().find("accepttermsandconditions") > -1:
+            url: str = response.headers["Location"]
+            params = {"acceptTermsAndConditions": True}
+            response: requests.Response = self._session.post(
+                url,
+                data=params,
+                verify=self._verify,
+                proxies=self._proxies,
+                allow_redirects=False,
+            )
+
         if response.status_code == 302:
             if "Location" in response.headers:
                 oauth_code = (

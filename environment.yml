@@ -5,13 +5,14 @@ channels:
 - pytorch
 - esri
 - esri-build
+- conda-forge
 dependencies:
-- ipywidgets >=7
-- pandas >=1
+- ipywidgets >=7,<8
+- pandas >=2
 - ujson >=3
-- numpy>=1.16.2
+- numpy>=1.21.6
 - pip
-- python>=3.7, <3.9
+- python>=3.9, <3.10
 - setuptools
 - widgetsnbextension >=3
 - jupyter_client <=6.1.12
@@ -24,6 +25,7 @@ dependencies:
 - requests-oauthlib>=1.2.0
 - python-gssapi
 - requests-gssapi
+- pyspnego >=0.8.0
 - jupyterlab
 - pytest
 - matplotlib
@@ -34,15 +36,19 @@ dependencies:
 - selenium
 - scipy
 - pillow
-- fastai=1.0.54
-- torchvision=0.3.0
-- pytorch=1.1.0
+- fastai=1.0.63
+- torchvision >=0.15.0
+- pytorch >=2
 - cudatoolkit
 - rtree>=0.8.3
 - lxml
+- dask >=2023.3.2
+- matplotlib-inline
 - pip:
   - unittest-xml-reporting
   - setuptools >=38.6
+  - sphinx==3.2.1
+  - jinja2<3.1
   - sphinx-rtd-theme==0.5.2
   - pytest-blockage
   - junit2html
@@ -53,3 +59,4 @@ dependencies:
   - python-certifi-win32
   - cachetools
   - black
+  - nose2

@@ -56,6 +56,19 @@ arcgis.features.GeoSeriesAccessor
     :members:
     :undoc-members:
 
+arcgis.features.GeoDaskSpatialAccessor
+--------------
+.. autoclass:: arcgis.features.GeoDaskSpatialAccessor
+    :inherited-members:
+    :members:
+    :undoc-members:
+
+arcgis.features.GeoDaskSeriesAccessor
+--------------
+.. autoclass:: arcgis.features.GeoDaskSeriesAccessor
+    :inherited-members:
+    :members:
+    :undoc-members:
 
 arcgis.features.EditFeatureJob
 --------------

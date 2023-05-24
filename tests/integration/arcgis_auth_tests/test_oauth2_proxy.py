@@ -1,3 +1,6 @@
+import sys
+
+# sys.path.insert(0, r"c:\SVN\geosaurus_issue_9708\src")
 import unittest
 import uuid
 from arcgis.gis import GIS
@@ -13,7 +16,9 @@ class TestOauth2WithProxy(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         gis = GIS(
-            profile='your_enterprise_profile', verify_cert=False, proxy=detect_proxy()
+            profile='your_enterprise_profile',
+            verify_cert=False,
+            proxy=detect_proxy(),
         )
         item = gis.content.add(
             item_properties={
@@ -24,7 +29,9 @@ class TestOauth2WithProxy(unittest.TestCase):
                 "applicationType": "otherApplication",
             }
         )
-        item.register(app_type='multiple', redirect_uris=["urn:ietf:wg:oauth:2.0:oob"])
+        item.register(
+            app_type='multiple', redirect_uris=["urn:ietf:wg:oauth:2.0:oob"]
+        )
         cls._url = gis.url
         cls._client_id = item.app_info['client_id']
         cls._client_secret = item.app_info['client_secret']
@@ -33,7 +40,9 @@ class TestOauth2WithProxy(unittest.TestCase):
 
     def tearDown(self):
         gis = GIS(
-            profile='your_enterprise_profile', verify_cert=False, proxy=detect_proxy()
+            profile='your_enterprise_profile',
+            verify_cert=False,
+            proxy=detect_proxy(),
         )
         gis.content.get(self._itemid).delete()
 

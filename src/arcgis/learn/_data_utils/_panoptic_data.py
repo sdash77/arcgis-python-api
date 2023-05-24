@@ -235,8 +235,8 @@ def compute_n_masks(path):
         line = f.readline()
         ext = line.split()[1].split(".")[-1].lower()
 
-    imgs = glob.glob(str(path / "images") + "\\*.{}".format(ext))
-    inst_labels = glob.glob(str(path / "labels2") + "\\*\\*.{}".format(ext))
+    imgs = glob.glob(str(path / "images") + "/*.{}".format(ext))
+    inst_labels = glob.glob(str(path / "labels2") + "/*/*.{}".format(ext))
 
     # Read labels and labels2 for each image
     for i, img in enumerate(imgs):

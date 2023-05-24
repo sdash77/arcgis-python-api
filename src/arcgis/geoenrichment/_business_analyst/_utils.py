@@ -503,7 +503,7 @@ def get_spatially_enabled_dataframe(
         input_object = input_object.to_frame("SHAPE")
 
     # if the geometry has not been set, take care of it
-    if input_object.spatial.name is None:
+    if input_object.spatial._name is None:
         assert spatial_column in input_object.columns, (
             f"The spatial column cannot be set to {spatial_column}, "
             f"because it is not a column in the input DataFrame."
@@ -773,7 +773,7 @@ def add_proximity_to_enrich_feature(
 
     # if some other iterable was used for input, make sure a list
     if not isinstance(proximity_value, list):
-        proximity_value = list(proximity_value)
+        proximity_value = proximity_value.split(",")
 
     # put the scalar proximity value(s) in the payload
     feature["bufferRadii"] = proximity_value

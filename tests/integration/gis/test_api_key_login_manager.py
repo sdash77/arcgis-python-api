@@ -1,18 +1,11 @@
-import sys
-
-sys.path.insert(0, r"C:\SVN\geosaurus_issue_9163\src")
 import unittest
 import unittest.mock
-from unittest.mock import MagicMock
 from arcgis.gis import GIS, Item
 from arcgis.gis._impl._apikeys import APIKeyManager, APIKey
 from arcgis.auth.tools._util import detect_proxy
 
 PROXIES = detect_proxy(True)
 gis = GIS(
-    # "https://devext.arcgis.com",
-    # "andrew_token",
-    # "#2020EsriConference",
     profile='your_online_profile',
     verify_cert=False,
     proxy=PROXIES,

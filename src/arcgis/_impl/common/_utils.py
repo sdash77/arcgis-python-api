@@ -8,7 +8,6 @@ import datetime
 from datetime import date
 import tempfile
 from contextlib import contextmanager
-import six
 import logging
 import decimal
 import functools
@@ -117,6 +116,12 @@ def inspect_function_inputs(fn, **params):
 # ----------------------------------------------------------------------
 def _date_handler(obj):
     import numpy
+
+    npversion = [int(i) for i in numpy.__version__.split(".")]
+    if npversion < [1, 20, 0]:
+        FLOAT_CHECKER = (numpy.float, numpy.float32, numpy.float64)
+    else:
+        FLOAT_CHECKER = (float, numpy.float32, numpy.float64)
     from ._mixins import PropertyMap
 
     if type(obj) is datetime.date:
@@ -134,7 +139,7 @@ def _date_handler(obj):
         return _date_handler(int(obj))
     elif isinstance(obj, decimal.Decimal):
         return float(obj)
-    elif isinstance(obj, (numpy.float, numpy.float32, numpy.float64)):
+    elif isinstance(obj, FLOAT_CHECKER):
         return float(obj)
     elif isinstance(obj, numpy.ndarray):
         return obj.tolist()
@@ -310,9 +315,9 @@ def _to_utf8(data):
         return [_to_utf8(element) for element in data]
     elif isinstance(data, str):
         return data
-    elif isinstance(data, six.text_type):
+    elif isinstance(data, str):
         return data.encode("utf-8")
-    elif isinstance(data, (float, six.integer_types)):
+    elif isinstance(data, (float, int)):
         return data
     else:
         return data

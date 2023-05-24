@@ -1,7 +1,7 @@
 import sys, json, uuid
 import sys
 
-sys.path.insert(0, r"c:\SVN\geosaurus_master\src")
+sys.path.insert(0, r"c:\SVN\geosaurus_issue_9708\src")
 import unittest
 from arcgis.auth import EsriSession, EsriUserTokenAuth, EsriBuiltInAuth
 
@@ -12,7 +12,9 @@ class TestUserToken(unittest.TestCase):
         username = "esri_requests"
         password = "portalaccount1"
         builtin = EsriBuiltInAuth(
-            "https://pythonapi.playground.esri.com/portal", username, password
+            "https://pythonapi.playground.esri.com/portal",
+            username,
+            password,
         )
         user_token = builtin.token
         referer = builtin._referer
@@ -39,7 +41,9 @@ class TestUserToken(unittest.TestCase):
         username = "esri_requests"
         password = "portalaccount1"
         builtin = EsriBuiltInAuth(
-            "https://pythonapi.playground.esri.com/portal", username, password
+            "https://pythonapi.playground.esri.com/portal",
+            username,
+            password,
         )
         user_token = builtin.token
         referer = builtin._referer

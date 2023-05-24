@@ -3,6 +3,7 @@ import unittest
 from arcgis.gis.workflowmanager import WorkflowManager, WorkflowManagerAdmin
 from arcgis.gis import GIS
 import datetime
+import re
 
 import workflowmanager_setup
 
@@ -119,6 +120,194 @@ class TestWorkflowManager(unittest.TestCase):
             assert True, (
                 "Expected error returned during test: " + testException.__str__()
             )
+
+    # endregion
+
+    # region Import Item
+
+    def test_import_item_returns_successfully(self):
+        # Act
+        item_id = self.connection.workflow_manager_admin.create_item(
+            "Testing_Item_" + str(datetime.datetime.now())
+        )
+
+        item = self.connection._gis.content.get(item_id)
+        filepath = self.connection.workflow_manager_admin.export_item(item)
+
+        item_id_two = self.connection.workflow_manager_admin.create_item(
+            "Testing_Item_" + str(datetime.datetime.now())
+        )
+
+        item_two = self.connection._gis.content.get(item_id_two)
+        actual = self.connection.workflow_manager_admin.import_item(item_two, filepath)
+
+        # Assert
+        self.assertTrue(actual, "Incorrect return type")
+
+    # endregion
+
+    # region Export Item
+
+    def test_export_item_returns_successfully(self):
+        # Act
+        item_id = self.connection.workflow_manager_admin.create_item(
+            "Testing_Item_" + str(datetime.datetime.now())
+        )
+
+        item = self.connection._gis.content.get(item_id)
+        actual = self.connection.workflow_manager_admin.export_item(item)
+
+        # Assert
+        self.assertIsInstance(actual, str, "Incorrect return type")
+        self.assertTrue(
+            "workflow_configuration" in actual, "Did not return a temporary file path"
+        )
+
+    def test_export_item_with_specific_job_templates_returns_successfully(self):
+        # Act
+        item_id = self.connection.workflow_manager_admin.create_item(
+            "Testing_Item_" + str(datetime.datetime.now())
+        )
+
+        item = self.connection._gis.content.get(item_id)
+        wm = WorkflowManager(item)
+        uniqueness = re.sub("[^0-9a-z]+", "_", str(datetime.datetime.now()))
+        diagram_id = wm.create_diagram(
+            name="Test New Diagram123 " + uniqueness,
+            display_grid=True,
+            description="Test Description",
+            active=True,
+            annotations=[
+                {
+                    "position": "0,0,100,250",
+                    "color": "130, 202, 237",
+                    "outlineColor": "130, 202, 237",
+                    "labelColor": "black",
+                    "text": "test annotations",
+                }
+            ],
+            data_sources=[{"name": "dsource", "url": "string", "sourceType": "string"}],
+            steps=[
+                {
+                    "action": {"actionType": "Manual"},
+                    "automatic": False,
+                    "canSkip": False,
+                    "color": "130, 202, 237",
+                    "description": "Start and end of a workflow",
+                    "helpText": "Start/End help text",
+                    "helpUrl": "Start/End help url",
+                    "id": "1640baf9-f934-fd12-2b62-af6bfc2d0e87",
+                    "labelColor": "black",
+                    "name": "Start/End",
+                    "outlineColor": "130, 202, 237",
+                    "paths": [
+                        {
+                            "assignedType": "Unassigned",
+                            "lineColor": "black",
+                            "nextStep": "21bff5ee-1586-a635-30ea" "-86769f01ac93",
+                            "notifications": [],
+                            "points": [{"x": 0, "y": 26}, {"x": 0, "y": 74}],
+                            "ports": ["BOTTOM", "TOP"],
+                        }
+                    ],
+                    "position": "0,0,100,50",
+                    "proceedNext": True,
+                    "shape": 3,
+                    "stepTemplateId": "AVw8d6MdyiKjHtuS9dJ6",
+                }
+            ],
+        )
+
+        uniqueness = re.sub("[^0-9a-z]+", "_", str(datetime.datetime.now()))
+
+        name = "Testing Template  " + uniqueness
+        table_name = "testing_table_" + uniqueness
+        template_id = uniqueness[0:22]
+
+        diagrams = self.connection.workflow_manager.diagrams
+        diagram = {}
+        for gram in diagrams:
+            if gram.diagram_name == "Introduction to Workflow Manager":
+                diagram = gram
+                break
+
+        template_id = wm.create_job_template(
+            name=name,
+            id=template_id,
+            diagram_id=diagram.diagram_id,
+            diagram_name=diagram.diagram_name,
+            priority="high",
+            category="Functional Tests",
+            job_duration=5,
+            assigned_to=self.connection.portal_username,
+            default_due_date="2020-04-02T13:25:50Z",
+            default_start_date="2020-04-02T13:25:50Z",
+            start_date_type="CreationDate",
+            assigned_type="Unassigned",
+            description="Test Test test",
+            default_description="Test Test123",
+            state="Active",
+            last_updated_by="Abbie Admin",
+            last_updated_date="2020-04-02T13:25:50Z",
+            extended_property_table_definitions=[
+                {
+                    "tableName": table_name,
+                    "tableAlias": table_name,
+                    "tableOrder": 0,
+                    "relationshipType": "OneToOne",
+                    "extendedPropertyDefinitions": [
+                        {
+                            "propertyOrder": 0,
+                            "visible": True,
+                            "propertyName": "prop1",
+                            "editable": True,
+                            "dataType": "String",
+                            "propertyAlias": "prop1",
+                            "required": True,
+                            "fieldLength": 50,
+                        },
+                        {
+                            "propertyOrder": 1,
+                            "visible": True,
+                            "propertyName": "prop2",
+                            "editable": True,
+                            "dataType": "String",
+                            "propertyAlias": "prop2",
+                            "required": True,
+                            "fieldLength": 50,
+                        },
+                        {
+                            "propertyOrder": 2,
+                            "visible": True,
+                            "propertyName": "string",
+                            "editable": True,
+                            "domain": {
+                                "type": "codedValue",
+                                "codedValues": [
+                                    {"code": "123", "name": "123"},
+                                    {"code": "456", "name": "456"},
+                                ],
+                                "range": ["string"],
+                            },
+                            "dataType": "String",
+                            "propertyAlias": "string",
+                            "required": True,
+                            "fieldLength": 0,
+                        },
+                    ],
+                }
+            ],
+        )
+
+        actual = self.connection.workflow_manager_admin.export_item(
+            item, [template_id], [diagram_id, diagram.diagram_id], False
+        )
+
+        # Assert
+        self.assertIsInstance(actual, str, "Incorrect return type")
+        self.assertTrue(
+            "workflow_configuration" in actual, "Did not return a temporary file path"
+        )
 
     # endregion
 

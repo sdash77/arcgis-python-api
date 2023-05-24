@@ -15,7 +15,13 @@ Functions can be applied to various rasters (or images), including the following
 # Rasters within mosaic datasets
 from __future__ import annotations
 from typing import Optional, Union
-from .._layer import ImageryLayer, Raster, _ArcpyRaster, RasterCollection
+from .._layer import (
+    ImageryLayer,
+    Raster,
+    _ArcpyRaster,
+    RasterCollection,
+    _ArcpyRasterCollection,
+)
 from .utility import (
     _raster_input,
     _get_raster,
@@ -79,8 +85,20 @@ def _clone_layer(
     layer, function_chain, raster_ra, raster_ra2=None, variable_name="Raster"
 ):
     _set_multidimensional_rules(function_chain)
-
     if isinstance(layer, Raster) or isinstance(layer, RasterCollection):
+        if (isinstance(layer, RasterCollection)) and isinstance(
+            layer, _ArcpyRasterCollection
+        ):
+            if "Rasters" in function_chain["rasterFunctionArguments"].keys():
+                if isinstance(
+                    function_chain["rasterFunctionArguments"]["Rasters"],
+                    RasterCollection,
+                ):
+                    function_chain["rasterFunctionArguments"].pop("Rasters")
+
+            return _clone_layer_raster_without_copy(
+                layer, function_chain, function_chain
+            )
         return _clone_layer_raster(
             layer, function_chain, raster_ra, raster_ra2, variable_name
         )
@@ -240,12 +258,14 @@ def _clone_layer_raster(
         if (layer._engine != _ArcpyRaster) and (
             layer.tiles_only or (not allow_raster_function and allow_analysis)
         ):
+            service_url = layer.url
             newlyr = Raster(
                 function_chain_ra,
                 is_multidimensional=layer._is_multidimensional,
                 engine=layer._engine,
                 gis=layer._gis,
             )
+            newlyr._engine_obj._service_url = service_url
         else:
             newlyr = Raster(
                 layer._url,
@@ -313,51 +333,76 @@ def _clone_layer_raster(
 
 
 def _clone_layer_raster_without_copy(layer, function_chain, function_chain_ra):
-    if layer._datastore_raster:
-        if isinstance(layer._uri, dict) or isinstance(layer._uri, bytes):
-            newlyr = Raster(
-                function_chain_ra,
-                is_multidimensional=layer._is_multidimensional,
-                engine=layer._engine,
-                gis=layer._gis,
-            )
+    if (isinstance(layer, RasterCollection)) and isinstance(
+        layer, _ArcpyRasterCollection
+    ):
+        if hasattr(layer, "_ras_coll_engine_obj"):
+            rc = layer._ras_coll_engine_obj
         else:
-            newlyr = Raster(
-                layer._uri,
-                is_multidimensional=layer._is_multidimensional,
-                engine=layer._engine,
-                gis=layer._gis,
-            )
-    else:
-        allow_raster_function = True
-        allow_analysis = True
-        info = layer._get_service_info()
-        if "allowRasterFunction" in info.keys():
-            allow_raster_function = info["allowRasterFunction"]
-        if not allow_raster_function:
-            if "allowAnalysis" in info.keys():
-                allow_analysis = info["allowAnalysis"]
-            if not allow_analysis:
-                raise RuntimeError("Input image service doesnt allow analysis.")
-        if (layer._engine != _ArcpyRaster) and (
-            layer.tiles_only or (not allow_raster_function and allow_analysis)
-        ):
-            newlyr = Raster(
-                function_chain_ra,
-                is_multidimensional=layer._is_multidimensional,
-                engine=layer._engine,
-                gis=layer._gis,
-            )
-        else:
-            newlyr = Raster(
-                layer._url,
-                is_multidimensional=layer._is_multidimensional,
-                engine=layer._engine,
-                gis=layer._gis,
-            )
-            newlyr._engine_obj._tiles_only = layer._tiles_only
+            rc = layer
+        try:
+            import arcpy, json
 
-    if layer._engine == _ArcpyRaster:
+            arcpylyr = arcpy.ia.Apply(
+                rc._raster_collection,
+                json.dumps(function_chain_ra),
+            )
+            newlyr = Raster(
+                arcpylyr,
+                is_multidimensional=True,
+                engine=rc[0]["Raster"]._engine,
+            )
+            return newlyr
+        except Exception as err:
+            _LOGGER.warning(err)
+    else:
+        if (hasattr(layer, "_datastore_raster")) and layer._datastore_raster:
+            if isinstance(layer._uri, dict) or isinstance(layer._uri, bytes):
+                newlyr = Raster(
+                    function_chain_ra,
+                    is_multidimensional=layer._is_multidimensional,
+                    engine=layer._engine,
+                    gis=layer._gis,
+                )
+            else:
+                newlyr = Raster(
+                    layer._uri,
+                    is_multidimensional=layer._is_multidimensional,
+                    engine=layer._engine,
+                    gis=layer._gis,
+                )
+        else:
+            allow_raster_function = True
+            allow_analysis = True
+            info = layer._get_service_info()
+            if "allowRasterFunction" in info.keys():
+                allow_raster_function = info["allowRasterFunction"]
+            if not allow_raster_function:
+                if "allowAnalysis" in info.keys():
+                    allow_analysis = info["allowAnalysis"]
+                if not allow_analysis:
+                    raise RuntimeError("Input image service doesnt allow analysis.")
+            if (layer._engine != _ArcpyRaster) and (
+                layer.tiles_only or (not allow_raster_function and allow_analysis)
+            ):
+                service_url = layer.url
+                newlyr = Raster(
+                    function_chain_ra,
+                    is_multidimensional=layer._is_multidimensional,
+                    engine=layer._engine,
+                    gis=layer._gis,
+                )
+                newlyr._engine_obj._service_url = service_url
+            else:
+                newlyr = Raster(
+                    layer._url,
+                    is_multidimensional=layer._is_multidimensional,
+                    engine=layer._engine,
+                    gis=layer._gis,
+                )
+                newlyr._engine_obj._tiles_only = layer._tiles_only
+
+    if (hasattr(layer, "_engine")) and layer._engine == _ArcpyRaster:
         allow_analysis = True  # check only allow  analysis if engine is arcpy as there is no export image case
         info = None
         try:
@@ -1957,6 +2002,13 @@ def clip(
         geom_dict = template_dict["rasterFunctionArguments"]["ClippingGeometry"]
 
         template_dict["rasterFunctionArguments"]["Extent"] = extent_envelope
+        if (geom_dict) and not isinstance(
+            Geometry(geom_dict), Envelope
+        ):  # Setting extent to extent envelope will only work for services on or after 11.0
+            if [
+                int(v) for v in str(dict(layer.properties)["currentVersion"]).split(".")
+            ] < [11, 0]:
+                template_dict["rasterFunctionArguments"]["Extent"] = None
 
     except:
         pass
@@ -12967,6 +13019,272 @@ def interpolate_raster_by_dimension(
         template_dict["rasterFunctionArguments"]["IgnoreNoData"] = ignore_nodata
 
     return _clone_layer(layer1, template_dict, raster_ra1)
+
+
+def surface_parameters(
+    raster: Union[Raster, ImageryLayer],
+    parameter_type: Optional[str] = "SLOPE",
+    local_surface_type: Optional[str] = "QUADRATIC",
+    neighborhood_distance_with_units: Optional[str] = None,
+    use_adaptive_neighborhood: Optional[bool] = False,
+    z_unit: Optional[str] = None,
+    slope_type: Optional[str] = "DEGREE",
+    project_geodesic_azimuths: Optional[str] = "GEODESIC_AZIMUTHS",
+    use_equatorial_aspect: Optional[str] = "NORTH_POLE_ASPECT",
+):
+    """
+    Determines parameters of a surface raster such as aspect, slope, and several types of curvatures using geodesic methods. 
+    
+    The arguments for this function are as follows:
+    
+    ================================     ====================================================================
+    **Argument**                         **Description**
+    --------------------------------     --------------------------------------------------------------------
+    raster                               Required :class:`Raster <arcgis.raster.Raster>`/ :class:`ImageryLayer <arcgis.raster.ImageryLayer>` object. The input surface raster. This can be an integer or a floating-point raster.
+    --------------------------------     --------------------------------------------------------------------
+    parameter_type                       Optional string. Specifies the output surface parameter type that will be computed.
+
+                                            - SLOPE - The rate of change in elevation will be computed. This is the default.
+                                            
+                                            - ASPECT - The downslope direction of the maximum rate of change for\
+                                            each cell will be computed.
+                                            
+                                            - MEAN_CURVATURE - The overall curvature of the surface will be measured.\
+                                            It is computed as the average of the minimum and maximum curvature.\
+                                            This curvature describes the intrinsic convexity or concavity of\
+                                            the surface, independent of direction or gravity influence.
+                                            
+                                            - TANGENTIAL_CURVATURE - The geometric normal curvature perpendicular\
+                                            to the slope line, tangent to the contour line will be measured. This\
+                                            curvature is typically applied to characterize the convergence or divergence\
+                                            of flow across the surface.
+                                            
+                                            - PROFILE_CURVATURE - The geometric normal curvature along the slope\
+                                            line will be measured. This curvature is typically applied to characterize\
+                                            the acceleration and deceleration of flow down the surface.
+                                            
+                                            - CONTOUR_CURVATURE - The curvature along contour lines will be measured.
+                                            
+                                            - CONTOUR_GEODESIC_TORSION - The rate of change in slope angle along\
+                                            contour lines will be measured.
+                                            
+                                            - GAUSSIAN_CURVATURE - The overall curvature of the surface will be\
+                                            measured. It is computed as the product of the minimum and maximum curvature.
+                                            
+                                            - CASORATI_CURVATURE - The general curvature of the surface will be measured.\
+                                            It can be zero or any other positive number.
+    --------------------------------     --------------------------------------------------------------------
+    local_surface_type                   Optional string. Specifies the type of surface function that will be fitted\
+                                         around the target cell. 
+    
+                                            - QUADRATIC - A quadratic surface function will be fitted to the\
+                                            neighborhood cells. This is the default. 
+                                            
+                                            - BIQUADRATIC - A biquadratic surface function will be fitted to\
+                                            the neighborhood cells.
+    --------------------------------     --------------------------------------------------------------------
+    neighborhood_distance_with_units     Optional string. The output will be calculated over this distance from the target cell center. 
+    
+                                         If this parameter is not specified, the neighborhood distance is the\
+                                         input raster cell size, resulting in a 3 by 3 neighborhood size.
+    --------------------------------     --------------------------------------------------------------------
+    use_adaptive_neighborhood            Optional boolean. Specifies whether neighborhood distance will vary with landscape\
+                                         changes (adaptive). The maximum distance is determined by the neighborhood\
+                                         scale. The minimum distance is the input raster cell size. 
+                                        
+                                            - False - A single (fixed) neighborhood distance will be used at all locations.\
+                                            This is the default. 
+                                            
+                                            - True - An adaptive neighborhood distance will be used at all locations.
+    --------------------------------     --------------------------------------------------------------------
+    z_unit                               Optional string. The linear unit of vertical z-values. It is defined by a vertical\
+                                         coordinate system if it exists. 
+                                         
+                                         If a vertical coordinate system does not exist, the z-unit should be defined\
+                                         from the unit list to ensure correct geodesic computation. 
+                                         
+                                         If the input raster has a defined VCS its unit will be the default.
+                                        
+                                            - INCH - The linear unit will be inches. 
+                                            
+                                            - FOOT - The linear unit will be feet.
+                                            
+                                            - YARD - The linear unit will be yards.
+                                            
+                                            - MILE_US - The linear unit will be miles.
+                                            
+                                            - NAUTICAL_MILE - The linear unit will be nautical miles.
+                                            
+                                            - MILLIMETER - The linear unit will be millimeters.
+                                            
+                                            - CENTIMETER - The linear unit will be centimeters.
+                                            
+                                            - METER - The linear unit will be meters.
+                                            
+                                            - KILOMETER - The linear unit will be kilometers.
+                                            
+                                            - DECIMETER - The linear unit will be decimeters.
+    --------------------------------     --------------------------------------------------------------------
+    slope_type                           Optional string. The measurement units (degrees or percentages) that will be\
+                                         used for the output slope raster.
+                                         
+                                         This parameter is only applicable when ``parameter_type`` = "SLOPE". 
+                                        
+                                            - DEGREE - The inclination of slope will be calculated in degrees. This is the default.
+                                             
+                                            - PERCENT_RISE - The inclination of slope will be calculated as percent\
+                                            rise, also referred to as the percent slope.
+    --------------------------------     --------------------------------------------------------------------
+    project_geogeodesic_azimuths         Optional string. Specifies whether geodesic azimuths will be projected to correct\
+                                         the angle distortion caused by the output spatial reference.
+                                         
+                                         This parameter is only applicable when ``parameter_type`` = "ASPECT". 
+                                         
+                                            - GEODESIC_AZIMUTHS - Geodesic azimuths will not be projected. This is the default.
+                                            
+                                            - PROJECT_GEODESIC_AZIMUTHS - Geodesic azimuths will be projected.
+    --------------------------------     --------------------------------------------------------------------
+    use_equatorial_aspect                Optional string. Specifies whether aspect will be measured from a point on the\
+                                         equator or from the north pole. 
+                                         
+                                         This parameter is only applicable when ``parameter_type`` = "ASPECT"
+                                         
+                                            - NORTH_POLE_ASPECT - Aspect will be measured from the north pole. This is the default. 
+                                            
+                                            - EQUATORIAL_ASPECT - Aspect will be measured from a point on the equator.
+    ================================     ====================================================================     
+
+    :return: The output raster with the function applied.
+
+    .. code-block:: python
+
+        # Usage Example: 
+
+        surface_parameters_output = surface_parameters(raster, parameter_type="SLOPE", slope_type="PERCENT_RISE")
+    """
+
+    layer, raster, raster_ra = _raster_input(raster)
+
+    template_dict = {
+        "rasterFunction": "SurfaceParam",
+        "rasterFunctionArguments": {"Raster": raster},
+    }
+
+    parameter_types = {
+        "SLOPE": 4,
+        "ASPECT": 5,
+        "MEAN_CURVATURE": 1,
+        "PROFILE_CURVATURE": 2,
+        "TANGENTIAL_CURVATURE": 3,
+        "CONTOUR_CURVATURE": 6,
+        "CONTOUR_GEODESIC_TORSION": 7,
+        "GAUSSIAN_CURVATURE": 8,
+        "CASORATI_CURVATURE": 9,
+    }
+
+    if parameter_type is not None:
+        if parameter_type.upper() not in parameter_types.keys():
+            raise RuntimeError(
+                "parameter_type should be one of the following "
+                + str(parameter_types.keys())
+            )
+        template_dict["rasterFunctionArguments"][
+            "SurfaceCalculation"
+        ] = parameter_types[parameter_type.upper()]
+
+    surface_types = {
+        "QUADRATIC": 1,
+        "BIQUADRATIC": 2,
+    }
+
+    if local_surface_type is not None:
+        if local_surface_type.upper() not in surface_types.keys():
+            raise RuntimeError(
+                "local_surface_type should be one of the following "
+                + str(surface_types.keys())
+            )
+        template_dict["rasterFunctionArguments"]["LocalSurface"] = surface_types[
+            local_surface_type.upper()
+        ]
+
+    if neighborhood_distance_with_units is not None:
+        template_dict["rasterFunctionArguments"][
+            "AnalysisScaleWithUnits"
+        ] = neighborhood_distance_with_units
+
+    if use_adaptive_neighborhood is not None:
+        if isinstance(use_adaptive_neighborhood, bool):
+            template_dict["rasterFunctionArguments"][
+                "UseAdaptiveScale"
+            ] = use_adaptive_neighborhood
+        else:
+            raise RuntimeError("use_adaptive_neighborhood should be of type: boolean")
+
+    z_unit_types = [
+        "METER",
+        "INCH",
+        "FOOT",
+        "YARD",
+        "MILE_US",
+        "NAUTICAL_MILE",
+        "MILLIMETER",
+        "CENTIMETER",
+        "KILOMETER",
+        "DECIMETER",
+    ]
+
+    if z_unit is not None:
+        if z_unit.upper() not in z_unit_types:
+            raise RuntimeError(
+                "z_unit should be one of the following " + str(z_unit_types)
+            )
+        template_dict["rasterFunctionArguments"]["ZUnit"] = z_unit.upper()
+
+    slope_types = {
+        "DEGREE": 1,
+        "PERCENT_RISE": 2,
+    }
+
+    if slope_type is not None:
+        if slope_type.upper() not in slope_types.keys():
+            raise RuntimeError(
+                "slope_type should be one of the following " + str(slope_types.keys())
+            )
+        template_dict["rasterFunctionArguments"]["SlopeType"] = slope_types[
+            slope_type.upper()
+        ]
+
+    azimuth_types = {
+        "GEODESIC_AZIMUTHS": False,
+        "PROJECT_GEODESIC_AZIMUTHS": True,
+    }
+
+    if project_geodesic_azimuths is not None:
+        if project_geodesic_azimuths.upper() not in azimuth_types.keys():
+            raise RuntimeError(
+                "project_geodesic_azimuths should be one of the following "
+                + str(azimuth_types.keys())
+            )
+        template_dict["rasterFunctionArguments"]["ProjectAzimuths"] = azimuth_types[
+            project_geodesic_azimuths.upper()
+        ]
+
+    eq_aspect_types = {
+        "NORTH_POLE_ASPECT": False,
+        "EQUATORIAL_ASPECT": True,
+    }
+
+    if use_equatorial_aspect is not None:
+        if use_equatorial_aspect.upper() not in eq_aspect_types.keys():
+            raise RuntimeError(
+                "use_equatorial_aspect should be one of the following "
+                + str(eq_aspect_types.keys())
+            )
+        template_dict["rasterFunctionArguments"][
+            "UseEquatorialAspect"
+        ] = eq_aspect_types[use_equatorial_aspect.upper()]
+
+    return _clone_layer(layer, template_dict, raster_ra)
 
 
 def geometric_median(

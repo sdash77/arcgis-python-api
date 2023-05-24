@@ -1,8 +1,4 @@
 import sys
-
-#
-#  Update the Path to set the test area
-sys.path.insert(0, r"C:\SVN\geosaurus_master_issue_8163\src")
 import logging, tempfile
 import unittest, os
 from arcgis.auth.tools._util import detect_proxy
@@ -30,7 +26,7 @@ class Test_ItemDownload(unittest.TestCase):
     def test_download_anonymous(self):
         """tests downloading a file with no auth"""
         gis = GIS(verify_cert=False, proxy=PROXIES)
-        item = gis.content.get("8b4600eb9a29407bbfe51491ad5bf62c")
+        item = gis.content.get("b7addc908a58486dbc0253b052140d45")
         filepath = item.download(tempfile.gettempdir())
         assert os.path.isfile(filepath)
         if os.path.isfile(filepath):

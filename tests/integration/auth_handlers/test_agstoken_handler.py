@@ -2,7 +2,7 @@ import sys
 
 #
 #  Update the Path to set the test area
-sys.path.insert(0, r"C:\SVN\geosaurus_master_issue_8929\src")
+sys.path.insert(0, r"c:\SVN\geosaurus_issue_9708\src")
 
 
 import logging
@@ -44,7 +44,7 @@ class TestAGSServerConnectionFile(unittest.TestCase):
         for folder in sd.folders:
             print(sd.list(folder))
 
-    @unittest.skip("i work")
+    # @unittest.skip("i work")
     def test_requests_session(self):
         """tests the ags connection through the idea"""
         url = "https://rextapilnxsvr01.esri.com/server/rest/services/System"

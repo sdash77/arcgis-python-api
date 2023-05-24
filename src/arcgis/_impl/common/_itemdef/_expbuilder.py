@@ -34,7 +34,18 @@ class _WebExperience(_ItemDefinition):
         **kwargs,
     ):
         super().__init__(
-            target, clone_mapping, search_existing, portal_item=portal_item
+            target=target,
+            clone_mapping=clone_mapping,
+            info=info,
+            data=data,
+            sharing=sharing,
+            search_existing=search_existing,
+            portal_item=portal_item,
+            thumbnail=thumbnail,
+            folder=folder,
+            item_extent=item_extent,
+            owner=owner,
+            **kwargs,
         )
         self.info = info
         self._preserve_item_id = kwargs.pop("preserve_item_id", False)

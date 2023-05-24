@@ -63,13 +63,6 @@ class Test_ImageryLayer_portal(unittest.TestCase):
         """
 
         # region Read config data
-        _conf_reader = ConfigParser()
-        _conf_reader.read(DinoConfigs.portal_list_file, "UTF-8")
-
-        cls.portal_url = _conf_reader["teamportal"]["url"]
-        cls.portal_username = _conf_reader["teamportal"]["publisher1"]
-        cls.portal_password = _conf_reader["teamportal"]["publisher1_password"]
-
         _conf_reader2 = ConfigParser()
         _conf_reader2.read(DinoConfigs.root_init_file, "UTF-8")
 
@@ -87,12 +80,12 @@ class Test_ImageryLayer_portal(unittest.TestCase):
         # endregion
 
         # region precondition checks and sign in
-        r1 = PreconditionChecks.can_ping_portal(cls.portal_url)
+        r1 = PreconditionChecks.can_ping_portal(GIS(profile="your_enterprise_profile").url)
         if not r1:
             cls.class_skip = True
 
         cls.gis = GIS(
-            cls.portal_url, cls.portal_username, cls.portal_password, verify_cert=False
+            profile="your_enterprise_profile", verify_cert=False
         )
         if cls.gis is None:
             cls.class_skip = True
@@ -205,7 +198,7 @@ class Test_ImageryLayer_portal(unittest.TestCase):
         try:
             # search for imagery layer and see if it can be accessed as a ImageryLayer class
             search_result = PortalUtils.search_portal_item(
-                self.gis, "ImgSrv_Landast_Montana2014", "Image Service"
+                self.gis, "Montana_Burn_scars14854", "Image Service"
             )
 
             montana_img_lyr = search_result.layers[0]
@@ -216,7 +209,7 @@ class Test_ImageryLayer_portal(unittest.TestCase):
             counts_b1 = hist_b1["counts"]
 
             self.assertIsInstance(hist_all_bands, list, "Cannot access hasHistograms")
-            self.assertEqual(len(hist_all_bands), 8, "cannot get 8 hist for 8 bands")
+            self.assertEqual(len(hist_all_bands), 3, "cannot get 3 hist for 8 bands")
 
             self.assertIsInstance(hist_b1, dict, "histogram of a band is not a dict")
             self.assertEqual(

@@ -269,7 +269,6 @@ class ArcGISObjectDetector:
         try:
             from ensemble_boxes import weighted_boxes_fusion
 
-            weights = [2] + [1] * (len(labels_list) - 1)
             iou_thr = self.nms_overlap
             skip_box_thr = 0.0001
 
@@ -277,7 +276,6 @@ class ArcGISObjectDetector:
                 boxes_list,
                 scores_list,
                 labels_list,
-                weights=weights,
                 iou_thr=iou_thr,
                 skip_box_thr=skip_box_thr,
             )
@@ -1415,7 +1413,7 @@ class ArcGISSuperResolution:
         return configuration
 
     def updateRasterInfo(self, **kwargs):
-        kwargs['output_info']['bandCount'] = 3
+        kwargs['output_info']['bandCount'] = self.json_info.get("n_channel", 3)
         kwargs['output_info']['pixelType'] = 'f4'
         return kwargs
 

@@ -125,6 +125,52 @@ class AttachmentManager(object):
         else:
             self._version = None
 
+    def count(
+        self,
+        where: str | None = None,
+        attachment_where: str | None = None,
+        object_ids: str | None = None,
+        global_ids: str | None = None,
+        attachment_types: str | None = None,
+        size: tuple[int] | list[int] | None = None,
+        keywords: str | None = None,
+    ) -> int:
+        """"""
+        url: str = "{}/{}".format(self._layer.url, "queryAttachments")
+        if object_ids is None:
+            object_ids = []
+        if global_ids is None:
+            global_ids = []
+        if attachment_types is None:
+            attachment_types = []
+        if where is None:
+            where = ""
+        if keywords is None:
+            keywords = []
+        params: dict[str, Any] = {
+            "f": "json",
+            "definitionExpression": where,
+            "attachmentTypes": ",".join(attachment_types),
+            "objectIds": ",".join([str(v) for v in object_ids]),
+            "globalIds": ",".join([str(v) for v in global_ids]),
+            "definitionExpression": where,
+            "attachmentsDefinitionExpression": attachment_where or "",
+            "keywords": ",".join([str(v) for v in keywords]),
+            "size": size,
+            "returnCountOnly": True,
+        }
+        res = self._layer._con._session.get(url=url, params=params)
+        res.raise_for_status()
+        data: dict[str, Any] = res.json()
+        if "attachmentGroups" in data:
+            return sum([grp["count"] for grp in res.json()["attachmentGroups"]])
+        elif "error" in data:
+            raise Exception(data["error"])
+        else:
+            raise Exception(
+                "Could not obtain the attachment counts, verify that attachments is enabled."
+            )
+
     def search(
         self,
         where: str = "1=1",
@@ -138,7 +184,9 @@ class AttachmentManager(object):
         return_metadata: bool = False,
         return_url: bool = False,
         max_records: int | None = None,
-        offset: int = 0,
+        offset: int | None = None,
+        *,
+        attachment_where: str | None = None,
     ):
         """
 
@@ -256,6 +304,12 @@ class AttachmentManager(object):
                                     The default value is 0. This parameter only applies when
                                     `supportPagination` is true. You can use this option to fetch
                                     records that are beyond `maxRecordCount` property.
+        -------------------------   ---------------------------------------------------------------
+        attachment_where            Optional str. The definition expression to be applied to the
+                                    attachments table. Only those records that conform to this
+                                    expression will be returned. You can get the attachments table
+                                    field names to use in the expression by checking the layer's
+                                    `attachmentProperties`.
         =========================   ===============================================================
 
         :return: A Pandas DataFrame or Dict of the attachments of the :class:`~arcgis.features.FeatureLayer`
@@ -366,6 +420,7 @@ class AttachmentManager(object):
                     ]
         else:
             url = "{}/{}".format(self._layer.url, "queryAttachments")
+
             params = {
                 "f": "json",
                 "attachmentTypes": ",".join(attachment_types),
@@ -379,6 +434,11 @@ class AttachmentManager(object):
                 "resultRecordCount": max_records,
                 "resultOffset": offset,
             }
+            if offset:
+                params["offset"] = offset
+            if attachment_where:
+                params["attachmentsDefinitionExpression"] = attachment_where or ""
+
             iterparams = copy.copy(params)
             for k, v in iterparams.items():
                 if k in ["objectIds", "globalIds", "attachmentTypes"] and v == "":
@@ -2000,18 +2060,18 @@ class FeatureLayerCollectionManager(_GISResource):
                     "preserveLayerIds": preserve_layer_ids,
                 }
             ),
+            "tags": tags if tags else item.tags,
+            "snippet": snippet if snippet else item.snippet,
+            "description": description if description else item.description,
             "outputType": "featureService",
         }
         if set_item_id:
             params["itemIdToCreate"] = set_item_id
-        if tags:
-            params["tags"] = tags
-        if snippet:
-            params["snippet"] = snippet
-        if not overwrite is None:
-            params["overwrite"] = overwrite
-        if description:
-            params["description"] = description
+        if overwrite:
+            logging.warning(
+                "overwrite is currently not supported on this platform, and will not be honored"
+            )
+
         res = gis._con.post(path=url, postdata=params)
         view = content.get(res["itemId"])
         fs_view = FeatureLayerCollection(url=view.url, gis=gis)
@@ -2231,13 +2291,7 @@ class FeatureLayerCollectionManager(_GISResource):
                 view.update(data=item_upd_dict)
         else:
             view.update(data=item.get_data())
-        view.update(
-            {
-                "tags": ",".join(item.tags),
-                "description": item.description or "",
-                "snippet": item.snippet or "",
-            }
-        )
+
         return content.get(res["itemId"])
 
     # ----------------------------------------------------------------------
@@ -2798,6 +2852,22 @@ class FeatureLayerManager(_GISResource):
     def __init__(self, url, gis=None):
         super(FeatureLayerManager, self).__init__(url, gis)
         self._hydrate()
+
+    # ----------------------------------------------------------------------
+    @property
+    def contingent_values(self) -> dict[str, Any]:
+        """returns the contingent values for the service endpoint"""
+        url: str = f"{self._url}/contingentValues"
+        params: dict[str, Any] = {"f": "json"}
+        return self._gis._con.get(url, params)
+
+    # ----------------------------------------------------------------------
+    @property
+    def field_groups(self) -> dict[str, Any]:
+        """returns the field groups for the service endpoint"""
+        url: str = f"{self._url}/fieldGroups"
+        params: dict[str, Any] = {"f": "json"}
+        return self._gis._con.get(url, params)
 
     # ----------------------------------------------------------------------
     @classmethod

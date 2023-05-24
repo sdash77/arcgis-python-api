@@ -22,7 +22,7 @@ from contextlib import contextmanager
 import functools
 import random
 import string
-from datetime import datetime
+from datetime import datetime, timedelta
 import logging
 from typing import Any, Optional, Union
 from urllib.error import HTTPError
@@ -339,6 +339,7 @@ class GIS(object):
     _is_agol = None
     _pds = None
     _validate_item_url = None
+    _properties = None
     """If 'True', the GIS instance is a GIS('home') from hosted nbs"""
 
     # admin = None
@@ -650,6 +651,9 @@ class GIS(object):
             force_refresh = True
 
         # If a token was injected, then force refresh to get updated properties
+        self._properties = _mixins.PropertyMap(
+            self._portal.get_properties(force=force_refresh)
+        )
         self._lazy_properties = _mixins.PropertyMap(
             self._portal.get_properties(force=force_refresh)
         )
@@ -1177,12 +1181,14 @@ class GIS(object):
             pass
         return self._datastores_list
 
-    @_lazy_property
+    @property
     def properties(self):
         """
         ``properties`` manages the actual properties of the GIS object.
         """
-        return _mixins.PropertyMap(self._get_properties(force=True))
+        if self._properties is None:
+            self._properties = _mixins.PropertyMap(self._get_properties(force=True))
+        return self._properties
 
     def update_properties(self, properties_dict: dict[str, Any]):
         """The ``update_properties`` method updates the GIS's properties from those in ``properties_dict``. This method
@@ -1229,7 +1235,7 @@ class GIS(object):
 
         resp = self._portal.con.post("portals/self/update", postdata)
         if resp:
-            self._lazy_properties = _mixins.PropertyMap(
+            self._properties = _mixins.PropertyMap(
                 self._portal.get_properties(force=True)
             )
             # delattr(self, '_lazy_properties') # force refresh of properties when queried next
@@ -1835,6 +1841,10 @@ class GroupMigrationManager(object):
             params = {
                 "f": "json",
                 "itemId": item,
+                "itemIdList": "",
+                "folderId": "",
+                "folderOwnerUsername": "",
+                "token": self._con.token,
             }
             if item_id_list:
                 params["itemIdList"] = item_id_list
@@ -3620,7 +3630,9 @@ class UserManager(object):
                 and "groups" in self.user_settings
                 and self.user_settings["groups"]
             ):
-                groups = [self._gis.groups.get(g) for g in self.user_settings["groups"]]
+                groups = [
+                    self._gis.groups.get(g).id for g in self.user_settings["groups"]
+                ]
             params = {
                 "f": "json",
                 "invitationList": {
@@ -4039,6 +4051,11 @@ class UserManager(object):
         ==================     ====================================================================
         """
         results = []
+        # ensure /Categories is at the start of each string.
+        categories = [
+            cat if cat.lower().find("/categories") > -1 else f"/Categories/{cat}"
+            for cat in categories
+        ]
         for user in users:
             results.append({user.username: user.update(categories=categories)})
         return results
@@ -4118,9 +4135,16 @@ class UserManager(object):
             res = self._gis._con.post(url, params)
             if res.get("success", False) == False:
                 raise Exception(res)
+            else:
+                self._gis._properties = None
         elif isinstance(value, (tuple, list)):
             url = f"{self._gis._portal.resturl}portals/self/assignMemberCategorySchema"
-            cat_param = [{"title": category} for category in value]
+            cat_param = []
+            for category in value:
+                if isinstance(value, str):
+                    cat_param.append({"title": category})
+                else:
+                    cat_param.append(category)
             if self._gis.properties.hasMemberCategorySchema:
                 for category in self._gis.users.categories[0]["categories"]:
                     cat_param.append(category)
@@ -4138,6 +4162,8 @@ class UserManager(object):
             res = self._gis._con.post(url, params)
             if res.get("success", False) == False:
                 raise Exception(res)
+            else:
+                self._gis._properties = None
         elif isinstance(value, dict) and "memberCategorySchema" in value:
             url = f"{self._gis._portal.resturl}portals/self/assignMemberCategorySchema"
             if self._gis.properties.hasMemberCategorySchema:
@@ -4147,6 +4173,8 @@ class UserManager(object):
             res = self._gis._con.post(url, params)
             if res.get("success", False) == False:
                 raise Exception(res)
+            else:
+                self._gis._properties = None
         else:
             raise ValueError("A list or tuple must be given to set the categories.")
 
@@ -4959,9 +4987,8 @@ class Role(object):
 class GroupManager(object):
     """
     The ``GroupManager`` class is a helper class for managing GIS groups.
-    An instance of this class, called :attr:`~arcgis.gis.GIS.groups`, is available as a property of the
-    :class:`~arcgis.gis.GIS` object.
-    Users call methods on this 'groups' object to manipulate (create, get, search, etc) users.
+    An instance of this class, called :attr:`~arcgis.gis.GIS.groups`, is available
+    as a property of the :class:`~arcgis.gis.GIS` object.
 
     .. note::
         This class is not created by users directly.
@@ -4996,14 +5023,18 @@ class GroupManager(object):
         autojoin: bool = False,
     ):
         """
-        The ``create`` method creates a group with the values for any particular arguments that are specified.
+        The ``create`` method creates a group with the values for any particular
+        arguments that are specified. The user who creates the group automatically
+        becomes the owner of the group, and the owner automatically becomes an
+        administrator. Use :attr:`~arcgis.gis.Group.reassign_to` to change the
+        owner.
 
         .. note::
             Only title and tags are required.
 
 
         ====================  =========================================================
-        **Parameter**          **Description**
+        **Parameter**         **Description**
         --------------------  ---------------------------------------------------------
         title                 Required string. The name of the group.
         --------------------  ---------------------------------------------------------
@@ -5035,7 +5066,6 @@ class GroupManager(object):
         auto_join             Optional boolean. Only applies to org accounts. If True,
                               this group will allow joining without requesting
                               membership approval. Default is False.
-
         --------------------  ---------------------------------------------------------
         provider_group_name   Optional string. The name of the domain group.
                               Create an association between a Portal group and an
@@ -5067,11 +5097,11 @@ class GroupManager(object):
                               from choosing to leave the group. If True, only an
                               administrator can remove them from the group. The default
                               is False.
-        ------------------    ---------------------------------------------------------
+        --------------------  ---------------------------------------------------------
         hidden_members        Optional Boolean. Only applies to org accounts. If true,
                               only the group owner, group managers, and default
                               administrators can see all members of the group.
-        ------------------    ---------------------------------------------------------
+        --------------------  ---------------------------------------------------------
         membership_access     Optional String. Sets the membership access for the group.
                               Setting to `org` restricts group access to members of
                               your organization. Setting to `collaboration` restricts the
@@ -5080,7 +5110,7 @@ class GroupManager(object):
                               will have access. `None` is the default.
 
                               Values: `org`, `collaboration`, or `None`
-        ------------------    ---------------------------------------------------------
+        --------------------  ---------------------------------------------------------
         autojoin              Optional Boolean. The default is `False`. Only applies to
                               org accounts. If `True`, this group will allow joined
                               without requesting membership approval.
@@ -5092,8 +5122,10 @@ class GroupManager(object):
         .. code-block:: python
 
             # Usage Example
-            >>> gis.groups.create(title = "New Group", tags = "new, group, USA",
-            >>>                     description = "a new group in the USA", access = "public")
+            >>> gis.groups.create(title = "New Group",
+                                  tags = "new, group, USA",
+                                  description = "a new group in the USA",
+                                  access = "public")
         """
         display_settings_lu = {
             "apps": {"itemTypes": "Application"},
@@ -5292,7 +5324,13 @@ class GroupManager(object):
         """
         grouplist = []
         groups = self._portal.search_groups(
-            query, sort_field, sort_order, max_groups, outside_org, categories, filter
+            query,
+            sort_field,
+            sort_order,
+            max_groups,
+            outside_org,
+            categories,
+            filter,
         )
         for group in groups:
             grouplist.append(Group(self._gis, group["id"], group))
@@ -5814,7 +5852,7 @@ class ContentManager(object):
         commentsEnabled             Optional boolean. Default is true, controls whether comments are allowed (true)
                                     or not allowed (false).
         --------------------------  ---------------------------------------------------------------------
-        culture                     Optional string. Language and country information.
+        access                      Optional string. Valid values are private, org, or public. Defaults to private.
         --------------------------  ---------------------------------------------------------------------
         overwrite                   Optional boolean. Default is `false`. Controls whether item can be overwritten.
         ==========================  =====================================================================
@@ -5980,7 +6018,7 @@ class ContentManager(object):
                 folder=folder,
             )
 
-            # Update the thumbnail and return the item
+            # Update the thumbnail
             item = Item(gis=self._gis, itemid=itemid)
             if item.type == "KML":
                 item.update(
@@ -5989,6 +6027,15 @@ class ContentManager(object):
                     }
                 )
             item.update(thumbnail=thumbnail)
+
+            # Update the access and return the item
+            if item_properties and "access" in item_properties:
+                if item_properties["access"] == "public":
+                    item.share(everyone=True)
+                elif item_properties["access"] == "org":
+                    item.share(org=True)
+                elif item_properties["access"] == "private":
+                    item.share(everyone=False, org=False)
             return item
         else:
             if filetype:
@@ -6012,6 +6059,15 @@ class ContentManager(object):
                         "url": f"{self._gis._portal.resturl}content/items/{item.itemid}/data"
                     }
                 )
+
+            # Update access
+            if item_properties and "access" in item_properties:
+                if item_properties["access"] == "public":
+                    item.share(everyone=True)
+                elif item_properties["access"] == "org":
+                    item.share(org=True)
+                elif item_properties["access"] == "private":
+                    item.share(everyone=False, org=False)
             return item
         else:
             return None
@@ -6372,6 +6428,11 @@ class ContentManager(object):
                     item.share(everyone=True)
                 elif item_properties["access"] == "org":
                     item.share(org=True)
+                elif item_properties["access"] == "private":
+                    item.share(everyone=False, org=False)
+                elif item_properties["access"] == "shared":
+                    groups = item.shared_with["groups"]
+                    item.share(groups=groups)
             return item
         else:
             return None
@@ -6472,6 +6533,13 @@ class ContentManager(object):
                                     >>> gis.content.advanced_search(query='owner:USERNAME, type:map')
 
                                 is not.  For more information, please check `Users, groups and items <https://developers.arcgis.com/rest/users-groups-and-items/search-reference.htm>`_.
+        ----------------    ---------------------------------------------------------------
+        return_count        Optional Boolean. When true, the total for the given search is
+                            returned. It will ignore the `max_items` variable.
+        ----------------    ---------------------------------------------------------------
+        max_items           Optional Integer. The total number of items to return up to
+                            10,000. When the value of -1 is given all aviable Items will be
+                            returned up to 10,000.
         ----------------    ---------------------------------------------------------------
         bbox                Optional String/List. This is the xmin,ymin,xmax,ymax bounding
                             box to limit the search in.  Items like documents do not have
@@ -7799,6 +7867,7 @@ class ContentManager(object):
         group_mapping: Optional[dict[str, str]] = None,
         owner: Optional[str] = None,
         preserve_item_id: bool = False,
+        **kwargs,
     ):
         """
         The ``clone_items`` method is used to clone content to the GIS by creating new :class:`~arcgis.gis.Item`
@@ -7905,6 +7974,7 @@ class ContentManager(object):
             group_mapping,
             owner_name,
             preserve_item_id=preserve_item_id,
+            from_dash=kwargs.pop("from_dash", False),
         )
         return deep_cloner.clone()
 
@@ -9667,7 +9737,7 @@ class Group(dict):
 
             # Usage Example
 
-            >>> group.notify(users="User1234", subject= "Test Message", message="Testing the notification system",
+            >>> group.notify(users=["User1234"], subject= "Test Message", message="Testing the notification system",
             >>>              method="email"
 
         """
@@ -10480,7 +10550,7 @@ class User(dict):
         try:
             count = 0
             item = None
-            while count < 5:
+            while count < 10:
                 try:
                     item = Item(self._gis, res["itemId"])
                 except:
@@ -13980,6 +14050,18 @@ class Item(dict):
             ):
                 metadata = item_properties.metadata
 
+            if "access" in item_properties:
+                access = item_properties.pop("access")
+                if access == "private":
+                    self.share(everyone=False, org=False)
+                if access == "org":
+                    self.share(everyone=False, org=True)
+                if access == "public":
+                    self.share(everyone=True)
+                if access == "shared":
+                    groups = self.shared_with["groups"]
+                    self.share(groups=groups)
+
             item_properties = item_properties.to_dict()
             item_properties.pop("metadata", None)
             item_properties.pop("thumbnail", None)
@@ -14071,6 +14153,17 @@ class Item(dict):
                 if "tags" in item_properties:
                     if type(item_properties["tags"]) is list:
                         item_properties["tags"] = ",".join(item_properties["tags"])
+                if "access" in item_properties:
+                    access = item_properties.pop("access")
+                    if access == "private":
+                        self.share(everyone=False, org=False)
+                    if access == "org":
+                        self.share(everyone=False, org=True)
+                    if access == "public":
+                        self.share(everyone=True)
+                    if access == "shared":
+                        groups = self.shared_with["groups"]
+                        self.share(groups=groups)
 
             if data is not None and isinstance(data, (io.StringIO, io.BytesIO)):
                 if item_properties is None:
@@ -14170,6 +14263,102 @@ class Item(dict):
         if self.type == "Feature Service" and "Hosted Service" in self.typeKeywords:
             return ViewManager(item=self)
         return None
+
+    # ----------------------------------------------------------------------
+    def _interval_times(self, sd, ed, params, as_df, dr_type):
+        """
+        Method for the usage method. If a date range is greater than 5 months
+        it needs to be sent in multiple posts.
+        """
+        if dr_type == "6m":
+            ranges = {
+                "1": [sd, sd + timedelta(days=60)],
+                "2": [sd + timedelta(days=61), sd + timedelta(days=120)],
+                "3": [sd + timedelta(days=121), sd + timedelta(days=180)],
+                "4": [
+                    sd + timedelta(days=181),
+                    ed + timedelta(days=1),
+                ],
+            }
+        elif dr_type == "12m":
+            ranges = {
+                "1": [sd, sd + timedelta(days=60)],
+                "2": [sd + timedelta(days=61), sd + timedelta(days=120)],
+                "3": [sd + timedelta(days=121), sd + timedelta(days=180)],
+                "4": [sd + timedelta(days=181), sd + timedelta(days=240)],
+                "5": [sd + timedelta(days=241), sd + timedelta(days=320)],
+                "6": [sd + timedelta(days=321), sd + timedelta(days=366)],
+            }
+        else:
+            # custom date range
+            ranges = {
+                "1": [sd, sd + timedelta(days=60)],
+                "2": [sd + timedelta(days=61), sd + timedelta(days=120)],
+                "3": [sd + timedelta(days=121), sd + timedelta(days=180)],
+            }
+            # since over 5 months we know that there are at least 4 ranges and up to 6 for 1 year.
+            stop = False
+            range_add = 4
+            days = 181
+            # need to check if time delta will surpass our end_date or not
+            while stop is False:
+                next_time = sd + timedelta(days=days + 59)
+                if next_time >= ed:
+                    # we reached the end time specified by user
+                    ranges[str(range_add)] = [
+                        sd + timedelta(days=days),
+                        ed + timedelta(days=1),
+                    ]
+                    stop = True
+                else:
+                    # add a range
+                    ranges[str(range_add)] = [
+                        sd + timedelta(days=days),
+                        sd + timedelta(days=days + 59),
+                    ]
+                range_add = range_add + 1
+                days = days + 60
+
+        # set the url
+        if self._gis._portal.is_logged_in:
+            url = "%s/portals/%s/usage" % (
+                self._portal.resturl,
+                self._gis.properties.id,
+            )
+        else:
+            url = "%s/portals/%s/usage" % (self._portal.resturl, "self")
+
+        # Go through ranges and gather results from each post request
+        results = []
+        for k, v in ranges.items():
+            sd = int(v[0].timestamp() * 1000)
+            ed = int(v[1].timestamp() * 1000)
+            params["startTime"] = sd
+            params["endTime"] = ed
+            res = self._portal.con.post(url, params)
+            if as_df:
+                import pandas as pd
+
+                if "data" not in res or len(res["data"]) == 0:
+                    res = pd.DataFrame([], columns=["Date", "Usage"])
+                elif len(res["data"]):
+                    res = pd.DataFrame(res["data"][0]["num"], columns=["Date", "Usage"])
+                    res.Date = pd.to_datetime(res["Date"], unit="ms")
+                    res.Usage = res.Usage.astype(int)
+
+            results.append(res)
+            del k, v
+        if as_df:
+            if len(results):
+                return (
+                    pd.concat(results)
+                    .reset_index(drop=True)
+                    .drop_duplicates(keep="first", inplace=False)
+                )
+            else:
+                return pd.DataFrame([], columns=["Date", "Usage"])
+        else:
+            return results
 
     # ----------------------------------------------------------------------
     @cached(cache=TTLCache(maxsize=255, ttl=60))
@@ -14279,9 +14468,9 @@ class Item(dict):
         """
         if not self._portal.is_arcgisonline:
             raise ValueError("Usage() only supported for ArcGIS Online items.")
-        end_date = None
-        if end_date is None:
-            end_date = datetime.now()
+
+        # Set end date and params dict
+        end_date = datetime.now()
         params = {
             "f": "json",
             "startTime": None,
@@ -14292,8 +14481,8 @@ class Item(dict):
             "etype": "svcusg",
             "name": self.itemid,
         }
-        from datetime import timedelta
 
+        # Handle Feature Service
         if self.type == "Feature Service":
             params["stype"] = "features"
             if len(self.layers) > 0 and not self.layers[0].container:
@@ -14305,13 +14494,23 @@ class Item(dict):
             else:  # hasattr(self, "url") and self.url and len(self.url) > 0:
                 params["name"] = os.path.basename(os.path.dirname(self.url))
 
+        # Handle Vector Tile Service
         if self.type == "Vector Tile Service":
             params["name"] = self.title.replace(" ", "_")
 
+        # Date Range Handling
         if isinstance(date_range, (tuple, list)) and len(date_range) == 2:
+            sd = date_range[0]
+            end_date = date_range[1]
             params["period"] = "1d"
-            params["startTime"] = int(date_range[0].timestamp() * 1000)
-            params["endTime"] = int(date_range[1].timestamp() * 1000)
+            if (end_date - sd).days <= 152:  # 5 months in days
+                # normal workflow
+                params["startTime"] = int(sd.timestamp() * 1000)
+                params["endTime"] = int(end_date.timestamp() * 1000)
+            else:
+                # need to send as more than one post
+                results = self._interval_times(sd, end_date, params, as_df, "custom")
+                return results
         elif date_range.lower() in ["24h", "1d"]:
             params["period"] = "1h"
             params["startTime"] = int((end_date - timedelta(days=1)).timestamp() * 1000)
@@ -14334,106 +14533,19 @@ class Item(dict):
                 (end_date - timedelta(days=60)).timestamp() * 1000
             )
         elif date_range.lower() == "6m":
-            sd = end_date - timedelta(days=int(365 / 2))
-            ranges = {
-                "1": [sd, sd + timedelta(days=60)],
-                "2": [sd + timedelta(days=61), sd + timedelta(days=120)],
-                "3": [sd + timedelta(days=121), sd + timedelta(days=180)],
-                "4": [
-                    sd + timedelta(days=181),
-                    end_date + timedelta(days=1),
-                ],
-            }
             params["period"] = "1d"
-            if self._gis._portal.is_logged_in:
-                url = "%s/portals/%s/usage" % (
-                    self._portal.resturl,
-                    self._gis.properties.id,
-                )
-            else:
-                url = "%s/portals/%s/usage" % (self._portal.resturl, "self")
-            results = []
-            for k, v in ranges.items():
-                sd = int(v[0].timestamp() * 1000)
-                ed = int(v[1].timestamp() * 1000)
-                params["startTime"] = sd
-                params["endTime"] = ed
-                res = self._portal.con.post(url, params)
-                if as_df:
-                    import pandas as pd
-
-                    if "data" not in res or len(res["data"]) == 0:
-                        res = pd.DataFrame([], columns=["Date", "Usage"])
-                    elif len(res["data"]):
-                        res = pd.DataFrame(
-                            res["data"][0]["num"], columns=["Date", "Usage"]
-                        )
-                        res.Date = pd.to_datetime(res["Date"], unit="ms")
-                        res.Usage = res.Usage.astype(int)
-
-                results.append(res)
-                del k, v
-            if as_df:
-                if len(results):
-                    return (
-                        pd.concat(results)
-                        .reset_index(drop=True)
-                        .drop_duplicates(keep="first", inplace=False)
-                    )
-                else:
-                    return pd.DataFrame([], columns=["Date", "Usage"])
-            else:
-                return results
+            sd = end_date - timedelta(days=int(365 / 2))
+            results = self._interval_times(sd, end_date, params, as_df, "6m")
+            return results
         elif date_range.lower() in ["12m", "1y"]:
             sd = end_date - timedelta(days=int(365))
-            ranges = {
-                "1": [sd, sd + timedelta(days=60)],
-                "2": [sd + timedelta(days=61), sd + timedelta(days=120)],
-                "3": [sd + timedelta(days=121), sd + timedelta(days=180)],
-                "4": [sd + timedelta(days=181), sd + timedelta(days=240)],
-                "5": [sd + timedelta(days=241), sd + timedelta(days=320)],
-                "6": [sd + timedelta(days=321), sd + timedelta(days=366)],
-            }
             params["period"] = "1d"
-            url = "%s/portals/%s/usage" % (
-                self._portal.resturl,
-                self._gis.properties.id,
-            )
-            results = []
-            for k, v in ranges.items():
-                sd = int(v[0].timestamp() * 1000)
-                ed = int(v[1].timestamp() * 1000)
-                params["startTime"] = sd
-                params["endTime"] = ed
-                res = self._portal.con.post(url, params)
-                if as_df:
-                    import pandas as pd
-
-                    if "data" not in res or len(res["data"]) == 0:
-                        res = pd.DataFrame([], columns=["Date", "Usage"])
-                    elif len(res["data"]):
-                        res = pd.DataFrame(
-                            res["data"][0]["num"], columns=["Date", "Usage"]
-                        )
-                        res.Date = pd.to_datetime(res["Date"], unit="ms")
-                        res.Usage = res.Usage.astype(int)
-
-                results.append(res)
-                del k, v
-
-            if as_df:
-                if len(results):
-                    return (
-                        pd.concat(results)
-                        .reset_index(drop=True)
-                        .drop_duplicates(keep="first", inplace=False)
-                    )
-                else:
-                    return pd.DataFrame([], columns=["Date", "Usage"])
-            else:
-                return results
+            results = self._interval_times(sd, end_date, params, as_df, "12m")
+            return results
         else:
             raise ValueError("Invalid date range.")
+
+        # if date range is less than 5 months
         if self._gis._portal.is_logged_in:
             url = "%sportals/%s/usage" % (
                 self._portal.resturl,
@@ -17017,7 +17129,7 @@ class Layer(_GISResource):
         ==================     ====================================================================
         **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
-        item                   Required string. An item ID representing a layer.
+        item                   Required Item. An item containing layers.
         ------------------     --------------------------------------------------------------------
         index                  Optional int. The index of the layer amongst the item's layers
         ==================     ====================================================================

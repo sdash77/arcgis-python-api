@@ -58,3 +58,10 @@ try:
     __all__.extend(["GeoAccessor", "GeoSeriesAccessor"])
 except ImportError:
     pass
+
+try:
+    from .geo._dask import GeoDaskSeriesAccessor, GeoDaskSpatialAccessor
+
+    __all__.extend(["GeoDaskSeriesAccessor", "GeoDaskSpatialAccessor"])
+except:
+    pass

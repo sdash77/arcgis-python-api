@@ -1,7 +1,11 @@
 import sys
+import logging
 from typing import Dict, Any, Tuple
+from .tools._util import check_module_exists
 
-if sys.platform == "win32":  # pragma: no cover
+__log__ = logging.getLogger()
+
+if sys.platform == "win32" and check_module_exists("certifi_win32"):  # pragma: no cover
     # when on Windows, append to the certifi
     # the users trusted certificate store
     # when certifi_win32 is present.
@@ -12,6 +16,15 @@ if sys.platform == "win32":  # pragma: no cover
         certifi_win32.wincerts.where()
     except ImportError:
         pass
+elif check_module_exists("truststore"):  # pragma: no cover
+    try:
+        import truststore
+
+        truststore.inject_into_ssl()
+    except ImportError as ie:
+        __log__.warning(f"truststore raised a warning: {ie}")
+    except Exception as e:
+        __log__.warning(f"truststore raised a warning: {e}")
 
 
 from requests.sessions import Session
@@ -33,7 +46,8 @@ from ._auth import (
     EsriKerberosAuth,
 )
 
-from ._auth._winauth import HAS_GSSAPI, HAS_SSPI, HAS_KERBEROS
+from ._auth._winauth import HAS_KERBEROS
+from ._auth._negotiate import HAS_GSSAPI
 
 from requests_toolbelt.adapters.host_header_ssl import HostHeaderSSLAdapter
 
@@ -194,7 +208,10 @@ class EsriSession:
             )
         elif auth is None and cert:
             self.auth = EsriPKIAuth(
-                cert=cert, referer=referer, verify_cert=verify_cert, session=self
+                cert=cert,
+                referer=referer,
+                verify_cert=verify_cert,
+                session=self,
             )
         elif sys.platform == "win32" and HAS_GSSAPI:  # Default Case Load IWA/WinAuth
             self.auth = EsriWindowsAuth(referer=referer, verify_cert=verify_cert)
@@ -217,7 +234,15 @@ class EsriSession:
                     method_whitelist=kwargs.get(
                         "method_whitelist",
                         frozenset(
-                            ["POST", "DELETE", "GET", "HEAD", "OPTIONS", "PUT", "TRACE"]
+                            [
+                                "POST",
+                                "DELETE",
+                                "GET",
+                                "HEAD",
+                                "OPTIONS",
+                                "PUT",
+                                "TRACE",
+                            ]
                         ),
                     ),
                 )
@@ -232,7 +257,15 @@ class EsriSession:
                     allowed_methods=kwargs.get(
                         "method_whitelist",
                         frozenset(
-                            ["POST", "DELETE", "GET", "HEAD", "OPTIONS", "PUT", "TRACE"]
+                            [
+                                "POST",
+                                "DELETE",
+                                "GET",
+                                "HEAD",
+                                "OPTIONS",
+                                "PUT",
+                                "TRACE",
+                            ]
                         ),
                     ),
                 )
@@ -417,7 +450,9 @@ class EsriSession:
             self._cert = cert
             self._session.cert = cert
             self._session.auth = EsriPKIAuth(
-                cert=cert, referer=self._referer, verify_cert=self.verify_cert
+                cert=cert,
+                referer=self._referer,
+                verify_cert=self.verify_cert,
             )
 
     # ----------------------------------------------------------------------

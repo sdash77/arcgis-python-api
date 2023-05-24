@@ -1,16 +1,13 @@
-import sys
-
-sys.path.insert(0, r"C:\ipython_workfolder\geosaurus\src")
 import unittest
 from arcgis.gis import GIS
 from arcgis.features._trace import TraceNetworkManager
 
-gis = GIS("https://utilitynetwork.esri.com/portal", "AChapkowski", "AChapkowski1")
+gis = GIS("https://utilitynetwork.esri.com/portal", "python_api_team", "python_api_team.109")
 # Create Topographic Service
 try:
     # Server gets updated at 2:30PM PST Everyday. Do not test around then.
     trace_nm = TraceNetworkManager(
-        "https://utilitynetwork.esri.com/server/rest/services/HUC4_TraceNetwork/TraceNetworkServer",
+        "https://utilitynetwork.esri.com/server/rest/services/Hydro_HUC4/TraceNetworkServer",
         gis=gis,
     )
     assert trace_nm
@@ -24,11 +21,11 @@ except:
 class TestTraceNetworkManager(unittest.TestCase):
     """Tests the Trace Network Service"""
 
-    def properties(self):
+    def test_properties(self):
         """Test getting properties"""
         assert trace_nm.properties
 
-    def trace_configurations(self):
+    def test_trace_configurations(self):
         """Test getting trace configurations and the methods associated with them."""
         # Get trace config manager
         manager = trace_nm.trace_configurations()
@@ -128,7 +125,7 @@ class TestTraceNetworkManager(unittest.TestCase):
         updated_query = manager.query()
         assert len(updated_query["traceConfigurations"]) == number_trace_configs
 
-    def validate_topology(self):
+    def test_validate_topology(self):
         """Test validate topology method. Validate edit made to network. If improper then gets marked as dirty rather than clean."""
         try:
             validate = trace_nm.validate_topology(
@@ -145,7 +142,7 @@ class TestTraceNetworkManager(unittest.TestCase):
         except:
             pass
 
-    def query_network(self):
+    def test_query_network(self):
         """Test query network method"""
         query1 = trace_nm.query_network_moments(
             moments_to_return=["enableTopology", "initialEnableTopology"]
@@ -157,7 +154,7 @@ class TestTraceNetworkManager(unittest.TestCase):
         assert query2
         assert len(query2["networkMoments"]) == 7
 
-    def trace_test(self):
+    def test_trace_test(self):
         """
         Test using trace method with the Trace Network Service
         """
