@@ -14,6 +14,7 @@ requirements:
   - setuptools
   run:
   - python
+  - urllib3 <2
   - pillow
   - cachetools
   - notebook
@@ -32,7 +33,8 @@ requirements:
   - requests-oauthlib
   - pywin32-security [win]
   - lerc
-  - python-certifi-win32 [win]
+  - python-certifi-win32 [win and py<310]
+  - truststore [py>=310]
   - cryptography
   - lxml
   - certifi
@@ -41,6 +43,7 @@ requirements:
   - python-gssapi
   - requests-gssapi
   - pyspnego >=0.8.0
+  - matplotlib-inline
 source:
   path: ../../src
 test:
