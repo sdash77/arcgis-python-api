@@ -7042,6 +7042,7 @@ class ContentManager(object):
     def delete_items(self, items: Union[list[Item], list[str]]):
         """
         The ``delete_items`` method deletes a collection of :class:`~arcgis.gis.Item` objects from a users content.
+        All items must belong to the same user to delete.
 
         ================  ==========================================================================
         **Parameter**      **Description**
@@ -7060,26 +7061,42 @@ class ContentManager(object):
             >>> gis.content.delete_items(items= ["item1", "item2", "item3", "item4", "item5"])
 
         """
+        params = {"f": "json", "items": ""}
+        ditems = []
+        owners = []
+        for item in items:
+            if isinstance(item, str):
+                ditems.append(item)
+                owners.append(self._gis.content.get(item).owner)
+            elif isinstance(item, Item):
+                ditems.append(item.id)
+                owners.append(item.owner)
+            del item
+
+        # Check if admin or owner before deleting
+        for owner in owners:
+            if (
+                self._gis.users.me.username != owner
+                and "admin" not in self._gis.users.me.role
+            ):
+                return Exception(
+                    "You are not the owner and you do not have the administrator privileges to perform this action."
+                )
+
+        # All items should be from same owner so we can set to first in list
         if self._gis._portal.con.baseurl.endswith("/"):
             url = "%s/%s/%s/deleteItems" % (
                 self._gis._portal.con.baseurl[:-1],
                 "content/users",
-                self._gis.users.me.username,
+                owners[0],
             )
         else:
             url = "%s/%s/%s/deleteItems" % (
                 self._gis._portal.con.baseurl,
                 "content/users",
-                self._gis.users.me.username,
+                owners[0],
             )
-        params = {"f": "json", "items": ""}
-        ditems = []
-        for item in items:
-            if isinstance(item, str):
-                ditems.append(item)
-            elif isinstance(item, Item):
-                ditems.append(item.id)
-            del item
+
         if len(ditems) > 0:
             params["items"] = ",".join(ditems)
             res = self._gis._con.post(path=url, postdata=params)
