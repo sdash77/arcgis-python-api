@@ -1664,6 +1664,7 @@ class MapView(widgets.DOMWidget):
         ==================      ====================================================================
 
         .. code-block:: python
+
             # Create a mapview and add layer
             map1 = gis.map("Oregon")
             map1.add_layer(<fl_to_add>)

@@ -5513,7 +5513,9 @@ class MapImageLayerManager(arcgis.gis._GISResource):
         ===============     ====================================================
         :return:
             A dictionary
+
         .. code-block:: python
+
             # USAGE EXAMPLE
             >>> from arcgis.mapping import MapImageLayer
             >>> from arcgis.gis import GIS
