@@ -1100,9 +1100,7 @@ def dimension_profile(
             else:
                 ax2.set_xlabel(variables[1])
 
-        title_string = (
-            f"Change in {', '.join(variables)} at {time} over {dimension}"
-        )
+        title_string = f"Change in {', '.join(variables)} at {time} over {dimension}"
         _plt.title(title_string)
 
         # print(t1)
