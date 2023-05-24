@@ -132,7 +132,7 @@ class TestExperience(unittest.TestCase):
 
             # test view method
             with self.subTest(msg=profile + " view"):
-                assert exp._publish()
+                assert exp.save(publish=True)
                 view = exp.view()
                 assert isinstance(view, IFrame)
 

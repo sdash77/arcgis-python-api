@@ -546,36 +546,6 @@ class WebExperience(object):
         return self.item
 
     # ----------------------------------------------------------------------
-    def _publish(self, access: str = None):
-        """
-        Publishes the last saved version of the experience. Leaves unsaved changes intact,
-        but doesn't publish them. Also allows user to set access level of published experience.
-        Note that if a user wishes to publish the draft version of the WebExperience they're
-        working on, they should do that through the `save()` method.
-
-        :return:
-            A boolean indicating the success of the operation.
-        """
-        keywords = self.item.typeKeywords
-        item_properties = {}
-        for i in range(len(keywords)):
-            if "status" in keywords[i]:
-                keywords[i] = "status: Published"
-        if access:
-            item_properties["access"] = access
-        item_properties["typeKeywords"] = keywords
-        if self._gis._is_agol:
-            url = "https://experience.arcgis.com/experience/" + self.item.itemid
-        else:
-            url = (
-                self._gis.url
-                + "/apps/experiencebuilder/experience/?id="
-                + self.item.itemid
-            )
-        item_properties["url"] = url
-        return self.item.update(item_properties=item_properties, data=self._expdict)
-
-    # ----------------------------------------------------------------------
     def preview(self, width: Optional[int] = 800, height: Optional[int] = 500):
         """
         Show a preview of the current experience draft. The default is a width of 800 and height of 500.
