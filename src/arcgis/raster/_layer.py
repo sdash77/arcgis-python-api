@@ -6981,11 +6981,10 @@ class ImageryLayer(Layer):
 
     def dimension_profile(
         self,
+        points: list[Point],
         dimension: str,
         time: datetime.datetime,
-        points: list[Point],
         variables: list[str] = [],
-        time_field: Optional[str] = None,
         show_values: bool = False,
         show_trend_line: bool = False,
         plot_properties: dict[str, Any] = {},
@@ -7008,18 +7007,15 @@ class ImageryLayer(Layer):
         ====================================     ====================================================================
         **Parameter**                             **Description**
         ------------------------------------     --------------------------------------------------------------------
+        points                                   Required list of :class:`~arcgis.geometry.Point` objects.
+        ------------------------------------     --------------------------------------------------------------------
         dimension                                Required string. The dimension name that will be used for plotting dimension profile. Use this parameter to set the field that
                                                  represents the dimension field in the image service.
         ------------------------------------     --------------------------------------------------------------------
         time                                     Required datetime object. The time slice that will be used for plotting dimension profile.
         ------------------------------------     --------------------------------------------------------------------
-        points                                   Required list of :class:`~arcgis.geometry.Point` objects.
-        ------------------------------------     --------------------------------------------------------------------
         variables                                Required list of strings. The variables that will be used for plotting dimension profile.
                                                  The dimension profile chart allows a maximum of two variables to be displayed.
-        ------------------------------------     --------------------------------------------------------------------
-        time_field                               Optional string. The time field that will be used for plotting dimension profile.
-                                                 If not specified the time field is obtained from the timeInfo of the image service.
         ------------------------------------     --------------------------------------------------------------------
         show_values                              Optional boolean. Default value is False.
                                                  Set this parameter to True to display the values at each point in the line graph.
@@ -7044,11 +7040,10 @@ class ImageryLayer(Layer):
 
         return dimension_profile(
             self,
+            points=points,
             dimension=dimension,
             time=time,
-            points=points,
             variables=variables,
-            time_field=time_field,
             show_values=show_values,
             show_trend_line=show_trend_line,
             plot_properties=plot_properties,

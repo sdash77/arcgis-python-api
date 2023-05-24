@@ -948,11 +948,10 @@ def spectral_profile(
 
 def dimension_profile(
     raster,
+    points: list[Point],
     dimension: [str],
     time: _datetime.datetime,
-    points: list[Point],
     variables: list[str] = [],
-    time_field: Optional[str] = None,
     show_values: bool = False,
     show_trend_line: bool = False,
     plot_properties: dict[str, Any] = {},
@@ -976,19 +975,16 @@ def dimension_profile(
     ------------------------------------     --------------------------------------------------------------------
     raster                                   Required Imagery Layer object.
     ------------------------------------     --------------------------------------------------------------------
+    points                                   Required list of point Geometry objects.
+    ------------------------------------     --------------------------------------------------------------------
     dimension                                Required dimension name. Use this parameter to set the field that
                                              represents the dimension field in the image service.
     ------------------------------------     --------------------------------------------------------------------
     time                                     Required datetime.date, datetime.datetime or timestamp string.
                                              The time slice that will be used for plotting dimension profile.
     ------------------------------------     --------------------------------------------------------------------
-    points                                   Required list of point Geometry objects.
-    ------------------------------------     --------------------------------------------------------------------
     variables                                Required list of variable names.
                                              The Dimension profile chart allows a maximum of two variables to be displayed.
-    ------------------------------------     --------------------------------------------------------------------
-    time_field                               Optional string. The time field that will be used for plotting dimension profile.
-                                             If not specified the time field is obtained from the timeInfo of the image service.
     ------------------------------------     --------------------------------------------------------------------
     show_values                              Optional bool. Default False.
                                              Set this parameter to True to display the values at each point in the line graph.
@@ -1023,14 +1019,6 @@ def dimension_profile(
 
     if not isinstance(points, list):
         points = [points]
-
-    if time_field is None:
-        try:
-            time_field = raster.properties.timeInfo["startTimeField"]
-        except:
-            raise RuntimeError(
-                "Unable to retrieve time field. Specify time_field to plot the dimension profile."
-            )
 
     if (
         "hasMultidimensions" in raster.properties
@@ -1113,7 +1101,7 @@ def dimension_profile(
                 ax2.set_xlabel(variables[1])
 
         title_string = (
-            f"Change in {', '.join(variables)} at {time_field} over {dimension}"
+            f"Change in {', '.join(variables)} at {time} over {dimension}"
         )
         _plt.title(title_string)
 
