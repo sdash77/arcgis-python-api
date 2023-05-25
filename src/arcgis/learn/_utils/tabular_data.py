@@ -1095,9 +1095,9 @@ class TabularDataObject(object):
                         dataframe[variable] = np.array(
                             encoder.transform(
                                 dataframe[variable]
-                                    .values.astype(str)
-                                    .to_numpy()
-                                    .reshape(-1, 1)
+                                .values.astype(str)
+                                .to_numpy()
+                                .reshape(-1, 1)
                             ),
                             dtype="int64",
                         )
