@@ -90,6 +90,10 @@ class WebExperience(object):
                         used to construct the layout. If necessary and none provided, template
                         will default to `blank fullscreen`.
     ---------------     --------------------------------------------------------------------
+    path                Optional string. Used if a WebExperience is being based on a local
+                        config json file, as one would with Experiences made via the desktop
+                        version of Experience Builder.
+    ---------------     --------------------------------------------------------------------
     name                Optional string. If a new experience is being created, the name of the
                         item. Otherwise, will default to "Experience via Python" followed by a
                         random number.
@@ -143,7 +147,7 @@ class WebExperience(object):
         elif (
             item and isinstance(item, arcgis.gis.Item) and item.type != "Web Experience"
         ):
-            # Throw error if item is not of type Story Map
+            # Throw error if item is not of type Experience
             raise ValueError("Item is not a Web Experience")
         else:
             self._create_new_experience(template=template, name=name)
@@ -192,6 +196,11 @@ class WebExperience(object):
                 title = "Experience via Python %s" % uuid.uuid4().hex[:10]
             else:
                 title = name
+
+        if gis:
+            temp_dict["attributes"]["portalUrl"] = gis.url
+        else:
+            temp_dict["attributes"]["portalUrl"] = self._gis.url
 
         keywords = ",".join(
             [
@@ -352,7 +361,7 @@ class WebExperience(object):
         ===============     ====================================================================
 
         :return:
-            An IFrame display of the story map if possible, else the item url is returned to be
+            An IFrame display of the Experience if possible, else the item url is returned to be
             clicked on. If the item is unpublished, the function returns False.
         """
         keywords = self.item.typeKeywords
@@ -493,23 +502,25 @@ class WebExperience(object):
         ===============     ====================================================================
 
         :return:
-            An IFrame display of the story map if possible, else the item url is returned to be
-            clicked on.
+            The newly added portal item, if successful. Otherwise, returns False.
         """
         # this will be the config file that dictates our new portal experience
         new_config = self.draft
-
         # automatically remap data to matching sources in target GIS
         if auto_remap:
             sources = new_config["dataSources"]
             for source in sources:
                 # first, see if we can already access each one anonymously
-                # CHECK FOR CASE IF PRIVATE ITEM BUT PASSED in GIS CAN ACCESS
+                # or through the passed in GIS
                 url = sources[source]["portalUrl"]
                 test_gis = GIS(url=url)
                 try:
-                    targ_item = test_gis.content.get(sources[source]["itemId"])
-                    targ_item.id
+                    try:
+                        targ_item = test_gis.content.get(sources[source]["itemId"])
+                    except:
+                        targ_item = gis.content.get(sources[source]["itemId"])
+                    print(targ_item.url)
+                    assert targ_item
                 # this will only get triggered if we can't access and need to remap
                 except:
                     # if available, match item in target GIS based on title and type
@@ -543,7 +554,10 @@ class WebExperience(object):
         if publish:
             self.save(publish=True)
 
-        return self.item
+        if self.item:
+            return self.item
+        else:
+            return False
 
     # ----------------------------------------------------------------------
     def preview(self, width: Optional[int] = 800, height: Optional[int] = 500):
@@ -561,7 +575,7 @@ class WebExperience(object):
         ===============     ====================================================================
 
         :return:
-            An IFrame display of the story map if possible, else the item url is returned to be
+            An IFrame display of the Experience if possible, else the item url is returned to be
             clicked on.
         """
         import threading
