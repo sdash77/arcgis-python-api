@@ -51,16 +51,16 @@ class Templates(Enum):
 
         try:
             temp = WebExperience(template=self.value)
-            temp.item.share(everyone=True)
+            temp._item.share(everyone=True)
             temp.save(publish=True)
             from IPython.display import IFrame
 
             frame = IFrame(
-                src=temp.item.url,
+                src=temp._item.url,
                 width=width,
                 height=height,
             )
-            delete = threading.Thread(target=thread_delete, args=([temp.item]))
+            delete = threading.Thread(target=thread_delete, args=([temp._item]))
             delete.start()
             return frame
 
@@ -100,9 +100,9 @@ class WebExperience(object):
     ===============     ====================================================================
     """
 
-    itemid = None
-    item = None
-    draft = {}
+    _draft = {}
+    _itemid = None
+    _item = None
     _local = False
     _properties = None
     _gis = None
@@ -130,19 +130,19 @@ class WebExperience(object):
             item = gis.content.get(item)
         if item and isinstance(item, arcgis.gis.Item) and item.type == "Web Experience":
             # set item properties
-            self.item = item
-            self.itemid = self.item.itemid
-            self._resources = self.item.resources.list()
-            self._expdict = self.item.resources.get("config/config.json")
-            self.draft = self.item.resources.get("config/config.json")
-            self._gis = self.item._gis
+            self._item = item
+            self._itemid = self._item.itemid
+            self._resources = self._item.resources.list()
+            self._expdict = self._item.resources.get("config/config.json")
+            self._draft = self._item.resources.get("config/config.json")
+            self._gis = self._item._gis
         elif path and isinstance(path, str):
             # construct web experience from path's config file
             # note that this will not have an associated portal item/itemid/resources
             self._local = True
             with open(path) as json_file:
                 config = json.load(json_file)
-                self.draft = config
+                self._draft = config
                 self._expdict = config
         elif (
             item and isinstance(item, arcgis.gis.Item) and item.type != "Web Experience"
@@ -151,6 +151,46 @@ class WebExperience(object):
             raise ValueError("Item is not a Web Experience")
         else:
             self._create_new_experience(template=template, name=name)
+
+    # -----------------------------------------------------------------------------------
+    @property
+    def draft(self):
+        """
+        Get/set the WebExperience's draft property. This dictionary dictates what
+        the current version of the story looks like. Calling `save()` after amending the
+        draft will make the changes permanent, and calling `reset()` will revert the
+        draft to the last save state.
+        """
+        return self._draft
+
+    # -----------------------------------------------------------------------------------
+    @draft.setter
+    def draft(self, draft):
+        """
+        See draft property above.
+        """
+        self._draft = draft
+        return self.draft
+
+    # -----------------------------------------------------------------------------------
+    @property
+    def item(self):
+        """
+        Returns the portal item associated with the WebExperience, if possible.
+        Experiences made from local json files won't have an `item` property until they
+        are added to a portal using `add_to_portal()`.
+        """
+        return self._item
+
+    # -----------------------------------------------------------------------------------
+    @property
+    def itemid(self):
+        """
+        Returns the item ID of the associated portal item, if possible. As with `item`,
+        Experiences made from local json files won't have an `itemid` property until they
+        are added to a portal using `add_to_portal()`.
+        """
+        return self._itemid
 
     # -----------------------------------------------------------------------------------
     def _create_new_experience(
@@ -228,14 +268,14 @@ class WebExperience(object):
             item = gis.content.add(item_properties=item_properties)
 
         # assign to experience properties
-        self.item = item
-        self.itemid = item.itemid
-        self.item.resources.add(
+        self._item = item
+        self._itemid = item.itemid
+        self._item.resources.add(
             folder_name="config", file_name="config.json", text=temp_dict
         )
-        self._resources = self.item.resources.list()
+        self._resources = self._item.resources.list()
         self._expdict = temp_dict
-        self.draft = temp_dict
+        self._draft = temp_dict
 
     # ----------------------------------------------------------------------
     def save(
@@ -294,7 +334,7 @@ class WebExperience(object):
             new_exp.save(access=access, publish=publish)
             return new_exp
 
-        keywords = self.item.typeKeywords
+        keywords = self._item.typeKeywords
         for i in range(len(keywords)):
             if keywords[i] == "status: Published":
                 keywords[i] = "status: Changed"
@@ -304,11 +344,11 @@ class WebExperience(object):
         if tags:
             item_properties["tags"] = tags
 
-        self._expdict = self.draft
-        self.item.resources.update(
+        self._expdict = self._draft
+        self._item.resources.update(
             folder_name="config", file_name="config.json", text=self._expdict
         )
-        self._resources = self.item.resources.list()
+        self._resources = self._item.resources.list()
         if publish:
             for i in range(len(keywords)):
                 if "status" in keywords[i]:
@@ -317,19 +357,21 @@ class WebExperience(object):
                 item_properties["access"] = access
             item_properties["typeKeywords"] = keywords
             if self._gis._is_agol:
-                url = "https://experience.arcgis.com/experience/" + self.item.itemid
+                url = "https://experience.arcgis.com/experience/" + self._item.itemid
             else:
                 url = (
                     self._gis.url
                     + "/apps/experiencebuilder/experience/?id="
-                    + self.item.itemid
+                    + self._item.itemid
                 )
             item_properties["url"] = url
-            return self.item.update(item_properties=item_properties, data=self._expdict)
+            return self._item.update(
+                item_properties=item_properties, data=self._expdict
+            )
             # self._publish(item_properties = item_properties, data = self._expdict)
         else:
             item_properties["typeKeywords"] = keywords
-            return self.item.update(item_properties=item_properties)
+            return self._item.update(item_properties=item_properties)
 
     # ----------------------------------------------------------------------
     def reset(self):
@@ -340,8 +382,8 @@ class WebExperience(object):
         :return: A boolean indicating the success of the operation.
         """
 
-        self.draft = self._expdict
-        return self.item.resources.update(
+        self._draft = self._expdict
+        return self._item.resources.update(
             folder_name="config", file_name="config.json", text=self._expdict
         )
 
@@ -364,19 +406,19 @@ class WebExperience(object):
             An IFrame display of the Experience if possible, else the item url is returned to be
             clicked on. If the item is unpublished, the function returns False.
         """
-        keywords = self.item.typeKeywords
+        keywords = self._item.typeKeywords
         if "status: Published" in keywords:
             from IPython.display import IFrame
 
             try:
                 frame = IFrame(
-                    src=self.item.url,
+                    src=self._item.url,
                     width=width,
                     height=height,
                 )
                 return frame
             except:
-                return self.item.url
+                return self._item.url
         else:
             return False
 
@@ -388,7 +430,7 @@ class WebExperience(object):
         :return:
             A boolean indicating the success of the operation.
         """
-        item = self._gis.content.get(self.itemid)
+        item = self._gis.content.get(self._itemid)
         return item.delete()
 
     # ----------------------------------------------------------------------
@@ -396,7 +438,7 @@ class WebExperience(object):
         """
         See :class:`~arcgis.gis.ResourceManager`
         """
-        resource_manager = arcgis.gis.ResourceManager(self.item, self._gis)
+        resource_manager = arcgis.gis.ResourceManager(self._item, self._gis)
         is_present = False
         if file:
             for resource in self._resources:
@@ -422,7 +464,7 @@ class WebExperience(object):
                 properties=properties,
             )
 
-        self._resources = self.item.resources.list()
+        self._resources = self._item.resources.list()
         return resp
 
     # ----------------------------------------------------------------------
@@ -453,7 +495,7 @@ class WebExperience(object):
             The newly created WebExperience object.
 
         """
-        new_item = self.item.copy_item(
+        new_item = self._item.copy_item(
             title=title,
             tags=tags,
             include_resources=True,
@@ -461,7 +503,7 @@ class WebExperience(object):
         )
         if new_item:
             new_exp = WebExperience(new_item)
-            new_exp.draft = self.draft
+            new_exp._draft = self._draft
             return new_exp
         else:
             return False
@@ -505,7 +547,7 @@ class WebExperience(object):
             The newly added portal item, if successful. Otherwise, returns False.
         """
         # this will be the config file that dictates our new portal experience
-        new_config = self.draft
+        new_config = self._draft
         # automatically remap data to matching sources in target GIS
         if auto_remap:
             sources = new_config["dataSources"]
@@ -519,7 +561,6 @@ class WebExperience(object):
                         targ_item = test_gis.content.get(sources[source]["itemId"])
                     except:
                         targ_item = gis.content.get(sources[source]["itemId"])
-                    print(targ_item.url)
                     assert targ_item
                 # this will only get triggered if we can't access and need to remap
                 except:
@@ -554,8 +595,8 @@ class WebExperience(object):
         if publish:
             self.save(publish=True)
 
-        if self.item:
-            return self.item
+        if self._item:
+            return self._item
         else:
             return False
 
@@ -587,21 +628,21 @@ class WebExperience(object):
 
         try:
             dummy_exp = self._duplicate()
-            dummy_exp.item.share(everyone=True)
+            dummy_exp._item.share(everyone=True)
             dummy_exp.save(publish=True)
             from IPython.display import IFrame
 
             frame = IFrame(
-                src=dummy_exp.item.url,
+                src=dummy_exp._item.url,
                 width=width,
                 height=height,
             )
-            delete = threading.Thread(target=thread_delete, args=([dummy_exp.item]))
+            delete = threading.Thread(target=thread_delete, args=([dummy_exp._item]))
             delete.start()
             return frame
 
         except:
-            return self.item.url
+            return self._item.url
 
     # ----------------------------------------------------------------------
     def clone(self, target, owner, **kwargs):
@@ -646,27 +687,27 @@ class WebExperience(object):
 
             return new_dict
 
-        exp_clone = target.content.clone_items([self.item], owner=owner, **kwargs)
+        exp_clone = target.content.clone_items([self._item], owner=owner, **kwargs)
         if exp_clone:
             new_dict = _clone_dict(self._expdict, self._gis, target, owner, **kwargs)
             target_exp = WebExperience(exp_clone[0])
             target_exp._expdict = new_dict
-            target_exp.item.resources.update(
+            target_exp._item.resources.update(
                 folder_name="config", file_name="config.json", text=target_exp._expdict
             )
-            keywords = target_exp.item.typeKeywords
+            keywords = target_exp._item.typeKeywords
             for word in keywords:
                 if "status" in word:
                     if "Published" in word or "Changed" in word:
                         new_data = _clone_dict(
-                            self.item.get_data(), self._gis, target, owner, **kwargs
+                            self._item.get_data(), self._gis, target, owner, **kwargs
                         )
-                        target_exp.item.update(item_properties={}, data=new_data)
+                        target_exp._item.update(item_properties={}, data=new_data)
                     else:
-                        target_exp.item.update(
+                        target_exp._item.update(
                             item_properties={}, data={"__not_publish": True}
                         )
                     break
-            return target_exp.item
+            return target_exp._item
         else:
             return False
