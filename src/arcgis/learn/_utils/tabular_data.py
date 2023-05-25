@@ -1066,22 +1066,41 @@ class TabularDataObject(object):
         if self._encoder_mapping:
             for variable, encoder in self._encoder_mapping.items():
                 try:
-                    dataframe[variable] = np.array(
-                        encoder.fit_transform(
-                            dataframe[variable].values.astype(str).reshape(-1, 1)
-                        ),
-                        dtype="int64",
-                    )
+                    if fit:
+                        dataframe[variable] = np.array(
+                            encoder.fit_transform(
+                                dataframe[variable].values.astype(str).reshape(-1, 1)
+                            ),
+                            dtype="int64",
+                        )
+                    else:
+                        dataframe[variable] = np.array(
+                            encoder.transform(
+                                dataframe[variable].values.astype(str).reshape(-1, 1)
+                            ),
+                            dtype="int64",
+                        )
                 except:
-                    dataframe[variable] = np.array(
-                        encoder.fit_transform(
-                            dataframe[variable]
-                            .values.astype(str)
-                            .to_numpy()
-                            .reshape(-1, 1)
-                        ),
-                        dtype="int64",
-                    )
+                    if fit:
+                        dataframe[variable] = np.array(
+                            encoder.fit_transform(
+                                dataframe[variable]
+                                .values.astype(str)
+                                .to_numpy()
+                                .reshape(-1, 1)
+                            ),
+                            dtype="int64",
+                        )
+                    else:
+                        dataframe[variable] = np.array(
+                            encoder.transform(
+                                dataframe[variable]
+                                    .values.astype(str)
+                                    .to_numpy()
+                                    .reshape(-1, 1)
+                            ),
+                            dtype="int64",
+                        )
 
         if fit:
             processed_data = _procs.fit_transform(dataframe)
