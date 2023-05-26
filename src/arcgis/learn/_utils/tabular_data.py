@@ -2436,3 +2436,4 @@ def global_interpretation(model, plot_type="bar", method="KernelRegressor"):
             explainer.expected_value[0], shap_values, df, matplotlib=True
         )
     return
+
