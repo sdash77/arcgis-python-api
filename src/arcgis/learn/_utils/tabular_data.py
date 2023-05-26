@@ -532,17 +532,12 @@ class TabularDataObject(object):
                 dataframe.loc[:, i] = dataframe.loc[:, i].astype(np.float64)
 
         labels = None
+        # restore the behaviour as earler
+        if isinstance(self._dependent_variable, list):
+            self._dependent_variable = self._dependent_variable[0]
 
         if self._dependent_variable:
-            labels = []
-            for cols in dataframe[self._dependent_variable].columns:
-                p = np.array(
-                    dataframe[self._dependent_variable][cols],
-                    dtype=dataframe[self._dependent_variable][cols].dtype,
-                )
-                labels.append(p)
-            labels = np.stack(labels, axis=1)
-
+            labels = np.array(dataframe[self._dependent_variable])
             dataframe = dataframe.drop(self._dependent_variable, axis=1)
 
         if not self._procs:
@@ -588,17 +583,10 @@ class TabularDataObject(object):
 
         try:
             processed_data = _procs.fit_transform(dataframe)
-            if self._procs:
-                list_of_transformed_cols = []
-                for cnt, transform in enumerate(self._procs.transformers):
-                    for col in self._procs.transformers[cnt][-1]:
-                        list_of_transformed_cols.append(col)
-                processed_orig_data = dataframe.copy()
-                processed_orig_data[list_of_transformed_cols] = processed_data
-                processed_data = processed_orig_data
         except:
             msg = arcpy_localization_helper(
-                "Unable to fit transforms. This could be because some of the columns in your dataset have multiple datatypes.",
+                "Unable to fit transforms. This could be because some of the columns in your dataset have multiple "
+                "datatypes.",
                 260143,
                 "ERROR",
             )
@@ -630,16 +618,12 @@ class TabularDataObject(object):
             training_data = processed_data.take(self._training_indexes, axis=0)
             training_labels = None
             if self._dependent_variable:
-                training_labels = labels.take(self._training_indexes, axis=0)
+                training_labels = labels.take(self._training_indexes)
 
             validation_data = processed_data.take(self._validation_indexes, axis=0)
             validation_labels = None
             if self._dependent_variable:
-                validation_labels = labels.take(self._validation_indexes, axis=0)
-
-        if len(self._dependent_variable) == 1:
-            training_labels = training_labels.ravel()
-            validation_labels = validation_labels.ravel()
+                validation_labels = labels.take(self._validation_indexes)
 
         return training_data, training_labels, validation_data, validation_labels
 
