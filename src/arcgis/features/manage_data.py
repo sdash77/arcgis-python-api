@@ -35,6 +35,7 @@ def generate_tessellation(
     gis: Optional[GIS] = None,
     estimate: bool = False,
     future: bool = False,
+    bin_resolution: Optional[int] = None,
 ):
     """
     Generates a tessellated grid of regular polygons.
@@ -53,8 +54,8 @@ def generate_tessellation(
                                              'NauticalMiles'.
     ------------------------------------     --------------------------------------------------------------------
     bin_type                                 Optional String. The type of shape to tessellate.
-                                             Allowed values are: 'SQUARE', 'HEXAGON', 'TRIANGLE', 'DIAMOND', or
-                                             'TRANSVERSEHEXAGON'.
+                                             Allowed values are: 'SQUARE', 'HEXAGON', 'TRIANGLE', 'DIAMOND',
+                                             'TRANSVERSEHEXAGON', or `H3_HEXAGON`.
     ------------------------------------     --------------------------------------------------------------------
     intersect_study_area                     Optional Boolean. A boolean defines whether to keep only tessellations intersect with the study area.
 
@@ -88,6 +89,11 @@ def generate_tessellation(
     ------------------------------------     --------------------------------------------------------------------
     future                                   Optional boolean. If True, a future object will be returned and the process
                                              will not wait for the task to complete. The default is False, which means wait for results.
+    ------------------------------------     --------------------------------------------------------------------
+    bin_resolution                           Optional Integer. This becomes required when H3_HEXAGON is used.
+                                             The H3 resolution of the hexagons. Resolution ranges from 0 to 15.
+                                             With each increasing resolution size, the area of the polygons will
+                                             be one seventh the size.
     ====================================     ====================================================================
 
     .. note::
@@ -99,7 +105,8 @@ def generate_tessellation(
         If ``future = True``, then the result is a :class:`~concurrent.futures.Future` object. Call ``result()`` to get the response.
 
     """
-
+    if not bin_resolution is None and (bin_resolution > 15 or bin_resolution < 0):
+        raise ValueError("bin_resolution must be between 0 to 15")
     gis = _arcgis.env.active_gis if gis is None else gis
     if not ((context and "extent" in context) or extent_layer):
         raise ValueError("Tool requires an extent_layer or defined extent.")
@@ -114,6 +121,7 @@ def generate_tessellation(
         "gis": gis,
         "estimate": estimate,
         "future": future,
+        "bin_resolution": bin_resolution,
     }
     params = inspect_function_inputs(
         fn=gis._tools.featureanalysis._tbx.generate_tessellations, **kwargs

@@ -62,7 +62,44 @@ class Scales(Enum):
 
 
 ###############################################################################################################
-class Image(object):
+class Separator:
+    """
+    Class representing a `separator`. You can use this class to edit and remove separators from a storymap.
+    """
+
+    def __init__(self, **kwargs) -> None:
+        # Can be created from scratch or already exist in story
+        # Separator is not an immersive node
+        self._story = kwargs.pop("story", None)
+        self._type = "separator"
+        self.node = kwargs.pop("node_id", "n-" + uuid.uuid4().hex[0:6])
+
+    # ----------------------------------------------------------------------
+    def __repr__(self) -> str:
+        return "Image"
+
+    # ----------------------------------------------------------------------
+    def _add_separator(self, story=None):
+        # Assign the story
+        self._story = story
+
+        # Create separator nodes.
+        self._story._properties["nodes"][self.node] = {
+            "type": "separator",
+        }
+
+    # ----------------------------------------------------------------------
+    def delete(self):
+        """
+        Delete the node
+
+        :return: True if successful.
+        """
+        return self._story._delete(self.node)
+
+
+###############################################################################################################
+class Image:
     """
     Class representing an `image` from a url or file.
 
@@ -75,7 +112,7 @@ class Image(object):
     ==================      ====================================================================
     **Parameter**            **Description**
     ------------------      --------------------------------------------------------------------
-    path                    Required String. The file path to the image that will be added.
+    path                    Required String. The file path or url to the image that will be added.
     ==================      ====================================================================
     """
 
@@ -394,7 +431,7 @@ class Image(object):
 
 
 ###############################################################################################################
-class Video(object):
+class Video:
     """
     Class representing a `video` from a url or file
 
@@ -451,6 +488,10 @@ class Video(object):
 
     # ----------------------------------------------------------------------
     def __str__(self) -> str:
+        return "Video"
+
+    # ----------------------------------------------------------------------
+    def __repr__(self) -> str:
         return "Video"
 
     # ----------------------------------------------------------------------
@@ -706,7 +747,7 @@ class Video(object):
 
 
 ###############################################################################################################
-class Audio(object):
+class Audio:
     """
     This class represents content that is of type `audio`. It can be created from
     a file path and added to the story.
@@ -753,6 +794,10 @@ class Audio(object):
 
     # ----------------------------------------------------------------------
     def __str__(self) -> str:
+        return "Audio"
+
+    # ----------------------------------------------------------------------
+    def __repr__(self) -> str:
         return "Audio"
 
     # ----------------------------------------------------------------------
@@ -945,7 +990,7 @@ class Audio(object):
 
 
 ###############################################################################################################
-class Embed(object):
+class Embed:
     """
     Class representing a `webpage` or `embedded audio`.
     Embed will show as a card in the story.
@@ -997,6 +1042,10 @@ class Embed(object):
 
     # ----------------------------------------------------------------------
     def __str__(self) -> str:
+        return "Embed"
+
+    # ----------------------------------------------------------------------
+    def __repr__(self) -> str:
         return "Embed"
 
     # ----------------------------------------------------------------------
@@ -1145,7 +1194,7 @@ class Embed(object):
 
 
 ###############################################################################################################
-class Map(object):
+class Map:
     """
     Class representing a `webmap` or `webscene` for the story
 
@@ -1313,8 +1362,8 @@ class Map(object):
                 ]["datetime"]
 
     # ----------------------------------------------------------------------
-    def __str__(self) -> str:
-        return "%s" % self._type
+    def __repr__(self):
+        return self._type
 
     # ----------------------------------------------------------------------
     @property
@@ -1762,7 +1811,7 @@ class Map(object):
 
 
 ###############################################################################################################
-class Text(object):
+class Text:
     """
     Class representing a `text` and a style of text.
 
@@ -1884,6 +1933,10 @@ class Text(object):
         return "Text"
 
     # ----------------------------------------------------------------------
+    def __repr__(self) -> str:
+        return "Text"
+
+    # ----------------------------------------------------------------------
     @property
     def properties(self):
         """
@@ -1961,7 +2014,7 @@ class Text(object):
 
 
 ###############################################################################################################
-class Button(object):
+class Button:
     """
     Class representing a `button`.
 
@@ -1999,6 +2052,10 @@ class Button(object):
 
     # ----------------------------------------------------------------------
     def __str__(self) -> str:
+        return "Button"
+
+    # ----------------------------------------------------------------------
+    def __repr__(self) -> str:
         return "Button"
 
     # ----------------------------------------------------------------------
@@ -2094,7 +2151,7 @@ class Button(object):
 
 
 ###############################################################################################################
-class Gallery(object):
+class Gallery:
     """
     Class representing an `image gallery`
 
@@ -2137,6 +2194,10 @@ class Gallery(object):
         return "Image Gallery"
 
     # ----------------------------------------------------------------------
+    def __repr__(self) -> str:
+        return "Image Gallery"
+
+    # ----------------------------------------------------------------------
     @property
     def properties(self):
         """
@@ -2161,7 +2222,7 @@ class Gallery(object):
         ==================      ====================================================================
         **Parameter**            **Description**
         ------------------      --------------------------------------------------------------------
-        node_list               List of node ids for the images in the gallery. Nodes must already be
+        images                  List of node ids for the images in the gallery. Nodes must already be
                                 in the gallery and this list will adjust the order of the images.
 
                                 To add new images to the gallery use:
@@ -2177,7 +2238,10 @@ class Gallery(object):
         if self._existing:
             # Update incase addition or removal was made in between last check.
             self._children = self._story._properties["nodes"][self.node]["children"]
-            return self._children
+            images = []
+            for child in self._children:
+                images.append(Image(story=self._story, node_id=child))
+            return images
         else:
             raise Warning(
                 "Image Gallery must be added to the story before adding Images."
@@ -2185,10 +2249,17 @@ class Gallery(object):
 
     # ----------------------------------------------------------------------
     @images.setter
-    def images(self, node_list):
+    def images(self, images):
         if self._existing:
-            self._children = node_list
-            self._story._properties["nodes"][self.node]["children"] = node_list
+            if images != self.images:
+                raise ValueError(
+                    "You cannot add or remove images through this method, only rearrange them."
+                )
+            children = []
+            for image in images:
+                children.append(image.node)
+            self._children = children
+            self._story._properties["nodes"][self.node]["children"] = children
         return self.images
 
     # ----------------------------------------------------------------------
@@ -2326,7 +2397,7 @@ class Gallery(object):
 
 
 ###############################################################################################################
-class Swipe(object):
+class Swipe:
     """
     Create an Swipe node.
 
@@ -2346,7 +2417,7 @@ class Swipe(object):
         >>> my_story.nodes #use to find swipe node id
 
         # Method 1: Use the Swipe Class
-        >>> swipe = Swipe(my_story, <node_id>)
+        >>> swipe = Swipe()
 
         # Method 2: Use the get method in story
         >>> swipe = my_story.get(node = <node_id>)
@@ -2371,10 +2442,31 @@ class Swipe(object):
                 self._slides = self._story._properties["nodes"][self.node]["data"][
                     "contents"
                 ]
+                # get the media for the swipe (image or map)
                 media_node = self._story._properties["nodes"][self.node]["data"][
                     "contents"
                 ]["0"]
-                self._media_type = self._story._properties["nodes"][media_node]["type"]
+
+                # Find the type, this is important since swipe must only have one media type
+                if media_node == "":
+                    # First position is empty
+                    # Check the second position
+                    second_media = self._story._properties["nodes"][self.node]["data"][
+                        "contents"
+                    ]["1"]
+                    if second_media == "":
+                        # No media set yet, type is empty
+                        self._media_type = ""
+                    else:
+                        self._media_type = self._story._properties["nodes"][
+                            second_media
+                        ]["type"]
+                else:
+                    # Use the media type of the first position
+                    self._media_type = self._story._properties["nodes"][media_node][
+                        "type"
+                    ]
+
             else:
                 # Empty swipe node
                 self._slides = []
@@ -2386,6 +2478,10 @@ class Swipe(object):
 
     # ----------------------------------------------------------------------
     def __str__(self) -> str:
+        return "Swipe"
+
+    # ----------------------------------------------------------------------
+    def __repr__(self) -> str:
         return "Swipe"
 
     # ----------------------------------------------------------------------
@@ -2563,11 +2659,11 @@ class Swipe(object):
 
 
 ###############################################################################################################
-class Sidecar(object):
+class Sidecar:
     """
-    Create an Sidecar immersive object from a pre-existing ``immersive`` node.
+    Create an Sidecar immersive object.
 
-    A sidecar is composed of slides. Slides are composed of two nodes: a narrative panel and a media node.
+    A sidecar is composed of slides. Slides are composed of two sub structures: a narrative panel and a media panel.
     The media node can be a(n): Image, Video, Embed, Map, or Swipe.
     The narrative panel can contain mulitple types of content including Image, Video, Embed, Button, Text, Map, and more.
 
@@ -2586,10 +2682,10 @@ class Sidecar(object):
         >>> my_story.nodes #use to find sidecar node id
 
         # Method 1: Use the Sidecar Class
-        >>> sidecar = Sidecar(my_story, <node_id>)
+        >>> sidecar = Sidecar("floating-panel") # create from scratch
 
         # Method 2: Use the get method in story
-        >>> sidecar = my_story.get(node = <node_id>)
+        >>> sidecar = my_story.content_list()[3] # sidecar is fourth item in story
     """
 
     def __init__(self, style: Optional[str] = None, **kwargs):
@@ -2613,6 +2709,10 @@ class Sidecar(object):
 
     # ----------------------------------------------------------------------
     def __str__(self) -> str:
+        return "Sidecar"
+
+    # ----------------------------------------------------------------------
+    def __repr__(self) -> str:
         return "Sidecar"
 
     # ----------------------------------------------------------------------
@@ -2681,13 +2781,49 @@ class Sidecar(object):
         return sidecar_tree
 
     # ----------------------------------------------------------------------
+    @property
+    def content_list(self):
+        """
+        Get a list of all the content within the sidecar in order of appearance.
+        The content will be displayed in the following order:
+        A list of the content in slide 1, a list of the content in slide 2, etc.
+        Each sub-list will contain content found in the narrative panel, if any, and the media content, if any.
+        """
+        contents = []
+        # get the values from the nodes list and return only these
+        sidecar_dict = self.properties
+        for slide in sidecar_dict:
+            content = []
+            # get the entire slide dict
+            slide_dict = list(slide.values())[0]
+            if (
+                "narrative_panel" in slide_dict
+                and "children" in slide_dict["narrative_panel"]
+                and len(slide_dict["narrative_panel"]["children"]) > 0
+            ):
+                # Get the content that are children of the narrative panel
+                children = slide_dict["narrative_panel"]["children"]
+                for child in children:
+                    # Get each class from the node value
+                    content.append(self.get(list(child.values())[0]))
+            if "media" in slide_dict and (
+                slide_dict["media"] is not None or slide_dict["media"] != {}
+            ):
+                # Get the media content for the slide
+                media = list(slide_dict["media"].values())[0]
+                # Get the class using the node value
+                content.append(self.get(media))
+            contents.append(content)
+        return contents
+
+    # ----------------------------------------------------------------------
     def edit(
         self,
         content: Union[Image, Video, Map, Embed],
         slide_number: int,
     ):
         """
-        Edit method can be used to edit the type of media in a slide of the Sidecar.
+        Edit method can be used to edit the **type** of media in a slide of the Sidecar.
         This is done by specifying the slide number and the media content to be added.
         The media can only be of type: Image, Video, Map, or Embed.
 
@@ -2710,6 +2846,7 @@ class Sidecar(object):
         ==================      =======================================================================
 
         .. code-block:: python
+
             # Get sidecar from story and see the properties
             sc = story.get(<sidecar_node_id>)
             sc.properties
@@ -2758,6 +2895,7 @@ class Sidecar(object):
         :return: An class instance of the node type.
 
         .. code-block:: python
+
             # Find the nodes associated with the sidecar
             sc = story.get(<sidecar_node_id>)
             sc.properties
@@ -2824,7 +2962,7 @@ class Sidecar(object):
                                     "ymax": 3915378.269425899
                                 }
         ---------------     --------------------------------------------------------------------
-        mapLayers           Optional list of dictionaries. Each dictionary represents a map layer
+        map_layers          Optional list of dictionaries. Each dictionary represents a map layer
                             and the parameters set on the map layer.
 
                             Example:
@@ -2933,6 +3071,7 @@ class Sidecar(object):
         =======================     ====================================================================
 
         .. code-block:: python
+
             # Get sidecar from story and see the properties
             sc = story.get(<sidecar_node_id>)
             sc.properties
@@ -3097,7 +3236,7 @@ class Sidecar(object):
 
 
 ###############################################################################################################
-class Timeline(object):
+class Timeline:
     """
     Create a Timeline object from a pre-existing `timeline` node.
 
@@ -3149,6 +3288,10 @@ class Timeline(object):
 
     # ----------------------------------------------------------------------
     def __str__(self) -> str:
+        return "Timeline"
+
+    # ----------------------------------------------------------------------
+    def __repr__(self) -> str:
         return "Timeline"
 
     # ----------------------------------------------------------------------
@@ -3425,7 +3568,7 @@ class Timeline(object):
 
 
 ###############################################################################################################
-class MapTour(object):
+class MapTour:
     """
     Create a MapTour object from a pre-existing `maptour` node.
 
@@ -3477,6 +3620,10 @@ class MapTour(object):
         return "Map Tour"
 
     # ----------------------------------------------------------------------
+    def __repr__(self) -> str:
+        return "Map Tour"
+
+    # ----------------------------------------------------------------------
     @property
     def _children(self) -> list:
         """private method to gather all children of a map tour from places data"""
@@ -3524,6 +3671,7 @@ class MapTour(object):
         :return: An class instance of the node type.
 
         .. code-block:: python
+
             # Find the nodes associated with the map tour
             mt = story.get(<maptour_node_id>)
             mt.places
@@ -3591,7 +3739,11 @@ class MapAction:
 
     # ----------------------------------------------------------------------
     def __str__(self) -> str:
-        return "Map Action: " + self.properties["event"]
+        return "Map Action"
+
+    # ----------------------------------------------------------------------
+    def __repr__(self) -> str:
+        return "Map Action"
 
     # ----------------------------------------------------------------------
     @property
@@ -3696,3 +3848,6 @@ class MapAction:
             return False
         else:
             return True
+
+
+###############################################################################################################

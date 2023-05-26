@@ -65,6 +65,7 @@ try:
     from ._utils.tabular_data import TabularDataObject
     from ._utils.cyclegan import ImageTupleList, prepare_data_ms_cyclegan
     from ._utils.cyclegan import show_batch as show_batch_img2img
+    from ._utils.superres import show_batch as show_batch_sr_img2img
     from .models._max_deeplab_utils import show_batch_panoptic
     from ._utils.wnet_cgan import prepare_data_wnetcgan
     from ._utils.wnet_cgan import show_batch_wnet as show_batch_img2depth
@@ -174,6 +175,16 @@ class _ImagenetCollater:
         else:
             _yb = torch.stack([torch.tensor(sample[1]) for sample in batch])
         return _xb, _yb
+
+
+def classified_tiles_collate_fn(
+    samples,
+):  # The default fastai collate_fn was causing memory leak on tensors
+    r = (
+        torch.stack([x[0].data for x in samples]),
+        torch.stack([x[1].data for x in samples]),
+    )
+    return r
 
 
 def _bb_pad_collate(samples, pad_idx=0):
@@ -1006,9 +1017,10 @@ def prepare_tabulardata(
                             This contains features denoting the value of the dependent variable.
                             Leave empty for using rasters with MLModel.
     ---------------------   -------------------------------------------
-    variable_predict        Optional String, denoting the field_name of
+    variable_predict        Optional String or List, denoting the field_names of
                             the variable to predict.
-                            Keep none for unsupervised training using MLModel.
+                            Keep none for unsupervised training using ML Model. For timeseries it
+                            will work for continuous variable
     ---------------------   -------------------------------------------
     explanatory_variables   Optional list containing field names from input_features
                             By default the field type is continuous.
@@ -1260,22 +1272,23 @@ def prepare_data(
     class_mapping           Optional dictionary. Mapping from id to
                             its string label.
     ---------------------   -------------------------------------------
-    chip_size               Optional integer, default 224. Size of the image to train the model.
-                            Images are cropped to the specified chip_size.
+    chip_size               Optional integer, default 224. Size of the image to train
+                            the model. Images are cropped to the specified chip_size.
                             If image size is less than chip_size, the image size is
-                            used as chip_size. A chip size that is a multiple of 32 pixels
-                            is recommended. Not supported for SuperResolution,
+                            used as chip_size. A chip size that is a multiple of 32
+                            pixels is recommended. Not supported for SuperResolution,
                             SiamMask, WNet_cGAN, Pix2Pix and CycleGAN.
     ---------------------   -------------------------------------------
     val_split_pct           Optional float. Percentage of training data to keep
                             as validation.
     ---------------------   -------------------------------------------
-    batch_size              Optional integer. Default 64. Batch size for mini batch gradient
-                            descent (Reduce it if getting CUDA Out of Memory
-                            Errors). Batch size is required to be greater than 1. If None is
-                            provided, a recommended batch size is used. This is estimated based
-                            on GPU capacity, size of model and data. To explicitly find the
-                            recommended batch_size, use arcgis.learn.estimate_batch_size() method.
+    batch_size              Optional integer. Default 64. Batch size for mini batch
+                            gradient descent (Reduce it if getting CUDA Out of Memory
+                            Errors). Batch size is required to be greater than 1. If
+                            None is provided, a recommended batch size is used. This is
+                            estimated based on GPU capacity, size of model and data.
+                            To explicitly find the recommended batch_size,
+                            use arcgis.learn.estimate_batch_size() method.
     ---------------------   -------------------------------------------
     transforms              Optional tuple. Fast.ai transforms for data
                             augmentation of training and validation datasets
@@ -1292,19 +1305,20 @@ def prepare_data(
     seed                    Optional integer. Random seed for reproducible
                             train-validation split.
     ---------------------   -------------------------------------------
-    dataset_type            Optional string. :meth:`~arcgis.learn.prepare_data`  function will infer
-                            the `dataset_type` on its own if it contains a
-                            map.txt file. If the path does not contain the
-                            map.txt file pass one of 'PASCAL_VOC_rectangles',
+    dataset_type            Optional string. :meth:`~arcgis.learn.prepare_data`
+                            function will infer the `dataset_type` on its own if
+                            it contains a map.txt file. If the path does not contain
+                            the map.txt file pass one of 'PASCAL_VOC_rectangles',
                             'KITTI_rectangles', 'RCNN_Masks', 'Classified_Tiles',
                             'Labeled_Tiles', 'MultiLabeled_Tiles', 'Imagenet',
-                            'PointCloud', 'ImageCaptioning', 'ChangeDetection',
-                            'superres', 'CycleGAN', 'Pix2Pix', 'WNet_cGAN',
-                            'Panoptic_Segmentation', and 'ObjectTracking'.
+                            'PointCloud', 'PointCloudOD', 'ImageCaptioning',
+                            'ChangeDetection', 'superres', 'CycleGAN', 'Pix2Pix',
+                            'WNet_cGAN', 'Panoptic_Segmentation', and 'ObjectTracking'.
                             This parameter is mandatory for data which are not
                             exported by ArcGIS Pro / Enterprise which includes
-                            'PointCloud', 'ImageCaptioning', 'ChangeDetection',
-                            'CycleGAN', 'Pix2Pix', 'WNet_cGAN' and 'ObjectTracking'.
+                            'PointCloud', 'PointCloudOD','ImageCaptioning',
+                            'ChangeDetection', 'CycleGAN', 'Pix2Pix', 'WNet_cGAN'
+                            and 'ObjectTracking'.
     ---------------------   -------------------------------------------
     resize_to               Optional integer or tuple of integers.
                             A tuple should be of the form (height, width).
@@ -1345,46 +1359,67 @@ def prepare_data(
                             Optional int. Number of pixels equal to or multiples
                             of 64 to sample from the each masked region of training
                             data i.e. 64, 128 etc. Applicable only for
-                            dataset_type='PointCloud' and 'PSETAE'
-    ---------------------   -------------------------------------------
-    classes_of_interest     Optional string. List of classes of interest.
-                            This will filter blocks based on `classes_of_interest`.
-                            If we have classes [1, 3, 5, 7] in our dataset,
-                            but we are mainly interested in 1 and 3,
-                            Set `classes_of_interest=[1,3]`. Only those blocks
-                            will be considered for training which either have
-                            class 1 or 3 in them, rest of the blocks will
-                            be filtered out.
-                            If remapping of rest of the classes is required
-                            set `background_classcode` to some value.
-                            Applicable only for dataset_type='PointCloud'
+                            dataset_type='PointCloud', 'PointCloudOD', and 'PSETAE'.
     ---------------------   -------------------------------------------
     extra_features          Optional List. Contains a list of strings
-                            which tells which extra features to use to
-                            train PointCNN. By default only x,y and z
-                            are considered for training irrespective
-                            of what features were exported.
-                            Set this to be a subset of
-                            ['intensity', 'numberOfReturns', 'returnNumber',
+                            which mentions extra features to be used for
+                            training, applicable with dataset_type 'PointCloud'
+                            and 'PointCloudOD'. By default only x, y, and z are
+                            considered for training irrespective of what features
+                            were exported.
+                            For example: ['intensity', 'numberOfReturns', 'returnNumber',
                             'red', 'green', 'blue', 'nearInfrared'].
-                            For data exported from `export_point_dataset` set
-                            this to ['intensity', 'num_returns', 'return_num',
-                            'red', 'green', 'blue', 'nir'].
     ---------------------   -------------------------------------------
     remap_classes           Optional dictionary {int:int}. Mapping from
                             class values to user defined values.
-                            If we have [1, 3, 5, 7] in our dataset
-                            and we want to map class 5 to 3. Set this
-                            parameter to `remap_classes={5:3}`.
-                            In training then 5 will also be considered as 3.
-                            Applicable only for dataset_type='PointCloud'
+                            Applicable with dataset_type='PointCloud'
+                            for remapping LAS classcode structure.
+                            And with dataset_type='PointCloudOD' for
+                            remapping object class structure.
+                            When this parameter is set as `remap_classes={5:3}`,
+                            then '5' class value will be considered as '3',
+                            in both training and validation blocks.
     ---------------------   -------------------------------------------
-    background_classcode    Optional int. Default None.
-                            If this is defined it will remap other
-                            class except `classes_of_interest` to
-                            `background_classcode` value. Only applicable
-                            when specifying `classes_of_interest`.
-                            Applicable only for dataset_type='PointCloud'.
+    classes_of_interest     Optional list of int.
+                            For dataset_type='PointCloud':
+                            This will filter training blocks based on
+                            `classes_of_interest`. If we have "1, 3, 5, 7"
+                            LAS classcodes in our dataset, but we are mainly
+                            interested in 1 and 3 classcodes, Set
+                            `classes_of_interest=[1,3]`. Only those blocks
+                            will be considered for training which either have
+                            1 or 3 LAS classcodes in them, rest of the blocks will
+                            be filtered out. If remapping of rest of the classcodes
+                            is required, set `background_classcode` to some value.
+
+                            For dataset_type='PointCloudOD':
+                            This will filter training blocks based on
+                            `classes_of_interest`. If we have "2, 3, 10, 16"
+                            object classes in the 3d feature class, but we are
+                            mainly interested in 2 and 10 object classes,
+                            Set `classes_of_interest=[2,10]`. Only those blocks
+                            will be considered for training which either have
+                            2 or 10 object classes in them, the rest of the blocks will
+                            be filtered out. Set `background_classcode` as `True`
+                            to discard other classes.
+
+                            Note: `classes_of_interest` is applied on the
+                            remapped class structure,
+                            if `remap_classes` is also used.
+    ---------------------   -------------------------------------------
+    background_classcode    This parameter is only applicable when
+                            `classes_of_interest` is specified.
+
+                            For dataset_type='PointCloud':
+                            Optional int. Default: None.
+                            This will remap other class values, except
+                            `classes_of_interest` to `background_classcode`.
+
+                            For dataset_type='PointCloudOD':
+                            Optional Bool. Default: False.
+                            If set to 'True', only `classes_of_interest`
+                            class values will be considered and rest of
+                            the class values will be discarded.
     ---------------------   -------------------------------------------
     stratify                Optional boolean, default False.
                             If True, prepare_data
@@ -1435,6 +1470,11 @@ def prepare_data(
                             For example, If we have stacked imagery of n bands each
                             from two dates then, ['YYYY-MM-DD','YYYY-MM-DD'].
                             Applicable only for dataset_type='PSETAE'.
+    ---------------------   -------------------------------------------
+    num_workers             Optional int. Default ``0``.
+                            number of subprocesses to use for data loading on the
+                            Windows operating system. ``0`` means that the data will
+                            be loaded in the main process.
     =====================   ===========================================
 
     :return:
@@ -1480,7 +1520,10 @@ def prepare_data(
         _estimate_batch = True
         batch_size = 2
 
-    databunch_kwargs = {"num_workers": 0} if sys.platform == "win32" else {}
+    num_workers = kwargs.get("num_workers", 0)  # min(16, (os.cpu_count() // 2) - 1)
+    databunch_kwargs = {"num_workers": num_workers} if sys.platform == "win32" else {}
+    if sys.platform == "win32" and num_workers > 0:
+        databunch_kwargs["persistent_workers"] = True
     databunch_kwargs["bs"] = batch_size
 
     force_cpu = arcgis.learn.models._arcgis_model._device_check()
@@ -2312,15 +2355,6 @@ def prepare_data(
         #
         _show_batch_multispectral = show_batch_classified_tiles
 
-        def classified_tiles_collate_fn(
-            samples,
-        ):  # The default fastai collate_fn was causing memory leak on tensors
-            r = (
-                torch.stack([x[0].data for x in samples]),
-                torch.stack([x[1].data for x in samples]),
-            )
-            return r
-
         databunch_kwargs["collate_fn"] = classified_tiles_collate_fn
 
         if transforms is None:
@@ -2604,52 +2638,102 @@ def prepare_data(
     elif dataset_type == "superres" or dataset_type == "Export_Tiles":
         path_hr = path / "images"
         path_lr = path / "labels"
-        il = ArcGISImageList.from_folder(path_hr)
-        hr_suffix = il.items[0].suffix
-        img_size = il[0].shape[1]
+        path_addras_lr = path / "images2"
+        image_stats2 = None
+        _is_multispec = False
+
+        def check_ms(il, il2):
+            samp_img, samp_img2 = gdal.Open(il.items[0].__str__()), gdal.Open(
+                il2.items[0].__str__()
+            )
+            if (
+                il[0].shape[0] != 3
+                or samp_img.GetRasterBand(1).DataType != gdal.GDT_Byte
+                or il2[0].shape[0] != 3
+                or samp_img2.GetRasterBand(1).DataType != gdal.GDT_Byte
+            ):
+                return "MULTISPECTRAL", True
+            else:
+                return "RGB", False
+
+        if has_esri_files:
+            json_file = path / "esri_model_definition.emd"
+            with open(json_file) as f:
+                emd = json.load(f)
+            stats_fields = ["AllTilesStats", "AllTilesStats2"]
+            image_stats = []
+            for field in stats_fields:
+                if field in emd:
+                    means, stds = [i.get("Mean") for i in emd[field]], [
+                        i.get("StdDev") for i in emd[field]
+                    ]
+                    image_stats.append((means, stds))
+
+        if "AllTilesStats2" in emd:
+            path_hr = path / "labels"
+            path_lr = path / "images"
+            image_stats2 = image_stats[1]
+            image_stats = image_stats[0]
+
+        if isinstance(image_stats, list):
+            image_stats = image_stats[0]
         downsample_factor = kwargs.get("downsample_factor", None)
         if downsample_factor is None:
             downsample_factor = 4
-        path_lr_check = path / f"esri_superres_labels_downsample_factor.txt"
-        prepare_label = False
-        if path_lr_check.exists():
-            with open(path_lr_check) as f:
-                label_downsample_ratio = float(f.read())
-            if label_downsample_ratio != downsample_factor:
-                prepare_label = True
-        else:
-            prepare_label = True
-        if prepare_label:
-            parallel(
-                partial(
-                    resize_one,
-                    path_lr=path_lr,
-                    size=img_size / downsample_factor,
-                    path_hr=path_hr,
-                    img_size=img_size,
-                ),
-                il.items,
-                max_workers=databunch_kwargs.get("num_workers"),
-            )
-            with open(path_lr_check, "w") as f:
+        path_hr_check = path / f"esri_superres_labels_downsample_factor.txt"
+
+        if os.path.isdir(path_addras_lr):
+            os.rename(path_addras_lr, path_hr)
+            with open(path_hr_check, "w") as f:
                 f.write(str(downsample_factor))
+            il, il2 = ArcGISImageList.from_folder(path_hr), ArcGISImageList.from_folder(
+                path_lr
+            )
+            hr_suffix = il.items[0].suffix
+            img_size = il[0].shape[1]
+            imagery_type, _is_multispec = check_ms(il, il2)
+        else:
+            il = ArcGISImageList.from_folder(path_hr)
+            hr_suffix = il.items[0].suffix
+            img_size = il[0].shape[1]
+            prepare_label = False
+            if path_hr_check.exists():
+                with open(path_hr_check) as f:
+                    label_downsample_ratio = float(f.read())
+                if label_downsample_ratio != downsample_factor:
+                    prepare_label = True
+            else:
+                prepare_label = True
+
+            if prepare_label:
+                parallel(
+                    partial(
+                        resize_one,
+                        path_lr=path_lr,
+                        size=img_size / downsample_factor,
+                        path_hr=path_hr,
+                        img_size=img_size,
+                    ),
+                    il.items,
+                    max_workers=databunch_kwargs.get("num_workers"),
+                )
+                with open(path_hr_check, "w") as f:
+                    f.write(str(downsample_factor))
+            il2 = ArcGISImageList.from_folder(path_lr)
+            imagery_type, _is_multispec = check_ms(il, il2)
 
         data = (
-            ImageImageListSR.from_folder(path_lr)
+            ImageImageListSR.from_folders(path, path_lr, image_stats, _is_multispec)
             .split_by_rand_pct(val_split_pct, seed=seed)
             .label_from_func(
                 lambda x: path_hr / x.with_suffix(hr_suffix).name,
                 label_cls=ImageImageListSR.label_cls,
             )
         )
+
         if resize_to is None:
             kwargs_transforms["size"] = img_size
         kwargs_transforms["tfm_y"] = True
-
-        if has_esri_files:
-            json_file = path / "esri_model_definition.emd"
-            with open(json_file) as f:
-                emd = json.load(f)
 
     elif dataset_type in ["ner_json", "BIO", "IOB", "LBIOU", "BILUO"]:
         from ._utils._ner_utils import _NERData
@@ -2702,6 +2786,19 @@ def prepare_data(
             data.path = Path(os.path.abspath(working_dir))
         _prepare_working_dir(data.path)
         data._estimate_batch = _estimate_batch
+        return data
+
+    elif dataset_type == "PointCloudOD":
+        from ._utils.pointcloud_od import pointcloud_od
+
+        data = pointcloud_od(
+            path, class_mapping, batch_size, databunch_kwargs, **kwargs
+        )
+        data._data_path = data.path
+        if working_dir is not None:
+            data.path = Path(os.path.abspath(working_dir))
+        _prepare_working_dir(data.path)
+        data.pc_type = dataset_type
         return data
 
     elif dataset_type == "ImageCaptioning":
@@ -2786,6 +2883,7 @@ def prepare_data(
             norm_pct=norm_pct,
             _is_multispectral=_is_multispectral,
             working_dir=working_dir,
+            seed=seed,
             **kwargs,
         )
         data._imagery_type_a = imagery_type_a
@@ -3074,11 +3172,30 @@ def prepare_data(
         data._imagery_type_b = imagery_type_b
         data.show_batch = types.MethodType(show_batch_img2img, data)
     elif dataset_type == "superres" or dataset_type == "Export_Tiles":
-        data = (
-            data.transform(get_transforms(), **kwargs_transforms)
-            .databunch(**databunch_kwargs)
-            .normalize(imagenet_stats, do_y=True)
+        ms_kwargs_transforms, ms_kwargs_norm = {}, {}
+        ms_kwargs_transforms["flip_vert"], ms_kwargs_transforms["p_lighting"] = (
+            True,
+            0,
         )
+        if _is_multispec:
+            ms_kwargs_norm["do_x"], ms_kwargs_norm["do_y"] = False, True
+            ms_kwargs_norm["stats"] = image_stats2 if image_stats2 else image_stats
+        else:
+            ms_kwargs_norm["do_y"] = True
+            ms_kwargs_norm["stats"] = imagenet_stats
+        data = (
+            data.transform(get_transforms(**ms_kwargs_transforms), **kwargs_transforms)
+            .databunch(**databunch_kwargs)
+            .normalize(**ms_kwargs_norm)
+        )
+        data._image_stats = imagenet_stats
+        data._is_multispec = _is_multispec
+        data._n_channel = il[0].shape[0]
+        data._image_stats2 = ms_kwargs_norm["stats"]
+        if _is_multispec:
+            data._image_stats = image_stats
+        data.path = data.train_ds.path / "models"
+        data.show_batch = types.MethodType(show_batch_sr_img2img, data)
     elif dataset_type == "CycleGAN":
         data = data.transform(get_transforms(), **kwargs_transforms).databunch(
             **databunch_kwargs

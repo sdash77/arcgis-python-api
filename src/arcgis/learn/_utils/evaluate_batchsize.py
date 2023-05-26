@@ -28,6 +28,7 @@ exception_models = [
     "MaXDeepLab",
     "CycleGAN",
     "ConnectNet",
+    "Pix2PixHD",
 ]
 
 unsupported_models = [
@@ -53,6 +54,7 @@ unsupported_models = [
     "_SpacyEntityRecognizer",
     "_TransformerEntityRecognizer",
     "TextClassifier",
+    "MMDetection3D",
 ]
 
 
@@ -90,7 +92,7 @@ def estimate_batch_size(model, mode="train"):
         raise Exception("unsupported model {}".format(model.__class__.__name__))
 
     if hasattr(model._data, "_is_multispectral") and model._data._is_multispectral:
-        channel = len(model._data._bands)
+        channel = len(model._data._band_max_values)
 
     height, width = model._data.chip_size, model._data.chip_size
     if (
@@ -145,6 +147,17 @@ def estimate_batch_size(model, mode="train"):
                                 x[0].to(model._device),
                                 x[0].to(model._device),
                                 x[0].to(model._device),
+                            )
+                        elif model.__class__.__name__ == "Pix2PixHD":
+                            from ..models._pix2pix_hd_utils import encode_input
+
+                            x[0], _, x[1], _ = encode_input(
+                                x[0], label_nc=model._data.label_nc, real_image=x[1]
+                            )
+                            model.learn.model.set_input(x)
+                            model.learn.loss_func.set_input(x)
+                            out = model.learn.model(
+                                x[0].to(model._device), x[1].to(model._device)
                             )
                         else:
                             out = model.learn.model(
@@ -237,6 +250,17 @@ def estimate_batch_size(model, mode="train"):
                                 x[0].to(nonemodel._device),
                                 x[0].to(nonemodel._device),
                             )
+                        elif model.__class__.__name__ == "Pix2PixHD":
+                            from ..models._pix2pix_hd_utils import encode_input
+
+                            x[0], _, x[1], _ = encode_input(
+                                x[0], label_nc=nonemodel._data.label_nc, real_image=x[1]
+                            )
+                            nonemodel.learn.model.set_input(x)
+                            nonemodel.learn.loss_func.set_input(x)
+                            out = nonemodel.learn.model(
+                                x[0].to(nonemodel._device), x[1].to(nonemodel._device)
+                            )
                         else:
                             out = nonemodel.learn.model(
                                 x[0].to(nonemodel._device), x[1].to(nonemodel._device)
@@ -267,8 +291,13 @@ def estimate_batch_size(model, mode="train"):
 
                     gc.collect()
                     torch.cuda.empty_cache()
-                    max_batchsize = int(max_batchsize // 2)
-                    continue
+                    if max_batchsize > 2:
+                        max_batchsize = int(max_batchsize // 2)
+                        continue
+                    else:
+                        raise Exception(
+                            "batch size can not be less than 2, not enough memory available"
+                        )
                 else:
                     exception = str(E)
                     breakwhile = True
@@ -285,9 +314,15 @@ def estimate_batch_size(model, mode="train"):
     output = namedtuple("batch_size", ["recommended_batchsize", "max_batchsize"])
     if model.__class__.__name__ in exception_models:
         max_batchsize = max_batchsize // 2
-        if model.__class__.__name__ == "MaXDeepLab":
+        if (
+            model.__class__.__name__ == "MaXDeepLab"
+            or model.__class__.__name__ == "Pix2PixHD"
+        ):
             max_batchsize = max_batchsize // 2
-    model._data.train_dl.batch_size = max_batchsize
+
+    if mode == "train" or mode == "none":
+        model._data.train_dl.batch_size = max_batchsize
+
     if (mode == "train" or mode == "none") and max_batchsize > 64:
         batch_size = output(64, max_batchsize)
     else:

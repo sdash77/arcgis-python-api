@@ -1,6 +1,11 @@
 import types
 from torch import nn
 from ._arcgis_model import _get_backbone_meta
+import logging
+import os
+import sys
+
+_logger = logging.getLogger(__name__)
 
 try:
     from fastai.callbacks.hooks import hook_outputs, model_sizes
@@ -8,10 +13,148 @@ try:
     from fastai.vision import create_body
     import timm
     import fnmatch
+    from timm.models.hub import (
+        has_hf_hub,
+        load_state_dict_from_hf,
+        load_state_dict_from_url,
+    )
+    from timm.models.helpers import adapt_input_conv
+    from torch.hub import get_dir
+    import zipfile
+    import torch
 
     HAS_FASTAI = True
 except Exception as e:
     HAS_FASTAI = False
+
+
+hosted_weights = {
+    "ecaresnet101d": "682eb6fca513415b9c5a6be61f1bc0f1",
+    "ecaresnet101d_pruned": "d676dfa5ffa04732bc8ef58d2c85dd38",
+    "ecaresnet269d": "df81aea21521475eba81658496dc6ace",
+    "ecaresnet50d": "9f3235316a464885b4d3e5db2d5499b9",
+    "ecaresnet50d_pruned": "eca1ccf9ea3145f3ae1cd257f290ef09",
+    "ecaresnetlight": "680b9da80da54bbca20a6b7446b5a2df",
+    "efficientnet_b1_pruned": "ed49c5e7bb804a05b877702e7ce12f40",
+    "efficientnet_b2_pruned": "8eb218d51113449181f1f25efae9ab98",
+    "efficientnet_b3_pruned": "b341d13252d244c591370c082bea9696",
+    "hardcorenas_a": "af3227e5f48145c2a21c8cf76c3782e4",
+    "hardcorenas_b": "9c14f1b482c5465ba5cc75772aeead60",
+    "hardcorenas_c": "b758a9d94cb7402c942f2a51fdd99953",
+    "hardcorenas_d": "8a927ea1f2c14b2dabaae423c21c193c",
+    "hardcorenas_e": "1e7d664452cf4ce596bd5d1bfe776557",
+    "hardcorenas_f": "f3a1f74efe244911b166d5456f2bba68",
+    "legacy_senet154": "36266e6e22444ce299d76a57a6a817df",
+    "legacy_seresnext101_32x4d": "884b2dd7093e49b4884fac2d23bc2386",
+    "legacy_seresnext50_32x4d": "e54dc138f33f415984ccfbf6250e1e03",
+    "nasnetalarge": "91404c5ecbd842948bb1507f1e313e4b",
+    "regnetx_006": "e595c123a67c4a4f87f322b1af4b293c",
+    "tf_efficientnet_b6_ns": "20d17115f5db4e11837b8d43e81d59da",
+}
+
+
+# same function with modification timm.models.helpers.load_pretrained
+def load_timm_bckbn_pretrained(
+    model,
+    default_cfg=None,
+    num_classes=1000,
+    in_chans=3,
+    filter_fn=None,
+    strict=True,
+    progress=True,
+):
+    default_cfg = default_cfg or getattr(model, "default_cfg", None) or {}
+    pretrained_url = default_cfg.get("url", None)
+    hf_hub_id = default_cfg.get("hf_hub", None)
+    if not pretrained_url and not hf_hub_id:
+        _logger.warning(
+            "No pretrained weights exist for this model. Using random initialization."
+        )
+        return
+
+    model_url = hosted_weights.get(default_cfg["architecture"], False)
+    if model_url:
+        model_dir = os.path.join(get_dir(), "checkpoints")
+        if not os.path.exists(model_dir):
+            os.makedirs(model_dir)
+        cached_file = os.path.join(model_dir, pretrained_url.split("/")[-1])
+        if not os.path.exists(cached_file):
+            sys.stderr.write(
+                'Downloading: "{}" pretrained weights to {}\n'.format(
+                    default_cfg["architecture"], cached_file
+                )
+            )
+            from arcgis.gis import GIS
+
+            gis = GIS(set_active=False)
+            item = gis.content.get(model_url)
+            item.download(model_dir)
+            zipped_file = os.path.join(
+                model_dir, pretrained_url.split("/")[-1][:-3] + "zip"
+            )
+            with zipfile.ZipFile(zipped_file) as f:
+                f.extractall(model_dir)
+            os.remove(zipped_file)
+
+        state_dict = torch.load(cached_file, map_location="cpu")
+
+    elif hf_hub_id and has_hf_hub(necessary=not pretrained_url):
+        _logger.info(f"Loading pretrained weights from Hugging Face hub ({hf_hub_id})")
+        state_dict = load_state_dict_from_hf(hf_hub_id)
+    else:
+        _logger.info(f"Loading pretrained weights from url ({pretrained_url})")
+        state_dict = load_state_dict_from_url(
+            pretrained_url, progress=progress, map_location="cpu"
+        )
+    if filter_fn is not None:
+        # for backwards compat with filter fn that take one arg, try one first, the two
+        try:
+            state_dict = filter_fn(state_dict)
+        except TypeError:
+            state_dict = filter_fn(state_dict, model)
+
+    input_convs = default_cfg.get("first_conv", None)
+    if input_convs is not None and in_chans != 3:
+        if isinstance(input_convs, str):
+            input_convs = (input_convs,)
+        for input_conv_name in input_convs:
+            weight_name = input_conv_name + ".weight"
+            try:
+                state_dict[weight_name] = adapt_input_conv(
+                    in_chans, state_dict[weight_name]
+                )
+                _logger.info(
+                    f"Converted input conv {input_conv_name} pretrained weights from 3 to {in_chans} channel(s)"
+                )
+            except NotImplementedError as e:
+                del state_dict[weight_name]
+                strict = False
+                _logger.warning(
+                    f"Unable to convert pretrained {input_conv_name} weights, using random init for this layer."
+                )
+
+    classifiers = default_cfg.get("classifier", None)
+    label_offset = default_cfg.get("label_offset", 0)
+    if classifiers is not None:
+        if isinstance(classifiers, str):
+            classifiers = (classifiers,)
+        if num_classes != default_cfg["num_classes"]:
+            for classifier_name in classifiers:
+                # completely discard fully connected if model num_classes doesn't match pretrained weights
+                del state_dict[classifier_name + ".weight"]
+                del state_dict[classifier_name + ".bias"]
+            strict = False
+        elif label_offset > 0:
+            for classifier_name in classifiers:
+                # special case for pretrained weights with an extra background class in pretrained weights
+                classifier_weight = state_dict[classifier_name + ".weight"]
+                state_dict[classifier_name + ".weight"] = classifier_weight[
+                    label_offset:
+                ]
+                classifier_bias = state_dict[classifier_name + ".bias"]
+                state_dict[classifier_name + ".bias"] = classifier_bias[label_offset:]
+
+    model.load_state_dict(state_dict, strict=strict)
 
 
 def _default_split(m):

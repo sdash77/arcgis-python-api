@@ -125,6 +125,52 @@ class AttachmentManager(object):
         else:
             self._version = None
 
+    def count(
+        self,
+        where: str | None = None,
+        attachment_where: str | None = None,
+        object_ids: str | None = None,
+        global_ids: str | None = None,
+        attachment_types: str | None = None,
+        size: tuple[int] | list[int] | None = None,
+        keywords: str | None = None,
+    ) -> int:
+        """"""
+        url: str = "{}/{}".format(self._layer.url, "queryAttachments")
+        if object_ids is None:
+            object_ids = []
+        if global_ids is None:
+            global_ids = []
+        if attachment_types is None:
+            attachment_types = []
+        if where is None:
+            where = ""
+        if keywords is None:
+            keywords = []
+        params: dict[str, Any] = {
+            "f": "json",
+            "definitionExpression": where,
+            "attachmentTypes": ",".join(attachment_types),
+            "objectIds": ",".join([str(v) for v in object_ids]),
+            "globalIds": ",".join([str(v) for v in global_ids]),
+            "definitionExpression": where,
+            "attachmentsDefinitionExpression": attachment_where or "",
+            "keywords": ",".join([str(v) for v in keywords]),
+            "size": size,
+            "returnCountOnly": True,
+        }
+        res = self._layer._con._session.get(url=url, params=params)
+        res.raise_for_status()
+        data: dict[str, Any] = res.json()
+        if "attachmentGroups" in data:
+            return sum([grp["count"] for grp in res.json()["attachmentGroups"]])
+        elif "error" in data:
+            raise Exception(data["error"])
+        else:
+            raise Exception(
+                "Could not obtain the attachment counts, verify that attachments is enabled."
+            )
+
     def search(
         self,
         where: str = "1=1",
@@ -138,7 +184,9 @@ class AttachmentManager(object):
         return_metadata: bool = False,
         return_url: bool = False,
         max_records: int | None = None,
-        offset: int = 0,
+        offset: int | None = None,
+        *,
+        attachment_where: str | None = None,
     ):
         """
 
@@ -256,6 +304,12 @@ class AttachmentManager(object):
                                     The default value is 0. This parameter only applies when
                                     `supportPagination` is true. You can use this option to fetch
                                     records that are beyond `maxRecordCount` property.
+        -------------------------   ---------------------------------------------------------------
+        attachment_where            Optional str. The definition expression to be applied to the
+                                    attachments table. Only those records that conform to this
+                                    expression will be returned. You can get the attachments table
+                                    field names to use in the expression by checking the layer's
+                                    `attachmentProperties`.
         =========================   ===============================================================
 
         :return: A Pandas DataFrame or Dict of the attachments of the :class:`~arcgis.features.FeatureLayer`
@@ -366,6 +420,7 @@ class AttachmentManager(object):
                     ]
         else:
             url = "{}/{}".format(self._layer.url, "queryAttachments")
+
             params = {
                 "f": "json",
                 "attachmentTypes": ",".join(attachment_types),
@@ -379,6 +434,11 @@ class AttachmentManager(object):
                 "resultRecordCount": max_records,
                 "resultOffset": offset,
             }
+            if offset:
+                params["offset"] = offset
+            if attachment_where:
+                params["attachmentsDefinitionExpression"] = attachment_where or ""
+
             iterparams = copy.copy(params)
             for k, v in iterparams.items():
                 if k in ["objectIds", "globalIds", "attachmentTypes"] and v == "":
