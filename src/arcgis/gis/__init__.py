@@ -7077,7 +7077,7 @@ class ContentManager(object):
         for owner in owners:
             if (
                 self._gis.users.me.username != owner
-                and "admin" not in self._gis.users.me.role
+                and "portal:admin:deleteItems" not in self._gis.users.me.privileges
             ):
                 return Exception(
                     "You are not the owner and you do not have the administrator privileges to perform this action."
