@@ -6,6 +6,7 @@ These tools primarily operate on items and layers from the GIS.
 """
 from __future__ import absolute_import, division, print_function, annotations
 
+from arcgis._impl.common._deprecate import deprecated
 import json
 import logging
 import os
@@ -9774,6 +9775,7 @@ class _RasterAnalysisTools(BaseAnalytics):
         return RAJob(gpjob, output_service).result()
 
     # ----------------------------------------------------------------------
+    @deprecated(deprecated_in="2.2.0", removed_in="3.0.0", current_version="2.2.0")
     def calculate_distance(
         self,
         input_source_raster_or_features,  #
