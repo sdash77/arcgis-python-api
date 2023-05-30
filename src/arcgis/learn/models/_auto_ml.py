@@ -140,6 +140,9 @@ class AutoML(object):
             _raise_fastai_import_error(import_exception=import_exception)
 
         self._data = data
+        if isinstance(self._data._dependent_variable, list):
+            self._data._dependent_variable = self._data._dependent_variable[0]
+
         if getattr(self._data, "_is_unsupervised", False):
             raise Exception(
                 "Auto ML feature is currently only available for Supervised learning."

@@ -130,6 +130,7 @@ class UtilityNetworkManager(object):
 
 
                                    .. code-block:: python
+
                                        [{
                                            "traceLocationType" : "startingPoint" | "barrier",
                                            "globalId" : <guid>,
@@ -443,6 +444,7 @@ class UtilityNetworkManager(object):
         result_types                                Optional list of dictionaries. Specifies the type of results to return.
 
                                                     .. code-block:: python
+
                                                         [
                                                             {
                                                                 "type" : "features" | "geometries" | "network" | "connectivity" | "controllers" | "associations" | "aggregatedGeometry" |
@@ -611,6 +613,7 @@ class UtilityNetworkManager(object):
                                                     synthesize association geometries.
 
                                                     .. code-block:: python
+
                                                         {
                                                             "xmin": <minimum x-coordinate>,
                                                             "ymin": <minimum y-coordinate>,
@@ -746,6 +749,7 @@ class UtilityNetworkManager(object):
         envelope                                    Required Dictionary. The envelope of the area to validate.
 
                                                     .. code-block:: python
+
                                                         {
                                                             "xmin": <minimum x-coordinate>,
                                                             "ymin": <minimum y-coordinate>,
@@ -783,6 +787,7 @@ class UtilityNetworkManager(object):
                                                     the set of features and objects to validate.
 
                                                     .. code-block:: python
+
                                                         [
                                                             {
                                                                 "sourceId": <int>,
@@ -875,6 +880,7 @@ class UtilityNetworkManager(object):
                                                     the association is querried.
 
                                                     .. code-block:: python
+
                                                         [{
                                                             "networkSourceId": <int>,
                                                             "globalId" : <guid>,
@@ -955,6 +961,7 @@ class UtilityNetworkManager(object):
                                                     the association is queried.
 
                                                     .. code-block:: python
+
                                                         [{
                                                             "networkSourceId": <int>,
                                                             "globalId" : <guid>,
@@ -1313,6 +1320,7 @@ class TraceConfigurationsManager(object):
                                     types of results to return.
 
                                     .. code-block:: python
+
                                         [{
                                             "type" : "elements" | "aggregatedGeometry",
                                             "includeGeometry" : true | false,
@@ -1396,6 +1404,7 @@ class TraceConfigurationsManager(object):
                                     types of results to return.
 
                                     .. code-block:: python
+
                                         [{
                                             "type" : "elements" | "aggregatedGeometry",
                                             "includeGeometry" : true | false,

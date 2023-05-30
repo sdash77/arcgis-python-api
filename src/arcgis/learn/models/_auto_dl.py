@@ -511,10 +511,10 @@ class AutoDL:
             "UperNet",
             "SingleShotDetector",
             "MaskRCNN",
-            "DETReg",
             "RetinaNet",
             "FasterRCNN",
             "YOLOv3",
+            "DETReg",
             "ATSS",
             "CARAFE",
             "CascadeRPN",
@@ -1945,8 +1945,9 @@ class AutoDL:
         algos = self._all_algorithms
         for algo in algos:
             if algo in algorithms:
-                sorted_algos.append(algo)
-        return list(set(sorted_algos))
+                if algo not in sorted_algos:
+                    sorted_algos.append(algo)
+        return list(sorted_algos)
 
     def supported_classification_models(self):
         """
@@ -1982,11 +1983,10 @@ class AutoDL:
         """
         return [
             "SingleShotDetector",
-            "DETReg",
-            "MaskRCNN",
             "RetinaNet",
             "FasterRCNN",
             "YOLOv3",
+            "DETReg",
             "MMDetection",
             "ATSS",
             "CARAFE",
@@ -2009,6 +2009,7 @@ class AutoDL:
             "Res2Net",
             "SABL",
             "VFNet",
+            "MaskRCNN",
         ]
 
     def lr_find(self):

@@ -97,6 +97,7 @@ def enrich_layer(
 
 
                                                                               .. code-block:: python
+
                                                                                 # Example Usage
 
                                                                                                           "ymin": -9187921.892449,

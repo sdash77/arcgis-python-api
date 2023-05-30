@@ -25,3 +25,4 @@ winkerberos;platform_system=="Windows"
 requests-gssapi
 dask  >=2023.3.2
 pyspnego >=0.8.0
+matplotlib-inline
