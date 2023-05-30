@@ -17,17 +17,17 @@ class TestQueryAnalytics(unittest.TestCase):
     # ----------------------------------------------------------------------
     def test_query(self):
         """Tests the simple query analytics call"""
-        url = "https://servicesdev1.arcgis.com/lidGgNLxw9LL0SbI/arcgis/rest/services/counties/FeatureServer/0"
+        url = "https://servicesdev1.arcgis.com/lidGgNLxw9LL0SbI/ArcGIS/rest/services/countries/FeatureServer/0"
         gis = GIS(profile=PROFILES[0], verify_cert=False)
         fl = FeatureLayer(url, gis=gis)
         analytics = [
             {
                 "analyticType": "CUME_DIST",
-                "onAnalyticField": "POP1990",
+                "onAnalyticField": "POP2007",
                 "outAnalyticFieldName": "CumDistance",
                 "analyticParameters": {
-                    "orderBy": "POP1990",
-                    "partitionBy": "state_name",
+                    "orderBy": "POP2007",
+                    "partitionBy": "CNTRY_NAME",
                 },
             }
         ]
@@ -39,17 +39,17 @@ class TestQueryAnalytics(unittest.TestCase):
     ##----------------------------------------------------------------------
     def test_query_async(self):
         """Tests the simple query analytics call"""
-        url = "https://servicesdev1.arcgis.com/lidGgNLxw9LL0SbI/arcgis/rest/services/counties/FeatureServer/0"
+        url = "https://servicesdev1.arcgis.com/lidGgNLxw9LL0SbI/ArcGIS/rest/services/countries/FeatureServer/0"
         gis = GIS(profile=PROFILES[0], verify_cert=False)
         fl = FeatureLayer(url, gis=gis)
         analytics = [
             {
                 "analyticType": "CUME_DIST",
-                "onAnalyticField": "POP1990",
+                "onAnalyticField": "POP2007",
                 "outAnalyticFieldName": "CumDistance",
                 "analyticParameters": {
-                    "orderBy": "POP1990",
-                    "partitionBy": "state_name",
+                    "orderBy": "POP2007",
+                    "partitionBy": "CNTRY_NAME",
                 },
             }
         ]
@@ -63,17 +63,17 @@ class TestQueryAnalytics(unittest.TestCase):
     # ----------------------------------------------------------------------
     def test_query_async_less_than_100(self):
         """Tests the simple query analytics call"""
-        url = "https://servicesdev1.arcgis.com/lidGgNLxw9LL0SbI/arcgis/rest/services/counties/FeatureServer/0"
+        url = "https://servicesdev1.arcgis.com/lidGgNLxw9LL0SbI/ArcGIS/rest/services/countries/FeatureServer/0"
         gis = GIS(profile=PROFILES[0], verify_cert=False)
         fl = FeatureLayer(url, gis=gis)
         analytics = [
             {
                 "analyticType": "CUME_DIST",
-                "onAnalyticField": "POP1990",
+                "onAnalyticField": "POP2007",
                 "outAnalyticFieldName": "CumDistance",
                 "analyticParameters": {
-                    "orderBy": "POP1990",
-                    "partitionBy": "state_name",
+                    "orderBy": "POP2007",
+                    "partitionBy": "CNTRY_NAME",
                 },
             }
         ]

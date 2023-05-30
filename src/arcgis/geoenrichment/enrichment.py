@@ -32,6 +32,7 @@ from ._business_analyst._utils import (
     avail_arcpy,
 )
 from ._ge import _GeoEnrichment
+from ._helper import service_properties
 
 
 def _check_gis_source(gis=None):
@@ -891,16 +892,55 @@ class Country(object):
             )
 
         """
-        # pull out named areas if present
-        if isinstance(study_areas, Iterable) and not isinstance(
+        # pull out named area properties if present and set to use country instead of just BA global
+        standard_geography_level = None
+
+        # If dictionary was passed, turn to list
+        if isinstance(study_areas, dict):
+            if isinstance(study_areas, Geometry):
+                study_areas = [study_areas]
+            else:
+                study_areas = list(study_areas.values())
+
+        if isinstance(study_areas, BufferStudyArea):
+            study_areas = [study_areas]
+
+        ### Begin creating Study Area ###
+        if isinstance(study_areas, list):
+            # For extent
+            study_areas = [
+                Geometry(area).polygon
+                if isinstance(area, dict) and "xmin" in area
+                else area
+                for area in study_areas
+            ]
+            first_geo = study_areas[0]
+            for index, value in enumerate(study_areas):
+                if isinstance(value, BufferStudyArea):
+                    # returns a string
+                    value = value.area
+                    study_areas[index] = value
+        if isinstance(study_areas, GeoAccessor) or isinstance(
             study_areas, pd.DataFrame
         ):
-            if isinstance(study_areas, dict):
-                study_areas = list(study_areas.values())
-            first_geo = study_areas[0]
-            if isinstance(first_geo, NamedArea):
-                study_areas = [na._areaid for na in study_areas]
-                standard_geography_level = first_geo._currlvl
+            if isinstance(study_areas, pd.DataFrame):
+                study_areas = study_areas.spatial
+            first_geo = Point(
+                {
+                    "x": study_areas.true_centroid[0],
+                    "y": study_areas.true_centroid[1],
+                    "spatialReference": study_areas.sr,
+                }
+            )
+            study_areas = study_areas._data
+
+        # assign further properties if found
+        if isinstance(first_geo, NamedArea):
+            standard_geography_level = first_geo._currlvl
+        elif isinstance(first_geo, BufferStudyArea):
+            proximity_metric = first_geo.units.lower() if first_geo.units else None
+            proximity_value = first_geo.radii
+            proximity_type = first_geo.travel_mode
 
         # if data collections passed in kwargs, pull enrich variables out
         if "data_collections" in kwargs.keys():
@@ -1629,16 +1669,27 @@ def enrich(
 
     # If dictionary was passed, turn to list
     if isinstance(study_areas, dict):
-        study_areas = list(study_areas.values())
+        if isinstance(study_areas, Geometry):
+            study_areas = [study_areas]
+        else:
+            study_areas = list(study_areas.values())
 
     if isinstance(study_areas, BufferStudyArea):
         study_areas = list(study_areas)
-
     # keep list of countries for data_collection check
     sa_to_country = {}
 
     ### Begin creating Study Area to Country dict ###
     if isinstance(study_areas, list):
+        # Process the study areas for extent values
+        #
+        # [f(x) if condition else g(x) for x in sequence]
+        study_areas = [
+            Geometry(area).polygon
+            if isinstance(area, dict) and "xmin" in area
+            else area
+            for area in study_areas
+        ]
         first_geo = study_areas[0]
         for index, value in enumerate(study_areas):
             cntry = None
@@ -1676,6 +1727,12 @@ def enrich(
                         value = value["geometry"]
                     # geocode the geom and extract the country
                     geocoded_area = reverse_geocode(value)
+                    cntry = Country(geocoded_area["address"]["CountryCode"])
+                elif isinstance(value, dict) and "xmin" in value:
+                    extent = Geometry(value)
+                    centroid = extent.polygon.true_centroid
+                    value = extent.polygon
+                    geocoded_area = reverse_geocode(centroid)
                     cntry = Country(geocoded_area["address"]["CountryCode"])
             if index == 0:
                 # if the first instance is a geocoded area, assign enrich_src
@@ -2234,8 +2291,19 @@ def interesting_facts(
     """
     if gis is None:
         gis: GIS = _env.active_gis
+    if (
+        "supportedOperations" in service_properties(gis=gis)
+        and not "InterestingFacts" in service_properties(gis=gis)["supportedOperations"]
+    ):
+        raise Exception(
+            "Interesting Facts functionality is not supported. Please make "
+            "sure you are using ArcGIS Online or Enterprise version the supports "
+            "interesting facts and check with your administrator to enable this functi"
+            "onality."
+        )
     if out_sr is None:
         out_sr = {"wkid": 3857}
+
     url: str = f"{gis.properties.helperServices.geoenrichment.url}/Geoenrichment/InterestingFacts"
     study_areas = _process_study_areas(areas=study_areas)
     params = {

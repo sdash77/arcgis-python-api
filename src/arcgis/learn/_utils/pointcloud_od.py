@@ -684,6 +684,7 @@ def predict_batch_h5(self, dl, output_path, progressor):
                 boxes_pred = []
                 labels_pred = []
                 confidence_pred = []
+                boxes_tile_no = []
                 point_box_ids = np.full(batch_num, 0, dtype=np.uint32)
                 low = high = 0
                 start_box_id = [1]
@@ -693,13 +694,15 @@ def predict_batch_h5(self, dl, output_path, progressor):
                 pred[unique_index[i] : unique_index[i + 1]],
                 data["points"][unique_index[i] : unique_index[i + 1]],
                 start_box_id,
+                tile_index,
             )
 
             boxes_pred.extend(predictions[0])
             labels_pred.extend(predictions[1])
             confidence_pred.extend(predictions[2])
-            high = low + predictions[3].shape[0]
-            point_box_ids[low:high] = predictions[3]
+            boxes_tile_no.extend(predictions[3])
+            high = low + predictions[4].shape[0]
+            point_box_ids[low:high] = predictions[4]
 
             if high == batch_num:
                 save_h5(
@@ -707,6 +710,7 @@ def predict_batch_h5(self, dl, output_path, progressor):
                     np.array(boxes_pred),
                     np.array(labels_pred),
                     np.array(confidence_pred),
+                    np.array(boxes_tile_no),
                     point_box_ids,
                 )
             low = high
@@ -732,10 +736,11 @@ def export_boxes(bboxes, scale_factor):
     ).tolist()
 
 
-def split_prediction(model, preds, points, start_box_id):
+def split_prediction(model, preds, points, start_box_id, tile_index):
     batch_export_bboxs = []
     batch_labels = []
     batch_confidance = []
+    batch_box_tiles = []
     batch_point_box_ids = []
     for idx, pred in enumerate(preds):
         boxes = pred["boxes_3d"]
@@ -754,17 +759,21 @@ def split_prediction(model, preds, points, start_box_id):
             np.array(list(model._data.idx2class.values()))[labels.tolist()]
         )
         batch_confidance.extend(scores.tolist())
+        batch_box_tiles.extend([tile_index[idx]] * scores.shape[0])
         batch_point_box_ids.extend(tile_box_ids.tolist())
 
     return (
         batch_export_bboxs,
         batch_labels,
         batch_confidance,
+        batch_box_tiles,
         np.array(batch_point_box_ids),
     )
 
 
-def save_h5(filename, boxes_pred, labels_pred, confidences_pred, box_ids):
+def save_h5(
+    filename, boxes_pred, labels_pred, confidences_pred, boxes_tile_no, box_ids
+):
     filename = Path(filename)
     if not filename.parent.exists():
         filename.parent.mkdir(parents=True, exist_ok=True)
@@ -774,4 +783,5 @@ def save_h5(filename, boxes_pred, labels_pred, confidences_pred, box_ids):
         file.create_dataset("pred_boxes", data=boxes_pred)
         file.create_dataset("pred_labels", data=labels_pred)
         file.create_dataset("pred_confidence", data=confidences_pred)
+        file.create_dataset("pred_boxes_block", data=boxes_tile_no)
         file.create_dataset("point_box_ids", data=box_ids)

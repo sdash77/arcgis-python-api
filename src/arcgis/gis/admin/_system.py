@@ -1020,7 +1020,8 @@ class PortalLicense(BasePortalAdmin):
         :return: Boolean. True if successful else False.
 
         .. code-block:: python
-            **Sample Usage**
+
+            # Example Usage
             >>> gis.admin.system.licenses.update(info={ "hostname": "licensemanager.domain.com,backuplicensemanager.domain.com",
                                                     "port": 27000
                                                   })

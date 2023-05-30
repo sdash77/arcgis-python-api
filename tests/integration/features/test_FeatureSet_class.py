@@ -36,6 +36,7 @@ except ImportError:
     raise (exit())
 # endregion PreCondition Check
 
+
 # TestModule
 @unittest.skipIf(
     module_skip, "Precondition check failed. Skipping tests in Features module"
@@ -75,13 +76,13 @@ class Test_Feature_class(unittest.TestCase):
         # endregion
 
         # region precondition checks and sign in
-        r1 = PreconditionChecks.can_ping_portal(GIS(profile="your_ent_admin_profile").url)
+        r1 = PreconditionChecks.can_ping_portal(
+            GIS(profile="your_ent_admin_profile").url
+        )
         if not r1:
             cls.class_skip = True
 
-        cls.gis = GIS(
-            profile="your_ent_admin_profile", verify_cert=False
-        )
+        cls.gis = GIS(profile="your_ent_admin_profile", verify_cert=False)
         if cls.gis is None:
             cls.class_skip = True
 
@@ -112,11 +113,12 @@ class Test_Feature_class(unittest.TestCase):
         :return:
         """
         try:
-
             temp = None
             gis = GIS()
             # calling a feature layer corresponding to the USA Freeway System in arcgis online
-            content = gis.content.get("c6b6cebc24ea4c619fbf4f5ed124fefa") # original item: 91c6a5f6410b4991ab0db1d7c26daacb"
+            content = gis.content.get(
+                "c6b6cebc24ea4c619fbf4f5ed124fefa"
+            )  # original item: 91c6a5f6410b4991ab0db1d7c26daacb"
 
             layer = content.layers[0]
             features_req = layer.query(where="OBJECTID = 1")
@@ -145,7 +147,6 @@ class Test_Feature_class(unittest.TestCase):
         :return:
         """
         try:
-
             temp = None
 
             gis = GIS()
@@ -370,6 +371,7 @@ class Test_Feature_class(unittest.TestCase):
 
     def tearDown(self):
         print("------------------------------------------------------------------\n")
+
 
 if __name__ == "__main__":
     unittest.main()

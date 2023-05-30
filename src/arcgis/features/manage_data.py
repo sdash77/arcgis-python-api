@@ -105,7 +105,7 @@ def generate_tessellation(
         If ``future = True``, then the result is a :class:`~concurrent.futures.Future` object. Call ``result()`` to get the response.
 
     """
-    if bin_resolution > 15 or bin_resolution < 0:
+    if not bin_resolution is None and (bin_resolution > 15 or bin_resolution < 0):
         raise ValueError("bin_resolution must be between 0 to 15")
     gis = _arcgis.env.active_gis if gis is None else gis
     if not ((context and "extent" in context) or extent_layer):

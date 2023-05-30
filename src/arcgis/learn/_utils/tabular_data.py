@@ -49,12 +49,17 @@ try:
 except:
     HAS_SK_LEARN = False
 
+warnings.formatwarning = lambda msg, *args, **kwargs: f"{msg}\n"
+
 
 class DummyTransform(object):
     def __int__(self):
         pass
 
     def fit_transform(self, x):
+        return x
+
+    def transform(self, x):
         return x
 
     def inverse_transform(self, x):
@@ -254,6 +259,7 @@ class TabularDataObject(object):
                     set([i for i in range(len(tabular_data._dataframe))])
                     - set(validation_indexes)
                 )
+
         if not tabular_data._dependent_variable:
             tabular_data._training_indexes = list(
                 set([i for i in range(len(tabular_data._dataframe))])
@@ -262,7 +268,6 @@ class TabularDataObject(object):
             tabular_data._validation_indexes = list(
                 set([i for i in range(len(tabular_data._dataframe))])
             )
-
         if tabular_data._dependent_variable:
             tabular_data._is_classification = tabular_data._is_classification()
         else:
@@ -461,17 +466,22 @@ class TabularDataObject(object):
                 260144,
                 "ERROR",
             )
+        classification_check_list = []
+        for columns in labels.columns:
+            unique_labels = labels[columns].unique()
 
-        unique_labels = labels.unique()
+            column_label = np.array(labels[columns])
 
-        labels = np.array(labels)
+            # from numbers import Integral
 
-        from numbers import Integral
-
-        if isinstance(labels[0], (float, np.float32)) or len(unique_labels) > 20:
-            return False
-        else:
-            return True
+            if (
+                isinstance(column_label[0], (float, np.float32))
+                or len(unique_labels) > 20
+            ):
+                classification_check_list.append(False)
+            else:
+                classification_check_list.append(True)
+        return all(classification_check_list)
 
     def _is_categorical(self, labels):
         unique_labels = labels.unique()
@@ -483,7 +493,8 @@ class TabularDataObject(object):
         if isinstance(labels[0], (float, np.float32)) or len(unique_labels) > 20:
             return False
 
-        if isinstance(int(labels[0]), (str, Integral)):
+        # if isinstance(int(labels[0]), (str, Integral)): # removing type casting.
+        if isinstance(labels[0], (str, Integral)):
             return True
 
     @property
@@ -515,14 +526,18 @@ class TabularDataObject(object):
             raise Exception("This module requires scikit-learn.")
 
         dataframe = self._dataframe
+        # Dtype conversion because native pandas format will break the plotting libraries
+        for i in dataframe.columns:
+            if isinstance(dataframe.loc[:, i].dtype, pd.Float64Dtype):
+                dataframe.loc[:, i] = dataframe.loc[:, i].astype(np.float64)
 
         labels = None
+        # restore the behaviour as earler
+        if isinstance(self._dependent_variable, list):
+            self._dependent_variable = self._dependent_variable[0]
 
         if self._dependent_variable:
-            labels = np.array(
-                dataframe[self._dependent_variable],
-                dtype=dataframe[self._dependent_variable].dtype.type,
-            )
+            labels = np.array(dataframe[self._dependent_variable])
             dataframe = dataframe.drop(self._dependent_variable, axis=1)
 
         if not self._procs:
@@ -568,17 +583,10 @@ class TabularDataObject(object):
 
         try:
             processed_data = _procs.fit_transform(dataframe)
-            if self._procs:
-                list_of_transformed_cols = []
-                for cnt, transform in enumerate(self._procs.transformers):
-                    for col in self._procs.transformers[cnt][-1]:
-                        list_of_transformed_cols.append(col)
-                processed_orig_data = dataframe.copy()
-                processed_orig_data[list_of_transformed_cols] = processed_data
-                processed_data = processed_orig_data
         except:
             msg = arcpy_localization_helper(
-                "Unable to fit transforms. This could be because some of the columns in your dataset have multiple datatypes.",
+                "Unable to fit transforms. This could be because some of the columns in your dataset have multiple "
+                "datatypes.",
                 260143,
                 "ERROR",
             )
@@ -619,11 +627,20 @@ class TabularDataObject(object):
 
         return training_data, training_labels, validation_data, validation_labels
 
-    def _time_series_bunch(self, seq_len, location_var, normalize=True, bunch=True):
+    def _time_series_bunch(
+        self, seq_len, location_var, normalize=True, bunch=True, multistep=False
+    ):
+        step = 1
+        if multistep and len(list(self._dataframe.columns.values)) != 1:
+            step = seq_len // 2
+
         if self._index_data is not None:
             bunched = []
-            for i in range(len(self._index_data) - seq_len - 1):
-                bunched.append(list(self._index_data[i : i + seq_len]))
+            # Changing it because it misses the edge case
+            # for i in range(len(self._index_data) - seq_len - 1):
+            for i in range(len(self._index_data) - seq_len - (step - 1)):
+                for st in range(step):
+                    bunched.append(list(self._index_data[i + st : i + seq_len + st]))
 
             self._index_seq = np.array(bunched)
 
@@ -646,7 +663,7 @@ class TabularDataObject(object):
             return self._univariate_bunch(seq_len, normalize, bunch, location_var_data)
         else:
             return self._multivariate_bunch(
-                seq_len, normalize, bunch, location_var_data
+                seq_len, normalize, bunch, location_var_data, multistep=multistep
             )
 
     def _raster_timeseries_bunch(self, normalize=True, bunched=True):
@@ -660,60 +677,12 @@ class TabularDataObject(object):
         ):
             kwargs_variables["device"] = torch.device("cpu")
 
-        self._encoder_mapping = None
-        mapping = {}
-        df = self._dataframe.copy()  # .drop(self._dependent_variable, axis=1)
-
-        for col in list(df.columns.values):
-            if self._is_categorical(df[col]):
-                labelEncoder = LabelEncoder()
-                df[col] = np.array(labelEncoder.fit_transform(df[col]), dtype="int64")
-                mapping[col] = labelEncoder
-
-        self._encoder_mapping = mapping
-
-        if normalize:
-            if len(self._column_transforms_mapping) == 0:
-                for col in list(df.columns):
-                    self._column_transforms_mapping[col] = [MinMaxScaler()]
-            else:
-                for col in list(df.columns):
-                    if len(self._column_transforms_mapping.get(col, [])) == 0:
-                        self._column_transforms_mapping[col] = [DummyTransform()]
-
-            processed_dataframe = df.copy()
-            for col in list(df.columns):
-                transformed_data = df[col]
-                for transform in self._column_transforms_mapping.get(col, []):
-                    try:
-                        transformed_data = transform.fit_transform(
-                            np.array(transformed_data, dtype=df[col].dtype).reshape(
-                                -1, 1
-                            )
-                        )
-                    except:
-                        transformed_data = transform.fit_transform(
-                            np.array(
-                                transformed_data,
-                                dtype=type(df[col][0]),
-                            ).reshape(-1, 1)
-                        )
-                    transformed_data = transformed_data.squeeze(1)
-                try:
-                    processed_dataframe[col] = np.array(
-                        transformed_data, dtype=df[col].dtype
-                    )
-                except:
-                    processed_dataframe[col] = np.array(
-                        transformed_data, dtype=type(df[col][0])
-                    )
-        else:
-            processed_dataframe = df.copy()
-
+        processed_dataframe = self._col_transform(normalize=normalize)
         big_bunch = []
 
         proc_df = processed_dataframe.copy()
         proc_df = proc_df.drop(self._dependent_variable, axis=1)
+        # Why this was inserted it can simply be converted to array
 
         for i in range(len(processed_dataframe)):
             big_bunch.append([proc_df.iloc[i].values])
@@ -724,6 +693,7 @@ class TabularDataObject(object):
         validation_indexes = random.sample(
             range(big_bunch.shape[0]), round(self._val_split_pct * big_bunch.shape[0])
         )
+
         self._validation_indexes_ts = validation_indexes
 
         self._training_indexes_ts = list(
@@ -756,8 +726,11 @@ class TabularDataObject(object):
         return data
 
     def _multivariate_bunch(
-        self, seq_len, normalize=True, bunched=True, location_var=None
+        self, seq_len, normalize=True, bunched=True, location_var=None, multistep=False
     ):
+        step = 1
+        if multistep:
+            step = seq_len // 2
         kwargs_variables = {"num_workers": 0} if sys.platform == "win32" else {}
 
         kwargs_variables["bs"] = self._bs
@@ -768,64 +741,23 @@ class TabularDataObject(object):
         ):
             kwargs_variables["device"] = torch.device("cpu")
 
-        self._encoder_mapping = None
-        mapping = {}
-        df = self._dataframe.copy()  # .drop(self._dependent_variable, axis=1)
-
-        for col in list(df.columns.values):
-            if self._is_categorical(df[col]):
-                labelEncoder = LabelEncoder()
-                df[col] = np.array(labelEncoder.fit_transform(df[col]), dtype="int64")
-                mapping[col] = labelEncoder
-
-        self._encoder_mapping = mapping
-
-        if normalize:
-            if len(self._column_transforms_mapping) == 0:
-                for col in list(df.columns):
-                    self._column_transforms_mapping[col] = [MinMaxScaler()]
-            else:
-                for col in list(df.columns):
-                    if len(self._column_transforms_mapping.get(col, [])) == 0:
-                        self._column_transforms_mapping[col] = [DummyTransform()]
-
-            processed_dataframe = df.copy()
-            for col in list(df.columns):
-                transformed_data = df[col]
-                for transform in self._column_transforms_mapping.get(col, []):
-                    try:
-                        transformed_data = transform.fit_transform(
-                            np.array(transformed_data, dtype=df[col].dtype).reshape(
-                                -1, 1
-                            )
-                        )
-                    except:
-                        transformed_data = transform.fit_transform(
-                            np.array(
-                                transformed_data,
-                                dtype=type(df[col][0]),
-                            ).reshape(-1, 1)
-                        )
-                    transformed_data = transformed_data.squeeze(1)
-                try:
-                    processed_dataframe[col] = np.array(
-                        transformed_data, dtype=df[col].dtype
-                    )
-                except:
-                    processed_dataframe[col] = np.array(
-                        transformed_data, dtype=type(df[col][0])
-                    )
-        else:
-            processed_dataframe = df.copy()
-
+        processed_dataframe = self._col_transform(normalize)
         big_bunch = []
-
+        target_bunch = []
         if location_var is not None:
             big_loc_processed_dataframe = pd.DataFrame()
             big_loc_processed_dataframe["temp_location"] = location_var
             unq_locations = location_var.unique()
         else:
             unq_locations = [None]
+        # preserve the ordering of the column
+        order_columns = (
+            self._dependent_variable
+            + self._continuous_variables
+            + self._categorical_variables
+        )
+        processed_dataframe = processed_dataframe.loc[:, order_columns]
+
         for k in range(len(unq_locations)):
             if unq_locations[0] is not None:
                 loc_processed_dataframe = processed_dataframe[
@@ -834,19 +766,32 @@ class TabularDataObject(object):
                 loc_processed_dataframe.reset_index(inplace=True, drop=True)
             else:
                 loc_processed_dataframe = processed_dataframe
-            for i in range(len(loc_processed_dataframe) - seq_len - 1):
+
+            for i in range(len(loc_processed_dataframe) - seq_len - step):
                 bunch = []
+                tb = []
                 for col in list(loc_processed_dataframe.columns.values):
                     bunch.append(list(loc_processed_dataframe[col][i : i + seq_len]))
-
+                    if col in self._dependent_variable:
+                        small_tb = []
+                        for st in range(step):
+                            small_tb.append(
+                                loc_processed_dataframe[col][i + st + seq_len]
+                            )
+                        tb.append(small_tb)
                 big_bunch.append(bunch)
+                target_bunch.append(
+                    np.stack(tb, axis=1).ravel()
+                )  # relying on the fastai loss calculation where they
+                # flatten the output then calculate the loss
 
         big_bunch = np.array(big_bunch)
-
+        target_bunch = np.array(target_bunch)
         random.seed(self._seed)
         validation_indexes = random.sample(
             range(big_bunch.shape[0]), round(self._val_split_pct * big_bunch.shape[0])
         )
+
         self._validation_indexes_ts = validation_indexes
 
         self._training_indexes_ts = list(
@@ -855,17 +800,8 @@ class TabularDataObject(object):
 
         X_train = big_bunch.take(self._training_indexes_ts, axis=0)
         X_valid = big_bunch.take(self._validation_indexes_ts, axis=0)
-
-        y_train = np.array(
-            processed_dataframe[self._dependent_variable].take(
-                self._training_indexes_ts
-            )
-        )
-        y_valid = np.array(
-            processed_dataframe[self._dependent_variable].take(
-                self._validation_indexes_ts
-            )
-        )
+        y_train = target_bunch.take(self._training_indexes_ts, axis=0)
+        y_valid = target_bunch.take(self._validation_indexes_ts, axis=0)
 
         if bunched is False:
             return X_train, X_valid, y_train, y_valid
@@ -879,6 +815,8 @@ class TabularDataObject(object):
         return data
 
     def _univariate_bunch(self, seq_len, normalize=True, bunch=True, location_var=None):
+        # handle the case, as the whole bunch is written as per string convert it to string
+        _dependent_variable = self._dependent_variable[0]
         kwargs_variables = {"num_workers": 0} if sys.platform == "win32" else {}
 
         kwargs_variables["bs"] = self._bs
@@ -899,49 +837,45 @@ class TabularDataObject(object):
             self._encoder_mapping = None
             mapping = {}
             labelEncoder = LabelEncoder()
-            self._dataframe[self._dependent_variable] = np.array(
-                labelEncoder.fit_transform(self._dataframe[self._dependent_variable]),
+            self._dataframe[_dependent_variable] = np.array(
+                labelEncoder.fit_transform(self._dataframe[_dependent_variable]),
                 dtype="int64",
             )
-            mapping[self._dependent_variable] = labelEncoder
+            mapping[_dependent_variable] = labelEncoder
             self._encoder_mapping = mapping
 
         if normalize:
-            if not self._column_transforms_mapping.get(self._dependent_variable):
-                self._column_transforms_mapping[self._dependent_variable] = [
-                    MinMaxScaler()
-                ]
+            if not self._column_transforms_mapping.get(_dependent_variable):
+                self._column_transforms_mapping[_dependent_variable] = [MinMaxScaler()]
 
             processed_dataframe = self._dataframe.copy()
-            transformed_data = processed_dataframe[self._dependent_variable]
-            for transform in self._column_transforms_mapping[self._dependent_variable]:
+            transformed_data = processed_dataframe[_dependent_variable]
+            for transform in self._column_transforms_mapping[_dependent_variable]:
                 try:
                     transformed_data = transform.fit_transform(
                         np.array(
                             transformed_data,
-                            dtype=processed_dataframe[self._dependent_variable].dtype,
+                            dtype=processed_dataframe[_dependent_variable].dtype,
                         ).reshape(-1, 1)
                     )
                 except:
                     transformed_data = transform.fit_transform(
                         np.array(
                             transformed_data,
-                            dtype=type(
-                                processed_dataframe[self._dependent_variable][0]
-                            ),
+                            dtype=type(processed_dataframe[_dependent_variable][0]),
                         ).reshape(-1, 1)
                     )
                 transformed_data = transformed_data.squeeze(1)
 
             try:
-                processed_dataframe[self._dependent_variable] = np.array(
+                processed_dataframe[_dependent_variable] = np.array(
                     transformed_data,
-                    dtype=self._dataframe[self._dependent_variable].dtype,
+                    dtype=self._dataframe[_dependent_variable].dtype,
                 )
             except:
-                processed_dataframe[self._dependent_variable] = np.array(
+                processed_dataframe[_dependent_variable] = np.array(
                     transformed_data,
-                    dtype=type(processed_dataframe[self._dependent_variable][0]),
+                    dtype=type(processed_dataframe[_dependent_variable][0]),
                 )
         else:
             processed_dataframe = self._dataframe.copy()
@@ -963,22 +897,20 @@ class TabularDataObject(object):
                 loc_processed_dataframe.reset_index(inplace=True, drop=True)
             else:
                 loc_processed_dataframe = processed_dataframe
-            for i in range(
-                len(loc_processed_dataframe[self._dependent_variable]) - seq_len
-            ):
+            for i in range(len(loc_processed_dataframe[_dependent_variable]) - seq_len):
                 for j in range(seq_len):
                     if (
-                        len(loc_processed_dataframe[self._dependent_variable])
+                        len(loc_processed_dataframe[_dependent_variable])
                         > i + seq_len - 1
                     ):
                         df_columns[f"att{j + 1}"].append(
-                            loc_processed_dataframe[self._dependent_variable][i + j]
+                            loc_processed_dataframe[_dependent_variable][i + j]
                         )
                     else:
                         continue
 
                 df_columns["target"].append(
-                    loc_processed_dataframe[self._dependent_variable][i + seq_len]
+                    loc_processed_dataframe[_dependent_variable][i + seq_len]
                 )
 
         df = pd.DataFrame(df_columns)
@@ -1022,6 +954,77 @@ class TabularDataObject(object):
 
         return data
 
+    def _col_transform(self, normalize):
+        self._encoder_mapping = None
+        mapping = {}
+        df = self._dataframe.copy()  # .drop(self._dependent_variable, axis=1)
+
+        for col in list(df.columns.values):
+            if self._is_categorical(df[col]):
+                labelEncoder = LabelEncoder()
+                df[col] = np.array(labelEncoder.fit_transform(df[col]), dtype="int64")
+                mapping[col] = labelEncoder
+                if col not in self._categorical_variables:
+                    warnings.warn(
+                        f"Field {col} is not marked as categorical. But, "
+                        f"we inferred it as categorical variable. Treating it as categorical variable"
+                        f" for processing. "
+                    )
+                    self._categorical_variables.append(col)
+                    if col in self._continuous_variables:
+                        self._continuous_variables.remove(col)
+
+        self._encoder_mapping = mapping
+        if normalize:
+            for col in list(df.columns):
+                if len(self._column_transforms_mapping.get(col, [])) == 0:
+                    if col in self._encoder_mapping:
+                        self._column_transforms_mapping[col] = [
+                            self._encoder_mapping[col]
+                        ]
+                    else:
+                        self._column_transforms_mapping[col] = [MinMaxScaler()]
+                else:
+                    # adding this to preserve the default label encoder.
+                    if col in self._encoder_mapping:
+                        self._column_transforms_mapping[col] = [
+                            self._encoder_mapping[col]
+                        ]
+
+            processed_dataframe = df.copy()
+            for col in list(df.columns):
+                transformed_data = df[col]
+                for transform in self._column_transforms_mapping.get(col, []):
+                    if isinstance(transform, LabelEncoder):
+                        transformed_data = np.array(transformed_data).reshape(-1, 1)
+                    else:
+                        try:
+                            transformed_data = transform.fit_transform(
+                                np.array(transformed_data, dtype=df[col].dtype).reshape(
+                                    -1, 1
+                                )
+                            )
+                        except:
+                            transformed_data = transform.fit_transform(
+                                np.array(
+                                    transformed_data,
+                                    dtype=type(df[col][0]),
+                                ).reshape(-1, 1)
+                            )
+                        transformed_data = transformed_data.squeeze(1)
+                try:
+                    processed_dataframe[col] = np.array(
+                        transformed_data, dtype=df[col].dtype
+                    )
+                except:
+                    processed_dataframe[col] = np.array(
+                        transformed_data, dtype=type(df[col][0])
+                    )
+        else:
+            processed_dataframe = df.copy()
+
+        return processed_dataframe
+
     def _process_data(self, dataframe, fit=True):
         if not HAS_NUMPY:
             raise Exception("This module requires numpy.")
@@ -1047,22 +1050,41 @@ class TabularDataObject(object):
         if self._encoder_mapping:
             for variable, encoder in self._encoder_mapping.items():
                 try:
-                    dataframe[variable] = np.array(
-                        encoder.fit_transform(
-                            dataframe[variable].values.astype(str).reshape(-1, 1)
-                        ),
-                        dtype="int64",
-                    )
+                    if fit:
+                        dataframe[variable] = np.array(
+                            encoder.fit_transform(
+                                dataframe[variable].values.astype(str).reshape(-1, 1)
+                            ),
+                            dtype="int64",
+                        )
+                    else:
+                        dataframe[variable] = np.array(
+                            encoder.transform(
+                                dataframe[variable].values.astype(str).reshape(-1, 1)
+                            ),
+                            dtype="int64",
+                        )
                 except:
-                    dataframe[variable] = np.array(
-                        encoder.fit_transform(
-                            dataframe[variable]
-                            .values.astype(str)
-                            .to_numpy()
-                            .reshape(-1, 1)
-                        ),
-                        dtype="int64",
-                    )
+                    if fit:
+                        dataframe[variable] = np.array(
+                            encoder.fit_transform(
+                                dataframe[variable]
+                                .values.astype(str)
+                                .to_numpy()
+                                .reshape(-1, 1)
+                            ),
+                            dtype="int64",
+                        )
+                    else:
+                        dataframe[variable] = np.array(
+                            encoder.transform(
+                                dataframe[variable]
+                                .values.astype(str)
+                                .to_numpy()
+                                .reshape(-1, 1)
+                            ),
+                            dtype="int64",
+                        )
 
         if fit:
             processed_data = _procs.fit_transform(dataframe)
@@ -1110,7 +1132,7 @@ class TabularDataObject(object):
 
         random_batch = random.sample(self._training_indexes, rows)
 
-        # using loc instead of iloc to get data when dataframe doesnt have continuous indexes
+        # using loc instead of iloc to get data when dataframe doesn't have continuous indexes
         if self._is_classification:
             return self._dataframe.loc[random_batch].sort_index()
         else:
@@ -1164,7 +1186,13 @@ class TabularDataObject(object):
                 for j in range(rows):
                     for predictor in X_train_sample[i + j]:
                         axs[i, j].plot(batched_index[i + j], predictor)
-                    axs[i, j].set_title(y_train_sample[i + j])
+
+                    if isinstance(y_train_sample[i + j], (list, np.ndarray)):
+                        val = ",".join([str(i) for i in y_train_sample[i + j]])
+                    else:
+                        val = y_train_sample[i + j]
+
+                    axs[i, j].set_title(val)
                     axs[i, j].tick_params(axis="x", labelrotation=60)
 
             plt.tight_layout()
@@ -1350,8 +1378,12 @@ class TabularDataObject(object):
                 if h3_field in dataframe_columns:
                     categorical_variables.append(h3_field)
         fields_to_keep = continuous_variables + categorical_variables
+        if isinstance(dependent_variable, str):
+            dependent_variable = [dependent_variable]
+
+        # Changes introduced to capture dependent var as a list.
         if dependent_variable:
-            fields_to_keep = fields_to_keep + [dependent_variable]
+            fields_to_keep = fields_to_keep + dependent_variable
 
         try:
             for col in fields_to_keep:
@@ -1365,7 +1397,7 @@ class TabularDataObject(object):
         for column in dataframe_columns:
             if column not in fields_to_keep:
                 dataframe = dataframe.drop(column, axis=1)
-            elif dependent_variable and column == dependent_variable:
+            elif dependent_variable and column in dependent_variable:
                 continue
             elif column in categorical_variables and dataframe[column].dtype == float:
                 warnings.warn(f"Changing column {column} to continuous")
@@ -1399,7 +1431,6 @@ class TabularDataObject(object):
                 ("Second", True),
                 ("Elapsed", False),
             ]
-
             for field in date_fields:
                 if field[0] in dataframe_columns:
                     if field[1]:
@@ -2405,3 +2436,4 @@ def global_interpretation(model, plot_type="bar", method="KernelRegressor"):
             explainer.expected_value[0], shap_values, df, matplotlib=True
         )
     return
+

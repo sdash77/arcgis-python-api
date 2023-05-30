@@ -2846,6 +2846,7 @@ class Sidecar:
         ==================      =======================================================================
 
         .. code-block:: python
+
             # Get sidecar from story and see the properties
             sc = story.get(<sidecar_node_id>)
             sc.properties
@@ -2894,6 +2895,7 @@ class Sidecar:
         :return: An class instance of the node type.
 
         .. code-block:: python
+
             # Find the nodes associated with the sidecar
             sc = story.get(<sidecar_node_id>)
             sc.properties
@@ -3069,6 +3071,7 @@ class Sidecar:
         =======================     ====================================================================
 
         .. code-block:: python
+
             # Get sidecar from story and see the properties
             sc = story.get(<sidecar_node_id>)
             sc.properties
@@ -3668,6 +3671,7 @@ class MapTour:
         :return: An class instance of the node type.
 
         .. code-block:: python
+
             # Find the nodes associated with the map tour
             mt = story.get(<maptour_node_id>)
             mt.places
