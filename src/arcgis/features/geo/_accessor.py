@@ -2508,6 +2508,10 @@ class GeoAccessor(object):
         user = gis._username
         if isinstance(feature_service, str):
             service = content.get(feature_service)
+            fs_id = feature_service
+        else:
+            service = feature_service
+            fs_id = feature_service.id
 
         if service.owner != user:
             raise AssertionError("You must own the service to insert data to it.")
@@ -2521,10 +2525,6 @@ class GeoAccessor(object):
 
         origin_columns = self._data.columns.tolist()
         origin_index = copy.deepcopy(self._data.index)
-        if isinstance(feature_service, _gis.Item):
-            fs_id = feature_service.id
-        else:
-            fs_id = feature_service
 
         if service_name:
             # sanitize name
