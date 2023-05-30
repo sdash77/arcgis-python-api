@@ -17194,7 +17194,7 @@ class Layer(_GISResource):
         ==================     ====================================================================
         **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
-        item                   Required string. An item ID representing a layer.
+        item                   Required Item. An item containing layers.
         ------------------     --------------------------------------------------------------------
         index                  Optional int. The index of the layer amongst the item's layers
         ==================     ====================================================================
