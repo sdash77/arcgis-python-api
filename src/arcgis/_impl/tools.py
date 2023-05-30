@@ -5075,18 +5075,14 @@ class _FeatureAnalysisTools(BaseAnalytics):
             from arcgis.features._credits import _estimate_credits
 
             return _estimate_credits(task=task, parameters=params)
-        gpjob = self._tbx.generate_tessellations(
-            bin_type=bin_type,
-            bin_size=bin_size,
-            bin_size_unit=bin_size_unit,
-            extent_layer=extent_layer,
-            intersect_study_area=intersect_study_area,
-            output_name=output_name,
-            context=context,
-            gis=self._gis,
-            future=True,
-            bin_resolution=bin_resolution,
-        )
+        params = {}
+        for key in list(self._tbx.generate_tessellations.__annotations__.keys()):
+            if "return" != key:
+                params[key] = eval(key)
+
+        params["future"] = True
+
+        gpjob = self._tbx.generate_tessellations(**params)
         gpjob._is_fa = True
         if future:
             return gpjob

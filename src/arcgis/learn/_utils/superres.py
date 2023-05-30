@@ -1,10 +1,11 @@
 import numpy as np
-from math import exp, log10
+from math import exp, log10, ceil
 import torch
 import torch.nn.functional as F
 from torch.autograd import Variable
-from fastai.vision import ImageImageList, Tuple, subplots, plt
-from .common import ArcGISMSImage, ArcGISImageListRGB
+from fastai.vision import ImageImageList, Tuple, subplots, plt, random
+from .common import ArcGISMSImage, ArcGISImageListRGB, ArcGISImageList
+from .._utils.common import get_nbatches, get_top_padding
 
 
 def gaussian(window_size, sigma):
@@ -101,29 +102,106 @@ def psnr(img1, img2):
     return psnr
 
 
+class ArcGISImageListSR_MS(ArcGISImageList):
+    _div = None
+
+
+def standardize(x, means, stds):
+    return (x - np.array(means)[:, None, None]) / np.array(stds)[:, None, None]
+
+
 class ImageImageListSR(ImageImageList):
-    label_cls = ArcGISImageListRGB
+    label_cls = ArcGISImageListSR_MS
 
-    from fastai.basics import Optional
-
-    def show_xys(
-        self,
-        xs,
-        ys,
-        imgsize: int = 4,
-        figsize: Optional[Tuple[int, int]] = None,
-        **kwargs
-    ):
-        "Show the `xs` (inputs) and `ys`(targets)  on a figure of `figsize`."
-        axs = subplots(
-            len(xs), 2, imgsize=imgsize, figsize=figsize, weight="bold", size=14
-        )
-        for i, (x, y) in enumerate(zip(xs, ys)):
-            x.show(ax=axs[i, 0], **kwargs)
-            y.show(ax=axs[i, 1], **kwargs)
-        axs[0, 0].title.set_text("Low Resolution")
-        axs[0, 1].title.set_text("High Resolution")
-        plt.tight_layout()
+    @classmethod
+    def from_folders(cls, path, folder, image_stats, is_multispec=False, **kwargs):
+        global _image_stats, is_ms
+        res = super().from_folder(folder, **kwargs)
+        res.path = path
+        _image_stats, is_ms = image_stats, is_multispec
+        return res
 
     def open(self, fn):
-        return ArcGISMSImage.open(fn, div=255)
+        if is_ms:
+            return ArcGISMSImage(
+                standardize(
+                    ArcGISMSImage.open(fn, div=None).data,
+                    _image_stats[0],
+                    _image_stats[1],
+                ).type(torch.float32)
+            )
+        else:
+            return ArcGISMSImage.open(fn, div=255)
+
+    def label_from_func(self, func, label_cls=None, **kwargs):
+        if is_ms:
+            label_cls = ArcGISImageListSR_MS
+        else:
+            label_cls = ArcGISImageListRGB
+        return super().label_from_func(func, label_cls=label_cls, **kwargs)
+
+
+def show_batch(self, rows=4, **kwargs):
+    xs, ys = [], []
+    for n, imgs in enumerate(self.train_ds):
+        if n != rows:
+            xs.append(imgs[0])
+            ys.append(imgs[1])
+        else:
+            break
+
+    axs = subplots(len(xs), 2, figsize=(20, rows * 5))
+    for i, (x, y) in enumerate(zip(xs, ys)):
+        x, y = ArcGISMSImage(x.data), ArcGISMSImage(y.data)
+        x.show(ax=axs[i, 0], **kwargs)
+        y.show(ax=axs[i, 1], **kwargs)
+    axs[0, 0].title.set_text("Low Resolution")
+    axs[0, 1].title.set_text("High Resolution")
+    plt.tight_layout()
+
+
+def show_results(self, rows, **kwargs):
+    from .._data_utils.pix2pix_data import display_row
+
+    self.learn.model.eval()
+    x_batch, y_batch = get_nbatches(
+        self._data.valid_dl, ceil(rows / self._data.batch_size)
+    )
+
+    x_A, x_B = torch.cat(x_batch), torch.cat(y_batch)
+
+    top = get_top_padding(title_font_size=16, nrows=rows, imsize=5)
+    activ = []
+
+    for i in range(0, x_A.shape[0], self._data.batch_size):
+        with torch.no_grad():
+            preds = self.learn.model(x_A[i : i + self._data.batch_size].detach())
+        activ.append(preds)
+
+    activations = torch.cat(activ)
+
+    from .._data_utils.pix2pix_data import denormalize
+
+    x_A = denormalize(x_A.cpu(), *self._data._image_stats)
+    x_B = denormalize(x_B.cpu(), *self._data._image_stats)
+    activations = denormalize(activations.cpu(), *self._data._image_stats)
+
+    rows = min(rows, x_A.shape[0])
+
+    fig, axs = plt.subplots(
+        nrows=rows, ncols=3, figsize=(4 * 5, rows * 5), squeeze=False
+    )
+    plt.subplots_adjust(top=top)
+    axs[0, 0].title.set_text("Input")
+    axs[0, 1].title.set_text("Target")
+    axs[0, 2].title.set_text("Prediction")
+    for r in range(rows):
+        display_row(
+            axs[r],
+            (
+                ArcGISMSImage(x_A[r].cpu()),
+                ArcGISMSImage(x_B[r].cpu()),
+                ArcGISMSImage(activations[r].cpu()),
+            ),
+            kwargs.get("rgb_bands", None),
+        )

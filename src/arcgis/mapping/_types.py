@@ -652,11 +652,29 @@ class WebMap(HasTraits, collections.OrderedDict):
                     else:
                         layer_type = "ArcGISFeatureLayer"
                 elif isinstance(layer, arcgis.raster.ImageryLayer):
-                    layer_type = "ArcGISImageServiceLayer"
+                    if layer.tiles_only:
+                        layer_type = "ArcGISTiledImageServiceLayer"
+                    else:
+                        layer_type = "ArcGISImageServiceLayer"
                     # todo : get renderer info
 
-                elif isinstance(layer, _arcgis_mapping.MapImageLayer):
-                    layer_type = "ArcGISMapServiceLayer"
+                elif isinstance(layer, _arcgis_mapping.MapImageLayer) or isinstance(
+                    layer, _arcgis_mapping.MapRasterLayer
+                ):
+                    try:
+                        if layer.container is not None:
+                            if (
+                                "TilesOnly"
+                                in layer.container.properties["capabilities"]
+                            ):
+                                layer_type = "ArcGISTiledMapServiceLayer"
+                            else:
+                                layer_type = "ArcGISMapServiceLayer"
+                    except:
+                        if "TilesOnly" in layer.properties["capabilities"]:
+                            layer_type = "ArcGISTiledMapServiceLayer"
+                        else:
+                            layer_type = "ArcGISMapServiceLayer"
                 elif isinstance(layer, _arcgis_mapping.VectorTileLayer):
                     layer_type = "VectorTileLayer"
                 elif isinstance(layer, _realtime.StreamLayer):
@@ -5495,7 +5513,9 @@ class MapImageLayerManager(arcgis.gis._GISResource):
         ===============     ====================================================
         :return:
             A dictionary
+
         .. code-block:: python
+
             # USAGE EXAMPLE
             >>> from arcgis.mapping import MapImageLayer
             >>> from arcgis.gis import GIS
