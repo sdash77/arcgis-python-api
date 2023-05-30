@@ -1335,28 +1335,13 @@ class Map:
                         layer_props["visible"] = False
                     layers.append(layer_props)
                 self._map_layers = layers
-                # Create the Map View to use
-                view = arcgis.widgets.MapView(
-                    arcgis.env.active_gis, map_item, mode="3D"
-                )
-                self._extent = view.extent
-                if map_item._mapview.center is None:
-                    x_center = (self._extent["xmin"] + self._extent["xmax"]) / 2
-                    y_center = (self._extent["ymin"] + self._extent["ymax"]) / 2
-                    self._center = {
-                        "spatialReference": map_item.definition.spatialReference,
-                        "x": x_center,
-                        "y": y_center,
-                    }
-                else:
-                    self._center = map_item._mapview.center
-                self._zoom = view.zoom if view.zoom > -1 else 2
-                self._viewpoint = {
-                    "rotation": map_item._mapview.rotation,
-                    "scale": map_item._mapview.scale,
-                    "targetGeometry": self._center,
-                }
-                self._camera = map_item["initialState"]["viewpoint"]
+                self._extent = None
+                self._center = map_item["initialState"]["viewpoint"]["camera"][
+                    "position"
+                ]
+                self._zoom = 2
+                self._viewpoint = map_item["initialState"]["viewpoint"]
+                self._camera = map_item["initialState"]["viewpoint"]["camera"]
                 self._lighting_date = map_item["initialState"]["environment"][
                     "lighting"
                 ]["datetime"]
@@ -2352,7 +2337,7 @@ class Gallery:
         return self.images
 
     # ----------------------------------------------------------------------
-    def delete_image(self, image: str):
+    def delete_image(self, image: str | Image):
         """
         The delete_image method is used to delete one image from the gallery. To see a list of images
         used in the gallery, use the :meth:`~arcgis.apps.storymap.story_content.Gallery.images` property.
@@ -2360,11 +2345,13 @@ class Gallery:
         ==================      ====================================================================
         **Parameter**            **Description**
         ------------------      --------------------------------------------------------------------
-        image                   Required String. The node id for the image to be removed from the gallery.
+        image                   Required String. The node id for the image to be removed from the gallery or the Image instance.
         ==================      ====================================================================
 
         :return: The current list of images in the gallery.
         """
+        if isinstance(image, Image):
+            image = image.node
         if image in self.images:
             # Remove from the gallery list
             self._story._properties["nodes"][self.node]["children"].remove(image)
@@ -2385,6 +2372,18 @@ class Gallery:
             },
             "children": self._children,
         }
+
+    # ----------------------------------------------------------------------
+    def delete(self):
+        """
+        Delete the node
+
+        :return: True if successful.
+        """
+        if self._existing is True:
+            return self._story._delete(self.node)
+        else:
+            return False
 
     # ----------------------------------------------------------------------
     def _check_node(self):
@@ -2869,7 +2868,7 @@ class Sidecar:
 
         """
         # Find media child
-        slide = self.properties[slide_number]
+        slide = self.properties[slide_number - 1]
         slide_node = list(slide.keys())[0]
         media_node = list(slide[slide_node]["media"].values())[0]
 
