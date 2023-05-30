@@ -543,19 +543,40 @@ def pixel_classify_ts_image(model, tiles, device, model_info):
     )
     ntemp = int(model_info.get("n_temporal", None))
     nchannel = int(model_info.get("n_channel", None))
+    ntemp_infer = model_info.get("timestep_infer", None)
+    nchannel_infer = model_info.get("channels_infer", None)
     class_dict = model_info.get("Class_mapping", None)
     num_class_dict = model_info.get("Num_class_mapping", None)
+    convertmap = model_info.get("convertmap", None)
+    bandidx = model_info.get("bandindex", None)
+    timeidx = model_info.get("timeindex", None)
 
     if num_class_dict:
         pixel_num_class_mapping = num_class_dict
     else:
         pixel_num_class_mapping = class_dict
-    final = tile_stack(
-        [
-            torch.reshape(time_arr, (1, time_arr.shape[0], ntemp, nchannel))
-            for time_arr in timeseries_arr
-        ]
-    )
+
+    if bandidx or timeidx:
+        final = tile_stack(
+            [
+                torch.reshape(
+                    time_arr, (1, time_arr.shape[0], ntemp_infer, nchannel_infer)
+                )
+                for time_arr in timeseries_arr
+            ]
+        )
+        if bandidx:
+            final = final[:, :, :, np.array(bandidx) - 1]
+        if timeidx:
+            final = final[:, :, np.array(timeidx) - 1, :]
+
+    else:
+        final = tile_stack(
+            [
+                torch.reshape(time_arr, (1, time_arr.shape[0], ntemp, nchannel))
+                for time_arr in timeseries_arr
+            ]
+        )
 
     def ts_normalization(x, m, s):
         x = np.rollaxis(x, 2)  # TxCxS -> SxTxC
@@ -579,9 +600,16 @@ def pixel_classify_ts_image(model, tiles, device, model_info):
         pred_out = prediction.argmax(dim=1).cpu()
         pred_list.append(pred_out)
 
+    if convertmap:
+        convmap = {int(value): int(key) for key, value in convertmap.items()}
+        pixel_num_class_mapping = {
+            convmap.get(int(key)): int(value)
+            for key, value in pixel_num_class_mapping.items()
+        }
+
     remap_pred_list = [
         torch.tensor(
-            [pixel_num_class_mapping.get(str(item.numpy())) for item in tile_pred_list]
+            [pixel_num_class_mapping.get(int(item.numpy())) for item in tile_pred_list]
         )
         for tile_pred_list in pred_list
     ]
