@@ -2858,7 +2858,7 @@ class Project:
         return self._mission_list
 
     @property
-    def count(self):
+    def mission_count(self):
         """
         The ``count`` property returns the number of missions associated with the project
 
