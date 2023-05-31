@@ -1259,10 +1259,10 @@ class TabularDataObject(object):
         for field in feature_variables:
             if isinstance(field, tuple):
                 if field[1]:
-                    if str(field[1]).lower() == 'text':
+                    if str(field[1]).lower() == "text":
                         text_variables.append(field[0])
                         feature_field_variables.append(field[0])
-                    elif str(field[1]).lower() == 'image':
+                    elif str(field[1]).lower() == "image":
                         image_variables.append(field[0])
                         feature_field_variables.append(field[0])
                     else:
@@ -2479,9 +2479,9 @@ def _extract_embeddings(text_variables, image_variables, dataframe):
 
     for cnt1, var in enumerate(text_variables + image_variables):
         if var in text_variables:
-            embeddings = Embeddings(dataset_type='text')
+            embeddings = Embeddings(dataset_type="text")
         else:
-            embeddings = Embeddings(dataset_type='image')
+            embeddings = Embeddings(dataset_type="image")
         emb_array = embeddings.get(
             tempfile.TemporaryDirectory(),
             return_embeddings=True,
@@ -2490,7 +2490,7 @@ def _extract_embeddings(text_variables, image_variables, dataframe):
         )
         emb_list = emb_array.tolist()
         new_col_names = [
-            'emb_' + str(cnt1) + '_' + str(cnt) for cnt in range(len(emb_list[0]))
+            "emb_" + str(cnt1) + "_" + str(cnt) for cnt in range(len(emb_list[0]))
         ]
         for col in new_col_names:
             new_cols.append(col)

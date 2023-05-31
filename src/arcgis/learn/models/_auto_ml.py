@@ -232,7 +232,7 @@ class AutoML(object):
             else:
                 mode = "Explain"
 
-            if self._data._embedding_variables and mode != 'Compete':
+            if self._data._embedding_variables and mode != "Compete":
                 warnings.warn(
                     "AutoML will be trained in Advanced/Compete mode when text or Image variables are used in model training."
                 )
@@ -958,21 +958,21 @@ class AutoML(object):
 
                 if column_name in fields_needed:
                     if column_name in self._data._text_variables:
-                        categorical = 'text'
+                        categorical = "text"
                     elif column_name in self._data._image_variables:
-                        categorical = 'image'
+                        categorical = "image"
                     elif column_name not in continuous_variables:
                         categorical = True
                     else:
                         pass
                 elif match_field_names and match_field_names.get(column_name):
                     if match_field_names.get(column_name) in self._data._text_variables:
-                        categorical = 'text'
+                        categorical = "text"
                     elif (
                         match_field_names.get(column_name)
                         in self._data._image_variables
                     ):
-                        categorical = 'image'
+                        categorical = "image"
                     elif match_field_names.get(column_name) not in continuous_variables:
                         categorical = True
                     else:
@@ -1040,7 +1040,7 @@ class AutoML(object):
 
         for column in processed_dataframe.columns:
             if column not in fields_needed:
-                if 'emb_' not in column:
+                if "emb_" not in column:
                     processed_dataframe = processed_dataframe.drop(column, axis=1)
 
         processed_numpy = self._data._process_data(
