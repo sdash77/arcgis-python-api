@@ -69,6 +69,8 @@ class DummyTransform(object):
 class TabularDataObject(object):
     _categorical_variables = []
     _continuous_variables = []
+    _text_variables = []
+    _image_variables = []
     dependent_variables = []
 
     @classmethod
@@ -124,6 +126,11 @@ class TabularDataObject(object):
         ]
         tabular_data._continuous_variables = tabular_data._field_mapping[
             "continuous_variables"
+        ]
+        tabular_data._text_variables = tabular_data._field_mapping["text_variables"]
+        tabular_data._image_variables = tabular_data._field_mapping["image_variables"]
+        tabular_data._embedding_variables = tabular_data._field_mapping[
+            "embed_variables"
         ]
         tabular_data._dependent_variable = tabular_data._field_mapping[
             "dependent_variable"
@@ -532,17 +539,12 @@ class TabularDataObject(object):
                 dataframe.loc[:, i] = dataframe.loc[:, i].astype(np.float64)
 
         labels = None
+        # restore the behaviour as earler
+        if isinstance(self._dependent_variable, list):
+            self._dependent_variable = self._dependent_variable[0]
 
         if self._dependent_variable:
-            labels = []
-            for cols in dataframe[self._dependent_variable].columns:
-                p = np.array(
-                    dataframe[self._dependent_variable][cols],
-                    dtype=dataframe[self._dependent_variable][cols].dtype,
-                )
-                labels.append(p)
-            labels = np.stack(labels, axis=1)
-
+            labels = np.array(dataframe[self._dependent_variable])
             dataframe = dataframe.drop(self._dependent_variable, axis=1)
 
         if not self._procs:
@@ -554,6 +556,7 @@ class TabularDataObject(object):
 
             self._procs = make_column_transformer(
                 (numerical_transformer, self._continuous_variables),
+                (numerical_transformer, self._embedding_variables),
                 (categorical_transformer, self._categorical_variables),
             )
 
@@ -588,17 +591,10 @@ class TabularDataObject(object):
 
         try:
             processed_data = _procs.fit_transform(dataframe)
-            if self._procs:
-                list_of_transformed_cols = []
-                for cnt, transform in enumerate(self._procs.transformers):
-                    for col in self._procs.transformers[cnt][-1]:
-                        list_of_transformed_cols.append(col)
-                processed_orig_data = dataframe.copy()
-                processed_orig_data[list_of_transformed_cols] = processed_data
-                processed_data = processed_orig_data
         except:
             msg = arcpy_localization_helper(
-                "Unable to fit transforms. This could be because some of the columns in your dataset have multiple datatypes.",
+                "Unable to fit transforms. This could be because some of the columns in your dataset have multiple "
+                "datatypes.",
                 260143,
                 "ERROR",
             )
@@ -630,16 +626,12 @@ class TabularDataObject(object):
             training_data = processed_data.take(self._training_indexes, axis=0)
             training_labels = None
             if self._dependent_variable:
-                training_labels = labels.take(self._training_indexes, axis=0)
+                training_labels = labels.take(self._training_indexes)
 
             validation_data = processed_data.take(self._validation_indexes, axis=0)
             validation_labels = None
             if self._dependent_variable:
-                validation_labels = labels.take(self._validation_indexes, axis=0)
-
-        if len(self._dependent_variable) == 1:
-            training_labels = training_labels.ravel()
-            validation_labels = validation_labels.ravel()
+                validation_labels = labels.take(self._validation_indexes)
 
         return training_data, training_labels, validation_data, validation_labels
 
@@ -1066,22 +1058,41 @@ class TabularDataObject(object):
         if self._encoder_mapping:
             for variable, encoder in self._encoder_mapping.items():
                 try:
-                    dataframe[variable] = np.array(
-                        encoder.fit_transform(
-                            dataframe[variable].values.astype(str).reshape(-1, 1)
-                        ),
-                        dtype="int64",
-                    )
+                    if fit:
+                        dataframe[variable] = np.array(
+                            encoder.fit_transform(
+                                dataframe[variable].values.astype(str).reshape(-1, 1)
+                            ),
+                            dtype="int64",
+                        )
+                    else:
+                        dataframe[variable] = np.array(
+                            encoder.transform(
+                                dataframe[variable].values.astype(str).reshape(-1, 1)
+                            ),
+                            dtype="int64",
+                        )
                 except:
-                    dataframe[variable] = np.array(
-                        encoder.fit_transform(
-                            dataframe[variable]
-                            .values.astype(str)
-                            .to_numpy()
-                            .reshape(-1, 1)
-                        ),
-                        dtype="int64",
-                    )
+                    if fit:
+                        dataframe[variable] = np.array(
+                            encoder.fit_transform(
+                                dataframe[variable]
+                                .values.astype(str)
+                                .to_numpy()
+                                .reshape(-1, 1)
+                            ),
+                            dtype="int64",
+                        )
+                    else:
+                        dataframe[variable] = np.array(
+                            encoder.transform(
+                                dataframe[variable]
+                                .values.astype(str)
+                                .to_numpy()
+                                .reshape(-1, 1)
+                            ),
+                            dtype="int64",
+                        )
 
         if fit:
             processed_data = _procs.fit_transform(dataframe)
@@ -1243,11 +1254,20 @@ class TabularDataObject(object):
         raster_field_variables = []
         continuous_variables = []
         categorical_variables = []
+        text_variables = []
+        image_variables = []
         for field in feature_variables:
             if isinstance(field, tuple):
                 if field[1]:
-                    categorical_variables.append(field[0])
-                    feature_field_variables.append(field[0])
+                    if str(field[1]).lower() == "text":
+                        text_variables.append(field[0])
+                        feature_field_variables.append(field[0])
+                    elif str(field[1]).lower() == "image":
+                        image_variables.append(field[0])
+                        feature_field_variables.append(field[0])
+                    else:
+                        categorical_variables.append(field[0])
+                        feature_field_variables.append(field[0])
                 else:
                     continuous_variables.append(field[0])
                     feature_field_variables.append(field[0])
@@ -1361,6 +1381,13 @@ class TabularDataObject(object):
             raster_variables,
             index_field,
         )
+        new_embd_cols = []
+        if len(text_variables + image_variables) > 0:
+            dataframe, new_embd_cols = _extract_embeddings(
+                text_variables, image_variables, dataframe
+            )
+            # continuous_variables = continuous_variables + new_embd_cols
+            # feature_field_variables = feature_field_variables + new_embd_cols
 
         dataframe_columns = dataframe.columns
         if distance_feature_layers:
@@ -1374,7 +1401,8 @@ class TabularDataObject(object):
                 h3_field = f"zone{res}_id"
                 if h3_field in dataframe_columns:
                     categorical_variables.append(h3_field)
-        fields_to_keep = continuous_variables + categorical_variables
+
+        fields_to_keep = continuous_variables + categorical_variables + new_embd_cols
         if isinstance(dependent_variable, str):
             dependent_variable = [dependent_variable]
 
@@ -1445,6 +1473,9 @@ class TabularDataObject(object):
                 "continuous_variables": continuous_variables
                 if continuous_variables
                 else [],
+                "text_variables": text_variables if text_variables else [],
+                "image_variables": image_variables if image_variables else [],
+                "embed_variables": new_embd_cols if new_embd_cols else [],
                 "index_data": index_data,
                 "feature_field_variables": feature_field_variables
                 if feature_field_variables
@@ -2014,11 +2045,17 @@ class TabularDataObject(object):
         dependent_variable,
         encoder_mapping,
         procs=None,
+        text_variables=None,
+        image_variables=None,
+        embedding_variables=None,
     ):
         class_object = cls()
         class_object._dependent_variable = dependent_variable
         class_object._continuous_variables = continuous_variables
         class_object._categorical_variables = categorical_variables
+        class_object._text_variables = text_variables
+        class_object._image_variables = image_variables
+        class_object._embedding_variables = embedding_variables
         class_object._encoder_mapping = encoder_mapping
         class_object._is_empty = True
         class_object._procs = procs
@@ -2433,3 +2470,32 @@ def global_interpretation(model, plot_type="bar", method="KernelRegressor"):
             explainer.expected_value[0], shap_values, df, matplotlib=True
         )
     return
+
+
+def _extract_embeddings(text_variables, image_variables, dataframe):
+    new_cols = []
+    import tempfile
+    from arcgis.learn import Embeddings
+
+    for cnt1, var in enumerate(text_variables + image_variables):
+        if var in text_variables:
+            embeddings = Embeddings(dataset_type="text")
+        else:
+            embeddings = Embeddings(dataset_type="image")
+        emb_array = embeddings.get(
+            tempfile.TemporaryDirectory(),
+            return_embeddings=True,
+            dataframe=dataframe,
+            text_column=var,
+        )
+        emb_list = emb_array.tolist()
+        new_col_names = [
+            "emb_" + str(cnt1) + "_" + str(cnt) for cnt in range(len(emb_list[0]))
+        ]
+        for col in new_col_names:
+            new_cols.append(col)
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            for cnt, val in enumerate(new_col_names):
+                dataframe[val] = [value[cnt] for value in emb_list]
+    return dataframe, new_cols

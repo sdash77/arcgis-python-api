@@ -90,7 +90,7 @@ class TimeSeriesModel(ArcGISModel):
     ---------------------   -------------------------------------------
     model_arch              Optional string. Model Architecture.
                             Allowed "InceptionTime", "ResCNN",
-                            "Resnet", "FCN", "TimeSeriesTransformer"
+                            "Resnet", "FCN", "TimeSeriesTransformer", "LSTM"
     ---------------------   -------------------------------------------
     location_var            Optional string. Location variable in case of
                             NetCDF dataset.

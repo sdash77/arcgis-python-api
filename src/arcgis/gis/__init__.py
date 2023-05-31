@@ -8770,13 +8770,10 @@ class ResourceManager(object):
         )
 
         files = []  # create a list of named tuples to hold list of files
-        if file and os.path.isfile(os.path.abspath(file)):
+        if file:
+            if not os.path.isfile(os.path.abspath(file)):
+                raise RuntimeError("File(" + file + ") not found.")
             files.append(("file", file, os.path.basename(file)))
-        elif file and os.path.isfile(os.path.abspath(file)) == False:
-            raise RuntimeError("File(" + file + ") not found.")
-        """if not os.path.isfile(os.path.abspath(file)):
-            raise RuntimeError("File(" + file + ") not found.")
-        files.append(("file", file, os.path.basename(file)))"""
 
         params = {}
         params["f"] = "json"

@@ -1029,13 +1029,16 @@ def prepare_tabulardata(
 
                             1. field to be taken as input from the input_features.
                             2. True/False denoting Categorical/Continuous variable.
-
+                            If the field is text, the value should be 'text'
+                                and if the field is image path, the value should be 'image'.
                             For example:
 
                                 ["Field_1", ("Field_2", True)]
+                                or
+                                ["Field_1", ("Field_3", 'text')]
 
                             Here Field_1 is treated as continuous and
-                            Field_2 as categorical.
+                            Field_2 as categorical and Field_3 as Text
     ---------------------   -------------------------------------------
     explanatory_rasters     Optional list containing Raster objects.
                             By default the rasters are continuous.

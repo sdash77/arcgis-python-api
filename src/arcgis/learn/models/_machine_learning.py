@@ -169,12 +169,17 @@ class MLModel(object):
 
         self._model_type = model_type
         self._data = data
+
+        if isinstance(self._data._dependent_variable, list):
+            self._data._dependent_variable = self._data._dependent_variable[0]
+
         (
             self._training_data,
             self._training_labels,
             self._validation_data,
             self._validation_labels,
         ) = self._data._ml_data
+
         if kwargs.get("pretrained_model"):
             self._model = kwargs.get("pretrained_model")
         else:

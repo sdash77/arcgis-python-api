@@ -852,7 +852,8 @@ class StoryMap(object):
                             :class:`~arcgis.apps.storymap.story_content.Button`,
                             :class:`~arcgis.apps.storymap.story_content.Timeline`,
                             :class:`~arcgis.apps.storymap.story_content.Sidecar`
-                            :class:`~arcgis.apps.storymap.story_content.Swipe`
+                            :class:`~arcgis.apps.storymap.story_content.Swipe`,
+                            :class:`~arcgis.apps.storymap.story_content.Separator`
 
 
                             If none is provided, a separator is added.
@@ -929,6 +930,7 @@ class StoryMap(object):
         elif isinstance(content, Content.Swipe):
             content._add_swipe(caption, alt_text, display, self)
         else:
+            content = Content.Separator(story=self, node_id=node_id)
             content._add_separator(story=self)
 
         # Add to story children

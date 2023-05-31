@@ -41,6 +41,24 @@ def ts_normalization(x, m, s):
     return torch.tensor(x)
 
 
+def band_adjust(index, x0):
+    band_index = np.array(index) - 1
+    x0 = np.concatenate(
+        [x0[:, q, :][:, None, :] for q in range(x0.shape[1]) if q in band_index],
+        axis=1,
+    )
+    return x0
+
+
+def time_adjust(index, x0):
+    time_index = np.array(index) - 1
+    x0 = np.concatenate(
+        [x0[q, :, :][None, :, :] for q in range(x0.shape[0]) if q in time_index],
+        axis=0,
+    )
+    return x0
+
+
 class PSATAEDataset(data.Dataset):
     def __init__(
         self,
@@ -52,6 +70,8 @@ class PSATAEDataset(data.Dataset):
         extra_feature=None,
         jitter=(0.01, 0.05),
         return_id=False,
+        use_band_index=None,
+        use_time_index=None,
     ):
         """
         Args:
@@ -76,6 +96,9 @@ class PSATAEDataset(data.Dataset):
         self.labels = labels
         self.npixel = npixel
         self.norm = norm
+
+        self.use_band_index = use_band_index
+        self.use_time_index = use_time_index
 
         self.extra_feature = extra_feature
         self.jitter = jitter  # (sigma , clip )
@@ -152,12 +175,20 @@ class PSATAEDataset(data.Dataset):
                     self.folder, "DATA", "train_data", "{}.npy".format(self.pid[item])
                 )
             )
+            if self.use_band_index:
+                x0 = band_adjust(self.use_band_index, x0)
+            if self.use_time_index:
+                x0 = time_adjust(self.use_time_index, x0)
         else:
             x0 = np.load(
                 os.path.join(
                     self.folder, "DATA", "valid_data", "{}.npy".format(self.pid[item])
                 )
             )
+            if self.use_band_index:
+                x0 = band_adjust(self.use_band_index, x0)
+            if self.use_time_index:
+                x0 = time_adjust(self.use_time_index, x0)
 
         y = self.target[item]
 
@@ -310,6 +341,9 @@ def create_train_val_sets(path, val_split_pct, working_dir, **kwargs):
         if int(n) in interest_class:
             class_mapping_dict[i] = int(n)
 
+    if interest_class:
+        convertmap = dict((c, i) for i, c in enumerate(list(class_mapping_dict.keys())))
+        convertmap = {v: k for k, v in convertmap.items()}
     if (
         not isExist_data
         or not isExist_train_data
@@ -347,96 +381,74 @@ def create_train_val_sets(path, val_split_pct, working_dir, **kwargs):
         for i in progress_bar(label_lst):
             lab_name = os.path.split(i)[1]
             class_name = int(os.path.split(os.path.split(i)[0])[1])
-            if class_name in interest_class:
-                img_file, lab_file = (
-                    ArcGISMSImage.open(os.path.join(images, lab_name)),
-                    ArcGISMSImage.open(i),
-                )
-                img_arr, lab_arr = (
-                    img_file.data,
-                    torch.sum(lab_file.data, axis=0)[None, :, :],
-                )
+            img_file, lab_file = (
+                ArcGISMSImage.open(os.path.join(images, lab_name)),
+                ArcGISMSImage.open(i),
+            )
+            img_arr, lab_arr = (
+                img_file.data,
+                torch.sum(lab_file.data, axis=0)[None, :, :],
+            )
 
-                concate_arr = torch.cat((img_arr, lab_arr), axis=0)
-                indxs = torch.where(concate_arr[-1, :, :] != 0)
-                timeseries_arr = concate_arr[:, indxs[0], indxs[1]][:-1, :]
+            concate_arr = torch.cat((img_arr, lab_arr), axis=0)
+            indxs = torch.where(concate_arr[-1, :, :] != 0)
+            timeseries_arr = concate_arr[:, indxs[0], indxs[1]][:-1, :]
 
-                nchannel = int(timeseries_arr.shape[0] / ntemp)
-                final = torch.reshape(
-                    timeseries_arr, (ntemp, nchannel, timeseries_arr.shape[1])
-                )
+            nchannel = int(timeseries_arr.shape[0] / ntemp)
+            final = torch.reshape(
+                timeseries_arr, (ntemp, nchannel, timeseries_arr.shape[1])
+            )
 
-                if use_band_index:
-                    band_index = np.array(use_band_index) - 1
-                    final = torch.cat(
-                        [
-                            final[:, x, :][:, None, :]
-                            for x in range(final.shape[1])
-                            if x in band_index
-                        ],
-                        axis=1,
+            lol1 = lambda lst, sz: [
+                len(lst[i : i + sz]) for i in range(0, len(lst), sz)
+            ]
+            if i in train_labels:
+                train_arrs_lst.append(final)
+                trainlabs.append(torch.tensor(class_name))
+                num_shp = list(np.arange(final.shape[2]))
+                u = 1 + cnt
+                cnt += len(lol1(num_shp, npixels))
+                save_cnt_lst = list(np.arange(u, cnt + 1))
+                cntt = len(list(np.arange(u, cnt + 1)))
+                train_lab_app.extend(cntt * [class_name])
+                cnt_lst_t.extend(save_cnt_lst)
+
+                def save(p, x, j, save_cnt):
+                    l = np.save(
+                        os.path.join(p, "DATA", "train_data", str(save_cnt[j])),
+                        x.numpy(),
                     )
-                if use_time_index:
-                    time_index = np.array(use_time_index) - 1
-                    final = torch.cat(
-                        [
-                            final[x, :, :][None, :, :]
-                            for x in range(final.shape[0])
-                            if x in time_index
-                        ],
-                        axis=0,
-                    )
+                    return x
 
-                lol1 = lambda lst, sz: [
-                    len(lst[i : i + sz]) for i in range(0, len(lst), sz)
+                lol2 = lambda lst, sz: [
+                    save(save_path, lst[:, :, i : i + sz], j, save_cnt_lst)
+                    for j, i in enumerate(range(0, lst.shape[2], sz))
                 ]
-                if i in train_labels:
-                    train_arrs_lst.append(final)
-                    trainlabs.append(torch.tensor(class_name))
-                    num_shp = list(np.arange(final.shape[2]))
-                    u = 1 + cnt
-                    cnt += len(lol1(num_shp, npixels))
-                    save_cnt_lst = list(np.arange(u, cnt + 1))
-                    cntt = len(list(np.arange(u, cnt + 1)))
-                    train_lab_app.extend(cntt * [class_name])
-                    cnt_lst_t.extend(save_cnt_lst)
+                divided = lol2(final, npixels)
+            else:
+                valid_arrs_lst.append(final.numpy())
+                validlabs.append(class_name)
+                num_shp = list(np.arange(final.shape[2]))
+                s = 1 + cnt1
+                cnt1 += len(lol1(num_shp, npixels))
+                save_cnt_lst = list(np.arange(s, cnt1 + 1))
+                cntt = len(list(np.arange(s, cnt1 + 1)))
+                val_lab_app.extend(cntt * [class_name])
+                cnt_lst_v.extend(save_cnt_lst)
 
-                    def save(p, x, j, save_cnt):
-                        l = np.save(
-                            os.path.join(p, "DATA", "train_data", str(save_cnt[j])),
-                            x.numpy(),
-                        )
-                        return x
+                def save(p, x, j, save_cnt):
+                    l = np.save(
+                        os.path.join(p, "DATA", "valid_data", str(save_cnt[j])),
+                        x.numpy(),
+                    )
+                    return x
 
-                    lol2 = lambda lst, sz: [
-                        save(save_path, lst[:, :, i : i + sz], j, save_cnt_lst)
-                        for j, i in enumerate(range(0, lst.shape[2], sz))
-                    ]
-                    divided = lol2(final, npixels)
-                else:
-                    valid_arrs_lst.append(final.numpy())
-                    validlabs.append(class_name)
-                    num_shp = list(np.arange(final.shape[2]))
-                    s = 1 + cnt1
-                    cnt1 += len(lol1(num_shp, npixels))
-                    save_cnt_lst = list(np.arange(s, cnt1 + 1))
-                    cntt = len(list(np.arange(s, cnt1 + 1)))
-                    val_lab_app.extend(cntt * [class_name])
-                    cnt_lst_v.extend(save_cnt_lst)
-
-                    def save(p, x, j, save_cnt):
-                        l = np.save(
-                            os.path.join(p, "DATA", "valid_data", str(save_cnt[j])),
-                            x.numpy(),
-                        )
-                        return x
-
-                    lol2 = lambda lst, sz: [
-                        save(save_path, lst[:, :, i : i + sz], j, save_cnt_lst)
-                        for j, i in enumerate(range(0, lst.shape[2], sz))
-                    ]
-                    divided = lol2(final, npixels)
-                whole_data.append(final.numpy())
+                lol2 = lambda lst, sz: [
+                    save(save_path, lst[:, :, i : i + sz], j, save_cnt_lst)
+                    for j, i in enumerate(range(0, lst.shape[2], sz))
+                ]
+                divided = lol2(final, npixels)
+            whole_data.append(final.numpy())
 
         stats_std_mean = np.concatenate(whole_data, axis=2)
         mean_std = (np.mean(stats_std_mean, axis=2), np.std(stats_std_mean, axis=2))
@@ -480,6 +492,9 @@ def create_train_val_sets(path, val_split_pct, working_dir, **kwargs):
         with open(os.path.join(save_path, "META", "labels.json"), "w") as file:
             file.write(json.dumps(labels_dic, indent=4))
         if ntempdates:
+            if use_time_index:
+                timeidx = np.array(ntempdates) - 1
+                ntempdates = ntempdates[timeidx]
             datelist = [x.replace("-", "") for x in ntempdates]
             dates_dict = {}
             for i in range(len(datelist)):
@@ -498,13 +513,56 @@ def create_train_val_sets(path, val_split_pct, working_dir, **kwargs):
         )
         raise Exception()
 
-    mean_std = pickle.load(
-        open(os.path.join(save_path, "META", "mean_std.pickle"), "rb")
+    mean_std = list(
+        pickle.load(open(os.path.join(save_path, "META", "mean_std.pickle"), "rb"))
     )
+
+    if use_band_index:
+        band_index = np.array(use_band_index) - 1
+        mean_std[0] = np.concatenate(
+            [
+                mean_std[0][:, q][:, None]
+                for q in range(mean_std[0].shape[1])
+                if q in band_index
+            ],
+            axis=1,
+        )
+        mean_std[1] = np.concatenate(
+            [
+                mean_std[1][:, q][:, None]
+                for q in range(mean_std[1].shape[1])
+                if q in band_index
+            ],
+            axis=1,
+        )
+    if use_time_index:
+        time_index = np.array(use_time_index) - 1
+        mean_std[0] = np.concatenate(
+            [
+                mean_std[0][q, :][None, :]
+                for q in range(mean_std[0].shape[0])
+                if q in time_index
+            ],
+            axis=0,
+        )
+        mean_std[1] = np.concatenate(
+            [
+                mean_std[1][q, :][None, :]
+                for q in range(mean_std[1].shape[0])
+                if q in time_index
+            ],
+            axis=0,
+        )
+
     with open(os.path.join(save_path, "META", "labels.json"), "r") as file:
         lab_load = json.loads(file.read())
     train_arrs_lst, labs = pickle.load(
         open(os.path.join(save_path, "META", "train_arrs_with_label.pickle"), "rb")
+    )
+
+    timestep_infer, channels_infer = (
+        train_arrs_lst[0].shape[0],
+        train_arrs_lst[0].shape[1],
     )
 
     npixels = lab_load["npixel"]
@@ -513,20 +571,24 @@ def create_train_val_sets(path, val_split_pct, working_dir, **kwargs):
         save_path,
         labels="train_labels",
         npixel=npixels,
-        norm=mean_std,
-        extra_feature=None,
+        norm=tuple(mean_std),
+        sub_classes=list(class_mapping_dict.keys()),
+        use_band_index=use_band_index,
+        use_time_index=use_time_index,
     )
     valid_dataset = PSATAEDataset(
         save_path,
         labels="valid_labels",
         npixel=npixels,
-        norm=mean_std,
-        extra_feature=None,
+        norm=tuple(mean_std),
+        sub_classes=list(class_mapping_dict.keys()),
+        use_band_index=use_band_index,
+        use_time_index=use_time_index,
     )
 
     new_ntemp = None
     if use_time_index:
-        new_ntemp = train_arrs_lst[0].shape[0]
+        new_ntemp = len(use_time_index)  # train_arrs_lst[0].shape[0]
     nt = new_ntemp if new_ntemp else ntemp
 
     return [
@@ -539,6 +601,11 @@ def create_train_val_sets(path, val_split_pct, working_dir, **kwargs):
         nt,
         IsMultidimensional,
         imagespace,
+        use_band_index,
+        use_time_index,
+        convertmap,
+        timestep_infer,
+        channels_infer,
     ]
 
 
@@ -583,7 +650,7 @@ def prepare_psetae_data(
     data._num_class_map_dict = train_val_dataset[1].copy() if class_mapping else None
 
     if class_mapping:
-        for r in range(len(data._class_map_dict)):
+        for r in data._class_map_dict.keys():
             data._class_map_dict[r] = class_mapping[data._class_map_dict[r]]
 
     data.show_batch = types.MethodType(show_batch, data)
@@ -598,6 +665,11 @@ def prepare_psetae_data(
     data._npixel = train_val_dataset[5]
     data._is_multidimensional = train_val_dataset[7]
     data._imagespace = train_val_dataset[8]
+    data._bandindex = train_val_dataset[9]
+    data._timeindex = train_val_dataset[10]
+    data._convertmap = train_val_dataset[11]
+    data._timestep_infer = train_val_dataset[12]
+    data._channels_infer = train_val_dataset[13]
 
     return data
 
@@ -637,8 +709,13 @@ def show_batch(self, rows=5, spectral_view=False, **kwargs):
     rev_map = {v: k for k, v in class_dict.items()}
 
     for t, r in zip(self._train_arrs_lst, self._train_labs):
-        t, r = ts_normalization(t, m, s), rev_map[int(r)]
-        if int(r) in self._class_map_dict.keys():
+        if int(r) in rev_map.keys():
+            r = rev_map[int(r)]
+            if self._bandindex:
+                t = band_adjust(self._bandindex, t)
+            if self._timeindex:
+                t = time_adjust(self._timeindex, t)
+            t = ts_normalization(Tensor(t), m, s)
             if t.shape[2] <= self._npixel:
                 viz_data_seg[int(r)].append(t)
             else:
@@ -646,7 +723,8 @@ def show_batch(self, rows=5, spectral_view=False, **kwargs):
                 viz_data_seg[int(r)].append(t.index_select(2, torch.tensor(index)))
 
     for z in range(n):
-        class_1_arr = np.concatenate(viz_data_seg[z], axis=2)
+        mp = list(self._class_map_dict.keys())
+        class_1_arr = np.concatenate(viz_data_seg[mp[z]], axis=2)
         randlist = random.sample(list(range(class_1_arr.shape[2])), rows)
         if class_1_arr.shape[0] != 1:
             if temporal_view:
@@ -692,7 +770,7 @@ def show_batch(self, rows=5, spectral_view=False, **kwargs):
                 bands, class_1_arr[:, :, randlist][0, :], color=colours[0], label=lab
             )
             ax.legend(loc="upper right")
-        ax.set_title(label=str(self._class_map_dict[z]), fontsize=17, pad=10)
+        ax.set_title(label=str(self._class_map_dict[mp[z]]), fontsize=17, pad=10)
     for ax in axs.flat:
         if not bool(ax.has_data()):
             fig.delaxes(ax)
@@ -759,6 +837,11 @@ def show_results(self, rows, **kwargs):
         else grouped["True"].values
     )
     pred.sort(), true.sort()
+
+    if self._data._convertmap:
+        true = np.array([self._data._convertmap.get(item, item) for item in true])
+        pred = np.array([self._data._convertmap.get(item, item) for item in pred])
+
     trues = np.array([self._data._class_map_dict.get(item, item) for item in true])
     preds = np.array([self._data._class_map_dict.get(item, item) for item in pred])
     n = all_cls_arr.shape[0]
