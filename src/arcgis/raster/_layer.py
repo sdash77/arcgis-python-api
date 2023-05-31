@@ -8075,6 +8075,7 @@ class Raster:
                 "application/json",
                 "application/geo+json",
                 "application/json;charset=utf-8",
+                "application/geo+json; charset=utf-8",
             ]:
                 raise RuntimeError(
                     f"Invalid Response: Please verify that the stac_item URL is correct-\n{data.text}"
@@ -8093,7 +8094,13 @@ class Raster:
             except Exception:
                 raise RuntimeError(f"Invalid/Unsupported STAC Item-\n{stac_item}")
 
-        if "type" not in json_data or json_data["type"] != "Feature":
+        if "type" not in json_data or (
+            json_data["type"] != "Feature"
+            and (
+                json_data["type"] == "Collection"
+                and not json_data["id"].startswith("daymet")
+            )
+        ):
             raise RuntimeError(f"Invalid STAC Item-\n{json_data}")
         item = json_data
 
@@ -12514,6 +12521,7 @@ class RasterCollection:
             "application/json",
             "application/geo+json",
             "application/json;charset=utf-8",
+            "application/geo+json; charset=utf-8",
         ]:
             raise RuntimeError(
                 f"Invalid Response: Please verify that the STAC API URL and the specified query are correct-\n{data.text}"
@@ -12682,6 +12690,7 @@ class RasterCollection:
                 "application/json",
                 "application/geo+json",
                 "application/json;charset=utf-8",
+                "application/geo+json; charset=utf-8",
             ]:
                 raise RuntimeError(
                     f"Invalid Response: Please verify that the stac_catalog URL is correct-\n{data.text}"
