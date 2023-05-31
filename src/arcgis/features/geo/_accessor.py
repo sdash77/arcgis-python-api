@@ -3319,7 +3319,7 @@ class GeoAccessor(object):
             np.NAN: None,
             pd.NaT: None,
         }
-        df = self._data.replace(replace_mappings).convert_dtypes()
+        df = self._data.copy()
         date_fields = [
             col for col in df.columns if df[col].dtype.name.find("datetime") > -1
         ]
@@ -3398,7 +3398,7 @@ class GeoAccessor(object):
             _dtype(np.int32): "esriFieldTypeInteger",
             np.int64: "esriFieldTypeDouble",
             _dtype(np.int64): "esriFieldTypeOID",
-            pd.Int64Dtype(): "esriFieldTypeInteger",
+            pd.Int64Dtype(): "esriFieldTypeBigInteger",
             pd.Int32Dtype(): "esriFieldTypeInteger",
             int: "esriFieldTypeInteger",
             float: "esriFieldTypeDouble",
@@ -3498,17 +3498,22 @@ class GeoAccessor(object):
                 fields.append(column)
 
         fs["fields"] = fields
-        df = df.copy()
-        string_column = df.select_dtypes(pd.StringDtype()).columns.tolist()
         number_columns = df.select_dtypes(np.number).columns.tolist()
-        df[string_column] = df[string_column].replace(pd.NA, "")
         df[number_columns] = df[number_columns].replace(pd.NA, 0)
+        string_column = df.select_dtypes(pd.StringDtype()).columns.tolist()
+        df[string_column] = df[string_column].replace(pd.NA, "")
+        df = df.replace(replace_mappings).convert_dtypes().copy()  #
+
         for td in time_delta_fields:
             df[td] = df[td].dt.total_seconds() * 1000
         for f in date_fields:
-            df[f] = pd.Series(df[f].dt.to_pydatetime()).apply(
+            fn = (
                 lambda x: int(x.timestamp() * 1000)
+                if isinstance(x, pd.Timestamp)
+                else 0
             )
+
+            df[f] = pd.to_datetime(df[date_fields[-1]]).apply(fn)
         for row in df.to_dict("records"):
             geom = {}
             if self.name in row:

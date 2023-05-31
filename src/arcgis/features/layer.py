@@ -1425,6 +1425,9 @@ class FeatureLayer(Layer):
                 "esriFieldTypeGUID": pd.StringDtype(),
                 "esriFieldTypeGlobalID": pd.StringDtype(),
                 "esriFieldTypeXML": object,
+                "esriFieldTypeTimeOnly": _datetime,
+                "esriFieldTypeDateOnly": _datetime,
+                "esriFieldTypeTimestampOffset": _datetime,
             }
 
             def feature_to_row(feature, sr):
@@ -1472,7 +1475,11 @@ class FeatureLayer(Layer):
                     if fld["type"] != "esriFieldTypeGeometry":
                         dtypes[fld["name"]] = _fld_lu[fld["type"]]
                         names.append(fld["name"])
-                    if fld["type"] == "esriFieldTypeDate":
+                    if fld["type"] in [
+                        "esriFieldTypeDate",
+                        "esriFieldTypeDateOnly",
+                        "esriFieldTypeTimestampOffset",
+                    ]:
                         dfields.append(fld["name"])
             if "SHAPE" in df:
                 df.spatial.set_geometry("SHAPE")
@@ -2280,6 +2287,9 @@ class FeatureLayer(Layer):
                 "esriFieldTypeGUID": pd.StringDtype(),
                 "esriFieldTypeGlobalID": pd.StringDtype(),
                 "esriFieldTypeXML": object,
+                "esriFieldTypeTimeOnly": object,
+                "esriFieldTypeDateOnly": object,
+                "esriFieldTypeTimestampOffset": object,
             }
             columns = {}
             for fld in self.properties.fields:
@@ -2316,7 +2326,12 @@ class FeatureLayer(Layer):
                 dt_fields = [
                     fld["name"]
                     for fld in self.properties.fields
-                    if fld["type"] == "esriFieldTypeDate"
+                    if fld["type"]
+                    in [
+                        "esriFieldTypeDate",
+                        "esriFieldTypeDateOnly",
+                        "esriFieldTypeTimestampOffset",
+                    ]
                 ]
                 if "SHAPE" in df.columns:
                     df.spatial.set_geometry("SHAPE")
@@ -2396,7 +2411,12 @@ class FeatureLayer(Layer):
             dt_fields = [
                 fld["name"]
                 for fld in self.properties.fields
-                if fld["type"] == "esriFieldTypeDate"
+                if fld["type"]
+                in [
+                    "esriFieldTypeDate",
+                    "esriFieldTypeDateOnly",
+                    "esriFieldTypeTimestampOffset",
+                ]
             ]
             if len(dfs) == 1:
                 df = dfs[0]
@@ -3674,6 +3694,9 @@ class FeatureLayer(Layer):
                 "esriFieldTypeGUID": str,
                 "esriFieldTypeGlobalID": str,
                 "esriFieldTypeXML": object,
+                "esriFieldTypeTimeOnly": pd.datetime,
+                "esriFieldTypeDateOnly": pd.datetime,
+                "esriFieldTypeTimestampOffset": pd.datetime,
             }
         else:
             from datetime import datetime as _datetime
@@ -3693,6 +3716,10 @@ class FeatureLayer(Layer):
                 "esriFieldTypeGUID": pd.StringDtype(),
                 "esriFieldTypeGlobalID": pd.StringDtype(),
                 "esriFieldTypeXML": object,
+                "esriFieldTypeTimeOnly": pd.StringDtype(),
+                "esriFieldTypeDateOnly": object,
+                "esriFieldTypeTimestampOffset": object,
+                "esriFieldTypeBigInteger": pd.Int64Dtype(),
             }
 
         def feature_to_row(feature, sr):
@@ -3788,7 +3815,12 @@ class FeatureLayer(Layer):
                 if fld["type"] != "esriFieldTypeGeometry":
                     dtypes[fld["name"]] = _fld_lu[fld["type"]]
                     names.append(fld["name"])
-                if fld["type"] == "esriFieldTypeDate":
+                if fld["type"] in [
+                    "esriFieldTypeDate",
+                    #
+                    "esriFieldTypeDateOnly",
+                    "esriFieldTypeTimestampOffset",
+                ]:
                     dfields.append(fld["name"])
         if dtypes:
             df = df.astype(dtypes)
@@ -4174,6 +4206,9 @@ class Table(FeatureLayer):
                 "esriFieldTypeGUID": pd.StringDtype(),
                 "esriFieldTypeGlobalID": pd.StringDtype(),
                 "esriFieldTypeXML": object,
+                "esriFieldTypeTimeOnly": object,
+                "esriFieldTypeDateOnly": object,
+                "esriFieldTypeTimestampOffset": object,
             }
             columns = {}
             for fld in self.properties.fields:
@@ -4205,7 +4240,12 @@ class Table(FeatureLayer):
                 dt_fields = [
                     fld["name"]
                     for fld in self.properties.fields
-                    if fld["type"] == "esriFieldTypeDate"
+                    if fld["type"]
+                    in [
+                        "esriFieldTypeDate",
+                        "esriFieldTypeDateOnly",
+                        "esriFieldTypeTimestampOffset",
+                    ]
                 ]
                 if "SHAPE" in df.columns:
                     df.spatial.set_geometry("SHAPE")
@@ -4285,7 +4325,12 @@ class Table(FeatureLayer):
             dt_fields = [
                 fld["name"]
                 for fld in self.properties.fields
-                if fld["type"] == "esriFieldTypeDate"
+                if fld["type"]
+                in [
+                    "esriFieldTypeDate",
+                    "esriFieldTypeDateOnly",
+                    "esriFieldTypeTimestampOffset",
+                ]
             ]
             if len(dfs) == 1:
                 df = dfs[0]
