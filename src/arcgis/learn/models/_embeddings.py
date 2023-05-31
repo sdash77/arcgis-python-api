@@ -663,7 +663,7 @@ class Embeddings:
                     [
                         np.array(
                             PIL_Image.open(img_path)
-                            .convert('RGB')
+                            .convert("RGB")
                             .resize((resize_to, resize_to))
                         ).astype(float)
                         / 255.0
