@@ -394,7 +394,7 @@ def _add_mission(
     gis = arcgis.env.active_gis if gis is None else gis
     project_item = project._project_item
     resource_manager = project_item.resources
-    oid = project.count
+    oid = project.mission_count
 
     for f in gis.users.me.folders:
         if f["id"] == project_item.ownerFolder:
