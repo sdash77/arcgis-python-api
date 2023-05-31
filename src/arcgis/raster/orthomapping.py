@@ -414,7 +414,7 @@ def _add_mission(
         input_rasters=image_list,
         raster_type_name=raster_type_name,
         raster_type_params=raster_type_params,
-        out_sr =out_sr,
+        out_sr=out_sr,
         context=context,
         gis=gis,
         folder=folder,
