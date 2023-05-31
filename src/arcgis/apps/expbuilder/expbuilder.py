@@ -690,7 +690,7 @@ class WebExperience(object):
         exp_clone = target.content.clone_items([self._item], owner=owner, **kwargs)
         if exp_clone:
             new_dict = _clone_dict(self._expdict, self._gis, target, owner, **kwargs)
-            target_exp = WebExperience(exp_clone[0])
+            target_exp = WebExperience(exp_clone[0], gis=target)
             target_exp._expdict = new_dict
             target_exp._item.resources.update(
                 folder_name="config", file_name="config.json", text=target_exp._expdict
