@@ -99,3 +99,61 @@ class _WebExperience(_ItemDefinition):
         self.created_items.append(new_item)
         self._clone_resources(new_item)
         return new_item
+
+    def clone(self):
+        def _clone_dict(data_dict, source, target):
+            new_dict = data_dict
+            new_dict["attributes"]["portalUrl"] = target.url
+            for k, v in new_dict["dataSources"].items():
+                v["portalUrl"] = target.url
+                item = source.content.get(v["itemId"])
+                clone_result = target.content.clone_items([item])
+                if clone_result:
+                    v["itemId"] = clone_result[0].itemid
+                else:
+                    targ_item = target.content.search(item.title)[0]
+                    v["itemId"] = targ_item.itemid
+
+            return new_dict
+
+        new_item = None
+        original_item = self.info
+        if self._search_existing:
+            new_item = _search_org_for_existing_item(self.target, self.portal_item)
+        if not new_item:
+            # Get the item properties from the original item to be applied when the new item is created
+            item_properties = self._get_item_properties(self.item_extent)
+            new_item = self._add_new_item(item_properties)
+            if self.resources:
+                new_item.resources.add(self.resources, archive=True)
+            config_dict = self.portal_item.resources.get("config/config.json")
+            new_dict = _clone_dict(config_dict, self.portal_item._gis, self.target)
+            new_item.resources.update(
+                folder_name="config", file_name="config.json", text=new_dict
+            )
+            if new_item.url:
+                new_item.update(
+                    {"url": new_item.url.replace(self.portal_item.id, new_item.id)}
+                )
+            keywords = new_item.typeKeywords
+            for word in keywords:
+                if "status" in word:
+                    if "Published" in word or "Changed" in word:
+                        new_data = _clone_dict(
+                            self.portal_item.get_data(),
+                            self.portal_item._gis,
+                            self.target,
+                        )
+                        new_item.update(item_properties={}, data=new_data)
+                    else:
+                        new_item.update(
+                            item_properties={}, data={"__not_publish": True}
+                        )
+                    break
+            _share_item_with_groups(
+                new_item, self.sharing, self._clone_mapping["Group IDs"]
+            )
+
+        self.resolved = True
+        self._clone_mapping["Item IDs"][original_item["id"]] = new_item["id"]
+        return new_item
