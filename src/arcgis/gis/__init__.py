@@ -8770,7 +8770,7 @@ class ResourceManager(object):
 
     def update(
         self,
-        file: str,
+        file: Optional[str] = None,
         folder_name: Optional[str] = None,
         file_name: Optional[str] = None,
         text: Optional[str] = None,
@@ -8839,9 +8839,10 @@ class ResourceManager(object):
         )
 
         files = []  # create a list of named tuples to hold list of files
-        if not os.path.isfile(os.path.abspath(file)):
-            raise RuntimeError("File(" + file + ") not found.")
-        files.append(("file", file, os.path.basename(file)))
+        if file:
+            if not os.path.isfile(os.path.abspath(file)):
+                raise RuntimeError("File(" + file + ") not found.")
+            files.append(("file", file, os.path.basename(file)))
 
         params = {}
         params["f"] = "json"
