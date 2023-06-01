@@ -7052,7 +7052,7 @@ class ContentManager(object):
         ================  ==========================================================================
 
         :return:
-            A list of booleans indicating success if the items were deleted (True), or failure if the items were not deleted
+            A list of booleans indicating success if the items were deleted(True/False) or an empty list if nothing was deleted.
             (False)
 
         .. code-block:: python
@@ -7079,42 +7079,39 @@ class ContentManager(object):
             del item
 
         # Now we have a dictionary to iterate through
-        try:
-            results = []
-            for key, val in items_dict.items():
-                owner = key  # owner username
-                ditems = val  # list of item(s)
+        results = []
+        for key, val in items_dict.items():
+            owner = key  # owner username
+            ditems = val  # list of item(s)
 
-                # Check if admin or owner before deleting
-                if (
-                    self._gis.users.me.username != owner
-                    and "portal:admin:deleteItems" not in self._gis.users.me.privileges
-                ):
-                    return Exception(
-                        "You are not the owner and you do not have the administrator privileges to perform this action."
-                    )
+            # Check if admin or owner before deleting
+            if (
+                self._gis.users.me.username != owner
+                and "portal:admin:deleteItems" not in self._gis.users.me.privileges
+            ):
+                return Exception(
+                    "You are not the owner and you do not have the administrator privileges to perform this action."
+                )
 
-                # All items should be from same owner so we can set to first in list
-                if self._gis._portal.con.baseurl.endswith("/"):
-                    url = "%s/%s/%s/deleteItems" % (
-                        self._gis._portal.con.baseurl[:-1],
-                        "content/users",
-                        owner,
-                    )
-                else:
-                    url = "%s/%s/%s/deleteItems" % (
-                        self._gis._portal.con.baseurl,
-                        "content/users",
-                        owner,
-                    )
+            # All items should be from same owner so we can set to first in list
+            if self._gis._portal.con.baseurl.endswith("/"):
+                url = "%s/%s/%s/deleteItems" % (
+                    self._gis._portal.con.baseurl[:-1],
+                    "content/users",
+                    owner,
+                )
+            else:
+                url = "%s/%s/%s/deleteItems" % (
+                    self._gis._portal.con.baseurl,
+                    "content/users",
+                    owner,
+                )
 
-                if len(ditems) > 0:
-                    params["items"] = ",".join(ditems)
-                    res = self._gis._con.post(path=url, postdata=params)
-                    results.append(all([r["success"] for r in res["results"]]))
-            return results
-        except:
-            return False
+            if len(ditems) > 0:
+                params["items"] = ",".join(ditems)
+                res = self._gis._con.post(path=url, postdata=params)
+                results.append(all([r["success"] for r in res["results"]]))
+        return results
 
     def delete_folder(self, folder: str, owner: Optional[str] = None):
         """
