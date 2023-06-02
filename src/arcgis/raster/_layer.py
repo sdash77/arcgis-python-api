@@ -10693,7 +10693,7 @@ class _ImageServerRaster(ImageryLayer, Raster):
             adjust_aspect_ratio,
             lerc_version,
         )
-        if f == "image":
+        if f == "image" and save_folder is None and save_file is None:
             from IPython.display import Image
 
             return Image(result)
