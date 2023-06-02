@@ -601,7 +601,7 @@ class TabularDataObject(object):
 
         if self._is_classification:
             scaled_features_df = pd.DataFrame(
-                processed_data, index=dataframe.index, columns=dataframe.columns
+                processed_data, index=dataframe.index, columns=self._continuous_variables+self._categorical_variables
             )
             scaled_labels_df = pd.DataFrame(labels, index=dataframe.index)
 
@@ -620,6 +620,7 @@ class TabularDataObject(object):
                 validation_labels = (
                     scaled_labels_df.loc[self._validation_indexes].to_numpy().squeeze()
                 )
+            
             del scaled_features_df
             del scaled_labels_df
         else:
