@@ -6427,8 +6427,8 @@ class ImageryLayer(Layer):
         variables: list[str] = [],
         bands: list[int] = [0],
         time_extent: Optional[list[datetime.datetime]] = None,
-        dimension: Optional[list[float]] = None,
-        dimension_values: list = [],
+        dimension: Optional[list[str]] = None,
+        dimension_values: Optional[list[float]] = [],
         show_values: bool = False,
         trend_type: Optional[str] = None,
         trend_order: Optional[int] = None,
@@ -6465,19 +6465,19 @@ class ImageryLayer(Layer):
                                                  If not specified the time field is obtained from the timeInfo of
                                                  the image service.
         ------------------------------------     --------------------------------------------------------------------
-        variables                                Required list of variable names.
+        variables                                Required list of strings. The variables that will be used for plotting temporal profile.
                                                  For non multidimensional data, the variable would be name of the Sensor.
                                                  To plot the graph against all sensors specify - "ALL_SENSORS"
         ------------------------------------     --------------------------------------------------------------------
-        bands                                    Optional list of band indices. By default takes the
-                                                 first band (band index - 0).
+        bands                                    Optional list of integers. Band indices to be used for plotting temporal profile.
+                                                 By default takes the first band (band index - 0).
                                                  For a multiband data, you can compare the time change of different
                                                  bands over different locations.
         ------------------------------------     --------------------------------------------------------------------
-        time_extent                              Optional list of date time object. This represents the time extent
+        time_extent                              Optional list of datetime objects. This represents the time extent.
         ------------------------------------     --------------------------------------------------------------------
-        dimension                                Optional list of dimension names. This option works specifically on
-                                                 multidimensional data containing a time dimension and other dimensions.
+        dimension                                Optional list of strings. The dimension names that will be used for plotting temporal profile.
+                                                 This option works specifically on multidimensional data containing a time dimension and other dimensions.
 
                                                  The temporal profile is created based on the specific values in other
                                                  dimensions, such as depth at the corresponding time value. For example,
@@ -6485,7 +6485,7 @@ class ImageryLayer(Layer):
                                                  dimension below the earth's surface, resulting in a temporal profile
                                                  at 0.1, 0.2, and 0.3 meters below the ground.
         ------------------------------------     --------------------------------------------------------------------
-        dimension_values                         Optional list of dimension values. This parameter can be used to specify
+        dimension_values                         Optional list of floats. This parameter can be used to specify
                                                  the values of dimension parameter other than the time dimension (dimension
                                                  name specified using dimension parameter)
         ------------------------------------     --------------------------------------------------------------------
@@ -6493,7 +6493,7 @@ class ImageryLayer(Layer):
                                                  Set this parameter to True to display the values at each point in the line graph.
         ------------------------------------     --------------------------------------------------------------------
         trend_type                               Optional string. Default None.
-                                                 Set the trend_type parameter eith with linear or harmonic to draw the trend line
+                                                 Set the trend_type parameter to either linear or harmonic to draw the trend line.
                                                  linear : Fits the pixel values for a variable along a linear trend line.
                                                  harmonic : Fits the pixel values for a variable along a harmonic trend line.
         ------------------------------------     --------------------------------------------------------------------
@@ -6976,6 +6976,76 @@ class ImageryLayer(Layer):
             self,
             points=points,
             show_values=show_values,
+            plot_properties=plot_properties,
+        )
+
+    def dimension_profile(
+        self,
+        points: list[Point],
+        dimension: str,
+        time: datetime.datetime,
+        variables: list[str] = [],
+        show_values: bool = False,
+        show_trend_line: bool = False,
+        plot_properties: dict[str, Any] = {},
+    ):
+        """
+        Dimension profile chart visualizes change along a vertical dimension, such as depth or height,
+        using a multidimensional raster dataset with a z-dimension.
+        Dimension Profile is only available for multidimensional datasets that contain a z-dimension.
+
+        Change is plotted in the form of a line graph for a given location and date or time. This allows
+        trends in two variables to be displayed and compared simultaneously, while taking into account
+        different unit scales.
+
+        The x-axis of the dimension profile displays the values of the variable. Default minimum and
+        maximum x-axis bounds are set based on the range of data values represented on the axis.
+
+        The y-axis of the dimension profile displays the vertical dimension value.
+
+
+        ====================================     ====================================================================
+        **Parameter**                             **Description**
+        ------------------------------------     --------------------------------------------------------------------
+        points                                   Required list of :class:`~arcgis.geometry.Point` objects.
+        ------------------------------------     --------------------------------------------------------------------
+        dimension                                Required string. The dimension name that will be used for plotting dimension profile. Use this parameter to set the field that
+                                                 represents the dimension field in the image service.
+        ------------------------------------     --------------------------------------------------------------------
+        time                                     Required datetime object or timestamp in milliseconds. The time slice that will be used for plotting dimension profile.
+        ------------------------------------     --------------------------------------------------------------------
+        variables                                Required list of strings. The variables that will be used for plotting dimension profile.
+                                                 The dimension profile chart allows a maximum of two variables to be displayed.
+        ------------------------------------     --------------------------------------------------------------------
+        show_values                              Optional boolean. Default value is False.
+                                                 Set this parameter to True to display the values at each point in the line graph.
+        ------------------------------------     --------------------------------------------------------------------
+        show_trend_line                          Optional boolean. Default value is False.
+                                                 Set this parameter to True to add a linear trend line to the dimension profile chart.
+                                                 One trend line will be drawn for each location when charting multiple locations,
+                                                 or each variable when charting multiple variables.
+        ------------------------------------     --------------------------------------------------------------------
+        plot_properties                          Optional dictionary. This parameter can be used to set the figure
+                                                 properties. These are the `matplotlib.pyplot.figure() <https://matplotlib.org/stable/api/_as_gen/matplotlib.pyplot.figure.html#matplotlib-pyplot-figure>`_
+                                                 parameters and values specified in dictionary format.
+
+                                                 eg: {"figsize":(15,15)}
+        ====================================     ====================================================================
+
+        :return:
+            None
+
+        """
+        from arcgis.raster._charts import dimension_profile
+
+        return dimension_profile(
+            self,
+            points=points,
+            dimension=dimension,
+            time=time,
+            variables=variables,
+            show_values=show_values,
+            show_trend_line=show_trend_line,
             plot_properties=plot_properties,
         )
 
