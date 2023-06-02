@@ -7012,7 +7012,7 @@ class ImageryLayer(Layer):
         dimension                                Required string. The dimension name that will be used for plotting dimension profile. Use this parameter to set the field that
                                                  represents the dimension field in the image service.
         ------------------------------------     --------------------------------------------------------------------
-        time                                     Required datetime object or timestamp in millisecond. The time slice that will be used for plotting dimension profile.
+        time                                     Required datetime object or timestamp in milliseconds. The time slice that will be used for plotting dimension profile.
         ------------------------------------     --------------------------------------------------------------------
         variables                                Required list of strings. The variables that will be used for plotting dimension profile.
                                                  The dimension profile chart allows a maximum of two variables to be displayed.
