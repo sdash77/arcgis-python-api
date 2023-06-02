@@ -128,7 +128,7 @@ class StoryMap(object):
             # Open JSON draft file for properties
             data = self._item.resources.get(saved_drafts[0], try_json=True)
             self._properties = data
-        else:
+        elif len(saved_drafts) > 1:
             # Multiple drafts saved
             # Remove draft.json because oldest one
             if "draft.json" in saved_drafts:
@@ -144,6 +144,10 @@ class StoryMap(object):
                     current = draft
             # Open most recent JSON draft file for properties
             data = self._item.resources.get(current, try_json=True)
+            self._properties = data
+        else:
+            # Storymap has no draft json so look for published json
+            data = self._item.resources.get("published_data.json", try_json=True)
             self._properties = data
 
     # ----------------------------------------------------------------------
