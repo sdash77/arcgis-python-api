@@ -80,16 +80,16 @@ import json
 from arcgis.learn.text import EntityRecognizer, SequenceToSequence, TextClassifier
 
 if os.environ.get("run_nightly") == "1":
-    data_folder = r"/home/administrator/Raster/Test_Data/data_for_testing_1/train_model_regression"
+    data_folder = r"/mnt/sda1/data_for_jenkins_tests/train_model_regression"
 else:
-    data_folder = r"/home/administrator/Raster/Test_Data/data_for_testing_1/train_model"
+    data_folder = r"/mnt/sda1/data_for_jenkins_tests/train_model"
 data_folder_inference = (
-    r"/home/administrator/Raster/Test_Data/data_for_testing_1/train_inference"
+    r"/mnt/sda1/data_for_jenkins_tests/train_inference"
 )
 data_folder_ms = (
-    r"/home/administrator/Raster/Test_Data/data_for_testing_1/train_model_ms"
+    r"/mnt/sda1/data_for_jenkins_tests/train_model_ms"
 )
-authorization_path = r"/home/administrator/Raster/Test_Data/data_for_testing_1/properties/properties.json"
+authorization_path = r"/mnt/sda1/data_for_jenkins_tests/properties/properties.json"
 
 colormap = {
     "0": [0, 0, 0],
@@ -149,12 +149,12 @@ data = {
         "model_test": "ssd_test",
         "prepare_data": {
             "path": os.path.join(data_folder, "100_cracks_data"),
-            "batch_size": 2,
+            "batch_size": None,
             "dataset_type": "PASCAL_VOC_rectangles",
         },
         "prepare_data_ms": {
             "path": os.path.join(data_folder_ms, "ssd_retina_yolo_fasterrcnn_data"),
-            "batch_size": 2,
+            "batch_size": None,
             "imagery_type": "multispectral",
         },
         "should_test": True,
@@ -212,11 +212,11 @@ data = {
         "model_test": "rn_test",
         "prepare_data": {
             "path": os.path.join(data_folder, "yolo_data"),
-            "batch_size": 2,
+            "batch_size": None,
         },
         "prepare_data_ms": {
             "path": os.path.join(data_folder_ms, "ssd_retina_yolo_fasterrcnn_data"),
-            "batch_size": 2,
+            "batch_size": None,
             "imagery_type": "multispectral",
         },
         "should_test": True,
@@ -274,11 +274,11 @@ data = {
         "model_test": "unet_test",
         "prepare_data": {
             "path": os.path.join(data_folder, "unet_psp_deep_data"),
-            "batch_size": 2,
+            "batch_size": None,
         },
         "prepare_data_ms": {
             "path": os.path.join(data_folder_ms, "unet_psp_deeplab_superres_data"),
-            "batch_size": 2,
+            "batch_size": None,
             "imagery_type": "multispectral",
         },
         "should_test": True,
@@ -332,11 +332,11 @@ data = {
         "model_test": "deeplab_test",
         "prepare_data": {
             "path": os.path.join(data_folder, "unet_psp_deep_data"),
-            "batch_size": 2,
+            "batch_size": None,
         },
         "prepare_data_ms": {
             "path": os.path.join(data_folder_ms, "unet_psp_deeplab_superres_data"),
-            "batch_size": 2,
+            "batch_size": None,
             "imagery_type": "multispectral",
         },
         "should_test": True,
@@ -390,12 +390,12 @@ data = {
         "model_test": "fc_test",
         "prepare_data": {
             "path": os.path.join(data_folder, "featureClassifier"),
-            "batch_size": 2,
+            "batch_size": None,
             "dataset_type": "Imagenet",
         },
         "prepare_data_ms": {
             "path": os.path.join(data_folder_ms, "fc_data"),
-            "batch_size": 2,
+            "batch_size": None,
             "imagery_type": "multispectral",
         },
         "should_test": True,
@@ -455,11 +455,11 @@ data = {
         "model_test": "pspnet_test",
         "prepare_data": {
             "path": os.path.join(data_folder, "unet_psp_deep_data"),
-            "batch_size": 2,
+            "batch_size": None,
         },
         "prepare_data_ms": {
             "path": os.path.join(data_folder_ms, "unet_psp_deeplab_superres_data"),
-            "batch_size": 2,
+            "batch_size": None,
             "imagery_type": "multispectral",
         },
         "should_test": True,
@@ -513,11 +513,11 @@ data = {
         "model_test": "maskrcnn_test",
         "prepare_data": {
             "path": os.path.join(data_folder, "maskrcnn_data"),
-            "batch_size": 2,
+            "batch_size": None,
         },
         "prepare_data_ms": {
             "path": os.path.join(data_folder_ms, "maskrcnn_data"),
-            "batch_size": 2,
+            "batch_size": None,
             "imagery_type": "multispectral",
         },
         "should_test": True,
@@ -598,7 +598,7 @@ data = {
         "model_test": "pointcnn_test",
         "prepare_data": {
             "path": os.path.join(data_folder, "pointcnn_data", "input"),
-            "batch_size": 2,
+            "batch_size": None,
             "dataset_type": "PointCloud",
             "transforms": None,
             "color_mapping": colormap,
@@ -688,7 +688,7 @@ data = {
         },
         "prepare_data_ms": {
             "path": os.path.join(data_folder_ms, "ssd_retina_yolo_fasterrcnn_data"),
-            "batch_size": 2,
+            "batch_size": None,
             "imagery_type": "multispectral",
         },
         "should_test": True,
@@ -750,7 +750,7 @@ data = {
         },
         "prepare_data_ms": {
             "path": os.path.join(data_folder_ms, "ssd_retina_yolo_fasterrcnn_data"),
-            "batch_size": 2,
+            "batch_size": None,
             "imagery_type": "multispectral",
         },
         "should_test": True,
@@ -844,7 +844,7 @@ data = {
         "model_test": "pix2pix_test",
         "prepare_data": {
             "path": os.path.join(data_folder, "pix2pix_data"),
-            "batch_size": 2,
+            "batch_size": None,
             "dataset_type": "Pix2Pix",
         },
         "prepare_data_ms": False,
@@ -900,7 +900,7 @@ data = {
         "model_test": "cyclegan_test",
         "prepare_data": {
             "path": os.path.join(data_folder, "cyclegan_data"),
-            "batch_size": 2,
+            "batch_size": None,
             "dataset_type": "CycleGAN",
         },
         "prepare_data_ms": False,
@@ -956,7 +956,7 @@ data = {
         "model_test": "hededgedetector_test",
         "prepare_data": {
             "path": os.path.join(data_folder, "hededgedetector_data"),
-            "batch_size": 2,
+            "batch_size": None,
         },
         "prepare_data_ms": False,
         "should_test": True,
@@ -1011,7 +1011,7 @@ data = {
         "model_test": "bdcnedgedetector_test",
         "prepare_data": {
             "path": os.path.join(data_folder, "hededgedetector_data"),
-            "batch_size": 2,
+            "batch_size": None,
         },
         "prepare_data_ms": False,
         "should_test": True,
@@ -1066,13 +1066,13 @@ data = {
         "model_test": "maxdeeplab_test",
         "prepare_data": {
             "path": os.path.join(data_folder, "panoptic_rgb"),
-            "batch_size": 2,
+            "batch_size": None,
              "n_masks":38,
              "resize_to":256
         },
         "prepare_data_ms": {
             "path": os.path.join(data_folder_ms, "panoptic_ms"),
-            "batch_size": 2,
+            "batch_size": None,
              "n_masks":38,
              "resize_to":256,
             "imagery_type": "multispectral",
@@ -1095,12 +1095,12 @@ data = {
         "model_test": "detreg_test",
         "prepare_data": {
             "path": os.path.join(data_folder, "rgb_small"),
-            "batch_size": 2,
+            "batch_size": None,
              "chip_size":256
         },
         "prepare_data_ms": {
             "path": os.path.join(data_folder_ms, "ms_small"),
-            "batch_size": 2,
+            "batch_size": None,
              "chip_size":256,
             "imagery_type": "multispectral",
         },
@@ -1122,7 +1122,7 @@ data = {
         "model_test": "imagecaptioner_test",
         "prepare_data": {
             "path": os.path.join(data_folder, "imagecaptioner_data"),
-            "batch_size": 2,
+            "batch_size": None,
             "transforms": False,
             "dataset_type": "ImageCaptioning",
         },
@@ -1165,7 +1165,7 @@ data = {
             "path": os.path.join(data_folder, "changedetection_data"),
             "chip_size": 256,
             "dataset_type": "ChangeDetection",
-            "batch_size": 2,
+            "batch_size": None,
         },
         "prepare_data_ms": False,
         "should_test": True,
@@ -1184,7 +1184,7 @@ data = {
         "model_test": "mtre_test",
         "prepare_data": {
             "path": os.path.join(data_folder, "mtre_data"),
-            "batch_size": 2,
+            "batch_size": None,
         },
         "prepare_data_ms": False,
         "should_test": True,
@@ -1284,7 +1284,7 @@ data = {
         "model_test": "mmsegmentation_test",
         "prepare_data": {
             "path": os.path.join(data_folder, "mmsegmentation_data"),
-            "batch_size": 2,
+            "batch_size": None,
         },
         "prepare_data_ms": False,
         "should_test": True,
@@ -1305,7 +1305,7 @@ data = {
         "model_test": "mmdetection_test",
         "prepare_data": {
             "path": os.path.join(data_folder, "mmdetection_data"),
-            "batch_size": 2,
+            "batch_size": None,
         },
         "prepare_data_ms": False,
         "should_test": True,
@@ -1418,7 +1418,7 @@ data = {
         "model_test": "randlanet_test",
         "prepare_data": {
             "path": os.path.join(data_folder, "randlanet_data", "GCS_plain.pctd"),
-            "batch_size": 4,
+            "batch_size": None,
             "min_points":100,
             "classes_of_interest": [5],
             "remap_classes": {},
@@ -1445,7 +1445,7 @@ data = {
         "model_test": "sqnseg_test",
         "prepare_data": {
             "path": os.path.join(data_folder, "randlanet_data", "GCS_plain.pctd"),
-            "batch_size": 4,
+            "batch_size": None,
             "min_points": 100,
             "classes_of_interest": [5],
             "remap_classes": {},

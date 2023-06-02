@@ -140,6 +140,9 @@ class AutoML(object):
             _raise_fastai_import_error(import_exception=import_exception)
 
         self._data = data
+        if isinstance(self._data._dependent_variable, list):
+            self._data._dependent_variable = self._data._dependent_variable[0]
+
         if getattr(self._data, "_is_unsupervised", False):
             raise Exception(
                 "Auto ML feature is currently only available for Supervised learning."
@@ -189,12 +192,14 @@ class AutoML(object):
             self._validation_data_df = pd.DataFrame(
                 self._validation_data,
                 columns=self._data._continuous_variables
-                + self._data._categorical_variables,
+                + self._data._categorical_variables
+                + self._data._embedding_variables,
             )
             self._all_data_df = pd.DataFrame(
                 self._all_data,
                 columns=self._data._continuous_variables
-                + self._data._categorical_variables,
+                + self._data._categorical_variables
+                + self._data._embedding_variables,
             )
             if ml_task == "auto":
                 ml_task = self.get_ml_task(self._all_labels)
@@ -226,6 +231,12 @@ class AutoML(object):
                 mode = mode
             else:
                 mode = "Explain"
+
+            if self._data._embedding_variables and mode != "Compete":
+                warnings.warn(
+                    "AutoML will be trained in Advanced/Compete mode when text or Image variables are used in model training."
+                )
+                mode = "Compete"
 
             try:
                 import arcpy
@@ -266,7 +277,7 @@ class AutoML(object):
         except:
             return "auto"
 
-    def fit(self):
+    def fit(self, sample_weight=None):
         """
         Fits the AutoML model.
         """
@@ -276,7 +287,9 @@ class AutoML(object):
             elif isinstance(self._all_labels[0], float):
                 self._all_labels = self._all_labels.astype(np.float)
             try:
-                self._model.fit(self._all_data_df, self._all_labels)
+                self._model.fit(
+                    self._all_data_df, self._all_labels, sample_weight=sample_weight
+                )
             except:
                 msg = arcpy_localization_helper(
                     "The desired models could not be trained using the input data provided.",
@@ -327,7 +340,7 @@ class AutoML(object):
         # columns=self._data._continuous_variables + self._data._categorical_variables)
         sample_indexes = [self._data._validation_indexes[i] for i in sample_batch]
         with warnings.catch_warnings():
-            warnings.simplefilter("ignore", UserWarning)
+            warnings.simplefilter("ignore")
             output_labels = self._predict(validation_data_batch)
         pd.options.mode.chained_assignment = None
         if self._data._is_classification:
@@ -554,6 +567,9 @@ class AutoML(object):
             emd_params["dependent_variable"] = self._data._dependent_variable
 
         emd_params["continuous_variables"] = self._data._continuous_variables
+        emd_params["text_variables"] = self._data._text_variables
+        emd_params["image_variables"] = self._data._image_variables
+        emd_params["embedding_variables"] = self._data._embedding_variables
         if self._data._feature_field_variables:
             emd_params["_feature_field_variables"] = self._data._feature_field_variables
         if self._data._raster_field_variables:
@@ -609,6 +625,9 @@ class AutoML(object):
         categorical_variables = emd["categorical_variables"]
         dependent_variable = emd.get("dependent_variable", None)
         continuous_variables = emd["continuous_variables"]
+        text_variables = emd.get("text_variables", None)
+        image_variables = emd.get("image_variables", None)
+        embedding_variables = emd.get("embedding_variables", None)
 
         if emd["version"] != str(sklearn.__version__):
             warnings.warn(
@@ -644,6 +663,9 @@ class AutoML(object):
             dependent_variable,
             encoder_mapping,
             column_transformer,
+            text_variables=text_variables,
+            image_variables=image_variables,
+            embedding_variables=embedding_variables,
         )
         empty_data._is_classification = _is_classification
         if _is_classification:
@@ -667,7 +689,8 @@ class AutoML(object):
         data_df = pd.DataFrame(
             data,
             columns=self._data._continuous_variables
-            + self._data._categorical_variables,
+            + self._data._categorical_variables
+            + self._data._embedding_variables,
         )
         return self._model.predict(data_df)
 
@@ -819,7 +842,7 @@ class AutoML(object):
         filename_expl = self._data.explainer_path
         load_explainer = pickle.load(open(filename_expl, "rb"))
         with warnings.catch_warnings():
-            warnings.simplefilter("ignore", UserWarning)
+            warnings.simplefilter("ignore")
             shap_values = load_explainer.shap_values(processed_numpy, nsamples=100)
         shap_values_normalised = []
         if isinstance(shap_values, np.ndarray):
@@ -902,13 +925,27 @@ class AutoML(object):
         else:
             dataframe = input_features.copy()
 
+        self._data._text_variables = self._data._text_variables or []
+        self._data._image_variables = self._data._image_variables or []
+
         fields_needed = (
+            self._data._categorical_variables
+            + self._data._continuous_variables
+            + self._data._text_variables
+            + self._data._image_variables
+        )
+        fields_needed_without_embeddings = (
             self._data._categorical_variables + self._data._continuous_variables
         )
         distance_feature_layers = (
             distance_feature_layers if distance_feature_layers else []
         )
         continuous_variables = self._data._continuous_variables
+        non_categorical_variables = (
+            self._data._continuous_variables
+            + self._data._text_variables
+            + self._data._image_variables
+        )
 
         columns = dataframe.columns
         if dataframe_complete:
@@ -920,11 +957,26 @@ class AutoML(object):
                 categorical = False
 
                 if column_name in fields_needed:
-                    if column_name not in continuous_variables:
+                    if column_name in self._data._text_variables:
+                        categorical = "text"
+                    elif column_name in self._data._image_variables:
+                        categorical = "image"
+                    elif column_name not in continuous_variables:
                         categorical = True
+                    else:
+                        pass
                 elif match_field_names and match_field_names.get(column_name):
-                    if match_field_names.get(column_name) not in continuous_variables:
+                    if match_field_names.get(column_name) in self._data._text_variables:
+                        categorical = "text"
+                    elif (
+                        match_field_names.get(column_name)
+                        in self._data._image_variables
+                    ):
+                        categorical = "image"
+                    elif match_field_names.get(column_name) not in continuous_variables:
                         categorical = True
+                    else:
+                        pass
                 else:
                     continue
 
@@ -950,7 +1002,7 @@ class AutoML(object):
             with warnings.catch_warnings():
                 if not HAS_FASTAI:
                     _raise_fastai_import_error(import_exception=import_exception)
-                warnings.simplefilter("ignore", UserWarning)
+                warnings.simplefilter("ignore")
                 (
                     processed_dataframe,
                     fields_mapping,
@@ -976,7 +1028,8 @@ class AutoML(object):
             except:
                 pass
             processed_dataframe.rename(columns=match_field_names, inplace=True)
-        for field in fields_needed:
+
+        for field in fields_needed_without_embeddings:
             if field not in processed_dataframe.columns:
                 msg = arcpy_localization_helper(
                     "Data on which prediction in needed does not have the fields the model was trained on",
@@ -987,13 +1040,23 @@ class AutoML(object):
 
         for column in processed_dataframe.columns:
             if column not in fields_needed:
-                processed_dataframe = processed_dataframe.drop(column, axis=1)
+                if "emb_" not in column:
+                    processed_dataframe = processed_dataframe.drop(column, axis=1)
 
         processed_numpy = self._data._process_data(
             processed_dataframe.reindex(sorted(processed_dataframe.columns), axis=1),
             fit=False,
         )
-        predictions = self._predict(processed_numpy)
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            predictions = self._predict(processed_numpy)
+
+        if get_local_explanations and self._data._embedding_variables:
+            get_local_explanations = False
+            warnings.warn(
+                "Local explanations cannot be generated when text or image variables are used to train the model."
+            )
+
         if get_local_explanations:
             shap_values_normalised = self._get_normalised_shap_values(processed_numpy)
         shap_df = pd.DataFrame()

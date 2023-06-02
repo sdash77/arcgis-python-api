@@ -5109,7 +5109,7 @@ class GroupManager(object):
                               organization members. If `None` set, any organization
                               will have access. `None` is the default.
 
-                              Values: `org`, `collaboration`, or `None`
+                              Values: `org`, `collaboration`, or `none`
         --------------------  ---------------------------------------------------------
         autojoin              Optional Boolean. The default is `False`. Only applies to
                               org accounts. If `True`, this group will allow joined
@@ -5168,7 +5168,9 @@ class GroupManager(object):
         params["MAX_FILE_SIZE"] = max_file_size
         if hidden_members in [True, False]:
             params["hiddenMembers"] = hidden_members
-        if membership_access in ["org", "collaboration", None]:
+        if membership_access in ["org", "collaboration", None, "none"]:
+            if membership_access is None:
+                membership_access = "none"
             params["membershipAccess"] = membership_access
         if autojoin in [True, False]:
             params["autoJoin"] = autojoin
@@ -8701,7 +8703,7 @@ class ResourceManager(object):
 
     def update(
         self,
-        file: str,
+        file: Optional[str] = None,
         folder_name: Optional[str] = None,
         file_name: Optional[str] = None,
         text: Optional[str] = None,
@@ -8770,9 +8772,10 @@ class ResourceManager(object):
         )
 
         files = []  # create a list of named tuples to hold list of files
-        if not os.path.isfile(os.path.abspath(file)):
-            raise RuntimeError("File(" + file + ") not found.")
-        files.append(("file", file, os.path.basename(file)))
+        if file:
+            if not os.path.isfile(os.path.abspath(file)):
+                raise RuntimeError("File(" + file + ") not found.")
+            files.append(("file", file, os.path.basename(file)))
 
         params = {}
         params["f"] = "json"
@@ -17125,7 +17128,7 @@ class Layer(_GISResource):
         ==================     ====================================================================
         **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
-        item                   Required string. An item ID representing a layer.
+        item                   Required Item. An item containing layers.
         ------------------     --------------------------------------------------------------------
         index                  Optional int. The index of the layer amongst the item's layers
         ==================     ====================================================================

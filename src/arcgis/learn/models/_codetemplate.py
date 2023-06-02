@@ -1413,7 +1413,7 @@ class ArcGISSuperResolution:
         return configuration
 
     def updateRasterInfo(self, **kwargs):
-        kwargs['output_info']['bandCount'] = 3
+        kwargs['output_info']['bandCount'] = self.json_info.get("n_channel", 3)
         kwargs['output_info']['pixelType'] = 'f4'
         return kwargs
 

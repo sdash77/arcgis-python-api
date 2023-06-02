@@ -496,7 +496,6 @@ def commonTestCases(
     # Fit for 1 epochs without LR.
     model_object.fit(1)
     # # Fit for 1 epochs with LR.
-    model_object.fit(1, lr=0.001)
 
     # save model
     d_path = os.path.join(data_folder, data_path, "models", model_test)
@@ -917,10 +916,10 @@ def text_models():
     return parameter_text
 
 def autodl_main():
-    autodl_data = [r"/home/administrator/Raster/Test_Data/data_for_testing_1/train_model/autodl_data/classified_tiles", 
-    r"/home/administrator/Raster/Test_Data/data_for_testing_1/train_model/autodl_data/palm_trees"]
-    autodl_pretrained_model = [r"/home/administrator/Raster/Test_Data/data_for_testing_1/train_model/autodl_data/unet_model/AutoDL_UnetClassifier_resnet34.emd",
-    r"/home/administrator/Raster/Test_Data/data_for_testing_1/train_model/autodl_data/ssd_model/AutoDL_SingleShotDetector_resnet34.emd"]
+    autodl_data = [r"/mnt/sda1/data_for_jenkins_tests/train_model/autodl_data/classified_tiles", 
+    r"/mnt/sda1/data_for_jenkins_tests/train_model/autodl_data/palm_trees"]
+    autodl_pretrained_model = [r"/mnt/sda1/data_for_jenkins_tests/train_model/autodl_data/unet_model/AutoDL_UnetClassifier_resnet34.emd",
+    r"/mnt/sda1/data_for_jenkins_tests/train_model/autodl_data/ssd_model/AutoDL_SingleShotDetector_resnet34.emd"]
     autodl_model = ["DeepLab", "SingleShotDetector"]
     for ind in range(0,2):
         path = autodl_data[ind]
@@ -944,30 +943,6 @@ def autodl_main():
         del im
         gc.collect()
         torch.cuda.empty_cache()
-
-# def efficientnet_main():
-#     os.environ['ARCGIS_ENABLE_TF_BACKEND'] = '1'
-#     data_path =  r"/home/administrator/Raster/Test_Data/data_for_testing_1/train_model/efficientnet_data"
-#     voc = prepare_data(data_path, batch_size=2, val_split_pct=0.2)
-#     import arcgis
-#     from arcgis.learn import EfficientDet
-#     detector = EfficientDet(voc)
-#     lr_val = detector.lr_find()
-#     detector.fit(1, lr=lr_val)
-#     score = detector.average_precision_score()
-#     detector.save("efficient",framework="tflite", compute_metrics=False, save_optimizer=True, save_inference_file=True)
-
-#     load_model = r"/home/administrator/Raster/notebooks/efficientnet_data/imagechips/models/efficient/efficient.emd"
-#     detector.load(load_model)
-#     detector.fit(1)
-
-
-#     from_model = EfficientDet.from_model(load_model)
-#     del detector
-#     del from_model
-#     gc.collect()
-#     torch.cuda.empty_cache()
-#     os.environ['ARCGIS_ENABLE_TF_BACKEND'] = '0'
 
 class TestTraining(unittest.TestCase):
     @classmethod
