@@ -67,11 +67,7 @@ try:
 except:
     HAS_NUMPY = False
 
-HAS_SHAP = True
-try:
-    import shap
-except:
-    HAS_SHAP = False
+warnings.filterwarnings("ignore", message=".*The 'nopython' keyword.*")
 
 
 class TextClassifier(ArcGISModel):
@@ -674,12 +670,15 @@ class TextClassifier(ArcGISModel):
 
                  * In case of multi label classification problem, a tuple containing the text, its predicted class labels, a list containing 1's for the predicted labels, 0's otherwise and list containing a score for each label
         """
-        if explain and (not HAS_SHAP):
-            warnings.warn(
-                "SHAP is not installed. Model explainablity will not be available"
-            )
-            explain = False
-            explain_index = None
+        if explain:
+            try:
+                import shap
+            except:
+                warnings.warn(
+                    "SHAP is not installed. Model explainablity will not be available"
+                )
+                explain = False
+                explain_index = None
 
         if self.is_multilabel_problem is False and thresh is not None:
             self.logger.error(

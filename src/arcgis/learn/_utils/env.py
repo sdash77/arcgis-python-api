@@ -41,10 +41,14 @@ if _LAMBDA_TEXT_CLASSIFICATION:
         sys.modules[module_name] = default_module
 
 try:
+    import platform
+
     if ARCGIS_ENABLE_TF_BACKEND:
         import tensorflow as tf
 
         HAS_TENSORFLOW = True
+    elif platform.system() == "Linux":
+        import tensorflow as tf
 except Exception as e:
     tf_import_exception = traceback.format_exc()
     pass
