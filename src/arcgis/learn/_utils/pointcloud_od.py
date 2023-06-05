@@ -685,7 +685,7 @@ def predict_batch_h5(self, dl, output_path, progressor):
                 labels_pred = []
                 confidence_pred = []
                 boxes_tile_no = []
-                point_box_ids = np.full(batch_num, 0, dtype=np.uint32)
+                point_box_ids = np.full(batch_num, 0, dtype=np.uint64)
                 low = high = 0
                 start_box_id = [1]
 
@@ -708,9 +708,9 @@ def predict_batch_h5(self, dl, output_path, progressor):
                 save_h5(
                     output_path / dl.dataset.filenames[int(tile[unique_index[i]][0])],
                     np.array(boxes_pred),
-                    np.array(labels_pred),
+                    np.array(labels_pred, dtype=np.uint8),
                     np.array(confidence_pred),
-                    np.array(boxes_tile_no),
+                    np.array(boxes_tile_no, dtype=np.uint64),
                     point_box_ids,
                 )
             low = high
@@ -747,7 +747,7 @@ def split_prediction(model, preds, points, start_box_id, tile_index):
         labels = pred["labels_3d"]
         scores = pred["scores_3d"]
 
-        tile_box_ids = np.array(start_box_id * points[idx].shape[0], dtype=np.uint32)
+        tile_box_ids = np.array(start_box_id * points[idx].shape[0], dtype=np.uint64)
         point_box_ids = boxes.points_in_boxes_part(points[idx][:, :3]).detach().cpu()
         tile_box_ids = np.add(tile_box_ids, point_box_ids)
         no_of_detbox = labels.shape[0]
@@ -767,7 +767,7 @@ def split_prediction(model, preds, points, start_box_id, tile_index):
         batch_labels,
         batch_confidance,
         batch_box_tiles,
-        np.array(batch_point_box_ids),
+        np.array(batch_point_box_ids, dtype=np.uint64),
     )
 
 
