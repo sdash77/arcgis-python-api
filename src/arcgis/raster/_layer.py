@@ -8087,10 +8087,6 @@ class Raster:
                               the URL of the STAC item. It can be a Static STAC item URL or a STAC
                               API Item URL.
 
-                              .. note::
-                                Currently only Sentinel-2 Cloud-Optimized GeoTIFFs (COGs) STAC Items
-                                are supported for this method (Available in 11.0 onwards).
-
                               Example:
                                     "https://sentinel-cogs.s3.us-west-2.amazonaws.com/sentinel-s2-l2a-cogs/12/S/YJ/2020/10/S2A_12SYJ_20201006_0_L2A/S2A_12SYJ_20201006_0_L2A.json"
         -----------------     --------------------------------------------------------------------
@@ -12402,10 +12398,6 @@ class RasterCollection:
         -----------------     --------------------------------------------------------------------
         stac_api              Required string. URL of the STAC API root endpoint. The STAC API where
                               the search needs to be performed.
-
-                              .. note::
-                                Currently only Sentinel-2 Cloud-Optimized GeoTIFFs (COGs) STAC Item queries
-                                are supported for this method (Available in 11.0 onwards).
 
                               Example:
                                     "https://earth-search.aws.element84.com/v0"
