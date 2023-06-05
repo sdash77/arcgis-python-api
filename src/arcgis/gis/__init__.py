@@ -13525,7 +13525,9 @@ class Item(dict):
         )
 
     # ----------------------------------------------------------------------
-    def reassign_to(self, target_owner: str, target_folder: Optional[str] = None):
+    def reassign_to(
+        self, target_owner: str | User, target_folder: Optional[str] = None
+    ):
         """
         The ``reassign_to`` method allows the administrator to reassign a single item from one user to another.
 
@@ -13536,7 +13538,7 @@ class Item(dict):
         ================  ========================================================
         **Parameter**      **Description**
         ----------------  --------------------------------------------------------
-        target_owner      Required string. The new desired owner of the item.
+        target_owner      Required string or User. The new desired owner of the item.
         ----------------  --------------------------------------------------------
         target_folder     Optional string. The folder to move the item to.
         ================  ========================================================
@@ -13555,6 +13557,8 @@ class Item(dict):
             current_folder = self.ownerFolder
         except:
             current_folder = None
+        if isinstance(target_owner, User):
+            target_owner = target_owner.username
         resp = self._portal.reassign_item(
             self.itemid,
             self._user_id,

@@ -641,7 +641,9 @@ def extract_from_kwargs(paramater_key: str, kwargs: dict) -> Tuple[Any, dict]:
     return param_val, kwargs
 
 
-def validate_network_travel_mode(source, travel_mode: str, proximity_metric: Optional[str]):
+def validate_network_travel_mode(
+    source, travel_mode: str, proximity_metric: Optional[str]
+):
     """Validate the travel_mode string or index."""
     # dictionary of potential aliases for travel modes
     travel_mode_dict = {"walk": "walking", "drive": "driving", "truck": "trucking"}
@@ -744,7 +746,9 @@ def add_proximity_to_enrich_feature(
         feature["areaType"] = "NetworkServiceArea"
 
         # scrub the travel mode
-        travel_mode = validate_network_travel_mode(source, travel_mode, proximity_metric)
+        travel_mode = validate_network_travel_mode(
+            source, travel_mode, proximity_metric
+        )
 
         # pull out the category from the travel modes and set the travel mode flat (temporal or distance)
         source_travel_mode = source.travel_modes[
