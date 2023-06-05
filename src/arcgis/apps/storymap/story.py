@@ -762,7 +762,10 @@ class StoryMap(object):
         # Get credit node id
         for key, value in dict_node.items():
             credits_node = key
-        children = self._properties["nodes"][credits_node]["children"]
+        if "children" in self._properties["nodes"][credits_node]:
+            children = self._properties["nodes"][credits_node]["children"]
+        else:
+            children = []
 
         nodes = []
         if content or attribution:
