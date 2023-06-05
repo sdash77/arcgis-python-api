@@ -90,7 +90,6 @@ else:
         "pyspnego >=0.8.0",
         "requests-kerberos",
         "requests-gssapi",
-        "gssapi>=1.8.1,<2",
         "dask >=2023.3.2",
         "matplotlib-inline",
     ]
