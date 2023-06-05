@@ -641,7 +641,7 @@ def extract_from_kwargs(paramater_key: str, kwargs: dict) -> Tuple[Any, dict]:
     return param_val, kwargs
 
 
-def validate_network_travel_mode(source, travel_mode: str):
+def validate_network_travel_mode(source, travel_mode: str, proximity_metric: Optional[str]):
     """Validate the travel_mode string or index."""
     # dictionary of potential aliases for travel modes
     travel_mode_dict = {"walk": "walking", "drive": "driving", "truck": "trucking"}
@@ -656,12 +656,12 @@ def validate_network_travel_mode(source, travel_mode: str):
 
         # if generic given, change to correct generic [Take care of old code for Buffer Study Area]
         if travel_mode in ["driving", "walking", "trucking"]:
-            if travel_mode == "driving":
-                travel_mode = "driving time"
-            elif travel_mode == "walking":
-                travel_mode = "walking time"
-            else:
-                travel_mode = "trucking time"
+            travel_mode_type = "time"
+            if proximity_metric:
+                proximity_metric = proximity_metric.lower()
+                if proximity_metric not in ["seconds", "minutes", "hours", "days"]:
+                    travel_mode_type = "distance"
+            travel_mode = "{} {}".format(travel_mode, travel_mode_type)
 
         # if the proximity type is straight line, just make sure in correct format (used for enrich method)
         if travel_mode == "straight_line" or travel_mode == "Straight Line":
@@ -744,12 +744,15 @@ def add_proximity_to_enrich_feature(
         feature["areaType"] = "NetworkServiceArea"
 
         # scrub the travel mode
-        travel_mode = validate_network_travel_mode(source, travel_mode)
+        travel_mode = validate_network_travel_mode(source, travel_mode, proximity_metric)
 
         # pull out the category from the travel modes and set the travel mode flat (temporal or distance)
-        trvl_md_typ = source.travel_modes[
+        source_travel_mode = source.travel_modes[
             source.travel_modes["alias"] == travel_mode
-        ].iloc[0]["impedance_category"]
+        ]
+        trvl_md_typ = source_travel_mode.iloc[0]["impedance_category"]
+
+        feature["travel_mode"] = source_travel_mode.iloc[0]["travel_mode_dict"]
 
         # tack on polygon area overlap
         if proximity_area_overlap:
@@ -758,10 +761,11 @@ def add_proximity_to_enrich_feature(
             feature["networkOptions"] = {"polygon_overlap_type": "Rings"}
 
     # if no proximity metric provided, provide default based on travel mode, and also validate if provided
-    if proximity_metric is None and trvl_md_typ == "distance":
-        proximity_metric = "kilometers"
-    elif proximity_metric is None and trvl_md_typ == "temporal":
-        proximity_metric = "minutes"
+    if proximity_metric is None:
+        if trvl_md_typ == "distance":
+            proximity_metric = "kilometers"
+        elif trvl_md_typ == "temporal":
+            proximity_metric = "minutes"
 
     # set the buffer units if now populated
     if proximity_metric is not None:
