@@ -670,7 +670,7 @@ def is_supported(gis=None):
 ## Compute Sensor model
 ###################################################################################################
 def compute_sensor_model(
-    image_collection=None,
+    image_collection,
     mode: str = "Quick",
     location_accuracy: str = "High",
     context: Optional[dict[str, Any]] = None,
@@ -689,7 +689,7 @@ def compute_sensor_model(
     ==================     ====================================================================
     **Parameter**           **Description**
     ------------------     --------------------------------------------------------------------
-    image_collection       Optional, the input image collection on which to compute
+    image_collection       Required, the input image collection on which to compute
                            the sensor model.
                            The image_collection can be a portal Item or an image service URL or a URI
 
