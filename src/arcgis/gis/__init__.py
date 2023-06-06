@@ -10590,6 +10590,99 @@ class User(dict):
             return TaskManager(url=url, user=self, gis=self._gis)
         return None
 
+    def transfer_content(
+        self, target_user: str | User, folder: str | None = None
+    ) -> concurrent.futures.Future:
+        """
+        This operation transfers all the current user's content to a new user.
+        This is an asynchronous operation that can take up to 15 minutes to complete.
+
+        ================  ========================================================
+        **Parameter**      **Description**
+        ----------------  --------------------------------------------------------
+        target_user       Required str or User. The user who will received the current user's content.
+        ----------------  --------------------------------------------------------
+        folder            Optional str. The folder where the content is stored.
+        ================  ========================================================
+
+        :returns: concurrent.futures.Future
+
+        """
+        if isinstance(target_user, User):
+            username: str = target_user.username
+        elif isinstance(target_user, str):
+            username: str = target_user
+            target_user: User = self._gis.users.get(username)
+        else:
+            raise ValueError("target_user must be a string or User object")
+        target_user: User = target_user
+        target_user.folders
+        if folder is None:
+            folder_dest: str = username
+        else:
+            folder_dest: str = None
+            for f in target_user.folders:
+                if folder.lower() == f["id"].lower():
+                    folder_dest = f["title"]
+                    break
+                elif folder.lower() == f["title"].lower():
+                    folder_dest = f["title"]
+                    break
+            if folder_dest is None:
+                cm: ContentManager = self._gis.content
+                cm.create_folder(folder=folder, owner=target_user)
+                folder_dest = folder
+        params: dict[str, Any] = {
+            "f": "json",
+            "reassign": json.dumps(
+                {
+                    "targetUser": username,  # destination user
+                    "reassignedUsers": [self.username],  # content source
+                    "targetFolderName": folder_dest,  # folder location, default is the root
+                    "createSubFolderPerReassignedUser": False,
+                }
+            ),
+        }
+        url: str = f"{self._portal.resturl}portals/self/reassignUsersContent"
+        resp: requests.Response = self._gis._con._session.post(url=url, data=params)
+        resp.raise_for_status()
+        data: dict[str, Any] = resp.json()
+        job_url: str = f"{self._portal.resturl}portals/self/jobs/{data['jobId']}"
+
+        tp = concurrent.futures.ThreadPoolExecutor(max_workers=1)
+        future: concurrent.futures.Future = tp.submit(
+            self._transfer_content_status,
+            **{"session": self._gis._con._session, "url": job_url},
+        )
+        tp.shutdown(cancel_futures=False)
+        return future
+
+    def _transfer_content_status(self, session: requests.Session, url: str) -> dict:
+        """checks the job status for transfer content operation"""
+
+        resp: requests.Response = session.get(
+            url=url,
+            params={
+                "f": "json",
+            },
+        )
+        data: dict[str, Any] = resp.json()
+        status: str = data.get("status", "submitted")
+        while "status" in data:
+            if status == "submitted":
+                time.sleep(10)
+            elif status in ["success", "failed", "succeeded"]:
+                return data
+            resp: requests.Response = session.get(
+                url=url,
+                params={
+                    "f": "json",
+                },
+            )
+            data: dict[str, Any] = resp.json()
+            status: str = data.get("status", "submitted")
+        return data
+
     # ----------------------------------------------------------------------
     def generate_direct_access_url(
         self,
