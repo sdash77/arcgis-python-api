@@ -597,6 +597,7 @@ class SystemManager(object):
         ---------------     --------------------------------------------------------------------
         value               Required property.
         ===============     ====================================================================
+
         The available properties are as follows:
 
             + WebContextURL - Defines the web front-end as seen by your users. Example: ``https://mydomain.com/gis``
