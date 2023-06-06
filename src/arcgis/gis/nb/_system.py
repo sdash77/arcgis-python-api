@@ -603,13 +603,8 @@ class SystemManager(object):
             >>> nbserver.system.properties = {"webSocketSize" : 32}
             
             
-        The available properties are as follows:
-
-            + WebContextURL - Defines the web front-end as seen by your users. Example: ``https://mydomain.com/gis``
-            + maxContainersPerNode - The default maximum number of containers that can be opened on a notebook server machine assuming the machine has the necessary CPU/Memory resources to support the containers.
-            + idleNotebookThreshold - Specifies the time (in minutes) after which idle notebooks are closed automatically.
-            + containerCreatedThreshold - Specifies the time (in minutes) after which an empty container is closed automatically.
-            + webSocketSize - Specifies the amount of memory (in MB) available to ArcGIS Notebooks for WebSocket communication
+        See the REST API documention for `Notebook Server System properties <https://developers.arcgis.com/rest/enterprise-administration/notebook/server-properties.htm>`_
+        for current complete list of available properties.
 
         :return: PropertyMap
         """
