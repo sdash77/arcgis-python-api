@@ -8,6 +8,7 @@ from ._ref import templates
 import json
 from arcgis.gis import GIS
 import re
+from dataclasses import dataclass
 
 arcgis = LazyLoader("arcgis")
 json = LazyLoader("json")
@@ -118,16 +119,26 @@ class WebExperience(object):
         name: Optional[str] = None,
     ):
         if gis is None:
-            gis = arcgis.env.active_gis
-            self._gis = gis
+            if item and isinstance(item, arcgis.gis.Item):
+                self._gis = item._gis
+            else:
+                self._gis = arcgis.env.active_gis
         else:
+            if item and isinstance(item, arcgis.gis.Item):
+                if item._gis != gis:
+                    raise ValueError("Provided GIS must match item GIS")
             self._gis = gis
-        if gis is None or gis._portal.is_logged_in is False:
+
+        if self._gis is None or self._gis._portal.is_logged_in is False:
             # check to see if user is authenticated
-            raise Exception("Must be logged into a Portal Account")
+            raise AttributeError(
+                "Must be logged into a Portal Account or provide a logged-in GIS object"
+            )
         if item and isinstance(item, str):
             # get item using the item id
-            item = gis.content.get(item)
+            item = self._gis.content.get(item)
+            if item is None:
+                raise ValueError("Item is not accessible with provided GIS")
         if item and isinstance(item, arcgis.gis.Item) and item.type == "Web Experience":
             # set item properties
             self._item = item
@@ -148,7 +159,7 @@ class WebExperience(object):
             item and isinstance(item, arcgis.gis.Item) and item.type != "Web Experience"
         ):
             # Throw error if item is not of type Experience
-            raise ValueError("Item is not a Web Experience")
+            raise ValueError("Item is not a Web Experience or is inaccesible")
         else:
             self._create_new_experience(template=template, name=name)
 
@@ -158,7 +169,7 @@ class WebExperience(object):
         """
         Get/set the WebExperience's draft property. This dictionary dictates what
         the current version of the story looks like. Calling `save()` after amending the
-        draft will make the changes permanent, and calling `reset()` will revert the
+        draft will make the changes permanent, and calling `reload()` will revert the
         draft to the last save state.
         """
         return self._draft
@@ -178,7 +189,7 @@ class WebExperience(object):
         """
         Returns the portal item associated with the WebExperience, if possible.
         Experiences made from local json files won't have an `item` property until they
-        are added to a portal using `add_to_portal()`.
+        are added to a portal using `upload()`.
         """
         return self._item
 
@@ -188,9 +199,20 @@ class WebExperience(object):
         """
         Returns the item ID of the associated portal item, if possible. As with `item`,
         Experiences made from local json files won't have an `itemid` property until they
-        are added to a portal using `add_to_portal()`.
+        are added to a portal using `upload()`.
         """
         return self._itemid
+
+    # -----------------------------------------------------------------------------------
+    @property
+    def datasources(self):
+        """
+        Shows the data sources dictionary found in the experience's draft, allowing users
+        to quickly get info on all of the other items in their experience. Changing this
+        dictionary will change the draft, making it convenient for remapping data
+        sources.
+        """
+        return self._draft["dataSources"]
 
     # -----------------------------------------------------------------------------------
     def _create_new_experience(
@@ -374,7 +396,7 @@ class WebExperience(object):
             return self._item.update(item_properties=item_properties)
 
     # ----------------------------------------------------------------------
-    def reset(self):
+    def reload(self):
         """
         Resets any changes that the user has made to the last saved state. Note that
         this only applies to changes made through a Python API object, and not the GUI.
@@ -508,8 +530,14 @@ class WebExperience(object):
         else:
             return False
 
+    @dataclass
+    class data_sources:
+        """
+        Data class for managing an experience's data sources. Calling save after
+        """
+
     # ----------------------------------------------------------------------
-    def add_to_portal(
+    def upload(
         self,
         gis,
         publish=False,
@@ -583,9 +611,9 @@ class WebExperience(object):
 
         # if user passed in their own custom remapping, use that
         if item_mapping is not None:
-            for k, v in item_mapping.items():
-                new_config["dataSources"][k]["itemId"] = v[0]
-                new_config["dataSources"][k]["portalUrl"] = v[1]
+            for source, v in item_mapping.items():
+                for attr, new_value in v.items():
+                    new_config["dataSources"][source][attr] = new_value
 
         # create a new portal experience using the config
         self._create_new_experience(config=new_config, name=name, gis=gis)

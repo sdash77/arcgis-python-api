@@ -15,7 +15,7 @@ class TestExperience(unittest.TestCase):
 
     # @unittest.skip("focusing elsewhere")
     def test_new_experience(self):
-        """Make a new experience, reset save, save, publish, delete"""
+        """Make a new experience, reload, save, save, publish, delete"""
         for profile in profiles:
             # establish gis connection
             gis = GIS(profile=profile, verify_cert=False)
@@ -30,10 +30,10 @@ class TestExperience(unittest.TestCase):
                 assert exp.draft["template"] == "blankfullscreen"
                 assert isinstance(exp._resources, list)
 
-            # test reset save
-            with self.subTest(msg=profile + " reset save"):
+            # test reload save
+            with self.subTest(msg=profile + " reload save"):
                 exp.draft = templates["foldable"]
-                assert exp.reset()
+                assert exp.reload()
                 assert exp.draft == exp._expdict
                 assert exp.draft["template"] == "blankfullscreen"
 
@@ -156,7 +156,7 @@ class TestExperience(unittest.TestCase):
 
             with self.subTest(msg=profile + " adding to portal"):
                 exp = WebExperience(path=path, gis=gis)
-                item = exp.add_to_portal(gis=gis, name="test exp")
+                item = exp.upload(gis=gis, name="test exp")
                 assert isinstance(item, Item)
                 assert item["title"] == "test exp"
                 assert exp.draft["attributes"]["portalUrl"] == gis.url
@@ -167,11 +167,12 @@ class TestExperience(unittest.TestCase):
             with self.subTest(msg=profile + " manually remapping data"):
                 exp = WebExperience(path=path, gis=gis)
                 remap_dict = {
-                    "dataSource_1": ["c50de463235e4161b206d000587af18b", gis.url]
+                    "dataSource_1": {
+                        "itemId": "c50de463235e4161b206d000587af18b",
+                        "portalUrl": gis.url,
+                    }
                 }
-                item = exp.add_to_portal(
-                    gis=gis, name="test exp", item_mapping=remap_dict
-                )
+                item = exp.upload(gis=gis, name="test exp", item_mapping=remap_dict)
                 assert isinstance(item, Item)
                 assert item["title"] == "test exp"
                 assert exp.draft["attributes"]["portalUrl"] == gis.url
@@ -190,7 +191,7 @@ class TestExperience(unittest.TestCase):
                 exp.draft["dataSources"]["dataSource_1"][
                     "itemId"
                 ] = "123hehethiswontwork"
-                item = exp.add_to_portal(gis=gis, name="test exp", auto_remap=True)
+                item = exp.upload(gis=gis, name="test exp", auto_remap=True)
                 assert isinstance(item, Item)
                 assert item["title"] == "test exp"
                 assert (
