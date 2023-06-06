@@ -586,18 +586,23 @@ class SystemManager(object):
         some of its intricate behavior. This resource is a container for
         these properties. The properties are available to all server
         objects and extensions through the server environment interface.
-
-        Sets the ArcGIS Notebook Server has configuration properties that govern
-        some of its intricate behavior. This resource is a container for
-        these properties. The properties are available to all server
-        objects and extensions through the server environment interface.
+        
+        You can use this property to get and/or set the available properties.
 
         ===============     ====================================================================
-        **Parameter**        **Description**
+        **Parameter**       **Description**
         ---------------     --------------------------------------------------------------------
-        value               Required property.
+        value               Required dictionary.
         ===============     ====================================================================
 
+        .. code-block:: python
+        
+            #Usage Example:
+            >>> nbserver = gis.notebook_server[0]
+            
+            >>> nbserver.system.properties = {"webSocketSize" : 32}
+            
+            
         The available properties are as follows:
 
             + WebContextURL - Defines the web front-end as seen by your users. Example: ``https://mydomain.com/gis``
