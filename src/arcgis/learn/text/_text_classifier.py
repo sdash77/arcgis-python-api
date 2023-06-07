@@ -67,11 +67,7 @@ try:
 except:
     HAS_NUMPY = False
 
-HAS_SHAP = True
-try:
-    import shap
-except:
-    HAS_SHAP = False
+warnings.filterwarnings("ignore", message=".*The 'nopython' keyword.*")
 
 
 class TextClassifier(ArcGISModel):
@@ -619,6 +615,14 @@ class TextClassifier(ArcGISModel):
         )
         return result
 
+    def _predict_batch(self, text, thresh=None):
+        if thresh is None:
+            thresh = self.thresh
+        result = self.learn.model.predict_class_batch(
+            text, self._device, self.is_multilabel_problem, thresh
+        )
+        return result
+
     def predict(
         self,
         text_or_list,
@@ -626,6 +630,7 @@ class TextClassifier(ArcGISModel):
         thresh=None,
         explain=False,
         explain_index=None,
+        batch_size=64,
     ):
         """
         Predicts the class label(s) for the input text
@@ -653,18 +658,27 @@ class TextClassifier(ArcGISModel):
         explain_index           Optional List. Index of the rows for which explanation
                                 is required.  If the value is None, it will generate
                                 an explanation for every row.
+        ---------------------   -------------------------------------------
+        batch_size              Optional integer.
+                                Number of inputs to be processed at once.
+                                Try reducing the batch size in case of out of
+                                memory errors.
+                                Default value : 64
         =====================   ===========================================
 
         :return: * In case of single label classification problem, a tuple containing the text, its predicted class label and the confidence score.
 
                  * In case of multi label classification problem, a tuple containing the text, its predicted class labels, a list containing 1's for the predicted labels, 0's otherwise and list containing a score for each label
         """
-        if explain and (not HAS_SHAP):
-            warnings.warn(
-                "SHAP is not installed. Model explainablity will not be available"
-            )
-            explain = False
-            explain_index = None
+        if explain:
+            try:
+                import shap
+            except:
+                warnings.warn(
+                    "SHAP is not installed. Model explainablity will not be available"
+                )
+                explain = False
+                explain_index = None
 
         if self.is_multilabel_problem is False and thresh is not None:
             self.logger.error(
@@ -675,15 +689,41 @@ class TextClassifier(ArcGISModel):
         sliced_text_list = []
 
         if isinstance(text_or_list, (list, tuple, np.ndarray)):
-            if show_progress:
-                preds = []
+            preds = []
+            if len(text_or_list) < batch_size:
+                batch_size = len(text_or_list)
 
-                for i in progress_bar(range(len(text_or_list))):
-                    prediction = self._predict(text_or_list[i], thresh)
-                    preds.append(prediction)
+            remaining_len = len(text_or_list)
+            if len(text_or_list) % batch_size == 0:
+                iter_val = len(text_or_list) // batch_size
             else:
-                preds = [self._predict(x, thresh) for x in text_or_list]
-
+                iter_val = (len(text_or_list) // batch_size) + 1
+            lower_range = 0
+            upper_range = batch_size
+            if show_progress:
+                for ind in progress_bar(range(iter_val)):
+                    prediction = self._predict_batch(
+                        text_or_list[lower_range:upper_range], thresh
+                    )
+                    preds.extend(prediction)
+                    remaining_len -= batch_size
+                    lower_range = upper_range
+                    if remaining_len >= batch_size:
+                        upper_range = lower_range + batch_size
+                    else:
+                        upper_range = upper_range + remaining_len
+            else:
+                for ind in range(iter_val):
+                    prediction = self._predict_batch(
+                        text_or_list[lower_range:upper_range], thresh
+                    )
+                    preds.extend(prediction)
+                    remaining_len -= batch_size
+                    lower_range = upper_range
+                    if remaining_len >= batch_size:
+                        upper_range = lower_range + batch_size
+                    else:
+                        upper_range = upper_range + remaining_len
             result = [(text, *pred) for text, pred in zip(text_or_list, preds)]
             if explain:
                 if isinstance(explain_index, int):

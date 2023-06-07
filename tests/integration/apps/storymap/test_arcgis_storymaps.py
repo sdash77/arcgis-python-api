@@ -53,8 +53,7 @@ class TestStoryMap(unittest.TestCase):
 
                 assert story.save()
 
-                item = gis.content.get(story._itemid)
-                assert item.delete()
+                story.delete_story()
 
 
 if __name__ == "__main__":

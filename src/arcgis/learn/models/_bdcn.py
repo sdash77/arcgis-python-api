@@ -262,6 +262,7 @@ class BDCNEdgeDetector(ModelExtension):
             )
             data.class_mapping = class_mapping
             data.color_mapping = color_mapping
+            data._is_empty = True
             data.emd_path = emd_path
             data.emd = emd
             data.classes = ["background"]

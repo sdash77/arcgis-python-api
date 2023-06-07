@@ -339,6 +339,7 @@ class GIS(object):
     _is_agol = None
     _pds = None
     _validate_item_url = None
+    _properties = None
     """If 'True', the GIS instance is a GIS('home') from hosted nbs"""
 
     # admin = None
@@ -650,6 +651,9 @@ class GIS(object):
             force_refresh = True
 
         # If a token was injected, then force refresh to get updated properties
+        self._properties = _mixins.PropertyMap(
+            self._portal.get_properties(force=force_refresh)
+        )
         self._lazy_properties = _mixins.PropertyMap(
             self._portal.get_properties(force=force_refresh)
         )
@@ -1177,12 +1181,14 @@ class GIS(object):
             pass
         return self._datastores_list
 
-    @_lazy_property
+    @property
     def properties(self):
         """
         ``properties`` manages the actual properties of the GIS object.
         """
-        return _mixins.PropertyMap(self._get_properties(force=True))
+        if self._properties is None:
+            self._properties = _mixins.PropertyMap(self._get_properties(force=True))
+        return self._properties
 
     def update_properties(self, properties_dict: dict[str, Any]):
         """The ``update_properties`` method updates the GIS's properties from those in ``properties_dict``. This method
@@ -1229,7 +1235,7 @@ class GIS(object):
 
         resp = self._portal.con.post("portals/self/update", postdata)
         if resp:
-            self._lazy_properties = _mixins.PropertyMap(
+            self._properties = _mixins.PropertyMap(
                 self._portal.get_properties(force=True)
             )
             # delattr(self, '_lazy_properties') # force refresh of properties when queried next
@@ -3624,7 +3630,9 @@ class UserManager(object):
                 and "groups" in self.user_settings
                 and self.user_settings["groups"]
             ):
-                groups = [self._gis.groups.get(g) for g in self.user_settings["groups"]]
+                groups = [
+                    self._gis.groups.get(g).id for g in self.user_settings["groups"]
+                ]
             params = {
                 "f": "json",
                 "invitationList": {
@@ -4043,6 +4051,11 @@ class UserManager(object):
         ==================     ====================================================================
         """
         results = []
+        # ensure /Categories is at the start of each string.
+        categories = [
+            cat if cat.lower().find("/categories") > -1 else f"/Categories/{cat}"
+            for cat in categories
+        ]
         for user in users:
             results.append({user.username: user.update(categories=categories)})
         return results
@@ -4122,9 +4135,16 @@ class UserManager(object):
             res = self._gis._con.post(url, params)
             if res.get("success", False) == False:
                 raise Exception(res)
+            else:
+                self._gis._properties = None
         elif isinstance(value, (tuple, list)):
             url = f"{self._gis._portal.resturl}portals/self/assignMemberCategorySchema"
-            cat_param = [{"title": category} for category in value]
+            cat_param = []
+            for category in value:
+                if isinstance(value, str):
+                    cat_param.append({"title": category})
+                else:
+                    cat_param.append(category)
             if self._gis.properties.hasMemberCategorySchema:
                 for category in self._gis.users.categories[0]["categories"]:
                     cat_param.append(category)
@@ -4142,6 +4162,8 @@ class UserManager(object):
             res = self._gis._con.post(url, params)
             if res.get("success", False) == False:
                 raise Exception(res)
+            else:
+                self._gis._properties = None
         elif isinstance(value, dict) and "memberCategorySchema" in value:
             url = f"{self._gis._portal.resturl}portals/self/assignMemberCategorySchema"
             if self._gis.properties.hasMemberCategorySchema:
@@ -4151,6 +4173,8 @@ class UserManager(object):
             res = self._gis._con.post(url, params)
             if res.get("success", False) == False:
                 raise Exception(res)
+            else:
+                self._gis._properties = None
         else:
             raise ValueError("A list or tuple must be given to set the categories.")
 
@@ -4963,9 +4987,8 @@ class Role(object):
 class GroupManager(object):
     """
     The ``GroupManager`` class is a helper class for managing GIS groups.
-    An instance of this class, called :attr:`~arcgis.gis.GIS.groups`, is available as a property of the
-    :class:`~arcgis.gis.GIS` object.
-    Users call methods on this 'groups' object to manipulate (create, get, search, etc) users.
+    An instance of this class, called :attr:`~arcgis.gis.GIS.groups`, is available
+    as a property of the :class:`~arcgis.gis.GIS` object.
 
     .. note::
         This class is not created by users directly.
@@ -5000,14 +5023,18 @@ class GroupManager(object):
         autojoin: bool = False,
     ):
         """
-        The ``create`` method creates a group with the values for any particular arguments that are specified.
+        The ``create`` method creates a group with the values for any particular
+        arguments that are specified. The user who creates the group automatically
+        becomes the owner of the group, and the owner automatically becomes an
+        administrator. Use :attr:`~arcgis.gis.Group.reassign_to` to change the
+        owner.
 
         .. note::
             Only title and tags are required.
 
 
         ====================  =========================================================
-        **Parameter**          **Description**
+        **Parameter**         **Description**
         --------------------  ---------------------------------------------------------
         title                 Required string. The name of the group.
         --------------------  ---------------------------------------------------------
@@ -5039,7 +5066,6 @@ class GroupManager(object):
         auto_join             Optional boolean. Only applies to org accounts. If True,
                               this group will allow joining without requesting
                               membership approval. Default is False.
-
         --------------------  ---------------------------------------------------------
         provider_group_name   Optional string. The name of the domain group.
                               Create an association between a Portal group and an
@@ -5071,11 +5097,11 @@ class GroupManager(object):
                               from choosing to leave the group. If True, only an
                               administrator can remove them from the group. The default
                               is False.
-        ------------------    ---------------------------------------------------------
+        --------------------  ---------------------------------------------------------
         hidden_members        Optional Boolean. Only applies to org accounts. If true,
                               only the group owner, group managers, and default
                               administrators can see all members of the group.
-        ------------------    ---------------------------------------------------------
+        --------------------  ---------------------------------------------------------
         membership_access     Optional String. Sets the membership access for the group.
                               Setting to `org` restricts group access to members of
                               your organization. Setting to `collaboration` restricts the
@@ -5083,8 +5109,8 @@ class GroupManager(object):
                               organization members. If `None` set, any organization
                               will have access. `None` is the default.
 
-                              Values: `org`, `collaboration`, or `None`
-        ------------------    ---------------------------------------------------------
+                              Values: `org`, `collaboration`, or `none`
+        --------------------  ---------------------------------------------------------
         autojoin              Optional Boolean. The default is `False`. Only applies to
                               org accounts. If `True`, this group will allow joined
                               without requesting membership approval.
@@ -5096,8 +5122,10 @@ class GroupManager(object):
         .. code-block:: python
 
             # Usage Example
-            >>> gis.groups.create(title = "New Group", tags = "new, group, USA",
-            >>>                     description = "a new group in the USA", access = "public")
+            >>> gis.groups.create(title = "New Group",
+                                  tags = "new, group, USA",
+                                  description = "a new group in the USA",
+                                  access = "public")
         """
         display_settings_lu = {
             "apps": {"itemTypes": "Application"},
@@ -5140,7 +5168,9 @@ class GroupManager(object):
         params["MAX_FILE_SIZE"] = max_file_size
         if hidden_members in [True, False]:
             params["hiddenMembers"] = hidden_members
-        if membership_access in ["org", "collaboration", None]:
+        if membership_access in ["org", "collaboration", None, "none"]:
+            if membership_access is None:
+                membership_access = "none"
             params["membershipAccess"] = membership_access
         if autojoin in [True, False]:
             params["autoJoin"] = autojoin
@@ -5824,7 +5854,7 @@ class ContentManager(object):
         commentsEnabled             Optional boolean. Default is true, controls whether comments are allowed (true)
                                     or not allowed (false).
         --------------------------  ---------------------------------------------------------------------
-        culture                     Optional string. Language and country information.
+        access                      Optional string. Valid values are private, org, or public. Defaults to private.
         --------------------------  ---------------------------------------------------------------------
         overwrite                   Optional boolean. Default is `false`. Controls whether item can be overwritten.
         ==========================  =====================================================================
@@ -5990,7 +6020,7 @@ class ContentManager(object):
                 folder=folder,
             )
 
-            # Update the thumbnail and return the item
+            # Update the thumbnail
             item = Item(gis=self._gis, itemid=itemid)
             if item.type == "KML":
                 item.update(
@@ -5999,6 +6029,15 @@ class ContentManager(object):
                     }
                 )
             item.update(thumbnail=thumbnail)
+
+            # Update the access and return the item
+            if item_properties and "access" in item_properties:
+                if item_properties["access"] == "public":
+                    item.share(everyone=True)
+                elif item_properties["access"] == "org":
+                    item.share(org=True)
+                elif item_properties["access"] == "private":
+                    item.share(everyone=False, org=False)
             return item
         else:
             if filetype:
@@ -6022,6 +6061,15 @@ class ContentManager(object):
                         "url": f"{self._gis._portal.resturl}content/items/{item.itemid}/data"
                     }
                 )
+
+            # Update access
+            if item_properties and "access" in item_properties:
+                if item_properties["access"] == "public":
+                    item.share(everyone=True)
+                elif item_properties["access"] == "org":
+                    item.share(org=True)
+                elif item_properties["access"] == "private":
+                    item.share(everyone=False, org=False)
             return item
         else:
             return None
@@ -6382,6 +6430,11 @@ class ContentManager(object):
                     item.share(everyone=True)
                 elif item_properties["access"] == "org":
                     item.share(org=True)
+                elif item_properties["access"] == "private":
+                    item.share(everyone=False, org=False)
+                elif item_properties["access"] == "shared":
+                    groups = item.shared_with["groups"]
+                    item.share(groups=groups)
             return item
         else:
             return None
@@ -8650,7 +8703,7 @@ class ResourceManager(object):
 
     def update(
         self,
-        file: str,
+        file: Optional[str] = None,
         folder_name: Optional[str] = None,
         file_name: Optional[str] = None,
         text: Optional[str] = None,
@@ -8719,9 +8772,10 @@ class ResourceManager(object):
         )
 
         files = []  # create a list of named tuples to hold list of files
-        if not os.path.isfile(os.path.abspath(file)):
-            raise RuntimeError("File(" + file + ") not found.")
-        files.append(("file", file, os.path.basename(file)))
+        if file:
+            if not os.path.isfile(os.path.abspath(file)):
+                raise RuntimeError("File(" + file + ") not found.")
+            files.append(("file", file, os.path.basename(file)))
 
         params = {}
         params["f"] = "json"
@@ -9682,7 +9736,7 @@ class Group(dict):
 
             # Usage Example
 
-            >>> group.notify(users="User1234", subject= "Test Message", message="Testing the notification system",
+            >>> group.notify(users=["User1234"], subject= "Test Message", message="Testing the notification system",
             >>>              method="email"
 
         """
@@ -10535,6 +10589,99 @@ class User(dict):
 
             return TaskManager(url=url, user=self, gis=self._gis)
         return None
+
+    def transfer_content(
+        self, target_user: str | User, folder: str | None = None
+    ) -> concurrent.futures.Future:
+        """
+        This operation transfers all the current user's content to a new user.
+        This is an asynchronous operation that can take up to 15 minutes to complete.
+
+        ================  ========================================================
+        **Parameter**      **Description**
+        ----------------  --------------------------------------------------------
+        target_user       Required str or User. The user who will received the current user's content.
+        ----------------  --------------------------------------------------------
+        folder            Optional str. The folder where the content is stored.
+        ================  ========================================================
+
+        :returns: concurrent.futures.Future
+
+        """
+        if isinstance(target_user, User):
+            username: str = target_user.username
+        elif isinstance(target_user, str):
+            username: str = target_user
+            target_user: User = self._gis.users.get(username)
+        else:
+            raise ValueError("target_user must be a string or User object")
+        target_user: User = target_user
+        target_user.folders
+        if folder is None:
+            folder_dest: str = username
+        else:
+            folder_dest: str = None
+            for f in target_user.folders:
+                if folder.lower() == f["id"].lower():
+                    folder_dest = f["title"]
+                    break
+                elif folder.lower() == f["title"].lower():
+                    folder_dest = f["title"]
+                    break
+            if folder_dest is None:
+                cm: ContentManager = self._gis.content
+                cm.create_folder(folder=folder, owner=target_user)
+                folder_dest = folder
+        params: dict[str, Any] = {
+            "f": "json",
+            "reassign": json.dumps(
+                {
+                    "targetUser": username,  # destination user
+                    "reassignedUsers": [self.username],  # content source
+                    "targetFolderName": folder_dest,  # folder location, default is the root
+                    "createSubFolderPerReassignedUser": False,
+                }
+            ),
+        }
+        url: str = f"{self._portal.resturl}portals/self/reassignUsersContent"
+        resp: requests.Response = self._gis._con._session.post(url=url, data=params)
+        resp.raise_for_status()
+        data: dict[str, Any] = resp.json()
+        job_url: str = f"{self._portal.resturl}portals/self/jobs/{data['jobId']}"
+
+        tp = concurrent.futures.ThreadPoolExecutor(max_workers=1)
+        future: concurrent.futures.Future = tp.submit(
+            self._transfer_content_status,
+            **{"session": self._gis._con._session, "url": job_url},
+        )
+        tp.shutdown(cancel_futures=False)
+        return future
+
+    def _transfer_content_status(self, session: requests.Session, url: str) -> dict:
+        """checks the job status for transfer content operation"""
+
+        resp: requests.Response = session.get(
+            url=url,
+            params={
+                "f": "json",
+            },
+        )
+        data: dict[str, Any] = resp.json()
+        status: str = data.get("status", "submitted")
+        while "status" in data:
+            if status == "submitted":
+                time.sleep(10)
+            elif status in ["success", "failed", "succeeded"]:
+                return data
+            resp: requests.Response = session.get(
+                url=url,
+                params={
+                    "f": "json",
+                },
+            )
+            data: dict[str, Any] = resp.json()
+            status: str = data.get("status", "submitted")
+        return data
 
     # ----------------------------------------------------------------------
     def generate_direct_access_url(
@@ -12231,7 +12378,8 @@ class Item(dict):
                         lyr._fn = rendering_rule
                         lyr._fnra = rendering_rule
                         lyr._rendering_rule_from_item = True
-                    lyr._mosaic_rule = item_data.get("mosaicRule", None)
+                    if lyr._mosaic_rule is None:
+                        lyr._mosaic_rule = item_data.get("mosaicRule", None)
                 except:
                     pass
                 layers.append(lyr)
@@ -12681,18 +12829,7 @@ class Item(dict):
             >>> item.download("C:\ARCGIS\Projects\", "hurricane_data")
 
         """
-        if self._gis._con.token:
-            data_path = (
-                "content/items/"
-                + self.itemid
-                + f"/data"  # "?token={self._gis._con.token}"
-            )
-        else:
-            data_path = (
-                "content/items/"
-                + self.itemid
-                + f"/data"  # "?token={self._gis._con.token}"
-            )
+        data_path = "content/items/" + self.itemid + f"/data"
         if file_name is None:
             if "name" in self or "title" in self:
                 file_name = self.name or self.title
@@ -12701,7 +12838,7 @@ class Item(dict):
         try:
             url = self._gis._portal.resturl + data_path
             con = self._gis._con
-            resp = self._portal.con.get(
+            resp = con.get(
                 path=url,
                 file_name=file_name,
                 out_folder=save_path,
@@ -12712,7 +12849,7 @@ class Item(dict):
             )
             if resp.status_code >= 300 and resp.status_code < 400:
                 url = resp.headers["location"]
-                resp = self._portal.con.get(
+                resp = con.get(
                     path=url,
                     file_name=file_name,
                     out_folder=save_path,
@@ -13481,7 +13618,9 @@ class Item(dict):
         )
 
     # ----------------------------------------------------------------------
-    def reassign_to(self, target_owner: str, target_folder: Optional[str] = None):
+    def reassign_to(
+        self, target_owner: str | User, target_folder: Optional[str] = None
+    ):
         """
         The ``reassign_to`` method allows the administrator to reassign a single item from one user to another.
 
@@ -13492,7 +13631,7 @@ class Item(dict):
         ================  ========================================================
         **Parameter**      **Description**
         ----------------  --------------------------------------------------------
-        target_owner      Required string. The new desired owner of the item.
+        target_owner      Required string or User. The new desired owner of the item.
         ----------------  --------------------------------------------------------
         target_folder     Optional string. The folder to move the item to.
         ================  ========================================================
@@ -13511,6 +13650,8 @@ class Item(dict):
             current_folder = self.ownerFolder
         except:
             current_folder = None
+        if isinstance(target_owner, User):
+            target_owner = target_owner.username
         resp = self._portal.reassign_item(
             self.itemid,
             self._user_id,
@@ -13995,6 +14136,18 @@ class Item(dict):
             ):
                 metadata = item_properties.metadata
 
+            if "access" in item_properties:
+                access = item_properties.pop("access")
+                if access == "private":
+                    self.share(everyone=False, org=False)
+                if access == "org":
+                    self.share(everyone=False, org=True)
+                if access == "public":
+                    self.share(everyone=True)
+                if access == "shared":
+                    groups = self.shared_with["groups"]
+                    self.share(groups=groups)
+
             item_properties = item_properties.to_dict()
             item_properties.pop("metadata", None)
             item_properties.pop("thumbnail", None)
@@ -14086,6 +14239,17 @@ class Item(dict):
                 if "tags" in item_properties:
                     if type(item_properties["tags"]) is list:
                         item_properties["tags"] = ",".join(item_properties["tags"])
+                if "access" in item_properties:
+                    access = item_properties.pop("access")
+                    if access == "private":
+                        self.share(everyone=False, org=False)
+                    if access == "org":
+                        self.share(everyone=False, org=True)
+                    if access == "public":
+                        self.share(everyone=True)
+                    if access == "shared":
+                        groups = self.shared_with["groups"]
+                        self.share(groups=groups)
 
             if data is not None and isinstance(data, (io.StringIO, io.BytesIO)):
                 if item_properties is None:
@@ -15830,6 +15994,8 @@ class Item(dict):
 
         :return: An :class:`~arcgis.gis.Item` object
         """
+        if tags and type(tags) is list:
+            tags = ",".join(tags)
 
         url = "%s/sharing/rest/content/users/%s/items/%s/copy" % (
             self._portal.url,
@@ -17049,7 +17215,7 @@ class Layer(_GISResource):
         ==================     ====================================================================
         **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
-        item                   Required string. An item ID representing a layer.
+        item                   Required Item. An item containing layers.
         ------------------     --------------------------------------------------------------------
         index                  Optional int. The index of the layer amongst the item's layers
         ==================     ====================================================================

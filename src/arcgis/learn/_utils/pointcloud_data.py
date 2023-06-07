@@ -118,7 +118,7 @@ def pad_tensor(cur_tensor, max_points, to_float=True):
     return cur_tensor, cur_points
 
 
-def concatenate_tensors(read_file, input_keys, tile, max_points):
+def concatenate_tensors(read_file, input_keys, tile, max_points=0, pad=True):
     cat_tensor = []
 
     cur_tensor = torch.tensor(
@@ -127,7 +127,8 @@ def concatenate_tensors(read_file, input_keys, tile, max_points):
     if len(cur_tensor.shape) < 2:
         cur_tensor = cur_tensor[:, None]
 
-    cur_tensor, cur_points = pad_tensor(cur_tensor, max_points)
+    if pad:
+        cur_tensor, cur_points = pad_tensor(cur_tensor, max_points)
     cat_tensor.append(cur_tensor)
 
     for key, min_max in input_keys.items():
@@ -143,8 +144,11 @@ def concatenate_tensors(read_file, input_keys, tile, max_points):
             cur_tensor = (cur_tensor - min_val) / (
                 max_val - min_val
             )  ## Test with one_hot
-            cur_tensor, cur_points = pad_tensor(cur_tensor, max_points)
+            if pad:
+                cur_tensor, cur_points = pad_tensor(cur_tensor, max_points)
             cat_tensor.append(cur_tensor)
+    if not pad:
+        return torch.cat(cat_tensor, dim=1)
 
     return torch.cat(cat_tensor, dim=1), cur_tensor.new_tensor(cur_points).long()
 

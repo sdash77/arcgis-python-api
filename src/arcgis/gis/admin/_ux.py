@@ -1,4 +1,5 @@
 from __future__ import annotations
+from enum import Enum
 import os
 import json
 from arcgis._impl.common._deprecate import deprecated
@@ -6,6 +7,15 @@ from arcgis.auth.tools import LazyLoader
 from arcgis.gis import Group, User
 
 _basemap_definitions = LazyLoader("arcgis.mapping._basemap_definitions")
+
+
+class StockImage(Enum):
+    RIVERVIOLET = "1"
+    RIVEREMERALD = "2"
+    GEOLOGYAMBER = "3"
+    GEOLOGYLILAC = "4"
+    SOILGOLD = "5"
+    SOILSILVER = "6"
 
 
 ###########################################################################
@@ -361,14 +371,24 @@ class UX(object):
         """
         Gets/Sets the featured content group information.
 
+        If you set the featured content, reinstantiate to update the gis properties and see the updated
+        list of featured_content.
+
         ================  ===============================================================
         **Parameter**      **Description**
         ----------------  ---------------------------------------------------------------
-        content           Required dictionary, defines the group and count of the feature
+        content           Required list or dictionary, defines the group(s) of the feature
                           content area on an organizational site.  A value of None will
-                          reset the value back to the install defaults.
+                          reset the value back to no featured groups.
+
+                          To add a new group to the list you must pass in the list of current
+                          featured content and include the new group in the list. "id" key must be in
+                          the dictionary, extra keys are ok.
+
+                          It is also acceptable to pass a list of Group class instances.
+
                           Example:
-                          {'group': <group id>, 'count' : 12}
+                          [{"id": <group_id>}, {"id": <group_id>}, etc.]
         ================  ===============================================================
 
         :return: dictionary
@@ -376,63 +396,61 @@ class UX(object):
 
         .. code-block:: python
             *Usage Example*
-            >>> data = ux.get_featured_content()
-            >>> ux.set_featured_content = data
+            >>> data = ux.featured_content
+            >>> ux.featured_content = data
             True
 
         """
-        return {
-            "group": self._gis.properties["homePageFeaturedContent"],
-            "count": self._gis.properties["homePageFeaturedContentCount"],
-        }
+        return self._gis.properties["featuredGroups"]
 
     # ----------------------------------------------------------------------
     @featured_content.setter
-    def featured_content(self, content: dict):
+    def featured_content(self, contents: dict):
         """
         See main ``featured_content`` property docstring
         """
         from .. import Group
 
-        if content is None:
-            content = {
-                "homePageFeaturedContent": "",
-                "homePageFeaturedContentCount": 12,
-                "featuredItemsGroupQuery": "",
-                "featuredGroupsId": "",
-                "clearEmptyFields": True,
-            }
-        elif "group" in content and isinstance(content["group"], Group):
-            gid = content["group"].groupid
-            content["homePageFeaturedContent"] = gid
-            content["featuredGroupsId"] = f"id:{gid}"
-            content["featuredItemsGroupQuery"] = f"id:{gid}"
+        featured_groups = []
+        if isinstance(contents, list):
+            for content in contents:
+                if isinstance(content, Group):
+                    group_id = content.id
+                    group_title = content.title
+                    group_owner = content.owner
+                    featured_groups.append(
+                        {"id": group_id, "title": group_title, "owner": group_owner}
+                    )
+                elif (
+                    isinstance(contents, dict)
+                    and "id" in contents
+                    and isinstance(contents["id"], str)
+                ) or isinstance(contents, str):
+                    if isinstance(contents, dict):
+                        contents = contents["id"]
+                    group = Group(self._gis, contents)
+                    group_id = group.id
+                    group_title = group.title
+                    group_owner = group.owner
+                    featured_groups.append(
+                        {"id": group_id, "title": group_title, "owner": group_owner}
+                    )
         elif (
-            isinstance(content, dict)
-            and "group" in content
-            and isinstance(content["group"], str)
-        ):
-            c = {}
-            c["homePageFeaturedContent"] = content["group"]
-            c["featuredItemsGroupQuery"] = f"id:{content['group']}"
-            c["featuredGroupsId"] = f"id:{content['group']}"
-            if "count" in content:
-                c["homePageFeaturedContentCount"] = content["count"]
-            else:
-                c["homePageFeaturedContentCount"] = 12
-            content = c
-        elif isinstance(content, str):
-            c = {}
-            c["homePageFeaturedContent"] = content
-            c["homePageFeaturedContentCount"] = 12
-            c["featuredItemsGroupQuery"] = f"id:{content}"
-            c["featuredGroupsId"] = f"id:{content}"
-            content = c
-        if not "featuredItemsGroupQuery" in self._gis.properties:
-            content.pop("featuredItemsGroupQuery", None)
-        if not "featuredGroupsId" in self._gis.properties:
-            content.pop("featuredGroupsId", None)
-        self._gis.update_properties(content)
+            isinstance(contents, dict)
+            and "id" in contents
+            and isinstance(contents["id"], str)
+        ) or isinstance(contents, str):
+            if isinstance(contents, dict):
+                contents = contents["id"]
+            group = Group(self._gis, contents)
+            group_id = group.id
+            group_title = group.title
+            group_owner = group.owner
+            featured_groups.append(
+                {"id": group_id, "title": group_title, "owner": group_owner}
+            )
+
+        self._gis.update_properties({"featuredGroups": featured_groups})
 
     # ----------------------------------------------------------------------
     def navigation_bar(
@@ -540,7 +558,11 @@ class UX(object):
         shared_theme = {
             "header": {"background": "no-color", "text": "no-color"},
             "button": {"background": "no-color", "text": "no-color"},
-            "body": {"background": "no-color", "text": "no-color", "link": "no-color"},
+            "body": {
+                "background": "no-color",
+                "text": "no-color",
+                "link": "no-color",
+            },
             "logo": {"small": ""},
         }
         if "sharedTheme" in portal_properties:
@@ -602,7 +624,11 @@ class UX(object):
         group = self._gis.properties["featuredItemsGroupQuery"]
         if "id:" in group:
             # must use [3::] to slice string since format of: "id:123abc"
-            return self._gis.groups.search(group[3::])[0]
+            gallery_grps = self._gis.groups.search(group[3::])
+            if len(gallery_grps) > 0:
+                return gallery_grps[0]
+            else:
+                return group
         else:
             return group
 
@@ -1015,7 +1041,12 @@ class HomePageSettings(object):
 
     # ----------------------------------------------------------------------
     def set_background(
-        self, background_file: str | None = None, is_built_in: bool = True
+        self,
+        background_file: str | None = None,
+        is_built_in: bool = True,
+        stock_image: StockImage | None = None,
+        layout: str | None = None,
+        opacity: int | None = None,
     ):
         """
         Configure your home page by setting the organization's background image. You can choose no image, a built-in image
@@ -1035,6 +1066,15 @@ class HomePageSettings(object):
         ----------------    ---------------------------------------------------------------
         is_built_in         Optional bool, default=True. The built-in background is set by default.
                             If uploading a custom image, this parameter is ignored.
+        ----------------    ---------------------------------------------------------------
+        stock_image         Optional instance of StockImage class or string that represents
+                            a stock image key.
+        ----------------    ---------------------------------------------------------------
+        layout              Optional string. The layout height of the cover image. The values are:
+                            "Full-height", "Two-thirds-height", or "Half-height".
+        ----------------    ---------------------------------------------------------------
+        opacity             Optional int that represent the opacity of the header. The value is
+                            anything from 0 to 1 included.
         ================    ===============================================================
 
         :return: True | False
@@ -1089,15 +1129,26 @@ class HomePageSettings(object):
                     )
                 background_update_val = key_val
                 cover_type = "custom"
-            elif is_built_in:
+                cover_image_stock = ""
+            elif is_built_in and stock_image is not None:
                 cover_type = "stock"
                 background_update_val = ""
+                if isinstance(stock_image, str):
+                    # User passed in string of the stock image key
+                    stock_image = StockImage[stock_image]
+                cover_image_stock = stock_image.value
             hp = json.loads(
                 open(self._portal_resources.get("home.page.json"), "r").read()
             )
 
             hp["header"]["coverImg"] = background_update_val
             hp["header"]["coverType"] = cover_type
+            hp["header"]["coverImgStock"] = cover_image_stock
+            if layout and layout in ["Full-height", "Two-thirds-height", "Half-height"]:
+                hp["header"]["coverImgLayout"] = layout
+            if opacity is not None and (opacity >= 0 or opacity <= 1):
+                hp["header"]["opacity"] = opacity
+
             params = {
                 "key": "home.page.json",
                 "text": hp,
@@ -1108,7 +1159,7 @@ class HomePageSettings(object):
             )
 
     # ----------------------------------------------------------------------
-    def get_background(self, download_path: str):
+    def get_background(self, download_path: str | None = None):
         """
         Get your organization's home page background image. You can use the `set_background()` method to set an image
         as the home page background image.
@@ -1118,47 +1169,74 @@ class HomePageSettings(object):
         ================  ===============================================================
         **Parameter**      **Description**
         ----------------  ---------------------------------------------------------------
-        download_path     required string. Folder path to download the background file.
+        download_path     Required string. Folder path to download the background file.
+                          If the background image is a stock image then an instance of the
+                          StockImage class will be returned and the download_path will be ignored.
+                          If you know the background is a stock image then don't provide a download path.
         ================  ===============================================================
 
-        :return: Path to downloaded background file. If None, then background is not set and nothing was downloaded.
+        :return: Path to downloaded background file. If the cover image is a stock image then the stock image's name from the StockImage class will be returned.
         """
 
         # create a portal resource manager obj
         # find existing banner resource file
         bckgrnd_path = None
-        if self._new_hp is False:
-            resource_list = self._portal_resources.list()
-            e_background = [
-                banner
-                for banner in resource_list
-                if banner["key"].startswith("background")
-            ]
-            for background in e_background:
-                try:
-                    bckgrnd_path = self._portal_resources.get(
-                        background["key"], download_path
+        if self._new_hp:
+            # Need to read the homepage settings
+            hp = json.loads(
+                open(
+                    self._portal_resources.get("home.page.json"),
+                    "r",
+                ).read()
+            )
+            # Have to check the cover type first
+            cover_type = hp["header"]["coverType"]
+            if cover_type == "stock":
+                return StockImage(hp["header"]["coverImgStock"]).name
+            else:
+                if download_path is None:
+                    raise ValueError(
+                        "A download path is needed since the background is not a stock image."
                     )
-
-                except:
-                    if self._new_hp:
-                        # see if named something else
-                        hp = json.loads(
-                            open(
-                                self._portal_resources.get("home.page.json"), "r"
-                            ).read()
+                # If not stock then image is set
+                resource_list = self._portal_resources.list()
+                e_background = [
+                    banner
+                    for banner in resource_list
+                    if banner["key"].startswith("background")
+                ]
+                for background in e_background:
+                    try:
+                        bckgrnd_path = self._portal_resources.get(
+                            background["key"], download_path
                         )
-                        background = hp["header"]["coverImg"]
-                        if background:
-                            bckgrnd_path = self._portal_resources.get(
-                                background["key"], download_path
+
+                    except:
+                        if self._new_hp:
+                            # see if named something else
+                            hp = json.loads(
+                                open(
+                                    self._portal_resources.get("home.page.json"),
+                                    "r",
+                                ).read()
                             )
-                    else:
-                        continue
+                            background = hp["header"]["coverImg"]
+                            if background:
+                                bckgrnd_path = self._portal_resources.get(
+                                    background["key"], download_path
+                                )
+                        else:
+                            continue
         return bckgrnd_path
 
     # ----------------------------------------------------------------------
-    def set_logo(self, logo_file: str | None = None, show_logo: bool | None = None):
+    def set_logo(
+        self,
+        logo_file: str | None = None,
+        show_logo: bool | None = None,
+        alignment: str | None = None,
+        position: str | None = None,
+    ):
         """
         Configure your home page by setting the organization's logo image. For best results the logo file should be
         65 x 65 pixels in dimension.
@@ -1171,6 +1249,12 @@ class HomePageSettings(object):
         logo_file           Optional string. Specify path to image file. If None, existing thumbnail is removed.
         ----------------    ---------------------------------------------------------------
         show_logo           Optional bool. Specify whether the logo is visible on the homepage or not.
+        ----------------    ---------------------------------------------------------------
+        alignment           Optional string. Values can either be "center" or "left". This will set
+                            the alignment for the title and logo on the header.
+        ----------------    ---------------------------------------------------------------
+        position            Optional string. Set the title and logo position on the homepage.
+                            Values: "middle" | "above" | "below" | "top3rd" | "bottom3rd"
         ================    ===============================================================
 
         :return: True | False
@@ -1185,11 +1269,11 @@ class HomePageSettings(object):
         if logo_file is not None and os.path.isfile(logo_file):
             fpath = Path(logo_file)
             f_splits = fpath.name.split(".")
-            if len(f_splits) > 1 and f_splits[1] == "png":
+            if len(f_splits) > 1 and f_splits[-1] == "png":
                 key_val = "thumbnail.png"
-            elif len(f_splits) > 1 and f_splits[1] == "jpg":
+            elif len(f_splits) > 1 and f_splits[-1] == "jpg":
                 key_val = "thumbnail.jpg"
-            elif len(f_splits) > 1 and f_splits[1] == "gif":
+            elif len(f_splits) > 1 and f_splits[-1] == "gif":
                 key_val = "thumbnail.gif"
 
             self._portal_resources.add(key_val, logo_file)
@@ -1212,9 +1296,21 @@ class HomePageSettings(object):
             hp = json.loads(
                 open(self._portal_resources.get("home.page.json"), "r").read()
             )
-            if show_logo:
+            if show_logo is not None:
                 hp["header"]["showLogo"] = show_logo
             hp["header"]["logo"] = key_val
+
+            if alignment and alignment in ["center", "left"]:
+                hp["header"]["titleLogoAlign"] = alignment
+            if position and position in [
+                "middle",
+                "above",
+                "below",
+                "top3rd",
+                "bottom3rd",
+            ]:
+                hp["header"]["titleLogoPos"] = position
+
             params = {
                 "key": "home.page.json",
                 "text": hp,
@@ -1241,7 +1337,11 @@ class HomePageSettings(object):
                         "color:#369;'>{}</span></div>".format(self._gis.properties.name)
                     )
             return self._gis.update_properties(
-                {"clearEmptyFields": True, "thumbnail": "", "rotatorPanels": rp}
+                {
+                    "clearEmptyFields": True,
+                    "thumbnail": "",
+                    "rotatorPanels": rp,
+                }
             )
 
     # ----------------------------------------------------------------------
@@ -1280,6 +1380,8 @@ class HomePageSettings(object):
         title: str | None = None,
         show_title: bool | None = None,
         color: str | None = None,
+        alignment: str | None = None,
+        position: str | None = None,
     ):
         """
         Set the homepage title and it's visibility
@@ -1294,6 +1396,12 @@ class HomePageSettings(object):
         color               Optional string. Specifies the font color for the for the
                             title. This property recognizes common color
                             names (such as red or blue) and hexadecimal color values.
+        ----------------    ---------------------------------------------------------------
+        alignment           Optional string. Values can either be "center" or "left". This will set
+                            the alignment for the title and logo on the header.
+        ----------------    ---------------------------------------------------------------
+        position            Optional string. Set the title and logo position on the homepage.
+                            Values: "middle" | "above" | "below" | "top3rd" | "bottom3rd"
         ================    ===============================================================
 
         :return: True | False
@@ -1308,6 +1416,16 @@ class HomePageSettings(object):
                 hp["header"]["showTitle"] = show_title
             if color:
                 hp["header"]["titleColor"] = color
+            if alignment and alignment in ["center", "left"]:
+                hp["header"]["titleLogoAlign"] = alignment
+            if position and position in [
+                "middle",
+                "above",
+                "below",
+                "top3rd",
+                "bottom3rd",
+            ]:
+                hp["header"]["titleLogoPos"] = position
             params = {
                 "key": "home.page.json",
                 "text": hp,
@@ -1334,6 +1452,8 @@ class HomePageSettings(object):
                 "title": hp["header"]["title"],
                 "show_title": hp["header"]["showTitle"],
                 "color": hp["header"]["titleColor"],
+                "position": hp["header"]["titleLogoPos"],
+                "alignment": hp["header"]["titleLogoAlign"],
             }
             return title
         else:
@@ -1376,11 +1496,134 @@ class HomePageSettings(object):
             }
             return contact
 
+    # ----------------------------------------------------------------------
+    def get_footer(self):
+        """Get the footer of the homepage"""
+        if self._new_hp:
+            hp = json.loads(
+                open(self._portal_resources.get("home.page.json"), "r").read()
+            )
+            footer = {
+                "contact": self.get_contact_email(),
+                "text": hp["footer"]["copy"],
+                "show_text": hp["footer"]["showCopy"],
+                "color": hp["footer"]["bgColor"],
+                "custom_color": hp["footer"]["bgCustom"],
+            }
+            return footer
+
+    # ----------------------------------------------------------------------
+    def set_footer(self, text: str, show_text: bool | None = None):
+        """Set the text and the visibility of the text in the footer"""
+        if self._new_hp:
+            hp = json.loads(
+                open(self._portal_resources.get("home.page.json"), "r").read()
+            )
+            if text:
+                hp["footer"]["copy"] = text
+            if show_text:
+                hp["footer"]["showCopy"] = show_text
+            params = {
+                "key": "home.page.json",
+                "text": hp,
+                "f": "json",
+            }
+            return self._portal_resources.add(
+                key="home.page.json", text=json.dumps(params["text"])
+            )
+        else:
+            return None
+
+    # ----------------------------------------------------------------------
+    def get_typography(self):
+        """Get the footer of the homepage"""
+        if self._new_hp:
+            hp = json.loads(
+                open(self._portal_resources.get("home.page.json"), "r").read()
+            )
+            if hp["useCustomTypography"] == True:
+                return hp["customTypography"]
+            else:
+                return hp["typography"]
+
+    # ----------------------------------------------------------------------
+    def set_typography(self, font_family: list, custom: bool = False):
+        """
+        ================    ===============================================================
+        **Parameter**        **Description**
+        ----------------    ---------------------------------------------------------------
+        font_family         Optional list. The combination of fonts to use for typography
+                            of the homepage. The first string represents the title font and
+                            the second string represents the body font. If a custom typography
+                            will be set, specify custom = True parameter
+
+                            Values:
+                            ["Avenir Next", "Avenir Next"]
+                            ["Avenir Next", "Noto Serif"]
+                            ["Noto Serif", "Avenir Next"]
+                            ["Noto Serif", "Noto Serif"]
+        ----------------    ---------------------------------------------------------------
+        custom              Optional bool. If True, a custom list of typography was passed in
+                            as the value for the font_family parameter.
+        ================    ===============================================================
+
+        """
+        if self._new_hp:
+            hp = json.loads(
+                open(self._portal_resources.get("home.page.json"), "r").read()
+            )
+            if custom:
+                hp["useCustomTypography"] = True
+                hp["customTypography"] = font_family
+            else:
+                hp["useCustomTypography"] = False
+                hp["typography"] = font_family
+            params = {
+                "key": "home.page.json",
+                "text": hp,
+                "f": "json",
+            }
+            return self._portal_resources.add(
+                key="home.page.json", text=json.dumps(params["text"])
+            )
+        else:
+            return None
+
+    # ----------------------------------------------------------------------
+    def set_base_color(self, color: str):
+        """
+        Set the base color with a string color name.
+        """
+        if self._new_hp:
+            hp = json.loads(
+                open(self._portal_resources.get("home.page.json"), "r").read()
+            )
+            hp["baseColor"] = color
+            params = {
+                "key": "home.page.json",
+                "text": hp,
+                "f": "json",
+            }
+            return self._portal_resources.add(
+                key="home.page.json", text=json.dumps(params["text"])
+            )
+        else:
+            return None
+
+    # ----------------------------------------------------------------------
+    def get_base_color(self):
+        if self._new_hp:
+            hp = json.loads(
+                open(self._portal_resources.get("home.page.json"), "r").read()
+            )
+            return hp["baseColor"]
+
 
 ##############################################################################
 class MapSettings(object):
     """Helper class that can be called off of UX class using the 'map_settings' property.
-    Edit org map settings such as the default extent, default basemap, etc."""
+    Edit org map settings such as the default extent, default basemap, etc.
+    """
 
     # ----------------------------------------------------------------------
     def __init__(self, gis):
@@ -1863,7 +2106,8 @@ class ItemSettings(object):
 #############################################################################
 class SecuritySettings(object):
     """Helper class that can be called off of UX class using the 'security_settings' property.
-    Edit org item settings such as the informational banner, password policy, etc."""
+    Edit org item settings such as the informational banner, password policy, etc.
+    """
 
     # ----------------------------------------------------------------------
     def __init__(self, gis):
@@ -2392,7 +2636,11 @@ class SecuritySettings(object):
         # perform update
 
         return self._gis.update_properties(
-            {"mfaEnabled": enabled, "mfaAdmins": admins, "clearEmptyFields": True}
+            {
+                "mfaEnabled": enabled,
+                "mfaAdmins": admins,
+                "clearEmptyFields": True,
+            }
         )
 
     # ----------------------------------------------------------------------
@@ -2479,7 +2727,7 @@ class SecuritySettings(object):
         """
         if self._gis._is_agol is True:
             return None
-        url = self._portal.resturl + "portals/self/emailSettings/update"
+        url = self._portal.resturl + "portals/self/setEmailSettings"
         params = {
             "f": "json",
             "smtpHost": smtp_host,
@@ -2582,7 +2830,10 @@ class SecuritySettings(object):
         """
         if self._gis._is_agol is True:
             url = self._portal.resturl + "portals/self/setSigninSettings"
-            params = {"f": "json", "blockUnapprovedThirdpartyApps": block_unapproved}
+            params = {
+                "f": "json",
+                "blockUnapprovedThirdpartyApps": block_unapproved,
+            }
 
             return self._gis._con.post(url, params)
         else:
@@ -2671,7 +2922,12 @@ class SecuritySettings(object):
                         "f": "json",
                         "signinOptionsOrder": {
                             "logins": ["arcgis", "social"],
-                            "social": ["facebook", "google", "github", "apple"],
+                            "social": [
+                                "facebook",
+                                "google",
+                                "github",
+                                "apple",
+                            ],
                         },
                     }
                 # specify order if passed in
@@ -2681,7 +2937,12 @@ class SecuritySettings(object):
                 # configure the social providers
                 for network in social_networks:
                     networks = []
-                    if network.lower() in ["facebook", "google", "github", "apple"]:
+                    if network.lower() in [
+                        "facebook",
+                        "google",
+                        "github",
+                        "apple",
+                    ]:
                         networks.append(network)
                 url = self._portal.resturl + "portals/self/socialProviders/configure"
                 params = {

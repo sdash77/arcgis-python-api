@@ -29,12 +29,17 @@ class TestProxyDetection(unittest.TestCase):
             assert merge_proxies() is None
             assert merge_proxies(detect=True) == mock_data
             assert (
-                merge_proxies(proxy_host="proxy_host", proxy_port="8888", detect=True)
+                merge_proxies(
+                    proxy_host="proxy_host", proxy_port="8888", detect=True
+                )
                 == mock_data
             )
             assert merge_proxies(
                 proxy_host="proxy_host", proxy_port="8888", detect=False
-            ) == {"http": "http://proxy_host:8888", "https": "https://proxy_host:8888"}
+            ) == {
+                "http": "http://proxy_host:8888",
+                "https": "https://proxy_host:8888",
+            }
 
             assert merge_proxies(
                 proxy_dict={"http": "127.0.0.1:8787"},

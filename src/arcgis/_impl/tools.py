@@ -1,11 +1,12 @@
-﻿"""
+"""
 The arcgis.tools module is used for consuming the GIS functionality exposed from ArcGIS Online
 or Portal web services. It has implementations for Spatial Analysis tools, GeoAnalytics tools,
 Raster Analysis tools, Geoprocessing tools, Geocoders and Geometry Utility services.
 These tools primarily operate on items and layers from the GIS.
 """
-from __future__ import absolute_import, division, print_function
+from __future__ import absolute_import, division, print_function, annotations
 
+from arcgis._impl.common._deprecate import deprecated
 import json
 import logging
 import os
@@ -21,8 +22,20 @@ from arcgis.gis import Item
 from arcgis._impl.common._mixins import PropertyMap
 from arcgis._impl.common._utils import _DisableLogger
 from arcgis.geocoding import Geocoder
-from arcgis.geometry import Point, MultiPoint, Polygon, Envelope, Polyline, Geometry
-from arcgis.features import Feature, FeatureSet, FeatureCollection, FeatureLayer
+from arcgis.geometry import (
+    Point,
+    MultiPoint,
+    Polygon,
+    Envelope,
+    Polyline,
+    Geometry,
+)
+from arcgis.features import (
+    Feature,
+    FeatureSet,
+    FeatureCollection,
+    FeatureLayer,
+)
 from urllib.error import HTTPError
 from arcgis.geoprocessing import import_toolbox
 from ._async.jobs import GeometryJob
@@ -30,6 +43,7 @@ from arcgis.raster._util import _set_context as _set_raster_context
 from arcgis._impl.common._utils import inspect_function_inputs
 from arcgis.geoprocessing._job import RAJob, RMJob
 from functools import lru_cache
+from arcgis.raster import Raster, ImageryLayer, _ImageServerRaster
 
 _log = logging.getLogger(__name__)
 
@@ -209,7 +223,10 @@ class BaseAnalytics(object):
                         "geometry": {
                             "x": 80.27032792000051,
                             "y": 13.085227147000467,
-                            "spatialReference": {"wkid": 4326, "latestWkid": 4326},
+                            "spatialReference": {
+                                "wkid": 4326,
+                                "latestWkid": 4326,
+                            },
                         },
                         "attributes": {
                             "description": "blayer desc",
@@ -249,7 +266,9 @@ class BaseAnalytics(object):
                             input_layer_url
                         )
                         if token and self._validate_token(
-                            input_layer._gis._con, url=input_layer_url, token=token
+                            input_layer._gis._con,
+                            url=input_layer_url,
+                            token=token,
                         ):
                             input_param.update({"serviceToken": token})
                 except:
@@ -283,7 +302,9 @@ class BaseAnalytics(object):
                 ):
                     token = input_layer._gis._con._create_token(input_layer_url)
                     if token and self._validate_token(
-                        input_layer._gis._con, url=input_layer_url, token=token
+                        input_layer._gis._con,
+                        url=input_layer_url,
+                        token=token,
                     ):
                         input_param.update({"serviceToken": token})
             except:
@@ -469,7 +490,8 @@ class _AsyncService(_GISService):
 
     def _analysis_job(self, task, params):
         """Submits an Analysis job and returns the job URL for monitoring the job
-        status in addition to the json response data for the submitted job."""
+        status in addition to the json response data for the submitted job.
+        """
 
         # Unpack the Analysis job parameters as a dictionary and add token and
         # formatting parameters to the dictionary. The dictionary is used in the
@@ -643,7 +665,10 @@ class _AsyncService(_GISService):
                         "geometry": {
                             "x": 80.27032792000051,
                             "y": 13.085227147000467,
-                            "spatialReference": {"wkid": 4326, "latestWkid": 4326},
+                            "spatialReference": {
+                                "wkid": 4326,
+                                "latestWkid": 4326,
+                            },
                         },
                         "attributes": {
                             "description": "blayer desc",
@@ -904,7 +929,7 @@ class _FeatureAnalysisTools(BaseAnalytics):
                                                 group_by_field is specified. If true, the minority (least dominant) or
                                                 the majority (most dominant) attribute values for each group field
                                                 within each boundary are calculated. Two new fields are added to the
-                                                aggregated_layer prefixed with Majority_ and Minority_.
+                                                aggregated_layer prefixed with `Majority_` and `Minority_`.
                                                 The default is false.
         ------------------------------------    --------------------------------------------------------------------
         percent_points                          Optional boolean. This boolean parameter is applicable only when a
@@ -4952,6 +4977,7 @@ class _FeatureAnalysisTools(BaseAnalytics):
         context=None,
         estimate=False,
         future=False,
+        bin_resolution=None,
     ):
         """
         Generates a tessellated grid of regular polygons.
@@ -5004,6 +5030,11 @@ class _FeatureAnalysisTools(BaseAnalytics):
         estimate                                 Optional Boolean. If True, the number of credits to run the operation will be returned.
         ------------------------------------     --------------------------------------------------------------------
         future                                   Optional boolean. If True, the result will be a GPJob object and results will be returned asynchronously.
+        ------------------------------------     --------------------------------------------------------------------
+        bin_resolution                           Optional Integer. This becomes required when H3_HEXAGON is used.
+                                                 The H3 resolution of the hexagons. Resolution ranges from 0 to 15.
+                                                 With each increasing resolution size, the area of the polygons will
+                                                 be one seventh the size.
         ====================================     ====================================================================
 
         .. note::
@@ -5033,6 +5064,8 @@ class _FeatureAnalysisTools(BaseAnalytics):
                 params["binSize"] = bin_size
             if bin_size_unit:
                 params["binSizeUnit"] = bin_size_unit
+            if bin_resolution:
+                params["binResolution"] = bin_resolution
             if extent_layer:
                 params["extentLayer"] = extent_layer
             params["intersectStudyArea"] = intersect_study_area
@@ -5043,17 +5076,14 @@ class _FeatureAnalysisTools(BaseAnalytics):
             from arcgis.features._credits import _estimate_credits
 
             return _estimate_credits(task=task, parameters=params)
-        gpjob = self._tbx.generate_tessellations(
-            bin_type=bin_type,
-            bin_size=bin_size,
-            bin_size_unit=bin_size_unit,
-            extent_layer=extent_layer,
-            intersect_study_area=intersect_study_area,
-            output_name=output_name,
-            context=context,
-            gis=self._gis,
-            future=True,
-        )
+        params = {}
+        for key in list(self._tbx.generate_tessellations.__annotations__.keys()):
+            if "return" != key:
+                params[key] = eval(key)
+
+        params["future"] = True
+
+        gpjob = self._tbx.generate_tessellations(**params)
         gpjob._is_fa = True
         if future:
             return gpjob
@@ -6303,7 +6333,7 @@ class _FeatureAnalysisTools(BaseAnalytics):
         -------------------------------------   ---------------------------------------------------------
         minority_majority                       Optional boolean. This boolean parameter is applicable only when a ``group_by_field`` is specified.
                                                 If true, the minority (least dominant) or the majority (most dominant) attribute values for each group
-                                                field are calculated. Two new fields are added to the ``result_layer`` prefixed with Majority_ and Minority_.
+                                                field are calculated. Two new fields are added to the ``result_layer`` prefixed with `Majority_` and `Minority_`.
 
                                                 The default is False.
         -------------------------------------   ---------------------------------------------------------
@@ -6758,7 +6788,7 @@ class _FeatureAnalysisTools(BaseAnalytics):
         -------------------------   --------------------------------------------------------------------------------------------------------------------
         minority_majority           Optional boolean. This boolean parameter is applicable only when a ``group_by_field`` is specified. If true, the minority (least dominant) or the
                                     majority (most dominant) attribute values for each group field within each nearby area are calculated. Two new fields are added to
-                                    the ``result_layer`` prefixed with Majority_ and Minority_.
+                                    the ``result_layer`` prefixed with `Majority_` and `Minority_`.
 
                                     The default is False.
         -------------------------   --------------------------------------------------------------------------------------------------------------------
@@ -7645,7 +7675,10 @@ class _OrthoRealityMappingTools(BaseAnalytics):
         if output_name is None:
             output_name = str(task_name) + "_" + _id_generator()
             output_service = self._create_output_image_service(
-                output_name, task, folder=folder, output_properties=output_properties
+                output_name,
+                task,
+                folder=folder,
+                output_properties=output_properties,
             )
             output_raster = {
                 "serviceProperties": {
@@ -7656,7 +7689,10 @@ class _OrthoRealityMappingTools(BaseAnalytics):
             }
         elif isinstance(output_name, str):
             output_service = self._create_output_image_service(
-                output_name, task, folder=folder, output_properties=output_properties
+                output_name,
+                task,
+                folder=folder,
+                output_properties=output_properties,
             )
             output_raster = {
                 "serviceProperties": {
@@ -7679,7 +7715,12 @@ class _OrthoRealityMappingTools(BaseAnalytics):
     # ----------------------------------------------------------------------
 
     def alter_processing_states(
-        self, image_collection, new_states=None, gis=None, future=False, **kwargs
+        self,
+        image_collection,
+        new_states=None,
+        gis=None,
+        future=False,
+        **kwargs,
     ):
         """
         The `alter_processing_states` operation is a service tool that sets the processing states of
@@ -7943,7 +7984,8 @@ class _OrthoRealityMappingTools(BaseAnalytics):
 
         if reference_image is not None:
             reference_image = self._set_image_collection_param(
-                image_collection=reference_image, param_name="reference_image"
+                image_collection=reference_image,
+                param_name="reference_image",
             )
 
         job = tool(
@@ -8374,7 +8416,9 @@ class _OrthoRealityMappingTools(BaseAnalytics):
                     output_dem = json.dumps({"itemId": output_dem_result.itemid})
                 else:
                     output_dem, output_service = self._set_output_raster(
-                        output_name=output_dem, task=task, output_properties=kwargs
+                        output_name=output_dem,
+                        task=task,
+                        output_properties=kwargs,
                     )
 
         job = tool(
@@ -8484,7 +8528,8 @@ class _OrthoRealityMappingTools(BaseAnalytics):
                     output_ortho_image = json.dumps({"uri": output_ortho_image})
             else:
                 result = gis.content.search(
-                    "title:" + str(output_ortho_image), item_type="Imagery Layer"
+                    "title:" + str(output_ortho_image),
+                    item_type="Imagery Layer",
                 )
                 output_ortho_image_result = None
                 for element in result:
@@ -8495,7 +8540,10 @@ class _OrthoRealityMappingTools(BaseAnalytics):
                         {"itemId": output_ortho_image_result.itemid}
                     )
                 else:
-                    output_ortho_image, output_service = self._set_output_raster(
+                    (
+                        output_ortho_image,
+                        output_service,
+                    ) = self._set_output_raster(
                         output_name=output_ortho_image,
                         task=task,
                         output_properties=kwargs,
@@ -8524,7 +8572,12 @@ class _OrthoRealityMappingTools(BaseAnalytics):
 
     # ----------------------------------------------------------------------
     def generate_report(
-        self, image_collection, report_format=None, gis=None, future=False, **kwargs
+        self,
+        image_collection,
+        report_format=None,
+        gis=None,
+        future=False,
+        **kwargs,
     ):
         """
 
@@ -8779,7 +8832,10 @@ class _OrthoRealityMappingTools(BaseAnalytics):
             image_collection=image_collection
         )
         job = self._tbx.query_control_points(
-            image_collection=image_collection, where=where, gis=gis, future=True
+            image_collection=image_collection,
+            where=where,
+            gis=gis,
+            future=True,
         )
 
         final_job = None
@@ -9515,7 +9571,10 @@ class _RasterAnalysisTools(BaseAnalytics):
         if output_name is None:
             output_name = str(task_name) + "_" + _id_generator()
             output_service = self._create_output_image_service(
-                output_name, task, folder=folder, output_properties=output_properties
+                output_name,
+                task,
+                folder=folder,
+                output_properties=output_properties,
             )
             output_raster = {
                 "serviceProperties": {
@@ -9526,7 +9585,10 @@ class _RasterAnalysisTools(BaseAnalytics):
             }
         elif isinstance(output_name, str):
             output_service = self._create_output_image_service(
-                output_name, task, folder=folder, output_properties=output_properties
+                output_name,
+                task,
+                folder=folder,
+                output_properties=output_properties,
             )
             output_raster = {
                 "serviceProperties": {
@@ -9659,7 +9721,10 @@ class _RasterAnalysisTools(BaseAnalytics):
                     if "http:" in item or "https:" in item:
                         if "blob.core" in item or all(
                             blob_string in item
-                            for blob_string in ["stg-arcgisazure", "arcgis.com"]
+                            for blob_string in [
+                                "stg-arcgisazure",
+                                "arcgis.com",
+                            ]
                         ):
                             uri_list.append(item)
                         else:
@@ -10065,7 +10130,12 @@ class _RasterAnalysisTools(BaseAnalytics):
 
     # ----------------------------------------------------------------------
     def build_overview(
-        self, image_collection, cell_size=None, context=None, future=False, **kwargs
+        self,
+        image_collection,
+        cell_size=None,
+        context=None,
+        future=False,
+        **kwargs,
     ):
         """
 
@@ -10193,6 +10263,7 @@ class _RasterAnalysisTools(BaseAnalytics):
         return RAJob(gpjob, output_service).result()
 
     # ----------------------------------------------------------------------
+    @deprecated(deprecated_in="2.2.0", removed_in="3.0.0", current_version="2.2.0")
     def calculate_distance(
         self,
         input_source_raster_or_features,  #
@@ -10272,19 +10343,34 @@ class _RasterAnalysisTools(BaseAnalytics):
                     input_barrier_raster_or_features
                 )
 
-        output_distance_raster, output_distance_service = self._set_output_raster(
-            output_name=output_distance_name, task=task, output_properties=kwargs
+        (
+            output_distance_raster,
+            output_distance_service,
+        ) = self._set_output_raster(
+            output_name=output_distance_name,
+            task=task,
+            output_properties=kwargs,
         )
         output_direction_raster = None
         if output_direction_name is not None:
-            output_direction_raster, output_direction_service = self._set_output_raster(
-                output_name=output_direction_name, task=task, output_properties=kwargs
+            (
+                output_direction_raster,
+                output_direction_service,
+            ) = self._set_output_raster(
+                output_name=output_direction_name,
+                task=task,
+                output_properties=kwargs,
             )
 
         output_allocation_raster = None
         if output_allocation_name is not None:
-            output_allocation_raster, out_allocation_service = self._set_output_raster(
-                output_name=output_allocation_name, task=task, output_properties=kwargs
+            (
+                output_allocation_raster,
+                out_allocation_service,
+            ) = self._set_output_raster(
+                output_name=output_allocation_name,
+                task=task,
+                output_properties=kwargs,
             )
 
         output_back_direction_raster = None
@@ -10337,7 +10423,12 @@ class _RasterAnalysisTools(BaseAnalytics):
 
     # ----------------------------------------------------------------------
     def calculate_statistics(
-        self, image_collection, skip_factors=None, context=None, future=False, **kwargs
+        self,
+        image_collection,
+        skip_factors=None,
+        context=None,
+        future=False,
+        **kwargs,
     ):
         """
         image_collection: imageCollection (str). Required parameter.
@@ -10410,7 +10501,10 @@ class _RasterAnalysisTools(BaseAnalytics):
         if "context" in context_param.keys():
             context = context_param["context"]
 
-        output_distance_raster, output_distance_service = self._set_output_raster(
+        (
+            output_distance_raster,
+            output_distance_service,
+        ) = self._set_output_raster(
             output_name=output_name, task=task, output_properties=kwargs
         )
 
@@ -10429,14 +10523,24 @@ class _RasterAnalysisTools(BaseAnalytics):
 
         output_backlink_raster = None
         if output_backlink_name is not None:
-            output_backlink_raster, output_backlink_service = self._set_output_raster(
-                output_name=output_backlink_name, task=task, output_properties=kwargs
+            (
+                output_backlink_raster,
+                output_backlink_service,
+            ) = self._set_output_raster(
+                output_name=output_backlink_name,
+                task=task,
+                output_properties=kwargs,
             )
 
         output_allocation_raster = None
         if output_allocation_name is not None:
-            output_allocation_raster, out_allocation_service = self._set_output_raster(
-                output_name=output_allocation_name, task=task, output_properties=kwargs
+            (
+                output_allocation_raster,
+                out_allocation_service,
+            ) = self._set_output_raster(
+                output_name=output_allocation_name,
+                task=task,
+                output_properties=kwargs,
             )
 
         gpjob = self._tbx.calculate_travel_cost(
@@ -10629,7 +10733,9 @@ class _RasterAnalysisTools(BaseAnalytics):
             context = context_param["context"]
 
         output_raster, output_service = self._set_output_raster(
-            output_name=output_classified_raster, task=task, output_properties=kwargs
+            output_name=output_classified_raster,
+            task=task,
+            output_properties=kwargs,
         )
 
         if (
@@ -10981,7 +11087,8 @@ class _RasterAnalysisTools(BaseAnalytics):
                     image_collection = json.dumps({"uri": image_collection})
             else:
                 result = gis.content.search(
-                    "title:" + str(image_collection), item_type="Imagery Layer"
+                    "title:" + str(image_collection),
+                    item_type="Imagery Layer",
                 )
                 image_collection_result = None
                 for element in result:
@@ -10992,7 +11099,10 @@ class _RasterAnalysisTools(BaseAnalytics):
                         {"itemId": image_collection_result.itemid}
                     )
                 else:
-                    image_collection, output_service = self._set_output_raster(
+                    (
+                        image_collection,
+                        output_service,
+                    ) = self._set_output_raster(
                         output_name=image_collection,
                         task=task,
                         output_properties=kwargs,
@@ -11029,7 +11139,11 @@ class _RasterAnalysisTools(BaseAnalytics):
 
         md_data_info = []
         if (isinstance(raster_type_name, str)) and raster_type_name == "mosaic_dataset":
-            input_rasters, raster_type, md_data_info = self._build_param_dictionary(
+            (
+                input_rasters,
+                raster_type,
+                md_data_info,
+            ) = self._build_param_dictionary(
                 input_rasters=input_rasters,
                 raster_type_name=raster_type_name,
                 raster_type_params=raster_type_params,
@@ -11072,7 +11186,10 @@ class _RasterAnalysisTools(BaseAnalytics):
             if len(md_data_path) == 1:
                 md_data_path = md_data_path[0]
             input_rasters.update(
-                {"mosaic_dataset": mosaic_dataset_uploaded, "data_path": md_data_info}
+                {
+                    "mosaic_dataset": mosaic_dataset_uploaded,
+                    "data_path": md_data_info,
+                }
             )
 
         if raster_type_name == "mosaic_dataset":
@@ -11201,7 +11318,10 @@ class _RasterAnalysisTools(BaseAnalytics):
 
         image_collection = self._set_image_collection_param(image_collection)
         gpjob = self._tbx.delete_image(
-            image_collection=image_collection, where=where, gis=self._gis, future=True
+            image_collection=image_collection,
+            where=where,
+            gis=self._gis,
+            future=True,
         )
         gpjob._is_ra = True
         if future:
@@ -12306,13 +12426,20 @@ class _RasterAnalysisTools(BaseAnalytics):
             output_flow_direction_raster,
             output_flow_direction_service,
         ) = self._set_output_raster(
-            output_name=output_flow_direction_name, task=task, output_properties=kwargs
+            output_name=output_flow_direction_name,
+            task=task,
+            output_properties=kwargs,
         )
 
         output_drop_raster = None
         if output_drop_name is not None:
-            output_drop_raster, output_drop_service = self._set_output_raster(
-                output_name=output_drop_name, task=task, output_properties=kwargs
+            (
+                output_drop_raster,
+                output_drop_service,
+            ) = self._set_output_raster(
+                output_name=output_drop_name,
+                task=task,
+                output_properties=kwargs,
             )
 
         gpjob = self._tbx.flow_direction(
@@ -12330,7 +12457,8 @@ class _RasterAnalysisTools(BaseAnalytics):
         if future:
             if output_drop_raster:
                 return RAJob(
-                    gpjob, [output_flow_direction_service, output_drop_service]
+                    gpjob,
+                    [output_flow_direction_service, output_drop_service],
                 )
             return RAJob(gpjob, output_flow_direction_service)
         if output_drop_raster:
@@ -12725,7 +12853,10 @@ class _RasterAnalysisTools(BaseAnalytics):
                     data_store_name[i] = datastore_item.datapath
 
         gpjob = self._tbx.list_datastore_content(
-            data_store_name=data_store_name, filter=filter, gis=gis, future=True
+            data_store_name=data_store_name,
+            filter=filter,
+            gis=gis,
+            future=True,
         )
         gpjob._is_ra = True
         gpjob._item_properties = False
@@ -13441,7 +13572,11 @@ class _RasterAnalysisTools(BaseAnalytics):
             if (
                 isinstance(raster_type_name, str)
             ) and raster_type_name == "mosaic_dataset":
-                input_raster, raster_type, md_data_info = self._build_param_dictionary(
+                (
+                    input_raster,
+                    raster_type,
+                    md_data_info,
+                ) = self._build_param_dictionary(
                     input_rasters=input_raster,
                     raster_type_name=raster_type_name,
                     raster_type_params=raster_type_params,
@@ -13669,7 +13804,10 @@ class _RasterAnalysisTools(BaseAnalytics):
 
         percentile_interpolation_type_val = percentile_interpolation_type
         if percentile_interpolation_type is not None:
-            percentile_interpolation_type_allowed_values = ["NEAREST", "LINEAR"]
+            percentile_interpolation_type_allowed_values = [
+                "NEAREST",
+                "LINEAR",
+            ]
             if [
                 element.lower()
                 for element in percentile_interpolation_type_allowed_values
@@ -14427,7 +14565,10 @@ class _RasterAnalysisTools(BaseAnalytics):
 
         occurrence_val = occurrence
         if occurrence is not None:
-            occurrence_type_allowed_values = ["FIRST_OCCURRENCE", "LAST_OCCURRENCE"]
+            occurrence_type_allowed_values = [
+                "FIRST_OCCURRENCE",
+                "LAST_OCCURRENCE",
+            ]
             if [element.lower() for element in occurrence_type_allowed_values].count(
                 occurrence.lower()
             ) <= 0:
@@ -15470,10 +15611,17 @@ class _RasterAnalysisTools(BaseAnalytics):
         if future:
             return RAJob(
                 gpjob,
-                [output_optimal_lines_service, output_neighbor_connections_service],
+                [
+                    output_optimal_lines_service,
+                    output_neighbor_connections_service,
+                ],
             )
         return RAJob(
-            gpjob, [output_optimal_lines_service, output_neighbor_connections_service]
+            gpjob,
+            [
+                output_optimal_lines_service,
+                output_neighbor_connections_service,
+            ],
         ).result()
 
     def distance_accumulation(
@@ -17705,7 +17853,10 @@ class _RasterAnalysisTools(BaseAnalytics):
             token = input_imagery_layer._gis._con._create_token(url)
             if token is not None:
                 url = url + "?token=" + token
-            input_imagery_layer = {"itemId": input_imagery_layer.itemid, "url": url}
+            input_imagery_layer = {
+                "itemId": input_imagery_layer.itemid,
+                "url": url,
+            }
         elif (isinstance(input_imagery_layer, str)) and (
             "http:" in input_imagery_layer or "https:" in input_imagery_layer
         ):
@@ -17728,6 +17879,236 @@ class _RasterAnalysisTools(BaseAnalytics):
             return RAJob(gpjob)
 
         return RAJob(gpjob).result()
+
+    def derive_continuous_flow(
+        self,
+        input_surface_raster,
+        input_depressions_data=None,
+        input_weight_raster=None,
+        flow_direction_type="D8",
+        force_flow=False,
+        output_flow_accumulation_raster_name=None,
+        output_flow_direction_raster_name=None,
+        context=None,
+        future=False,
+        **kwargs,
+    ):
+        """
+        Generates a raster of accumulated flow into each cell from an input surface raster with no prior sink or depression filling required.
+        
+        ====================================     ====================================================================
+        **Argument**                             **Description**
+        ------------------------------------     --------------------------------------------------------------------
+        input_surface_raster                     Required The input elevation surface.
+        ------------------------------------     --------------------------------------------------------------------
+        input_depressions_data                   Optional. A dataset that defines real depressions. The depressions can\
+                                                 be defined either through a raster or a feature layer.\
+                                                
+                                                 If input is a raster, the depression cells must take a valid value, including\
+                                                 zero, and the areas that are not depressions must be NoData.
+        ------------------------------------     --------------------------------------------------------------------
+        input_weight_raster                      Optional. A raster that defines the fraction of flow that contributes\
+                                                 to flow accumulation at each cell. The weight is only applied to flow accumulation.
+                                                
+                                                 If no weight raster is specified, a default weight of 1 will be applied to each cell. 
+        ------------------------------------     --------------------------------------------------------------------
+        flow_direction_type                      Optional string. Specifies the flow direction type to use.
+        
+                                                 Choice list: ['D8', 'MFD'] 
+        
+                                                    - D8 is for the D8 flow direction type. This is the default. 
+                                                    - MFD is for the Multi Flow Direction type.
+        ------------------------------------     --------------------------------------------------------------------
+        force_flow                               Optional string. Specifies if edge cells will always flow outward or follow normal flow rules.
+        
+                                                 Choice list: ['NORMAL', 'FORCE'] The default value is 'NORMAL'.
+        ------------------------------------     --------------------------------------------------------------------
+        output_flow_accumulation_raster_name     Optional. If not provided, an Image Service is created by the method and\
+                                                 used as the output raster.
+                                                
+                                                 The output raster representing flow accumulation (number of upstream cells\
+                                                 draining to each cell). The output raster is of floating-point type. You can pass\
+                                                 in an existing Image Service Item from your GIS to use that instead. 
+                                                
+                                                 Alternatively, you can pass in the name of the output Image Service that should be\
+                                                 created by this method to be used as the output for the tool. A RuntimeError is\
+                                                 raised if a service by that name already exists.
+        ------------------------------------     --------------------------------------------------------------------
+        output_flow_direction_raster_name        Optional string. Name of the flow_direction_raster. This parameter determines\
+                                                 whether flow_direction_raster should be generated or not. Set this parameter,\
+                                                 in order to generate the flow_direction_raster.
+        ------------------------------------     --------------------------------------------------------------------
+        context                                  Context contains additional settings that affect task execution.
+
+                                                 context parameter overwrites values set through arcgis.env parameter
+
+                                                 This function has the following settings:
+
+                                                  - Cell size (cellSize) - Set the output raster cell size, or resolution
+
+                                                  - Extent (extent): A bounding box that defines the analysis area.
+
+                                                    Example:
+                                                        {"extent: {"xmin": -122.68, 
+                                                        "ymin": 45.53,
+                                                        "xmax": -122.45,
+                                                        "ymax": 45.6,
+                                                        "spatialReference": {"wkid": 4326}}}
+
+                                                  - Output Spatial Reference (outSR): The output raster will be
+                                                    projected into the output spatial reference.
+
+                                                    Example:
+                                                        {"outSR": {spatial reference}}
+
+                                                  - Snap Raster (snapRaster): The output raster will have its
+                                                    cells aligned with the specified snap raster.
+
+                                                    Example:
+                                                        {'snapRaster': {'url': '<image_service_url>'}}
+
+                                                  - Cell Size (cellSize): The output raster will have the resolution
+                                                    specified by cell size.
+
+                                                    Example:
+                                                        {'cellSize': 11} or {'cellSize': {'url': <image_service_url>}}  or {'cellSize': 'MaxOfIn'}
+
+                                                  - Parallel Processing Factor (parallelProcessingFactor): controls
+                                                    Raster Processing (CPU) service instances.
+
+                                                    Example:
+                                                        Syntax example with a specified number of processing instances:
+
+                                                        {"parallelProcessingFactor": "2"}
+
+                                                        Syntax example with a specified percentage of total
+                                                        processing instances:
+
+                                                        {"parallelProcessingFactor": "60%"}
+        ------------------------------------     --------------------------------------------------------------------
+        gis                                      Optional GIS. The GIS on which this tool runs. If not specified, the active GIS is used.
+        ------------------------------------     --------------------------------------------------------------------
+        future                                   Keyword only parameter. Optional Boolean. If True, the result will be a GPJob object and
+                                                 results will be returned asynchronously.
+        ====================================     ====================================================================     
+
+        """
+
+        task = "DeriveContinuousFlow"
+
+        gis = self._gis
+
+        context_param = {}
+        _set_raster_context(context_param, context)
+        if "context" in context_param.keys():
+            context = context_param["context"]
+
+        input_surface_raster = self._layer_input(input_layer=input_surface_raster)
+
+        if isinstance(input_depressions_data, _FEATURE_INPUTS):
+            input_depressions_data = self._feature_input(
+                input_layer=input_depressions_data
+            )
+        elif isinstance(input_depressions_data, Item):
+            input_depressions_data = {"itemId": input_depressions_data.itemid}
+        elif input_depressions_data is not None:
+            input_depressions_data = self._layer_input(
+                input_layer=input_depressions_data
+            )
+
+        if input_weight_raster is not None:
+            input_weight_raster = self._layer_input(input_layer=input_weight_raster)
+
+        if flow_direction_type is not None:
+            flow_direction_type_allowed_values = (
+                self._tbx.choice_list.derive_continuous_flow["flow_direction_type"]
+            )
+            if [
+                element.lower() for element in flow_direction_type_allowed_values
+            ].count(flow_direction_type.lower()) <= 0:
+                raise RuntimeError(
+                    "flow_direction_type can only be one of the following: "
+                    + str(flow_direction_type_allowed_values)
+                )
+            for element in flow_direction_type_allowed_values:
+                if flow_direction_type.lower() == element.lower():
+                    flow_direction_type = element
+
+        if force_flow is not None:
+            if isinstance(force_flow, bool):
+                force_flow = force_flow
+            elif isinstance(force_flow, str):
+                if force_flow == "NORMAL":
+                    force_flow = False
+                elif force_flow == "FORCE":
+                    force_flow = True
+                else:
+                    raise RuntimeError(
+                        "force_flow can only be one of the following: ['NORMAL', 'FORCE']"
+                    )
+            else:
+                raise RuntimeError(
+                    "Invalid datatype given for force_flow. force_flow can only be one of the following: ['NORMAL', 'FORCE']"
+                )
+
+        (
+            output_accumulation_raster,
+            output_accumulation_service,
+        ) = self._set_output_raster(
+            output_name=output_flow_accumulation_raster_name,
+            task=task,
+            output_properties=kwargs,
+        )
+
+        output_direction_raster = None
+        if output_flow_direction_raster_name is not None:
+            (
+                output_direction_raster,
+                output_direction_service,
+            ) = self._set_output_raster(
+                output_name=output_flow_direction_raster_name,
+                task=task,
+                output_properties=kwargs,
+            )
+
+        gpjob = self._tbx.derive_continuous_flow(
+            input_surface_raster=input_surface_raster,
+            output_flow_accumulation_raster_name=output_accumulation_raster,
+            input_depressions_data=input_depressions_data,
+            input_weight_raster=input_weight_raster,
+            output_flow_direction_raster_name=output_direction_raster,
+            flow_direction_type=flow_direction_type,
+            force_flow=force_flow,
+            context=context,
+            gis=self._gis,
+            future=True,
+        )
+
+        gpjob._is_ra = True
+        gpjob._item_properties = True
+
+        if future:
+            if output_direction_raster:
+                return RAJob(
+                    gpjob,
+                    item=[
+                        output_accumulation_service,
+                        output_direction_service,
+                    ],
+                )
+            return RAJob(
+                gpjob,
+                item=output_accumulation_service,
+            )
+        if output_direction_raster:
+            return RAJob(
+                gpjob,
+                item=[output_accumulation_service, output_direction_service],
+            ).result()
+        return RAJob(
+            gpjob,
+            item=output_accumulation_service,
+        ).result()
 
     def mosaic_image(
         self,
@@ -17872,7 +18253,9 @@ class _GeoanalyticsTools(_AsyncService):
         }
 
         output_service = self._gis.content.create_service(
-            output_name, create_params=createParameters, service_type="featureService"
+            output_name,
+            create_params=createParameters,
+            service_type="featureService",
         )
         description = "Feature Service generated from running the " + task + " tool."
         item_properties = {
@@ -18018,7 +18401,12 @@ class _GeoanalyticsTools(_AsyncService):
             return arcgis.features.FeatureCollection(job_values["output"])
 
     def describe_dataset(
-        self, in_dataset, out_sr=None, out_extent=None, datastore="GDB", context=None
+        self,
+        in_dataset,
+        out_sr=None,
+        out_extent=None,
+        datastore="GDB",
+        context=None,
     ):
         """
 
@@ -19445,7 +19833,13 @@ class _GeometryService(_GISService):
 
     # ----------------------------------------------------------------------
     def areas_and_lengths(
-        self, polygons, lengthUnit, areaUnit, calculationType, sr=4326, future=False
+        self,
+        polygons,
+        lengthUnit,
+        areaUnit,
+        calculationType,
+        sr=4326,
+        future=False,
     ):
         """
         The areasAndLengths operation is performed on a geometry service
@@ -19540,7 +19934,8 @@ class _GeometryService(_GISService):
             return "No polygons provided, please submit a list of polygon geometries"
         executor = concurrent.futures.ThreadPoolExecutor(1)
         futureobj = executor.submit(
-            self._con.post, **{"path": url, "postdata": params, "token": self._token}
+            self._con.post,
+            **{"path": url, "postdata": params, "token": self._token},
         )
         executor.shutdown(False)
         job = GeometryJob(
@@ -19633,6 +20028,8 @@ class _GeometryService(_GISService):
                 listGeoms.append(g)
             elif isinstance(g, Polyline):
                 listGeoms.append({"paths": g["paths"]})
+            elif isinstance(g, MultiPoint):
+                listGeoms.append({"points": g.get("points", [])})
         if returnType == "str":
             return json.dumps(listGeoms)
         elif returnType == "list":
@@ -19710,14 +20107,22 @@ class _GeometryService(_GISService):
             # loop until all chunks reached
             for i in range(0, len(all_geometries), chunk):
                 geoms = all_geometries[i : i + chunk]
-                params[geom_param] = {"geometryType": geom_type, "geometries": geoms}
+                params[geom_param] = {
+                    "geometryType": geom_type,
+                    "geometries": geoms,
+                }
                 f1 = executor.submit(
                     self._con.post,
-                    **{"path": url, "postdata": params, "token": self._token},
+                    **{
+                        "path": url,
+                        "postdata": params,
+                        "token": self._token,
+                    },
                 )
                 if number_executors == 2:
                     f2 = executor.submit(
-                        self._process_results, **{"results": f1, "out_sr": sr}
+                        self._process_results,
+                        **{"results": f1, "out_sr": sr},
                     )
                 job = GeometryJob(
                     future=f1 if number_executors == 1 else f2,
@@ -19732,8 +20137,11 @@ class _GeometryService(_GISService):
                     return job
                 else:
                     results = job.result()
-                    for result in results:
-                        all_results.append(result)
+                    if isinstance(results, dict):
+                        all_results.append(results)
+                    else:
+                        for result in results:
+                            all_results.append(result)
         return all_results
 
     # ----------------------------------------------------------------------
@@ -19782,7 +20190,11 @@ class _GeometryService(_GISService):
                 params[geom_param] = geoms
                 f1 = executor.submit(
                     self._con.post,
-                    **{"path": url, "postdata": params, "token": self._token},
+                    **{
+                        "path": url,
+                        "postdata": params,
+                        "token": self._token,
+                    },
                 )
                 f2 = executor.submit(
                     self._process_results, **{"results": f1, "out_sr": sr}
@@ -19913,7 +20325,7 @@ class _GeometryService(_GISService):
             if sr is not None:
                 params["sr"] = sr
             else:
-                params["sr"] = g.spatialreference
+                params["sr"] = g.spatial_reference
             if isinstance(g, Polygon):
                 params["geometries"] = {
                     "geometryType": "esriGeometryPolygon",
@@ -19927,6 +20339,11 @@ class _GeometryService(_GISService):
             elif isinstance(g, Polyline):
                 params["geometries"] = {
                     "geometryType": "esriGeometryPolyline",
+                    "geometries": self.__geomToStringArray(geometries, "list"),
+                }
+            elif isinstance(g, MultiPoint):
+                params["geometries"] = {
+                    "geometryType": "esriGeometryMultipoint",
                     "geometries": self.__geomToStringArray(geometries, "list"),
                 }
         else:
@@ -19987,7 +20404,13 @@ class _GeometryService(_GISService):
 
     # ----------------------------------------------------------------------
     def densify(
-        self, geometries, sr, maxSegmentLength, lengthUnit, geodesic=False, future=False
+        self,
+        geometries,
+        sr,
+        maxSegmentLength,
+        lengthUnit,
+        geodesic=False,
+        future=False,
     ):
         """
         The densify operation is performed on a geometry service resource.
@@ -20112,7 +20535,13 @@ class _GeometryService(_GISService):
 
     # ----------------------------------------------------------------------
     def distance(
-        self, sr, geometry1, geometry2, distanceUnit="", geodesic=False, future=False
+        self,
+        sr,
+        geometry1,
+        geometry2,
+        distanceUnit="",
+        geodesic=False,
+        future=False,
     ):
         """
         The distance operation is performed on a geometry service resource.
@@ -20150,7 +20579,8 @@ class _GeometryService(_GISService):
         params["geometry2"] = geometry2
         executor = concurrent.futures.ThreadPoolExecutor(1)
         f1 = executor.submit(
-            self._con.post, **{"path": url, "postdata": params, "token": self._token}
+            self._con.post,
+            **{"path": url, "postdata": params, "token": self._token},
         )
         executor.shutdown(False)
         job = GeometryJob(
@@ -20168,7 +20598,12 @@ class _GeometryService(_GISService):
 
     # ----------------------------------------------------------------------
     def find_transformation(
-        self, inSR, outSR, extentOfInterest=None, numOfResults=1, future=False
+        self,
+        inSR,
+        outSR,
+        extentOfInterest=None,
+        numOfResults=1,
+        future=False,
     ):
         """
         The findTransformations operation is performed on a geometry
@@ -20211,7 +20646,8 @@ class _GeometryService(_GISService):
             params["extentOfInterest"] = extentOfInterest
         executor = concurrent.futures.ThreadPoolExecutor(1)
         f1 = executor.submit(
-            self._con.post, **{"path": url, "postdata": params, "token": self._token}
+            self._con.post,
+            **{"path": url, "postdata": params, "token": self._token},
         )
 
         executor.shutdown(False)
@@ -20287,7 +20723,8 @@ class _GeometryService(_GISService):
             params["conversionMode"] = conversionMode
         executor = concurrent.futures.ThreadPoolExecutor(1)
         f1 = executor.submit(
-            self._con.post, **{"path": url, "postdata": params, "token": self._token}
+            self._con.post,
+            **{"path": url, "postdata": params, "token": self._token},
         )
         executor.shutdown(False)
         job = GeometryJob(
@@ -20397,7 +20834,11 @@ class _GeometryService(_GISService):
                 params["polygons"] = geoms
                 f1 = executor.submit(
                     self._con.post,
-                    **{"path": url, "postdata": params, "token": self._token},
+                    **{
+                        "path": url,
+                        "postdata": params,
+                        "token": self._token,
+                    },
                 )
                 job = GeometryJob(
                     future=f1,
@@ -20476,7 +20917,11 @@ class _GeometryService(_GISService):
                 params["polylines"] = geoms
                 f1 = executor.submit(
                     self._con.post,
-                    **{"path": url, "postdata": params, "token": self._token},
+                    **{
+                        "path": url,
+                        "postdata": params,
+                        "token": self._token,
+                    },
                 )
                 job = GeometryJob(
                     future=f1,
@@ -20678,7 +21123,8 @@ class _GeometryService(_GISService):
         }
         executor = concurrent.futures.ThreadPoolExecutor(1)
         f1 = executor.submit(
-            self._con.post, **{"path": url, "postdata": params, "token": self._token}
+            self._con.post,
+            **{"path": url, "postdata": params, "token": self._token},
         )
 
         executor.shutdown(False)
@@ -20724,7 +21170,8 @@ class _GeometryService(_GISService):
             raise AttributeError("Invalid reshaper object, must be Polyline")
         executor = concurrent.futures.ThreadPoolExecutor(2)
         f1 = executor.submit(
-            self._con.post, **{"path": url, "postdata": params, "token": self._token}
+            self._con.post,
+            **{"path": url, "postdata": params, "token": self._token},
         )
         f2 = executor.submit(self._process_results, **{"results": f1, "out_sr": sr})
         executor.shutdown(False)
@@ -20846,7 +21293,8 @@ class _GeometryService(_GISService):
             params["addSpaces"] = addSpaces
         executor = concurrent.futures.ThreadPoolExecutor(1)
         f1 = executor.submit(
-            self._con.post, **{"path": url, "postdata": params, "token": self._token}
+            self._con.post,
+            **{"path": url, "postdata": params, "token": self._token},
         )
 
         executor.shutdown(False)
@@ -20924,7 +21372,11 @@ class _GeometryService(_GISService):
                 params["polylines"] = geoms
                 f1 = executor.submit(
                     self._con.post,
-                    **{"path": url, "postdata": params, "token": self._token},
+                    **{
+                        "path": url,
+                        "postdata": params,
+                        "token": self._token,
+                    },
                 )
                 f2 = executor.submit(
                     self._process_results, **{"results": f1, "out_sr": sr}
@@ -20967,6 +21419,130 @@ class _GeometryService(_GISService):
         return self._execute_by_chunk(url, params, 2, "union", sr, future)
 
 
+class AGSSystemTools:
+    """
+    ArcGIS Server has System folder that have utility geop,rocessing tools to work
+    with multiple aspects of the system.
+    """
+
+    _properties = None
+    _gptbxs = None
+    _gpserver = None
+    _gpcatalogs = None
+
+    def __init__(self, gis: "GIS", verbose=False):
+        self._gis = gis
+        self._verbose = verbose
+        self.properties = {}
+
+    # ----------------------------------------------------------------------
+    @property
+    def _tbx(self):
+        """gets the toolbox"""
+        if self._gptbxs is None:
+            self._gptbxs = {}
+            for catalog in self._catalogs:
+                try:
+                    self._gptbxs[catalog._url.lower()] = catalog.get(
+                        "PublishingTools", "System"
+                    )
+                except:
+                    ...
+        return self._gptbxs
+
+    # ----------------------------------------------------------------------
+    @property
+    def _servers(self):
+        if self._gpserver is None:
+            self._gpserver = self._gis.admin.servers.list()
+        return self._gpserver
+
+    # ---------------------------------------------------------------------
+    @property
+    def _catalogs(self):
+        if self._gpcatalogs is None:
+            self._gpcatalogs = [server.content for server in self._servers]
+        return self._gpcatalogs
+
+    # ---------------------------------------------------------------------
+    def refresh_service(
+        self,
+        layer: ImageryLayer | Raster,
+        options: str | None = None,
+        future: bool = True,
+    ) -> bool:
+        """
+        Refresh Service is a new task in the existing out-of-the-box
+        PublishingTools geoprocessing service used by the service publisher
+        to refresh a GIS service to reflect back-end data changes.
+
+        At 10.3, only image services are supported by this tool. Valid
+        input image services must have been configured as
+        hasLiveData:true through ArcGIS Server Manager Manager.
+
+        =====================     ====================================================================
+        **Parameter**             **Description**
+        ---------------------     --------------------------------------------------------------------
+        layer                     Required ImageryLayer or Raster. The layer to refresh on the server.
+        ---------------------     --------------------------------------------------------------------
+        options                   Optional string. Additional options to refresh the service.
+        ---------------------     --------------------------------------------------------------------
+        future                    Optional Boolean. If True, the operation is completed in an asynchronous fashion, else, synchronous fashion.
+        =====================     ====================================================================
+
+        :returns: string
+
+        """
+
+        if isinstance(layer, ImageryLayer):
+            base_service_url: str = (
+                layer._url.split("/services/")[0].lower() + "/services"
+            )
+            path: str = layer._url.split("/services/")[-1]
+            service_type: str = os.path.basename(path)
+            service_name: str = os.path.basename(os.path.dirname(path))
+            folder: str = ""
+            if path.startswith(service_name) == False:
+                folder = path.split(f"/{service_name}/")[0]
+
+        elif isinstance(layer, Raster) and isinstance(
+            layer._engine_obj, _ImageServerRaster
+        ):
+            path: str = layer._engine_obj._url.split("/services/")[-1]
+            base_service_url: str = (
+                layer._engine_obj._url.split("/services/")[0].lower() + "/services"
+            )
+            service_type: str = os.path.basename(path)
+            service_name: str = os.path.basename(os.path.dirname(path))
+            folder: str = ""
+            if path.startswith(service_name) == False:
+                folder = path.split(f"/{service_name}/")[0]
+        else:
+            raise ValueError(
+                "Input must be a service based `Raster` class or `ImageryLayer`"
+            )
+        tbxs = self._tbx
+        if base_service_url in tbxs:
+            tbx = tbxs[base_service_url]
+        else:
+            raise ValueError(
+                "The service is not stored on a system where it can be refreshed"
+            )
+
+        job = tbx.refresh_service(
+            service_name=service_name,
+            service_type=service_type,
+            service_folder=folder,
+            refresh_options=options,
+            gis=self._gis,
+            future=True,
+        )
+        if future:
+            return job
+        else:
+            return job.result()
+
+
 ###########################################################################
 class _Tools(object):
     """
@@ -20989,6 +21565,7 @@ class _Tools(object):
         self._realitymapping = None
         self._packaging = None
         self._symbolservice = None
+        self._systemservice = None
 
     @lru_cache(maxsize=255)
     def _validate_url(self, url):
@@ -20998,6 +21575,16 @@ class _Tools(object):
         else:
             return res["serviceUrl"]
         return url
+
+    @property
+    @lru_cache(maxsize=255)
+    def system_service(self) -> AGSSystemTools:
+        """
+        the portal's AGS System Tools provides access to refresh_service
+        """
+        if self._systemservice is None:
+            self._systemservice = AGSSystemTools(gis=self._gis)
+        return self._systemservice
 
     @property
     @lru_cache(maxsize=255)

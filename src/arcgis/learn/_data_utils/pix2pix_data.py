@@ -381,6 +381,16 @@ class Pix2PixHDDataset(Dataset):
         return len(self.image_list_B)
 
     def __getitem__(self, idx):
+        if os.path.isdir(self.path / "labels"):
+            self.image_list_B = [
+                Path(
+                    os.path.join(
+                        os.path.split(i)[0].replace("images2", "labels"),
+                        os.path.split(i)[1],
+                    )
+                )
+                for i in self.image_list_B
+            ]
         if self._is_multispectral:
             # to add mask loading
             image_A = ArcGISMSImage.open(
@@ -577,6 +587,7 @@ def prepare_pix2pix_data(
     norm_pct,
     _is_multispectral,
     working_dir,
+    seed,
     **kwargs,
 ):
     norm_stats = [[0.5, 0.5, 0.5], [0.5, 0.5, 0.5]]  # kwargs.get('norm_stats', stats)
@@ -624,6 +635,10 @@ def prepare_pix2pix_data(
     data._temp_folder = _prepare_working_dir(data.path)
     data.show_batch = types.MethodType(show_batch, data)
     data._dataset_type = "Pix2Pix"
+    data._downsampling_factor = kwargs.get("downsample_factor", None)
+    data.val_split_pct = val_split_pct
+    data.resize_to = resize_to
+    data.seed = seed
     data._extract_bands = None
 
     return data

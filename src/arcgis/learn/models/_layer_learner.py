@@ -103,6 +103,9 @@ class FullyConnectedNetwork(ArcGISModel):
 
         super().__init__(data, None)
 
+        if isinstance(self._data._dependent_variable, list):
+            self._data._dependent_variable = self._data._dependent_variable[0]
+
         self._backbone = None
         if layers is None:
             layers = [500, 100]

@@ -52,6 +52,7 @@ class ChildImageClassifier:
             )
 
         self.psetae = PSETAE.from_model(data=None, emd_path=model)
+        self._learnmodel = self.psetae
         self.model = self.psetae.learn.model.to(self.device)
         self.model.eval()
 

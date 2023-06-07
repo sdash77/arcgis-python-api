@@ -119,7 +119,10 @@ class _DeepCloner:
         self._create_graph()
 
     def _clone_dashboard(self, dashboard_item):
-        widgets = dashboard_item.get_data()["desktopView"]["widgets"]
+        if "desktopView" in dashboard_item.get_data():
+            widgets = dashboard_item.get_data()["desktopView"]["widgets"]
+        else:
+            widgets = dashboard_item.get_data()["widgets"]
         item_list = []
         cloned_item_list = []
         map_dict = {}
@@ -463,11 +466,11 @@ class _DeepCloner:
 
             for layer in featurelayer_services:
                 try:
-                    item = arcgis.gis.Item(item._gis, layer["itemId"])
+                    lay_item = arcgis.gis.Item(item._gis, layer["itemId"])
                 except:
-                    item = {}
+                    lay_item = {}
                 if (
-                    getattr(item, "groupDesignations", "notlivingatlas")
+                    getattr(lay_item, "groupDesignations", "notlivingatlas")
                     != "livingatlas"
                 ):
                     service_url = os.path.dirname(layer["url"])
@@ -519,7 +522,6 @@ class _DeepCloner:
                             )
                             if vector_tile_item is None:
                                 continue
-
                             if vector_tile_item["owner"] == item["owner"]:
                                 item_definition.add_child(
                                     self._get_item_definitions(vector_tile_item)
@@ -1669,10 +1671,10 @@ class _DeepCloner:
                 dict(item),
                 data=None,
                 thumbnail=None,
-                portal_item=item,
                 folder=self.folder,
                 search_existing=self._search_existing_items,
                 owner=self.owner,
+                portal_item=item,
                 preserve_item_id=self._preserve_item_id,
             )
 
@@ -2497,7 +2499,8 @@ class _FeatureServiceDefinition(_TextItemDefinition):
         """Get the features for the given feature layer of a feature service. Returns a list of json features.
         Keyword arguments:
         feature_layer - The feature layer to return the features for
-        spatial_reference -  The spatial reference to return the features in"""
+        spatial_reference -  The spatial reference to return the features in
+        """
         if spatial_reference is None:
             spatial_reference = {"wkid": 102100}
 
@@ -2533,7 +2536,8 @@ class _FeatureServiceDefinition(_TextItemDefinition):
         layers - Dictionary containing the id of the layer and its corresponding arcgis.lyr.FeatureLayer
         relationships - Dictionary containing the id of the layer and its relationship definitions
         layer_field_mapping - field mapping if the case or name of field changed from the original service
-        spatial_reference -  The spatial reference to create the features in"""
+        spatial_reference -  The spatial reference to create the features in
+        """
 
         # Get the features if they haven't already been queried
         features = self.features
@@ -6836,7 +6840,8 @@ def _zip_dir(path, zip_file, include_root=True):
     Keyword arguments:
     path - The folder containing the files and subfolders to zip
     zip_file - The zip file that will store the compressed files
-    include_root -  Indicates if the root folder should be included in the zip"""
+    include_root -  Indicates if the root folder should be included in the zip
+    """
 
     rel_path = ""
     if include_root:

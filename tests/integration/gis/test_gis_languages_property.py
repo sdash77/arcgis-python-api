@@ -1,14 +1,11 @@
 import sys, uuid
 import unittest
-
-sys.path.insert(0, r"C:\SVN\geosaurus_master_issue_6698\src")
 from arcgis.gis import GIS, UserManager, User
 
 profiles = [
     None,
-    "your_online_profile",
-    "your_enterprise_profile",
-    "your_dev_online_profile",
+    "your_online_admin_profile",
+    "your_ent_admin_profile",
 ]
 VERIFY_CERT = False
 TRUST_ENV = True
