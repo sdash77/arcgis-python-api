@@ -586,17 +586,17 @@ class SystemManager(object):
         some of its intricate behavior. This resource is a container for
         these properties. The properties are available to all server
         objects and extensions through the server environment interface.
-        
+
         You can use this property to get and/or set the available properties.
 
         .. code-block:: python
-        
+
             #Usage Example to set property:
             >>> nbserver = gis.notebook_server[0]
-            
+
             >>> nbserver.system.properties = {"webSocketSize" : 32}
-            
-            
+
+
         See the REST API documention for `Notebook Server System properties <https://developers.arcgis.com/rest/enterprise-administration/notebook/server-properties.htm>`_
         for current complete list of available properties.
 
