@@ -7044,6 +7044,7 @@ class ContentManager(object):
     def delete_items(self, items: Union[list[Item], list[str]]):
         """
         The ``delete_items`` method deletes a collection of :class:`~arcgis.gis.Item` objects from a users content.
+        All items must belong to the same user to delete.
 
         ================  ==========================================================================
         **Parameter**      **Description**
@@ -7053,7 +7054,7 @@ class ContentManager(object):
         ================  ==========================================================================
 
         :return:
-            A boolean indicating success if the items were deleted (True), or failure if the items were not deleted
+            A list of booleans indicating success if the items were deleted(True/False) or an empty list if nothing was deleted.
             (False)
 
         .. code-block:: python
@@ -7062,31 +7063,57 @@ class ContentManager(object):
             >>> gis.content.delete_items(items= ["item1", "item2", "item3", "item4", "item5"])
 
         """
-        if self._gis._portal.con.baseurl.endswith("/"):
-            url = "%s/%s/%s/deleteItems" % (
-                self._gis._portal.con.baseurl[:-1],
-                "content/users",
-                self._gis.users.me.username,
-            )
-        else:
-            url = "%s/%s/%s/deleteItems" % (
-                self._gis._portal.con.baseurl,
-                "content/users",
-                self._gis.users.me.username,
-            )
         params = {"f": "json", "items": ""}
-        ditems = []
+        items_dict = {}  # key will be ownner and value is list of their items
         for item in items:
             if isinstance(item, str):
-                ditems.append(item)
+                owner = self._gis.content.get(item).owner
+                if owner in items_dict:
+                    items_dict[owner].append(item)
+                else:
+                    items_dict[owner] = [item]
             elif isinstance(item, Item):
-                ditems.append(item.id)
+                owner = item.owner
+                if owner in items_dict:
+                    items_dict[owner].append(item.id)
+                else:
+                    items_dict[owner] = [item.id]
             del item
-        if len(ditems) > 0:
-            params["items"] = ",".join(ditems)
-            res = self._gis._con.post(path=url, postdata=params)
-            return all([r["success"] for r in res["results"]])
-        return False
+
+        # Now we have a dictionary to iterate through
+        results = []
+        for key, val in items_dict.items():
+            owner = key  # owner username
+            ditems = val  # list of item(s)
+
+            # Check if admin or owner before deleting
+            if (
+                self._gis.users.me.username != owner
+                and "portal:admin:deleteItems" not in self._gis.users.me.privileges
+            ):
+                return Exception(
+                    "You are not the owner and you do not have the administrator privileges to perform this action."
+                )
+
+            # All items should be from same owner so we can set to first in list
+            if self._gis._portal.con.baseurl.endswith("/"):
+                url = "%s/%s/%s/deleteItems" % (
+                    self._gis._portal.con.baseurl[:-1],
+                    "content/users",
+                    owner,
+                )
+            else:
+                url = "%s/%s/%s/deleteItems" % (
+                    self._gis._portal.con.baseurl,
+                    "content/users",
+                    owner,
+                )
+
+            if len(ditems) > 0:
+                params["items"] = ",".join(ditems)
+                res = self._gis._con.post(path=url, postdata=params)
+                results.append(all([r["success"] for r in res["results"]]))
+        return results
 
     def delete_folder(self, folder: str, owner: Optional[str] = None):
         """
