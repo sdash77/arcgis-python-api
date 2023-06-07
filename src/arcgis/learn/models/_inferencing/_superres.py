@@ -150,6 +150,7 @@ class ChildImageClassifier:
             )
 
         self.superres = SuperResolution.from_emd(data=None, emd_path=model)
+        self._learnmodel = self.superres
         self.model = self.superres.learn.model.to(self.device)
         self.model.eval()
 

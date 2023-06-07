@@ -244,6 +244,7 @@ class ChildInstanceDetector:
         self.mask_rcnn = MaskRCNN.from_model(
             emd_path=self.model_emd, chip_size=self.tytx
         )
+        self._learnmodel = self.mask_rcnn
         self.model = self.mask_rcnn.learn.model.to(self.device)
         self.model.eval()
 

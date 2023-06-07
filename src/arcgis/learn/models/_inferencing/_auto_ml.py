@@ -47,6 +47,7 @@ class ChildImageClassifier:
             )
 
         self.automl = AutoML.from_model(emd_path=model)
+        self._learnmodel = self.automl
         # self.model = self.pix2pix_hd.learn.model.to(self.device)
         # self.model.eval()
 
