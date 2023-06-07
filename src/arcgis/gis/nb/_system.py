@@ -589,15 +589,9 @@ class SystemManager(object):
         
         You can use this property to get and/or set the available properties.
 
-        ===============     ====================================================================
-        **Parameter**       **Description**
-        ---------------     --------------------------------------------------------------------
-        value               Required dictionary.
-        ===============     ====================================================================
-
         .. code-block:: python
         
-            #Usage Example:
+            #Usage Example to set property:
             >>> nbserver = gis.notebook_server[0]
             
             >>> nbserver.system.properties = {"webSocketSize" : 32}
@@ -606,7 +600,7 @@ class SystemManager(object):
         See the REST API documention for `Notebook Server System properties <https://developers.arcgis.com/rest/enterprise-administration/notebook/server-properties.htm>`_
         for current complete list of available properties.
 
-        :return: PropertyMap
+        :return: dictionary-like PropertyMap
         """
         if self._properties is None:
             self._init()
