@@ -120,7 +120,9 @@ def _to_datetime(dt):
                 seconds=(dt / 1000)
             )
         else:
-            return datetime.datetime.fromtimestamp(dt / 1000, tz=datetime.timezone.utc).replace(tzinfo=None)
+            return datetime.datetime.fromtimestamp(
+                dt / 1000, tz=datetime.timezone.utc
+            ).replace(tzinfo=None)
     except:
         return dt
 
@@ -141,7 +143,9 @@ def _ole2datetime(oledt):
     try:
         return OLE_TIME_ZERO + datetime.timedelta(days=float(oledt))
     except:
-        return datetime.datetime.fromtimestamp(oledt / 1000, tz=datetime.timezone.utc).replace(tzinfo=None)
+        return datetime.datetime.fromtimestamp(
+            oledt / 1000, tz=datetime.timezone.utc
+        ).replace(tzinfo=None)
 
 
 def _iso_to_datetime(timestamp):
@@ -303,7 +307,9 @@ def _ole2datetime(oledt):
     try:
         return OLE_TIME_ZERO + datetime.timedelta(days=float(oledt))
     except:
-        return datetime.datetime.fromtimestamp(oledt / 1000, tz=datetime.timezone.utc).replace(tzinfo=None)
+        return datetime.datetime.fromtimestamp(
+            oledt / 1000, tz=datetime.timezone.utc
+        ).replace(tzinfo=None)
 
 
 def _iso_to_datetime(timestamp):
