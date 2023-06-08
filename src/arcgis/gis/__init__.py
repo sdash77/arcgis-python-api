@@ -1363,7 +1363,7 @@ class GIS(object):
         configuration for any access notices or information banners.
 
         ======================     ===============================================================
-        **Parameter**             **Description**
+        **Parameter**               **Description**
         ----------------------     ---------------------------------------------------------------
         settings                   Required Dict.  A dictionary of the settings
 
@@ -2027,16 +2027,18 @@ class GroupMigrationManager(object):
     # ----------------------------------------------------------------------
     def inspect(self, epk_item: Item) -> dict:
         """
-        The ``inspect`` method retrieves the contents of the EPK Package
+        The ``inspect`` method retrieves the contents of the EPK Package.
+
         ================  ===============================================================================
         **Keys**          **Description**
         ----------------  -------------------------------------------------------------------------------
-        epk_item          Required Item. A report on the content of the EPK Item.  This allows administrators
-                          to view the contents inside a EPK.
+        epk_item          Required Item. A report on the content of the EPK Item. This allows
+                          administrators to view the contents inside a EPK.
         ================  ===============================================================================
 
         :return:
             A dictionary containing the contents of the EPK Package
+
         """
         if isinstance(epk_item, Item) and epk_item.type == "Export Package":
             try:
@@ -4601,7 +4603,7 @@ class UserManager(object):
         ----------------  --------------------------------------------------------
         max_results       Optional Integer. A limiter on the number of groups
                           returned for each user.
-        ----------------  --------------------------------------------------------
+        ================  ========================================================
 
         :return:
             List of dictionaries with each :class:`~arcgis.gis.User` object's group ids.
@@ -9433,17 +9435,17 @@ class Group(dict):
             Portal object is either an administrator for the entire
             Portal or the owner of the group.
 
-        ============    ======================================
+        =============   =====================================
         **Parameter**    **Description**
-        ------------    --------------------------------------
+        -------------   -------------------------------------
         usernames       Optional list of strings or single string.
                         The list of usernames or single username
                         to be added.
-        ------------    --------------------------------------
+        -------------   -------------------------------------
         admins          Optional List of String, or Single String.
                         This is a list of users to be an administrator
                         of the group.
-        ============    ======================================
+        =============   =====================================
 
         :return:
            A dictionary containing the users that were not added to the group.
