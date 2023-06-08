@@ -243,6 +243,7 @@ class ChildObjectDetector:
 
         self.json_emd_file = Path(model).parent
         self.model_extension = ModelExtension.from_model(emd_path=model)
+        self._learnmodel = self.model_extension
         self.model = self.model_extension.learn.model.to(self.device)
         self.model.eval()
 

@@ -150,6 +150,7 @@ class ChildImageClassifier:
             )
 
         self.model_instance = load_model(model)
+        self._learnmodel = self.model_instance
         self.model = self.model_instance.learn.model.to(self.device)
         self.model.eval()
 

@@ -30,7 +30,9 @@ import warnings
 
 
 def score(
-    _is_classification, y_true, y_pred,
+    _is_classification,
+    y_true,
+    y_pred,
 ):
     if _is_classification:
         return accuracy_score(y_true, y_pred)
@@ -151,7 +153,6 @@ def show_regression_score(
     fairness_metrics,
     visualize=False,
 ):
-
     if fairness_metrics is None:
         fairness_metrics = "mean_absolute_error"
 
@@ -177,7 +178,6 @@ def show_regression_score(
 
 
 def plot_regression_metrics(res, xlabels, metric_name, _sensitive_feature):
-
     fig, ax = plt.subplots()
 
     ax.bar(res.index, res.values, align="center", tick_label=xlabels)

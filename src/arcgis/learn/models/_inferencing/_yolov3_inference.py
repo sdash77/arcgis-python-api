@@ -257,6 +257,7 @@ class ChildObjectDetector:
             )
 
         self.model = YOLOv3.from_model(emd_path=model)
+        self._learnmodel = self.model
         self.model.learn.model = self.model.learn.model.to(self.device)
         self.model.learn.model.eval()
 

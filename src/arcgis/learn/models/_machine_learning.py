@@ -166,7 +166,7 @@ class MLModel(object):
                                                             'sensitive_feature': 'Gender',
                                                             'mitigation_type': "threshold_optimizer",
                                                             'mitigation_constraint':'demographic_parity'
-                                                                                    
+
                                                             }
 
                                                 For Regression :
@@ -175,7 +175,7 @@ class MLModel(object):
                                                             'sensitive_feature': 'Gender',
                                                             'mitigation_type': "grid_search",
                                                             'mitigation_constraint':'demographic_parity'
-                                                                                    
+
                                                             }
     ---------------------   -------------------------------------------
     ``**kwargs``            model_type specific arguments.
@@ -306,9 +306,9 @@ class MLModel(object):
             self.instance_weights = None
 
             if self.mitigation_method == "reweighing":
-
                 self._training_label_df = pd.DataFrame(
-                    self._training_labels, columns=[self._data._dependent_variable],
+                    self._training_labels,
+                    columns=[self._data._dependent_variable],
                 )
                 self._all_training_df = pd.concat(
                     [self._training_df, self._training_label_df], axis=1
@@ -321,7 +321,6 @@ class MLModel(object):
                 )
 
             elif self.mitigation_method == "exponentiated_gradient":
-
                 if self.constraint == "demographic_parity":
                     mitigation_constraint = DemographicParity()
                 elif self.constraint == "equalized_odds":
@@ -334,7 +333,6 @@ class MLModel(object):
                 )
 
             elif self.mitigation_method == "threshold_optimizer":
-
                 if self.constraint not in [
                     "demographic_parity",
                     "selection_rate_parity",
@@ -374,7 +372,6 @@ class MLModel(object):
                     ),
                 )
             elif self.mitigation_method == "exponentiated_gradient":
-
                 self._model = ExponentiatedGradient(
                     estimator=self._model,
                     constraints=BoundedGroupLoss(
@@ -421,7 +418,10 @@ class MLModel(object):
                 raise Exception("Model is incompatible with the training data")
 
     def fairness_score(
-        self, sensitive_feature, fairness_metrics=None, visualize=False,
+        self,
+        sensitive_feature,
+        fairness_metrics=None,
+        visualize=False,
     ):
         """
         Shows sample fairness score and plots for the model.
@@ -430,7 +430,7 @@ class MLModel(object):
         **Parameter**            **Description**
         ---------------------   -------------------------------------------
         sensitive_feature        Column name of the protected class.
-        fairness_metrics         Allowed list of fairness metrics 
+        fairness_metrics         Allowed list of fairness metrics
                                  1. for classification
                                     [
                                      "equalized_odds_difference",
@@ -440,10 +440,10 @@ class MLModel(object):
                                     ]
                                  2. for Regression
                                     [
-                                    "mean_absolute_error", 
+                                    "mean_absolute_error",
                                     "mean_squared_error",
                                     ]
-                                
+
         visualize                A boolean value to visualize plot of metrics
         =====================   ===========================================
         :return: dataframe
@@ -451,7 +451,6 @@ class MLModel(object):
 
         self.group_validation = self._validation_df.loc[:, sensitive_feature]
         if not self._fairness and self._data._is_classification:
-
             labelEncoder = LabelEncoder()
             train_labels = labelEncoder.fit_transform(self._training_labels)
             y_true = labelEncoder.transform(self._validation_labels)
@@ -701,7 +700,9 @@ class MLModel(object):
             file_name = os.path.basename(path) + ".dlpk"
             dlpk_path = Path(os.path.join(path, file_name))
             self._publish_dlpk(
-                dlpk_path, gis=gis, overwrite=kwargs.get("overwrite", False),
+                dlpk_path,
+                gis=gis,
+                overwrite=kwargs.get("overwrite", False),
             )
 
         return Path(path)

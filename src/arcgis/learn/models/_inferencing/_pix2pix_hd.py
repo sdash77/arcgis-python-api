@@ -150,6 +150,7 @@ class ChildImageClassifier:
             )
 
         self.pix2pix_hd = Pix2PixHD.from_model(data=None, emd_path=model)
+        self._learnmodel = self.pix2pix_hd
         self.model = self.pix2pix_hd.learn.model.to(self.device)
         self.model.eval()
 
