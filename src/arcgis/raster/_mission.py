@@ -11,7 +11,8 @@ class Mission:
 
     Mission represents a mission in an Orthomapping Project.
 
-    Usage: ``arcgis.raster.Mission(mission_name=mission_name, project = project)``
+    .. note :: This class is not created by users directly. An instance of this class is returned as output for
+    get_mission() and add_mission() methods on the Project class of arcgis.raster.orthomapping module.
 
     ====================================     ====================================================================
     **Parameter**                             **Description**
@@ -29,8 +30,8 @@ class Mission:
 
         # Example Usage
 
-        #om_item = gis.content.get("85a54236c6364a88a7c7c2b1a31fd901")
-        #project = Project(om_item, gis=gis)
+        om_item = gis.content.get("85a54236c6364a88a7c7c2b1a31fd901")
+        project = Project(om_item, gis=gis)
 
         mission = Mission(mission_name='Mission_Yucaipa', project=project)
 
@@ -43,7 +44,7 @@ class Mission:
             self._project = project
         elif isinstance(project, Item):
             if project.type == "Ortho Mapping Project":
-                self._project = Project(project, gis=gis)
+                self._project = Project(project, gis=project._gis)
 
         self._project_item = project._project_item
         self._gis = project._gis

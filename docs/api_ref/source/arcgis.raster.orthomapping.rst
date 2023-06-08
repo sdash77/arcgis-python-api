@@ -91,7 +91,7 @@ Project
 
 Mission
 -------
-.. autoclass:: arcgis.raster.orthomapping.Mission
+.. autoclass:: arcgis.raster._mission.Mission
     :inherited-members:
     :members:
     :undoc-members:

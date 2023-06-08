@@ -2800,9 +2800,8 @@ class Project:
 
                                              Example:
 
-                                                project = "OM_project"
-
-                                                om_item = gis.content.get("85a54236c6364a88a7c7c2b1a31fd901")
+                                                project = "OM_project" \
+                                                om_item = gis.content.get("85a54236c6364a88a7c7c2b1a31fd901") \
                                                 project = om_item
     ------------------------------------     --------------------------------------------------------------------
     gis                                      Optional `~arcgis.gis.GIS`. Repesents the GIS object of the Orthomapping
