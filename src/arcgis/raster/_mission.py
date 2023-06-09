@@ -28,13 +28,23 @@ class Mission:
 
     .. code-block:: python
 
-        # Example Usage
+        # Example Usage 1
 
         om_item = gis.content.get("85a54236c6364a88a7c7c2b1a31fd901")
         project = Project(om_item, gis=gis)
 
-        mission = Mission(mission_name='Mission_Yucaipa', project=project)
+        mission_1 = project.add_mission(image_list,
+                                        mission_name="mission_name",
+                                        image_collection="img_collection",
+                                        raster_type_name="UAV/UAS",
+                                        raster_type_params=raster_type_params)
 
+        # Example Usage 2
+
+        om_item = gis.content.get("85a54236c6364a88a7c7c2b1a31fd901")
+        project = Project(om_item, gis=gis)
+
+        mission_1 = project.get_mission("mission_name")
 
     """
 
