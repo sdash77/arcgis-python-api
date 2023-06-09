@@ -543,7 +543,7 @@ class AttachmentManager(object):
             attachment_types=attachment_types,
             as_df=True,
         )
-        for row in attachments.to_dict(orient="records"):
+        for row in attachments.to_dict("records"):
             dlpath = os.path.join(
                 save_folder,
                 "%s" % int(row["PARENTOBJECTID"]),

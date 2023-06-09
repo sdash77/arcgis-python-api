@@ -3311,7 +3311,7 @@ class FeatureLayer(Layer):
                 c for c in adds.columns.tolist() if c.lower() not in ["objectid", "fid"]
             ]
             params["adds"] = json.dumps(
-                [{"attributes": row} for row in adds[cols].to_dict(orient="records")],
+                [{"attributes": row} for row in adds[cols].to_dict("records")],
                 default=_date_handler,
             )
         elif isinstance(adds, FeatureSet):
@@ -3362,10 +3362,7 @@ class FeatureLayer(Layer):
                 if c.lower() not in ["objectid", "fid"]
             ]
             params["updates"] = json.dumps(
-                [
-                    {"attributes": row}
-                    for row in updates[cols].to_dict(orient="records")
-                ],
+                [{"attributes": row} for row in updates[cols].to_dict("records")],
                 default=_date_handler,
             )
         elif len(updates) > 0:
