@@ -12,7 +12,7 @@ class Mission:
     Mission represents a mission in an Orthomapping Project.
 
     .. note :: This class is not created by users directly. An instance of this class is returned as output for
-    get_mission() and add_mission() methods on the Project class of arcgis.raster.orthomapping module.
+      get_mission() and add_mission() methods on the Project class of arcgis.raster.orthomapping module.
 
     ====================================     ====================================================================
     **Parameter**                             **Description**
@@ -103,10 +103,6 @@ class Mission:
                 else:
                     mission_product[key] = self._gis.content.get(val["itemId"])
         return mission_product
-
-    @property
-    def processing_states(self):
-        return self._mission_json["processingSettings"]
 
     @property
     def image_count(self):
