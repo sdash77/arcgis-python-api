@@ -4710,6 +4710,112 @@ class ImageryLayer(Layer):
 
         return self._con.post(path=url, postdata=params, timeout=None)
 
+    def _query_gps_info(
+        self,
+        where: Optional[str] = None,
+        object_ids: Optional[list[int]] = None,
+        time_filter: Optional[
+            Union[datetime.date, datetime.datetime, list[int], str]
+        ] = None,
+        geometry_filter: Optional[dict] = None,
+    ):
+        """
+        The ``query_gps_info`` method queries an :class:`~arcgis.raster.ImageryLayer` by applying the filter specified by
+        the user. The result of this operation is the gps and orientation information for image collections created by
+        OrthoMapping REST/Python API or Ortho Maker.
+
+        ==============================  ====================================================================
+        **Parameter**                   **Description**
+        ------------------------------  --------------------------------------------------------------------
+        where                           Optional string. A where clause on this layer to filter the imagery
+                                        layer by the selection sql statement. Any legal SQL where clause
+                                        operating on the fields in the raster
+        ------------------------------  --------------------------------------------------------------------
+        object_ids                      Optional list of objectids, use the raster id list to define a
+                                        subset of rasters.
+        ------------------------------  --------------------------------------------------------------------
+        time_filter                     Optional datetime.date, datetime.datetime or timestamp in
+                                        milliseconds. The time instant or the time extent to query.
+
+                                        Syntax: time_filter=<timeInstant>
+
+                                        Time extent specified as list of [<startTime>, <endTime>]
+                                        For time extents one of <startTime> or <endTime> could be None. A
+                                        None value specified for start time or end time will represent
+                                        infinity for start or end time respectively.
+                                        Syntax: time_filter=[<startTime>, <endTime>] ; specified as
+                                        datetime.date, datetime.datetime or timestamp in milliseconds
+        ------------------------------  --------------------------------------------------------------------
+        geometry_filter                 Optional arcgis.geometry.filters. Spatial filter from
+                                        arcgis.geometry.filters module to filter results by a spatial
+                                        relationship with another geometry.
+        ==============================  ====================================================================
+
+        :return: A :class:`~arcgis.features.FeatureSet` containing the footprints (features) matching the query when
+                  return_geometry is ``True``, else a dictionary containing the expected return
+                  type.
+
+        .. code-block:: python
+
+            # Usage Example
+
+            img_lyr = gis.content.search("my_image_service", item_type="Imagery Layer")[0].layers[0]
+            gps_info = img_lyr.query_gps_info(where="OBJECTID=1")
+
+        """
+
+        if self.tiles_only:
+            raise RuntimeError(
+                "This operation cannot be performed on a TilesOnly Service"
+            )
+
+        if self._datastore_raster:
+            raise RuntimeError(
+                "This operation cannot be performed on a datastore raster"
+            )
+
+        params = {"f": "json"}
+        if object_ids:
+            params["objectIds"] = object_ids
+
+        if where is not None:
+            params["where"] = where
+        elif self._where_clause is not None:
+            params["where"] = self._where_clause
+        else:
+            params["where"] = "1=1"
+
+        if self._temporal_filter is not None:
+            time_filter = self._temporal_filter
+
+        if time_filter is not None:
+            if type(time_filter) is list:
+                starttime = _date_handler(time_filter[0])
+                endtime = _date_handler(time_filter[1])
+                if starttime is None:
+                    starttime = "null"
+                if endtime is None:
+                    endtime = "null"
+                params["time"] = "%s,%s" % (starttime, endtime)
+            else:
+                params["time"] = _date_handler(time_filter)
+
+        if self._spatial_filter is not None:
+            geometry_filter = self._spatial_filter
+
+        if not geometry_filter is None and isinstance(geometry_filter, dict):
+            gf = geometry_filter
+            params["geometry"] = gf["geometry"]
+            params["geometryType"] = gf["geometryType"]
+            params["spatialRel"] = gf["spatialRel"]
+            if "inSR" in gf:
+                params["inSR"] = gf["inSR"]
+
+        url = self._url + "/queryGPSInfo"
+        res = self._con.post(path=url, postdata=params, timeout=None)
+
+        return res["images"]
+
     def _compute_multidimensional_info(
         self,
         where=None,
