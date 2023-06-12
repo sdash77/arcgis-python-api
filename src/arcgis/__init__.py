@@ -1,4 +1,4 @@
-__version__ = "2.2.0a0"
+__version__ = "2.2.0"
 
 from arcgis.auth.tools import LazyLoader
 
