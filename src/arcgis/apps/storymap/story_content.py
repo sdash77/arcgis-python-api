@@ -2810,8 +2810,12 @@ class Sidecar:
             ):
                 # Get the media content for the slide
                 media = list(slide_dict["media"].values())[0]
-                # Get the class using the node value
-                content.append(self.get(media))
+
+                if media == None or media == "":
+                    pass
+                else:
+                    # Get the class using the node value
+                    content.append(self.get(media))
             contents.append(content)
         return contents
 
