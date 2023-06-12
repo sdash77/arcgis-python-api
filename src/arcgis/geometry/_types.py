@@ -3283,7 +3283,7 @@ class Polygon(Geometry):
         ----------------  -------------------------------------------------------------------------------
         scale_factor      An optional float. Multiplication factor for the SVG stroke-width.  Default is 1.
         ----------------  -------------------------------------------------------------------------------
-        fill_color      An optional string. Hex string for fill color. Default is to use "#66cc99" if geometry is
+        fill_color        An optional string. Hex string for fill color. Default is to use "#66cc99" if geometry is
                           valid, and "#ff3333" if invalid.
         ================  ===============================================================================
 

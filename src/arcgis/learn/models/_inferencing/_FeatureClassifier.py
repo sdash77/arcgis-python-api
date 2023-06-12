@@ -55,6 +55,7 @@ class ChildObjectDetector:
 
         # Using arcgis.learn FeatureClassifer from_model function.
         self.cf = FeatureClassifier.from_model(emd_path=model)
+        self._learnmodel = self.cf
         self.model = self.cf.learn.model
         self.model = self.cf.learn.model.to(self.device)
         self.model.eval()

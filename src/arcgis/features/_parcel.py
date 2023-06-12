@@ -1257,7 +1257,7 @@ class ParcelFabricManager(object):
         divide_cogo_line_bearing    Optional Float. Parameter representing the COGO direction
                                     (in decimal degrees) that will be stored in the COGO Direction field
                                     of the dividing lines.
-        -----------------------     --------------------------------------------------------------------
+        --------------------------- --------------------------------------------------------------------
         future                      Optional boolean. If `True`, the request is processed as an asynchronous
                                     job and a URL is returned that points a location displaying the status
                                     of the job.

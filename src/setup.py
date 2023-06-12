@@ -90,7 +90,6 @@ else:
         "pyspnego >=0.8.0",
         "requests-kerberos",
         "requests-gssapi",
-        "gssapi>=1.8.1,<2",
         "dask >=2023.3.2",
         "matplotlib-inline",
     ]
@@ -227,11 +226,11 @@ def get_version():
         def __path(filename):
             return os.path.join(os.path.dirname(__file__), filename)
 
-        MICRO = "0"
+        MICRO = "0a0"
         if os.path.exists(__path("build.info")):
             MICRO = open(__path("build.info")).read().strip()
     except:
-        MICRO = "0"
+        MICRO = "0a0"
     return f"{MAJOR}.{MINOR}.{MICRO}"
 
 

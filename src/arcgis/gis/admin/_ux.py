@@ -1041,7 +1041,12 @@ class HomePageSettings(object):
 
     # ----------------------------------------------------------------------
     def set_background(
-        self, background_file: str | StockImage | None = None, is_built_in: bool = True
+        self,
+        background_file: str | None = None,
+        is_built_in: bool = True,
+        stock_image: StockImage | None = None,
+        layout: str | None = None,
+        opacity: int | None = None,
     ):
         """
         Configure your home page by setting the organization's background image. You can choose no image, a built-in image
@@ -1058,10 +1063,18 @@ class HomePageSettings(object):
         background_file     Optional string. If using a custom background, specify path to image file.
                             To remove an existing background, specify None for this argument and
                             False for is_built_in argument.
-                            If you want to set a stock image, use the StockImage class.
         ----------------    ---------------------------------------------------------------
         is_built_in         Optional bool, default=True. The built-in background is set by default.
                             If uploading a custom image, this parameter is ignored.
+        ----------------    ---------------------------------------------------------------
+        stock_image         Optional instance of StockImage class or string that represents
+                            a stock image key.
+        ----------------    ---------------------------------------------------------------
+        layout              Optional string. The layout height of the cover image. The values are:
+                            "Full-height", "Two-thirds-height", or "Half-height".
+        ----------------    ---------------------------------------------------------------
+        opacity             Optional int that represent the opacity of the header. The value is
+                            anything from 0 to 1 included.
         ================    ===============================================================
 
         :return: True | False
@@ -1099,7 +1112,7 @@ class HomePageSettings(object):
                 {"backgroundImage": background_update_val}
             )
         elif self._new_hp:
-            if background_file and not isinstance(background_file, StockImage):
+            if background_file:
                 fpath = Path(background_file)
                 f_splits = fpath.name.split(".")
                 if len(f_splits) > 1 and f_splits[1] == "png":
@@ -1117,10 +1130,13 @@ class HomePageSettings(object):
                 background_update_val = key_val
                 cover_type = "custom"
                 cover_image_stock = ""
-            elif is_built_in:
+            elif is_built_in and stock_image is not None:
                 cover_type = "stock"
                 background_update_val = ""
-                cover_image_stock = background_file.value
+                if isinstance(stock_image, str):
+                    # User passed in string of the stock image key
+                    stock_image = StockImage[stock_image]
+                cover_image_stock = stock_image.value
             hp = json.loads(
                 open(self._portal_resources.get("home.page.json"), "r").read()
             )
@@ -1128,6 +1144,11 @@ class HomePageSettings(object):
             hp["header"]["coverImg"] = background_update_val
             hp["header"]["coverType"] = cover_type
             hp["header"]["coverImgStock"] = cover_image_stock
+            if layout and layout in ["Full-height", "Two-thirds-height", "Half-height"]:
+                hp["header"]["coverImgLayout"] = layout
+            if opacity is not None and (opacity >= 0 or opacity <= 1):
+                hp["header"]["opacity"] = opacity
+
             params = {
                 "key": "home.page.json",
                 "text": hp,
@@ -1138,7 +1159,7 @@ class HomePageSettings(object):
             )
 
     # ----------------------------------------------------------------------
-    def get_background(self, download_path: str):
+    def get_background(self, download_path: str | None = None):
         """
         Get your organization's home page background image. You can use the `set_background()` method to set an image
         as the home page background image.
@@ -1149,6 +1170,9 @@ class HomePageSettings(object):
         **Parameter**      **Description**
         ----------------  ---------------------------------------------------------------
         download_path     Required string. Folder path to download the background file.
+                          If the background image is a stock image then an instance of the
+                          StockImage class will be returned and the download_path will be ignored.
+                          If you know the background is a stock image then don't provide a download path.
         ================  ===============================================================
 
         :return: Path to downloaded background file. If the cover image is a stock image then the stock image's name from the StockImage class will be returned.
@@ -1170,6 +1194,10 @@ class HomePageSettings(object):
             if cover_type == "stock":
                 return StockImage(hp["header"]["coverImgStock"]).name
             else:
+                if download_path is None:
+                    raise ValueError(
+                        "A download path is needed since the background is not a stock image."
+                    )
                 # If not stock then image is set
                 resource_list = self._portal_resources.list()
                 e_background = [
@@ -1202,7 +1230,13 @@ class HomePageSettings(object):
         return bckgrnd_path
 
     # ----------------------------------------------------------------------
-    def set_logo(self, logo_file: str | None = None, show_logo: bool | None = None):
+    def set_logo(
+        self,
+        logo_file: str | None = None,
+        show_logo: bool | None = None,
+        alignment: str | None = None,
+        position: str | None = None,
+    ):
         """
         Configure your home page by setting the organization's logo image. For best results the logo file should be
         65 x 65 pixels in dimension.
@@ -1215,6 +1249,12 @@ class HomePageSettings(object):
         logo_file           Optional string. Specify path to image file. If None, existing thumbnail is removed.
         ----------------    ---------------------------------------------------------------
         show_logo           Optional bool. Specify whether the logo is visible on the homepage or not.
+        ----------------    ---------------------------------------------------------------
+        alignment           Optional string. Values can either be "center" or "left". This will set
+                            the alignment for the title and logo on the header.
+        ----------------    ---------------------------------------------------------------
+        position            Optional string. Set the title and logo position on the homepage.
+                            Values: "middle" | "above" | "below" | "top3rd" | "bottom3rd"
         ================    ===============================================================
 
         :return: True | False
@@ -1229,11 +1269,11 @@ class HomePageSettings(object):
         if logo_file is not None and os.path.isfile(logo_file):
             fpath = Path(logo_file)
             f_splits = fpath.name.split(".")
-            if len(f_splits) > 1 and f_splits[1] == "png":
+            if len(f_splits) > 1 and f_splits[-1] == "png":
                 key_val = "thumbnail.png"
-            elif len(f_splits) > 1 and f_splits[1] == "jpg":
+            elif len(f_splits) > 1 and f_splits[-1] == "jpg":
                 key_val = "thumbnail.jpg"
-            elif len(f_splits) > 1 and f_splits[1] == "gif":
+            elif len(f_splits) > 1 and f_splits[-1] == "gif":
                 key_val = "thumbnail.gif"
 
             self._portal_resources.add(key_val, logo_file)
@@ -1256,9 +1296,21 @@ class HomePageSettings(object):
             hp = json.loads(
                 open(self._portal_resources.get("home.page.json"), "r").read()
             )
-            if show_logo:
+            if show_logo is not None:
                 hp["header"]["showLogo"] = show_logo
             hp["header"]["logo"] = key_val
+
+            if alignment and alignment in ["center", "left"]:
+                hp["header"]["titleLogoAlign"] = alignment
+            if position and position in [
+                "middle",
+                "above",
+                "below",
+                "top3rd",
+                "bottom3rd",
+            ]:
+                hp["header"]["titleLogoPos"] = position
+
             params = {
                 "key": "home.page.json",
                 "text": hp,
@@ -1328,6 +1380,8 @@ class HomePageSettings(object):
         title: str | None = None,
         show_title: bool | None = None,
         color: str | None = None,
+        alignment: str | None = None,
+        position: str | None = None,
     ):
         """
         Set the homepage title and it's visibility
@@ -1342,6 +1396,12 @@ class HomePageSettings(object):
         color               Optional string. Specifies the font color for the for the
                             title. This property recognizes common color
                             names (such as red or blue) and hexadecimal color values.
+        ----------------    ---------------------------------------------------------------
+        alignment           Optional string. Values can either be "center" or "left". This will set
+                            the alignment for the title and logo on the header.
+        ----------------    ---------------------------------------------------------------
+        position            Optional string. Set the title and logo position on the homepage.
+                            Values: "middle" | "above" | "below" | "top3rd" | "bottom3rd"
         ================    ===============================================================
 
         :return: True | False
@@ -1356,6 +1416,16 @@ class HomePageSettings(object):
                 hp["header"]["showTitle"] = show_title
             if color:
                 hp["header"]["titleColor"] = color
+            if alignment and alignment in ["center", "left"]:
+                hp["header"]["titleLogoAlign"] = alignment
+            if position and position in [
+                "middle",
+                "above",
+                "below",
+                "top3rd",
+                "bottom3rd",
+            ]:
+                hp["header"]["titleLogoPos"] = position
             params = {
                 "key": "home.page.json",
                 "text": hp,
@@ -1382,6 +1452,8 @@ class HomePageSettings(object):
                 "title": hp["header"]["title"],
                 "show_title": hp["header"]["showTitle"],
                 "color": hp["header"]["titleColor"],
+                "position": hp["header"]["titleLogoPos"],
+                "alignment": hp["header"]["titleLogoAlign"],
             }
             return title
         else:
@@ -1423,6 +1495,128 @@ class HomePageSettings(object):
                 "show_email": hp["footer"]["showContact"],
             }
             return contact
+
+    # ----------------------------------------------------------------------
+    def get_footer(self):
+        """Get the footer of the homepage"""
+        if self._new_hp:
+            hp = json.loads(
+                open(self._portal_resources.get("home.page.json"), "r").read()
+            )
+            footer = {
+                "contact": self.get_contact_email(),
+                "text": hp["footer"]["copy"],
+                "show_text": hp["footer"]["showCopy"],
+                "color": hp["footer"]["bgColor"],
+                "custom_color": hp["footer"]["bgCustom"],
+            }
+            return footer
+
+    # ----------------------------------------------------------------------
+    def set_footer(self, text: str, show_text: bool | None = None):
+        """Set the text and the visibility of the text in the footer"""
+        if self._new_hp:
+            hp = json.loads(
+                open(self._portal_resources.get("home.page.json"), "r").read()
+            )
+            if text:
+                hp["footer"]["copy"] = text
+            if show_text:
+                hp["footer"]["showCopy"] = show_text
+            params = {
+                "key": "home.page.json",
+                "text": hp,
+                "f": "json",
+            }
+            return self._portal_resources.add(
+                key="home.page.json", text=json.dumps(params["text"])
+            )
+        else:
+            return None
+
+    # ----------------------------------------------------------------------
+    def get_typography(self):
+        """Get the footer of the homepage"""
+        if self._new_hp:
+            hp = json.loads(
+                open(self._portal_resources.get("home.page.json"), "r").read()
+            )
+            if hp["useCustomTypography"] == True:
+                return hp["customTypography"]
+            else:
+                return hp["typography"]
+
+    # ----------------------------------------------------------------------
+    def set_typography(self, font_family: list, custom: bool = False):
+        """
+        ================    ===============================================================
+        **Parameter**        **Description**
+        ----------------    ---------------------------------------------------------------
+        font_family         Optional list. The combination of fonts to use for typography
+                            of the homepage. The first string represents the title font and
+                            the second string represents the body font. If a custom typography
+                            will be set, specify custom = True parameter
+
+                            Values:
+                            ["Avenir Next", "Avenir Next"]
+                            ["Avenir Next", "Noto Serif"]
+                            ["Noto Serif", "Avenir Next"]
+                            ["Noto Serif", "Noto Serif"]
+        ----------------    ---------------------------------------------------------------
+        custom              Optional bool. If True, a custom list of typography was passed in
+                            as the value for the font_family parameter.
+        ================    ===============================================================
+
+        """
+        if self._new_hp:
+            hp = json.loads(
+                open(self._portal_resources.get("home.page.json"), "r").read()
+            )
+            if custom:
+                hp["useCustomTypography"] = True
+                hp["customTypography"] = font_family
+            else:
+                hp["useCustomTypography"] = False
+                hp["typography"] = font_family
+            params = {
+                "key": "home.page.json",
+                "text": hp,
+                "f": "json",
+            }
+            return self._portal_resources.add(
+                key="home.page.json", text=json.dumps(params["text"])
+            )
+        else:
+            return None
+
+    # ----------------------------------------------------------------------
+    def set_base_color(self, color: str):
+        """
+        Set the base color with a string color name.
+        """
+        if self._new_hp:
+            hp = json.loads(
+                open(self._portal_resources.get("home.page.json"), "r").read()
+            )
+            hp["baseColor"] = color
+            params = {
+                "key": "home.page.json",
+                "text": hp,
+                "f": "json",
+            }
+            return self._portal_resources.add(
+                key="home.page.json", text=json.dumps(params["text"])
+            )
+        else:
+            return None
+
+    # ----------------------------------------------------------------------
+    def get_base_color(self):
+        if self._new_hp:
+            hp = json.loads(
+                open(self._portal_resources.get("home.page.json"), "r").read()
+            )
+            return hp["baseColor"]
 
 
 ##############################################################################

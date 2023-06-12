@@ -194,6 +194,7 @@ class ChildImageClassifier:
         self.road_extractor = MultiTaskRoadExtractor.from_model(
             data=None, emd_path=model
         )
+        self._learnmodel = self.road_extractor
         self.model = self.road_extractor.learn.model.to(self.device)
         self.model.eval()
 

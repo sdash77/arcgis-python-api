@@ -326,7 +326,7 @@ def _get_raster_url(raster, layer):
     if isinstance(raster, (ImageryLayer, Raster)):
         if raster._fn is not None:
             if raster._datastore_raster and layer._datastore_raster:
-                if raster._uri == layer._uri:
+                if raster._uri == layer._uri or isinstance(raster._uri, bytes):
                     raster = raster._fn
                 else:
                     raster = _replace_raster_url(raster._fn, raster._uri)

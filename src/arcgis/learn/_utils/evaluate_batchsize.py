@@ -295,9 +295,7 @@ def estimate_batch_size(model, mode="train"):
                         max_batchsize = int(max_batchsize // 2)
                         continue
                     else:
-                        raise Exception(
-                            "batch size can not be less than 2, not enough memory available"
-                        )
+                        raise Exception(E)
                 else:
                     exception = str(E)
                     breakwhile = True

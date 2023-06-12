@@ -151,6 +151,7 @@ class ChildImageClassifier:
             )
 
         self.cyclegan = CycleGAN.from_model(data=None, emd_path=model)
+        self._learnmodel = self.cyclegan
         self.model = self.cyclegan.learn.model.to(self.device)
         self.model.eval()
 

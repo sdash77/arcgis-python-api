@@ -7,7 +7,7 @@ build:
   number: '0'
 package:
   name: arcgis
-  version: 2.2.0
+  version: 2.2.0a0
 requirements:
   build:
   - python
@@ -40,7 +40,6 @@ requirements:
   - certifi
   - dask >=2023.3.2
   - geomet
-  - python-gssapi
   - requests-gssapi
   - pyspnego >=0.8.0
   - matplotlib-inline
