@@ -62,37 +62,6 @@ class Mission:
         self._collection = None
         self._resource_info = self._resource_info(self._mission_name)
 
-        # import types
-        # from arcgis.raster.orthomapping import (
-        #    compute_sensor_model,
-        #    alter_processing_states,
-        #    get_processing_states,
-        #    match_control_points,
-        #    color_correction,
-        #    compute_control_points,
-        #    compute_seamlines,
-        #    edit_control_points,
-        #    generate_dem,
-        #    generate_orthomosaic,
-        #    generate_report,
-        #    query_control_points,
-        #    reset_image_collection,
-        # )
-
-        # self.compute_sensor_model = types.MethodType(compute_sensor_model, self)
-        # self.alter_processing_states = types.MethodType(alter_processing_states, self)
-        # self.get_processing_states = types.MethodType(get_processing_states, self)
-        # self.match_control_points = types.MethodType(match_control_points, self)
-        # self.color_correction = types.MethodType(color_correction, self)
-        # self.compute_control_points = types.MethodType(compute_control_points, self)
-        # self.compute_seamlines = types.MethodType(compute_seamlines, self)
-        # self.edit_control_points = types.MethodType(edit_control_points, self)
-        # self.generate_dem = types.MethodType(generate_dem, self)
-        # self.generate_orthomosaic = types.MethodType(generate_orthomosaic, self)
-        # self.generate_report = types.MethodType(generate_report, self)
-        # self.query_control_points = types.MethodType(query_control_points, self)
-        # self.reset_processing = types.MethodType(reset_image_collection, self)
-
     @property
     def products(self):
         """
