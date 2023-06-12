@@ -7102,38 +7102,42 @@ class ImageryLayer(Layer):
         }
 
         mosaic_rule = {}
-        if ("defaultMosaicMethod" in self.properties.keys()) and self.properties[
-            "defaultMosaicMethod"
-        ] != None:
-            if (
-                self.properties["defaultMosaicMethod"].lower()
-                in mosaic_method_mapping.keys()
-            ):
+        if type(self) == ImageryLayer:
+            if ("defaultMosaicMethod" in self.properties.keys()) and self.properties[
+                "defaultMosaicMethod"
+            ] != None:
+                if (
+                    self.properties["defaultMosaicMethod"].lower()
+                    in mosaic_method_mapping.keys()
+                ):
+                    mosaic_rule.update(
+                        {
+                            "mosaicMethod": mosaic_method_mapping[
+                                self.properties["defaultMosaicMethod"].lower()
+                            ]
+                        }
+                    )
+            if ("sortField" in self.properties.keys()) and self.properties[
+                "sortField"
+            ] != None:
+                mosaic_rule.update({"sortField": self.properties["sortField"]})
+            if ("sortValue" in self.properties.keys()) and self.properties[
+                "sortValue"
+            ] != None:
+                mosaic_rule.update({"sortValue": self.properties["sortValue"]})
+            if ("mosaicOperator" in self.properties.keys()) and self.properties[
+                "mosaicOperator"
+            ] != None:
                 mosaic_rule.update(
                     {
-                        "mosaicMethod": mosaic_method_mapping[
-                            self.properties["defaultMosaicMethod"].lower()
-                        ]
+                        "mosaicOperation": "MT_"
+                        + self.properties["mosaicOperator"].upper()
                     }
                 )
-        if ("sortField" in self.properties.keys()) and self.properties[
-            "sortField"
-        ] != None:
-            mosaic_rule.update({"sortField": self.properties["sortField"]})
-        if ("sortValue" in self.properties.keys()) and self.properties[
-            "sortValue"
-        ] != None:
-            mosaic_rule.update({"sortValue": self.properties["sortValue"]})
-        if ("mosaicOperator" in self.properties.keys()) and self.properties[
-            "mosaicOperator"
-        ] != None:
-            mosaic_rule.update(
-                {"mosaicOperation": "MT_" + self.properties["mosaicOperator"].upper()}
-            )
-        if ("sortAscending" in self.properties.keys()) and self.properties[
-            "sortAscending"
-        ] != None:
-            mosaic_rule.update({"ascending": self.properties["sortAscending"]})
+            if ("sortAscending" in self.properties.keys()) and self.properties[
+                "sortAscending"
+            ] != None:
+                mosaic_rule.update({"ascending": self.properties["sortAscending"]})
 
         return mosaic_rule
 
