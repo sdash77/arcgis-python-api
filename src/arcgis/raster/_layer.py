@@ -7102,7 +7102,7 @@ class ImageryLayer(Layer):
         }
 
         mosaic_rule = {}
-        if not isinstance(self, _ArcpyRaster):
+        if type(self) == ImageryLayer:
             if ("defaultMosaicMethod" in self.properties.keys()) and self.properties[
                 "defaultMosaicMethod"
             ] != None:
