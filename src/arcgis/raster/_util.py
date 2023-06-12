@@ -1453,6 +1453,8 @@ def _get_stac_metadata_file(item):
             href = item["assets"]["image"]["href"]
         elif item["collection"] == "landsat-c2-l2":
             href = item["assets"]["mtl.txt"]["href"]
+        elif item["collection"] == "sentinel-1-grd":
+            href = item["assets"]["safe-manifest"]["href"]
 
         href = (
             rf"/vsis3{href[4:]}" if href is not None and href.startswith("s3") else href
