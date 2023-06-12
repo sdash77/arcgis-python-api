@@ -299,6 +299,10 @@ gndvi
 ____
 .. autofunction:: arcgis.raster.functions.gndvi
 
+gradient
+________
+.. autofunction:: arcgis.raster.functions.gradient
+
 grayscale
 _________
 .. autofunction:: arcgis.raster.functions.grayscale

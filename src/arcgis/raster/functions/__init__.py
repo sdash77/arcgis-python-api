@@ -13164,6 +13164,64 @@ def region_pixel_count(raster, max_region_size=100, pixel_neighborhood=4):
     return _clone_layer(layer, template_dict, raster_ra)
 
 
+def gradient(raster, gradient_dimension="X", denominator_unit="DEFAULT"):
+    """
+    Compute gradient along a specified dimension
+
+    The arguments for this function are as follows:
+
+    ================================     ====================================================================
+    **Parameter**                         **Description**
+    --------------------------------     --------------------------------------------------------------------
+    raster                               Required :class:`Raster <arcgis.raster.Raster>` /  :class:`ImageryLayer <arcgis.raster.ImageryLayer>` object.
+    --------------------------------     --------------------------------------------------------------------
+    gradient_dimension                   Optional string. The gradient dimension. The default is 'X'.
+    --------------------------------     --------------------------------------------------------------------
+    denominator_unit                     Optional string. The default is "DEFAULT".
+    ================================     ====================================================================
+
+    :return: The output raster with the function applied.
+
+    .. code-block:: python
+
+        # Usage Example 1: Compute gradient along StdZ dimension
+
+        op_lyr = gradient(raster=img_lyr, gradient_dimension="StdZ")
+    """
+    layer, raster, raster_ra = _raster_input(raster)
+
+    template_dict = {
+        "rasterFunction": "Gradient",
+        "rasterFunctionArguments": {
+            "Raster": raster,
+        },
+    }
+
+    if gradient_dimension is not None:
+        template_dict["rasterFunctionArguments"][
+            "GradientDimension"
+        ] = gradient_dimension
+
+    if denominator_unit.upper() not in [
+        "DEFAULT",
+        "CELLSIZE",
+        "PER_HOUR",
+        "PER_DAY",
+        "PER_MONTH",
+        "PER_YEAR",
+        "PER_DECADE",
+        "DIMENSION_INTERVAL",
+    ]:
+        raise RuntimeError(
+            "Invalid denominator_unit value. Note that gradient_dimension should be either 'DEFAULT', 'CELLSIZE'"
+        )
+    template_dict["rasterFunctionArguments"][
+        "DenominatorUnit"
+    ] = denominator_unit.upper()
+
+    return _clone_layer(layer, template_dict, raster_ra)
+
+
 class RFT:
     def __init__(self, raster_function_template, gis=None):
         try:
