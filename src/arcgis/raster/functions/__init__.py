@@ -13175,16 +13175,16 @@ def gradient(raster, gradient_dimension="X", denominator_unit="DEFAULT"):
     --------------------------------     --------------------------------------------------------------------
     raster                               Required :class:`Raster <arcgis.raster.Raster>` /  :class:`ImageryLayer <arcgis.raster.ImageryLayer>` object.
     --------------------------------     --------------------------------------------------------------------
-    gradient_dimension                   Optional string. The gradient dimension. The default is 'X'.
+    gradient_dimension                   | Optional string. The gradient dimension. The default is 'X'.
                                          The dimensions that are available to calculate gradient on.
                                          |
-                                         For non-multidimensional input, X, Y and XY are available.
+                                         | For non-multidimensional input, X, Y and XY are available.
                                          |
-                                         For multidimensional input, X, Y and XY and all dimensions in the data are available.
+                                         | For multidimensional input, X, Y and XY and all dimensions in the data are available.
                                          If there are two or more dimensions, gradient will be calculated on the gradient dimension
                                          for all slices in other dimensions.
                                          |
-                                         XY option outputs a 3-band raster where band 1 represents the gradient along X dimension
+                                         | XY option outputs a 3-band raster where band 1 represents the gradient along X dimension
                                          and bands 2 and 3 represents the gradient along Y dimension.
     --------------------------------     --------------------------------------------------------------------
     denominator_unit                     Optional string. The default is "DEFAULT".
