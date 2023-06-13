@@ -13176,17 +13176,53 @@ def gradient(raster, gradient_dimension="X", denominator_unit="DEFAULT"):
     raster                               Required :class:`Raster <arcgis.raster.Raster>` /  :class:`ImageryLayer <arcgis.raster.ImageryLayer>` object.
     --------------------------------     --------------------------------------------------------------------
     gradient_dimension                   Optional string. The gradient dimension. The default is 'X'.
+                                         The dimensions that are available to calculate gradient on.
+
+                                         For non-multidimensional input, X, Y and XY are available.
+
+                                         For multidimensional input, X, Y and XY and all dimensions in the data are available.
+                                         If there are two or more dimensions, gradient will be calculated on the gradient dimension
+                                         for all slices in other dimensions.
+
+                                         XY option outputs a 3-band raster where band 1 represents the gradient along X dimension
+                                         and bands 2 and 3 represents the gradient along Y dimension.
     --------------------------------     --------------------------------------------------------------------
     denominator_unit                     Optional string. The default is "DEFAULT".
+                                         The unit of the denominator. Depends on the selected Gradient Dimension.
+
+                                         For X, Y, XY, the options are:
+                                            - DEFAULT - Output is the difference between adjacent cells. This is the default.
+                                            - CELLSIZE - Output is the difference between adjacent cells divided by the cellsize
+                                                         of the input. The output unit is the same as the unit of the X/Y coordinates
+                                                         of the input. If the data is in a geographic coordinate system,
+                                                         it will be converted to meters.
+
+                                         For StdTime, the options are:
+                                            - DEFAULT - Output is the difference between adjacent slices. This is the default.
+                                            - PER_HOUR - Output is the difference between adjacent slices divided by the difference
+                                                         between their time values and converted to per hour rate.
+                                            - PER_DAY - Output is the difference between adjacent slices divided by the difference
+                                                        between their time values and converted to per day rate.
+                                            - PER_MONTH - Output is the difference between adjacent slices divided by the
+                                                          difference between their time values and converted to per month rate.
+                                            - PER_YEAR - Output is the difference between adjacent slices divided by the
+                                                         difference between their time values and converted to per year rate.
+                                            - PER_DECADE - Output is the difference between adjacent slices divided by the difference
+                                                           between their time values and converted to per decade rate.
+
+                                         For non-time dimension, the options are:
+                                            - DEFAULT - Output is the difference between adjacent slices. This is the default.
+                                            - DIMENSION_INTERVAL - Output is the difference between adjacent slices divided by
+                                                                   the difference between their dimension values.
     ================================     ====================================================================
 
     :return: The output raster with the function applied.
 
     .. code-block:: python
 
-        # Usage Example 1: Compute gradient along StdZ dimension
+        # Usage Example 1: This example calculates the gradient along X and Y dimensions of a raster.
 
-        op_lyr = gradient(raster=img_lyr, gradient_dimension="StdZ")
+        gradient_raster = gradient(raster=img_lyr, gradient_dimension="XY", denominator_unit="CELLSIZE")
     """
     layer, raster, raster_ra = _raster_input(raster)
 
@@ -13202,7 +13238,7 @@ def gradient(raster, gradient_dimension="X", denominator_unit="DEFAULT"):
             "GradientDimension"
         ] = gradient_dimension
 
-    if denominator_unit.upper() not in [
+    denominator_unit_list = [
         "DEFAULT",
         "CELLSIZE",
         "PER_HOUR",
@@ -13211,13 +13247,16 @@ def gradient(raster, gradient_dimension="X", denominator_unit="DEFAULT"):
         "PER_YEAR",
         "PER_DECADE",
         "DIMENSION_INTERVAL",
-    ]:
-        raise RuntimeError(
-            "Invalid denominator_unit value. Note that gradient_dimension should be either 'DEFAULT', 'CELLSIZE'"
-        )
-    template_dict["rasterFunctionArguments"][
-        "DenominatorUnit"
-    ] = denominator_unit.upper()
+    ]
+    if denominator_unit is not None:
+        if denominator_unit.upper() not in denominator_unit_list:
+            raise RuntimeError(
+                "denominator_unit should be one of the following "
+                + str(denominator_unit_list)
+            )
+        template_dict["rasterFunctionArguments"][
+            "DenominatorUnit"
+        ] = denominator_unit.upper()
 
     return _clone_layer(layer, template_dict, raster_ra)
 
