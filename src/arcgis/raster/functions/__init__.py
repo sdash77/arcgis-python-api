@@ -13178,19 +13178,20 @@ def gradient(raster, gradient_dimension="X", denominator_unit="DEFAULT"):
     gradient_dimension                   Optional string. The gradient dimension. The default is 'X'.
                                          The dimensions that are available to calculate gradient on.
                                          |
-                                         |For non-multidimensional input, X, Y and XY are available.
+                                         For non-multidimensional input, X, Y and XY are available.
                                          |
-                                         |For multidimensional input, X, Y and XY and all dimensions in the data are available.
-                                          If there are two or more dimensions, gradient will be calculated on the gradient dimension
-                                          for all slices in other dimensions.
+                                         For multidimensional input, X, Y and XY and all dimensions in the data are available.
+                                         If there are two or more dimensions, gradient will be calculated on the gradient dimension
+                                         for all slices in other dimensions.
                                          |
-                                         |XY option outputs a 3-band raster where band 1 represents the gradient along X dimension
-                                          and bands 2 and 3 represents the gradient along Y dimension.
+                                         XY option outputs a 3-band raster where band 1 represents the gradient along X dimension
+                                         and bands 2 and 3 represents the gradient along Y dimension.
     --------------------------------     --------------------------------------------------------------------
     denominator_unit                     Optional string. The default is "DEFAULT".
                                          The unit of the denominator. Depends on the selected Gradient Dimension.
 
                                          For X, Y, XY, the options are:
+
                                          - DEFAULT : Output is the difference between adjacent cells. This is the default.
                                          - CELLSIZE : Output is the difference between adjacent cells divided by the cellsize\
                                                       of the input. The output unit is the same as the unit of the X/Y coordinates\
@@ -13198,6 +13199,7 @@ def gradient(raster, gradient_dimension="X", denominator_unit="DEFAULT"):
                                                       it will be converted to meters.
 
                                          For StdTime, the options are:
+
                                          - DEFAULT : Output is the difference between adjacent slices. This is the default.
                                          - PER_HOUR : Output is the difference between adjacent slices divided by the difference\
                                                       between their time values and converted to per hour rate.
@@ -13211,6 +13213,7 @@ def gradient(raster, gradient_dimension="X", denominator_unit="DEFAULT"):
                                                         between their time values and converted to per decade rate.
 
                                          For non-time dimension, the options are:
+
                                          - DEFAULT : Output is the difference between adjacent slices. This is the default.
                                          - DIMENSION_INTERVAL : Output is the difference between adjacent slices divided by\
                                                                 the difference between their dimension values.
