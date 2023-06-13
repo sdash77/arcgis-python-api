@@ -13128,7 +13128,7 @@ def region_pixel_count(raster, max_region_size=100, pixel_neighborhood=4):
 
     .. code-block:: python
 
-        # Usage Example 1: Generate the raster  where each pixel contains the number of pixels within a connected region of the input raster.
+        # Usage Example 1: Generate the raster where each pixel contains the number of pixels within a connected region of the input raster.
 
         op_lyr = region_pixel_count(raster=img_lyr, max_region_size=100, pixel_neighborhood=4)
     """
