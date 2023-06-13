@@ -327,6 +327,7 @@ class GPJob(object):
             elif self.task == "ReconstructSurface":
                 r = {}
                 iids = []
+                urls = []
                 for key in result:
                     val = result[key]
                     if (
@@ -347,6 +348,30 @@ class GPJob(object):
                                 }
                                 r[key].update(item_properties=_item_properties)
                             iids.append(val["itemId"])
+                    elif (
+                        isinstance(val, dict)
+                        and "url" in val
+                        and len(val["url"]) > 0
+                    ):
+                        if not val["url"] in iids:
+                            try:
+                                r[key] = arcgis.mapping.SceneLayer(val["url"], self._gis)
+                            except Exception:
+                                from time import sleep
+                                print("sleeping...")
+                                sleep(10)
+                                r[key] = arcgis.mapping.SceneLayer(val["url"], self._gis)
+                            if self._item_properties:
+                                _item_properties = {
+                                    "properties": {
+                                        "jobUrl": self._url + "/jobs/" + self._jobid,
+                                        "jobType": "GPServer",
+                                        "jobId": self._jobid,
+                                        "jobStatus": "completed",
+                                    }
+                                }
+                                r[key].update(item_properties=_item_properties)
+                            urls.append(val["url"])
 
                 import collections
 
