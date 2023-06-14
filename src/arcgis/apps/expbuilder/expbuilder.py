@@ -353,10 +353,6 @@ class WebExperience(object):
         -----------------  ---------------------------------------------------------------------
         snippet            Optional string. Provide a short summary (limit to max 250 characters) of the what the item is.
         -----------------  ---------------------------------------------------------------------
-        extent             Optional string. Provide comma-separated values for min x, min y, max x, max y.
-        -----------------  ---------------------------------------------------------------------
-        spatialReference   Optional string. Coordinate system that the item is in.
-        -----------------  ---------------------------------------------------------------------
         accessInformation  Optional string. Information on the source of the content.
         -----------------  ---------------------------------------------------------------------
         licenseInfo        Optional string.  Any license information or restrictions regarding the content.
