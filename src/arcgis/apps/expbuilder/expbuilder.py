@@ -5,7 +5,6 @@ from enum import Enum
 from arcgis.auth.tools import LazyLoader
 import copy
 from ._ref import templates
-import json
 from arcgis.gis import GIS
 import re
 from dataclasses import dataclass
@@ -436,6 +435,12 @@ class WebExperience(object):
         height              Optional integer. The desired height to show the preview.
         ===============     ====================================================================
 
+        .. note::
+
+            In some cases, a dialogue box may pop up asking for credentials when calling this
+            method. If the preview isn't rendering, check if pop-ups are disabled in your browser.
+
+
         :return:
             An IFrame display of the Experience if possible, else the item url is returned to be
             clicked on. If the item is unpublished, the function returns False.
@@ -687,6 +692,12 @@ class WebExperience(object):
         ---------------     --------------------------------------------------------------------
         height              Optional integer. The desired height to show the preview.
         ===============     ====================================================================
+
+        .. note::
+
+            In some cases, a dialogue box may pop up asking for credentials when calling this
+            method. If the preview isn't rendering, check if pop-ups are disabled in your browser.
+
 
         :return:
             An IFrame display of the Experience if possible, else the item url is returned to be
