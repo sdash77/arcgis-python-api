@@ -13237,6 +13237,21 @@ def gradient(raster, gradient_dimension="X", denominator_unit="DEFAULT"):
     }
 
     if gradient_dimension is not None:
+        complete_dim_list = None
+        try:
+            from .utility import _get_dimension_names
+
+            dim_list = _get_dimension_names(layer)
+            complete_dim_list = ["X", "Y", "XY"]
+            complete_dim_list.extend(dim_list)
+        except:
+            pass
+        if complete_dim_list:
+            if gradient_dimension not in complete_dim_list:
+                raise RuntimeError(
+                    "gradient_dimension should be one of the following "
+                    + str(complete_dim_list)
+                )
         template_dict["rasterFunctionArguments"][
             "GradientDimension"
         ] = gradient_dimension
