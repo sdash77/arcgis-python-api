@@ -27,19 +27,19 @@ class TestExperience(unittest.TestCase):
                 assert exp.item
                 assert exp.itemid
                 assert exp._expdict["template"] == "blankfullscreen"
-                assert exp.draft["template"] == "blankfullscreen"
+                assert exp._draft["template"] == "blankfullscreen"
                 assert isinstance(exp._resources, list)
 
             # test reload save
             with self.subTest(msg=profile + " reload save"):
-                exp.draft = templates["foldable"]
+                exp._draft = templates["foldable"]
                 assert exp.reload()
-                assert exp.draft == exp._expdict
-                assert exp.draft["template"] == "blankfullscreen"
+                assert exp._draft == exp._expdict
+                assert exp._draft["template"] == "blankfullscreen"
 
             # test save
             with self.subTest(msg=profile + " save"):
-                exp.draft = templates["foldable"]
+                exp._draft = templates["foldable"]
                 assert exp.save(title="pikachu", tags="ash, misty, brock")
                 assert exp._expdict["template"] == "foldable"
                 assert exp.item.title == "pikachu"
@@ -83,7 +83,7 @@ class TestExperience(unittest.TestCase):
                 assert exp2.item.title == "rhyperior"
                 # assert exp2.item.tags == ["jesse", "james", "meowth"]
                 assert exp2._expdict == exp._expdict
-                assert exp2.draft == exp.draft
+                assert exp2._draft == exp._draft
                 assert exp2.item.get_data() == exp.item.get_data()
                 assert exp2.delete()
 
@@ -149,17 +149,17 @@ class TestExperience(unittest.TestCase):
 
             with self.subTest(msg=profile + " creating"):
                 exp = WebExperience(path=path, gis=gis)
-                assert exp.draft
+                assert exp._draft
                 assert exp._gis
                 assert exp.item == None
                 assert exp.itemid == None
 
             with self.subTest(msg=profile + " adding to portal"):
                 exp = WebExperience(path=path, gis=gis)
-                item = exp.upload(gis=gis, name="test exp")
+                item = exp.upload(gis=gis, title="test exp")
                 assert isinstance(item, Item)
                 assert item["title"] == "test exp"
-                assert exp.draft["attributes"]["portalUrl"] == gis.url
+                assert exp._draft["attributes"]["portalUrl"] == gis.url
                 assert exp.item == item
                 assert exp.itemid
                 assert exp.delete()
@@ -172,30 +172,30 @@ class TestExperience(unittest.TestCase):
                         "portalUrl": gis.url,
                     }
                 }
-                item = exp.upload(gis=gis, name="test exp", item_mapping=remap_dict)
+                item = exp.upload(gis=gis, title="test exp", item_mapping=remap_dict)
                 assert isinstance(item, Item)
                 assert item["title"] == "test exp"
-                assert exp.draft["attributes"]["portalUrl"] == gis.url
+                assert exp._draft["attributes"]["portalUrl"] == gis.url
                 assert (
-                    exp.draft["dataSources"]["dataSource_1"]["itemId"]
+                    exp._draft["dataSources"]["dataSource_1"]["itemId"]
                     == "c50de463235e4161b206d000587af18b"
                 )
-                assert exp.draft["dataSources"]["dataSource_1"]["portalUrl"] == gis.url
+                assert exp._draft["dataSources"]["dataSource_1"]["portalUrl"] == gis.url
                 assert exp.item == item
                 assert exp.itemid
                 assert exp.delete()
 
             with self.subTest(msg=profile + " auto remapping data"):
                 exp = WebExperience(path=path, gis=gis)
-                exp.draft["dataSources"]["dataSource_1"]["sourceLabel"] = "Giraffes"
-                exp.draft["dataSources"]["dataSource_1"][
+                exp._draft["dataSources"]["dataSource_1"]["sourceLabel"] = "Giraffes"
+                exp._draft["dataSources"]["dataSource_1"][
                     "itemId"
                 ] = "123hehethiswontwork"
-                item = exp.upload(gis=gis, name="test exp", auto_remap=True)
+                item = exp.upload(gis=gis, title="test exp", auto_remap=True)
                 assert isinstance(item, Item)
                 assert item["title"] == "test exp"
                 assert (
-                    exp.draft["dataSources"]["dataSource_1"]["itemId"]
+                    exp._draft["dataSources"]["dataSource_1"]["itemId"]
                     != "123hehethiswontwork"
                 )
                 assert exp.item == item

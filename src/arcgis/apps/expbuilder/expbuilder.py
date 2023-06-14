@@ -165,26 +165,6 @@ class WebExperience(object):
 
     # -----------------------------------------------------------------------------------
     @property
-    def draft(self):
-        """
-        Get/set the WebExperience's draft property. This dictionary dictates what
-        the current version of the story looks like. Calling `save()` after amending the
-        draft will make the changes permanent, and calling `reload()` will revert the
-        draft to the last save state.
-        """
-        return self._draft
-
-    # -----------------------------------------------------------------------------------
-    @draft.setter
-    def draft(self, draft):
-        """
-        See draft property above.
-        """
-        self._draft = draft
-        return self.draft
-
-    # -----------------------------------------------------------------------------------
-    @property
     def item(self):
         """
         Returns the portal item associated with the WebExperience, if possible.
@@ -216,7 +196,12 @@ class WebExperience(object):
 
     # -----------------------------------------------------------------------------------
     def _create_new_experience(
-        self, config=None, template="blank fullscreen", name=None, gis=None
+        self,
+        config=None,
+        template="blank fullscreen",
+        name=None,
+        gis=None,
+        item_properties={},
     ):
         """
         If no experience is specified when creating a WebExperience, this helper function
@@ -277,17 +262,22 @@ class WebExperience(object):
                 "expbuilderapp:python-api-" + arcgis.__version__,
             ]
         )
-        item_properties = {
+        props = item_properties
+        props["title"] = title
+        props["type"] = "Web Experience"
+        props["typeKeywords"] = keywords
+
+        """item_properties = {
             "type": "Web Experience",
             "title": title,
             "typeKeywords": keywords,
-        }
+        }"""
 
         # add to active gis and set properties
         if gis is None:
-            item = self._gis.content.add(item_properties=item_properties)
+            item = self._gis.content.add(item_properties=props)
         else:
-            item = gis.content.add(item_properties=item_properties)
+            item = gis.content.add(item_properties=props)
 
         # assign to experience properties
         self._item = item
@@ -308,6 +298,7 @@ class WebExperience(object):
         publish: bool = False,
         duplicate: bool = False,
         include_private: Optional[bool] = None,
+        item_properties: Optional[dict] = {},
     ):
         """
         This method will save your Web Experience to your active GIS. The experience will be saved
@@ -344,7 +335,34 @@ class WebExperience(object):
         include_private     Optional boolean. Only to be included when duplicate is `True`.
                             If True, the private resources of the original item will be included
                             in the new item.
+        ---------------     --------------------------------------------------------------------
+        item_properties     Optional dictionary. Contains a variety of properties that can be
+                            set when creating a new item, much like `item.update()`. See below
+                            for a table containing possible properties.
         ===============     ====================================================================
+
+
+        *Key:Value Dictionary Options for Argument item_properties*
+
+        =================  =====================================================================
+        **Key**            **Value**
+        -----------------  ---------------------------------------------------------------------
+        description        Optional string. Description of the item.
+        -----------------  ---------------------------------------------------------------------
+        url                Optional string. URL to item that are based on URLs.
+        -----------------  ---------------------------------------------------------------------
+        snippet            Optional string. Provide a short summary (limit to max 250 characters) of the what the item is.
+        -----------------  ---------------------------------------------------------------------
+        extent             Optional string. Provide comma-separated values for min x, min y, max x, max y.
+        -----------------  ---------------------------------------------------------------------
+        spatialReference   Optional string. Coordinate system that the item is in.
+        -----------------  ---------------------------------------------------------------------
+        accessInformation  Optional string. Information on the source of the content.
+        -----------------  ---------------------------------------------------------------------
+        licenseInfo        Optional string.  Any license information or restrictions regarding the content.
+        -----------------  ---------------------------------------------------------------------
+        culture            Optional string. Locale, country and language information.
+        =================  =====================================================================
 
 
         :return: A boolean indicating the success of the operation.
@@ -360,11 +378,11 @@ class WebExperience(object):
         for i in range(len(keywords)):
             if keywords[i] == "status: Published":
                 keywords[i] = "status: Changed"
-        item_properties = {}
+        props = item_properties
         if title:
-            item_properties["title"] = title
+            props["title"] = title
         if tags:
-            item_properties["tags"] = tags
+            props["tags"] = tags
 
         self._expdict = self._draft
         self._item.resources.update(
@@ -376,8 +394,8 @@ class WebExperience(object):
                 if "status" in keywords[i]:
                     keywords[i] = "status: Published"
             if access:
-                item_properties["access"] = access
-            item_properties["typeKeywords"] = keywords
+                props["access"] = access
+            props["typeKeywords"] = keywords
             if self._gis._is_agol:
                 url = "https://experience.arcgis.com/experience/" + self._item.itemid
             else:
@@ -386,14 +404,12 @@ class WebExperience(object):
                     + "/apps/experiencebuilder/experience/?id="
                     + self._item.itemid
                 )
-            item_properties["url"] = url
-            return self._item.update(
-                item_properties=item_properties, data=self._expdict
-            )
+            props["url"] = url
+            return self._item.update(item_properties=props, data=self._expdict)
             # self._publish(item_properties = item_properties, data = self._expdict)
         else:
-            item_properties["typeKeywords"] = keywords
-            return self._item.update(item_properties=item_properties)
+            props["typeKeywords"] = keywords
+            return self._item.update(item_properties=props)
 
     # ----------------------------------------------------------------------
     def reload(self):
@@ -530,20 +546,15 @@ class WebExperience(object):
         else:
             return False
 
-    @dataclass
-    class data_sources:
-        """
-        Data class for managing an experience's data sources. Calling save after
-        """
-
     # ----------------------------------------------------------------------
     def upload(
         self,
-        gis,
+        gis: Optional[GIS] = None,
         publish=False,
-        name=None,
+        title=None,
         item_mapping: Optional[dict] = None,
         auto_remap: Optional[bool] = False,
+        item_properties: Optional[dict] = {},
     ):
         """
         Adds a WebExperience created locally through the Developer Edition to a specified
@@ -554,12 +565,13 @@ class WebExperience(object):
         ===============     ====================================================================
         **Argument**        **Description**
         ---------------     --------------------------------------------------------------------
-        gis                 Required GIS object. The portal to add the WebExperience to.
+        gis                 Optional GIS object. The portal to add the WebExperience to. If none
+                            is passed in, will default to the GIS of the WebExperience object.
         ---------------     --------------------------------------------------------------------
         publish             Optional boolean. Publishes the experience when adding it to the
                             portal. Default is `False`.
         ---------------     --------------------------------------------------------------------
-        name                Optional string. Allows a user to specify the name of their new
+        title               Optional string. Allows a user to specify the title of their new
                             experience in the portal.
         ---------------     --------------------------------------------------------------------
         item_mapping        Optional dictionary. Allows users to manually remap the datasources
@@ -569,11 +581,46 @@ class WebExperience(object):
         auto_remap          Optional boolean. Searches the portal for matching datasources and
                             automatically remaps the experience to use those accordingly.
                             Default is `False`.
+        ---------------     --------------------------------------------------------------------
+        item_properties     Optional dictionary. Contains a variety of properties that can be
+                            set when creating a new item, much like `ContentManager.add()`. See
+                            below for a table containing possible properties.
         ===============     ====================================================================
+
+
+        *Key:Value Dictionary Options for Argument item_properties*
+
+        ==========================  =====================================================================
+        **Key**                     **Value**
+        --------------------------  ---------------------------------------------------------------------
+        description                 Optional string. Description of the item.
+        --------------------------  ---------------------------------------------------------------------
+        url                         Optional string. URL to item that are based on URLs.
+        --------------------------  ---------------------------------------------------------------------
+        tags                        Optional string. Tags listed as comma-separated values, or a list of strings.
+                                    Used for searches on items.
+        --------------------------  ---------------------------------------------------------------------
+        snippet                     Optional string. Provide a short summary (limit to max 250 characters) of the what the item is.
+        --------------------------  ---------------------------------------------------------------------
+        accessInformation           Optional string. Information on the source of the content.
+        --------------------------  ---------------------------------------------------------------------
+        licenseInfo                 Optional string.  Any license information or restrictions regarding the content.
+        --------------------------  ---------------------------------------------------------------------
+        culture                     Optional string. Locale, country and language information.
+        --------------------------  ---------------------------------------------------------------------
+        commentsEnabled             Optional boolean. Default is true, controls whether comments are allowed (true)
+                                    or not allowed (false).
+        --------------------------  ---------------------------------------------------------------------
+        access                      Optional string. Valid values are private, org, or public. Defaults to private.
+        --------------------------  ---------------------------------------------------------------------
+        overwrite                   Optional boolean. Default is `false`. Controls whether item can be overwritten.
+        ==========================  =====================================================================
 
         :return:
             The newly added portal item, if successful. Otherwise, returns False.
         """
+        if gis is None:
+            gis = self._gis
         # this will be the config file that dictates our new portal experience
         new_config = self._draft
         # automatically remap data to matching sources in target GIS
@@ -616,7 +663,9 @@ class WebExperience(object):
                     new_config["dataSources"][source][attr] = new_value
 
         # create a new portal experience using the config
-        self._create_new_experience(config=new_config, name=name, gis=gis)
+        self._create_new_experience(
+            config=new_config, name=title, gis=gis, item_properties=item_properties
+        )
         self._local = False
 
         # if wish for item to be published, save/publish
