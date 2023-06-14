@@ -893,7 +893,7 @@ class WorkflowManager:
 
         # USAGE EXAMPLE: Creating a WorkflowManager object from a workflow item
 
-        from arcgis.workflow import WorkflowManager
+        from arcgis.gis.workflowmanager import WorkflowManager
         from arcgis.gis import GIS
 
         # connect to your GIS and get the web map item
@@ -903,7 +903,7 @@ class WorkflowManager:
         # create a WorkflowManager object from the workflow item
         wm = WorkflowManager(wf_item)
         type(wm)
-        >> arcgis.workflowmanager.WorkflowManager
+        >> arcgis.gis.workflowmanager.WorkflowManager
 
         # explore the users in this workflow using the 'users' property
         wm.users
