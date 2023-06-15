@@ -27,6 +27,7 @@ import logging
 from typing import Any, Optional, Union
 from urllib.error import HTTPError
 import requests
+
 from arcgis.gis._impl._dataclasses._contentds import (
     ItemTypeEnum,
     ItemProperties,
@@ -53,7 +54,7 @@ _common_utils = LazyLoader("arcgis._impl.common._utils")
 _common_deprecated = LazyLoader("arcgis._impl.common._deprecate")
 _portalpy = LazyLoader("arcgis.gis._impl._portalpy")
 _jb = LazyLoader("arcgis.gis._impl._jb")
-
+_cloner = LazyLoader("arcgis.gis.clone")
 _log = logging.getLogger(__name__)
 
 
@@ -4659,6 +4660,34 @@ class RoleManager(object):
         self._gis = gis
         self._portal = gis._portal
 
+    def clone(self, roles: list[Role]) -> list[CloningJob]:
+        """
+        Clones a list of Roles from one organization to another
+
+        ==================     ====================================================================
+        **Parameter**           **Description**
+        ------------------     --------------------------------------------------------------------
+        roles                  Required list[Role]. An array of roles from the source GIS.
+        ==================     ====================================================================
+
+        :returns: list[Future]
+        """
+        jobs = []
+        with concurrent.futures.ThreadPoolExecutor(max_workers=10) as tp:
+            for role in roles:
+                role: Role
+                future: concurrent.futures.Future = tp.submit(
+                    self.create,
+                    **{
+                        "name": role.name,
+                        "description": role.description,
+                        "privileges": role.privileges,
+                    },
+                )
+                jobs.append(_cloner.CloningJob(future, "Role"))
+            tp.shutdown(wait=True)
+        return jobs
+
     def create(self, name: str, description: str, privileges: Optional[str] = None):
         """
             The ``create`` method creates a custom :class:`~arcgis.gis.Role` with the specified parameters.
@@ -4951,8 +4980,15 @@ class Role(object):
     def privileges(self, value):
         """Privileges for the custom role as a list of strings"""
         postdata = self._portal._postdata()
-        postdata["privileges"] = {"privileges": value}
-
+        if isinstance(value, list):
+            postdata["privileges"] = json.dumps({"privileges": value})
+        elif value and isinstance(value, str) and len(value) == 0:
+            postdata["privileges"] = {"privileges": []}
+        elif value and isinstance(value, str):
+            postdata["privileges"] = {"privileges": value}
+        elif value is None:
+            value = []
+            postdata["privileges"] = json.dumps({"privileges": value})
         resp = self._portal.con.post(
             "portals/self/roles/" + self.role_id + "/setPrivileges", postdata
         )
@@ -4999,6 +5035,39 @@ class GroupManager(object):
     def __init__(self, gis):
         self._gis = gis
         self._portal = gis._portal
+        self._cloner = _cloner.GroupCloner(gis=self._gis)
+
+    def clone(
+        self, groups: list[Group], *, skip_existing: bool = True
+    ) -> list[_cloner.CloningJob]:
+        """
+        The group cloner will recreate groups from site A to site B.
+        It will not clone the group's items.  This should be done using the `clone_items`
+        or group item migrator tools.
+
+        ====================  =========================================================
+        **Parameter**         **Description**
+        --------------------  ---------------------------------------------------------
+        groups                Required list[Group]. A list of Group objects to clone.
+        --------------------  ---------------------------------------------------------
+        skip_existing         Optional bool. If True, if a group exists, it will be skipped.
+        ====================  =========================================================
+
+        :returns: list[CloningJob]
+
+        .. code-block:: python
+
+            # Usage Example
+            >>> group = gis_source.groups.create(title = "New Group",
+                                  tags = "new, group, USA",
+                                  description = "a new group in the USA",
+                                  access = "public")
+            >>> jobs = gis_destination.groups.clone([group])
+            >>> [job.result() for job in jobs]
+            [<Group>]
+
+        """
+        return self._cloner.clone(groups=groups, skip_existing=skip_existing)
 
     def create(
         self,
