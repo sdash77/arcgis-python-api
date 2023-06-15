@@ -4664,6 +4664,11 @@ class RoleManager(object):
         """
         Clones a list of Roles from one organization to another
 
+        ==================     ====================================================================
+        **Parameter**           **Description**
+        ------------------     --------------------------------------------------------------------
+        roles                  Required list[Role]. An array of roles from the source GIS.
+        ==================     ====================================================================
 
         :returns: list[Future]
         """
