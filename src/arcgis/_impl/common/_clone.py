@@ -1666,14 +1666,15 @@ class _DeepCloner:
             )
 
             return _WebExperience(
-                self.target,
-                self._clone_mapping,
-                dict(item),
+                target=self.target,
+                clone_mapping=self._clone_mapping,
+                info=dict(item),
                 data=None,
                 thumbnail=None,
                 folder=self.folder,
                 search_existing=self._search_existing_items,
                 owner=self.owner,
+                resources=item.resources.export(),
                 portal_item=item,
                 preserve_item_id=self._preserve_item_id,
             )
