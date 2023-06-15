@@ -1432,9 +1432,34 @@ def _get_stac_metadata_file(item):
     :return string (URL of the STAC Item metadata file)
     """
 
+    pc_sign_url = "https://planetarycomputer.microsoft.com/api/sas/v1/sign?href="
     href = None
-    if item["collection"] == "sentinel-s2-l2a-cogs":
-        href = rf"{item['links'][1]['href']}\Multiband"
+    if "planetarycomputer" in item["links"][0]["href"]:
+        if item["type"] == "Collection" and item["id"].startswith("daymet"):
+            href = item["assets"]["zarr-https"]["href"]
+        elif item["collection"] == "naip":
+            href = item["assets"]["image"]["href"]
+        elif item["collection"] in ["landsat-c2-l1", "landsat-c2-l2"]:
+            mtl_file = item["assets"]["mtl.txt"]["href"]
+            href = _requests.get(pc_sign_url + mtl_file).json()["href"]
+
+    elif "earth-search.aws.element84" in item["links"][0]["href"]:
+        if item["collection"] in ["sentinel-s2-l2a-cogs", "sentinel-2-l2a"]:
+            if "sentinel-s2-l2a-cogs" in item["links"][1]["href"]:
+                href = rf"{item['links'][1]['href']}\Multiband"
+        elif item["collection"] in ["cop-dem-glo-30", "cop-dem-glo-90"]:
+            href = item["assets"]["data"]["href"]
+        elif item["collection"] == "naip":
+            href = item["assets"]["image"]["href"]
+        elif item["collection"] == "landsat-c2-l2":
+            href = item["assets"]["mtl.txt"]["href"]
+        elif item["collection"] == "sentinel-1-grd":
+            href = item["assets"]["safe-manifest"]["href"]
+
+        href = (
+            rf"/vsis3{href[4:]}" if href is not None and href.startswith("s3") else href
+        )
+
     else:
         if "metadata" in item["assets"]:
             href = item["assets"]["metadata"]["href"]
@@ -1449,6 +1474,11 @@ def _get_stac_metadata_file(item):
             for i in range(len(links)):
                 if links[i]["rel"] == "metadata":
                     href = links[i]["href"]
+                elif links[i]["rel"] == "canonical":
+                    s3_path = links[i]["href"]
+                    if "sentinel-s2-l2a-cogs" in s3_path and s3_path.endswith(".json"):
+                        href = rf"/vsi{s3_path}\Multiband"
+
     return href
 
 
