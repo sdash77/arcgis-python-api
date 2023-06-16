@@ -108,7 +108,11 @@ class _DeepCloner:
 
         self._cloned_items = []
         for index, item in enumerate(self._items):
-            if item["type"] == "Dashboard" and not from_dash:
+            if (
+                item["type"] == "Dashboard"
+                and "desktopView" in item.get_data()
+                and not from_dash
+            ):
                 if len(self._items) > 1:
                     self._items.pop(index)
                 dash_list = self._clone_dashboard(item)
