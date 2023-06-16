@@ -14,7 +14,7 @@ from pandas.core.dtypes.dtypes import ExtensionDtype
 from pandas.api.extensions import ExtensionArray
 
 from collections.abc import Iterable
-from arcgis.geometry import Geometry
+from arcgis.geometry import Geometry, Point, Polygon, Polyline
 
 # -----------------------------------------------------------------------------
 # pandas version checker
@@ -262,6 +262,20 @@ class GeoArray(ExtensionArray):
             vindx = check[0]
             if isinstance(data[vindx], Geometry) == False:
                 self.data[:] = [Geometry(d) if d else None for d in data]
+
+                # Extra step for shapely, need to transform to correct Geometry type instance if not already
+                geom = self.data[0]
+                if (
+                    not isinstance(geom, Point)
+                    or not isinstance(geom, Polyline)
+                    or not isinstance(geom, Polygon)
+                ):
+                    if "type" in geom and geom["type"] == "Point":
+                        self.data[:] = [Point(d) if d else None for d in data]
+                    elif "type" in geom and geom["type"] == "Polyline":
+                        self.data[:] = [Polyline(d) if d else None for d in data]
+                    elif "type" in geom and geom["type"] == "Polygon":
+                        self.data[:] = [Polygon(d) if d else None for d in data]
 
     def __arrow_array__(self, type=None):
         """converts the data to a pyarrow array"""
