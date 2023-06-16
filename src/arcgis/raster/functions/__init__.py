@@ -8175,7 +8175,7 @@ def complex(
     --------------------------------     --------------------------------------------------------------------
     raster                                   Required input :class:`Raster <arcgis.raster.Raster>` /  :class:`ImageryLayer <arcgis.raster.ImageryLayer>` object.
     --------------------------------     --------------------------------------------------------------------
-    imaginary_raster                         Optional input :class:`Raster <arcgis.raster.Raster>` /  :class:`ImageryLayer <arcgis.raster.ImageryLayer>` object. 
+    imaginary_raster                         Optional input :class:`Raster <arcgis.raster.Raster>` /  :class:`ImageryLayer <arcgis.raster.ImageryLayer>` object.
                                              The imaginary raster input
     --------------------------------     --------------------------------------------------------------------
     value_type                               Specifies which value type to calculate:
