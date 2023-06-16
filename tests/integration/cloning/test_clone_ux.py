@@ -28,13 +28,7 @@ PROXIES = detect_proxy(True)  # Handles Fiddler when True
 # enable_verbose_logging(__logger__)
 
 
-class TestCloneOnlineWorkflows(unittest.TestCase):
-    """Tests the cloning online workflows"""
-
-    ...
-
-
-class TestCloneOfflineWorkflows(unittest.TestCase):
+class TestCloneWorkflows(unittest.TestCase):
     """tests the cloning offline workflows"""
 
     @classmethod
@@ -61,6 +55,15 @@ class TestCloneOfflineWorkflows(unittest.TestCase):
         assert fp[0].result()
         self.result_files.append(fp[0].result())
 
+    def test_offline_package_loading(self):
+        gis_source = self.source_gis_online
+        ux = gis_source.admin.ux
+        fp = ux.clone()
+        assert len(fp) >= 0
+        fp = fp[0].result()
+        ux_dest = self.source_gis_ent.admin.ux
+        assert ux_dest.load_offline_configuration(fp)
+
     def test_offline_defaults_ent(self):
         gis_source = self.source_gis_ent
         ux = gis_source.admin.ux
@@ -77,9 +80,6 @@ class TestCloneOfflineWorkflows(unittest.TestCase):
         assert isinstance(result[0], concurrent.futures.Future)
         assert result[0].result()
 
-    def test_online_to_online(self):
-        ...
-
     def test_ent_to_online(self):
         gis = self.source_gis_ent
         ux = gis.admin.ux
@@ -87,9 +87,6 @@ class TestCloneOfflineWorkflows(unittest.TestCase):
         assert len(result) == 1
         assert isinstance(result[0], concurrent.futures.Future)
         assert result[0].result()
-
-    def test_ent_to_ent(self):
-        ...
 
     @classmethod
     def tearDownClass(cls):
