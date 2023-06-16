@@ -270,7 +270,9 @@ class GeoArray(ExtensionArray):
                     or not isinstance(geom, Polyline)
                     or not isinstance(geom, Polygon)
                 ):
-                    if "type" in geom and geom["type"] == "Point":
+                    if "type" in geom and (
+                        geom["type"] == "Point" or geom["type"] == "MultiPoint"
+                    ):
                         self.data[:] = [Point(d) if d else None for d in data]
                     elif "type" in geom and geom["type"] == "Polyline":
                         self.data[:] = [Polyline(d) if d else None for d in data]
