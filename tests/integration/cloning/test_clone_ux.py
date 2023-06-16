@@ -57,6 +57,11 @@ class TestCloneWorkflows(unittest.TestCase):
 
     def test_offline_package_loading(self):
         gis_source = self.source_gis_online
+        gis_source.update_properties(
+            {
+                "allowedOrigins": "http://localhost:8888,http://localhost:8889,http://*.esri.com,http://*,https://*"
+            }
+        )
         ux = gis_source.admin.ux
         fp = ux.clone()
         assert len(fp) >= 0
@@ -66,6 +71,11 @@ class TestCloneWorkflows(unittest.TestCase):
 
     def test_offline_defaults_ent(self):
         gis_source = self.source_gis_ent
+        gis_source.update_properties(
+            {
+                "allowedOrigins": "http://localhost:8888,http://localhost:8889,http://*.esri.com,http://*,https://*"
+            }
+        )
         ux = gis_source.admin.ux
         fp = ux.clone()
         assert len(fp) >= 0
@@ -74,6 +84,11 @@ class TestCloneWorkflows(unittest.TestCase):
 
     def test_online_to_ent(self):
         gis = self.source_gis_online
+        gis.update_properties(
+            {
+                "allowedOrigins": "http://localhost:8888,http://localhost:8889,http://*.esri.com,http://*,https://*"
+            }
+        )
         ux = gis.admin.ux
         result = ux.clone(targets=[self.source_gis_ent])
         assert len(result) == 1
@@ -82,6 +97,11 @@ class TestCloneWorkflows(unittest.TestCase):
 
     def test_ent_to_online(self):
         gis = self.source_gis_ent
+        gis.update_properties(
+            {
+                "allowedOrigins": "http://localhost:8888,http://localhost:8889,http://*.esri.com,http://*,https://*"
+            }
+        )
         ux = gis.admin.ux
         result = ux.clone(targets=[self.source_gis_online])
         assert len(result) == 1

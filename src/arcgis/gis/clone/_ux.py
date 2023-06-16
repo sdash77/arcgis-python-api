@@ -196,7 +196,7 @@ class UXCloner:
                 "metadata_format": ip.metadata_format,
             },
             "SecuritySettings": {
-                "allowed_origins": ss.allowed_origins,  #
+                "allowed_origins": ",".join(ss.allowed_origins),  #
                 "allowed_redirect_uris": ss.allowed_redirect_uris,  #
                 "enable_https": ss.enable_https,  #
                 "anonymous_access": ss.anonymous_access,  #
@@ -474,11 +474,12 @@ class UXCloner:
         # handle method updates
         #
         notice = security_config["anonymous_access_notice"]
-        ux.security_settings.set_anonymous_access_notice(
-            title=notice["title"],
-            text=notice["text"],
-            button_type=notice["buttons"],
-        )
+        if notice and len(notice) > 0:
+            ux.security_settings.set_anonymous_access_notice(
+                title=notice["title"],
+                text=notice["text"],
+                button_type=notice["buttons"],
+            )
 
         ux.security_settings.set_informational_banner(
             text=security_config["informational_banner"]["text"],
