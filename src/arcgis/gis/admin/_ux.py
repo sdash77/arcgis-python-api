@@ -62,7 +62,31 @@ class UX(object):
         package_save_folder: str | None = None,
         package_name: str | None = None,
     ) -> list[concurrent.futures.Future]:
-        """clones the settings from site A to site B"""
+        """
+        Copies the UX settings from the source WebGIS site to the destination WebGIS site or to
+        a `.UX_CLONER` offline file.
+        When directly connected to two WebGIS', this method performs the clone operation immediately.
+        When cloning in an offlien situation, a `.UX_CLONER` is created and stored on the user's local
+        hard drive.
+
+        ====================  ===============================================================
+        **Parameter**         **Description**
+        --------------------  ---------------------------------------------------------------
+        targets               list[GIS | None]. The sites to clone to. If None is given, then
+                              a local file is returned.
+        --------------------  ---------------------------------------------------------------
+        workspace_folder      Optional String. The workspace where the temporary files are
+                              processed.
+        --------------------  ---------------------------------------------------------------
+        package_save_folder   Optional String. The output folder where the offline package is
+                              saved.
+        --------------------  ---------------------------------------------------------------
+        package_name          Optional String. The saved package name minus the extension.
+        ====================  ===============================================================
+
+        :returns: list[concurrent.futures.Future]
+
+        """
         if self._cloner is None:
             self._cloner = UXCloner(gis=self._gis)
         return self._cloner.clone(
