@@ -1231,10 +1231,13 @@ class GIS(object):
             gis.update_properties(upd)
 
         """
-        postdata = self._portal._postdata()
+        postdata = {
+            "f": "json",
+        }
         postdata.update(properties_dict)
+        url: str = self._portal.resturl + "portals/self/update"
 
-        resp = self._portal.con.post("portals/self/update", postdata)
+        resp = self._con.post(url, postdata)
         if resp:
             self._properties = _mixins.PropertyMap(
                 self._portal.get_properties(force=True)

@@ -5,6 +5,7 @@ from ._base import (
 )
 from ._mgr import register, unregister, clone_registry
 from ._groups import GroupCloner, CloningJob
+from ._ux import UXCloner
 
 __all__ = [
     "register",
@@ -15,4 +16,5 @@ __all__ = [
     "BaseCloneTextItemDefinition",
     "GroupCloner",
     "CloningJob",
+    "UXCloner",
 ]

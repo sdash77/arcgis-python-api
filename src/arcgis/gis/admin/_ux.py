@@ -1,12 +1,19 @@
 from __future__ import annotations
+
+import concurrent.futures
+import uuid
+import tempfile
 from enum import Enum
 import os
 import json
+from typing import Any
 from arcgis._impl.common._deprecate import deprecated
 from arcgis.auth.tools import LazyLoader
 from arcgis.gis import Group, User
+from arcgis.gis.clone._ux import UXCloner
 
 _basemap_definitions = LazyLoader("arcgis.mapping._basemap_definitions")
+_arcgis_gis = LazyLoader("arcgis.gis")
 
 
 class StockImage(Enum):
@@ -26,6 +33,8 @@ class UX(object):
     By calling the 'org_map_editor' or 'homepage_editor' more methods can be found to change org settings specific
     to those categories."""
 
+    _cloner: UXCloner | None = None
+
     # ----------------------------------------------------------------------
     def __init__(self, gis):
         """Creates helper object to manage portal home page, resources, update resources"""
@@ -43,6 +52,34 @@ class UX(object):
             )
         else:
             self._new_hp = False
+
+    # ----------------------------------------------------------------------
+    def clone(
+        self,
+        *,
+        targets: list[_arcgis_gis.GIS | None] | None = None,
+        workspace_folder: str | None = None,
+        package_save_folder: str | None = None,
+        package_name: str | None = None,
+    ) -> list[concurrent.futures.Future]:
+        """clones the settings from site A to site B"""
+        if self._cloner is None:
+            self._cloner = UXCloner(gis=self._gis)
+        return self._cloner.clone(
+            targets=targets,
+            workspace_folder=workspace_folder,
+            package_save_folder=package_save_folder,
+            package_name=package_name,
+        )
+
+    # ----------------------------------------------------------------------
+    def load_offline_configuration(self, package: str) -> concurrent.futures.Future:
+        """
+        Loads the UX configuration file into the current active portal.
+        """
+        if self._cloner is None:
+            self._cloner = UXCloner(gis=self._gis)
+        return self._cloner.load_offline_configuration(package)
 
     # ----------------------------------------------------------------------
     @property
@@ -181,8 +218,9 @@ class UX(object):
         """
         Get and set the contact link for the site.
         """
-        if "links" in self._gis.properties["portalProperties"]:
-            return self._gis.properties["portalProperties"]["links"]
+        props: dict = self._gis._get_properties()
+        if "links" in props["portalProperties"]:
+            return props["portalProperties"]["links"]
         else:
             return None
 
@@ -191,7 +229,9 @@ class UX(object):
     def contact_link(self, url: str):
         portal_properties = self._gis.properties["portalProperties"]
         if url:
-            portal_properties["links"] = {"contactUs": {"url": {url}, "visible": True}}
+            portal_properties["links"] = {
+                "contactUs": {"url": f"{url}", "visible": True}
+            }
         else:
             portal_properties["links"] = {"contactUs": {"url": "", "visible": False}}
 
@@ -419,7 +459,11 @@ class UX(object):
                     group_title = content.title
                     group_owner = content.owner
                     featured_groups.append(
-                        {"id": group_id, "title": group_title, "owner": group_owner}
+                        {
+                            "id": group_id,
+                            "title": group_title,
+                            "owner": group_owner,
+                        }
                     )
                 elif (
                     isinstance(contents, dict)
@@ -433,7 +477,11 @@ class UX(object):
                     group_title = group.title
                     group_owner = group.owner
                     featured_groups.append(
-                        {"id": group_id, "title": group_title, "owner": group_owner}
+                        {
+                            "id": group_id,
+                            "title": group_title,
+                            "owner": group_owner,
+                        }
                     )
         elif (
             isinstance(contents, dict)
@@ -1144,7 +1192,11 @@ class HomePageSettings(object):
             hp["header"]["coverImg"] = background_update_val
             hp["header"]["coverType"] = cover_type
             hp["header"]["coverImgStock"] = cover_image_stock
-            if layout and layout in ["Full-height", "Two-thirds-height", "Half-height"]:
+            if layout and layout in [
+                "Full-height",
+                "Two-thirds-height",
+                "Half-height",
+            ]:
                 hp["header"]["coverImgLayout"] = layout
             if opacity is not None and (opacity >= 0 or opacity <= 1):
                 hp["header"]["opacity"] = opacity
@@ -1772,7 +1824,11 @@ class MapSettings(object):
         group = self._gis.properties["basemapGalleryGroupQuery"]
         if "id:" in group:
             # must use [3::] to slice string since format of: "id:123abc"
-            return self._gis.groups.search(group[3::])[0]
+            groups = self._gis.groups.search(group[3::])
+            if groups:
+                return self._gis.groups.search(group[3::])[0]
+            else:
+                return None
         else:
             return group
 
@@ -1827,7 +1883,7 @@ class MapSettings(object):
     @default_mapviewer.setter
     def default_mapviewer(self, value: str):
         if value not in ["modern", "classic"]:
-            raise ValueError("The two accepted values are 'modern' or 'classi'")
+            raise ValueError("The two accepted values are 'modern' or 'classic'")
 
         portal_properties = self._gis.properties["portalProperties"]
         portal_properties["mapViewer"] = value
@@ -1845,7 +1901,7 @@ class MapSettings(object):
     # ----------------------------------------------------------------------
     @units.setter
     def units(self, value: str):
-        if value not in ["english", "classic"]:
+        if value not in ["english", "classic", "metric"]:
             raise ValueError("The two accepted values are 'english' and 'metric'")
 
         self._gis.update_properties({"units": value})
@@ -1903,7 +1959,11 @@ class MapSettings(object):
             group = self._gis.properties["templatesGroupQuery"]
             if "id:" in group:
                 # must use [3::] to slice string since format of: "id:123abc"
-                return self._gis.groups.search(group[3::])[0]
+                groups = self._gis.groups.search(group[3::])
+                if groups:
+                    return groups[0]
+                else:
+                    return None
             else:
                 return group
         else:
@@ -1991,7 +2051,10 @@ class MapSettings(object):
             group = self._gis.properties["analysisLayersGroupQuery"]
             if "id:" in group:
                 # must use [3::] to slice string since format of: "id:123abc"
-                return self._gis.groups.search(group[3::])[0]
+                groups = self._gis.groups.search(group[3::])
+                if groups:
+                    return groups[0]
+                return "Default"
             else:
                 return group
         else:
@@ -2217,10 +2280,13 @@ class SecuritySettings(object):
     # ----------------------------------------------------------------------
     @anonymous_access.setter
     def anonymous_access(self, access: bool):
-        if access is True:
+        if access is True or access != "private":
             access = "public"
-            bing = self._gis.properties["canShareBingPublic"]
-        elif access is False:
+            if "canShareBingPublic" in self._gis.properties:
+                bing = self._gis.properties["canShareBingPublic"]
+            else:
+                bing = False
+        elif access is False or access == "private":
             access = "private"
             bing = False
         self._gis.update_properties({"canShareBingPublic": bing, "access": access})
@@ -2464,8 +2530,8 @@ class SecuritySettings(object):
 
     # ----------------------------------------------------------------------
     @trusted_servers.setter
-    def truster_servers(self, servers: list):
-        self._gis.properties({"authorizedCrossOriginDomains": servers})
+    def trusted_servers(self, servers: list):
+        self._gis.update_properties({"authorizedCrossOriginDomains": servers})
 
     # ----------------------------------------------------------------------
     def set_org_access_notice(
@@ -2534,6 +2600,7 @@ class SecuritySettings(object):
         title: str | None = None,
         text: str | None = None,
         button_type: str | None = None,
+        enabled: bool | None = False,
     ):
         """
         Provide a notice of terms to be displayed to all users who access your
@@ -2564,9 +2631,9 @@ class SecuritySettings(object):
             button_type = "acceptAndDecline"
         notice = {"title": title, "text": text, "buttons": button_type}
         if title and text:
-            notice["enabled"] = True
+            notice["enabled"] = enabled
         else:
-            notice["enabled"] = False
+            notice["enabled"] = enabled
 
         org_settings["anonymousAccessNotice"] = notice
         org_settings["clearEmptyFields"] = True
