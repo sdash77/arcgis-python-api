@@ -2776,6 +2776,11 @@ class WebMap(HasTraits, collections.OrderedDict):
             "exportOptions": export_options,
         }
 
+        # add token parameter to the operational layers if token present
+        if self._gis._con.token is not None:
+            for i in range(len(print_options["operationalLayers"])):
+                print_options["operationalLayers"][i]["token"] = self._gis._con.token
+
         # execute printing
         result = export_map(
             web_map_as_json=print_options,
