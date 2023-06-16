@@ -8214,8 +8214,6 @@ def complex(
             )
         template_dict["rasterFunctionArguments"]["ValueType"] = value_type.upper()
 
-    if imaginary_raster is not None:
-        return _clone_layer(layer, template_dict, raster_ra1, raster_ra2)
     return _clone_layer(layer, template_dict, raster_ra1)
 
 
