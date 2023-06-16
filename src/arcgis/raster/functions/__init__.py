@@ -8178,11 +8178,11 @@ def complex(
     imaginary_raster                         Optional input :class:`Raster <arcgis.raster.Raster>` /  :class:`ImageryLayer <arcgis.raster.ImageryLayer>` object.
                                              The imaginary raster input
     --------------------------------     --------------------------------------------------------------------
-    value_type                               Specifies which value type to calculate:
+    value_type                               Optional string. Specifies which value type to calculate:
 
-                                                 - Amplitude - Produces an output containing the amplitude values. This is the default.
-                                                 - Phase - Produces an output containing the phase values.
-                                                 - Complex - Produces an output containing the complex values.
+                                                 - AMPLITUDE - Produces an output containing the amplitude values. This is the default.
+                                                 - PHASE - Produces an output containing the phase values.
+                                                 - COMPLEX - Produces an output containing the complex values.
     ================================     ====================================================================
 
     :return: The output raster.
