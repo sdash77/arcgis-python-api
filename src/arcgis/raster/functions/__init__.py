@@ -8158,7 +8158,7 @@ def vector_field(
 
 def complex(
     raster: Union[Raster, ImageryLayer],
-    imaginary_raster: Optional[Raster] = None,
+    imaginary_raster: Optional[Raster, ImageryLayer] = None,
     value_type: str = "AMPLITUDE",
 ):
     """
@@ -8175,7 +8175,8 @@ def complex(
     --------------------------------     --------------------------------------------------------------------
     raster                                   Required input :class:`Raster <arcgis.raster.Raster>` /  :class:`ImageryLayer <arcgis.raster.ImageryLayer>` object.
     --------------------------------     --------------------------------------------------------------------
-    imaginary_raster                         The imaginary raster input
+    imaginary_raster                         Optional input :class:`Raster <arcgis.raster.Raster>` /  :class:`ImageryLayer <arcgis.raster.ImageryLayer>` object. 
+                                             The imaginary raster input
     --------------------------------     --------------------------------------------------------------------
     value_type                               Specifies which value type to calculate:
 
