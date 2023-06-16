@@ -276,7 +276,9 @@ class GeoArray(ExtensionArray):
                         self.data[:] = [Point(d) if d else None for d in data]
                     elif "type" in geom and geom["type"] == "Polyline":
                         self.data[:] = [Polyline(d) if d else None for d in data]
-                    elif "type" in geom and geom["type"] == "Polygon":
+                    elif "type" in geom and (
+                        geom["type"] == "Polygon" or geom["type"] == "MultiPolygon"
+                    ):
                         self.data[:] = [Polygon(d) if d else None for d in data]
 
     def __arrow_array__(self, type=None):
