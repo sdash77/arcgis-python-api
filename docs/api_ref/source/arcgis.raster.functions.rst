@@ -207,10 +207,6 @@ cosh
 ____
 .. autofunction:: arcgis.raster.functions.cosh
 
-create_color_composite
-__________
-.. autofunction:: arcgis.raster.functions.create_color_composite
-
 curvature
 _________
 .. autofunction:: arcgis.raster.functions.curvature
