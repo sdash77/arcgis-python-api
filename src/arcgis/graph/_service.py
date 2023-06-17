@@ -1,6 +1,7 @@
 from __future__ import annotations
 import datetime as _dt
 from arcgis.auth.tools import LazyLoader
+from typing import Optional
 
 
 try:
@@ -87,7 +88,8 @@ class KnowledgeGraph:
                             text search.  This can be isolated to either the `entities` or
                             the `relationships`.  The default is to look in `both`.
 
-                            The allowed values are: both, entities, relationships
+                            The allowed values are: both, entities, relationships,
+                            and both_entity_relationship.
         ================    ===============================================================
 
         .. note::
@@ -108,8 +110,10 @@ class KnowledgeGraph:
         url = self._url + "/graph/search"
         cat_lu = {
             "both": _kgparser.esriNamedTypeCategory.both,
+            "both_entity_relationship": _kgparser.esriNamedTypeCategory.both_entity_relationshp,
             "relationships": _kgparser.esriNamedTypeCategory.relationship,
             "entities": _kgparser.esriNamedTypeCategory.entity,
+            "meta_entity_provenance": _kgparser.esriNamedTypeCategory.meta_entity_provenance,
         }
         assert str(category).lower() in cat_lu.keys()
         r_enc = _kgparser.GraphSearchRequestEncoder()
@@ -182,6 +186,95 @@ class KnowledgeGraph:
             r = gqd.get_current_row()
             rows.append(r)
         return rows
+    
+    def query_streaming(
+        self,
+        query: str,
+        input_transform: dict[str, Any] = None,
+        include_provenance: bool = False,
+        **kwargs,
+    ) -> List[dict]:
+        """
+        Query the graph using an openCypher query. Differs from `query()` in that the query
+        request is PBF encoded, allows for more user customization and the results are 
+        streamed back in chunks.
+        
+
+        ===================    ===============================================================
+        **Parameter**           **Description**
+        -------------------    ---------------------------------------------------------------
+        query                  Required String. Allows you to return the entities and
+                               relationships in a graph, as well as the properties of those
+                               entities and relationships, by providing an openCypher query.
+        -------------------    ---------------------------------------------------------------
+        input_transform        Optional dict. Allows a user to specify custom quantization
+                               parameters for input geometry, which dictate how geometries are
+                               compressed and transferred to the server. Defaults to lossless
+                               WGS84 quantization.
+        -------------------    ---------------------------------------------------------------
+        include_provenance     Optional boolean. Dictates whether provenance entities are
+                               included in the query results. Defaults to `False`.
+        -------------------    ---------------------------------------------------------------
+        **kwargs               Keyword arguments for the QuerySearchRequestEncoder.
+        ===================    ===============================================================
+
+
+        """
+
+        # internal helper to get quantization params
+        def _getInputQuantParams(inputQuantParams: dict):
+            clientCoreQuantParams = _kgparser.InputQuantizationParameters()
+            clientCoreQuantParams.xy_resolution = inputQuantParams["xyResolution"]
+            clientCoreQuantParams.x_false_origin = inputQuantParams["xFalseOrigin"]
+            clientCoreQuantParams.y_false_origin = inputQuantParams["yFalseOrigin"]
+            clientCoreQuantParams.z_resolution = inputQuantParams["zResolution"]
+            clientCoreQuantParams.z_false_origin = inputQuantParams["zFalseOrigin"]
+            clientCoreQuantParams.m_resolution = inputQuantParams["mResolution"]
+            clientCoreQuantParams.m_false_origin = inputQuantParams["mFalseOrigin"]
+            return clientCoreQuantParams
+
+        if input_transform:
+            quant_params = _getInputQuantParams(input_transform)
+        else:
+            quant_params = _kgparser.InputQuantizationParameters.WGS84_lossless()
+
+        self._validate_import()
+        url = f"{self._url}/graph/query"
+        params = {
+            "f": "pbf",
+            "token": self._gis._con.token,
+        }
+        headers = {'Content-Type': 'application/octet-stream'}
+        r_enc= _kgparser.GraphQueryRequestEncoder()
+        r_enc.open_cypher_query = query
+        r_enc.input_quantization_parameters = quant_params
+        if include_provenance == True:
+            r_enc.provenance_behavior = _kgparser.ProvenanceBehavior.include
+        else:
+            r_enc.provenance_behavior = _kgparser.ProvenanceBehavior.exclude
+        r_enc.encode()
+        assert r_enc.get_encoding_result().error.error_code == 0
+        query_dec = _kgparser.GraphQueryDecoder()
+
+        session = self._gis._con._session
+        response = session.post(
+            url=url,
+            params=params,
+            data=r_enc.get_encoding_result().byte_buffer,
+            stream=True,
+            headers=headers,
+        )
+        rows = []
+        for chunk in response.iter_content(8192):
+            did_push = query_dec.push_buffer(chunk)
+            local_count = 0
+            while query_dec.next_row():
+                rows.append(query_dec.get_current_row())
+                local_count += 1
+        return rows
+
+        
+
 
     @property
     def _datamodel(self) -> object:
@@ -224,6 +317,7 @@ class KnowledgeGraph:
         deletes: list[dict[str, Any]] = [],
         input_transform: dict[str, Any] = None,
         cascade_delete: bool = False,
+        cascade_delete_provenance: bool = True,
     ) -> dict:
         """
         Allows users to add new graph entities/relationships, update existing
@@ -320,6 +414,7 @@ class KnowledgeGraph:
         for edit in deletes:
             enc.delete_from_ids(edit)
         enc.cascade_delete = cascade_delete
+        enc.cascade_delete_provenance = cascade_delete_provenance
 
         # encode and prepare for the post request
         enc.encode()
