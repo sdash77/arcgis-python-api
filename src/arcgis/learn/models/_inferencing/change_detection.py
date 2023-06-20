@@ -151,6 +151,7 @@ class ChildImageClassifier:
             )
 
         self.cd_model = ChangeDetector.from_model(emd_path=model)
+        self._learnmodel = self.cd_model
         self.model = self.cd_model.learn.model.to(self.device)
         self.model.eval()
 

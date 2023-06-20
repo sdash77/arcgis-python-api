@@ -4,6 +4,7 @@ from . import storymap
 from . import survey123
 from . import tracker
 from . import dashboard
+from . import expbuilder
 
 from ._url_schemes import build_collector_url
 from ._url_schemes import build_field_maps_url

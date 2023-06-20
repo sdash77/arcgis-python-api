@@ -70,6 +70,12 @@ from ._process_df import process_df, add_datepart
 from ._utils.evaluate_batchsize import estimate_batch_size
 
 
+_point_cloud_classification_model_list = ["PointCNN", "RandLANet", "SQNSeg"]
+
+
+_point_cloud_detection_model_list = ["MMDetection3D"]
+
+
 def _set_param(gis, params, param_name, input_param):
     if isinstance(input_param, str):
         if "http:" in input_param or "https:" in input_param:

@@ -29,6 +29,7 @@ import logging
 from typing import Any, Optional, Union
 from urllib.error import HTTPError
 import requests
+
 from arcgis.gis._impl._dataclasses._contentds import (
     ItemTypeEnum,
     ItemProperties,
@@ -73,6 +74,7 @@ _common_deprecated = LazyLoader("arcgis._impl.common._deprecate")
 _portalpy = LazyLoader("arcgis.gis._impl._portalpy")
 _jb = LazyLoader("arcgis.gis._impl._jb")
 _tool_utils = LazyLoader("arcgis.features.geo._tools._utils")
+_cloner = LazyLoader("arcgis.gis.clone")
 _log = logging.getLogger(__name__)
 
 
@@ -1115,7 +1117,7 @@ class GIS(object):
     @_lazy_property
     def notebook_server(
         self,
-    ) -> "list[NotebookServer]" | "list[AGOLNotebookManager]":
+    ) -> list["NotebookServer"] | list["AGOLNotebookManager"]:
         """
         The ``notebook_server`` property provides access to the :class:`~arcgis.gis.nb.NotebookServer` registered
         with the organization or enterprise.
@@ -1382,7 +1384,7 @@ class GIS(object):
         configuration for any access notices or information banners.
 
         ======================     ===============================================================
-        **Parameter**             **Description**
+        **Parameter**               **Description**
         ----------------------     ---------------------------------------------------------------
         settings                   Required Dict.  A dictionary of the settings
 
@@ -2046,16 +2048,18 @@ class GroupMigrationManager(object):
     # ----------------------------------------------------------------------
     def inspect(self, epk_item: Item) -> dict:
         """
-        The ``inspect`` method retrieves the contents of the EPK Package
+        The ``inspect`` method retrieves the contents of the EPK Package.
+
         ================  ===============================================================================
         **Keys**          **Description**
         ----------------  -------------------------------------------------------------------------------
-        epk_item          Required Item. A report on the content of the EPK Item.  This allows administrators
-                          to view the contents inside a EPK.
+        epk_item          Required Item. A report on the content of the EPK Item. This allows
+                          administrators to view the contents inside a EPK.
         ================  ===============================================================================
 
         :return:
             A dictionary containing the contents of the EPK Package
+
         """
         if isinstance(epk_item, Item) and epk_item.type == "Export Package":
             try:
@@ -4620,7 +4624,7 @@ class UserManager(object):
         ----------------  --------------------------------------------------------
         max_results       Optional Integer. A limiter on the number of groups
                           returned for each user.
-        ----------------  --------------------------------------------------------
+        ================  ========================================================
 
         :return:
             List of dictionaries with each :class:`~arcgis.gis.User` object's group ids.
@@ -4675,6 +4679,34 @@ class RoleManager(object):
         """Creates helper object to manage custom roles in the GIS"""
         self._gis = gis
         self._portal = gis._portal
+
+    def clone(self, roles: list[Role]) -> list[_cloner.CloningJob]:
+        """
+        Clones a list of Roles from one organization to another
+
+        ==================     ====================================================================
+        **Parameter**           **Description**
+        ------------------     --------------------------------------------------------------------
+        roles                  Required list[Role]. An array of roles from the source GIS.
+        ==================     ====================================================================
+
+        :returns: list[Future]
+        """
+        jobs = []
+        with concurrent.futures.ThreadPoolExecutor(max_workers=10) as tp:
+            for role in roles:
+                role: Role
+                future: concurrent.futures.Future = tp.submit(
+                    self.create,
+                    **{
+                        "name": role.name,
+                        "description": role.description,
+                        "privileges": role.privileges,
+                    },
+                )
+                jobs.append(_cloner.CloningJob(future, "Role"))
+            tp.shutdown(wait=True)
+        return jobs
 
     def create(self, name: str, description: str, privileges: Optional[str] = None):
         """
@@ -4968,8 +5000,15 @@ class Role(object):
     def privileges(self, value):
         """Privileges for the custom role as a list of strings"""
         postdata = self._portal._postdata()
-        postdata["privileges"] = {"privileges": value}
-
+        if isinstance(value, list):
+            postdata["privileges"] = json.dumps({"privileges": value})
+        elif value and isinstance(value, str) and len(value) == 0:
+            postdata["privileges"] = {"privileges": []}
+        elif value and isinstance(value, str):
+            postdata["privileges"] = {"privileges": value}
+        elif value is None:
+            value = []
+            postdata["privileges"] = json.dumps({"privileges": value})
         resp = self._portal.con.post(
             "portals/self/roles/" + self.role_id + "/setPrivileges", postdata
         )
@@ -5016,6 +5055,39 @@ class GroupManager(object):
     def __init__(self, gis):
         self._gis = gis
         self._portal = gis._portal
+        self._cloner = _cloner.GroupCloner(gis=self._gis)
+
+    def clone(
+        self, groups: list[Group], *, skip_existing: bool = True
+    ) -> list[_cloner.CloningJob]:
+        """
+        The group cloner will recreate groups from site A to site B.
+        It will not clone the group's items.  This should be done using the `clone_items`
+        or group item migrator tools.
+
+        ====================  =========================================================
+        **Parameter**         **Description**
+        --------------------  ---------------------------------------------------------
+        groups                Required list[Group]. A list of Group objects to clone.
+        --------------------  ---------------------------------------------------------
+        skip_existing         Optional bool. If True, if a group exists, it will be skipped.
+        ====================  =========================================================
+
+        :returns: list[CloningJob]
+
+        .. code-block:: python
+
+            # Usage Example
+            >>> group = gis_source.groups.create(title = "New Group",
+                                  tags = "new, group, USA",
+                                  description = "a new group in the USA",
+                                  access = "public")
+            >>> jobs = gis_destination.groups.clone([group])
+            >>> [job.result() for job in jobs]
+            [<Group>]
+
+        """
+        return self._cloner.clone(groups=groups, skip_existing=skip_existing)
 
     def create(
         self,
@@ -5128,7 +5200,7 @@ class GroupManager(object):
                               organization members. If `None` set, any organization
                               will have access. `None` is the default.
 
-                              Values: `org`, `collaboration`, or `None`
+                              Values: `org`, `collaboration`, or `none`
         --------------------  ---------------------------------------------------------
         autojoin              Optional Boolean. The default is `False`. Only applies to
                               org accounts. If `True`, this group will allow joined
@@ -5187,7 +5259,9 @@ class GroupManager(object):
         params["MAX_FILE_SIZE"] = max_file_size
         if hidden_members in [True, False]:
             params["hiddenMembers"] = hidden_members
-        if membership_access in ["org", "collaboration", None]:
+        if membership_access in ["org", "collaboration", None, "none"]:
+            if membership_access is None:
+                membership_access = "none"
             params["membershipAccess"] = membership_access
         if autojoin in [True, False]:
             params["autoJoin"] = autojoin
@@ -7061,6 +7135,7 @@ class ContentManager(object):
     def delete_items(self, items: Union[list[Item], list[str]]):
         """
         The ``delete_items`` method deletes a collection of :class:`~arcgis.gis.Item` objects from a users content.
+        All items must belong to the same user to delete.
 
         ================  ==========================================================================
         **Parameter**      **Description**
@@ -7070,7 +7145,7 @@ class ContentManager(object):
         ================  ==========================================================================
 
         :return:
-            A boolean indicating success if the items were deleted (True), or failure if the items were not deleted
+            A list of booleans indicating success if the items were deleted(True/False) or an empty list if nothing was deleted.
             (False)
 
         .. code-block:: python
@@ -7079,31 +7154,57 @@ class ContentManager(object):
             >>> gis.content.delete_items(items= ["item1", "item2", "item3", "item4", "item5"])
 
         """
-        if self._gis._portal.con.baseurl.endswith("/"):
-            url = "%s/%s/%s/deleteItems" % (
-                self._gis._portal.con.baseurl[:-1],
-                "content/users",
-                self._gis.users.me.username,
-            )
-        else:
-            url = "%s/%s/%s/deleteItems" % (
-                self._gis._portal.con.baseurl,
-                "content/users",
-                self._gis.users.me.username,
-            )
         params = {"f": "json", "items": ""}
-        ditems = []
+        items_dict = {}  # key will be ownner and value is list of their items
         for item in items:
             if isinstance(item, str):
-                ditems.append(item)
+                owner = self._gis.content.get(item).owner
+                if owner in items_dict:
+                    items_dict[owner].append(item)
+                else:
+                    items_dict[owner] = [item]
             elif isinstance(item, Item):
-                ditems.append(item.id)
+                owner = item.owner
+                if owner in items_dict:
+                    items_dict[owner].append(item.id)
+                else:
+                    items_dict[owner] = [item.id]
             del item
-        if len(ditems) > 0:
-            params["items"] = ",".join(ditems)
-            res = self._gis._con.post(path=url, postdata=params)
-            return all([r["success"] for r in res["results"]])
-        return False
+
+        # Now we have a dictionary to iterate through
+        results = []
+        for key, val in items_dict.items():
+            owner = key  # owner username
+            ditems = val  # list of item(s)
+
+            # Check if admin or owner before deleting
+            if (
+                self._gis.users.me.username != owner
+                and "portal:admin:deleteItems" not in self._gis.users.me.privileges
+            ):
+                return Exception(
+                    "You are not the owner and you do not have the administrator privileges to perform this action."
+                )
+
+            # All items should be from same owner so we can set to first in list
+            if self._gis._portal.con.baseurl.endswith("/"):
+                url = "%s/%s/%s/deleteItems" % (
+                    self._gis._portal.con.baseurl[:-1],
+                    "content/users",
+                    owner,
+                )
+            else:
+                url = "%s/%s/%s/deleteItems" % (
+                    self._gis._portal.con.baseurl,
+                    "content/users",
+                    owner,
+                )
+
+            if len(ditems) > 0:
+                params["items"] = ",".join(ditems)
+                res = self._gis._con.post(path=url, postdata=params)
+                results.append(all([r["success"] for r in res["results"]]))
+        return results
 
     def delete_folder(self, folder: str, owner: Optional[str] = None):
         """
@@ -9473,17 +9574,17 @@ class Group(dict):
             Portal object is either an administrator for the entire
             Portal or the owner of the group.
 
-        ============    ======================================
+        =============   =====================================
         **Parameter**    **Description**
-        ------------    --------------------------------------
+        -------------   -------------------------------------
         usernames       Optional list of strings or single string.
                         The list of usernames or single username
                         to be added.
-        ------------    --------------------------------------
+        -------------   -------------------------------------
         admins          Optional List of String, or Single String.
                         This is a list of users to be an administrator
                         of the group.
-        ============    ======================================
+        =============   =====================================
 
         :return:
            A dictionary containing the users that were not added to the group.
@@ -10656,6 +10757,99 @@ class User(dict):
 
             return TaskManager(url=url, user=self, gis=self._gis)
         return None
+
+    def transfer_content(
+        self, target_user: str | User, folder: str | None = None
+    ) -> concurrent.futures.Future:
+        """
+        This operation transfers all the current user's content to a new user.
+        This is an asynchronous operation that can take up to 15 minutes to complete.
+
+        ================  ========================================================
+        **Parameter**      **Description**
+        ----------------  --------------------------------------------------------
+        target_user       Required str or User. The user who will received the current user's content.
+        ----------------  --------------------------------------------------------
+        folder            Optional str. The folder where the content is stored.
+        ================  ========================================================
+
+        :returns: concurrent.futures.Future
+
+        """
+        if isinstance(target_user, User):
+            username: str = target_user.username
+        elif isinstance(target_user, str):
+            username: str = target_user
+            target_user: User = self._gis.users.get(username)
+        else:
+            raise ValueError("target_user must be a string or User object")
+        target_user: User = target_user
+        target_user.folders
+        if folder is None:
+            folder_dest: str = username
+        else:
+            folder_dest: str = None
+            for f in target_user.folders:
+                if folder.lower() == f["id"].lower():
+                    folder_dest = f["title"]
+                    break
+                elif folder.lower() == f["title"].lower():
+                    folder_dest = f["title"]
+                    break
+            if folder_dest is None:
+                cm: ContentManager = self._gis.content
+                cm.create_folder(folder=folder, owner=target_user)
+                folder_dest = folder
+        params: dict[str, Any] = {
+            "f": "json",
+            "reassign": json.dumps(
+                {
+                    "targetUser": username,  # destination user
+                    "reassignedUsers": [self.username],  # content source
+                    "targetFolderName": folder_dest,  # folder location, default is the root
+                    "createSubFolderPerReassignedUser": False,
+                }
+            ),
+        }
+        url: str = f"{self._portal.resturl}portals/self/reassignUsersContent"
+        resp: requests.Response = self._gis._con._session.post(url=url, data=params)
+        resp.raise_for_status()
+        data: dict[str, Any] = resp.json()
+        job_url: str = f"{self._portal.resturl}portals/self/jobs/{data['jobId']}"
+
+        tp = concurrent.futures.ThreadPoolExecutor(max_workers=1)
+        future: concurrent.futures.Future = tp.submit(
+            self._transfer_content_status,
+            **{"session": self._gis._con._session, "url": job_url},
+        )
+        tp.shutdown(cancel_futures=False)
+        return future
+
+    def _transfer_content_status(self, session: requests.Session, url: str) -> dict:
+        """checks the job status for transfer content operation"""
+
+        resp: requests.Response = session.get(
+            url=url,
+            params={
+                "f": "json",
+            },
+        )
+        data: dict[str, Any] = resp.json()
+        status: str = data.get("status", "submitted")
+        while "status" in data:
+            if status == "submitted":
+                time.sleep(10)
+            elif status in ["success", "failed", "succeeded"]:
+                return data
+            resp: requests.Response = session.get(
+                url=url,
+                params={
+                    "f": "json",
+                },
+            )
+            data: dict[str, Any] = resp.json()
+            status: str = data.get("status", "submitted")
+        return data
 
     # ----------------------------------------------------------------------
     def generate_direct_access_url(
@@ -12352,7 +12546,8 @@ class Item(dict):
                         lyr._fn = rendering_rule
                         lyr._fnra = rendering_rule
                         lyr._rendering_rule_from_item = True
-                    lyr._mosaic_rule = item_data.get("mosaicRule", None)
+                    if lyr._mosaic_rule is None:
+                        lyr._mosaic_rule = item_data.get("mosaicRule", None)
                 except:
                     pass
                 layers.append(lyr)
@@ -12802,18 +12997,7 @@ class Item(dict):
             >>> item.download("C:\ARCGIS\Projects\", "hurricane_data")
 
         """
-        if self._gis._con.token:
-            data_path = (
-                "content/items/"
-                + self.itemid
-                + f"/data"  # "?token={self._gis._con.token}"
-            )
-        else:
-            data_path = (
-                "content/items/"
-                + self.itemid
-                + f"/data"  # "?token={self._gis._con.token}"
-            )
+        data_path = "content/items/" + self.itemid + f"/data"
         if file_name is None:
             if "name" in self or "title" in self:
                 file_name = self.name or self.title
@@ -12822,7 +13006,7 @@ class Item(dict):
         try:
             url = self._gis._portal.resturl + data_path
             con = self._gis._con
-            resp = self._portal.con.get(
+            resp = con.get(
                 path=url,
                 file_name=file_name,
                 out_folder=save_path,
@@ -12833,7 +13017,7 @@ class Item(dict):
             )
             if resp.status_code >= 300 and resp.status_code < 400:
                 url = resp.headers["location"]
-                resp = self._portal.con.get(
+                resp = con.get(
                     path=url,
                     file_name=file_name,
                     out_folder=save_path,
@@ -13602,7 +13786,9 @@ class Item(dict):
         )
 
     # ----------------------------------------------------------------------
-    def reassign_to(self, target_owner: str, target_folder: Optional[str] = None):
+    def reassign_to(
+        self, target_owner: str | User, target_folder: Optional[str] = None
+    ):
         """
         The ``reassign_to`` method allows the administrator to reassign a single item from one user to another.
 
@@ -13613,7 +13799,7 @@ class Item(dict):
         ================  ========================================================
         **Parameter**      **Description**
         ----------------  --------------------------------------------------------
-        target_owner      Required string. The new desired owner of the item.
+        target_owner      Required string or User. The new desired owner of the item.
         ----------------  --------------------------------------------------------
         target_folder     Optional string. The folder to move the item to.
         ================  ========================================================
@@ -13632,6 +13818,8 @@ class Item(dict):
             current_folder = self.ownerFolder
         except:
             current_folder = None
+        if isinstance(target_owner, User):
+            target_owner = target_owner.username
         resp = self._portal.reassign_item(
             self.itemid,
             self._user_id,

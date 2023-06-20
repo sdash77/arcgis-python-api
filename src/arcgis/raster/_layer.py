@@ -691,7 +691,9 @@ class ImageryLayer(Layer):
         self._fn = None
         self._fnra = None
         self._filtered = False
-        self._mosaic_rule = None
+        self._mosaic_rule = self._set_mosaic_rule()
+        if self._mosaic_rule:
+            self._using_default_mosaic_rule = True
         self._extent = None
         self._uses_gbl_function = False
         self._other_outputs = {}
@@ -838,7 +840,7 @@ class ImageryLayer(Layer):
             if isinstance(self._uri, bytes):
                 if "renderingRule" in options_dict["imageServiceParameters"]:
                     del options_dict["imageServiceParameters"]["renderingRule"]
-                options_dict["imageServiceParameters"]["raster"] = self._fn
+                options_dict["imageServiceParameters"]["raster"] = self._fnra
 
         if options_dict["imageServiceParameters"] != {}:
             lyr_dict.update({"options": json.dumps(options_dict)})
@@ -4708,6 +4710,112 @@ class ImageryLayer(Layer):
 
         return self._con.post(path=url, postdata=params, timeout=None)
 
+    def _query_gps_info(
+        self,
+        where: Optional[str] = None,
+        object_ids: Optional[list[int]] = None,
+        time_filter: Optional[
+            Union[datetime.date, datetime.datetime, list[int], str]
+        ] = None,
+        geometry_filter: Optional[dict] = None,
+    ):
+        """
+        The ``query_gps_info`` method queries an :class:`~arcgis.raster.ImageryLayer` by applying the filter specified by
+        the user. The result of this operation is the gps and orientation information for image collections created by
+        OrthoMapping REST/Python API or Ortho Maker.
+
+        ==============================  ====================================================================
+        **Parameter**                   **Description**
+        ------------------------------  --------------------------------------------------------------------
+        where                           Optional string. A where clause on this layer to filter the imagery
+                                        layer by the selection sql statement. Any legal SQL where clause
+                                        operating on the fields in the raster
+        ------------------------------  --------------------------------------------------------------------
+        object_ids                      Optional list of objectids, use the raster id list to define a
+                                        subset of rasters.
+        ------------------------------  --------------------------------------------------------------------
+        time_filter                     Optional datetime.date, datetime.datetime or timestamp in
+                                        milliseconds. The time instant or the time extent to query.
+
+                                        Syntax: time_filter=<timeInstant>
+
+                                        Time extent specified as list of [<startTime>, <endTime>]
+                                        For time extents one of <startTime> or <endTime> could be None. A
+                                        None value specified for start time or end time will represent
+                                        infinity for start or end time respectively.
+                                        Syntax: time_filter=[<startTime>, <endTime>] ; specified as
+                                        datetime.date, datetime.datetime or timestamp in milliseconds
+        ------------------------------  --------------------------------------------------------------------
+        geometry_filter                 Optional arcgis.geometry.filters. Spatial filter from
+                                        arcgis.geometry.filters module to filter results by a spatial
+                                        relationship with another geometry.
+        ==============================  ====================================================================
+
+        :return: A :class:`~arcgis.features.FeatureSet` containing the footprints (features) matching the query when
+                  return_geometry is ``True``, else a dictionary containing the expected return
+                  type.
+
+        .. code-block:: python
+
+            # Usage Example
+
+            img_lyr = gis.content.search("my_image_service", item_type="Imagery Layer")[0].layers[0]
+            gps_info = img_lyr.query_gps_info(where="OBJECTID=1")
+
+        """
+
+        if self.tiles_only:
+            raise RuntimeError(
+                "This operation cannot be performed on a TilesOnly Service"
+            )
+
+        if self._datastore_raster:
+            raise RuntimeError(
+                "This operation cannot be performed on a datastore raster"
+            )
+
+        params = {"f": "json"}
+        if object_ids:
+            params["objectIds"] = object_ids
+
+        if where is not None:
+            params["where"] = where
+        elif self._where_clause is not None:
+            params["where"] = self._where_clause
+        else:
+            params["where"] = "1=1"
+
+        if self._temporal_filter is not None:
+            time_filter = self._temporal_filter
+
+        if time_filter is not None:
+            if type(time_filter) is list:
+                starttime = _date_handler(time_filter[0])
+                endtime = _date_handler(time_filter[1])
+                if starttime is None:
+                    starttime = "null"
+                if endtime is None:
+                    endtime = "null"
+                params["time"] = "%s,%s" % (starttime, endtime)
+            else:
+                params["time"] = _date_handler(time_filter)
+
+        if self._spatial_filter is not None:
+            geometry_filter = self._spatial_filter
+
+        if not geometry_filter is None and isinstance(geometry_filter, dict):
+            gf = geometry_filter
+            params["geometry"] = gf["geometry"]
+            params["geometryType"] = gf["geometryType"]
+            params["spatialRel"] = gf["spatialRel"]
+            if "inSR" in gf:
+                params["inSR"] = gf["inSR"]
+
+        url = self._url + "/queryGPSInfo"
+        res = self._con.post(path=url, postdata=params, timeout=None)
+
+        return res["images"]
+
     def _compute_multidimensional_info(
         self,
         where=None,
@@ -6427,8 +6535,8 @@ class ImageryLayer(Layer):
         variables: list[str] = [],
         bands: list[int] = [0],
         time_extent: Optional[list[datetime.datetime]] = None,
-        dimension: Optional[list[float]] = None,
-        dimension_values: list = [],
+        dimension: Optional[list[str]] = None,
+        dimension_values: Optional[list[float]] = [],
         show_values: bool = False,
         trend_type: Optional[str] = None,
         trend_order: Optional[int] = None,
@@ -6465,19 +6573,19 @@ class ImageryLayer(Layer):
                                                  If not specified the time field is obtained from the timeInfo of
                                                  the image service.
         ------------------------------------     --------------------------------------------------------------------
-        variables                                Required list of variable names.
+        variables                                Required list of strings. The variables that will be used for plotting temporal profile.
                                                  For non multidimensional data, the variable would be name of the Sensor.
                                                  To plot the graph against all sensors specify - "ALL_SENSORS"
         ------------------------------------     --------------------------------------------------------------------
-        bands                                    Optional list of band indices. By default takes the
-                                                 first band (band index - 0).
+        bands                                    Optional list of integers. Band indices to be used for plotting temporal profile.
+                                                 By default takes the first band (band index - 0).
                                                  For a multiband data, you can compare the time change of different
                                                  bands over different locations.
         ------------------------------------     --------------------------------------------------------------------
-        time_extent                              Optional list of date time object. This represents the time extent
+        time_extent                              Optional list of datetime objects. This represents the time extent.
         ------------------------------------     --------------------------------------------------------------------
-        dimension                                Optional list of dimension names. This option works specifically on
-                                                 multidimensional data containing a time dimension and other dimensions.
+        dimension                                Optional list of strings. The dimension names that will be used for plotting temporal profile.
+                                                 This option works specifically on multidimensional data containing a time dimension and other dimensions.
 
                                                  The temporal profile is created based on the specific values in other
                                                  dimensions, such as depth at the corresponding time value. For example,
@@ -6485,7 +6593,7 @@ class ImageryLayer(Layer):
                                                  dimension below the earth's surface, resulting in a temporal profile
                                                  at 0.1, 0.2, and 0.3 meters below the ground.
         ------------------------------------     --------------------------------------------------------------------
-        dimension_values                         Optional list of dimension values. This parameter can be used to specify
+        dimension_values                         Optional list of floats. This parameter can be used to specify
                                                  the values of dimension parameter other than the time dimension (dimension
                                                  name specified using dimension parameter)
         ------------------------------------     --------------------------------------------------------------------
@@ -6493,7 +6601,7 @@ class ImageryLayer(Layer):
                                                  Set this parameter to True to display the values at each point in the line graph.
         ------------------------------------     --------------------------------------------------------------------
         trend_type                               Optional string. Default None.
-                                                 Set the trend_type parameter eith with linear or harmonic to draw the trend line
+                                                 Set the trend_type parameter to either linear or harmonic to draw the trend line.
                                                  linear : Fits the pixel values for a variable along a linear trend line.
                                                  harmonic : Fits the pixel values for a variable along a harmonic trend line.
         ------------------------------------     --------------------------------------------------------------------
@@ -6979,6 +7087,76 @@ class ImageryLayer(Layer):
             plot_properties=plot_properties,
         )
 
+    def dimension_profile(
+        self,
+        points: list[Point],
+        dimension: str,
+        time: datetime.datetime,
+        variables: list[str] = [],
+        show_values: bool = False,
+        show_trend_line: bool = False,
+        plot_properties: dict[str, Any] = {},
+    ):
+        """
+        Dimension profile chart visualizes change along a vertical dimension, such as depth or height,
+        using a multidimensional raster dataset with a z-dimension.
+        Dimension Profile is only available for multidimensional datasets that contain a z-dimension.
+
+        Change is plotted in the form of a line graph for a given location and date or time. This allows
+        trends in two variables to be displayed and compared simultaneously, while taking into account
+        different unit scales.
+
+        The x-axis of the dimension profile displays the values of the variable. Default minimum and
+        maximum x-axis bounds are set based on the range of data values represented on the axis.
+
+        The y-axis of the dimension profile displays the vertical dimension value.
+
+
+        ====================================     ====================================================================
+        **Parameter**                             **Description**
+        ------------------------------------     --------------------------------------------------------------------
+        points                                   Required list of :class:`~arcgis.geometry.Point` objects.
+        ------------------------------------     --------------------------------------------------------------------
+        dimension                                Required string. The dimension name that will be used for plotting dimension profile. Use this parameter to set the field that
+                                                 represents the dimension field in the image service.
+        ------------------------------------     --------------------------------------------------------------------
+        time                                     Required datetime object or timestamp in milliseconds. The time slice that will be used for plotting dimension profile.
+        ------------------------------------     --------------------------------------------------------------------
+        variables                                Required list of strings. The variables that will be used for plotting dimension profile.
+                                                 The dimension profile chart allows a maximum of two variables to be displayed.
+        ------------------------------------     --------------------------------------------------------------------
+        show_values                              Optional boolean. Default value is False.
+                                                 Set this parameter to True to display the values at each point in the line graph.
+        ------------------------------------     --------------------------------------------------------------------
+        show_trend_line                          Optional boolean. Default value is False.
+                                                 Set this parameter to True to add a linear trend line to the dimension profile chart.
+                                                 One trend line will be drawn for each location when charting multiple locations,
+                                                 or each variable when charting multiple variables.
+        ------------------------------------     --------------------------------------------------------------------
+        plot_properties                          Optional dictionary. This parameter can be used to set the figure
+                                                 properties. These are the `matplotlib.pyplot.figure() <https://matplotlib.org/stable/api/_as_gen/matplotlib.pyplot.figure.html#matplotlib-pyplot-figure>`_
+                                                 parameters and values specified in dictionary format.
+
+                                                 eg: {"figsize":(15,15)}
+        ====================================     ====================================================================
+
+        :return:
+            None
+
+        """
+        from arcgis.raster._charts import dimension_profile
+
+        return dimension_profile(
+            self,
+            points=points,
+            dimension=dimension,
+            time=time,
+            variables=variables,
+            show_values=show_values,
+            show_trend_line=show_trend_line,
+            plot_properties=plot_properties,
+        )
+
     def _repr_jpeg_(self):
         if self._uses_gbl_function:
             return self._repr_svg_()
@@ -7016,6 +7194,58 @@ class ImageryLayer(Layer):
             return svg_graph
         else:
             return None
+
+    def _set_mosaic_rule(self):
+        mosaic_method_mapping = {
+            "none": "esriMosaicNone",
+            "center": "esriMosaicCenter",
+            "northwest": "esriMosaicNorthwest",
+            "nadir": "esriMosaicNadir",
+            "viewpoint": "esriMosaicViewpoint",
+            "byattribute": "esriMosaicAttribute",
+            "lockraster": "esriMosaicLockRaster",
+            "seamline": "esriMosaicSeamline",
+        }
+
+        mosaic_rule = {}
+        if type(self) == ImageryLayer:
+            if ("defaultMosaicMethod" in self.properties.keys()) and self.properties[
+                "defaultMosaicMethod"
+            ] != None:
+                if (
+                    self.properties["defaultMosaicMethod"].lower()
+                    in mosaic_method_mapping.keys()
+                ):
+                    mosaic_rule.update(
+                        {
+                            "mosaicMethod": mosaic_method_mapping[
+                                self.properties["defaultMosaicMethod"].lower()
+                            ]
+                        }
+                    )
+            if ("sortField" in self.properties.keys()) and self.properties[
+                "sortField"
+            ] != None:
+                mosaic_rule.update({"sortField": self.properties["sortField"]})
+            if ("sortValue" in self.properties.keys()) and self.properties[
+                "sortValue"
+            ] != None:
+                mosaic_rule.update({"sortValue": self.properties["sortValue"]})
+            if ("mosaicOperator" in self.properties.keys()) and self.properties[
+                "mosaicOperator"
+            ] != None:
+                mosaic_rule.update(
+                    {
+                        "mosaicOperation": "MT_"
+                        + self.properties["mosaicOperator"].upper()
+                    }
+                )
+            if ("sortAscending" in self.properties.keys()) and self.properties[
+                "sortAscending"
+            ] != None:
+                mosaic_rule.update({"ascending": self.properties["sortAscending"]})
+
+        return mosaic_rule
 
     def __sub__(self, other):
         from arcgis.raster.functions import minus
@@ -8017,10 +8247,6 @@ class Raster:
                               the URL of the STAC item. It can be a Static STAC item URL or a STAC
                               API Item URL.
 
-                              .. note::
-                                Currently only Sentinel-2 Cloud-Optimized GeoTIFFs (COGs) STAC Items
-                                are supported for this method (Available in 11.0 onwards).
-
                               Example:
                                     "https://sentinel-cogs.s3.us-west-2.amazonaws.com/sentinel-s2-l2a-cogs/12/S/YJ/2020/10/S2A_12SYJ_20201006_0_L2A/S2A_12SYJ_20201006_0_L2A.json"
         -----------------     --------------------------------------------------------------------
@@ -8075,6 +8301,7 @@ class Raster:
                 "application/json",
                 "application/geo+json",
                 "application/json;charset=utf-8",
+                "application/geo+json; charset=utf-8",
             ]:
                 raise RuntimeError(
                     f"Invalid Response: Please verify that the stac_item URL is correct-\n{data.text}"
@@ -8093,7 +8320,13 @@ class Raster:
             except Exception:
                 raise RuntimeError(f"Invalid/Unsupported STAC Item-\n{stac_item}")
 
-        if "type" not in json_data or json_data["type"] != "Feature":
+        if "type" not in json_data or (
+            json_data["type"] != "Feature"
+            and (
+                json_data["type"] == "Collection"
+                and not json_data["id"].startswith("daymet")
+            )
+        ):
             raise RuntimeError(f"Invalid STAC Item-\n{json_data}")
         item = json_data
 
@@ -10693,7 +10926,7 @@ class _ImageServerRaster(ImageryLayer, Raster):
             adjust_aspect_ratio,
             lerc_version,
         )
-        if f == "image":
+        if f == "image" and save_folder is None and save_file is None:
             from IPython.display import Image
 
             return Image(result)
@@ -12326,10 +12559,6 @@ class RasterCollection:
         stac_api              Required string. URL of the STAC API root endpoint. The STAC API where
                               the search needs to be performed.
 
-                              .. note::
-                                Currently only Sentinel-2 Cloud-Optimized GeoTIFFs (COGs) STAC Item queries
-                                are supported for this method (Available in 11.0 onwards).
-
                               Example:
                                     "https://earth-search.aws.element84.com/v0"
         -----------------     --------------------------------------------------------------------
@@ -12514,6 +12743,7 @@ class RasterCollection:
             "application/json",
             "application/geo+json",
             "application/json;charset=utf-8",
+            "application/geo+json; charset=utf-8",
         ]:
             raise RuntimeError(
                 f"Invalid Response: Please verify that the STAC API URL and the specified query are correct-\n{data.text}"
@@ -12682,6 +12912,7 @@ class RasterCollection:
                 "application/json",
                 "application/geo+json",
                 "application/json;charset=utf-8",
+                "application/geo+json; charset=utf-8",
             ]:
                 raise RuntimeError(
                     f"Invalid Response: Please verify that the stac_catalog URL is correct-\n{data.text}"

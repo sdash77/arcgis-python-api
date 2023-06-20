@@ -225,6 +225,7 @@ class ChildObjectDetector:
             )
 
         self.ssd = SingleShotDetector.from_emd(data=None, emd_path=model)
+        self._learnmodel = self.ssd
         self.model = self.ssd.learn.model.to(self.device)
         self.model.eval()
 

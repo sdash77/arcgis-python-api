@@ -109,6 +109,11 @@ class MMDetection3D(ArcGISModel):
     def __repr__(self):
         return "<%s>" % (type(self).__name__)
 
+    supported_models = ["SECOND"]
+    """
+    List of models supported by this class.
+    """
+
     def _free_memory(self):
         gc.collect()
         torch.cuda.empty_cache()

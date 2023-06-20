@@ -709,7 +709,7 @@ class GeoSeriesAccessor:
         method              Required String. `PLANAR` measurements reflect the projection of
                             geographic data onto the 2D surface (in other words, they will not
                             take into account the curvature of the earth). `GEODESIC`,
-                           ` GREAT_ELLIPTIC`, `LOXODROME`, and `PRESERVE_SHAPE` measurement types
+                            `GREAT_ELLIPTIC`, `LOXODROME`, and `PRESERVE_SHAPE` measurement types
                             may be chosen as an alternative, if desired.
         ---------------     --------------------------------------------------------------------
         units               Optional String. Areal unit of measure keywords:` ACRES | ARES | HECTARES
