@@ -291,8 +291,20 @@ class GeoArray(ExtensionArray):
         """Checks if the Geometries are Equal"""
         if isinstance(other, Geometry):
             return self.equals(other)
+        elif isinstance(other, GeoArray):
+            equal = True
+            if self.shape == other.shape:
+                for i in range(len(self)):
+                    if self[i] != other[i]:
+                        equal = False
+                        break
+            else:
+                equal = False
+            return equal
         else:
-            raise ValueError("Input must be a arcgis.geometry.Geometry")
+            raise ValueError(
+                "Input must be a arcgis.geometry.Geometry or arcgis.features.geo.GeoArray"
+            )
 
     def __ne__(self, other: Geometry):
         """Checks if the Geometries are Equal"""
