@@ -1,8 +1,4 @@
 from __future__ import annotations
-
-# import sys
-
-# sys.path.insert(0, r"C:\SVN\geosaurus_issue_10109\src")
 import os
 import uuid
 import json
