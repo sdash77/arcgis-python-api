@@ -163,9 +163,11 @@ class UX(object):
         :return: string
         """
         try:
-            res = json.loads(
-                open(self._portal_resources.get("localizedOrgProperties"), "r").read()
-            )
+            with open(
+                self._portal_resources.get("localizedOrgProperties"), "r"
+            ) as reader:
+                res = json.loads(reader.read())
+
         except:
             # if summary has never been set for org then need to create the resource
             self.summary = ""
@@ -1111,6 +1113,12 @@ class HomePageSettings(object):
         else:
             self._new_hp = False
 
+    def _reader_hp(self) -> dict[str, Any]:
+        """reads the homepage settings as a dictionary."""
+        with open(self._portal_resources.get("home.page.json"), "r") as reader:
+            return json.loads(reader.read())
+        return {}
+
     # ----------------------------------------------------------------------
     def set_background(
         self,
@@ -1209,10 +1217,8 @@ class HomePageSettings(object):
                     # User passed in string of the stock image key
                     stock_image = StockImage[stock_image]
                 cover_image_stock = stock_image.value
-            hp = json.loads(
-                open(self._portal_resources.get("home.page.json"), "r").read()
-            )
 
+            hp = self._reader_hp()
             hp["header"]["coverImg"] = background_update_val
             hp["header"]["coverType"] = cover_type
             hp["header"]["coverImgStock"] = cover_image_stock
@@ -1369,9 +1375,7 @@ class HomePageSettings(object):
 
         # extra step for new homepage editor
         if self._new_hp:
-            hp = json.loads(
-                open(self._portal_resources.get("home.page.json"), "r").read()
-            )
+            hp = self._reader_hp()
             if show_logo is not None:
                 hp["header"]["showLogo"] = show_logo
             hp["header"]["logo"] = key_val
@@ -1439,9 +1443,7 @@ class HomePageSettings(object):
             if "thumbnail" in props:
                 resource = props["thumbnail"]
         else:
-            hp = json.loads(
-                open(self._portal_resources.get("home.page.json"), "r").read()
-            )
+            hp = self._reader_hp()
             resource = hp["header"]["logo"]
         if resource is not None and len(str(resource)) > 0:
             output = self._portal_resources.get(
@@ -1483,9 +1485,7 @@ class HomePageSettings(object):
         :return: True | False
         """
         if self._new_hp:
-            hp = json.loads(
-                open(self._portal_resources.get("home.page.json"), "r").read()
-            )
+            hp = self._reader_hp()
             if title:
                 hp["header"]["title"] = title
             if show_title:
@@ -1521,9 +1521,7 @@ class HomePageSettings(object):
         :return: Dict or None if using old homepage
         """
         if self._new_hp:
-            hp = json.loads(
-                open(self._portal_resources.get("home.page.json"), "r").read()
-            )
+            hp = self._reader_hp()
             title = {
                 "title": hp["header"]["title"],
                 "show_title": hp["header"]["showTitle"],
@@ -1541,9 +1539,7 @@ class HomePageSettings(object):
     ):
         """Set the email shown in the footer of the homepage and whether it is visible."""
         if self._new_hp:
-            hp = json.loads(
-                open(self._portal_resources.get("home.page.json"), "r").read()
-            )
+            hp = self._reader_hp()
             if email:
                 hp["footer"]["contact"] = email
             if show_email:
@@ -1563,9 +1559,7 @@ class HomePageSettings(object):
     def get_contact_email(self):
         """Get the email and whether it is shown from the footer of the homepage."""
         if self._new_hp:
-            hp = json.loads(
-                open(self._portal_resources.get("home.page.json"), "r").read()
-            )
+            hp = self._reader_hp()
             contact = {
                 "email": hp["footer"]["contact"],
                 "show_email": hp["footer"]["showContact"],
@@ -1576,9 +1570,7 @@ class HomePageSettings(object):
     def get_footer(self):
         """Get the footer of the homepage"""
         if self._new_hp:
-            hp = json.loads(
-                open(self._portal_resources.get("home.page.json"), "r").read()
-            )
+            hp = self._reader_hp()
             footer = {
                 "contact": self.get_contact_email(),
                 "text": hp["footer"]["copy"],
@@ -1592,9 +1584,7 @@ class HomePageSettings(object):
     def set_footer(self, text: str, show_text: bool | None = None):
         """Set the text and the visibility of the text in the footer"""
         if self._new_hp:
-            hp = json.loads(
-                open(self._portal_resources.get("home.page.json"), "r").read()
-            )
+            hp = self._reader_hp()
             if text:
                 hp["footer"]["copy"] = text
             if show_text:
@@ -1614,9 +1604,7 @@ class HomePageSettings(object):
     def get_typography(self):
         """Get the footer of the homepage"""
         if self._new_hp:
-            hp = json.loads(
-                open(self._portal_resources.get("home.page.json"), "r").read()
-            )
+            hp = self._reader_hp()
             if hp["useCustomTypography"] == True:
                 return hp["customTypography"]
             else:
@@ -1645,9 +1633,7 @@ class HomePageSettings(object):
 
         """
         if self._new_hp:
-            hp = json.loads(
-                open(self._portal_resources.get("home.page.json"), "r").read()
-            )
+            hp = self._reader_hp()
             if custom:
                 hp["useCustomTypography"] = True
                 hp["customTypography"] = font_family
@@ -1671,9 +1657,7 @@ class HomePageSettings(object):
         Set the base color with a string color name.
         """
         if self._new_hp:
-            hp = json.loads(
-                open(self._portal_resources.get("home.page.json"), "r").read()
-            )
+            hp = self._reader_hp()
             hp["baseColor"] = color
             params = {
                 "key": "home.page.json",
@@ -1689,9 +1673,7 @@ class HomePageSettings(object):
     # ----------------------------------------------------------------------
     def get_base_color(self):
         if self._new_hp:
-            hp = json.loads(
-                open(self._portal_resources.get("home.page.json"), "r").read()
-            )
+            hp = self._reader_hp()
             return hp["baseColor"]
 
 
