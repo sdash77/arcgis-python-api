@@ -13407,7 +13407,7 @@ def merge_rasters(
 
     .. code-block:: python
 
-        # Usage Example 1: merges two rasters and display the pixels form the first raster in the list of rasters overlapping a given area.
+        # Usage Example 1: merges two rasters and display the pixels from the first raster in the list of rasters overlapping a given area.
 
         merged_op = merge_rasters([ras1, ras2], resolve_overlap_method="FIRST")
     """
