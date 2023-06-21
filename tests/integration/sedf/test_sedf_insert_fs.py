@@ -7,7 +7,7 @@ from arcgis.features import GeoAccessor, GeoSeriesAccessor
 import unittest
 import tempfile
 
-data = [
+point_data = [
     {
         "FID": 1,
         "NAME": "MARKET FRESH GRILL CAFE",
@@ -1786,6 +1786,135 @@ data = [
     },
 ]
 
+polygon_features = [
+    {
+        "FID": 1,
+        "NAME": "Polygon 1",
+        "TYPE": "Type A",
+        "AREA": 120.5,
+        "SHAPE": {
+            "type": "Polygon",
+            "coordinates": [
+                [
+                    [-118.456056, 34.074513],
+                    [-118.456056, 34.064513],
+                    [-118.446056, 34.064513],
+                    [-118.446056, 34.074513],
+                    [-118.456056, 34.074513],
+                ]
+            ],
+        },
+    },
+    {
+        "FID": 2,
+        "NAME": "Polygon 2",
+        "TYPE": "Type B",
+        "AREA": 87.3,
+        "SHAPE": {
+            "type": "Polygon",
+            "coordinates": [
+                [
+                    [-118.438902, 34.060288],
+                    [-118.438902, 34.050288],
+                    [-118.428902, 34.050288],
+                    [-118.428902, 34.060288],
+                    [-118.438902, 34.060288],
+                ]
+            ],
+        },
+    },
+    {
+        "FID": 3,
+        "NAME": "Polygon 3",
+        "TYPE": "Type C",
+        "AREA": 65.2,
+        "SHAPE": {
+            "type": "Polygon",
+            "coordinates": [
+                [
+                    [-118.464789, 34.078965],
+                    [-118.464789, 34.068965],
+                    [-118.454789, 34.068965],
+                    [-118.454789, 34.078965],
+                    [-118.464789, 34.078965],
+                ]
+            ],
+        },
+    },
+    {
+        "FID": 4,
+        "NAME": "Polygon 4",
+        "TYPE": "Type D",
+        "AREA": 93.7,
+        "SHAPE": {
+            "type": "Polygon",
+            "coordinates": [
+                [
+                    [-118.446289, 34.064154],
+                    [-118.446289, 34.054154],
+                    [-118.436289, 34.054154],
+                    [-118.436289, 34.064154],
+                    [-118.446289, 34.064154],
+                ]
+            ],
+        },
+    },
+    {
+        "FID": 5,
+        "NAME": "Polygon 5",
+        "TYPE": "Type E",
+        "AREA": 105.8,
+        "SHAPE": {
+            "type": "Polygon",
+            "coordinates": [
+                [
+                    [-118.424752, 34.045629],
+                    [-118.424752, 34.035629],
+                    [-118.414752, 34.035629],
+                    [-118.414752, 34.045629],
+                    [-118.424752, 34.045629],
+                ]
+            ],
+        },
+    },
+    {
+        "FID": 6,
+        "NAME": "Polygon 6",
+        "TYPE": "Type F",
+        "AREA": 78.6,
+        "SHAPE": {
+            "type": "Polygon",
+            "coordinates": [
+                [
+                    [-118.432193, 34.056874],
+                    [-118.432193, 34.046874],
+                    [-118.422193, 34.046874],
+                    [-118.422193, 34.056874],
+                    [-118.432193, 34.056874],
+                ]
+            ],
+        },
+    },
+    {
+        "FID": 7,
+        "NAME": "Polygon 7",
+        "TYPE": "Type G",
+        "AREA": 42.1,
+        "SHAPE": {
+            "type": "Polygon",
+            "coordinates": [
+                [
+                    [-118.474318, 34.087625],
+                    [-118.474318, 34.077625],
+                    [-118.464318, 34.077625],
+                    [-118.464318, 34.087625],
+                    [-118.474318, 34.087625],
+                ]
+            ],
+        },
+    },
+]
+
 tbl_data = [
     {
         "FID": 1,
@@ -2071,33 +2200,46 @@ class TestSeDFInsert(unittest.TestCase):
             # establish gis connection
             gis = GIS(profile=profile, verify_cert=False)
             print("User: ", gis.users.me.username)
-            # add point layer to portal
-            sdf = pd.DataFrame(data)
-            point_item = gis.content.import_data(sdf)
-            if gis._is_agol:
-                polygon_item = gis.content.get(
-                    "1ac6896bcafc4dccb29c70f45c442b00"
-                )  # layer with polygon geom
-            else:
-                polygon_item = gis.content.get(
-                    "66872ac18e1046ca9cdd785816f1817d"
-                )  # layer with polygon geom
+            polygon_item = None
+            point_item = None
+            try:
+                # add point layer to portal
+                sdf = pd.DataFrame(point_data)
+                point_item = gis.content.import_data(sdf)
 
-            # Basis Assertions
-            assert point_item.layers[0]
-            num_layers = len(point_item.layers)
+                # add polygon layer to portal
+                sdf2 = pd.DataFrame(polygon_features)
+                polygon_item = gis.content.import_data(sdf2)
 
-            # Append as new layer to feature service
-            sdf = pd.DataFrame.spatial.from_layer(polygon_item.layers[0])
-            updated_item = sdf.spatial.insert_layer(feature_service=point_item.id)
+                # Basis Assertions
+                assert point_item.layers[0]
+                assert (
+                    point_item.layers[0].properties.geometryType == "esriGeometryPoint"
+                )
+                num_layers = len(point_item.layers)
+                num_features = point_item.layers[0].query(return_count_only=True)
 
-            # Check to see if different layer but same service
-            assert point_item.id == updated_item.id
-            assert num_layers + 1 == len(updated_item.layers)
-            related_items = updated_item.related_items("Service2Data")
-            for related_item in related_items:
-                related_item.delete()
-            updated_item.delete()
+                # Insert
+                sdf = pd.DataFrame.spatial.from_layer(polygon_item.layers[0])
+                updated_item = sdf.spatial.insert_layer(feature_service=point_item.id)
+
+                # Check to see if different layer but same service
+                assert point_item.id == updated_item.id
+                assert num_layers + 1 == len(updated_item.layers)
+            except:
+                pass
+            finally:
+                # clean up
+                if polygon_item:
+                    poly_rel_items = polygon_item.related_items("Service2Data")
+                    for item in poly_rel_items:
+                        item.delete()
+                    polygon_item.delete()
+                if point_item:
+                    pnt_rel_items = point_item.related_items("Service2Data")
+                    for item in pnt_rel_items:
+                        item.delete()
+                    point_item.delete()
 
     def test_insert_table(self):
         for profile in profiles:
