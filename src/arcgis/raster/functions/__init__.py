@@ -13373,7 +13373,10 @@ def geometric_median(
 
     return _clone_layer(layer, template_dict, raster_ra, variable_name="Rasters")
 
-def merge_rasters(rasters: Union[Raster, ImageryLayer], resolve_overlap_method: str = "FIRST"):
+
+def merge_rasters(
+    rasters: Union[Raster, ImageryLayer], resolve_overlap_method: str = "FIRST"
+):
     """
     The merge_rasters function groups or merges a collection of rasters.
 
@@ -13384,7 +13387,7 @@ def merge_rasters(rasters: Union[Raster, ImageryLayer], resolve_overlap_method: 
     --------------------------------     --------------------------------------------------------------------
     rasters                              Required list of :class:`Raster <arcgis.raster.Raster>` /  :class:`ImageryLayer <arcgis.raster.ImageryLayer>` objects.
     --------------------------------     --------------------------------------------------------------------
-    resolve_overlap_method               Optional string. Specifies the method that will be used to resolve overlapping pixels in the 
+    resolve_overlap_method               Optional string. Specifies the method that will be used to resolve overlapping pixels in the
                                          combined datasets. The options include the following:
 
                                          - "FIRST" - The pixel value in the overlapping areas is the value from the first raster in the list of input rasters. This is the default.
@@ -13412,7 +13415,14 @@ def merge_rasters(rasters: Union[Raster, ImageryLayer], resolve_overlap_method: 
 
     layer, raster, raster_ra = _raster_input(raster)
 
-    mosaic_types = {"FIRST": "MT_FIRST", "LAST": "MT_LAST", "MIN": "MT_MIN", "MAX": "MT_MAX", "MEAN": "MT_MEAN", "SUM": "MT_SUM"}
+    mosaic_types = {
+        "FIRST": "MT_FIRST",
+        "LAST": "MT_LAST",
+        "MIN": "MT_MIN",
+        "MAX": "MT_MAX",
+        "MEAN": "MT_MEAN",
+        "SUM": "MT_SUM",
+    }
 
     in_mosaic_type = mosaic_types[resolve_overlap_method.upper()]
 
@@ -13426,6 +13436,7 @@ def merge_rasters(rasters: Union[Raster, ImageryLayer], resolve_overlap_method: 
         template_dict["rasterFunctionArguments"]["MosaicOperator"] = in_mosaic_type
 
     return _clone_layer(layer, template_dict, raster_ra, variable_name="Rasters")
+
 
 class RFT:
     def __init__(self, raster_function_template, gis=None):

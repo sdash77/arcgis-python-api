@@ -24,7 +24,7 @@ _aggregating_functions = [
     "variety",
     "geometric_median",
     "minority",
-    "merge_rasters"
+    "merge_rasters",
 ]
 
 
