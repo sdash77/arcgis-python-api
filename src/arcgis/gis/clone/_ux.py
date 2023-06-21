@@ -271,6 +271,13 @@ class UXCloner:
                 r["path"] = os.path.join(resource_folder, os.path.basename(r["path"]))
                 rs.append(r)
             settings_configuration["ResourceManager"]["resources"] = rs
+            if "logo" in settings_configuration and settings_configuration["logo"]:
+                logo = os.path.join(
+                    workspace,
+                    os.path.basename(settings_configuration["logo"]),
+                )
+                settings_configuration["logo"] = logo
+
         return self._config_or_org(
             settings_configuration=settings_configuration,
             target_gis=self._source_gis,
