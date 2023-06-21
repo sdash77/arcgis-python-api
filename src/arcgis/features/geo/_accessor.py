@@ -3912,7 +3912,7 @@ class GeoAccessor(object):
         return geo_df
 
     # ----------------------------------------------------------------------
-    def eq(self, other: GeoAccessor):
+    def eq(self, other: GeoAccessor | pd.DataFrame):
         """
         Check if two DataFrames are equal to each other. Equal means
         same shape and corresponding elements
@@ -3925,8 +3925,18 @@ class GeoAccessor(object):
         Check if two DataFrames are equal to each other. Equal means
         same shape and corresponding elements
         """
+        # Convert DataFrame
+        if isinstance(other, pd.DataFrame):
+            if _is_geoenabled(other):
+                other = other.spatial
+            else:
+                raise ValueError(
+                    "The comparative item must be a DataFrame with spatial capabilities or be an instance of GeoAccessor."
+                )
+
         if not isinstance(other, GeoAccessor):
             raise ValueError("Input must be features.geo.GeoAccessor")
+
         # Check the shape
         if self._data.shape != other._data.shape:
             return False
@@ -3947,7 +3957,7 @@ class GeoAccessor(object):
             return False
 
     # ----------------------------------------------------------------------
-    def compare(self, other: GeoAccessor, match_field: str = None):
+    def compare(self, other: GeoAccessor | pd.DataFrame, match_field: str = None):
         """
         Compare the current spatially enabled DataFrame with another spatially enabled DataFrame and identify the differences
         in terms of added, deleted, and modified rows based on a specified match field.
@@ -3967,6 +3977,13 @@ class GeoAccessor(object):
             - 'modified_rows': DataFrame representing the rows modified between the DataFrames.
 
         """
+        if isinstance(other, pd.DataFrame):
+            if _is_geoenabled(other):
+                other = other.spatial
+            else:
+                raise ValueError(
+                    "The comparative item must be a DataFrame with spatial capabilities or be an instance of GeoAccessor."
+                )
         if match_field is None:
             match_field = self.name
         old_df = self._data

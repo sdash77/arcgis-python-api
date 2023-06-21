@@ -292,15 +292,7 @@ class GeoArray(ExtensionArray):
         if isinstance(other, Geometry):
             return self.equals(other)
         elif isinstance(other, GeoArray):
-            equal = True
-            if self.shape == other.shape:
-                for i in range(len(self)):
-                    if self[i] != other[i]:
-                        equal = False
-                        break
-            else:
-                equal = False
-            return equal
+            return np.array_equal(self, other)
         else:
             raise ValueError(
                 "Input must be a arcgis.geometry.Geometry or arcgis.features.geo.GeoArray"
