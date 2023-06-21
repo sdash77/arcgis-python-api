@@ -2153,7 +2153,12 @@ class ItemSettings(object):
 
         Values: 'arcgis' | 'fgdc' | 'inspire' | 'iso19139' | 'iso19139-3.2' | 'iso19115'
         """
-        return self._gis.properties["metadataFormats"][0]
+        if (
+            "metadataFormats" in self._gis.properties
+            and self._gis.properties["metadataFormats"]
+        ):
+            return self._gis.properties["metadataFormats"][0]
+        return "arcgis"
 
     # ----------------------------------------------------------------------
     @metadata_format.setter
@@ -2500,7 +2505,19 @@ class SecuritySettings(object):
     # ----------------------------------------------------------------------
     @allowed_origins.setter
     def allowed_origins(self, allowed_origins: list[str]):
-        self._gis.update_properties({"allowedOrigins": allowed_origins})
+        if isinstance(allowed_origins, (tuple, list)):
+            allowed_origins = ",".join(allowed_origins)
+            self._gis.update_properties({"allowedOrigins": allowed_origins})
+        elif allowed_origins is None or allowed_origins == "":
+            allowed_origins = ""
+            self._gis.update_properties(
+                {
+                    "allowedOrigins": allowed_origins,
+                    "clearEmptyFields": True,
+                }
+            )
+        else:
+            self._gis.update_properties({"allowedOrigins": allowed_origins})
 
     # ----------------------------------------------------------------------
     @property
@@ -2515,12 +2532,26 @@ class SecuritySettings(object):
         to be able to use enterprise logins to access the secured content
         through web applications hosted on these portals.
         """
-        return self._gis.properties["allowedRedirectUris"]
+        if "allowedRedirectUris" in self._gis.properties:
+            return self._gis.properties["allowedRedirectUris"]
+        return None
 
     # ----------------------------------------------------------------------
     @allowed_redirect_uris.setter
     def allowed_redirect_uris(self, uris: list[str]):
-        self._gis.update_properties({"allowedRedirectUris": uris})
+        if isinstance(uris, (tuple, list)):
+            uris = ",".join(uris)
+            self._gis.update_properties({"allowedRedirectUris": uris})
+        elif uris is None or uris == "":
+            uris = ""
+            self._gis.update_properties(
+                {
+                    "allowedRedirectUris": uris,
+                    "clearEmptyFields": True,
+                }
+            )
+        else:
+            self._gis.update_properties({"allowedRedirectUris": uris})
 
     # ----------------------------------------------------------------------
     @property
@@ -2532,7 +2563,9 @@ class SecuritySettings(object):
         Set a list of trusted servers that clients can send credentials to when
         making Cross-Origin Resource Sharing (CORS) requests to access web-tier secured services.
         """
-        return self._gis.properties["authorizedCrossOriginDomains"]
+        if "authorizedCrossOriginDomains" in self._gis.properties:
+            return self._gis.properties["authorizedCrossOriginDomains"]
+        return None
 
     # ----------------------------------------------------------------------
     @trusted_servers.setter

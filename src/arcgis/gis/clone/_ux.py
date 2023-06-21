@@ -396,17 +396,21 @@ class UXCloner:
             from arcgis.gis.admin import PortalAdminManager
 
             admin: PortalAdminManager = target_gis.admin
-
+        ux: _arcgis_ux.UX = admin.ux
         for resource in settings_configuration["ResourceManager"]["resources"]:
             admin.resources.add(**resource)
         if settings_configuration["logo"]:
             ux.set_logo(logo_file=settings_configuration["logo"], show_logo=True)
-        ux: _arcgis_ux.UX = admin.ux
+
         ux.name = settings_configuration["name"]
         ux.summary = settings_configuration["summary"]
-        ux.contact_link = settings_configuration["contact_link"]["contactUs"].get(
-            "url", ""
-        )
+        if (
+            "contact_link" in settings_configuration
+            and settings_configuration["contact_link"]
+        ):
+            ux.contact_link = settings_configuration["contact_link"]["contactUs"].get(
+                "url", ""
+            )
         try:
             ux.admin_contacts = settings_configuration["admin_contacts"]
         except Exception as ex:
@@ -438,7 +442,8 @@ class UXCloner:
             ux.map_settings.default_mapviewer = settings_configuration["MapSettings"][
                 "default_mapviewer"
             ]
-        ux.map_settings.units = settings_configuration["MapSettings"]["units"]
+        if settings_configuration["MapSettings"]["units"]:
+            ux.map_settings.units = settings_configuration["MapSettings"]["units"]
         # Security Settings
         security_config: dict[str, Any] = settings_configuration["SecuritySettings"]
         ux.security_settings.allowed_origins = security_config["allowed_origins"]
@@ -476,13 +481,13 @@ class UXCloner:
                 text=notice["text"],
                 button_type=notice["buttons"],
             )
-
-        ux.security_settings.set_informational_banner(
-            text=security_config["informational_banner"]["text"],
-            bg_color=security_config["informational_banner"]["bgColor"],
-            font_color=security_config["informational_banner"]["fontColor"],
-            enabled=security_config["informational_banner"]["enabled"],
-        )
+        if security_config["informational_banner"]:
+            ux.security_settings.set_informational_banner(
+                text=security_config["informational_banner"]["text"],
+                bg_color=security_config["informational_banner"]["bgColor"],
+                font_color=security_config["informational_banner"]["fontColor"],
+                enabled=security_config["informational_banner"]["enabled"],
+            )
         if security_config["org_access_notice"]:
             ux.security_settings.set_org_access_notice(
                 title=security_config["org_access_notice"]["title"],
