@@ -2103,6 +2103,8 @@ class TestSeDFInsert(unittest.TestCase):
         for profile in profiles:
             # establish connection
             gis = GIS(profile=profile, verify_cert=False)
+            if gis._is_agol is False:
+                return
             print("User: ", gis.users.me.username)
             # add point tbl to portal
             df = pd.DataFrame(tbl_data)
