@@ -96,7 +96,7 @@ def _get_layer_info(input_layer):
                             url = input_param["url"] + "?token=" + token
                         input_param.update({"url": url})
                         if "serviceToken" in input_param.keys():
-                            del context_param["serviceToken"]
+                            del input_param["serviceToken"]
             except:
                 pass
 
