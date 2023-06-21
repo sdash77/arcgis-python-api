@@ -26,6 +26,7 @@ try:
 except:
     pass
 
+
 def _get_layer_info(input_layer):
     input_param = input_layer
 
@@ -44,10 +45,7 @@ def _get_layer_info(input_layer):
             if "layers" in input_layer:
                 input_param = input_layer.layers[0]._lyr_dict
                 try:
-                    if (
-                        isinstance(input_param, dict)
-                        and "url" in input_param.keys()
-                    ):
+                    if isinstance(input_param, dict) and "url" in input_param.keys():
                         url = input_param["url"]
                         if "token" not in url:
                             from arcgis.raster.functions.utility import (
@@ -105,10 +103,7 @@ def _get_layer_info(input_layer):
         elif isinstance(input_layer, _FeatureLayer):
             input_param = input_layer._lyr_dict
             try:
-                if (
-                    isinstance(input_param, dict)
-                    and "url" in input_param.keys()
-                ):
+                if isinstance(input_param, dict) and "url" in input_param.keys():
                     url = input_param["url"]
                     if "serviceToken" not in input_param:
                         from arcgis.raster.functions.utility import (
@@ -132,9 +127,7 @@ def _get_layer_info(input_layer):
             input_param = {"uri": input_layer}
 
     else:
-        raise Exception(
-            "Invalid format for env parameter"
-        )
+        raise Exception("Invalid format for env parameter")
 
     if "ImageServer" in url or "MapServer" in url:
         if "serviceToken" in input_param:
@@ -142,6 +135,7 @@ def _get_layer_info(input_layer):
             input_param.update({"url": url})
 
     return input_param
+
 
 def _set_context(params, function_context=None):
     out_sr = _arcgis.env.out_spatial_reference
