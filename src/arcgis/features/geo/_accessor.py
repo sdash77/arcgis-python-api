@@ -3,7 +3,6 @@ Holds Delegate and Accessor Logic
 """
 from __future__ import annotations
 import logging
-from venv import logger
 import pandas as pd
 from collections.abc import Iterable
 
@@ -3979,7 +3978,7 @@ class GeoAccessor(object):
         }
 
         if old_df.empty and new_df.empty:
-            logger.error(
+            _LOGGER.error(
                 "Both dataframes are empty, cannot compate two empty dataframes"
             )
             return diff
