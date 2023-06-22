@@ -43,6 +43,7 @@ _TEXT_BASED_ITEM_TYPES = [
     "Network Analysis Service",
     "Workflow Manager Service",
     "StoryMap",
+    "Web Scene",
 ]
 
 # Regular expressions for finding fields in json
@@ -401,7 +402,7 @@ class _DeepCloner:
                 item_definition.add_child(self._get_item_definitions(item))
 
         # If the item is a web map find all the feature service layers and tables that make up the map
-        elif item["type"] == "Web Map":
+        elif item["type"] in ["Web Map", "Web Scene"]:
             item_definition = self._get_item_definition(item)
             self._graph[item.id] = item_definition
 
@@ -1446,7 +1447,7 @@ class _DeepCloner:
             )
 
         # If the item is a web map get the WebMapDefintion
-        elif item["type"] == "Web Map":
+        elif item["type"] in ["Web Map", "Web Scene"]:
             webmap_json = item.get_data()
             return _WebMapDefinition(
                 self.target,
@@ -3975,7 +3976,6 @@ class _WebMapDefinition(_TextItemDefinition):
 
     def clone(self):
         """Clone the web map in the target organization."""
-
         try:
             new_item = None
             original_item = self.info
