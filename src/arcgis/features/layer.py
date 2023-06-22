@@ -2235,8 +2235,11 @@ class FeatureLayer(Layer):
                 del key, val
 
         if not return_all_records or "outStatistics" in params:
-            if "orderByFields" in params:
-                del params["orderByFields"]
+            # we cannot assume that because return_all_records is False it means we specified something else
+            if return_count_only or return_extent_only or return_ids_only:
+                # Remove to avoid missing when wanting counts only
+                if "orderByFields" in params:
+                    del params["orderByFields"]
             if as_df:
                 return self._query_df(url, params)
             return self._query(url, params, raw=as_raw)
