@@ -2477,6 +2477,9 @@ class GeoAccessor(object):
         This method creates a feature layer from the spatially enabled dataframe and adds (inserts)
         it to an existing feature service.
 
+        .. note::
+            Inserting table data in Enterprise is not currently supported.
+
         ============================    ====================================================================
         **Parameter**                   **Description**
         ----------------------------    --------------------------------------------------------------------
@@ -2493,6 +2496,8 @@ class GeoAccessor(object):
                                         :class:`~arcgis.gis.Item` The name cannot be used already or contain
                                         special characters, spaces, or a number as the first character.
         ============================    ====================================================================
+
+        :return: The feature service item that was appended to.
         """
         from arcgis import env
         import copy
@@ -2502,12 +2507,28 @@ class GeoAccessor(object):
             if gis is None:
                 raise ValueError("GIS object must be provided")
         content = gis.content
+
+        # Check that the user is the owner of both the source and the published item
+        user = gis._username
+        if isinstance(feature_service, str):
+            service = content.get(feature_service)
+            fs_id = feature_service
+        else:
+            service = feature_service
+            fs_id = feature_service.id
+
+        if service.owner != user:
+            raise AssertionError("You must own the service to insert data to it.")
+        # Get the data related
+        related_items = service.related_items(rel_type="Service2Data")
+        for item in related_items:
+            if item.owner != user:
+                raise AssertionError(
+                    "You must own the service data to insert data to it."
+                )
+
         origin_columns = self._data.columns.tolist()
         origin_index = copy.deepcopy(self._data.index)
-        if isinstance(feature_service, _gis.Item):
-            fs_id = feature_service.id
-        else:
-            fs_id = feature_service
 
         if service_name:
             # sanitize name
@@ -2802,6 +2823,8 @@ class GeoAccessor(object):
         ---------------------------     --------------------------------------------------------------------
         overwrite                       Optional boolean. If True, the specified layer in the `service` parameter
                                         will be overwritten.
+                                        .. note::
+                                            Overwriting table data in Enterprise is not currently supported.
         ---------------------------     --------------------------------------------------------------------
         service                         Dictionary that is required if `overwrite = True`. Dictionary with two
                                         keys: "FeatureServiceId" and "layers".
