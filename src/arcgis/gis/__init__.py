@@ -5697,6 +5697,7 @@ class ContentManager(object):
         size = int(size)
         if size < 2.5e7:
             size = int(2.5e7)
+        size = int(self._calculate_upload_size(fp=file_path))
 
         owner_name = owner
         if isinstance(owner, User):
@@ -5838,6 +5839,25 @@ class ContentManager(object):
                 "reason": {"message": "{msg}".format(msg=e.args[0])},
             }
         return False
+
+    # ----------------------------------------------------------------------
+    def _calculate_upload_size(self, fp: str) -> int:
+        """calculates the file MAX upload limit."""
+        fd = os.open(fp, os.O_RDONLY)
+        size: float = os.fstat(fd).st_size
+
+        if size <= 5 * (1024 * 1024):
+            return int(5 * (1024 * 1024))
+        elif size > 5 * (1024 * 1024) and size <= 10 * (1024 * 1024):
+            return int(7 * (1024 * 1024))
+        elif size > 10 * (1024 * 1024) and size <= 15 * (1024 * 1024):
+            return int(13 * (1024 * 1024))
+        elif size > 15 * (1024 * 1024) and size <= 25 * (1024 * 1024):
+            return int(25 * (1024 * 1024))
+        elif size > 25 * (1024 * 1024) and size <= 35 * (1024 * 1024):
+            return int(30 * (1024 * 1024))
+        else:
+            return int(35 * (1024 * 1024))
 
     # ----------------------------------------------------------------------
     def add(
@@ -6103,7 +6123,7 @@ class ContentManager(object):
             if kwargs.get("upload_size", 0) >= 1e7:
                 upload_size = kwargs.get("upload_size")
             else:
-                upload_size = int(2.5e7)
+                upload_size = self._calculate_upload_size(data)
 
             status = self._add_by_part(
                 file_path=data,
