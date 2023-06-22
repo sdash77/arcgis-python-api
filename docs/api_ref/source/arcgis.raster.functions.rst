@@ -403,6 +403,10 @@ med
 ___
 .. autofunction:: arcgis.raster.functions.med
 
+merge_rasters
+_____________
+.. autofunction:: arcgis.raster.functions.merge_rasters
+
 min
 ___
 .. autofunction:: arcgis.raster.functions.min

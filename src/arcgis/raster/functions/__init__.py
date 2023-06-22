@@ -13405,6 +13405,70 @@ def geometric_median(
     return _clone_layer(layer, template_dict, raster_ra, variable_name="Rasters")
 
 
+def merge_rasters(
+    rasters: Union[Raster, ImageryLayer], resolve_overlap_method: str = "FIRST"
+):
+    """
+    The merge_rasters function groups or merges a collection of rasters.
+
+    The arguments for the function are as follows:
+
+    ================================     ====================================================================
+    **Parameter**                         **Description**
+    --------------------------------     --------------------------------------------------------------------
+    rasters                              Required list of :class:`Raster <arcgis.raster.Raster>` /  :class:`ImageryLayer <arcgis.raster.ImageryLayer>` objects.
+    --------------------------------     --------------------------------------------------------------------
+    resolve_overlap_method               Optional string. Specifies the method that will be used to resolve overlapping pixels in the
+                                         combined datasets. The options include the following:
+
+                                         - "FIRST" - The pixel value in the overlapping areas is the value from the first raster in the list of input rasters. This is the default.
+
+                                         - "LAST" - The pixel value in the overlapping areas is the value from the last raster in the list of input rasters.
+
+                                         - "MIN" - The pixel value in the overlapping areas is the minimum value of the overlapping pixels.
+
+                                         - "MAX" - The pixel value in the overlapping areas is the maximum value of the overlapping pixels.
+
+                                         - "MEAN" - The pixel value in the overlapping areas is the average of the overlapping pixels.
+
+                                         - "SUM" - The pixel value in the overlapping areas is the total sum of the overlapping pixels.
+    ================================     ====================================================================
+
+    :return: The output raster with the function applied.
+
+    .. code-block:: python
+
+        # Usage Example 1: merges two rasters and display the pixels from the first raster in the list of rasters overlapping a given area.
+
+        merged_op = merge_rasters([ras1, ras2], resolve_overlap_method="FIRST")
+    """
+    raster = rasters
+
+    layer, raster, raster_ra = _raster_input(raster)
+
+    mosaic_types = {
+        "FIRST": "MT_FIRST",
+        "LAST": "MT_LAST",
+        "MIN": "MT_MIN",
+        "MAX": "MT_MAX",
+        "MEAN": "MT_MEAN",
+        "SUM": "MT_SUM",
+    }
+
+    in_mosaic_type = mosaic_types[resolve_overlap_method.upper()]
+
+    template_dict = {
+        "rasterFunction": "MergeRasters",
+        "rasterFunctionArguments": {"Rasters": raster},
+        "variableName": "Rasters",
+    }
+
+    if resolve_overlap_method is not None:
+        template_dict["rasterFunctionArguments"]["MosaicOperator"] = in_mosaic_type
+
+    return _clone_layer(layer, template_dict, raster_ra, variable_name="Rasters")
+
+
 class RFT:
     def __init__(self, raster_function_template, gis=None):
         try:

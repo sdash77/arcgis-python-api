@@ -15601,10 +15601,11 @@ class _ImageServerRasterCollection(ImageryLayer, RasterCollection):
         )
 
     def mosaic(self, mosaic_method):
-        from arcgis.raster.functions import raster_collection_function
+        from arcgis.raster.functions import merge_rasters
 
-        ras = raster_collection_function(self)
-        ras._engine_obj.mosaic_by(op=mosaic_method)
+        ras = merge_rasters(
+            rasters=self._rasters_list, resolve_overlap_method=mosaic_method
+        )
         return ras
 
     def quality_mosaic(self, quality_rc_or_list, statistic_type=None):
@@ -16676,7 +16677,12 @@ class _LocalRasterCollection(ImageryLayer, RasterCollection):
         )
 
     def mosaic(self, mosaic_method):
-        raise RuntimeError("Local RasterCollection does not support mosaic function")
+        from arcgis.raster.functions import merge_rasters
+
+        ras = merge_rasters(
+            rasters=self._rasters_list, resolve_overlap_method=mosaic_method
+        )
+        return ras
 
     def quality_mosaic(self, quality_rc_or_list, statistic_type=None):
         from arcgis.raster.functions import arg_statistics, _pick
