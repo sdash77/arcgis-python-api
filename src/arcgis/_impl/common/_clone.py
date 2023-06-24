@@ -114,8 +114,7 @@ class _DeepCloner:
                 and "desktopView" in item.get_data()
                 and not from_dash
             ):
-                if len(self._items) > 1:
-                    self._items.pop(index)
+                self._items.pop(index)
                 dash_list = self._clone_dashboard(item)
                 for cloned_item in dash_list:
                     self._cloned_items.append(cloned_item)
@@ -146,7 +145,10 @@ class _DeepCloner:
             if len(clone_result) > 0:
                 for cloned_item in clone_result:
                     cloned_item_list.append(cloned_item)
-            new_item = self.target.content.search(item.title)[0]
+                    if cloned_item.title == item.title:
+                        new_item = cloned_item
+            else:
+                new_item = item
             map_dict[item_id] = new_item.itemid
 
         cloned_db = self.target.content.clone_items([dashboard_item], from_dash=True)[0]
