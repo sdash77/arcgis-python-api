@@ -1253,10 +1253,8 @@ class TabularDataObject(object):
                     axs[counter].plot(x, self._dataframe[col], label=col)
                     if sample_ticks:
                         axs[counter].xaxis.set_major_locator(
-                            plt.FixedLocator(self._safe_div(range(len(
-                                self._dataframe[col])
-                            )
-                            )
+                            plt.FixedLocator(
+                                self._safe_div(range(len(self._dataframe[col])))
                             )
                         )
                     axs[counter].set_title(col)
@@ -1265,10 +1263,8 @@ class TabularDataObject(object):
                     axs.plot(x, self._dataframe[col], label=col)
                     if sample_ticks:
                         axs.xaxis.set_major_locator(
-                            plt.FixedLocator(self._safe_div(range(len(
-                                self._dataframe[col])
-                            )
-                            )
+                            plt.FixedLocator(
+                                self._safe_div(range(len(self._dataframe[col])))
                             )
                         )
                     axs.set_title(col)
