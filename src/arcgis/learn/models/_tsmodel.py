@@ -1246,7 +1246,9 @@ class TimeSeriesModel(ArcGISModel):
             for idx, seq_plot in enumerate(sequence_inversed[i]):
                 sample_ticks = False
                 if self._data._index_seq is not None:
-                    index_data, sample_ticks = self._convert_datetime(validation_index_seq[i])
+                    index_data, sample_ticks = self._convert_datetime(
+                        validation_index_seq[i]
+                    )
                     axs[i, 0].plot(index_data, seq_plot)
                     axs[i, 1].plot(index_data, seq_plot)
                 else:
@@ -1254,16 +1256,14 @@ class TimeSeriesModel(ArcGISModel):
                     axs[i, 1].plot(seq_plot)
 
                 if sample_ticks:
-                    axs[i, 0 ].xaxis.set_major_locator(
-                        plt.FixedLocator(self._safe_div(
-                            range(len(validation_index_seq[i]))
-                        )
+                    axs[i, 0].xaxis.set_major_locator(
+                        plt.FixedLocator(
+                            self._safe_div(range(len(validation_index_seq[i])))
                         )
                     )
-                    axs[i, 1 ].xaxis.set_major_locator(
-                        plt.FixedLocator(self._safe_div(
-                            range(len(validation_index_seq[i]))
-                        )
+                    axs[i, 1].xaxis.set_major_locator(
+                        plt.FixedLocator(
+                            self._safe_div(range(len(validation_index_seq[i])))
                         )
                     )
                 axs[i, 0].tick_params(axis="x", labelrotation=60)
