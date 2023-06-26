@@ -12,6 +12,10 @@ import arcgis as _arcgis
 from arcgis.raster._layer import ImageryLayer as _ImageryLayer
 from arcgis.raster._util import _set_context, _id_generator
 from ._scannedmapdigitizer import ScannedMapDigitizer
+from .models._timm_utils import load_timm_bckbn_pretrained
+from timm.models import helpers
+
+helpers.load_pretrained = load_timm_bckbn_pretrained
 
 if not _LAMBDA_TEXT_CLASSIFICATION:
     from .models import (
@@ -55,6 +59,7 @@ if not _LAMBDA_TEXT_CLASSIFICATION:
         EfficientDet,
         SQNSeg,
         PSETAE,
+        MMDetection3D,
     )
 
     from ._object_tracker import ObjectTracker
@@ -62,6 +67,13 @@ if not _LAMBDA_TEXT_CLASSIFICATION:
     from ._utils.pointcloud_data import Transform3d
 from ._data import prepare_data, prepare_tabulardata, prepare_textdata
 from ._process_df import process_df, add_datepart
+from ._utils.evaluate_batchsize import estimate_batch_size
+
+
+_point_cloud_classification_model_list = ["PointCNN", "RandLANet", "SQNSeg"]
+
+
+_point_cloud_detection_model_list = ["MMDetection3D"]
 
 
 def _set_param(gis, params, param_name, input_param):

@@ -257,6 +257,7 @@ class ChildObjectDetector:
             )
 
         self.retinanet = RetinaNet.from_model(emd_path=model)
+        self._learnmodel = self.retinanet
         self.retinanet.learn.model = self.retinanet.learn.model.to(self.device)
         self.retinanet.learn.model.eval()
 

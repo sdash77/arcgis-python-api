@@ -268,6 +268,16 @@ class GPJob(object):
                 ):
                     if not value["itemId"] in iids:
                         r[key] = arcgis.gis.Item(self._gis, value["itemId"])
+                        if self._item_properties:
+                            _item_properties = {
+                                "properties": {
+                                    "jobUrl": self._url + "/jobs/" + self._jobid,
+                                    "jobType": "GPServer",
+                                    "jobId": self._jobid,
+                                    "jobStatus": "completed",
+                                }
+                            }
+                            r[key].update(item_properties=_item_properties)
                         iids.append(value["itemId"])
                 elif len(str(value)) > 0 and value:
                     r[key] = value
@@ -295,10 +305,32 @@ class GPJob(object):
                 return value
             elif "itemId" in value and len(value["itemId"]) > 0:
                 itemid = value["itemId"]
-                return arcgis.gis.Item(gis=self._gis, itemid=itemid)
+                item = arcgis.gis.Item(gis=self._gis, itemid=itemid)
+                if self._item_properties:
+                    _item_properties = {
+                        "properties": {
+                            "jobUrl": self._url + "/jobs/" + self._jobid,
+                            "jobType": "GPServer",
+                            "jobId": self._jobid,
+                            "jobStatus": "completed",
+                        }
+                    }
+                    item.update(item_properties=_item_properties)
+                return item
             elif isinstance(value, dict) and "items" in value:
                 itemid = list(value["items"].keys())[0]
-                return arcgis.gis.Item(gis=self._gis, itemid=itemid)
+                item = arcgis.gis.Item(gis=self._gis, itemid=itemid)
+                if self._item_properties:
+                    _item_properties = {
+                        "properties": {
+                            "jobUrl": self._url + "/jobs/" + self._jobid,
+                            "jobType": "GPServer",
+                            "jobId": self._jobid,
+                            "jobStatus": "completed",
+                        }
+                    }
+                    item.update(item_properties=_item_properties)
+                return item
             elif self.task == "QueryCameraInfo":
                 import pandas as pd
 
@@ -723,3 +755,239 @@ class RAJob(GPJob):
         :return: boolean
         """
         return self._gpjob.done()
+
+
+class OMJob(GPJob):
+    """
+    Represents a Single Raster orthomapping Job.  The `OMJob` class allows for the asynchronous operation
+    of any geoprocessing task.  To request a GPJob task, the code must be called with `future=True`
+    or else the operation will occur synchronously.  This class is not intended for users to call
+    directly.
+
+
+    ================  ===============================================================
+    **Parameter**      **Description**
+    ----------------  ---------------------------------------------------------------
+    gpjob             Represents the GP Job Object
+    ----------------  ---------------------------------------------------------------
+    item              Item object that needs to be updated by the OMJob
+    ================  ===============================================================
+
+    """
+
+    _item = None
+    _gpjob = None
+    _flight_details = None
+
+    # ----------------------------------------------------------------------
+    def __init__(self, gpjob: GPJob, item: "Item" = None):
+        """
+        initializer
+        """
+        self._gpjob = gpjob
+        self._item = item
+
+    # ----------------------------------------------------------------------
+    def __str__(self):
+        return "<%s Orthomapping Job: %s>" % (self.task, self._jobid)
+
+    # ----------------------------------------------------------------------
+    def __repr__(self):
+        return "<%s Orthomapping Job: %s>" % (self.task, self._jobid)
+
+    # ----------------------------------------------------------------------
+    @property
+    def task(self):
+        """Returns the task name.
+        :return: string
+        """
+        return self._gpjob.task
+
+    # ----------------------------------------------------------------------
+    @property
+    def messages(self):
+        """
+        Returns the service's messages
+
+        :return: List
+        """
+        return self._gpjob.messages
+
+    # ----------------------------------------------------------------------
+    @property
+    def status(self):
+        """
+        returns the GP status
+
+        :return: String
+        """
+        return self._gpjob.status
+
+    # ----------------------------------------------------------------------
+    @property
+    def elapse_time(self):
+        """
+        Returns the Ellapse Time for the Job
+        """
+        return self._gpjob.ellapse_time
+
+    # ----------------------------------------------------------------------
+    def result(self):
+        """
+        Return the value returned by the call. If the call hasn't yet completed
+        then this method will wait.
+
+        :return: object
+        """
+        try:
+            op = self._gpjob.result()
+            self._update_flight_info()
+            return op
+        except Exception as e:
+            from arcgis.gis import Item
+
+            if isinstance(self._item, Item):
+                self._item.delete()
+            elif isinstance(self._item, (tuple, list)):
+                [i.delete() for i in self._item if isinstance(i, Item)]
+            raise e
+
+    # ----------------------------------------------------------------------
+    def cancel(self):
+        """
+        Attempt to cancel the call. If the call is currently being executed
+        or finished running and cannot be cancelled then the method will
+        return False, otherwise the call will be cancelled and the method
+        will return True.
+
+        :return: boolean
+        """
+        res = self._gpjob.cancel()
+        if self.cancelled():
+            from arcgis.gis import Item
+
+            if isinstance(self._item, Item):
+                self._item.delete()
+            elif isinstance(self._item, (tuple, list)):
+                [i.delete() for i in self._item if isinstance(i, Item)]
+        return res
+
+    # ----------------------------------------------------------------------
+    def cancelled(self):
+        """
+        Return True if the call was successfully cancelled.
+
+        :return: boolean
+        """
+        return self._gpjob.cancelled()
+
+    # ----------------------------------------------------------------------
+    def running(self):
+        """
+        Return True if the call is currently being executed and cannot be cancelled.
+
+        :return: boolean
+        """
+        return self._gpjob.running()
+
+    # ----------------------------------------------------------------------
+    def done(self):
+        """
+        Return True if the call was successfully cancelled or finished running.
+
+        :return: boolean
+        """
+        return self._gpjob.done()
+
+    def _update_flight_info(self):
+        flight_json_details = self._flight_details
+        update_flight_json = False
+        if isinstance(flight_json_details, dict):
+            # project_item = flight_json_details.get("project_item", None)
+            item_name = flight_json_details.get("item_name", None)
+            mission = flight_json_details.get("mission", None)
+            update_flight_json = flight_json_details.get("update_flight_json", None)
+            processing_states = flight_json_details.get("processing_states", None)
+            adjust_settings = flight_json_details.get("adjust_settings", None)
+
+        if update_flight_json:
+            import json
+
+            job_messages = self.messages
+            rm = mission._project_item.resources
+            mission_json = mission._mission_json
+            resource = mission._resource_info
+            resource_name = resource["resource"]
+
+            start_time = (
+                self._gpjob._start_time.isoformat(timespec="milliseconds") + "Z"
+            )
+            end_time = self._gpjob._end_time.isoformat(timespec="milliseconds") + "Z"
+
+            mission_json["jobs"].update(
+                {
+                    item_name: {
+                        "messages": job_messages,
+                        "checked": True,
+                        "progress": 100,
+                        "success": True,
+                        "startTime": start_time,
+                        "completionTime": end_time,
+                    }
+                }
+            )
+            if processing_states is not None:
+                mission_json["processingSettings"].update(
+                    {item_name: processing_states}
+                )
+            if adjust_settings is not None:
+                mode = adjust_settings.pop("mode", None)
+                mission_json["jobs"][item_name].update({"mode": mode})
+                mission_json["adjustSettings"].update(adjust_settings)
+
+            properties = json.loads(resource["properties"])
+
+            if self._item:
+                url = json.loads(self._item)["serviceProperties"]["serviceUrl"]
+                itemid = json.loads(self._item)["itemProperties"]["itemId"]
+                mission_json["items"].update(
+                    {item_name: {"itemId": itemid, "url": url}}
+                )
+
+                properties = json.loads(resource["properties"])
+                properties_items = properties["items"]
+                products = []
+                for dict_item in properties_items:
+                    products.append(dict_item["product"])
+                if item_name not in products:
+                    properties_items.append(
+                        {"product": item_name, "id": itemid, "created": True}
+                    )
+                else:
+                    index = products.index(item_name)
+                    properties_items[index] = {
+                        "product": item_name,
+                        "id": itemid,
+                        "created": True,
+                    }
+                properties.update({"items": properties_items})
+
+            import tempfile, uuid, os
+
+            fname = resource_name.split("/")[1]
+            temp_dir = tempfile.gettempdir()
+            temp_file = os.path.join(temp_dir, fname)
+            with open(temp_file, "w") as writer:
+                json.dump(mission_json, writer)
+            del writer
+
+            try:
+                rm.update(
+                    file=temp_file,
+                    text=mission_json,
+                    folder_name="flights",
+                    file_name=fname,
+                    properties=properties,
+                )
+            except:
+                raise RuntimeError("Error updating the mission resource")

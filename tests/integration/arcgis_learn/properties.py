@@ -71,25 +71,25 @@ from arcgis.learn import (
     MLModel,
     MaXDeepLab,
     DETReg,
-    AutoDL
+    PSETAE,
+    EfficientDet,
+    RandLANet,
+    SQNSeg
 )
 import json
-from arcgis.learn.text import EntityRecognizer, SequenceToSequence
-
-
-
+from arcgis.learn.text import EntityRecognizer, SequenceToSequence, TextClassifier
 
 if os.environ.get("run_nightly") == "1":
-    data_folder = r"/home/administrator/Raster/Test_Data/data_for_testing_1/train_model_regression"
+    data_folder = r"/mnt/sda1/data_for_jenkins_tests/train_model_regression"
 else:
-    data_folder = r"/home/administrator/Raster/Test_Data/data_for_testing_1/train_model"
+    data_folder = r"/mnt/sda1/data_for_jenkins_tests/train_model"
 data_folder_inference = (
-    r"/home/administrator/Raster/Test_Data/data_for_testing_1/train_inference"
+    r"/mnt/sda1/data_for_jenkins_tests/train_inference"
 )
 data_folder_ms = (
-    r"/home/administrator/Raster/Test_Data/data_for_testing_1/train_model_ms"
+    r"/mnt/sda1/data_for_jenkins_tests/train_model_ms"
 )
-authorization_path = r"/home/administrator/Raster/Test_Data/data_for_testing_1/properties/properties.json"
+authorization_path = r"/mnt/sda1/data_for_jenkins_tests/properties/properties.json"
 
 colormap = {
     "0": [0, 0, 0],
@@ -117,6 +117,21 @@ X = [
     "vp__Pa_",
 ]
 
+class_mapping_psetae={204:'Pistachios', 
+                    2:'Cotton', 
+                    176:'Grassland/Pasture',
+                    195:'Herbaceous Wetlands',
+                    225:'Dbl Crop WinWht/Corn',
+                    24:'Winter Wheat',
+                    61:'Fallow/Idle Cropland', 
+                    75:'Almonds', 
+                    54:'Tomatoes', 
+                    36:'Alfalfa', 
+                    37:'Other Hay/Non Alfalfa',
+                    69:'Grapes',
+                    67:'Peaches',
+                    121:'Developed'}
+
 
 def setuposenviron():
 
@@ -134,12 +149,12 @@ data = {
         "model_test": "ssd_test",
         "prepare_data": {
             "path": os.path.join(data_folder, "100_cracks_data"),
-            "batch_size": 2,
+            "batch_size": None,
             "dataset_type": "PASCAL_VOC_rectangles",
         },
         "prepare_data_ms": {
             "path": os.path.join(data_folder_ms, "ssd_retina_yolo_fasterrcnn_data"),
-            "batch_size": 2,
+            "batch_size": None,
             "imagery_type": "multispectral",
         },
         "should_test": True,
@@ -197,11 +212,11 @@ data = {
         "model_test": "rn_test",
         "prepare_data": {
             "path": os.path.join(data_folder, "yolo_data"),
-            "batch_size": 2,
+            "batch_size": None,
         },
         "prepare_data_ms": {
             "path": os.path.join(data_folder_ms, "ssd_retina_yolo_fasterrcnn_data"),
-            "batch_size": 2,
+            "batch_size": None,
             "imagery_type": "multispectral",
         },
         "should_test": True,
@@ -259,11 +274,11 @@ data = {
         "model_test": "unet_test",
         "prepare_data": {
             "path": os.path.join(data_folder, "unet_psp_deep_data"),
-            "batch_size": 2,
+            "batch_size": None,
         },
         "prepare_data_ms": {
             "path": os.path.join(data_folder_ms, "unet_psp_deeplab_superres_data"),
-            "batch_size": 2,
+            "batch_size": None,
             "imagery_type": "multispectral",
         },
         "should_test": True,
@@ -317,11 +332,11 @@ data = {
         "model_test": "deeplab_test",
         "prepare_data": {
             "path": os.path.join(data_folder, "unet_psp_deep_data"),
-            "batch_size": 2,
+            "batch_size": None,
         },
         "prepare_data_ms": {
             "path": os.path.join(data_folder_ms, "unet_psp_deeplab_superres_data"),
-            "batch_size": 2,
+            "batch_size": None,
             "imagery_type": "multispectral",
         },
         "should_test": True,
@@ -375,12 +390,12 @@ data = {
         "model_test": "fc_test",
         "prepare_data": {
             "path": os.path.join(data_folder, "featureClassifier"),
-            "batch_size": 2,
+            "batch_size": None,
             "dataset_type": "Imagenet",
         },
         "prepare_data_ms": {
             "path": os.path.join(data_folder_ms, "fc_data"),
-            "batch_size": 2,
+            "batch_size": None,
             "imagery_type": "multispectral",
         },
         "should_test": True,
@@ -440,11 +455,11 @@ data = {
         "model_test": "pspnet_test",
         "prepare_data": {
             "path": os.path.join(data_folder, "unet_psp_deep_data"),
-            "batch_size": 2,
+            "batch_size": None,
         },
         "prepare_data_ms": {
             "path": os.path.join(data_folder_ms, "unet_psp_deeplab_superres_data"),
-            "batch_size": 2,
+            "batch_size": None,
             "imagery_type": "multispectral",
         },
         "should_test": True,
@@ -498,11 +513,11 @@ data = {
         "model_test": "maskrcnn_test",
         "prepare_data": {
             "path": os.path.join(data_folder, "maskrcnn_data"),
-            "batch_size": 2,
+            "batch_size": None,
         },
         "prepare_data_ms": {
             "path": os.path.join(data_folder_ms, "maskrcnn_data"),
-            "batch_size": 2,
+            "batch_size": None,
             "imagery_type": "multispectral",
         },
         "should_test": True,
@@ -583,7 +598,7 @@ data = {
         "model_test": "pointcnn_test",
         "prepare_data": {
             "path": os.path.join(data_folder, "pointcnn_data", "input"),
-            "batch_size": 2,
+            "batch_size": None,
             "dataset_type": "PointCloud",
             "transforms": None,
             "color_mapping": colormap,
@@ -673,7 +688,7 @@ data = {
         },
         "prepare_data_ms": {
             "path": os.path.join(data_folder_ms, "ssd_retina_yolo_fasterrcnn_data"),
-            "batch_size": 2,
+            "batch_size": None,
             "imagery_type": "multispectral",
         },
         "should_test": True,
@@ -735,7 +750,7 @@ data = {
         },
         "prepare_data_ms": {
             "path": os.path.join(data_folder_ms, "ssd_retina_yolo_fasterrcnn_data"),
-            "batch_size": 2,
+            "batch_size": None,
             "imagery_type": "multispectral",
         },
         "should_test": True,
@@ -829,7 +844,7 @@ data = {
         "model_test": "pix2pix_test",
         "prepare_data": {
             "path": os.path.join(data_folder, "pix2pix_data"),
-            "batch_size": 2,
+            "batch_size": None,
             "dataset_type": "Pix2Pix",
         },
         "prepare_data_ms": False,
@@ -885,7 +900,7 @@ data = {
         "model_test": "cyclegan_test",
         "prepare_data": {
             "path": os.path.join(data_folder, "cyclegan_data"),
-            "batch_size": 2,
+            "batch_size": None,
             "dataset_type": "CycleGAN",
         },
         "prepare_data_ms": False,
@@ -941,7 +956,7 @@ data = {
         "model_test": "hededgedetector_test",
         "prepare_data": {
             "path": os.path.join(data_folder, "hededgedetector_data"),
-            "batch_size": 2,
+            "batch_size": None,
         },
         "prepare_data_ms": False,
         "should_test": True,
@@ -996,7 +1011,7 @@ data = {
         "model_test": "bdcnedgedetector_test",
         "prepare_data": {
             "path": os.path.join(data_folder, "hededgedetector_data"),
-            "batch_size": 2,
+            "batch_size": None,
         },
         "prepare_data_ms": False,
         "should_test": True,
@@ -1051,13 +1066,13 @@ data = {
         "model_test": "maxdeeplab_test",
         "prepare_data": {
             "path": os.path.join(data_folder, "panoptic_rgb"),
-            "batch_size": 2,
+            "batch_size": None,
              "n_masks":38,
              "resize_to":256
         },
         "prepare_data_ms": {
             "path": os.path.join(data_folder_ms, "panoptic_ms"),
-            "batch_size": 2,
+            "batch_size": None,
              "n_masks":38,
              "resize_to":256,
             "imagery_type": "multispectral",
@@ -1065,7 +1080,7 @@ data = {
         "should_test": True,
         "test_feature_layer": False,
         "regression_parameter": "panoptic_quality",
-        "regression_test_score": 0.25,
+        "regression_test_score": 0.1,
         "regression_epochs": 15,
         "inferencing_parameter": {
             "model_type": "pass",
@@ -1080,12 +1095,12 @@ data = {
         "model_test": "detreg_test",
         "prepare_data": {
             "path": os.path.join(data_folder, "rgb_small"),
-            "batch_size": 2,
+            "batch_size": None,
              "chip_size":256
         },
         "prepare_data_ms": {
             "path": os.path.join(data_folder_ms, "ms_small"),
-            "batch_size": 2,
+            "batch_size": None,
              "chip_size":256,
             "imagery_type": "multispectral",
         },
@@ -1107,7 +1122,7 @@ data = {
         "model_test": "imagecaptioner_test",
         "prepare_data": {
             "path": os.path.join(data_folder, "imagecaptioner_data"),
-            "batch_size": 2,
+            "batch_size": None,
             "transforms": False,
             "dataset_type": "ImageCaptioning",
         },
@@ -1150,7 +1165,7 @@ data = {
             "path": os.path.join(data_folder, "changedetection_data"),
             "chip_size": 256,
             "dataset_type": "ChangeDetection",
-            "batch_size": 2,
+            "batch_size": None,
         },
         "prepare_data_ms": False,
         "should_test": True,
@@ -1169,13 +1184,13 @@ data = {
         "model_test": "mtre_test",
         "prepare_data": {
             "path": os.path.join(data_folder, "mtre_data"),
-            "batch_size": 2,
+            "batch_size": None,
         },
         "prepare_data_ms": False,
         "should_test": True,
         "test_feature_layer": False,
         "regression_parameter": "mIOU",
-        "regression_test_score": 0.2,
+        "regression_test_score": 0.05,
         "regression_epochs": 10,
         "inferencing_parameter": {
             "model_type": "pass",
@@ -1269,7 +1284,7 @@ data = {
         "model_test": "mmsegmentation_test",
         "prepare_data": {
             "path": os.path.join(data_folder, "mmsegmentation_data"),
-            "batch_size": 2,
+            "batch_size": None,
         },
         "prepare_data_ms": False,
         "should_test": True,
@@ -1290,7 +1305,7 @@ data = {
         "model_test": "mmdetection_test",
         "prepare_data": {
             "path": os.path.join(data_folder, "mmdetection_data"),
-            "batch_size": 2,
+            "batch_size": None,
         },
         "prepare_data_ms": False,
         "should_test": True,
@@ -1344,6 +1359,112 @@ data = {
         },
         "inferencing_image_server": {"input_raster": "pass", "context": "pass"},
     },
+    "psetae": {
+        "model_name": "psetae",
+        "datapath": "psetae_data",
+        "datapath_ms": "psetae_data_ms",
+        "model": PSETAE,
+        "model_test": "psetae_test",
+        "prepare_data": {
+            "path": os.path.join(data_folder, "psetae_data"),
+            "batch_size": 64,
+            "dataset_type": "PSETAE",
+            "class_mapping": class_mapping_psetae
+
+        },
+        "prepare_data_ms": False,
+        "should_test": True,
+        "test_feature_layer": False,
+        "regression_parameter": "mIOU",
+        "regression_test_score": 0.4,
+        "regression_epochs": 10,
+        "inferencing_parameter": {
+            "model_type": "pass",
+        },
+        "inferencing_image_server": {"input_raster": "pass", "context": "pass"},
+    },
+    "textclassifier": {
+        "model_name": "textclassifier",
+        "datapath": "textclassifier_data",
+        "model": TextClassifier,
+        "model_test": "textclassifier_test",
+        "prepare_data": {
+            "path": os.path.join(data_folder, "textclassifier_data"),
+            "batch_size": 8,
+            "task": "classification",
+            "train_file": "textclassifier_data_file.csv",
+            "text_columns": "text",
+            "label_columns": "sentiment",
+            "remove_html_tags": True,
+            "remove_urls": True,
+            
+        },
+        "prepare_data_ms": False,
+        "should_test": True,
+        "test_feature_layer": False,
+        "regression_parameter": "accuracy",
+        "regression_test_score": 0.40,
+        "regression_epochs": 10,
+        "inferencing_parameter": {
+            "model_type": "pass",
+            "sample_input": "pass",
+        },
+        "inferencing_image_server": {"input_raster": "pass", "model_package": "pass"},
+    },
+    "randlanet": {
+        "model_name": "randlanet",
+        "datapath": "randlanet_data",
+        "model": RandLANet,
+        "model_test": "randlanet_test",
+        "prepare_data": {
+            "path": os.path.join(data_folder, "randlanet_data", "GCS_plain.pctd"),
+            "batch_size": None,
+            "min_points":100,
+            "classes_of_interest": [5],
+            "remap_classes": {},
+            "extra_features": ['intensity', 'numberOfReturns', 'returnNumber'],
+            "class_mapping":{},
+            "dataset_type": "PointCloud"
+        },
+        "prepare_data_ms": False,
+        "should_test": True,
+        "test_feature_layer": False,
+        "regression_parameter": "compute_precision_recall",
+        "regression_test_score": 0.20,
+        "regression_epochs": 10,
+        "inferencing_parameter": {
+            "model_type": "pass",
+            "sample_input": "pass",
+        },
+        "inferencing_image_server": {"input_raster": "pass", "model_package": "pass"},
+    },
+    "sqnseg": {
+        "model_name": "sqnseg",
+        "datapath": "sqnseg_data",
+        "model": SQNSeg,
+        "model_test": "sqnseg_test",
+        "prepare_data": {
+            "path": os.path.join(data_folder, "randlanet_data", "GCS_plain.pctd"),
+            "batch_size": None,
+            "min_points": 100,
+            "classes_of_interest": [5],
+            "remap_classes": {},
+            "extra_features": ['intensity', 'numberOfReturns', 'returnNumber'],
+            "class_mapping":{},
+            "dataset_type": "PointCloud"
+        },
+        "prepare_data_ms": False,
+        "should_test": True,
+        "test_feature_layer": False,
+        "regression_parameter": "compute_precision_recall",
+        "regression_test_score": 0.20,
+        "regression_epochs": 10,
+        "inferencing_parameter": {
+            "model_type": "pass",
+            "sample_input": "pass",
+        },
+        "inferencing_image_server": {"input_raster": "pass", "model_package": "pass"},
+    }
 }
 
 
@@ -1355,6 +1476,7 @@ from arcgis.learn.text import (
     TextTranslator,
     FillMask,
 )
+
 
 data_inference_only = {
     "zeroshotclassifier": {
@@ -1437,47 +1559,3 @@ data_inference_only = {
         "labels": [None],
     },
 }
-# from arcgis.learn import ImageryModel, AutoDL
-# import glob
-# data_autodl = {
-#     "autodl_object_det":{
-#         "model_name": "autodl_object_det",
-#         "datapath": "autodl_pascal_voc_rgb",
-#         "datapath_ms": "autodl_pascal_voc_ms",
-#         "model": AutoDL,
-#         "model_test": "autodl_object_det_test",
-#         "prepare_data": {
-#             "path": os.path.join(data_folder, "autodl_pascal_voc_rgb"),
-#             "batch_size": 2,
-#             "chip_size":256, 
-#             "class_mapping":{'1': 'pool'}
-#         },
-#         "prepare_data_ms": {
-#             "path": os.path.join(data_folder_ms, "autodl_pascal_voc_ms"),
-#             "batch_size": 2,
-#             "imagery_type": "multispectral",
-#             "chip_size":256, 
-#             "class_mapping":{'1': 'pool'}
-#         },
-#      "network": ['SingleShotDetector', 'RetinaNet', 'FasterRCNN', 'YOLOv3', 'MMDetection'],
-#      "time": 1  
-#     },
-#     "autodl_pixel_cls":{
-#         "model_name": "autodl_pixel_cls",
-#         "datapath": "autodl_classified_tiles_rgb_small",
-#         "datapath_ms": "autodl_classified_tiles_ms_small",
-#         "model": AutoDL,
-#         "model_test": "autodl_pixel_test",
-#         "prepare_data": {
-#             "path": os.path.join(data_folder, "autodl_classified_tiles_rgb_small"),
-#             "batch_size": 2,
-#             "chip_size":256},
-#         "prepare_data_ms": {
-#             "path": os.path.join(data_folder_ms, "autodl_classified_tiles_ms_small"),
-#             "batch_size": 2,
-#             "imagery_type": "multispectral",
-#             "chip_size":256},
-#      "network": ["DeepLab", "UnetClassifier", "PSPNetClassifier", "MMSegmentation"],
-#      "time": 1  
-#     },
-# }

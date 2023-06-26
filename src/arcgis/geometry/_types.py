@@ -420,7 +420,11 @@ class Geometry(BaseGeometry, metaclass=GeometryFactory):
             if shape == 2:
                 res = [avgs[:, 0].mean(), avgs[:, 1].mean()]
             elif shape > 2:
-                res = [avgs[:, 0].mean(), avgs[:, 1].mean(), avgs[:, 2].mean()]
+                res = [
+                    avgs[:, 0].mean(),
+                    avgs[:, 1].mean(),
+                    avgs[:, 2].mean(),
+                ]
             for a in res:
                 yield a
                 del a
@@ -436,7 +440,11 @@ class Geometry(BaseGeometry, metaclass=GeometryFactory):
             if shape == 2:
                 res = [avgs[:, 0].mean(), avgs[:, 1].mean()]
             elif shape > 2:
-                res = [avgs[:, 0].mean(), avgs[:, 1].mean(), avgs[:, 2].mean()]
+                res = [
+                    avgs[:, 0].mean(),
+                    avgs[:, 1].mean(),
+                    avgs[:, 2].mean(),
+                ]
             for a in res:
                 yield a
                 del a
@@ -1251,21 +1259,33 @@ class Geometry(BaseGeometry, metaclass=GeometryFactory):
                 return
             geom = self["points"][0]
             return Geometry(
-                {"x": geom[0], "y": geom[1], "spatialReference": {"wkid": 4326}}
+                {
+                    "x": geom[0],
+                    "y": geom[1],
+                    "spatialReference": {"wkid": 4326},
+                }
             )
         elif isinstance(self, Polygon):
             if len(self["rings"]) == 0:
                 return
             geom = self["rings"][0][0]
             return Geometry(
-                {"x": geom[0], "y": geom[1], "spatialReference": {"wkid": 4326}}
+                {
+                    "x": geom[0],
+                    "y": geom[1],
+                    "spatialReference": {"wkid": 4326},
+                }
             )
         elif isinstance(self, Polyline):
             if len(self["paths"]) == 0:
                 return
             geom = self["paths"][0][0]
             return Geometry(
-                {"x": geom[0], "y": geom[1], "spatialReference": {"wkid": 4326}}
+                {
+                    "x": geom[0],
+                    "y": geom[1],
+                    "spatialReference": {"wkid": 4326},
+                }
             )
         return
 
@@ -1393,7 +1413,8 @@ class Geometry(BaseGeometry, metaclass=GeometryFactory):
         elif HASARCPY:
             return Geometry(
                 arcpy.PointGeometry(
-                    getattr(self.as_arcpy, "labelPoint", None), self.spatial_reference
+                    getattr(self.as_arcpy, "labelPoint", None),
+                    self.spatial_reference,
                 )
             )
 
@@ -1431,7 +1452,8 @@ class Geometry(BaseGeometry, metaclass=GeometryFactory):
         elif HASARCPY:
             return Geometry(
                 arcpy.PointGeometry(
-                    getattr(self.as_arcpy, "lastPoint", None), self.spatial_reference
+                    getattr(self.as_arcpy, "lastPoint", None),
+                    self.spatial_reference,
                 )
             )
         elif isinstance(self, Point):
@@ -1441,14 +1463,22 @@ class Geometry(BaseGeometry, metaclass=GeometryFactory):
                 return
             geom = self["rings"][-1][-1]
             return Geometry(
-                {"x": geom[0], "y": geom[1], "spatialReference": {"wkid": 4326}}
+                {
+                    "x": geom[0],
+                    "y": geom[1],
+                    "spatialReference": {"wkid": 4326},
+                }
             )
         elif isinstance(self, Polyline):
             if self["paths"] == 0:
                 return
             geom = self["paths"][-1][-1]
             return Geometry(
-                {"x": geom[0], "y": geom[1], "spatialReference": {"wkid": 4326}}
+                {
+                    "x": geom[0],
+                    "y": geom[1],
+                    "spatialReference": {"wkid": 4326},
+                }
             )
         return
 
@@ -1731,9 +1761,8 @@ class Geometry(BaseGeometry, metaclass=GeometryFactory):
         ---------------     --------------------------------------------------------------------
         method              Optional String. PLANAR measurements reflect the projection of geographic
                             data onto the 2D surface (in other words, they will not take into
-                            account the curvature of the earth). GEODESIC, GREAT_ELLIPTIC,
-                            LOXODROME, and PRESERVE_SHAPE measurement types may be chosen as
-                            an alternative, if desired.
+                            account the curvature of the earth). GEODESIC, GREAT_ELLIPTIC, and
+                            LOXODROME measurement types may be chosen as an alternative, if desired.
         ===============     ====================================================================
 
         :return: A tuple of angle and distance to another :class:`~arcgis.geometry.Point` using a measurement type.
@@ -1830,7 +1859,10 @@ class Geometry(BaseGeometry, metaclass=GeometryFactory):
         HASARCPY, HASSHAPELY = _check_geometry_engine()
         if HASARCPY and isinstance(envelope, (list, tuple)) and len(envelope) == 4:
             envelope = arcpy.Extent(
-                XMin=envelope[0], YMin=envelope[1], XMax=envelope[2], YMax=envelope[3]
+                XMin=envelope[0],
+                YMin=envelope[1],
+                XMax=envelope[2],
+                YMax=envelope[3],
             )
             return Geometry(self.as_arcpy.clip(envelope))
         elif (
@@ -2729,7 +2761,10 @@ class Geometry(BaseGeometry, metaclass=GeometryFactory):
 
     # ----------------------------------------------------------------------
     def segment_along_line(
-        self, start_measure: float, end_measure: float, use_percentage: bool = False
+        self,
+        start_measure: float,
+        end_measure: float,
+        use_percentage: bool = False,
     ):
         """
         Retrieves a :class:`~arcgis.geometry.Polyline` between ``start`` and ``end``
@@ -3197,7 +3232,13 @@ class Point(Geometry):
                 coordkey = d
         coordinates = data[coordkey]
 
-        return cls({"x": coordinates[0], "y": coordinates[1], "spatialReference": sr})
+        return cls(
+            {
+                "x": coordinates[0],
+                "y": coordinates[1],
+                "spatialReference": sr,
+            }
+        )
 
 
 ########################################################################
@@ -3242,7 +3283,7 @@ class Polygon(Geometry):
         ----------------  -------------------------------------------------------------------------------
         scale_factor      An optional float. Multiplication factor for the SVG stroke-width.  Default is 1.
         ----------------  -------------------------------------------------------------------------------
-        fill_color      An optional string. Hex string for fill color. Default is to use "#66cc99" if geometry is
+        fill_color        An optional string. Hex string for fill color. Default is to use "#66cc99" if geometry is
                           valid, and "#ff3333" if invalid.
         ================  ===============================================================================
 

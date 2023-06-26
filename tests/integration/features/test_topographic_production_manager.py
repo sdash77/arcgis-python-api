@@ -21,16 +21,16 @@ topo = TopographicProductionManager(
 class TestTopographicProductionManager(unittest.TestCase):
     """Tests the Topographic Production Service"""
 
-    def get_products(self):
+    def test_get_products(self):
         products = topo.products()
         assert products
 
-    def get_product(self):
+    def test_get_product(self):
         product = topo.product("MTM50")
         assert product
         assert product.name == "MTM50"
 
-    def add_product(self):
+    def test_add_product(self):
         """Test the add_product method"""
         # Get all the products
         products = topo.products(include_def=True)
@@ -47,7 +47,7 @@ class TestTopographicProductionManager(unittest.TestCase):
         products_updated = topo.products()
         assert len(products_updated["products"]) == number_products + 1
 
-    def remove_product(self):
+    def test_remove_product(self):
         """Test remove product"""
         # Get all the products
         products = topo.products(include_def=True)
@@ -61,7 +61,7 @@ class TestTopographicProductionManager(unittest.TestCase):
         products_updated = topo.products()
         assert len(products_updated["products"]) == number_products - 1
 
-    def generate_product(self):
+    def test_generate_product(self):
         """Test generate product"""
         # Get all the products
         products = topo.products(include_def=True)

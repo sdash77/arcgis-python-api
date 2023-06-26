@@ -1,7 +1,42 @@
+from __future__ import annotations
+import hmac
+import time
+import base64
+import struct
 import typing
+
 import urllib.parse as urllib_parse
 import urllib.request
 from functools import lru_cache
+import importlib
+
+
+def hotp(key: str, counter: int, digits: int = 6, digest: str = "sha1"):
+    key = base64.b32decode(key.upper() + "=" * ((8 - len(key)) % 8))
+    counter = struct.pack(">Q", counter)
+    mac = hmac.new(key, counter, digest).digest()
+    offset = mac[-1] & 0x0F
+    binary = struct.unpack(">L", mac[offset : offset + 4])[0] & 0x7FFFFFFF
+    return str(binary)[-digits:].zfill(digits)
+
+
+def mfa_otp(
+    key: str, time_step: int = 30, digits: int = 6, digest: str = "sha1"
+) -> str:
+    """Creates the MFA Code for MFA logins"""
+    return hotp(key, int(time.time() / time_step), digits, digest)
+
+
+@lru_cache(maxsize=255)
+def check_module_exists(name: str) -> bool:
+    """Checks if a module exists"""
+    try:
+        res = importlib.util.find_spec(name)
+        if res is None:
+            return False
+        return True
+    except:
+        return False
 
 
 @lru_cache(maxsize=255)

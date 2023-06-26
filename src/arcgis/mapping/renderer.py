@@ -5,7 +5,11 @@ from __future__ import annotations
 from typing import Optional, Union
 
 from arcgis._impl.common._utils import chunks
-from arcgis.mapping._utils import _get_list_value, _format_colors, create_colormap
+from arcgis.mapping._utils import (
+    _get_list_value,
+    _format_colors,
+    create_colormap,
+)
 from arcgis.mapping.symbol import create_symbol, _cmap2rgb
 from arcgis.auth.tools import LazyLoader
 import itertools
@@ -313,7 +317,11 @@ class _DotDensity(object):
 
     # ----------------------------------------------------------------------
     def add_expression(
-        self, expression: str, title: str, label: str, color: Union[list, str]
+        self,
+        expression: str,
+        title: str,
+        label: str,
+        color: Union[list, str],
     ):
         """
         Adds an arcade expression to the attributes
@@ -773,9 +781,7 @@ def generate_heatmap(
         if stops < 3:
             stops = 3
         ratios = np.linspace(0, 1, num=stops)
-        for idx, cstep in enumerate(
-            np.linspace(0, 255, num=stops, dtype=np.int).tolist()
-        ):
+        for idx, cstep in enumerate(np.linspace(0, 255, num=stops, dtype=int).tolist()):
             if r == 0 and show_none == True:
                 calpha = alpha
             elif r == 0 and show_none == False:
@@ -928,7 +934,9 @@ def generate_unique(
         vv = _assemble_visual(sdf_or_series, **symbol_args)
     else:
         vv = visual_variables(
-            geometry_type=geometry_type, sdf_or_list=sdf_or_series, **symbol_args
+            geometry_type=geometry_type,
+            sdf_or_list=sdf_or_series,
+            **symbol_args,
         )
 
     if "arcade_expression" not in symbol_args:
@@ -1015,7 +1023,7 @@ def generate_unique(
                     uvals = uvals[:255]
             unique_values = []
 
-            steps = np.linspace(0, 255, len(uvals), dtype=np.int)
+            steps = np.linspace(0, 255, len(uvals), dtype=int)
 
             for idx, uval in enumerate(uvals):
                 if hasattr(colors, "mpl_colormap"):
@@ -1225,7 +1233,9 @@ def generate_classbreaks(
         vv = _assemble_visual(sdf_or_series, **symbol_args)
     else:
         vv = visual_variables(
-            geometry_type=geometry_type, sdf_or_list=sdf_or_series, **symbol_args
+            geometry_type=geometry_type,
+            sdf_or_list=sdf_or_series,
+            **symbol_args,
         )
 
     if sdf_or_series is None:
@@ -1293,7 +1303,7 @@ def generate_classbreaks(
     # calculate the class breaks from column data
     cbs = []
     breaks = np.linspace(float(minValue), float(maxValue), num=class_count + 1).tolist()
-    steps = np.linspace(0, 255, len(breaks), dtype=np.int)
+    steps = np.linspace(0, 255, len(breaks), dtype=int)
     ss = symbol_args.pop("symbol_style", None)
     st = symbol_args.pop("symbol_type", None)
     import sys
@@ -1474,7 +1484,9 @@ def generate_simple(
         vv = _assemble_visual(sdf_or_series, **symbol_args)
     else:
         vv = visual_variables(
-            geometry_type=geometry_type, sdf_or_list=sdf_or_series, **symbol_args
+            geometry_type=geometry_type,
+            sdf_or_list=sdf_or_series,
+            **symbol_args,
         )
     cstep = symbol_args.pop("cstep", None)
     """if "cstep" in symbol_args:

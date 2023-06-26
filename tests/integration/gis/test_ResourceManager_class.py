@@ -7,6 +7,7 @@ import os
 from integration.dino_utils.dino_precondition_checks import PreconditionChecks
 from integration.dino_utils.dino_precondition_checks import PortalUtils
 from integration.dino_utils.dino_configs import DinoConfigs
+from integration.config import QALAB_ROOT_PATH
 from configparser import ConfigParser
 from pathlib import Path
 import datetime
@@ -66,14 +67,10 @@ class Test_ResourceManager_portal(unittest.TestCase):
         _conf_reader = ConfigParser()
         _conf_reader.read(DinoConfigs.portal_list_file, "UTF-8")
 
-        cls.portal_url = _conf_reader["teamportal"]["url"]
-        cls.portal_username = _conf_reader["teamportal"]["publisher1"]
-        cls.portal_password = _conf_reader["teamportal"]["publisher1_password"]
-
         _conf_reader2 = ConfigParser()
         _conf_reader2.read(DinoConfigs.root_init_file, "UTF-8")
 
-        cls.qalab_base_path = _conf_reader2["test_data"]["qalab_base_path"]
+        cls.qalab_base_path = QALAB_ROOT_PATH
         cls.qalab_data_path = (
             cls.qalab_base_path + _conf_reader2["test_data"]["qalab_dataprep"]
         )
@@ -88,11 +85,7 @@ class Test_ResourceManager_portal(unittest.TestCase):
         # endregion
 
         # region precondition checks and sign in
-        r1 = PreconditionChecks.can_ping_portal(cls.portal_url)
-        if not r1:
-            cls.class_skip = True
-
-        cls.gis = GIS(cls.portal_url, cls.portal_username, cls.portal_password)
+        cls.gis = GIS(profile="your_ent_admin_profile", verify_cert=False)
         if cls.gis is None:
             cls.class_skip = True
 
@@ -326,7 +319,7 @@ class Test_ResourceManager_portal(unittest.TestCase):
 
         # search for existing vector tile service item by Esri
         vtl_item = _gis.content.get(
-            "92c551c9f07b4147846aae273e822714"
+            "86f556a2d1fd468181855a35e344567f"
         )  # World street map night
 
         if vtl_item is None:
@@ -376,11 +369,11 @@ class Test_ResourceManager_portal(unittest.TestCase):
 
         # search for existing vector tile service item by Esri
         # World Street Map (with Relief) (Mature Support)
-        vtl_item = _gis.content.get("2e063e709e3446459f8538ed6743f879")
+        vtl_item = _gis.content.get("fdf540eef40344b79ead3c0c49be76a9")
 
         if vtl_item is None:
             print(
-                "Could not find Esri's vector tile service item: 2e063e709e3446459f8538ed6743f879"
+                "Could not find Esri's vector tile service item: fdf540eef40344b79ead3c0c49be76a9"
                 + "Skipping test case."
             )
             raise unittest.SkipTest
@@ -402,7 +395,7 @@ class Test_ResourceManager_portal(unittest.TestCase):
             print("Number of resource files: " + str(len(vtl_resources)))
 
             self.assertGreaterEqual(
-                len(vtl_resources), 10000, "Number of resource files less than usual"
+                len(vtl_resources), 700, "Number of resource files less than usual"
             )
 
         except AssertionError as assertErrorException:
@@ -425,7 +418,7 @@ class Test_ResourceManager_portal(unittest.TestCase):
 
         # search for existing vector tile service item by Esri
         # Existing vector tile service from Esri
-        vtl_item = _gis.content.get("92c551c9f07b4147846aae273e822714")
+        vtl_item = _gis.content.get("86f556a2d1fd468181855a35e344567f")
 
         if vtl_item is None:
             print(
@@ -574,6 +567,7 @@ class Test_ResourceManager_portal(unittest.TestCase):
             )
             fld_json = res_mgr.get(
                 "fld/root_resource_file.json",
+                try_json=False,
                 out_folder=output_folder,
                 out_file_name="as_its_a_type_of_pine.json",
             )

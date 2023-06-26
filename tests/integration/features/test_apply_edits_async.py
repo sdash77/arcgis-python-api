@@ -1,15 +1,11 @@
-import sys
 import unittest
-
-# sys.path.insert(0, r"C:\SVN\geosaurus_master_issue_6484\src")
 from arcgis.features import FeatureLayer
 from arcgis.gis import GIS, ProfileManager
 import pandas as pd
 from arcgis.features._async import EditFeatureJob
 
-if "your_dev_online_profile" in ProfileManager().list():
-
-    gis = GIS(profile="your_dev_online_profile", verify_cert=False, trust_env=True)
+if "your_online_profile" in ProfileManager().list():
+    gis = GIS(profile="your_online_profile", verify_cert=False, trust_env=True)
     do_not_skip_me = True
     msg = "All systems go!"
 else:

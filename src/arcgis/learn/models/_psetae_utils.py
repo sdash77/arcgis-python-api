@@ -405,10 +405,7 @@ def get_sinusoid_encoding_table(positions, d_hid, T):
     sinusoid_table[:, 0::2] = np.sin(sinusoid_table[:, 0::2])  # dim 2i
     sinusoid_table[:, 1::2] = np.cos(sinusoid_table[:, 1::2])  # dim 2i+1
 
-    if torch.cuda.is_available():
-        return torch.FloatTensor(sinusoid_table).cuda()
-    else:
-        return torch.FloatTensor(sinusoid_table)
+    return torch.FloatTensor(sinusoid_table)
 
 
 class FocalLoss(nn.Module):
@@ -471,7 +468,7 @@ class miou(Callback):
             else:
                 iou += inter / union
         miou = iou / n_observed
-        return add_metrics(last_metrics, miou)
+        return add_metrics(last_metrics, miou.detach().cpu().numpy())
 
 
 def mIou_new(y_true, y_pred, cls_list):
@@ -668,12 +665,10 @@ def get_ntrainparams(model):
     return sum(p.numel() for p in model.parameters() if p.requires_grad)
 
 
-def model_eval(valid_dt, model, class_dict):
-    validarr = torch.cat([i[0][None, :, :, :] for i, j in valid_dt], axis=0)
-    for i, j in valid_dt:
-        batch_size = i[0].shape[0]
-        break
-    labsarr = torch.stack([j for i, j in valid_dt])
+def model_eval(data, model, class_dict, convertmap):
+    validarr = torch.cat([i[0][None, :, :, :] for i, j in data.valid_ds], axis=0)
+    batch_size = data.batch_size
+    labsarr = torch.stack([j for i, j in data.valid_ds])
     final_img = torch.moveaxis(validarr, 3, 1)[:, :, :, :, None]
     img_arr = torch.reshape(
         final_img,
@@ -683,22 +678,27 @@ def model_eval(valid_dt, model, class_dict):
             final_img.shape[3],
             1,
         ),
-    )
+    ).to(model._device)
     final_labs = [validarr.shape[3] * [labsarr[l]] for l in range(validarr.shape[0])]
-    final_labs = torch.stack(sum(final_labs, [])).cuda()
+    final_labs = torch.stack(sum(final_labs, [])).to(model._device)
     divided = DataLoader(img_arr, batch_size=batch_size, pin_memory=False)
     prediction = []
     for i in progress_bar(divided):
-        sim = torch.ones(i.shape[0], i.shape[1], 1).cuda()
+        sim = torch.ones(i.shape[0], i.shape[1], 1).to(model._device)
         model.eval()
         with torch.no_grad():
-            pred = model(i.cuda(), sim)
+            pred = model(i, sim)
         prediction.append(pred.argmax(dim=1))
+    if convertmap:
+        prediction = np.array(
+            [convertmap.get(item, item) for item in torch.cat(prediction).cpu().numpy()]
+        )
+        final_labs = np.array(
+            [convertmap.get(item, item) for item in final_labs.cpu().numpy()]
+        )
 
-    preds = np.array(
-        [class_dict.get(item, item) for item in torch.cat(prediction).cpu().numpy()]
-    )
-    trues = np.array([class_dict.get(item, item) for item in final_labs.cpu().numpy()])
+    preds = np.array([class_dict.get(item, item) for item in prediction])
+    trues = np.array([class_dict.get(item, item) for item in final_labs])
     mats = confusion_matrix_analysis(confusion_matrix(preds, trues), class_dict)
     miou = mIou_new(preds, trues, list(class_dict.values()))
     return mats, miou
