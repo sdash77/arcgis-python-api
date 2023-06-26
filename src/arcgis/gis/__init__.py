@@ -16,9 +16,7 @@ import re
 import time
 import shutil
 import tempfile
-import warnings
 import zipfile
-from uuid import uuid4
 import configparser
 from contextlib import contextmanager
 import functools
@@ -29,7 +27,6 @@ import logging
 from typing import Any, Optional, Union
 from urllib.error import HTTPError
 import requests
-
 from arcgis.gis._impl._dataclasses._contentds import (
     ItemTypeEnum,
     ItemProperties,
@@ -37,27 +34,11 @@ from arcgis.gis._impl._dataclasses._contentds import (
 from arcgis.gis._impl import (
     MetadataFormatEnum,
     CreateServiceParameter,
+    ServiceTypeEnum,
     ViewLayerDefParameter,
+    SpatialRelationship,
+    SpatialFilter,
 )
-
-try:
-    import pandas as pd
-except:
-    pass
-try:
-    import arcpy
-
-    has_arcpy = True
-except ImportError:
-    has_arcpy = False
-except RuntimeError:
-    has_arcpy = False
-try:
-    import shapefile
-
-    has_pyshp = True
-except ImportError:
-    has_pyshp = False
 import concurrent.futures
 
 from cachetools import cached, TTLCache
@@ -66,15 +47,13 @@ from arcgis.auth.tools import LazyLoader
 
 arcgis_env = LazyLoader("arcgis.env")
 arcgis = LazyLoader("arcgis")
-features = LazyLoader("arcgis.features")
 _agoserver = LazyLoader("arcgis.gis.agoserver._api")
 _mixins = LazyLoader("arcgis._impl.common._mixins")
 _common_utils = LazyLoader("arcgis._impl.common._utils")
 _common_deprecated = LazyLoader("arcgis._impl.common._deprecate")
 _portalpy = LazyLoader("arcgis.gis._impl._portalpy")
 _jb = LazyLoader("arcgis.gis._impl._jb")
-_tool_utils = LazyLoader("arcgis.features.geo._tools._utils")
-_cloner = LazyLoader("arcgis.gis.clone")
+
 _log = logging.getLogger(__name__)
 
 
@@ -1115,9 +1094,19 @@ class GIS(object):
             raise Exception("Please access your ArcGIS Online sites through your Hub.")
 
     @_lazy_property
+    def pages(self):
+        """
+        The ``pages`` property is the resource manager for a Page of an Enterprise Site. See :class:`~arcgis.apps.hub.pages` for more information.
+        """
+        if not self._portal.is_arcgisonline:
+            return arcgis.apps.hub.PageManager(self)
+        else:
+            raise Exception("Please access your ArcGIS Online pages through your Hub.")
+
+    @_lazy_property
     def notebook_server(
         self,
-    ) -> list["NotebookServer"] | list["AGOLNotebookManager"]:
+    ) -> "list[NotebookServer]" | "list[AGOLNotebookManager]":
         """
         The ``notebook_server`` property provides access to the :class:`~arcgis.gis.nb.NotebookServer` registered
         with the organization or enterprise.
@@ -1251,13 +1240,10 @@ class GIS(object):
             gis.update_properties(upd)
 
         """
-        postdata = {
-            "f": "json",
-        }
+        postdata = self._portal._postdata()
         postdata.update(properties_dict)
-        url: str = self._portal.resturl + "portals/self/update"
 
-        resp = self._con.post(url, postdata)
+        resp = self._portal.con.post("portals/self/update", postdata)
         if resp:
             self._properties = _mixins.PropertyMap(
                 self._portal.get_properties(force=True)
@@ -1387,7 +1373,7 @@ class GIS(object):
         configuration for any access notices or information banners.
 
         ======================     ===============================================================
-        **Parameter**               **Description**
+        **Parameter**             **Description**
         ----------------------     ---------------------------------------------------------------
         settings                   Required Dict.  A dictionary of the settings
 
@@ -2051,18 +2037,16 @@ class GroupMigrationManager(object):
     # ----------------------------------------------------------------------
     def inspect(self, epk_item: Item) -> dict:
         """
-        The ``inspect`` method retrieves the contents of the EPK Package.
-
+        The ``inspect`` method retrieves the contents of the EPK Package
         ================  ===============================================================================
         **Keys**          **Description**
         ----------------  -------------------------------------------------------------------------------
-        epk_item          Required Item. A report on the content of the EPK Item. This allows
-                          administrators to view the contents inside a EPK.
+        epk_item          Required Item. A report on the content of the EPK Item.  This allows administrators
+                          to view the contents inside a EPK.
         ================  ===============================================================================
 
         :return:
             A dictionary containing the contents of the EPK Package
-
         """
         if isinstance(epk_item, Item) and epk_item.type == "Export Package":
             try:
@@ -4627,7 +4611,7 @@ class UserManager(object):
         ----------------  --------------------------------------------------------
         max_results       Optional Integer. A limiter on the number of groups
                           returned for each user.
-        ================  ========================================================
+        ----------------  --------------------------------------------------------
 
         :return:
             List of dictionaries with each :class:`~arcgis.gis.User` object's group ids.
@@ -4682,34 +4666,6 @@ class RoleManager(object):
         """Creates helper object to manage custom roles in the GIS"""
         self._gis = gis
         self._portal = gis._portal
-
-    def clone(self, roles: list[Role]) -> list[_cloner.CloningJob]:
-        """
-        Clones a list of Roles from one organization to another
-
-        ==================     ====================================================================
-        **Parameter**           **Description**
-        ------------------     --------------------------------------------------------------------
-        roles                  Required list[Role]. An array of roles from the source GIS.
-        ==================     ====================================================================
-
-        :returns: list[Future]
-        """
-        jobs = []
-        with concurrent.futures.ThreadPoolExecutor(max_workers=10) as tp:
-            for role in roles:
-                role: Role
-                future: concurrent.futures.Future = tp.submit(
-                    self.create,
-                    **{
-                        "name": role.name,
-                        "description": role.description,
-                        "privileges": role.privileges,
-                    },
-                )
-                jobs.append(_cloner.CloningJob(future, "Role"))
-            tp.shutdown(wait=True)
-        return jobs
 
     def create(self, name: str, description: str, privileges: Optional[str] = None):
         """
@@ -5003,15 +4959,8 @@ class Role(object):
     def privileges(self, value):
         """Privileges for the custom role as a list of strings"""
         postdata = self._portal._postdata()
-        if isinstance(value, list):
-            postdata["privileges"] = json.dumps({"privileges": value})
-        elif value and isinstance(value, str) and len(value) == 0:
-            postdata["privileges"] = {"privileges": []}
-        elif value and isinstance(value, str):
-            postdata["privileges"] = {"privileges": value}
-        elif value is None:
-            value = []
-            postdata["privileges"] = json.dumps({"privileges": value})
+        postdata["privileges"] = {"privileges": value}
+
         resp = self._portal.con.post(
             "portals/self/roles/" + self.role_id + "/setPrivileges", postdata
         )
@@ -5058,39 +5007,6 @@ class GroupManager(object):
     def __init__(self, gis):
         self._gis = gis
         self._portal = gis._portal
-        self._cloner = _cloner.GroupCloner(gis=self._gis)
-
-    def clone(
-        self, groups: list[Group], *, skip_existing: bool = True
-    ) -> list[_cloner.CloningJob]:
-        """
-        The group cloner will recreate groups from site A to site B.
-        It will not clone the group's items.  This should be done using the `clone_items`
-        or group item migrator tools.
-
-        ====================  =========================================================
-        **Parameter**         **Description**
-        --------------------  ---------------------------------------------------------
-        groups                Required list[Group]. A list of Group objects to clone.
-        --------------------  ---------------------------------------------------------
-        skip_existing         Optional bool. If True, if a group exists, it will be skipped.
-        ====================  =========================================================
-
-        :returns: list[CloningJob]
-
-        .. code-block:: python
-
-            # Usage Example
-            >>> group = gis_source.groups.create(title = "New Group",
-                                  tags = "new, group, USA",
-                                  description = "a new group in the USA",
-                                  access = "public")
-            >>> jobs = gis_destination.groups.clone([group])
-            >>> [job.result() for job in jobs]
-            [<Group>]
-
-        """
-        return self._cloner.clone(groups=groups, skip_existing=skip_existing)
 
     def create(
         self,
@@ -5203,7 +5119,7 @@ class GroupManager(object):
                               organization members. If `None` set, any organization
                               will have access. `None` is the default.
 
-                              Values: `org`, `collaboration`, or `none`
+                              Values: `org`, `collaboration`, or `None`
         --------------------  ---------------------------------------------------------
         autojoin              Optional Boolean. The default is `False`. Only applies to
                               org accounts. If `True`, this group will allow joined
@@ -5262,9 +5178,7 @@ class GroupManager(object):
         params["MAX_FILE_SIZE"] = max_file_size
         if hidden_members in [True, False]:
             params["hiddenMembers"] = hidden_members
-        if membership_access in ["org", "collaboration", None, "none"]:
-            if membership_access is None:
-                membership_access = "none"
+        if membership_access in ["org", "collaboration", None]:
             params["membershipAccess"] = membership_access
         if autojoin in [True, False]:
             params["autoJoin"] = autojoin
@@ -5697,7 +5611,6 @@ class ContentManager(object):
         size = int(size)
         if size < 2.5e7:
             size = int(2.5e7)
-        size = int(self._calculate_upload_size(fp=file_path))
 
         owner_name = owner
         if isinstance(owner, User):
@@ -5839,25 +5752,6 @@ class ContentManager(object):
                 "reason": {"message": "{msg}".format(msg=e.args[0])},
             }
         return False
-
-    # ----------------------------------------------------------------------
-    def _calculate_upload_size(self, fp: str) -> int:
-        """calculates the file MAX upload limit."""
-        fd = os.open(fp, os.O_RDONLY)
-        size: float = os.fstat(fd).st_size
-
-        if size <= 5 * (1024 * 1024):
-            return int(5 * (1024 * 1024))
-        elif size > 5 * (1024 * 1024) and size <= 10 * (1024 * 1024):
-            return int(7 * (1024 * 1024))
-        elif size > 10 * (1024 * 1024) and size <= 15 * (1024 * 1024):
-            return int(13 * (1024 * 1024))
-        elif size > 15 * (1024 * 1024) and size <= 25 * (1024 * 1024):
-            return int(25 * (1024 * 1024))
-        elif size > 25 * (1024 * 1024) and size <= 35 * (1024 * 1024):
-            return int(30 * (1024 * 1024))
-        else:
-            return int(35 * (1024 * 1024))
 
     # ----------------------------------------------------------------------
     def add(
@@ -6123,7 +6017,7 @@ class ContentManager(object):
             if kwargs.get("upload_size", 0) >= 1e7:
                 upload_size = kwargs.get("upload_size")
             else:
-                upload_size = self._calculate_upload_size(data)
+                upload_size = int(2.5e7)
 
             status = self._add_by_part(
                 file_path=data,
@@ -7158,7 +7052,6 @@ class ContentManager(object):
     def delete_items(self, items: Union[list[Item], list[str]]):
         """
         The ``delete_items`` method deletes a collection of :class:`~arcgis.gis.Item` objects from a users content.
-        All items must belong to the same user to delete.
 
         ================  ==========================================================================
         **Parameter**      **Description**
@@ -7168,7 +7061,7 @@ class ContentManager(object):
         ================  ==========================================================================
 
         :return:
-            A list of booleans indicating success if the items were deleted(True/False) or an empty list if nothing was deleted.
+            A boolean indicating success if the items were deleted (True), or failure if the items were not deleted
             (False)
 
         .. code-block:: python
@@ -7177,57 +7070,31 @@ class ContentManager(object):
             >>> gis.content.delete_items(items= ["item1", "item2", "item3", "item4", "item5"])
 
         """
+        if self._gis._portal.con.baseurl.endswith("/"):
+            url = "%s/%s/%s/deleteItems" % (
+                self._gis._portal.con.baseurl[:-1],
+                "content/users",
+                self._gis.users.me.username,
+            )
+        else:
+            url = "%s/%s/%s/deleteItems" % (
+                self._gis._portal.con.baseurl,
+                "content/users",
+                self._gis.users.me.username,
+            )
         params = {"f": "json", "items": ""}
-        items_dict = {}  # key will be ownner and value is list of their items
+        ditems = []
         for item in items:
             if isinstance(item, str):
-                owner = self._gis.content.get(item).owner
-                if owner in items_dict:
-                    items_dict[owner].append(item)
-                else:
-                    items_dict[owner] = [item]
+                ditems.append(item)
             elif isinstance(item, Item):
-                owner = item.owner
-                if owner in items_dict:
-                    items_dict[owner].append(item.id)
-                else:
-                    items_dict[owner] = [item.id]
+                ditems.append(item.id)
             del item
-
-        # Now we have a dictionary to iterate through
-        results = []
-        for key, val in items_dict.items():
-            owner = key  # owner username
-            ditems = val  # list of item(s)
-
-            # Check if admin or owner before deleting
-            if (
-                self._gis.users.me.username != owner
-                and "portal:admin:deleteItems" not in self._gis.users.me.privileges
-            ):
-                return Exception(
-                    "You are not the owner and you do not have the administrator privileges to perform this action."
-                )
-
-            # All items should be from same owner so we can set to first in list
-            if self._gis._portal.con.baseurl.endswith("/"):
-                url = "%s/%s/%s/deleteItems" % (
-                    self._gis._portal.con.baseurl[:-1],
-                    "content/users",
-                    owner,
-                )
-            else:
-                url = "%s/%s/%s/deleteItems" % (
-                    self._gis._portal.con.baseurl,
-                    "content/users",
-                    owner,
-                )
-
-            if len(ditems) > 0:
-                params["items"] = ",".join(ditems)
-                res = self._gis._con.post(path=url, postdata=params)
-                results.append(all([r["success"] for r in res["results"]]))
-        return results
+        if len(ditems) > 0:
+            params["items"] = ",".join(ditems)
+            res = self._gis._con.post(path=url, postdata=params)
+            return all([r["success"] for r in res["results"]])
+        return False
 
     def delete_folder(self, folder: str, owner: Optional[str] = None):
         """
@@ -7593,213 +7460,178 @@ class ContentManager(object):
            that can be used for analysis, visualization, or published to the GIS as an :class:`~arcgis.gis.Item`.
            If geoenabled DataFrame is passed in then an :class:`~arcgis.gis.Item` is directly returned.
         """
-        # Housekeeping steps
+        sanitize_columns = kwargs.pop("sanitize_columns", False)
+        if item_id and self._gis.version <= [7, 1]:
+            item_id = None
+            import warnings
+
+            warnings.warn(
+                "`item_id` is not allowed at this version of Portal, please use Enterprise 10.8.1+"
+            )
         from arcgis.features import (
             FeatureCollection,
             FeatureSet,
             FeatureLayerCollection,
         )
 
-        if item_id and self._gis.version <= [7, 1]:
-            item_id = None
+        from arcgis._impl.common._utils import zipws
 
-            warnings.warn(
-                "`item_id` is not allowed at this version of Portal, please use Enterprise 10.8.1+"
-            )
+        import shutil
+        from uuid import uuid4
+        import pandas as pd
 
+        try:
+            import arcpy
+
+            has_arcpy = True
+        except ImportError:
+            has_arcpy = False
+        except RuntimeError:
+            has_arcpy = False
+        try:
+            import shapefile
+
+            has_pyshp = True
+        except ImportError:
+            has_pyshp = False
         if isinstance(df, FeatureSet):
             df = df.sdf
 
-        # Check that a layer can be created
+        # determine if will be published as fl or table
         if has_arcpy == False and has_pyshp == False and _is_geoenabled(df):
             raise Exception(
                 "Spatially enabled DataFrame's must have either pyshp or"
                 + " arcpy available to use import_data"
             )
+        elif _is_geoenabled(df):
+            service_name = kwargs.pop("service_name", None)
+            if service_name is None:
+                service_name = "a" + uuid4().hex[:7]
+            temp_dir = os.path.join(tempfile.gettempdir(), service_name)
+            title = kwargs.pop("title", uuid4().hex)
+            tags = kwargs.pop("tags", "FGDB")
+            target_sr = kwargs.pop("target_sr", 102100)
+            capabilities = kwargs.pop("capabilities", "Query")
+            os.makedirs(temp_dir)
+            temp_zip = os.path.join(temp_dir, "%s.zip" % ("a" + uuid4().hex[:5]))
+            if has_arcpy:
+                from arcgis.features.geo._tools._utils import run_and_hide
 
-        # Pop out kwargs, establish params to be used throughout
-        sanitize_columns = kwargs.pop("sanitize_columns", False)
-        service_name = kwargs.pop("service_name", None)
-        if service_name is None:
-            service_name = "a" + uuid4().hex[:7]
-        temp_dir = os.path.join(tempfile.gettempdir(), service_name)
-        title = kwargs.pop("title", uuid4().hex)
-        target_sr = kwargs.pop("target_sr", 102100)
-        capabilities = kwargs.pop("capabilities", "Query")
-
-        def _create_file_item(file_type):
-            ftypes = {
-                "File Geodatabase": "gdb",
-                "Shapefile": "shp",
-            }
-            tags = kwargs.pop("tags", file_type)
-            if tags is None:
-                tags = file_type
-            name = "%s%s.%s" % (
-                random.choice(string.ascii_lowercase),
-                uuid4().hex[:5],
-                ftypes[file_type],
-            )
-            if file_type == "File Geodatabase":
-                # create empty filegdb
-                emtpy_fgdb = _tool_utils.run_and_hide(
+                name = "%s%s.gdb" % (
+                    random.choice(string.ascii_lowercase),
+                    uuid4().hex[:5],
+                )
+                result = run_and_hide(
                     fn=arcpy.CreateFileGDB_management,
                     **{"out_folder_path": temp_dir, "out_name": name},
                 )
-                fgdb = emtpy_fgdb[0]
-                location = os.path.join(fgdb, os.path.basename(temp_dir))
-                zip_loc = os.path.join(temp_dir, name)
-            else:
-                location = os.path.join(temp_dir, name)
-                zip_loc = temp_dir
+                fgdb = result[0]
 
-            # writes the df to file as features
-            df.spatial.to_featureclass(
-                location=location, sanitize_columns=sanitize_columns
-            )
-
-            # zip it
-            zip_file = _common_utils.zipws(path=zip_loc, outfile=temp_zip, keep=True)
-            # add item to portal
-            file_item = self.add(
-                item_properties={
-                    "title": title,
-                    "type": file_type,
-                    "tags": tags,
-                },
-                data=zip_file,
-                folder=folder,
-            )
-            shutil.rmtree(temp_dir, ignore_errors=True)
-
-            # start creating publish params from new file item
-            publish_parameters = {
-                "hasStaticData": True,
-                "name": os.path.splitext(file_item["name"])[0],
-                "maxRecordCount": 2000,
-                "layerInfo": {"capabilities": capabilities},
-            }
-
-            if target_sr is not None:
-                publish_parameters["targetSR"] = {"wkid": target_sr}
-
-            return file_item, publish_parameters
-
-        def _perform_overwrite(fl_index, flc, flc_manager, publish_parameters):
-            # update the name and id to represent correct values
-            publish_parameters["id"] = fl_index
-            publish_parameters["name"] = flc.manager.properties.layers[fl_index]["name"]
-
-            # Perform edit on the flc
-            # Step 1: Preserve layer ids
-            revert = False
-            if (
-                "preserveLayerIds" not in flc_manager.properties
-                or flc_manager.properties["preserveLayerIds"] is not True
-            ):
-                flc_manager.update_definition({"preserveLayerIds": True})
-                revert = True
-            # Step 2: Delete layer from definition
-            flc_manager.delete_from_definition({"layers": [{"id": fl_index}]})
-            # Step 3: Add new layer to definition
-            flc_manager.add_to_definition({"layers": [dict(publish_parameters)]})
-            # Step 4: Cleanup
-            if revert:
-                flc_manager.update_definition({"preserveLayerIds": False})
-
-        def _perform_append(flc_manager, publish_parameters, is_table=False):
-            # Add new layer to definition
-            flc_manager.add_to_definition({"layers": [dict(publish_parameters)]})
-            # Find the index at which the layer was added
-            for layer in flc_manager.properties.layers:
-                if layer["name"] == publish_parameters["name"]:
-                    fl_index = layer["id"]
-            return fl_index
-
-        def _add_item_dependency(
-            file_type, fl_index, file_item, fs_item, new_item=None, gis=None
-        ):
-            if file_type == "csv":
-                source_info = gis.content.analyze(item=file_item)["publishParameters"]
-                ItemDependency(fs_item).add("itemid", file_item.id)
-                fs_item.tables[fl_index].append(
-                    item_id=file_item.id,
-                    upload_format=file_type,
-                    source_info=source_info,
+                ds = df.spatial.to_featureclass(
+                    location=os.path.join(fgdb, os.path.basename(temp_dir)),
+                    sanitize_columns=sanitize_columns,
                 )
-            elif (
-                file_type == "shapefile"
-                or "filegdb"
-                in fs_item.layers[fl_index].properties.supportedAppendFormats
-            ):
-                ItemDependency(fs_item).add("itemid", file_item.id)
-                fs_item.layers[fl_index].append(
-                    item_id=file_item.id, upload_format=file_type
+
+                zip_fgdb = zipws(path=fgdb, outfile=temp_zip, keep=True)
+                fgdb_item = self.add(
+                    item_properties={
+                        "title": title,
+                        "type": "File Geodatabase",
+                        "tags": tags,
+                    },
+                    data=zip_fgdb,
+                    folder=folder,
                 )
-            else:
-                # When filegdb not supported through append, use featureCollection
-                features = new_item.layers[0].query().features
-                fs_item.layers[fl_index].edit_features(adds=features)
-            fs_item.add_relationship(rel_item=file_item, rel_type="Service2Data")
+                shutil.rmtree(temp_dir, ignore_errors=True)
 
-        # If overwrite or append specified, set up necessary params
-        overwrite = kwargs.pop("overwrite", False)
-        append = kwargs.pop("append", False)
-        if overwrite or append:
-            # Get user defined parameters
-            fs_dict = kwargs.pop("service", None)
-            if fs_dict is None:
-                raise ValueError(
-                    "If overwite or append is True, then the feature service id needs to be specified in the `service` parameter."
-                )
-            fs_id = fs_dict["featureServiceId"]
-            if isinstance(fs_id, Item):
-                fs_id = fs_id.itemid
+                # Publish as new feature layer
+                publish_parameters = {
+                    "hasStaticData": True,
+                    "name": os.path.splitext(fgdb_item["name"])[0],
+                    "maxRecordCount": 2000,
+                    "layerInfo": {"capabilities": capabilities},
+                }
+                if target_sr is not None:
+                    publish_parameters["targetSR"] = {"wkid": target_sr}
 
-            fl_index = fs_dict["layer"]
-
-            # Create the feature layer manager for the existing feature service
-            if fs_id is None:
-                raise ValueError(
-                    "The provided feature service id cannot be found. Please check it is correct and try again."
-                )
-            fs_item = self._gis.content.get(fs_id)
-
-            flc = features.FeatureLayerCollection.fromitem(fs_item)
-            flc_manager = flc.manager
-
-        if _is_geoenabled(df):
-            # Working with feature layers
-            # set up temporary zip to be used in directory
-            os.makedirs(temp_dir)
-            temp_zip = os.path.join(temp_dir, "%s.zip" % ("a" + uuid4().hex[:5]))
-
-            if has_arcpy:
-                # publish the file item and create publish params
-                fgdb_item, publish_parameters = _create_file_item("File Geodatabase")
-
-                # publish as new layer
                 new_item = fgdb_item.publish(
                     publish_parameters=publish_parameters, item_id=item_id
                 )
 
+                # If overwrite or append specified, perform overwrite or append
+                overwrite = kwargs.pop("overwrite", False)
+                append = kwargs.pop("append", False)
                 if overwrite or append:
+                    # Get user defined parameters
+                    fs_dict = kwargs.pop("service", None)
+                    if fs_dict is None:
+                        raise ValueError(
+                            "If overwite or append is True, then the feature service id needs to be specified in the `service` parameter."
+                        )
+                    fs_id = fs_dict["featureServiceId"]
+
+                    fl_index = fs_dict["layer"]
+
+                    # Create the feature layer manager for the existing feature service
+                    fs_item = self._gis.content.get(fs_id)
+                    flc = FeatureLayerCollection.fromitem(fs_item)
+                    flc_manager = flc.manager
+
                     # Get properties from the newly created feature layer
                     new_fl = new_item.layers[0]
                     publish_parameters = new_fl.properties
 
                     # Overwrite or Append Steps
                     if overwrite:
-                        _perform_overwrite(
-                            fl_index, flc, flc_manager, publish_parameters
+                        # update the name and id to represent correct values
+                        publish_parameters["name"] = flc.manager.properties.layers[
+                            fl_index
+                        ]["name"]
+                        publish_parameters["id"] = fl_index
+
+                        # Perform edit on the flc
+                        # Step 1: Preserve layer ids
+                        revert = False
+                        if (
+                            "preserveLayerIds" not in flc_manager.properties
+                            or flc_manager.properties["preserveLayerIds"] is not True
+                        ):
+                            flc_manager.update_definition({"preserveLayerIds": True})
+                            revert = True
+                        # Step 2: Delete layer from definition
+                        flc_manager.delete_from_definition(
+                            {"layers": [{"id": fl_index}]}
                         )
+                        # Step 3: Add new layer to definition
+                        flc_manager.add_to_definition(
+                            {"layers": [dict(publish_parameters)]}
+                        )
+                        # Step 4: Cleanup
+                        if revert:
+                            flc_manager.update_definition({"preserveLayerIds": False})
                     elif append:
-                        fl_index = _perform_append(flc_manager, publish_parameters)
+                        # Add new layer to definition
+                        flc_manager.add_to_definition(
+                            {"layers": [dict(publish_parameters)]}
+                        )
+                        # Find the index at which the layer was added
+                        for layer in flc_manager.properties.layers:
+                            if layer["name"] == publish_parameters["name"]:
+                                fl_index = layer["id"]
 
                     # Add new item dependency and append the features
-                    _add_item_dependency(
-                        "filegdb", fl_index, fgdb_item, fs_item, new_item
-                    )
+                    if (
+                        "filegdb"
+                        in fs_item.layers[fl_index].properties.supportedAppendFormats
+                    ):
+                        ItemDependency(fs_item).add("itemid", fgdb_item.id)
+                        fs_item.layers[fl_index].append(
+                            item_id=fgdb_item.id, upload_format="filegdb"
+                        )
+                    else:
+                        # When filegdb not supported through append, use featureCollection
+                        features = new_item.layers[0].query().features
+                        fs_item.layers[fl_index].edit_features(adds=features)
 
                     # Feature layer was added to existing feature service so can delete the item
                     new_item.delete()
@@ -7809,101 +7641,92 @@ class ContentManager(object):
                 else:
                     return new_item
             elif has_pyshp:
-                shpfl_item, publish_parameters = _create_file_item("Shapefile")
-                if overwrite or append:
-                    # Analyze the shapefile item to get definition for new feature layer
-                    publish_parameters = self._gis.content.analyze(
-                        item=shpfl_item, file_type="shapefile"
-                    )["publishParameters"]["layers"][0]
-                    if fl_index:
-                        publish_parameters_orig = flc_manager.properties["layers"][
-                            fl_index
-                        ]
-                        publish_parameters.update(publish_parameters_orig)
-                    if overwrite:
-                        _perform_overwrite(
-                            fl_index, flc, flc_manager, publish_parameters
-                        )
-                    elif append:
-                        fl_index = _perform_append(flc_manager, publish_parameters)
+                name = "%s%s.shp" % (
+                    random.choice(string.ascii_lowercase),
+                    uuid4().hex[:5],
+                )
 
-                    _add_item_dependency(
-                        "shapefile", fl_index, shpfl_item, fs_item, None
+                ds = df.spatial.to_featureclass(
+                    location=os.path.join(temp_dir, name),
+                    sanitize_columns=sanitize_columns,
+                )
+                zip_shp = zipws(path=temp_dir, outfile=temp_zip, keep=False)
+                item = self.add(
+                    item_properties={"title": title, "tags": tags},
+                    data=zip_shp,
+                    folder=folder,
+                )
+                shutil.rmtree(temp_dir, ignore_errors=True)
+
+                # If overwrite or append specified, perform overwrite or append
+                overwrite = kwargs.pop("overwrite", False)
+                append = kwargs.pop("append", False)
+                if overwrite or append:
+                    # Get user defined parameters
+                    fs_dict = kwargs.pop("service", None)
+                    if fs_dict is None:
+                        raise ValueError(
+                            "If overwite is True, then the feature service id and layer index need to be specified in the `service` parameter."
+                        )
+                    fs_id = fs_dict["featureServiceId"]
+                    fl_index = fs_dict["layer"]
+
+                    # Create the feature layer manager for the existing feature service
+                    fs_item = self._gis.content.get(fs_id)
+                    flc = FeatureLayerCollection.fromitem(fs_item)
+                    flc_manager = flc.manager
+
+                    # Analyze the shapefile item to get definition for new feature layer
+                    publish_parameters_orig = flc_manager.properties["layers"][fl_index]
+                    publish_parameters = self._gis.content.analyze(
+                        item=item, file_type="shapefile"
+                    )["publishParameters"]["layers"][0]
+
+                    # Update to get all correct parameters to add to definition
+                    publish_parameters.update(publish_parameters_orig)
+                    if overwrite:
+                        publish_parameters["id"] = fl_index
+
+                        # Perform edit on the feature layer collection using the manager
+                        revert = False
+                        if flc_manager.properties["preserveLayerIds"] is not True:
+                            flc_manager.update_definition({"preserveLayerIds": True})
+                            revert = True
+                        flc_manager.delete_from_definition(
+                            {"layers": [{"id": fl_index}]}
+                        )
+                        flc_manager.add_to_definition({"layers": [publish_parameters]})
+                        if revert:
+                            flc_manager.update_definition({"preserveLayerIds": False})
+                    elif append:
+                        # add new layer definition to existing service
+                        flc_manager.add_to_definition({"layers": [publish_parameters]})
+                        # find position at which it was added
+                        for layer in flc_manager.properties.layers:
+                            if layer["name"] == publish_parameters["name"]:
+                                fl_index = layer["id"]
+
+                    # Add new dependency on the shapefile and append the features
+                    ItemDependency(fs_item).add("itemid", item.id)
+                    fs_item.layers[fl_index].append(
+                        item_id=item.id, upload_format="shapefile"
                     )
 
                     return self._gis.content.get(fs_id)
                 # Publish as new Feature Layer
                 publish_parameters = {
                     "hasStaticData": True,
-                    "name": os.path.splitext(shpfl_item["name"])[0],
+                    "name": os.path.splitext(item["name"])[0],
                     "maxRecordCount": 2000,
                     "layerInfo": {"capabilities": capabilities},
                 }
                 if target_sr is not None:
                     publish_parameters["targetSR"] = {"wkid": target_sr}
-                return shpfl_item.publish(
+                return item.publish(
                     publish_parameters=publish_parameters, item_id=item_id
                 )
             return
-        elif (
-            isinstance(df, pd.DataFrame)
-            and "location_type" not in kwargs
-            and (overwrite or append)
-        ):
-            # Table Workflow
-            tags = kwargs.pop("tags", "CSV")
-
-            # Step 1: Add the csv as an item
-            temp_file = tempfile.gettempdir() + "\\%s%s.csv" % (
-                random.choice(string.ascii_lowercase),
-                uuid4().hex[:5],
-            )
-            with open(temp_file, "w") as my_csv:
-                df.to_csv(my_csv)
-                my_csv.close()
-            csv_item = self.add(
-                item_properties={
-                    "title": title,
-                    "type": "CSV",
-                    "tags": tags,
-                },
-                data=temp_file,
-            )
-
-            # # Step 2: Analyze the data
-            res = self._gis.content.analyze(item=csv_item, file_type="csv")
-
-            # Step 3: Publish the CSV as a Table
-            # publish the csv using the params from analyze
-            publish_parameters = res["publishParameters"]
-            publish_parameters["name"] = service_name
-            # This makes it a hosted table
-            publish_parameters["locationType"] = None
-
-            # publish as new layer
-            new_item = csv_item.publish(publish_parameters)
-
-            if overwrite or append:
-                # Get properties from the newly created feature layer
-                new_tbl = new_item.tables[0]
-                publish_parameters = new_tbl.properties
-                if overwrite:
-                    _perform_overwrite(fl_index, flc, flc_manager, publish_parameters)
-                elif append:
-                    fl_index = _perform_append(flc_manager, publish_parameters)
-
-                _add_item_dependency(
-                    "csv", fl_index, csv_item, fs_item, new_item, self._gis
-                )
-
-                # Table layer was added to existing feature service so can delete the item
-                new_item.delete()
-                return self._gis.content.get(fs_id)
-
-            return new_item
         elif isinstance(df, pd.DataFrame) and "location_type" not in kwargs:
-            # To not break backwards compatibility
-            # TODO: At 3.0.0 return an item not a Feature Set anymore: remove this elif block and keep one above
             # CSV WORKFLOW
             path = "content/features/analyze"
             if kwargs.get("geocode_url", None):
@@ -7919,7 +7742,7 @@ class ContentManager(object):
                 geocode_url = locators[0]
             postdata = {
                 "f": "pjson",
-                "text": df.to_csv(),
+                "text": df.to_csv(index_label="OBJECTID"),
                 "filetype": "csv",
                 "analyzeParameters": {
                     "enableGlobalGeocoding": "true",
@@ -7936,10 +7759,11 @@ class ContentManager(object):
             res = self._portal.con.post(path, postdata)
             if address_fields is not None:
                 res["publishParameters"].update({"addressFields": address_fields})
+
             path = "content/features/generate"
             postdata = {
                 "f": "pjson",
-                "text": df.to_csv(),
+                "text": df.to_csv(index_label="OBJECTID"),
                 "filetype": "csv",
                 "publishParameters": json.dumps(res["publishParameters"]),
             }
@@ -7949,9 +7773,7 @@ class ContentManager(object):
 
             fc = FeatureCollection(res["featureCollection"]["layers"][0])
             return fc
-        elif (isinstance(df, pd.DataFrame) and "location_type" in kwargs) or (
-            isinstance(df, pd.DataFrame) and address_fields
-        ):
+        elif isinstance(df, pd.DataFrame) and "location_type" in kwargs:
             if kwargs.get("geocode_url", None):
                 geocode_url = kwargs.get("geocode_url")
             else:
@@ -7991,12 +7813,7 @@ class ContentManager(object):
             for k in rk:
                 del update_dict[k]
 
-            if address_fields is not None:
-                postdata["analyzeParameters"]["locationType"] = "address"
-
             res = self._portal.con.post(path, postdata)
-            if address_fields is not None:
-                res["publishParameters"].update({"addressFields": address_fields})
             res["publishParameters"].update(update_dict)
             path = "content/features/generate"
             postdata = {
@@ -8011,7 +7828,7 @@ class ContentManager(object):
                 path, postdata
             )  # , use_ordered_dict=True) - OrderedDict >36< _mixins.PropertyMap
 
-            fc = features.FeatureCollection(res["featureCollection"]["layers"][0])
+            fc = FeatureCollection(res["featureCollection"]["layers"][0])
             return fc
             # return
         return None
@@ -8894,7 +8711,7 @@ class ResourceManager(object):
 
     def update(
         self,
-        file: Optional[str] = None,
+        file: str,
         folder_name: Optional[str] = None,
         file_name: Optional[str] = None,
         text: Optional[str] = None,
@@ -8963,10 +8780,9 @@ class ResourceManager(object):
         )
 
         files = []  # create a list of named tuples to hold list of files
-        if file:
-            if not os.path.isfile(os.path.abspath(file)):
-                raise RuntimeError("File(" + file + ") not found.")
-            files.append(("file", file, os.path.basename(file)))
+        if not os.path.isfile(os.path.abspath(file)):
+            raise RuntimeError("File(" + file + ") not found.")
+        files.append(("file", file, os.path.basename(file)))
 
         params = {}
         params["f"] = "json"
@@ -9597,17 +9413,17 @@ class Group(dict):
             Portal object is either an administrator for the entire
             Portal or the owner of the group.
 
-        =============   =====================================
+        ============    ======================================
         **Parameter**    **Description**
-        -------------   -------------------------------------
+        ------------    --------------------------------------
         usernames       Optional list of strings or single string.
                         The list of usernames or single username
                         to be added.
-        -------------   -------------------------------------
+        ------------    --------------------------------------
         admins          Optional List of String, or Single String.
                         This is a list of users to be an administrator
                         of the group.
-        =============   =====================================
+        ============    ======================================
 
         :return:
            A dictionary containing the users that were not added to the group.
@@ -10780,99 +10596,6 @@ class User(dict):
 
             return TaskManager(url=url, user=self, gis=self._gis)
         return None
-
-    def transfer_content(
-        self, target_user: str | User, folder: str | None = None
-    ) -> concurrent.futures.Future:
-        """
-        This operation transfers all the current user's content to a new user.
-        This is an asynchronous operation that can take up to 15 minutes to complete.
-
-        ================  ========================================================
-        **Parameter**      **Description**
-        ----------------  --------------------------------------------------------
-        target_user       Required str or User. The user who will received the current user's content.
-        ----------------  --------------------------------------------------------
-        folder            Optional str. The folder where the content is stored.
-        ================  ========================================================
-
-        :returns: concurrent.futures.Future
-
-        """
-        if isinstance(target_user, User):
-            username: str = target_user.username
-        elif isinstance(target_user, str):
-            username: str = target_user
-            target_user: User = self._gis.users.get(username)
-        else:
-            raise ValueError("target_user must be a string or User object")
-        target_user: User = target_user
-        target_user.folders
-        if folder is None:
-            folder_dest: str = username
-        else:
-            folder_dest: str = None
-            for f in target_user.folders:
-                if folder.lower() == f["id"].lower():
-                    folder_dest = f["title"]
-                    break
-                elif folder.lower() == f["title"].lower():
-                    folder_dest = f["title"]
-                    break
-            if folder_dest is None:
-                cm: ContentManager = self._gis.content
-                cm.create_folder(folder=folder, owner=target_user)
-                folder_dest = folder
-        params: dict[str, Any] = {
-            "f": "json",
-            "reassign": json.dumps(
-                {
-                    "targetUser": username,  # destination user
-                    "reassignedUsers": [self.username],  # content source
-                    "targetFolderName": folder_dest,  # folder location, default is the root
-                    "createSubFolderPerReassignedUser": False,
-                }
-            ),
-        }
-        url: str = f"{self._portal.resturl}portals/self/reassignUsersContent"
-        resp: requests.Response = self._gis._con._session.post(url=url, data=params)
-        resp.raise_for_status()
-        data: dict[str, Any] = resp.json()
-        job_url: str = f"{self._portal.resturl}portals/self/jobs/{data['jobId']}"
-
-        tp = concurrent.futures.ThreadPoolExecutor(max_workers=1)
-        future: concurrent.futures.Future = tp.submit(
-            self._transfer_content_status,
-            **{"session": self._gis._con._session, "url": job_url},
-        )
-        tp.shutdown(cancel_futures=False)
-        return future
-
-    def _transfer_content_status(self, session: requests.Session, url: str) -> dict:
-        """checks the job status for transfer content operation"""
-
-        resp: requests.Response = session.get(
-            url=url,
-            params={
-                "f": "json",
-            },
-        )
-        data: dict[str, Any] = resp.json()
-        status: str = data.get("status", "submitted")
-        while "status" in data:
-            if status == "submitted":
-                time.sleep(10)
-            elif status in ["success", "failed", "succeeded"]:
-                return data
-            resp: requests.Response = session.get(
-                url=url,
-                params={
-                    "f": "json",
-                },
-            )
-            data: dict[str, Any] = resp.json()
-            status: str = data.get("status", "submitted")
-        return data
 
     # ----------------------------------------------------------------------
     def generate_direct_access_url(
@@ -12569,8 +12292,7 @@ class Item(dict):
                         lyr._fn = rendering_rule
                         lyr._fnra = rendering_rule
                         lyr._rendering_rule_from_item = True
-                    if lyr._mosaic_rule is None:
-                        lyr._mosaic_rule = item_data.get("mosaicRule", None)
+                    lyr._mosaic_rule = item_data.get("mosaicRule", None)
                 except:
                     pass
                 layers.append(lyr)
@@ -13020,7 +12742,18 @@ class Item(dict):
             >>> item.download("C:\ARCGIS\Projects\", "hurricane_data")
 
         """
-        data_path = "content/items/" + self.itemid + f"/data"
+        if self._gis._con.token:
+            data_path = (
+                "content/items/"
+                + self.itemid
+                + f"/data"  # "?token={self._gis._con.token}"
+            )
+        else:
+            data_path = (
+                "content/items/"
+                + self.itemid
+                + f"/data"  # "?token={self._gis._con.token}"
+            )
         if file_name is None:
             if "name" in self or "title" in self:
                 file_name = self.name or self.title
@@ -13029,7 +12762,7 @@ class Item(dict):
         try:
             url = self._gis._portal.resturl + data_path
             con = self._gis._con
-            resp = con.get(
+            resp = self._portal.con.get(
                 path=url,
                 file_name=file_name,
                 out_folder=save_path,
@@ -13040,7 +12773,7 @@ class Item(dict):
             )
             if resp.status_code >= 300 and resp.status_code < 400:
                 url = resp.headers["location"]
-                resp = con.get(
+                resp = self._portal.con.get(
                     path=url,
                     file_name=file_name,
                     out_folder=save_path,
@@ -13809,9 +13542,7 @@ class Item(dict):
         )
 
     # ----------------------------------------------------------------------
-    def reassign_to(
-        self, target_owner: str | User, target_folder: Optional[str] = None
-    ):
+    def reassign_to(self, target_owner: str, target_folder: Optional[str] = None):
         """
         The ``reassign_to`` method allows the administrator to reassign a single item from one user to another.
 
@@ -13822,7 +13553,7 @@ class Item(dict):
         ================  ========================================================
         **Parameter**      **Description**
         ----------------  --------------------------------------------------------
-        target_owner      Required string or User. The new desired owner of the item.
+        target_owner      Required string. The new desired owner of the item.
         ----------------  --------------------------------------------------------
         target_folder     Optional string. The folder to move the item to.
         ================  ========================================================
@@ -13841,8 +13572,6 @@ class Item(dict):
             current_folder = self.ownerFolder
         except:
             current_folder = None
-        if isinstance(target_owner, User):
-            target_owner = target_owner.username
         resp = self._portal.reassign_item(
             self.itemid,
             self._user_id,
