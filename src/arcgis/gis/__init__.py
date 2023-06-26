@@ -16960,7 +16960,7 @@ class ViewManager:
         assert isinstance(layer_def, (list, tuple))
         for lyrdef in layer_def:
             assert isinstance(lyrdef, ViewLayerDefParameter)
-            layer = layer_def.layer
+            layer = lyrdef.layer
             assert isinstance(layer, arcgis.features.FeatureLayer)
             if "isView" in lyrdef.layer.properties and lyrdef.layer.properties.isView:
                 results.append(
