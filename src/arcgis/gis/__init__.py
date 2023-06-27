@@ -5076,7 +5076,13 @@ class GroupManager(object):
         return self._cloner.load_offline_configuration(package)
 
     def clone(
-        self, groups: list[Group], *, skip_existing: bool = True
+        self,
+        groups: list[Group],
+        *,
+        skip_existing: bool = True,
+        offline: bool = False,
+        save_folder: str | None = None,
+        file_name: str | None = "GROUP_CLONER",
     ) -> list[_cloner.CloningJob]:
         """
         The group cloner will recreate groups from site A to site B.
@@ -5089,6 +5095,12 @@ class GroupManager(object):
         groups                Required list[Group]. A list of Group objects to clone.
         --------------------  ---------------------------------------------------------
         skip_existing         Optional bool. If True, if a group exists, it will be skipped.
+        --------------------  ---------------------------------------------------------
+        offline               Optional bool. If True, a file will be saved locally that can be imported at a later date.
+        --------------------  ---------------------------------------------------------
+        save_folder           Optional str. The save path of the offline package.
+        --------------------  ---------------------------------------------------------
+        file_name             Optional str. The name of the file without an extension.
         ====================  =========================================================
 
         :returns: list[CloningJob]
@@ -5104,8 +5116,25 @@ class GroupManager(object):
             >>> [job.result() for job in jobs]
             [<Group>]
 
+        .. code-block:: python
+
+            # Usage Example 2
+            >>> group = gis_source.groups.create(title = "New Group",
+                                  tags = "new, group, USA",
+                                  description = "a new group in the USA",
+                                  access = "public")
+            >>> job = gis_destination.groups.clone([group], offline=True, save_folder=r"c:\storage", file_name="groups)
+            >>> job.result()
+            c:\storage\groups.GROUP_CLONER
+
         """
-        return self._cloner.clone(groups=groups, skip_existing=skip_existing)
+        return self._cloner.clone(
+            groups=groups,
+            skip_existing=skip_existing,
+            offline=offline,
+            save_folder=save_folder,
+            file_name=file_name,
+        )
 
     def create(
         self,

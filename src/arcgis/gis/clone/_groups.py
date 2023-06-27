@@ -6,9 +6,6 @@ import shutil
 import logging
 import tempfile
 import warnings
-import sys
-
-sys.path.insert(0, r"C:\SVN\geosaurus_master\src")
 import concurrent.futures
 from typing import Any
 from arcgis.gis import GIS, Group, GroupManager
