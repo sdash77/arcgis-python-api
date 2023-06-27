@@ -101,17 +101,21 @@ class _WebExperience(_ItemDefinition):
         return new_item
 
     def clone(self):
-        def _clone_dict(data_dict, source, target):
+        def _clone_dict(data_dict, source, target, search_ex):
             new_dict = data_dict
             new_dict["attributes"]["portalUrl"] = target.url
             for k, v in new_dict["dataSources"].items():
                 v["portalUrl"] = target.url
                 item = source.content.get(v["itemId"])
-                clone_result = target.content.clone_items([item])
+                clone_result = target.content.clone_items(
+                    [item], search_existing_items=search_ex
+                )
                 if clone_result:
                     v["itemId"] = clone_result[0].itemid
+                    for cloned in clone_result:
+                        self.created_items.append(cloned)
                 else:
-                    targ_item = target.content.search(item.title)[0]
+                    targ_item = _search_org_for_existing_item(self.target, item)
                     v["itemId"] = targ_item.itemid
 
             return new_dict
@@ -127,7 +131,9 @@ class _WebExperience(_ItemDefinition):
             if self.resources:
                 new_item.resources.add(self.resources, archive=True)
             config_dict = self.portal_item.resources.get("config/config.json")
-            new_dict = _clone_dict(config_dict, self.portal_item._gis, self.target)
+            new_dict = _clone_dict(
+                config_dict, self.portal_item._gis, self.target, self._search_existing
+            )
             new_item.resources.update(
                 folder_name="config", file_name="config.json", text=new_dict
             )
@@ -143,6 +149,7 @@ class _WebExperience(_ItemDefinition):
                             self.portal_item.get_data(),
                             self.portal_item._gis,
                             self.target,
+                            True,
                         )
                         new_item.update(item_properties={}, data=new_data)
                     else:

@@ -231,6 +231,9 @@ class _StoryMapDefinition(CloneNode):
                 cloned_webmaps = self.target.content.clone_items(
                     [webmap_to_copy], search_existing_items=False
                 )  # Clones the WebMap
+                if cloned_webmaps:
+                    for webmap in cloned_webmaps:
+                        self.created_items.append(webmap)
                 webmap_mapper[webmap_to_copy.id] = [
                     i.id
                     for i in cloned_webmaps
@@ -246,6 +249,9 @@ class _StoryMapDefinition(CloneNode):
                     cloned_theme = self.target.content.clone_items(
                         [theme_to_copy], search_existing_items=False
                     )
+                    if cloned_theme:
+                        for theme in cloned_theme:
+                            self.created_items.append(theme)
                     webmap_mapper[theme_to_copy.id] = [
                         i.id for i in cloned_theme if (i.type == "StoryMap Theme")
                     ]

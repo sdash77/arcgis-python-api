@@ -116,8 +116,9 @@ class _DeepCloner:
             ):
                 self._items.pop(index)
                 dash_list = self._clone_dashboard(item)
-                for cloned_item in dash_list:
-                    self._cloned_items.append(cloned_item)
+                if len(dash_list) > 0:
+                    for cloned_item in dash_list:
+                        self._cloned_items.append(cloned_item)
 
         # parse the config and get values
         self._create_graph()
@@ -141,14 +142,17 @@ class _DeepCloner:
 
         for item_id in item_list:
             item = dashboard_item._gis.content.get(item_id)
-            clone_result = self.target.content.clone_items([item])
-            if len(clone_result) > 0:
+            clone_result = self.target.content.clone_items(
+                [item], search_existing_items=self._search_existing_items
+            )
+            if clone_result:
                 for cloned_item in clone_result:
                     cloned_item_list.append(cloned_item)
                     if cloned_item.title == item.title:
                         new_item = cloned_item
             else:
-                new_item = item
+                new_item = _search_org_for_existing_item(self.target, item)
+
             map_dict[item_id] = new_item.itemid
 
         cloned_db = self.target.content.clone_items([dashboard_item], from_dash=True)[0]
