@@ -5051,6 +5051,30 @@ class GroupManager(object):
         self._portal = gis._portal
         self._cloner = _cloner.GroupCloner(gis=self._gis)
 
+    #  --------------------------------------------------------------------
+    def load_offline_configuration(self, package: str) -> concurrent.futures.Future:
+        """
+        Loads the UX configuration file into the current active portal.
+
+        ====================  =========================================================
+        **Parameter**         **Description**
+        --------------------  ---------------------------------------------------------
+        package               Required String. The GROUP_CLONER file that contains the offline information.
+        ====================  =========================================================
+
+        :returns: concurrent.futures.Future
+
+        .. code-block:: python
+
+            # Usage Example
+            >>> package = r"/home/groups.GROUP_CLONER"
+            >>> job = gis_destination.groups.load_offline_configuration(package)
+            >>> job.result()
+            [<Group>]
+
+        """
+        return self._cloner.load_offline_configuration(package)
+
     def clone(
         self, groups: list[Group], *, skip_existing: bool = True
     ) -> list[_cloner.CloningJob]:
