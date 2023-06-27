@@ -3157,6 +3157,7 @@ class UserManager(object):
         user_type: Optional[str] = None,
         credits: float = -1,
         groups: Optional[list[str]] = None,
+        email_text: Optional[str] = None,
     ):
         """
         The ``create`` operation is used to pre-create built-in or enterprise accounts within the Enterprise portal,
@@ -3235,6 +3236,9 @@ class UserManager(object):
         ----------------  -------------------------------------------------------------------------------
         groups            Optional List. An array of Group objects to provide access to for a given
                           user. (10.7+)
+        ----------------  -------------------------------------------------------------------------------
+        email_text        Optional string. Custom text to include in the invitation email. This text will
+                          be appended to the top of the default email text. ArcGIS Online only.
         ================  ===============================================================================
 
         :return:
@@ -3292,6 +3296,7 @@ class UserManager(object):
             "user_type": user_type,
             "credits": credits,
             "groups": groups,
+            "email_text": email_text,
         }
         if self._gis.version >= [6, 4]:
             allowed_keys = {
@@ -3309,6 +3314,7 @@ class UserManager(object):
                 "credits",
                 "groups",
                 "level",
+                "email_text",
             }
             params = {}
             for k, v in kwargs.items():
@@ -3506,6 +3512,7 @@ class UserManager(object):
         credits=None,
         groups=None,
         level=None,
+        email_text=None,
     ):
         """
         This operation is used to pre-create built-in or enterprise accounts within the portal,
@@ -3563,6 +3570,9 @@ class UserManager(object):
                           which means unlimited.
         ----------------  -------------------------------------------------------------------------------
         groups            Optional List. An array of Group objects to provide access to for a given user.
+        ----------------  -------------------------------------------------------------------------------
+        email_text        Optional string. Custom text to include in the invitation email. This text will
+                          be appended to the default email text. ArcGIS Online only.
         ================  ===============================================================================
 
         :return:
@@ -3625,26 +3635,6 @@ class UserManager(object):
         if self._gis._portal.is_arcgisonline or (
             self._gis._portal.is_kubernetes and provider != "enterprise"
         ):
-            email_text = (
-                """<html><body><p>"""
-                + self._gis.properties.user.fullName
-                + """ has invited you to join an ArcGIS Online Organization, """
-                + self._gis.properties.name
-                + """</p>
-<p>Please click this link to finish setting up your account and establish your password: <a href="https://www.arcgis.com/home/newuser.html?invitation=@@invitation.id@@">https://www.arcgis.com/home/newuser.html?invitation=@@invitation.id@@</a></p>
-<p>Note that your account has already been created for you with the username, <strong>@@touser.username@@</strong>.  </p>
-<p>If you have difficulty signing in, please contact """
-                + self._gis.properties.user.fullName
-                + "("
-                + self._gis.properties.user.email
-                + """). Be sure to include a description of the problem, the error message, and a screenshot.</p>
-<p>For your reference, you can access the home page of the organization here: <br>"""
-                + self._gis.properties.user.fullName
-                + """</p>
-<p>This link will expire in two weeks.</p>
-<p style="color:gray;">This is an automated email. Please do not reply.</p>
-</body></html>"""
-            )
             if (
                 credits == -1
                 and self._gis.version >= [7, 2]
@@ -3678,8 +3668,9 @@ class UserManager(object):
                     "apps": [],
                     "appBundles": [],
                 },
-                #'message' : email_text
             }
+            if email_text:
+                params["message"] = email_text
             if idp_username is not None:
                 if provider is None:
                     provider = "enterprise"
