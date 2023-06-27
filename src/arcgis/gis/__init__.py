@@ -3238,7 +3238,7 @@ class UserManager(object):
                           user. (10.7+)
         ----------------  -------------------------------------------------------------------------------
         email_text        Optional string. Custom text to include in the invitation email. This text will
-                          be appended to the default email text. ArcGIS Online only.
+                          be appended to the top of the default email text. ArcGIS Online only.
         ================  ===============================================================================
 
         :return:
