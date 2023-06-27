@@ -14297,9 +14297,10 @@ class Item(dict):
 
             # Usage Example
 
-            >>> item.update(description ="aggregated US hurricane data",
-                            title = "US Hurricane Data",
-                            tags = "Hurricanes, USA, Natural Disasters")
+            >>> item.update(item_properties = {"description":"Warren County Fetaure Layer", 
+                                                "title":"Warren County DB", 
+                                                "tags":"WarrenCounty"
+                                               })
         """
         if isinstance(item_properties, ItemProperties):
             if (
