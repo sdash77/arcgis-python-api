@@ -5051,8 +5051,40 @@ class GroupManager(object):
         self._portal = gis._portal
         self._cloner = _cloner.GroupCloner(gis=self._gis)
 
+    #  --------------------------------------------------------------------
+    def load_offline_configuration(
+        self, package: str
+    ) -> list[concurrent.futures.Future]:
+        """
+        Loads the UX configuration file into the current active portal.
+
+        ====================  =========================================================
+        **Parameter**         **Description**
+        --------------------  ---------------------------------------------------------
+        package               Required String. The GROUP_CLONER file that contains the offline information.
+        ====================  =========================================================
+
+        :returns: concurrent.futures.Future
+
+        .. code-block:: python
+
+            # Usage Example
+            >>> package = r"/home/groups.GROUP_CLONER"
+            >>> job = gis_destination.groups.load_offline_configuration(package)
+            >>> job.result()
+            [<Group>]
+
+        """
+        return self._cloner.load_offline_configuration(package)
+
     def clone(
-        self, groups: list[Group], *, skip_existing: bool = True
+        self,
+        groups: list[Group],
+        *,
+        skip_existing: bool = True,
+        offline: bool = False,
+        save_folder: str | None = None,
+        file_name: str | None = "GROUP_CLONER",
     ) -> list[_cloner.CloningJob]:
         """
         The group cloner will recreate groups from site A to site B.
@@ -5065,6 +5097,12 @@ class GroupManager(object):
         groups                Required list[Group]. A list of Group objects to clone.
         --------------------  ---------------------------------------------------------
         skip_existing         Optional bool. If True, if a group exists, it will be skipped.
+        --------------------  ---------------------------------------------------------
+        offline               Optional bool. If True, a file will be saved locally that can be imported at a later date.
+        --------------------  ---------------------------------------------------------
+        save_folder           Optional str. The save path of the offline package.
+        --------------------  ---------------------------------------------------------
+        file_name             Optional str. The name of the file without an extension.
         ====================  =========================================================
 
         :returns: list[CloningJob]
@@ -5080,8 +5118,25 @@ class GroupManager(object):
             >>> [job.result() for job in jobs]
             [<Group>]
 
+        .. code-block:: python
+
+            # Usage Example 2
+            >>> group = gis_source.groups.create(title = "New Group",
+                                  tags = "new, group, USA",
+                                  description = "a new group in the USA",
+                                  access = "public")
+            >>> job = gis_destination.groups.clone([group], offline=True, save_folder=r"c:\storage", file_name="groups)
+            >>> job.result()
+            c:\storage\groups.GROUP_CLONER
+
         """
-        return self._cloner.clone(groups=groups, skip_existing=skip_existing)
+        return self._cloner.clone(
+            groups=groups,
+            skip_existing=skip_existing,
+            offline=offline,
+            save_folder=save_folder,
+            file_name=file_name,
+        )
 
     def create(
         self,
@@ -5217,6 +5272,7 @@ class GroupManager(object):
             "all": {"itemTypes": ""},
             "files": {"itemTypes": "CSV"},
             None: {"itemTypes": ""},
+            "none": {"itemTypes": ""},
             "maps": {"itemTypes": "Web Map"},
             "layers": {"itemTypes": "Layer"},
             "scenes": {"itemTypes": "Web Scene"},
@@ -10690,8 +10746,6 @@ class User(dict):
             if dayname == "Sunday":
                 return 0
 
-        if self._gis._portal.is_arcgisonline == False:
-            raise Exception("The report operation only works on ArcGIS Online.")
         if report_type.lower() != "activity" and duration == "daily":
             raise ValueError("Daily only applies to activity report type.")
         if (
