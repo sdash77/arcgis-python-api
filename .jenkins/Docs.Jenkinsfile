@@ -9,6 +9,14 @@ pipeline {
     }
 
     stages {
+        stage('Setup') {
+            steps {
+                // copy binaries
+                sh 'cp /media/geosaurus_public/build/geosaurus2/linux/py3.9/graph/* ./src/arcgis/graph'
+                sh 'cp /media/geosaurus_public/build/geosaurus2/linux/py3.9/knn/* ./src/arcgis/learn/_utils'
+                sh 'cp /media/geosaurus_public/build/geosaurus2/linux/py3.9/tracking-engine/* ./src/arcgis/learn/_tracking'
+            }
+        }
         stage('Sphinx HTML') {
             stages {
                 stage('Build') {
