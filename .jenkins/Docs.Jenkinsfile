@@ -2,7 +2,10 @@ pipeline {
     agent {
         docker {
             image "harbor-west.esri.com/python-api/arcgis-learn-pr-docs:2.1.0.3"
+            registryUrl 'https://harbor-west.esri.com'
+            registryCredentialsId 'avworld_geosaurusaccnt'
             alwaysPull true
+            label "linux && docker"
             args "-u 0 -v /media/crdata_apiref:/media/crdata_apiref -v /media/geosaurus_public:/media/geosaurus_public"
             customWorkspace "workspace/$JOB_NAME/$BUILD_NUMBER"
         }
