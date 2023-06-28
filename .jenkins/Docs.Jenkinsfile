@@ -1,7 +1,7 @@
 pipeline {
     agent {
         docker {
-            image "ghcr.io/jtroe/cicd-container-images/sphinx-rtd:3.2.1"
+            image "harbor-west.esri.com/python-api/arcgis-learn-pr-docs:2.1.0.3"
             alwaysPull true
             args "-u 0 -v /media/crdata_apiref:/media/crdata_apiref -v /media/geosaurus_public:/media/geosaurus_public"
             customWorkspace "workspace/$JOB_NAME/$BUILD_NUMBER"
@@ -11,10 +11,11 @@ pipeline {
     stages {
         stage('Setup') {
             steps {
-                // copy binaries
+                // copy in dependent binaries to relevant path
                 sh 'cp /media/geosaurus_public/build/geosaurus2/linux/py3.9/graph/* ./src/arcgis/graph'
                 sh 'cp /media/geosaurus_public/build/geosaurus2/linux/py3.9/knn/* ./src/arcgis/learn/_utils'
                 sh 'cp /media/geosaurus_public/build/geosaurus2/linux/py3.9/tracking-engine/* ./src/arcgis/learn/_tracking'
+                sh 'python -m pip install -e ./src --no-deps'
             }
         }
         stage('Sphinx HTML') {
