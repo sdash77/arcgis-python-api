@@ -14297,9 +14297,9 @@ class Item(dict):
 
             # Usage Example
 
-            >>> item.update(item_properties = {"description":"Warren County Fetaure Layer", 
-                                                "title":"Warren County DB", 
-                                                "tags":"WarrenCounty"
+            >>> item.update(item_properties = {"description":"Boundaries and infrastructure for Warren County", 
+                                                "title":"Warren County Feature Layer", 
+                                                "tags":"local government, administration, Warren County"
                                                })
         """
         if isinstance(item_properties, ItemProperties):
