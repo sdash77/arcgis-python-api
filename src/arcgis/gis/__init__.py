@@ -5052,7 +5052,9 @@ class GroupManager(object):
         self._cloner = _cloner.GroupCloner(gis=self._gis)
 
     #  --------------------------------------------------------------------
-    def load_offline_configuration(self, package: str) -> concurrent.futures.Future:
+    def load_offline_configuration(
+        self, package: str
+    ) -> list[concurrent.futures.Future]:
         """
         Loads the UX configuration file into the current active portal.
 
@@ -5270,6 +5272,7 @@ class GroupManager(object):
             "all": {"itemTypes": ""},
             "files": {"itemTypes": "CSV"},
             None: {"itemTypes": ""},
+            "none": {"itemTypes": ""},
             "maps": {"itemTypes": "Web Map"},
             "layers": {"itemTypes": "Layer"},
             "scenes": {"itemTypes": "Web Scene"},

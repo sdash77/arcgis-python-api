@@ -2,7 +2,8 @@ import sys
 
 #
 #  Update the Path to set the test area
-# sys.path.insert(0, r"C:\SVN\geosaurus_master\src")
+sys.path.insert(0, r"C:\SVN\geosaurus_issue_10148a\src")
+import os
 import logging
 import uuid
 import unittest
@@ -43,6 +44,24 @@ class Test_CloneGroups(unittest.TestCase):
         groups = gis.groups.clone(self.source_groups)
         assert len(groups) == len(self.source_groups)
         [g.result().delete() for g in groups]
+
+    def test_clone_groups_offline(self):
+        fp = self.gis_source.groups.clone(self.source_groups, offline=True)
+        assert len(fp) > 0
+        assert fp[0]
+        group_file = fp[0].result()
+        assert os.path.isfile(group_file)
+        os.remove(group_file)
+
+    def test_clone_groups_load_offline(self):
+        fp = self.gis_source.groups.clone(self.source_groups, offline=True)
+        group_file = fp[0].result()
+        gis = GIS(profile='your_enterprise_profile')
+        gmgr = gis.groups
+        groups = gmgr.load_offline_configuration(group_file)
+        os.remove(group_file)
+        assert len(groups) == 3
+        [grp.result().delete() for grp in groups]
 
     @classmethod
     def tearDownClass(cls):

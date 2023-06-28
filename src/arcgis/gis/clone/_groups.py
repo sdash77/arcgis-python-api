@@ -167,7 +167,7 @@ class GroupCloner(BaseCloneGroup):
         group_json_file: str = os.path.join(working_folder, "group_def.json")
         fp: str = os.path.join(save_folder, file_name)
 
-        lu: [str, Any] = {
+        lu: dict[str, Any] = {
             '{"itemTypes": "Application"}': "apps",
             '{"itemTypes": ""}': "none",
             '{"itemTypes": "CSV"}': "files",
@@ -311,22 +311,9 @@ class GroupCloner(BaseCloneGroup):
         return jobs
 
     # ---------------------------------------------------------------------
-    def load_offline_configuration(self, package: str) -> concurrent.futures.Future:
-        """
-        Loads the Group configuration file into the current active portal.
-        """
-        with concurrent.futures.ThreadPoolExecutor(max_workers=1) as tp:
-            future = tp.submit(
-                self._load_offline_configuration,
-                **{
-                    "package": package,
-                },
-            )
-            tp.shutdown(wait=True)
-            return future
-
-    # ---------------------------------------------------------------------
-    def _load_offline_configuration(self, package: str) -> list[Group]:
+    def load_offline_configuration(
+        self, package: str
+    ) -> list[concurrent.futures.Future]:
         """
         Loads the Group configuration file into the current active portal.
         """
@@ -339,21 +326,36 @@ class GroupCloner(BaseCloneGroup):
         settings_configuration = []
         with open(os.path.join(workspace, "group_def.json"), "r") as reader:
             settings_configuration = json.load(reader)
-        for group in settings_configuration:
-            if group["thumbnail"]:
-                thumbnail = os.path.join(
-                    workspace,
-                    os.path.basename(os.path.dirname(group["thumbnail"])),
-                    os.path.basename(group["thumbnail"]),
-                )
-                group["thumbnail"] = thumbnail
+        with concurrent.futures.ThreadPoolExecutor(max_workers=1) as tp:
+            for group in settings_configuration:
+                if group["thumbnail"]:
+                    thumbnail = os.path.join(
+                        workspace,
+                        os.path.basename(os.path.dirname(group["thumbnail"])),
+                        os.path.basename(group["thumbnail"]),
+                    )
+                    group["thumbnail"] = thumbnail
 
-            gm = self._gis.groups
-            try:
-                groups.append(gm.create(**group))
-            except Exception as ex:
-                print(f"could not create the group {group['title']} with error: {ex}")
+                future = tp.submit(
+                    self._load_offline_configuration,
+                    **{
+                        "payload": group,
+                    },
+                )
+                groups.append(future)
+            tp.shutdown(wait=True)
         return groups
+
+    # ---------------------------------------------------------------------
+    def _load_offline_configuration(self, payload: dict[str, Any]) -> Group | str:
+        """
+        Loads the Group configuration file into the current active portal.
+        """
+        gm = self._gis.groups
+        try:
+            return gm.create(**payload)
+        except Exception as ex:
+            return f"could not create the group {group['title']} with error: {ex}"
 
     # ---------------------------------------------------------------------
     def clone(
