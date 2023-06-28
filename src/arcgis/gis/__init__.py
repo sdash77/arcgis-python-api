@@ -10746,8 +10746,6 @@ class User(dict):
             if dayname == "Sunday":
                 return 0
 
-        if self._gis._portal.is_arcgisonline == False:
-            raise Exception("The report operation only works on ArcGIS Online.")
         if report_type.lower() != "activity" and duration == "daily":
             raise ValueError("Daily only applies to activity report type.")
         if (
