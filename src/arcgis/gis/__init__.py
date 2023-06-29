@@ -12467,7 +12467,7 @@ class Item(dict):
     """
     The ``Item`` class represents an item  in the GIS, where an item is simply considered a unit of content in the GIS.
     Each item has a unique identifier and a well-known URL that is independent of the user owning the item.
-    For a comprehensive list of properties of an item please see the REST API documentation `here <https://developers.arcgis.com/rest/users-groups-and-items/item.htm>`_ .  
+    For a comprehensive list of properties of an item please see the REST API documentation `here <https://developers.arcgis.com/rest/users-groups-and-items/item.htm>`_ .
     Additionally, each item can have associated binary or textual data that's available via the item data resource.
     For example, an item of type `Map Package` returns the actual bits corresponding to the
     map package via the item data resource.

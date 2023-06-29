@@ -171,6 +171,7 @@ class UX(object):
         except:
             # if summary has never been set for org then need to create the resource
             self.summary = ""
+            return self.summary
         return res["default"]["description"]
 
     # ----------------------------------------------------------------------
