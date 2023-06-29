@@ -64,9 +64,9 @@ class UX(object):
     ) -> list[concurrent.futures.Future]:
         """
         Copies the UX settings from the source WebGIS site to the destination WebGIS site or to
-        a `.UX_CLONER` offline file.
+        a `.uxpk` offline file.
         When directly connected to two WebGIS', this method performs the clone operation immediately.
-        When cloning in an offlien situation, a `.UX_CLONER` is created and stored on the user's local
+        When cloning in an offline situation, a `.uxpk` is created and stored on the user's local
         hard drive.
 
         ====================  ===============================================================

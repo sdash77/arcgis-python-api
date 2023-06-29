@@ -57,9 +57,9 @@ class UXCloner:
     ) -> list[concurrent.futures.Future]:
         """
         Copies the UX settings from the source WebGIS site to the destination WebGIS site or to
-        a `.UX_CLONER` offline file.
+        a `.uxpk` offline file.
         When directly connected to two WebGIS', this method performs the clone operation immediately.
-        When cloning in an offlien situation, a `.UX_CLONER` is created and stored on the user's local
+        When cloning in an offlien situation, a `.uxpk` is created and stored on the user's local
         hard drive.
 
 
@@ -313,11 +313,11 @@ class UXCloner:
     def _create_cloner_file(
         self, save_folder: str, path: str, package_name: str | None = None
     ) -> str:
-        """Creates the Zipped compressed .UX_CLONER file."""
+        """Creates the Zipped compressed .uxpk file."""
         if package_name is None:
-            package_name = f"{uuid.uuid4().hex[:5]}.UX_CLONER"
+            package_name = f"{uuid.uuid4().hex[:5]}.uxpk"
         else:
-            package_name += ".UX_CLONER"
+            package_name += ".uxpk"
         save_fp: str = os.path.join(save_folder, package_name)
         self._zipdir(src=path, dst=save_folder, zip_name=package_name)
 
@@ -335,7 +335,7 @@ class UXCloner:
         package_name: str | None = None,  # package save name
     ) -> str:
         """
-        Creates an offline cloner package (.UX_CLONER)
+        Creates an offline cloner package (.uxpk)
         """
         offline: bool = True
         ## 1). Setup the workspace folder
