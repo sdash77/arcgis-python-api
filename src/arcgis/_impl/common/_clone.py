@@ -147,6 +147,11 @@ class _DeepCloner:
                 search_existing_items=self._search_existing_items,
                 folder=self.folder,
                 owner=self.owner,
+                use_org_basemap=self._use_org_basemap,
+                copy_data=self._copy_data,
+                copy_global_ids=self._copy_global_ids,
+                item_extent=self._item_extent,
+                preserve_item_id=self._preserve_item_id,
             )
             if clone_result:
                 for cloned_item in clone_result:
@@ -158,7 +163,14 @@ class _DeepCloner:
 
             map_dict[item_id] = new_item.itemid
 
-        cloned_db = self.target.content.clone_items([dashboard_item], from_dash=True)[0]
+        cloned_db = self.target.content.clone_items(
+            [dashboard_item],
+            folder=self.folder,
+            owner=self.owner,
+            search_existing_items=self._search_existing_items,
+            preserve_item_id=self._preserve_item_id,
+            from_dash=True,
+        )[0]
         cloned_item_list.append(cloned_db)
         cloned_widgets = cloned_db.get_data()["desktopView"]["widgets"]
 

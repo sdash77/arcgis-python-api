@@ -233,6 +233,8 @@ class _StoryMapDefinition(CloneNode):
                     search_existing_items=False,
                     folder=self.folder,
                     owner=self.owner,
+                    item_extent=self.item_extent,
+                    preserve_item_id=self._preserve_item_id,
                 )  # Clones the WebMap
                 if cloned_webmaps:
                     for webmap in cloned_webmaps:

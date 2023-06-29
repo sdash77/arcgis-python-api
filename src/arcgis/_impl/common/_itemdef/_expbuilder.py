@@ -112,6 +112,8 @@ class _WebExperience(_ItemDefinition):
                     search_existing_items=search_ex,
                     folder=self.folder,
                     owner=self.owner,
+                    item_extent=self.item_extent,
+                    preserve_item_id=self._preserve_item_id,
                 )
                 if clone_result:
                     v["itemId"] = clone_result[0].itemid
