@@ -229,7 +229,10 @@ class _StoryMapDefinition(CloneNode):
             for wm in web_maps:
                 webmap_to_copy = self.portal_item._gis.content.get(wm)
                 cloned_webmaps = self.target.content.clone_items(
-                    [webmap_to_copy], search_existing_items=False
+                    [webmap_to_copy],
+                    search_existing_items=False,
+                    folder=self.folder,
+                    owner=self.owner,
                 )  # Clones the WebMap
                 if cloned_webmaps:
                     for webmap in cloned_webmaps:

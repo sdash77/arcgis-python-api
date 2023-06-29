@@ -108,7 +108,10 @@ class _WebExperience(_ItemDefinition):
                 v["portalUrl"] = target.url
                 item = source.content.get(v["itemId"])
                 clone_result = target.content.clone_items(
-                    [item], search_existing_items=search_ex
+                    [item],
+                    search_existing_items=search_ex,
+                    folder=self.folder,
+                    owner=self.owner,
                 )
                 if clone_result:
                     v["itemId"] = clone_result[0].itemid

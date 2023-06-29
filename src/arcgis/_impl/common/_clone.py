@@ -143,7 +143,10 @@ class _DeepCloner:
         for item_id in item_list:
             item = dashboard_item._gis.content.get(item_id)
             clone_result = self.target.content.clone_items(
-                [item], search_existing_items=self._search_existing_items
+                [item],
+                search_existing_items=self._search_existing_items,
+                folder=self.folder,
+                owner=self.owner,
             )
             if clone_result:
                 for cloned_item in clone_result:
