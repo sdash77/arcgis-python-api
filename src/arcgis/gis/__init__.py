@@ -10930,9 +10930,6 @@ class User(dict):
         The ``generate_direct_access_url`` method creates a direct access URL that is ideal
         for uploading large files to datafile share, notebook workspaces or raster stores.
 
-        .. note::
-            The ``generate_direct_access_url`` is available in ArcGIS Online Only
-
         =====================  =========================================================
         **Parameter**           **Description**
         ---------------------  ---------------------------------------------------------
