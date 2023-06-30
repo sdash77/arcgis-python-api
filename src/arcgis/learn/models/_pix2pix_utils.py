@@ -33,8 +33,10 @@ from torchvision.models.resnet import (
 )
 from fastai.vision.models.unet import DynamicUnet
 
+
 def GeneratorResUnet(data, n_output, size, backbone):
     from ._arcgis_model import _change_tail
+
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     body = create_body(backbone, pretrained=True)
     new_body = _change_tail(body, data)

@@ -12,7 +12,7 @@ try:
         Pix2PixPerceptualTrainer,
         optim,
         compute_metrics,
-        compute_fid_metric
+        compute_fid_metric,
     )
     from ._pix2pix_utils import pix2pix as pix2pix_model
     from .._utils.common import get_multispectral_data_params_from_emd, _get_emd_path
