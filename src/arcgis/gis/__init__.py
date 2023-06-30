@@ -13745,6 +13745,24 @@ class Item(dict):
             icon = "maptiles16.png"
         elif self.type.lower() == "map document":
             icon = "mapsgray16.png"
+        elif self.type.lower() == "csv":
+            return (
+                f"{self._gis.url}/home/js/arcgisonline/img/item-types/datafiles16.svg"
+            )
+        elif self.type.lower() == "notebook":
+            return f"{self._gis.url}/home/js/arcgisonline/img/item-types/notebook16.svg"
+        elif self.type.lower() == "shapefile":
+            return (
+                f"{self._gis.url}/home/js/arcgisonline/img/item-types/datafiles16.svg"
+            )
+        elif self.type.lower() == "notebook code snippet library":
+            return (
+                f"{self._gis.url}/home/js/arcgisonline/img/item-types/codeSnippet16.svg"
+            )
+        elif self.type.lower() == "web mapping application":
+            return f"{self._gis.url}/home/js/arcgisonline/img/item-types/apps16.svg"
+        elif self.type.lower() == "geoprocessing service":
+            return f"{self._gis.url}/home/js/arcgisonline/img/item-types/layers16.svg"
         else:
             icon = "layers16.png"
 
@@ -13818,7 +13836,7 @@ class Item(dict):
             + snippet
             + """<img src='"""
             + self._get_icon()
-            + """' style="vertical-align:middle;">"""
+            + """' style="vertical-align:middle;" width=16 height=16>"""
             + self._ux_item_type()
             + """ by """
             + self.owner
@@ -14349,8 +14367,8 @@ class Item(dict):
 
             # Usage Example
 
-            >>> item.update(item_properties = {"description":"Boundaries and infrastructure for Warren County", 
-                                                "title":"Warren County Feature Layer", 
+            >>> item.update(item_properties = {"description":"Boundaries and infrastructure for Warren County",
+                                                "title":"Warren County Feature Layer",
                                                 "tags":"local government, administration, Warren County"
                                                })
         """
