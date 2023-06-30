@@ -2,7 +2,10 @@ import sys
 
 #
 #  Update the Path to set the test area
-# sys.path.insert(0, r"C:\SVN\geosaurus_master\src")
+
+# sys.path.insert(
+#    0, r"C:\SVN\geosaurus_multiiwa_fix_handle_ports_properly\src"
+# )
 import logging
 import unittest
 from arcgis.auth.tools._util import detect_proxy
@@ -31,7 +34,7 @@ class TestMFASecurityAuth(unittest.TestCase):
         cls.url = "https://devext.arcgis.com/sharing/rest"
         cls.username = "mfauser"
         cls.password = "esri.agp2"
-        cls.mfa_code = "WTE74DJZEHX2ZWVW"
+        cls.mfa_code = "5BYTJTGFUPV7UT6C"
 
     def test_login_mfa(self):
         auth = EsriBuiltInAuth(

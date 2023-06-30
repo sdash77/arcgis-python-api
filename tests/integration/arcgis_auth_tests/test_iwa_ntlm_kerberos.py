@@ -1,6 +1,5 @@
 import sys
 
-sys.path.insert(0, r"c:\SVN\geosaurus_issue_9708\src")
 # sys.path.insert(0, r"c:\SVN\geosaurus_master\src")
 from arcgis.auth.tools._util import detect_proxy
 
@@ -66,10 +65,16 @@ except:
 class TestWinAuth(unittest.TestCase):
     def test_win_auth(self):
         gis = GIS(url=iwa_url, password=iwa_pw, username=iwa_user)
+        servers = gis.admin.servers.list()
+        if len(servers) > 0:
+            assert servers[1].properties
         assert gis.users.me
 
     def test_win_auth_no_user(self):
         gis = GIS(url=iwa_url)
+        servers = gis.admin.servers.list()
+        if len(servers) > 0:
+            assert servers[1].properties
         assert gis.users.me
 
 
@@ -77,14 +82,21 @@ class TestWinAuth(unittest.TestCase):
     WINDOWS == False or SKIP_IWA == True, "Operating System is not Windows"
 )
 class TestMultiIWAAuth(unittest.TestCase):
+    # @unittest.skip("TBD")
     def test_creds_multiiwa(self):
         gis = GIS(
             url=multiiwa_url, password=multiiwa_pw, username=multiiwa_user
         )
+        servers = gis.admin.servers.list()
+        if len(servers) > 0:
+            assert servers[1].properties
         assert gis.users.me
 
     def test_no_creds_multiiwa(self):
         gis = GIS(url=multiiwa_url)
+        servers = gis.admin.servers.list()
+        if len(servers) > 0:
+            assert servers[0].properties
         assert gis.users.me
 
 
@@ -97,6 +109,7 @@ class TestKerberos(unittest.TestCase):
         """Tests the Kerberos"""
         gis = GIS(url=ker_url)
         assert gis.users.me  # not working
+        assert gis.admin.servers.list()[0].properties
 
 
 @unittest.skipIf(

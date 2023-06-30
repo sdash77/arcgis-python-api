@@ -17,7 +17,7 @@ except:
 
 requests = LazyLoader("requests")
 
-from ._utils import _split_username
+from ._utils import _split_username, assemble_url
 
 __all__ = ["EsriKerberosAuth", "EsriWindowsAuth"]
 
@@ -119,12 +119,7 @@ class EsriWindowsAuth(AuthBase, SupportMultiAuth):
     def generate_portal_server_token(self, r, **kwargs):
         """generates a server token using Portal token"""
         parsed = parse_url(r.url)
-        if parsed.port:
-            server_url = f'{parsed.scheme}://{parsed.netloc}:{parsed.port}/{parsed.path[1:].split("/")[0]}'
-        else:
-            server_url = (
-                f'{parsed.scheme}://{parsed.netloc}/{parsed.path[1:].split("/")[0]}'
-            )
+        server_url = assemble_url(parsed)
         if (
             r.text.lower().find("invalid token") > -1
             or r.text.lower().find("token required") > -1
@@ -277,12 +272,7 @@ class EsriKerberosAuth(AuthBase, SupportMultiAuth):
     def generate_portal_server_token(self, r, **kwargs):
         """generates a server token using Portal token"""
         parsed = parse_url(r.url)
-        if parsed.port:
-            server_url = f'{parsed.scheme}://{parsed.netloc}:{parsed.port}/{parsed.path[1:].split("/")[0]}'
-        else:
-            server_url = (
-                f'{parsed.scheme}://{parsed.netloc}/{parsed.path[1:].split("/")[0]}'
-            )
+        server_url = assemble_url(parsed)
         if (
             r.text.lower().find("invalid token") > -1
             or r.text.lower().find("token required") > -1
