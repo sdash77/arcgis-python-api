@@ -22,16 +22,24 @@ from .._utils.superres import psnr, ssim
 
 import torch.nn as nn
 import torch.nn.functional as F
-import torch
+import torch.nn.init as init
+from fastai.vision.learner import create_body
+from torchvision.models.resnet import (
+    resnet18,
+    resnet34,
+    resnet50,
+    resnext50_32x4d,
+    wide_resnet50_2,
+)
+from fastai.vision.models.unet import DynamicUnet
 
-
-def weights_init_normal(m):
-    classname = m.__class__.__name__
-    if classname.find("Conv") != -1:
-        torch.nn.init.normal_(m.weight.data, 0.0, 0.02)
-    elif classname.find("BatchNorm2d") != -1:
-        torch.nn.init.normal_(m.weight.data, 1.0, 0.02)
-        torch.nn.init.constant_(m.bias.data, 0.0)
+def GeneratorResUnet(data, n_output, size, backbone):
+    from ._arcgis_model import _change_tail
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    body = create_body(backbone, pretrained=True)
+    new_body = _change_tail(body, data)
+    net_G = DynamicUnet(new_body, n_output, (size, size)).to(device)
+    return net_G
 
 
 ##############################
@@ -194,14 +202,26 @@ class PerceptualLossDiscriminator(nn.Module):
 
 
 class pix2pix(nn.Module):
-    def __init__(self, ch_in: int, ch_out: int, perceptual_loss: bool = False):
+    def __init__(
+        self,
+        data,
+        ch_in: int,
+        ch_out: int,
+        backbone=None,
+        perceptual_loss: bool = False,
+        chip_size=256,
+    ):
         super().__init__()
 
         if perceptual_loss:
             self.D = PerceptualLossDiscriminator(ch_in)
         else:
             self.D = Discriminator(ch_in)
-        self.G = GeneratorUNet(ch_in, ch_out)
+        if backbone:
+            self.G = GeneratorResUnet(data, ch_out, chip_size, backbone)
+        else:
+            self.G = GeneratorUNet(ch_in, ch_out)
+
         self.perceptual_loss = perceptual_loss
         self.arcgis_results = False
 
