@@ -916,10 +916,10 @@ def text_models():
     return parameter_text
 
 def autodl_main():
-    autodl_data = [r"/mnt/sda1/data_for_jenkins_tests/train_model/autodl_data/classified_tiles", 
-    r"/mnt/sda1/data_for_jenkins_tests/train_model/autodl_data/palm_trees"]
-    autodl_pretrained_model = [r"/mnt/sda1/data_for_jenkins_tests/train_model/autodl_data/unet_model/AutoDL_UnetClassifier_resnet34.emd",
-    r"/mnt/sda1/data_for_jenkins_tests/train_model/autodl_data/ssd_model/AutoDL_SingleShotDetector_resnet34.emd"]
+    autodl_data = [os.path.join(data_folder, "autodl_data", "classified_tiles"), 
+                   os.path.join(data_folder, "autodl_data", "palm_trees")]
+    autodl_pretrained_model = [os.path.join(data_folder, "autodl_data", "unet_model", "AutoDL_UnetClassifier_resnet34.emd"),
+                               os.path.join(data_folder, "autodl_data", "ssd_model", "AutoDL_SingleShotDetector_resnet34.emd")]
     autodl_model = ["DeepLab", "SingleShotDetector"]
     for ind in range(0,2):
         path = autodl_data[ind]
