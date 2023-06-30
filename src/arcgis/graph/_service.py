@@ -1,8 +1,6 @@
 from __future__ import annotations
-import datetime as _dt
 from arcgis.auth.tools import LazyLoader
-from typing import Optional
-
+from typing import Generator
 
 try:
     import arcgis.graph._arcgisknowledge as _kgparser
@@ -10,10 +8,8 @@ try:
     HAS_KG = True
 except ImportError as e:
     HAS_KG = False
-_gis = LazyLoader("arcgis.gis")
 _isd = LazyLoader("arcgis._impl.common._isd")
 from typing import List, Any
-import platform
 
 
 class KnowledgeGraph:
@@ -54,6 +50,17 @@ class KnowledgeGraph:
                 "An error occured with importing the Knowledge Graph libraries. Please ensure you "
                 "are using Python 3.7, 3.8, 3.9, or 3.10 on Windows or Linux platforms."
             )
+        
+    def _getInputQuantParams(self, inputQuantParams: dict):
+        clientCoreQuantParams = _kgparser.InputQuantizationParameters()
+        clientCoreQuantParams.xy_resolution = inputQuantParams["xyResolution"]
+        clientCoreQuantParams.x_false_origin = inputQuantParams["xFalseOrigin"]
+        clientCoreQuantParams.y_false_origin = inputQuantParams["yFalseOrigin"]
+        clientCoreQuantParams.z_resolution = inputQuantParams["zResolution"]
+        clientCoreQuantParams.z_false_origin = inputQuantParams["zFalseOrigin"]
+        clientCoreQuantParams.m_resolution = inputQuantParams["mResolution"]
+        clientCoreQuantParams.m_false_origin = inputQuantParams["mFalseOrigin"]
+        return clientCoreQuantParams
 
     @classmethod
     def fromitem(cls, item):
@@ -122,9 +129,10 @@ class KnowledgeGraph:
         r_enc.max_num_results = self.properties["maxRecordCount"]
         r_enc.type_category_filter = cat_lu[category.lower()]
         r_enc.encode()
-        assert r_enc.get_encoding_result().error.error_code == 0
+        error = r_enc.get_encoding_result().error
+        if error.error_code != 0:
+            raise Exception(error.error_message)
         query_dec = _kgparser.GraphQueryDecoder()
-        count = 0
 
         session = self._gis._con._session
         response = session.post(
@@ -139,10 +147,8 @@ class KnowledgeGraph:
         query_dec.data_model = self._datamodel
         for chunk in response.iter_content(8192):
             did_push = query_dec.push_buffer(chunk)
-            count = 0
             while query_dec.next_row():
                 rows.append(query_dec.get_current_row())
-                count += 1
         return rows
 
     def query(self, query: str) -> List[dict]:
@@ -195,9 +201,8 @@ class KnowledgeGraph:
         **kwargs,
     ) -> List[dict]:
         """
-        Query the graph using an openCypher query. Differs from `query()` in that the query
-        request is PBF encoded, allows for more user customization and the results are 
-        streamed back in chunks.
+        Query the graph using an openCypher query. Allows for more customization than the base
+        `query()` function.
         
 
         ===================    ===============================================================
@@ -221,20 +226,8 @@ class KnowledgeGraph:
 
         """
 
-        # internal helper to get quantization params
-        def _getInputQuantParams(inputQuantParams: dict):
-            clientCoreQuantParams = _kgparser.InputQuantizationParameters()
-            clientCoreQuantParams.xy_resolution = inputQuantParams["xyResolution"]
-            clientCoreQuantParams.x_false_origin = inputQuantParams["xFalseOrigin"]
-            clientCoreQuantParams.y_false_origin = inputQuantParams["yFalseOrigin"]
-            clientCoreQuantParams.z_resolution = inputQuantParams["zResolution"]
-            clientCoreQuantParams.z_false_origin = inputQuantParams["zFalseOrigin"]
-            clientCoreQuantParams.m_resolution = inputQuantParams["mResolution"]
-            clientCoreQuantParams.m_false_origin = inputQuantParams["mFalseOrigin"]
-            return clientCoreQuantParams
-
         if input_transform:
-            quant_params = _getInputQuantParams(input_transform)
+            quant_params = self._getInputQuantParams(input_transform)
         else:
             quant_params = _kgparser.InputQuantizationParameters.WGS84_lossless()
 
@@ -253,7 +246,9 @@ class KnowledgeGraph:
         else:
             r_enc.provenance_behavior = _kgparser.ProvenanceBehavior.exclude
         r_enc.encode()
-        assert r_enc.get_encoding_result().error.error_code == 0
+        error = r_enc.get_encoding_result().error
+        if error.error_code != 0:
+            raise Exception(error.error_message) 
         query_dec = _kgparser.GraphQueryDecoder()
 
         session = self._gis._con._session
@@ -267,15 +262,11 @@ class KnowledgeGraph:
         rows = []
         for chunk in response.iter_content(8192):
             did_push = query_dec.push_buffer(chunk)
-            local_count = 0
             while query_dec.next_row():
                 rows.append(query_dec.get_current_row())
-                local_count += 1
         return rows
 
         
-
-
     @property
     def _datamodel(self) -> object:
         """
@@ -317,7 +308,7 @@ class KnowledgeGraph:
         deletes: list[dict[str, Any]] = [],
         input_transform: dict[str, Any] = None,
         cascade_delete: bool = False,
-        cascade_delete_provenance: bool = True,
+        cascade_delete_provenance: bool = False,
     ) -> dict:
         """
         Allows users to add new graph entities/relationships, update existing
@@ -384,20 +375,8 @@ class KnowledgeGraph:
 
         url = self._url + "/graph/applyEdits"
 
-        # internal helper to get quant params
-        def _getInputQuantParams(inputQuantParams: dict):
-            clientCoreQuantParams = _kgparser.InputQuantizationParameters()
-            clientCoreQuantParams.xy_resolution = inputQuantParams["xyResolution"]
-            clientCoreQuantParams.x_false_origin = inputQuantParams["xFalseOrigin"]
-            clientCoreQuantParams.y_false_origin = inputQuantParams["yFalseOrigin"]
-            clientCoreQuantParams.z_resolution = inputQuantParams["zResolution"]
-            clientCoreQuantParams.z_false_origin = inputQuantParams["zFalseOrigin"]
-            clientCoreQuantParams.m_resolution = inputQuantParams["mResolution"]
-            clientCoreQuantParams.m_false_origin = inputQuantParams["mFalseOrigin"]
-            return clientCoreQuantParams
-
         if input_transform:
-            quant_params = _getInputQuantParams(input_transform)
+            quant_params = self._getInputQuantParams(input_transform)
         else:
             quant_params = _kgparser.InputQuantizationParameters.WGS84_lossless()
 
@@ -421,7 +400,7 @@ class KnowledgeGraph:
         res = enc.get_encoding_result()
 
         if res.error.error_code != 0:
-            print(res.error.error_message)
+            raise Exception(res.error.error_message)
 
         pbf_params = {
             "f": "pbf",
@@ -512,7 +491,9 @@ class KnowledgeGraph:
             r_enc.add_relationship_type(relationship_type)
 
         r_enc.encode()
-        assert r_enc.get_encoding_result().error.error_code == 0
+        error = r_enc.get_encoding_result().error
+        if error.error_code != 0:
+            raise Exception(error.error_message)
         r_dec = _kgparser.GraphNamedObjectTypeAddsResponseDecoder()
 
         session = self._gis._con._session
@@ -590,7 +571,9 @@ class KnowledgeGraph:
             r_enc.update_relationship_type(named_type_update, mask)
 
         r_enc.encode()
-        assert r_enc.get_encoding_result().error.error_code == 0
+        error = r_enc.get_encoding_result().error
+        if error.error_code != 0:
+            raise Exception(error.error_message)
         r_dec = _kgparser.GraphNamedObjectTypeUpdateResponseDecoder()
 
         session = self._gis._con._session
@@ -711,7 +694,9 @@ class KnowledgeGraph:
             r_enc.add_property(prop)
 
         r_enc.encode()
-        assert r_enc.get_encoding_result().error.error_code == 0
+        error = r_enc.get_encoding_result().error
+        if error.error_code != 0:
+            raise Exception(error.error_message)
         r_dec = _kgparser.GraphPropertyAddsResponseDecoder()
 
         session = self._gis._con._session
@@ -806,8 +791,9 @@ class KnowledgeGraph:
         r_enc.name = property_name
 
         r_enc.encode()
-        if r_enc.get_encoding_result().error.error_code != 0:
-            print(r_enc.get_encoding_result().error.error_message)
+        error = r_enc.get_encoding_result().error
+        if error.error_code != 0:
+            raise Exception(error.error_message)
         r_dec = _kgparser.GraphPropertyUpdateResponseDecoder()
 
         session = self._gis._con._session
@@ -856,7 +842,9 @@ class KnowledgeGraph:
         r_enc.name = property_name
 
         r_enc.encode()
-        assert r_enc.get_encoding_result().error.error_code == 0
+        error = r_enc.get_encoding_result().error
+        if error.error_code != 0:
+            raise Exception(error.error_message)
         r_dec = _kgparser.GraphPropertyDeleteResponseDecoder()
 
         session = self._gis._con._session
