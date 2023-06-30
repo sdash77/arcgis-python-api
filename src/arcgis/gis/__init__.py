@@ -3167,6 +3167,7 @@ class UserManager(object):
         user_type: Optional[str] = None,
         credits: float = -1,
         groups: Optional[list[str]] = None,
+        email_text: Optional[str] = None,
     ):
         """
         The ``create`` operation is used to pre-create built-in or enterprise accounts within the Enterprise portal,
@@ -3245,6 +3246,9 @@ class UserManager(object):
         ----------------  -------------------------------------------------------------------------------
         groups            Optional List. An array of Group objects to provide access to for a given
                           user. (10.7+)
+        ----------------  -------------------------------------------------------------------------------
+        email_text        Optional string. Custom text to include in the invitation email. This text will
+                          be appended to the top of the default email text. ArcGIS Online only.
         ================  ===============================================================================
 
         :return:
@@ -3302,6 +3306,7 @@ class UserManager(object):
             "user_type": user_type,
             "credits": credits,
             "groups": groups,
+            "email_text": email_text,
         }
         if self._gis.version >= [6, 4]:
             allowed_keys = {
@@ -3319,6 +3324,7 @@ class UserManager(object):
                 "credits",
                 "groups",
                 "level",
+                "email_text",
             }
             params = {}
             for k, v in kwargs.items():
@@ -3516,6 +3522,7 @@ class UserManager(object):
         credits=None,
         groups=None,
         level=None,
+        email_text=None,
     ):
         """
         This operation is used to pre-create built-in or enterprise accounts within the portal,
@@ -3573,6 +3580,9 @@ class UserManager(object):
                           which means unlimited.
         ----------------  -------------------------------------------------------------------------------
         groups            Optional List. An array of Group objects to provide access to for a given user.
+        ----------------  -------------------------------------------------------------------------------
+        email_text        Optional string. Custom text to include in the invitation email. This text will
+                          be appended to the default email text. ArcGIS Online only.
         ================  ===============================================================================
 
         :return:
@@ -3635,26 +3645,6 @@ class UserManager(object):
         if self._gis._portal.is_arcgisonline or (
             self._gis._portal.is_kubernetes and provider != "enterprise"
         ):
-            email_text = (
-                """<html><body><p>"""
-                + self._gis.properties.user.fullName
-                + """ has invited you to join an ArcGIS Online Organization, """
-                + self._gis.properties.name
-                + """</p>
-<p>Please click this link to finish setting up your account and establish your password: <a href="https://www.arcgis.com/home/newuser.html?invitation=@@invitation.id@@">https://www.arcgis.com/home/newuser.html?invitation=@@invitation.id@@</a></p>
-<p>Note that your account has already been created for you with the username, <strong>@@touser.username@@</strong>.  </p>
-<p>If you have difficulty signing in, please contact """
-                + self._gis.properties.user.fullName
-                + "("
-                + self._gis.properties.user.email
-                + """). Be sure to include a description of the problem, the error message, and a screenshot.</p>
-<p>For your reference, you can access the home page of the organization here: <br>"""
-                + self._gis.properties.user.fullName
-                + """</p>
-<p>This link will expire in two weeks.</p>
-<p style="color:gray;">This is an automated email. Please do not reply.</p>
-</body></html>"""
-            )
             if (
                 credits == -1
                 and self._gis.version >= [7, 2]
@@ -3688,8 +3678,9 @@ class UserManager(object):
                     "apps": [],
                     "appBundles": [],
                 },
-                #'message' : email_text
             }
+            if email_text:
+                params["message"] = email_text
             if idp_username is not None:
                 if provider is None:
                     provider = "enterprise"
@@ -5070,8 +5061,40 @@ class GroupManager(object):
         self._portal = gis._portal
         self._cloner = _cloner.GroupCloner(gis=self._gis)
 
+    #  --------------------------------------------------------------------
+    def load_offline_configuration(
+        self, package: str
+    ) -> list[concurrent.futures.Future]:
+        """
+        Loads the UX configuration file into the current active portal.
+
+        ====================  =========================================================
+        **Parameter**         **Description**
+        --------------------  ---------------------------------------------------------
+        package               Required String. The GROUP_CLONER file that contains the offline information.
+        ====================  =========================================================
+
+        :returns: concurrent.futures.Future
+
+        .. code-block:: python
+
+            # Usage Example
+            >>> package = r"/home/groups.GROUP_CLONER"
+            >>> job = gis_destination.groups.load_offline_configuration(package)
+            >>> job.result()
+            [<Group>]
+
+        """
+        return self._cloner.load_offline_configuration(package)
+
     def clone(
-        self, groups: list[Group], *, skip_existing: bool = True
+        self,
+        groups: list[Group],
+        *,
+        skip_existing: bool = True,
+        offline: bool = False,
+        save_folder: str | None = None,
+        file_name: str | None = "GROUP_CLONER",
     ) -> list[_cloner.CloningJob]:
         """
         The group cloner will recreate groups from site A to site B.
@@ -5084,6 +5107,12 @@ class GroupManager(object):
         groups                Required list[Group]. A list of Group objects to clone.
         --------------------  ---------------------------------------------------------
         skip_existing         Optional bool. If True, if a group exists, it will be skipped.
+        --------------------  ---------------------------------------------------------
+        offline               Optional bool. If True, a file will be saved locally that can be imported at a later date.
+        --------------------  ---------------------------------------------------------
+        save_folder           Optional str. The save path of the offline package.
+        --------------------  ---------------------------------------------------------
+        file_name             Optional str. The name of the file without an extension.
         ====================  =========================================================
 
         :returns: list[CloningJob]
@@ -5099,8 +5128,25 @@ class GroupManager(object):
             >>> [job.result() for job in jobs]
             [<Group>]
 
+        .. code-block:: python
+
+            # Usage Example 2
+            >>> group = gis_source.groups.create(title = "New Group",
+                                  tags = "new, group, USA",
+                                  description = "a new group in the USA",
+                                  access = "public")
+            >>> job = gis_destination.groups.clone([group], offline=True, save_folder=r"c:\storage", file_name="groups)
+            >>> job.result()
+            c:\storage\groups.GROUP_CLONER
+
         """
-        return self._cloner.clone(groups=groups, skip_existing=skip_existing)
+        return self._cloner.clone(
+            groups=groups,
+            skip_existing=skip_existing,
+            offline=offline,
+            save_folder=save_folder,
+            file_name=file_name,
+        )
 
     def create(
         self,
@@ -5236,6 +5282,7 @@ class GroupManager(object):
             "all": {"itemTypes": ""},
             "files": {"itemTypes": "CSV"},
             None: {"itemTypes": ""},
+            "none": {"itemTypes": ""},
             "maps": {"itemTypes": "Web Map"},
             "layers": {"itemTypes": "Layer"},
             "scenes": {"itemTypes": "Web Scene"},
@@ -10709,8 +10756,6 @@ class User(dict):
             if dayname == "Sunday":
                 return 0
 
-        if self._gis._portal.is_arcgisonline == False:
-            raise Exception("The report operation only works on ArcGIS Online.")
         if report_type.lower() != "activity" and duration == "daily":
             raise ValueError("Daily only applies to activity report type.")
         if (
@@ -10894,9 +10939,6 @@ class User(dict):
         """
         The ``generate_direct_access_url`` method creates a direct access URL that is ideal
         for uploading large files to datafile share, notebook workspaces or raster stores.
-
-        .. note::
-            The ``generate_direct_access_url`` is available in ArcGIS Online Only
 
         =====================  =========================================================
         **Parameter**           **Description**
@@ -12432,6 +12474,7 @@ class Item(dict):
     """
     The ``Item`` class represents an item  in the GIS, where an item is simply considered a unit of content in the GIS.
     Each item has a unique identifier and a well-known URL that is independent of the user owning the item.
+    For a comprehensive list of properties of an item please see the REST API documentation `here <https://developers.arcgis.com/rest/users-groups-and-items/item.htm>`_ .
     Additionally, each item can have associated binary or textual data that's available via the item data resource.
     For example, an item of type `Map Package` returns the actual bits corresponding to the
     map package via the item data resource.
@@ -13712,6 +13755,24 @@ class Item(dict):
             icon = "maptiles16.png"
         elif self.type.lower() == "map document":
             icon = "mapsgray16.png"
+        elif self.type.lower() == "csv":
+            return (
+                f"{self._gis.url}/home/js/arcgisonline/img/item-types/datafiles16.svg"
+            )
+        elif self.type.lower() == "notebook":
+            return f"{self._gis.url}/home/js/arcgisonline/img/item-types/notebook16.svg"
+        elif self.type.lower() == "shapefile":
+            return (
+                f"{self._gis.url}/home/js/arcgisonline/img/item-types/datafiles16.svg"
+            )
+        elif self.type.lower() == "notebook code snippet library":
+            return (
+                f"{self._gis.url}/home/js/arcgisonline/img/item-types/codeSnippet16.svg"
+            )
+        elif self.type.lower() == "web mapping application":
+            return f"{self._gis.url}/home/js/arcgisonline/img/item-types/apps16.svg"
+        elif self.type.lower() == "geoprocessing service":
+            return f"{self._gis.url}/home/js/arcgisonline/img/item-types/layers16.svg"
         else:
             icon = "layers16.png"
 
@@ -13785,7 +13846,7 @@ class Item(dict):
             + snippet
             + """<img src='"""
             + self._get_icon()
-            + """' style="vertical-align:middle;">"""
+            + """' style="vertical-align:middle;" width=16 height=16>"""
             + self._ux_item_type()
             + """ by """
             + self.owner
@@ -14316,9 +14377,10 @@ class Item(dict):
 
             # Usage Example
 
-            >>> item.update(description ="aggregated US hurricane data",
-                            title = "US Hurricane Data",
-                            tags = "Hurricanes, USA, Natural Disasters")
+            >>> item.update(item_properties = {"description":"Boundaries and infrastructure for Warren County",
+                                                "title":"Warren County Feature Layer",
+                                                "tags":"local government, administration, Warren County"
+                                               })
         """
         if isinstance(item_properties, ItemProperties):
             if (

@@ -1,6 +1,8 @@
 import sys
 
-sys.path.insert(0, r"c:\SVN\geosaurus_issue_9708\src")
+sys.path.insert(
+    0, r"C:\SVN\geosaurus_multiiwa_fix_handle_ports_properly\src"
+)
 import unittest
 
 
@@ -62,7 +64,6 @@ class TestOAuth2Workflow(unittest.TestCase):
         )
         print(gis.properties)
 
-    @unittest.skip("I work")
     def test_client_id_client_secret(self):
         """
         Tests the client/secret workflow
@@ -93,7 +94,6 @@ class TestOAuth2Workflow(unittest.TestCase):
 
         assert gis.properties["appInfo"]["appOwner"]
 
-    @unittest.skip("I work")
     def test_client_id_client_secret_username_pw(self):
         """
         Tests the client/secret + username/password provided workflow

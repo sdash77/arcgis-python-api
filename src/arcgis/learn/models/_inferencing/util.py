@@ -628,6 +628,7 @@ def pixel_classify_pix2pix_image(model, tiles, device, model_info):
     num_channel_tar = model_info.get("n_channel", None)
 
     norm_stats_a = model_info.get("NormalizationStats", None)
+    model_info["ExtractBands"] = list(range(tiles.shape[1]))
     img_scaled = scale_batch(tiles, model_info, norm_stats_a)
     img_normed = -1 + 2 * img_scaled
 

@@ -1,43 +1,4 @@
 import os
-from platform import python_version
-import subprocess
-from subprocess import PIPE, run
-
-version = python_version().split(".")[:-1]
-python_ver = ".".join(version)
-
-
-hosted_ip = "http://10.44.9.88:8002"
-if os.environ.get("run_nightly") == "1":
-    workspace_path = "/var/lib/jenkins/workspace/learn_nightly"
-else:
-    workspace_path = "/var/lib/jenkins/workspace/learn_pullrequests"
-all_required_dlls = {
-    "_track_processor.so": {
-        "url": os.path.join(hosted_ip, "build_files", "tracking-engine"),
-        "destination": os.path.join(workspace_path, "src", "arcgis", "learn", "_tracking", "_track_processor.so")
-    },
-    "libTrackingEngine.so": {
-        "url": os.path.join(hosted_ip, "build_files", "tracking-engine"),
-        "destination": os.path.join(workspace_path, "src", "arcgis", "learn", "_tracking", "libTrackingEngine.so")
-    },
-    "nearest_neighbors.cpython-39-x86_64-linux-gnu.so": {
-        "url": os.path.join(hosted_ip, "build_files", "knn"),
-        "destination": os.path.join(workspace_path, "src", "arcgis", "learn", "_utils", "nearest_neighbors.cpython-39-x86_64-linux-gnu.so")
-    },
-    "nearest_neighbors.py": {
-        "url": os.path.join(hosted_ip, "build_files", "knn"),
-        "destination": os.path.join(workspace_path, "src", "arcgis", "learn", "_utils", "nearest_neighbors.py")
-    },
-}
-
-for key, val in all_required_dlls.items():
-    url = str(os.path.join(val["url"], "py"+python_ver+"_linux", key))
-    command = "curl "+ url + " --output " + val["destination"]
-    subprocess.call(command, shell=True )
-
-import arcgis
-
 from fastai.vision.transform import rotate, brightness, contrast
 os.environ["CUDA_VISIBLE_DEVICES"] = "0"
 from arcgis.learn import (
@@ -54,7 +15,6 @@ from arcgis.learn import (
     DeepLab,
     YOLOv3,
     FullyConnectedNetwork,
-    prepare_tabulardata,
     Pix2Pix,
     CycleGAN,
     BDCNEdgeDetector,
@@ -72,7 +32,6 @@ from arcgis.learn import (
     MaXDeepLab,
     DETReg,
     PSETAE,
-    EfficientDet,
     RandLANet,
     SQNSeg
 )
@@ -80,16 +39,16 @@ import json
 from arcgis.learn.text import EntityRecognizer, SequenceToSequence, TextClassifier
 
 if os.environ.get("run_nightly") == "1":
-    data_folder = r"/mnt/sda1/data_for_jenkins_tests/train_model_regression"
+    data_folder = r"/root/data_for_testing/test_automation/data/train_model_regression"
 else:
-    data_folder = r"/mnt/sda1/data_for_jenkins_tests/train_model"
+    data_folder = r"/root/data_for_testing/test_automation/data/train_model"
 data_folder_inference = (
-    r"/mnt/sda1/data_for_jenkins_tests/train_inference"
+    r"/root/data_for_testing/test_automation/data/train_inference"
 )
 data_folder_ms = (
-    r"/mnt/sda1/data_for_jenkins_tests/train_model_ms"
+    r"/root/data_for_testing/test_automation/data/train_model_ms"
 )
-authorization_path = r"/mnt/sda1/data_for_jenkins_tests/properties/properties.json"
+authorization_path = r"/root/data_for_testing/test_automation/data/properties/properties.json"
 
 colormap = {
     "0": [0, 0, 0],
