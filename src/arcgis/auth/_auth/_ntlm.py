@@ -14,7 +14,7 @@ from requests.auth import AuthBase
 from urllib3.response import HTTPResponse
 
 from arcgis.auth.tools import LazyLoader
-from ._utils import parse_url, _split_username
+from ._utils import parse_url, _split_username, assemble_url
 
 try:
     spnego = LazyLoader("spnego", strict=True)
@@ -103,12 +103,7 @@ class EsriHttpNtlmAuth(AuthBase):
     def generate_token(self, r, scheme, args):
         """generates the server token"""
         parsed = parse_url(url=r.url)
-        if parsed.port:
-            server_url = f'{parsed.scheme}://{parsed.netloc}:{parsed.port}/{parsed.path[1:].split("/")[0]}'
-        else:
-            server_url = (
-                f'{parsed.scheme}://{parsed.netloc}/{parsed.path[1:].split("/")[0]}'
-            )
+        server_url = assemble_url(parsed)
         token_url: str = None
         if server_url in self._server_log:
             token_url: str = self._server_log[server_url]
