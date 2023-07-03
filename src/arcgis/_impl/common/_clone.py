@@ -163,30 +163,32 @@ class _DeepCloner:
 
             map_dict[item_id] = new_item.itemid
 
-        cloned_db = self.target.content.clone_items(
+        cloned_db_list = self.target.content.clone_items(
             [dashboard_item],
             folder=self.folder,
             owner=self.owner,
             search_existing_items=self._search_existing_items,
             preserve_item_id=self._preserve_item_id,
             from_dash=True,
-        )[0]
-        cloned_item_list.append(cloned_db)
-        cloned_widgets = cloned_db.get_data()["desktopView"]["widgets"]
+        )
+        if cloned_db_list:
+            cloned_db = cloned_db_list[0]
+            cloned_item_list.append(cloned_db)
+            cloned_widgets = cloned_db.get_data()["desktopView"]["widgets"]
 
-        for widget in cloned_widgets:
-            for k, v in widget.items():
-                if k == "itemId":
-                    widget["itemId"] = map_dict[v]
-                if k == "datasets":
-                    for dataset in v:
-                        dataset["dataSource"]["itemId"] = map_dict[
-                            dataset["dataSource"]["itemId"]
-                        ]
+            for widget in cloned_widgets:
+                for k, v in widget.items():
+                    if k == "itemId":
+                        widget["itemId"] = map_dict[v]
+                    if k == "datasets":
+                        for dataset in v:
+                            dataset["dataSource"]["itemId"] = map_dict[
+                                dataset["dataSource"]["itemId"]
+                            ]
 
-        new_data = cloned_db.get_data()
-        new_data["desktopView"]["widgets"] = cloned_widgets
-        cloned_db.update(item_properties={}, data=new_data)
+            new_data = cloned_db.get_data()
+            new_data["desktopView"]["widgets"] = cloned_widgets
+            cloned_db.update(item_properties={}, data=new_data)
 
         return cloned_item_list
 
