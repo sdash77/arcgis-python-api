@@ -355,7 +355,7 @@ class GroupCloner(BaseCloneGroup):
         try:
             return gm.create(**payload)
         except Exception as ex:
-            return f"could not create the group {group['title']} with error: {ex}"
+            return f"could not create the group {payload['title']} with error: {ex}"
 
     # ---------------------------------------------------------------------
     def clone(
