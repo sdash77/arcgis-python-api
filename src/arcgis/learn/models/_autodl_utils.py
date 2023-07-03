@@ -68,7 +68,12 @@ class train_callback(LearnerCallback):
 
 
 def generate_output_report(
-    df, output_folder, exhaustive_mode_studies, mode, save_to_folder
+    df,
+    output_folder,
+    exhaustive_mode_studies,
+    mode,
+    save_to_folder,
+    save_evaluated_models,
 ):
     content = ""
     header = """
@@ -337,15 +342,11 @@ def generate_output_report(
                     + """" /></p>
                     """
                 )
-            except ValueError as e:
+            except:
                 pass
-            except Exception as e:
-                raise Exception(str(e))
 
-        model_report += "<hr/><h2>Best Performing Model Report</h2>"
-        if save_to_folder:
-            html_report = os.path.join(output_folder, "model_metrics.html")
-        else:
+        if not save_to_folder:
+            model_report += "<hr/><h2>Best Performing Model Report</h2>"
             folder_name = (
                 "AutoDL_"
                 + df["Model"][0]
@@ -358,13 +359,21 @@ def generate_output_report(
                 output_folder, "models", folder_name, "model_metrics.html"
             )
 
-        model_metrics = open(html_report, "r")
-        model_metrics_content = model_metrics.readlines()
-        model_metrics.close()
-        model_report += "\n".join(model_metrics_content)
+            model_metrics = open(html_report, "r")
+            model_metrics_content = model_metrics.readlines()
+            model_metrics.close()
+            model_report += "\n".join(model_metrics_content)
+        if save_to_folder:
+            model_report += "<hr/><h2>Best Performing Model Report</h2>"
+            html_report = os.path.join(output_folder, "model_metrics.html")
+            model_metrics = open(html_report, "r")
+            model_metrics_content = model_metrics.readlines()
+            model_metrics.close()
+            model_report += "\n".join(model_metrics_content)
 
         ## Ends
-
+        # if not save_evaluated_models:
+        #     model_report += "<br/><br/><p>* To display full model metrics enable Save Evaluated Models parameter.</p>"
         content += model_report
 
         content += "</div>"
@@ -405,27 +414,61 @@ def generate_output_report(
                     )
 
                 hidden_divs += "</ul>"
-                hidden_divs += "<h2>Model Performance Report</h2>"
-                folder_name = (
-                    "AutoDL_"
-                    + name
-                    + "_"
-                    + dl["params_backbones"]
-                    + "_"
-                    + ex._timing[ind]
-                )
-                html_model_report = os.path.join(
-                    output_folder, "models", folder_name, "model_metrics.html"
-                )
-                model_metrics = open(html_model_report, "r")
-                model_metrics_content = model_metrics.readlines()
-                model_metrics.close()
-                hidden_divs += "\n".join(model_metrics_content)
+                if save_evaluated_models:
+                    hidden_divs += "<h2>Model Performance Report</h2>"
+                    folder_name = (
+                        "AutoDL_"
+                        + name
+                        + "_"
+                        + dl["params_backbones"]
+                        + "_"
+                        + ex._timing[ind]
+                    )
+                    html_model_report = os.path.join(
+                        output_folder, "models", folder_name, "model_metrics.html"
+                    )
+                    model_metrics = open(html_model_report, "r")
+                    model_metrics_content = model_metrics.readlines()
+                    model_metrics.close()
+                    hidden_divs += "\n".join(model_metrics_content)
+
+                if not save_evaluated_models:
+                    hidden_divs += (
+                        "<p>*To see model metrics enable Save Evaluated Models</p>"
+                    )
 
                 hidden_divs += "</div>"
             content += hidden_divs
         ## Hidden divs ends
+    else:
+        model_report = ""
+        if not save_to_folder:
+            model_report += "<hr/><h2>Best Performing Model Report</h2>"
+            folder_name = (
+                "AutoDL_"
+                + df["Model"][0]
+                + "_"
+                + df["backbone"][0]
+                + "_"
+                + df["timing"][0]
+            )
+            html_report = os.path.join(
+                output_folder, "models", folder_name, "model_metrics.html"
+            )
 
+            model_metrics = open(html_report, "r")
+            model_metrics_content = model_metrics.readlines()
+            model_metrics.close()
+            model_report += "\n".join(model_metrics_content)
+        if save_to_folder:
+            model_report += "<hr/><h2>Best Performing Model Report</h2>"
+            html_report = os.path.join(output_folder, "model_metrics.html")
+            model_metrics = open(html_report, "r")
+            model_metrics_content = model_metrics.readlines()
+            model_metrics.close()
+            model_report += "\n".join(model_metrics_content)
+        content += model_report
+        content += "</div>"
     display_html_path = os.path.join(output_folder, "README.html")
 
     html_template = header + content + footer
@@ -473,7 +516,7 @@ def _objective(trial):
     # Get pretrained model
     model = _get_model(trial.study.study_name, **params)
 
-    global all_val_losses, all_train_losses, dice, BestPerformingModel, best_backbone, best_model, best_name_time
+    global all_val_losses, all_train_losses, dice, BestPerformingModel, best_backbone, best_model
     callbacks = [
         self_obj._train_callback(
             model.learn,

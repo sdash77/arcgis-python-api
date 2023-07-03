@@ -43,6 +43,7 @@ _TEXT_BASED_ITEM_TYPES = [
     "Network Analysis Service",
     "Workflow Manager Service",
     "StoryMap",
+    "Web Scene",
 ]
 
 # Regular expressions for finding fields in json
@@ -108,9 +109,12 @@ class _DeepCloner:
 
         self._cloned_items = []
         for index, item in enumerate(self._items):
-            if item["type"] == "Dashboard" and not from_dash:
-                if len(self._items) > 1:
-                    self._items.pop(index)
+            if (
+                item["type"] == "Dashboard"
+                and "desktopView" in item.get_data()
+                and not from_dash
+            ):
+                self._items.pop(index)
                 dash_list = self._clone_dashboard(item)
                 for cloned_item in dash_list:
                     self._cloned_items.append(cloned_item)
@@ -141,7 +145,10 @@ class _DeepCloner:
             if len(clone_result) > 0:
                 for cloned_item in clone_result:
                     cloned_item_list.append(cloned_item)
-            new_item = self.target.content.search(item.title)[0]
+                    if cloned_item.title == item.title:
+                        new_item = cloned_item
+            else:
+                new_item = item
             map_dict[item_id] = new_item.itemid
 
         cloned_db = self.target.content.clone_items([dashboard_item], from_dash=True)[0]
@@ -397,7 +404,7 @@ class _DeepCloner:
                 item_definition.add_child(self._get_item_definitions(item))
 
         # If the item is a web map find all the feature service layers and tables that make up the map
-        elif item["type"] == "Web Map":
+        elif item["type"] in ["Web Map", "Web Scene"]:
             item_definition = self._get_item_definition(item)
             self._graph[item.id] = item_definition
 
@@ -1442,7 +1449,7 @@ class _DeepCloner:
             )
 
         # If the item is a web map get the WebMapDefintion
-        elif item["type"] == "Web Map":
+        elif item["type"] in ["Web Map", "Web Scene"]:
             webmap_json = item.get_data()
             return _WebMapDefinition(
                 self.target,
@@ -1666,14 +1673,15 @@ class _DeepCloner:
             )
 
             return _WebExperience(
-                self.target,
-                self._clone_mapping,
-                dict(item),
+                target=self.target,
+                clone_mapping=self._clone_mapping,
+                info=dict(item),
                 data=None,
                 thumbnail=None,
                 folder=self.folder,
                 search_existing=self._search_existing_items,
                 owner=self.owner,
+                resources=item.resources.export(),
                 portal_item=item,
                 preserve_item_id=self._preserve_item_id,
             )
@@ -3970,7 +3978,6 @@ class _WebMapDefinition(_TextItemDefinition):
 
     def clone(self):
         """Clone the web map in the target organization."""
-
         try:
             new_item = None
             original_item = self.info

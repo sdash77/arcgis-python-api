@@ -6,7 +6,7 @@ from requests.auth import (
 )
 from ._schain import SupportMultiAuth
 from ..tools._lazy import LazyLoader
-from ..tools import parse_url
+from ..tools import parse_url, assemble_url
 
 requests = LazyLoader("requests")
 
@@ -94,17 +94,8 @@ class EsriBasicAuth(HTTPBasicAuth, SupportMultiAuth):
     def generate_portal_server_token(self, r, **kwargs):
         """generates a server token using Portal token"""
         parsed = parse_url(r.url)
-        if parsed.port:
-            if parsed.port in parsed.netloc:
-                server_url = (
-                    f'{parsed.scheme}://{parsed.netloc}/{parsed.path[1:].split("/")[0]}'
-                )
-            else:
-                server_url = f'{parsed.scheme}://{parsed.netloc}:{parsed.port}/{parsed.path[1:].split("/")[0]}'
-        else:
-            server_url = (
-                f'{parsed.scheme}://{parsed.netloc}/{parsed.path[1:].split("/")[0]}'
-            )
+        server_url: str = assemble_url(parsed)
+
         if (
             r.text.lower().find("invalid token") > -1
             or r.text.lower().find("token required") > -1

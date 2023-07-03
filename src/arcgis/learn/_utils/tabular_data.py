@@ -645,13 +645,13 @@ class TabularDataObject(object):
         if multistep and len(list(self._dataframe.columns.values)) != 1:
             step = seq_len // 2
 
+        self._index_seq = None
         if self._index_data is not None:
             bunched = []
             # Changing it because it misses the edge case
             # for i in range(len(self._index_data) - seq_len - 1):
             for i in range(len(self._index_data) - seq_len - (step - 1)):
-                for st in range(step):
-                    bunched.append(list(self._index_data[i + st : i + seq_len + st]))
+                bunched.append(list(self._index_data[i : i + seq_len]))
 
             self._index_seq = np.array(bunched)
 
@@ -1149,6 +1149,15 @@ class TabularDataObject(object):
         else:
             return self._dataframe.iloc[random_batch].sort_index()
 
+    def _safe_div(self, arr):
+        len_arr = len(arr) - 1
+        if len_arr % 10 == 0:
+            return np.linspace(0, len_arr, 10).astype(int)
+        elif len_arr < 10:
+            return np.linspace(0, len_arr, len_arr + 1).astype(int)
+        else:
+            return np.linspace(0, len_arr, 6).astype(int)
+
     def _show_graph(self, seq_len=None, rows=5):
         """
         Shows a batch of prepared data in the form of graphs
@@ -1158,6 +1167,19 @@ class TabularDataObject(object):
             raise Exception("Show Graphs is used for Time Series Network")
 
         import matplotlib.pyplot as plt
+
+        # Check whether the index is timestamp
+        sample_ticks = False
+        index_data_copy = self._index_data
+        if not pd.core.dtypes.common.is_datetime_or_timedelta_dtype(index_data_copy):
+            # Try to convert the datatype to timestamp
+            warnings.warn("Index field is not timestamp. Converting it to timestamp.")
+            try:
+                index_data_copy = pd.to_datetime(
+                    index_data_copy, infer_datetime_format=True
+                )
+            except:
+                sample_ticks = True
 
         if seq_len is not None:
             try:
@@ -1178,10 +1200,10 @@ class TabularDataObject(object):
             y_train_sample = np.array(y_train).take(sample, axis=0)
 
             batched_index = []
-            if self._index_data is not None:
+            if index_data_copy is not None:
                 indexes = 0
-                while indexes < len(self._index_data):
-                    batched_index.append(self._index_data[indexes : indexes + seq_len])
+                while indexes < len(index_data_copy):
+                    batched_index.append(index_data_copy[indexes : indexes + seq_len])
                     indexes = indexes + seq_len
             else:
                 j = 0
@@ -1204,6 +1226,10 @@ class TabularDataObject(object):
                         val = y_train_sample[i + j]
 
                     axs[i, j].set_title(val)
+                    if sample_ticks:
+                        axs[i, j].xaxis.set_major_locator(
+                            plt.FixedLocator(self._safe_div(range(seq_len)))
+                        )
                     axs[i, j].tick_params(axis="x", labelrotation=60)
 
             plt.tight_layout()
@@ -1211,10 +1237,8 @@ class TabularDataObject(object):
         else:
             # plotting the points
             # y = self._dataframe[self._dependent_variable]
-            x_field = "Time"
-            if self._index_data is not None:
-                x = self._index_data
-                x_field = self._index_field
+            if index_data_copy is not None:
+                x = index_data_copy
             else:
                 x = [i for i in range(len(self._dataframe[self._dependent_variable]))]
 
@@ -1227,10 +1251,22 @@ class TabularDataObject(object):
             for col in list(self._dataframe.columns):
                 if isinstance(axs, np.ndarray):
                     axs[counter].plot(x, self._dataframe[col], label=col)
+                    if sample_ticks:
+                        axs[counter].xaxis.set_major_locator(
+                            plt.FixedLocator(
+                                self._safe_div(range(len(self._dataframe[col])))
+                            )
+                        )
                     axs[counter].set_title(col)
                     axs[counter].tick_params(axis="x", labelrotation=60)
                 else:
                     axs.plot(x, self._dataframe[col], label=col)
+                    if sample_ticks:
+                        axs.xaxis.set_major_locator(
+                            plt.FixedLocator(
+                                self._safe_div(range(len(self._dataframe[col])))
+                            )
+                        )
                     axs.set_title(col)
                     axs.tick_params(axis="x", labelrotation=60)
                 counter = counter + 1

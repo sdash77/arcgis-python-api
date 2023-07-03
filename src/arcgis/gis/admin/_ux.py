@@ -1,12 +1,19 @@
 from __future__ import annotations
+
+import concurrent.futures
+import uuid
+import tempfile
 from enum import Enum
 import os
 import json
+from typing import Any
 from arcgis._impl.common._deprecate import deprecated
 from arcgis.auth.tools import LazyLoader
 from arcgis.gis import Group, User
+from arcgis.gis.clone._ux import UXCloner
 
 _basemap_definitions = LazyLoader("arcgis.mapping._basemap_definitions")
+_arcgis_gis = LazyLoader("arcgis.gis")
 
 
 class StockImage(Enum):
@@ -26,6 +33,8 @@ class UX(object):
     By calling the 'org_map_editor' or 'homepage_editor' more methods can be found to change org settings specific
     to those categories."""
 
+    _cloner: UXCloner | None = None
+
     # ----------------------------------------------------------------------
     def __init__(self, gis):
         """Creates helper object to manage portal home page, resources, update resources"""
@@ -43,6 +52,58 @@ class UX(object):
             )
         else:
             self._new_hp = False
+
+    # ----------------------------------------------------------------------
+    def clone(
+        self,
+        *,
+        targets: list[_arcgis_gis.GIS | None] | None = None,
+        workspace_folder: str | None = None,
+        package_save_folder: str | None = None,
+        package_name: str | None = None,
+    ) -> list[concurrent.futures.Future]:
+        """
+        Copies the UX settings from the source WebGIS site to the destination WebGIS site or to
+        a `.uxpk` offline file.
+        When directly connected to two WebGIS', this method performs the clone operation immediately.
+        When cloning in an offline situation, a `.uxpk` is created and stored on the user's local
+        hard drive.
+
+        ====================  ===============================================================
+        **Parameter**         **Description**
+        --------------------  ---------------------------------------------------------------
+        targets               list[GIS | None]. The sites to clone to. If None is given, then
+                              a local file is returned.
+        --------------------  ---------------------------------------------------------------
+        workspace_folder      Optional String. The workspace where the temporary files are
+                              processed.
+        --------------------  ---------------------------------------------------------------
+        package_save_folder   Optional String. The output folder where the offline package is
+                              saved.
+        --------------------  ---------------------------------------------------------------
+        package_name          Optional String. The saved package name minus the extension.
+        ====================  ===============================================================
+
+        :returns: list[concurrent.futures.Future]
+
+        """
+        if self._cloner is None:
+            self._cloner = UXCloner(gis=self._gis)
+        return self._cloner.clone(
+            targets=targets,
+            workspace_folder=workspace_folder,
+            package_save_folder=package_save_folder,
+            package_name=package_name,
+        )
+
+    # ----------------------------------------------------------------------
+    def load_offline_configuration(self, package: str) -> concurrent.futures.Future:
+        """
+        Loads the UX configuration file into the current active portal.
+        """
+        if self._cloner is None:
+            self._cloner = UXCloner(gis=self._gis)
+        return self._cloner.load_offline_configuration(package)
 
     # ----------------------------------------------------------------------
     @property
@@ -102,12 +163,15 @@ class UX(object):
         :return: string
         """
         try:
-            res = json.loads(
-                open(self._portal_resources.get("localizedOrgProperties"), "r").read()
-            )
+            with open(
+                self._portal_resources.get("localizedOrgProperties"), "r"
+            ) as reader:
+                res = json.loads(reader.read())
+
         except:
             # if summary has never been set for org then need to create the resource
             self.summary = ""
+            return self.summary
         return res["default"]["description"]
 
     # ----------------------------------------------------------------------
@@ -181,8 +245,9 @@ class UX(object):
         """
         Get and set the contact link for the site.
         """
-        if "links" in self._gis.properties["portalProperties"]:
-            return self._gis.properties["portalProperties"]["links"]
+        props: dict = self._gis._get_properties()
+        if "links" in props["portalProperties"]:
+            return props["portalProperties"]["links"]
         else:
             return None
 
@@ -191,7 +256,9 @@ class UX(object):
     def contact_link(self, url: str):
         portal_properties = self._gis.properties["portalProperties"]
         if url:
-            portal_properties["links"] = {"contactUs": {"url": {url}, "visible": True}}
+            portal_properties["links"] = {
+                "contactUs": {"url": f"{url}", "visible": True}
+            }
         else:
             portal_properties["links"] = {"contactUs": {"url": "", "visible": False}}
 
@@ -419,7 +486,11 @@ class UX(object):
                     group_title = content.title
                     group_owner = content.owner
                     featured_groups.append(
-                        {"id": group_id, "title": group_title, "owner": group_owner}
+                        {
+                            "id": group_id,
+                            "title": group_title,
+                            "owner": group_owner,
+                        }
                     )
                 elif (
                     isinstance(contents, dict)
@@ -433,7 +504,11 @@ class UX(object):
                     group_title = group.title
                     group_owner = group.owner
                     featured_groups.append(
-                        {"id": group_id, "title": group_title, "owner": group_owner}
+                        {
+                            "id": group_id,
+                            "title": group_title,
+                            "owner": group_owner,
+                        }
                     )
         elif (
             isinstance(contents, dict)
@@ -1039,6 +1114,12 @@ class HomePageSettings(object):
         else:
             self._new_hp = False
 
+    def _reader_hp(self) -> dict[str, Any]:
+        """reads the homepage settings as a dictionary."""
+        with open(self._portal_resources.get("home.page.json"), "r") as reader:
+            return json.loads(reader.read())
+        return {}
+
     # ----------------------------------------------------------------------
     def set_background(
         self,
@@ -1137,14 +1218,16 @@ class HomePageSettings(object):
                     # User passed in string of the stock image key
                     stock_image = StockImage[stock_image]
                 cover_image_stock = stock_image.value
-            hp = json.loads(
-                open(self._portal_resources.get("home.page.json"), "r").read()
-            )
 
+            hp = self._reader_hp()
             hp["header"]["coverImg"] = background_update_val
             hp["header"]["coverType"] = cover_type
             hp["header"]["coverImgStock"] = cover_image_stock
-            if layout and layout in ["Full-height", "Two-thirds-height", "Half-height"]:
+            if layout and layout in [
+                "Full-height",
+                "Two-thirds-height",
+                "Half-height",
+            ]:
                 hp["header"]["coverImgLayout"] = layout
             if opacity is not None and (opacity >= 0 or opacity <= 1):
                 hp["header"]["opacity"] = opacity
@@ -1293,9 +1376,7 @@ class HomePageSettings(object):
 
         # extra step for new homepage editor
         if self._new_hp:
-            hp = json.loads(
-                open(self._portal_resources.get("home.page.json"), "r").read()
-            )
+            hp = self._reader_hp()
             if show_logo is not None:
                 hp["header"]["showLogo"] = show_logo
             hp["header"]["logo"] = key_val
@@ -1363,9 +1444,7 @@ class HomePageSettings(object):
             if "thumbnail" in props:
                 resource = props["thumbnail"]
         else:
-            hp = json.loads(
-                open(self._portal_resources.get("home.page.json"), "r").read()
-            )
+            hp = self._reader_hp()
             resource = hp["header"]["logo"]
         if resource is not None and len(str(resource)) > 0:
             output = self._portal_resources.get(
@@ -1407,9 +1486,7 @@ class HomePageSettings(object):
         :return: True | False
         """
         if self._new_hp:
-            hp = json.loads(
-                open(self._portal_resources.get("home.page.json"), "r").read()
-            )
+            hp = self._reader_hp()
             if title:
                 hp["header"]["title"] = title
             if show_title:
@@ -1445,9 +1522,7 @@ class HomePageSettings(object):
         :return: Dict or None if using old homepage
         """
         if self._new_hp:
-            hp = json.loads(
-                open(self._portal_resources.get("home.page.json"), "r").read()
-            )
+            hp = self._reader_hp()
             title = {
                 "title": hp["header"]["title"],
                 "show_title": hp["header"]["showTitle"],
@@ -1465,9 +1540,7 @@ class HomePageSettings(object):
     ):
         """Set the email shown in the footer of the homepage and whether it is visible."""
         if self._new_hp:
-            hp = json.loads(
-                open(self._portal_resources.get("home.page.json"), "r").read()
-            )
+            hp = self._reader_hp()
             if email:
                 hp["footer"]["contact"] = email
             if show_email:
@@ -1487,9 +1560,7 @@ class HomePageSettings(object):
     def get_contact_email(self):
         """Get the email and whether it is shown from the footer of the homepage."""
         if self._new_hp:
-            hp = json.loads(
-                open(self._portal_resources.get("home.page.json"), "r").read()
-            )
+            hp = self._reader_hp()
             contact = {
                 "email": hp["footer"]["contact"],
                 "show_email": hp["footer"]["showContact"],
@@ -1500,9 +1571,7 @@ class HomePageSettings(object):
     def get_footer(self):
         """Get the footer of the homepage"""
         if self._new_hp:
-            hp = json.loads(
-                open(self._portal_resources.get("home.page.json"), "r").read()
-            )
+            hp = self._reader_hp()
             footer = {
                 "contact": self.get_contact_email(),
                 "text": hp["footer"]["copy"],
@@ -1516,9 +1585,7 @@ class HomePageSettings(object):
     def set_footer(self, text: str, show_text: bool | None = None):
         """Set the text and the visibility of the text in the footer"""
         if self._new_hp:
-            hp = json.loads(
-                open(self._portal_resources.get("home.page.json"), "r").read()
-            )
+            hp = self._reader_hp()
             if text:
                 hp["footer"]["copy"] = text
             if show_text:
@@ -1538,9 +1605,7 @@ class HomePageSettings(object):
     def get_typography(self):
         """Get the footer of the homepage"""
         if self._new_hp:
-            hp = json.loads(
-                open(self._portal_resources.get("home.page.json"), "r").read()
-            )
+            hp = self._reader_hp()
             if hp["useCustomTypography"] == True:
                 return hp["customTypography"]
             else:
@@ -1569,9 +1634,7 @@ class HomePageSettings(object):
 
         """
         if self._new_hp:
-            hp = json.loads(
-                open(self._portal_resources.get("home.page.json"), "r").read()
-            )
+            hp = self._reader_hp()
             if custom:
                 hp["useCustomTypography"] = True
                 hp["customTypography"] = font_family
@@ -1595,9 +1658,7 @@ class HomePageSettings(object):
         Set the base color with a string color name.
         """
         if self._new_hp:
-            hp = json.loads(
-                open(self._portal_resources.get("home.page.json"), "r").read()
-            )
+            hp = self._reader_hp()
             hp["baseColor"] = color
             params = {
                 "key": "home.page.json",
@@ -1613,9 +1674,7 @@ class HomePageSettings(object):
     # ----------------------------------------------------------------------
     def get_base_color(self):
         if self._new_hp:
-            hp = json.loads(
-                open(self._portal_resources.get("home.page.json"), "r").read()
-            )
+            hp = self._reader_hp()
             return hp["baseColor"]
 
 
@@ -1772,7 +1831,11 @@ class MapSettings(object):
         group = self._gis.properties["basemapGalleryGroupQuery"]
         if "id:" in group:
             # must use [3::] to slice string since format of: "id:123abc"
-            return self._gis.groups.search(group[3::])[0]
+            groups = self._gis.groups.search(group[3::])
+            if groups:
+                return self._gis.groups.search(group[3::])[0]
+            else:
+                return None
         else:
             return group
 
@@ -1827,7 +1890,7 @@ class MapSettings(object):
     @default_mapviewer.setter
     def default_mapviewer(self, value: str):
         if value not in ["modern", "classic"]:
-            raise ValueError("The two accepted values are 'modern' or 'classi'")
+            raise ValueError("The two accepted values are 'modern' or 'classic'")
 
         portal_properties = self._gis.properties["portalProperties"]
         portal_properties["mapViewer"] = value
@@ -1845,7 +1908,7 @@ class MapSettings(object):
     # ----------------------------------------------------------------------
     @units.setter
     def units(self, value: str):
-        if value not in ["english", "classic"]:
+        if value not in ["english", "classic", "metric"]:
             raise ValueError("The two accepted values are 'english' and 'metric'")
 
         self._gis.update_properties({"units": value})
@@ -1903,7 +1966,11 @@ class MapSettings(object):
             group = self._gis.properties["templatesGroupQuery"]
             if "id:" in group:
                 # must use [3::] to slice string since format of: "id:123abc"
-                return self._gis.groups.search(group[3::])[0]
+                groups = self._gis.groups.search(group[3::])
+                if groups:
+                    return groups[0]
+                else:
+                    return None
             else:
                 return group
         else:
@@ -1991,7 +2058,10 @@ class MapSettings(object):
             group = self._gis.properties["analysisLayersGroupQuery"]
             if "id:" in group:
                 # must use [3::] to slice string since format of: "id:123abc"
-                return self._gis.groups.search(group[3::])[0]
+                groups = self._gis.groups.search(group[3::])
+                if groups:
+                    return groups[0]
+                return "Default"
             else:
                 return group
         else:
@@ -2084,7 +2154,12 @@ class ItemSettings(object):
 
         Values: 'arcgis' | 'fgdc' | 'inspire' | 'iso19139' | 'iso19139-3.2' | 'iso19115'
         """
-        return self._gis.properties["metadataFormats"][0]
+        if (
+            "metadataFormats" in self._gis.properties
+            and self._gis.properties["metadataFormats"]
+        ):
+            return self._gis.properties["metadataFormats"][0]
+        return "arcgis"
 
     # ----------------------------------------------------------------------
     @metadata_format.setter
@@ -2217,10 +2292,13 @@ class SecuritySettings(object):
     # ----------------------------------------------------------------------
     @anonymous_access.setter
     def anonymous_access(self, access: bool):
-        if access is True:
+        if access is True or access != "private":
             access = "public"
-            bing = self._gis.properties["canShareBingPublic"]
-        elif access is False:
+            if "canShareBingPublic" in self._gis.properties:
+                bing = self._gis.properties["canShareBingPublic"]
+            else:
+                bing = False
+        elif access is False or access == "private":
             access = "private"
             bing = False
         self._gis.update_properties({"canShareBingPublic": bing, "access": access})
@@ -2428,7 +2506,19 @@ class SecuritySettings(object):
     # ----------------------------------------------------------------------
     @allowed_origins.setter
     def allowed_origins(self, allowed_origins: list[str]):
-        self._gis.update_properties({"allowedOrigins": allowed_origins})
+        if isinstance(allowed_origins, (tuple, list)):
+            allowed_origins = ",".join(allowed_origins)
+            self._gis.update_properties({"allowedOrigins": allowed_origins})
+        elif allowed_origins is None or allowed_origins == "":
+            allowed_origins = ""
+            self._gis.update_properties(
+                {
+                    "allowedOrigins": allowed_origins,
+                    "clearEmptyFields": True,
+                }
+            )
+        else:
+            self._gis.update_properties({"allowedOrigins": allowed_origins})
 
     # ----------------------------------------------------------------------
     @property
@@ -2443,12 +2533,26 @@ class SecuritySettings(object):
         to be able to use enterprise logins to access the secured content
         through web applications hosted on these portals.
         """
-        return self._gis.properties["allowedRedirectUris"]
+        if "allowedRedirectUris" in self._gis.properties:
+            return self._gis.properties["allowedRedirectUris"]
+        return None
 
     # ----------------------------------------------------------------------
     @allowed_redirect_uris.setter
     def allowed_redirect_uris(self, uris: list[str]):
-        self._gis.update_properties({"allowedRedirectUris": uris})
+        if isinstance(uris, (tuple, list)):
+            uris = ",".join(uris)
+            self._gis.update_properties({"allowedRedirectUris": uris})
+        elif uris is None or uris == "":
+            uris = ""
+            self._gis.update_properties(
+                {
+                    "allowedRedirectUris": uris,
+                    "clearEmptyFields": True,
+                }
+            )
+        else:
+            self._gis.update_properties({"allowedRedirectUris": uris})
 
     # ----------------------------------------------------------------------
     @property
@@ -2460,12 +2564,14 @@ class SecuritySettings(object):
         Set a list of trusted servers that clients can send credentials to when
         making Cross-Origin Resource Sharing (CORS) requests to access web-tier secured services.
         """
-        return self._gis.properties["authorizedCrossOriginDomains"]
+        if "authorizedCrossOriginDomains" in self._gis.properties:
+            return self._gis.properties["authorizedCrossOriginDomains"]
+        return None
 
     # ----------------------------------------------------------------------
     @trusted_servers.setter
-    def truster_servers(self, servers: list):
-        self._gis.properties({"authorizedCrossOriginDomains": servers})
+    def trusted_servers(self, servers: list):
+        self._gis.update_properties({"authorizedCrossOriginDomains": servers})
 
     # ----------------------------------------------------------------------
     def set_org_access_notice(
@@ -2534,6 +2640,7 @@ class SecuritySettings(object):
         title: str | None = None,
         text: str | None = None,
         button_type: str | None = None,
+        enabled: bool | None = False,
     ):
         """
         Provide a notice of terms to be displayed to all users who access your
@@ -2564,9 +2671,9 @@ class SecuritySettings(object):
             button_type = "acceptAndDecline"
         notice = {"title": title, "text": text, "buttons": button_type}
         if title and text:
-            notice["enabled"] = True
+            notice["enabled"] = enabled
         else:
-            notice["enabled"] = False
+            notice["enabled"] = enabled
 
         org_settings["anonymousAccessNotice"] = notice
         org_settings["clearEmptyFields"] = True

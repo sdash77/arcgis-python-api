@@ -1316,7 +1316,7 @@ def _pyshp_to_shapefile(df, out_path, out_name):
                         ):
                             shpfile.field(name=c, fieldType="D", size=8)
                             dfields.append(c)
-                        elif isinstance(df[c].loc[idx], (bool, np.bool)):
+                        elif isinstance(df[c].loc[idx], (bool)):
                             shpfile.field(name=c, fieldType="L", size=1)
                 del c
                 del idx
@@ -1443,7 +1443,7 @@ def _pyshp2(df, out_path, out_name):
                     ):
                         shpfile.field(name=c, fieldType="D", size=8)
                         dfields.append(c)
-                    elif isinstance(df[c].loc[idx], (bool, np.bool)):
+                    elif isinstance(df[c].loc[idx], (bool)):
                         shpfile.field(name=c, fieldType="L", size=1)
             del c
             del idx

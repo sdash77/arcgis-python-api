@@ -962,7 +962,10 @@ class ArcGISModel(object):
             if arcgis.env.verbose:
                 logger.info("Fitting the model.")
 
-            if getattr(self, "_backend", "pytorch") == "tensorflow":
+            if (
+                not (type(self).__name__) == "EfficientDet"
+                and getattr(self, "_backend", "pytorch") == "tensorflow"
+            ):
                 checkpoint = False
 
             callbacks = kwargs["callbacks"] if "callbacks" in kwargs.keys() else []
@@ -1441,9 +1444,6 @@ class ArcGISModel(object):
         save_inference_file=True,
         **kwargs,
     ):
-        if (type(self).__name__) == "EfficientDet":
-            framework = "tflite"
-
         save_format = kwargs.get("save_format", "default")  # 'default', 'tflite'
         post_processed = kwargs.get("post_processed", True)  # True, False
         quantized = kwargs.get("quantized", False)  # True, False
@@ -1527,7 +1527,7 @@ class ArcGISModel(object):
 
         if (type(self).__name__) == "EfficientDet":
             _emd_template = self._create_emd_template(
-                saved_path.with_suffix(".tflite"), compute_metrics, save_inference_file
+                saved_path, compute_metrics, save_inference_file
             )
         else:
             _emd_template = self._create_emd_template(

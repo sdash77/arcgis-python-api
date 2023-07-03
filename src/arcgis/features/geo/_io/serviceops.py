@@ -28,6 +28,10 @@ if [float(i) for i in pd.__version__.split(".")] < [1, 0, 0]:
         "esriFieldTypeGUID": str,
         "esriFieldTypeGlobalID": str,
         "esriFieldTypeXML": object,
+        "esriFieldTypeBigInteger": np.int64,
+        "esriFieldTypeTimeOnly": str,
+        "esriFieldTypeDateOnly": pd.datetime,
+        "esriFieldTypeTimestampOffset": str,
     }
 else:
     from datetime import datetime as _datetime
@@ -47,6 +51,10 @@ else:
         "esriFieldTypeGUID": pd.StringDtype(),
         "esriFieldTypeGlobalID": pd.StringDtype(),
         "esriFieldTypeXML": object,
+        "esriFieldTypeBigInteger": pd.Int64Dtype(),  #  added 11.2
+        "esriFieldTypeTimeOnly": pd.StringDtype(),  #  added 11.2
+        "esriFieldTypeDateOnly": "<M8[us]",  #  added 11.2
+        "esriFieldTypeTimestampOffset": object,  #  added 11.2
     }
 
 

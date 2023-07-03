@@ -8167,7 +8167,11 @@ def vector_field(
     return _clone_layer(layer, template_dict, raster_ra1, raster_ra2)
 
 
-def complex(raster: Union[Raster, ImageryLayer]):
+def complex(
+    raster: Union[Raster, ImageryLayer],
+    imaginary_raster: Optional[Raster, ImageryLayer] = None,
+    value_type: str = "AMPLITUDE",
+):
     """
     Complex function computes magnitude from complex values. It is used when
     input raster has complex pixel type. It computes magnitude from complex
@@ -8181,21 +8185,48 @@ def complex(raster: Union[Raster, ImageryLayer]):
     **Parameter**                         **Description**
     --------------------------------     --------------------------------------------------------------------
     raster                                   Required input :class:`Raster <arcgis.raster.Raster>` /  :class:`ImageryLayer <arcgis.raster.ImageryLayer>` object.
+    --------------------------------     --------------------------------------------------------------------
+    imaginary_raster                         Optional input :class:`Raster <arcgis.raster.Raster>` /  :class:`ImageryLayer <arcgis.raster.ImageryLayer>` object.
+                                             The imaginary raster input
+    --------------------------------     --------------------------------------------------------------------
+    value_type                               Optional string. Specifies which value type to calculate:
+
+                                                 - AMPLITUDE - Produces an output containing the amplitude values. This is the default.
+                                                 - PHASE - Produces an output containing the phase values.
+                                                 - COMPLEX - Produces an output containing the complex values.
     ================================     ====================================================================
 
     :return: The output raster.
 
     """
-    layer, raster, raster_ra = _raster_input(raster)
+    layer1, raster1, raster_ra1 = _raster_input(raster)
 
     template_dict = {
         "rasterFunction": "Complex",
         "rasterFunctionArguments": {
-            "Raster": raster,
+            "Raster": raster1,
         },
     }
 
-    return _clone_layer(layer, template_dict, raster_ra)
+    layer2 = None
+    if imaginary_raster is not None:
+        layer2, raster2, raster_ra2 = _raster_input(raster, imaginary_raster)
+        template_dict["rasterFunctionArguments"]["ImaginaryRaster"] = raster2
+
+    if layer1 is not None or (layer2 is not None and layer2._datastore_raster is False):
+        layer = layer1
+    else:
+        layer = layer2
+
+    value_types = ["AMPLITUDE", "PHASE", "COMPLEX"]
+    if value_type is not None:
+        if value_type.upper() not in value_types:
+            raise RuntimeError(
+                "value_type should be one of the following " + str(value_types)
+            )
+        template_dict["rasterFunctionArguments"]["ValueType"] = value_type.upper()
+
+    return _clone_layer(layer, template_dict, raster_ra1)
 
 
 def colormap_to_rgb(raster: Union[Raster, ImageryLayer]):
@@ -13370,6 +13401,70 @@ def geometric_median(
         template_dict["rasterFunctionArguments"]["ExtentType"] = in_extent_type
     if cellsize_type is not None:
         template_dict["rasterFunctionArguments"]["CellsizeType"] = in_cellsize_type
+
+    return _clone_layer(layer, template_dict, raster_ra, variable_name="Rasters")
+
+
+def merge_rasters(
+    rasters: Union[Raster, ImageryLayer], resolve_overlap_method: str = "FIRST"
+):
+    """
+    The merge_rasters function groups or merges a collection of rasters.
+
+    The arguments for the function are as follows:
+
+    ================================     ====================================================================
+    **Parameter**                         **Description**
+    --------------------------------     --------------------------------------------------------------------
+    rasters                              Required list of :class:`Raster <arcgis.raster.Raster>` /  :class:`ImageryLayer <arcgis.raster.ImageryLayer>` objects.
+    --------------------------------     --------------------------------------------------------------------
+    resolve_overlap_method               Optional string. Specifies the method that will be used to resolve overlapping pixels in the
+                                         combined datasets. The options include the following:
+
+                                         - "FIRST" - The pixel value in the overlapping areas is the value from the first raster in the list of input rasters. This is the default.
+
+                                         - "LAST" - The pixel value in the overlapping areas is the value from the last raster in the list of input rasters.
+
+                                         - "MIN" - The pixel value in the overlapping areas is the minimum value of the overlapping pixels.
+
+                                         - "MAX" - The pixel value in the overlapping areas is the maximum value of the overlapping pixels.
+
+                                         - "MEAN" - The pixel value in the overlapping areas is the average of the overlapping pixels.
+
+                                         - "SUM" - The pixel value in the overlapping areas is the total sum of the overlapping pixels.
+    ================================     ====================================================================
+
+    :return: The output raster with the function applied.
+
+    .. code-block:: python
+
+        # Usage Example 1: merges two rasters and display the pixels from the first raster in the list of rasters overlapping a given area.
+
+        merged_op = merge_rasters([ras1, ras2], resolve_overlap_method="FIRST")
+    """
+    raster = rasters
+
+    layer, raster, raster_ra = _raster_input(raster)
+
+    mosaic_types = {
+        "FIRST": "MT_FIRST",
+        "LAST": "MT_LAST",
+        "MIN": "MT_MIN",
+        "MAX": "MT_MAX",
+        "MEAN": "MT_MEAN",
+        "SUM": "MT_SUM",
+    }
+
+    in_mosaic_type = mosaic_types[resolve_overlap_method.upper()]
+
+    template_dict = {
+        "rasterFunction": "MergeRasters",
+        "rasterFunctionArguments": {"Rasters": raster},
+        "variableName": "Rasters",
+    }
+
+    if resolve_overlap_method is not None:
+        template_dict["rasterFunctionArguments"]["MosaicOperator"] = in_mosaic_type
 
     return _clone_layer(layer, template_dict, raster_ra, variable_name="Rasters")
 

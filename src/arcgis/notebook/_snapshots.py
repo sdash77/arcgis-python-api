@@ -1,8 +1,6 @@
 from __future__ import annotations
 import sys
 
-sys.path.insert(0, r"C:\SVN\geosaurus_master_issue_8882\src")
-
 import concurrent.futures
 from arcgis.gis import GIS, Item
 from arcgis.gis.nb import NotebookManager

@@ -4710,6 +4710,112 @@ class ImageryLayer(Layer):
 
         return self._con.post(path=url, postdata=params, timeout=None)
 
+    def _query_gps_info(
+        self,
+        where: Optional[str] = None,
+        object_ids: Optional[list[int]] = None,
+        time_filter: Optional[
+            Union[datetime.date, datetime.datetime, list[int], str]
+        ] = None,
+        geometry_filter: Optional[dict] = None,
+    ):
+        """
+        The ``query_gps_info`` method queries an :class:`~arcgis.raster.ImageryLayer` by applying the filter specified by
+        the user. The result of this operation is the gps and orientation information for image collections created by
+        OrthoMapping REST/Python API or Ortho Maker.
+
+        ==============================  ====================================================================
+        **Parameter**                   **Description**
+        ------------------------------  --------------------------------------------------------------------
+        where                           Optional string. A where clause on this layer to filter the imagery
+                                        layer by the selection sql statement. Any legal SQL where clause
+                                        operating on the fields in the raster
+        ------------------------------  --------------------------------------------------------------------
+        object_ids                      Optional list of objectids, use the raster id list to define a
+                                        subset of rasters.
+        ------------------------------  --------------------------------------------------------------------
+        time_filter                     Optional datetime.date, datetime.datetime or timestamp in
+                                        milliseconds. The time instant or the time extent to query.
+
+                                        Syntax: time_filter=<timeInstant>
+
+                                        Time extent specified as list of [<startTime>, <endTime>]
+                                        For time extents one of <startTime> or <endTime> could be None. A
+                                        None value specified for start time or end time will represent
+                                        infinity for start or end time respectively.
+                                        Syntax: time_filter=[<startTime>, <endTime>] ; specified as
+                                        datetime.date, datetime.datetime or timestamp in milliseconds
+        ------------------------------  --------------------------------------------------------------------
+        geometry_filter                 Optional arcgis.geometry.filters. Spatial filter from
+                                        arcgis.geometry.filters module to filter results by a spatial
+                                        relationship with another geometry.
+        ==============================  ====================================================================
+
+        :return: A :class:`~arcgis.features.FeatureSet` containing the footprints (features) matching the query when
+                  return_geometry is ``True``, else a dictionary containing the expected return
+                  type.
+
+        .. code-block:: python
+
+            # Usage Example
+
+            img_lyr = gis.content.search("my_image_service", item_type="Imagery Layer")[0].layers[0]
+            gps_info = img_lyr.query_gps_info(where="OBJECTID=1")
+
+        """
+
+        if self.tiles_only:
+            raise RuntimeError(
+                "This operation cannot be performed on a TilesOnly Service"
+            )
+
+        if self._datastore_raster:
+            raise RuntimeError(
+                "This operation cannot be performed on a datastore raster"
+            )
+
+        params = {"f": "json"}
+        if object_ids:
+            params["objectIds"] = object_ids
+
+        if where is not None:
+            params["where"] = where
+        elif self._where_clause is not None:
+            params["where"] = self._where_clause
+        else:
+            params["where"] = "1=1"
+
+        if self._temporal_filter is not None:
+            time_filter = self._temporal_filter
+
+        if time_filter is not None:
+            if type(time_filter) is list:
+                starttime = _date_handler(time_filter[0])
+                endtime = _date_handler(time_filter[1])
+                if starttime is None:
+                    starttime = "null"
+                if endtime is None:
+                    endtime = "null"
+                params["time"] = "%s,%s" % (starttime, endtime)
+            else:
+                params["time"] = _date_handler(time_filter)
+
+        if self._spatial_filter is not None:
+            geometry_filter = self._spatial_filter
+
+        if not geometry_filter is None and isinstance(geometry_filter, dict):
+            gf = geometry_filter
+            params["geometry"] = gf["geometry"]
+            params["geometryType"] = gf["geometryType"]
+            params["spatialRel"] = gf["spatialRel"]
+            if "inSR" in gf:
+                params["inSR"] = gf["inSR"]
+
+        url = self._url + "/queryGPSInfo"
+        res = self._con.post(path=url, postdata=params, timeout=None)
+
+        return res["images"]
+
     def _compute_multidimensional_info(
         self,
         where=None,
@@ -7102,38 +7208,42 @@ class ImageryLayer(Layer):
         }
 
         mosaic_rule = {}
-        if ("defaultMosaicMethod" in self.properties.keys()) and self.properties[
-            "defaultMosaicMethod"
-        ] != None:
-            if (
-                self.properties["defaultMosaicMethod"].lower()
-                in mosaic_method_mapping.keys()
-            ):
+        if type(self) == ImageryLayer:
+            if ("defaultMosaicMethod" in self.properties.keys()) and self.properties[
+                "defaultMosaicMethod"
+            ] != None:
+                if (
+                    self.properties["defaultMosaicMethod"].lower()
+                    in mosaic_method_mapping.keys()
+                ):
+                    mosaic_rule.update(
+                        {
+                            "mosaicMethod": mosaic_method_mapping[
+                                self.properties["defaultMosaicMethod"].lower()
+                            ]
+                        }
+                    )
+            if ("sortField" in self.properties.keys()) and self.properties[
+                "sortField"
+            ] != None:
+                mosaic_rule.update({"sortField": self.properties["sortField"]})
+            if ("sortValue" in self.properties.keys()) and self.properties[
+                "sortValue"
+            ] != None:
+                mosaic_rule.update({"sortValue": self.properties["sortValue"]})
+            if ("mosaicOperator" in self.properties.keys()) and self.properties[
+                "mosaicOperator"
+            ] != None:
                 mosaic_rule.update(
                     {
-                        "mosaicMethod": mosaic_method_mapping[
-                            self.properties["defaultMosaicMethod"].lower()
-                        ]
+                        "mosaicOperation": "MT_"
+                        + self.properties["mosaicOperator"].upper()
                     }
                 )
-        if ("sortField" in self.properties.keys()) and self.properties[
-            "sortField"
-        ] != None:
-            mosaic_rule.update({"sortField": self.properties["sortField"]})
-        if ("sortValue" in self.properties.keys()) and self.properties[
-            "sortValue"
-        ] != None:
-            mosaic_rule.update({"sortValue": self.properties["sortValue"]})
-        if ("mosaicOperator" in self.properties.keys()) and self.properties[
-            "mosaicOperator"
-        ] != None:
-            mosaic_rule.update(
-                {"mosaicOperation": "MT_" + self.properties["mosaicOperator"].upper()}
-            )
-        if ("sortAscending" in self.properties.keys()) and self.properties[
-            "sortAscending"
-        ] != None:
-            mosaic_rule.update({"ascending": self.properties["sortAscending"]})
+            if ("sortAscending" in self.properties.keys()) and self.properties[
+                "sortAscending"
+            ] != None:
+                mosaic_rule.update({"ascending": self.properties["sortAscending"]})
 
         return mosaic_rule
 
@@ -8137,10 +8247,6 @@ class Raster:
                               the URL of the STAC item. It can be a Static STAC item URL or a STAC
                               API Item URL.
 
-                              .. note::
-                                Currently only Sentinel-2 Cloud-Optimized GeoTIFFs (COGs) STAC Items
-                                are supported for this method (Available in 11.0 onwards).
-
                               Example:
                                     "https://sentinel-cogs.s3.us-west-2.amazonaws.com/sentinel-s2-l2a-cogs/12/S/YJ/2020/10/S2A_12SYJ_20201006_0_L2A/S2A_12SYJ_20201006_0_L2A.json"
         -----------------     --------------------------------------------------------------------
@@ -8195,6 +8301,7 @@ class Raster:
                 "application/json",
                 "application/geo+json",
                 "application/json;charset=utf-8",
+                "application/geo+json; charset=utf-8",
             ]:
                 raise RuntimeError(
                     f"Invalid Response: Please verify that the stac_item URL is correct-\n{data.text}"
@@ -8213,7 +8320,13 @@ class Raster:
             except Exception:
                 raise RuntimeError(f"Invalid/Unsupported STAC Item-\n{stac_item}")
 
-        if "type" not in json_data or json_data["type"] != "Feature":
+        if "type" not in json_data or (
+            json_data["type"] != "Feature"
+            and (
+                json_data["type"] == "Collection"
+                and not json_data["id"].startswith("daymet")
+            )
+        ):
             raise RuntimeError(f"Invalid STAC Item-\n{json_data}")
         item = json_data
 
@@ -12446,10 +12559,6 @@ class RasterCollection:
         stac_api              Required string. URL of the STAC API root endpoint. The STAC API where
                               the search needs to be performed.
 
-                              .. note::
-                                Currently only Sentinel-2 Cloud-Optimized GeoTIFFs (COGs) STAC Item queries
-                                are supported for this method (Available in 11.0 onwards).
-
                               Example:
                                     "https://earth-search.aws.element84.com/v0"
         -----------------     --------------------------------------------------------------------
@@ -12634,6 +12743,7 @@ class RasterCollection:
             "application/json",
             "application/geo+json",
             "application/json;charset=utf-8",
+            "application/geo+json; charset=utf-8",
         ]:
             raise RuntimeError(
                 f"Invalid Response: Please verify that the STAC API URL and the specified query are correct-\n{data.text}"
@@ -12802,6 +12912,7 @@ class RasterCollection:
                 "application/json",
                 "application/geo+json",
                 "application/json;charset=utf-8",
+                "application/geo+json; charset=utf-8",
             ]:
                 raise RuntimeError(
                     f"Invalid Response: Please verify that the stac_catalog URL is correct-\n{data.text}"
@@ -15490,10 +15601,11 @@ class _ImageServerRasterCollection(ImageryLayer, RasterCollection):
         )
 
     def mosaic(self, mosaic_method):
-        from arcgis.raster.functions import raster_collection_function
+        from arcgis.raster.functions import merge_rasters
 
-        ras = raster_collection_function(self)
-        ras._engine_obj.mosaic_by(op=mosaic_method)
+        ras = merge_rasters(
+            rasters=self._rasters_list, resolve_overlap_method=mosaic_method
+        )
         return ras
 
     def quality_mosaic(self, quality_rc_or_list, statistic_type=None):
@@ -16565,7 +16677,12 @@ class _LocalRasterCollection(ImageryLayer, RasterCollection):
         )
 
     def mosaic(self, mosaic_method):
-        raise RuntimeError("Local RasterCollection does not support mosaic function")
+        from arcgis.raster.functions import merge_rasters
+
+        ras = merge_rasters(
+            rasters=self._rasters_list, resolve_overlap_method=mosaic_method
+        )
+        return ras
 
     def quality_mosaic(self, quality_rc_or_list, statistic_type=None):
         from arcgis.raster.functions import arg_statistics, _pick

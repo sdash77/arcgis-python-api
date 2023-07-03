@@ -90,7 +90,9 @@ class TimeSeriesModel(ArcGISModel):
     ---------------------   -------------------------------------------
     model_arch              Optional string. Model Architecture.
                             Allowed "InceptionTime", "ResCNN",
-                            "Resnet", "FCN", "TimeSeriesTransformer", "LSTM"
+                            "Resnet", "FCN", "TimeSeriesTransformer", "LSTM". "LSTM"
+                            supports both "LSTM" and "Bi-LSTM". "Bi-LSTM" is enabled by passing
+                            `bidirectional=True` in kwargs.
     ---------------------   -------------------------------------------
     location_var            Optional string. Location variable in case of
                             NetCDF dataset.
@@ -1127,6 +1129,26 @@ class TimeSeriesModel(ArcGISModel):
             predictions = torch.tensor(predictions_inversed).to(self._device)
             return float(r2_score(predictions, targets))
 
+    def _safe_div(self, arr):
+        len_arr = len(arr) - 1
+        if len_arr % 10 == 0:
+            return np.linspace(0, len_arr, 10).astype(int)
+        elif len_arr < 10:
+            return np.linspace(0, len_arr, len_arr + 1).astype(int)
+        else:
+            return np.linspace(0, len_arr, 6).astype(int)
+
+    def _convert_datetime(self, index_data_copy):
+        sample_ticks = False
+        if not pd.core.dtypes.common.is_datetime_or_timedelta_dtype(index_data_copy):
+            try:
+                index_data_copy = pd.to_datetime(
+                    index_data_copy, infer_datetime_format=True
+                )
+            except:
+                sample_ticks = True
+        return index_data_copy, sample_ticks
+
     def show_results(self, rows=5):
         """
         Prints the graph with predictions.
@@ -1222,13 +1244,28 @@ class TimeSeriesModel(ArcGISModel):
 
         for i in range(rows):
             for idx, seq_plot in enumerate(sequence_inversed[i]):
+                sample_ticks = False
                 if self._data._index_seq is not None:
-                    axs[i, 0].plot(validation_index_seq[i], seq_plot)
-                    axs[i, 1].plot(validation_index_seq[i], seq_plot)
+                    index_data, sample_ticks = self._convert_datetime(
+                        validation_index_seq[i]
+                    )
+                    axs[i, 0].plot(index_data, seq_plot)
+                    axs[i, 1].plot(index_data, seq_plot)
                 else:
                     axs[i, 0].plot(seq_plot)
                     axs[i, 1].plot(seq_plot)
 
+                if sample_ticks:
+                    axs[i, 0].xaxis.set_major_locator(
+                        plt.FixedLocator(
+                            self._safe_div(range(len(validation_index_seq[i])))
+                        )
+                    )
+                    axs[i, 1].xaxis.set_major_locator(
+                        plt.FixedLocator(
+                            self._safe_div(range(len(validation_index_seq[i])))
+                        )
+                    )
                 axs[i, 0].tick_params(axis="x", labelrotation=60)
                 axs[i, 1].tick_params(axis="x", labelrotation=60)
                 axs[i, 0].set_title(

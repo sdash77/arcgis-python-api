@@ -87,3 +87,16 @@ query_exif_info
 ------------
 .. autofunction:: arcgis.raster.orthomapping.query_exif_info
 
+Project
+-------
+.. autoclass:: arcgis.raster.orthomapping.Project
+    :inherited-members:
+    :members:
+    :undoc-members:
+
+Mission
+-------
+.. autoclass:: arcgis.raster._mission.Mission
+    :inherited-members:
+    :members:
+    :undoc-members:

@@ -41,7 +41,7 @@ from arcgis.geoprocessing import import_toolbox
 from ._async.jobs import GeometryJob
 from arcgis.raster._util import _set_context as _set_raster_context
 from arcgis._impl.common._utils import inspect_function_inputs
-from arcgis.geoprocessing._job import RAJob, RMJob
+from arcgis.geoprocessing._job import RAJob, OMJob, RMJob
 from functools import lru_cache
 from arcgis.raster import Raster, ImageryLayer, _ImageServerRaster
 
@@ -7772,7 +7772,7 @@ class _OrthoRealityMappingTools(BaseAnalytics):
         final_job = None
         if self._is_ortho:
             job._is_ortho = True
-            final_job = job
+            final_job = OMJob(job)
         else:
             job._is_reality = True
             final_job = RMJob(job)
@@ -7790,6 +7790,7 @@ class _OrthoRealityMappingTools(BaseAnalytics):
         context=None,
         gis=None,
         future=False,
+        flight_json_details=None,
         **kwargs,
     ):
         """
@@ -7899,7 +7900,8 @@ class _OrthoRealityMappingTools(BaseAnalytics):
         final_job = None
         if self._is_ortho:
             job._is_ortho = True
-            final_job = job
+            final_job = OMJob(job)
+            final_job._flight_details = flight_json_details
         else:
             job._is_reality = True
             final_job = RMJob(job)
@@ -7916,6 +7918,7 @@ class _OrthoRealityMappingTools(BaseAnalytics):
         context=None,
         gis=None,
         future=False,
+        flight_json_details=None,
         **kwargs,
     ):
         """
@@ -8000,7 +8003,8 @@ class _OrthoRealityMappingTools(BaseAnalytics):
         final_job = None
         if self._is_ortho:
             job._is_ortho = True
-            final_job = job
+            final_job = OMJob(job)
+            final_job._flight_details = flight_json_details
         else:
             job._is_reality = True
             final_job = RMJob(job)
@@ -8016,6 +8020,7 @@ class _OrthoRealityMappingTools(BaseAnalytics):
         context=None,
         gis=None,
         future=False,
+        flight_json_details=None,
         **kwargs,
     ):
         """
@@ -8100,7 +8105,8 @@ class _OrthoRealityMappingTools(BaseAnalytics):
         final_job = None
         if self._is_ortho:
             job._is_ortho = True
-            final_job = job
+            final_job = OMJob(job)
+            final_job._flight_details = flight_json_details
         else:
             job._is_reality = True
             final_job = RMJob(job)
@@ -8117,6 +8123,7 @@ class _OrthoRealityMappingTools(BaseAnalytics):
         context=None,
         gis=None,
         future=False,
+        flight_json_details=None,
         **kwargs,
     ):
         """
@@ -8201,7 +8208,8 @@ class _OrthoRealityMappingTools(BaseAnalytics):
         final_job = None
         if self._is_ortho:
             job._is_ortho = True
-            final_job = job
+            final_job = OMJob(job)
+            final_job._flight_details = flight_json_details
         else:
             job._is_reality = True
             final_job = RMJob(job)
@@ -8217,6 +8225,7 @@ class _OrthoRealityMappingTools(BaseAnalytics):
         context=None,
         gis=None,
         future=False,
+        flight_json_details=None,
         **kwargs,
     ):
         """
@@ -8280,7 +8289,8 @@ class _OrthoRealityMappingTools(BaseAnalytics):
         final_job = None
         if self._is_ortho:
             job._is_ortho = True
-            final_job = job
+            final_job = OMJob(job)
+            final_job._flight_details = flight_json_details
         else:
             job._is_reality = True
             final_job = RMJob(job)
@@ -8299,6 +8309,7 @@ class _OrthoRealityMappingTools(BaseAnalytics):
         context=None,
         gis=None,
         future=False,
+        flight_json_details=None,
         **kwargs,
     ):
         """
@@ -8435,7 +8446,12 @@ class _OrthoRealityMappingTools(BaseAnalytics):
         final_job = None
         if self._is_ortho:
             job._is_ortho = True
-            final_job = job
+            job._item_properties = True
+            item = None
+            if output_dem:
+                item = output_dem
+            final_job = OMJob(job, item=item)
+            final_job._flight_details = flight_json_details
         else:
             job._is_reality = True
             final_job = RMJob(job)
@@ -8453,6 +8469,7 @@ class _OrthoRealityMappingTools(BaseAnalytics):
         context=None,
         gis=None,
         future=False,
+        flight_json_details=None,
         **kwargs,
     ):
         """
@@ -8562,7 +8579,12 @@ class _OrthoRealityMappingTools(BaseAnalytics):
         final_job = None
         if self._is_ortho:
             job._is_ortho = True
-            final_job = job
+            job._item_properties = True
+            item = None
+            if output_ortho_image:
+                item = output_ortho_image
+            final_job = OMJob(job, item=item)
+            final_job._flight_details = flight_json_details
         else:
             job._is_reality = True
             final_job = RMJob(job)
@@ -8577,6 +8599,7 @@ class _OrthoRealityMappingTools(BaseAnalytics):
         report_format=None,
         gis=None,
         future=False,
+        flight_json_details=None,
         **kwargs,
     ):
         """
@@ -8633,9 +8656,12 @@ class _OrthoRealityMappingTools(BaseAnalytics):
             gis=gis,
             future=True,
         )
+        job._is_ortho = True
+        omjob = OMJob(job)
+        omjob._flight_details = flight_json_details
         if future:
-            return job
-        return job.result()
+            return omjob
+        return omjob.result()
 
     # ----------------------------------------------------------------------
     def get_processing_states(self, image_collection, gis=None, future=False, **kwargs):
@@ -8669,7 +8695,7 @@ class _OrthoRealityMappingTools(BaseAnalytics):
         final_job = None
         if self._is_ortho:
             job._is_ortho = True
-            final_job = job
+            final_job = OMJob(job)
         else:
             job._is_reality = True
             final_job = RMJob(job)
@@ -8686,6 +8712,7 @@ class _OrthoRealityMappingTools(BaseAnalytics):
         context=None,
         gis=None,
         future=False,
+        flight_json_details=None,
         **kwargs,
     ):
         """
@@ -8755,7 +8782,8 @@ class _OrthoRealityMappingTools(BaseAnalytics):
         final_job = None
         if self._is_ortho:
             job._is_ortho = True
-            final_job = job
+            final_job = OMJob(job)
+            final_job._flight_details = flight_json_details
         else:
             job._is_reality = True
             final_job = RMJob(job)
@@ -8793,7 +8821,7 @@ class _OrthoRealityMappingTools(BaseAnalytics):
         final_job = None
         if self._is_ortho:
             job._is_ortho = True
-            final_job = job
+            final_job = OMJob(job)
         else:
             job._is_reality = True
             final_job = RMJob(job)
@@ -8803,7 +8831,13 @@ class _OrthoRealityMappingTools(BaseAnalytics):
 
     # ----------------------------------------------------------------------
     def query_control_points(
-        self, image_collection, where, gis=None, future=False, **kwargs
+        self,
+        image_collection,
+        where,
+        gis=None,
+        future=False,
+        flight_json_details=None,
+        **kwargs,
     ):
         """
         The `query_control_points` allows users to use a SQL query to query certain control
@@ -8841,7 +8875,8 @@ class _OrthoRealityMappingTools(BaseAnalytics):
         final_job = None
         if self._is_ortho:
             job._is_ortho = True
-            final_job = job
+            final_job = OMJob(job)
+            final_job._flight_details = flight_json_details
         else:
             job._is_reality = True
             final_job = RMJob(job)
@@ -8885,7 +8920,7 @@ class _OrthoRealityMappingTools(BaseAnalytics):
         final_job = None
         if self._is_ortho:
             job._is_ortho = True
-            final_job = job
+            final_job = OMJob(job)
         else:
             job._is_reality = True
             final_job = RMJob(job)
@@ -8927,7 +8962,7 @@ class _OrthoRealityMappingTools(BaseAnalytics):
         final_job = None
         if self._is_ortho:
             job._is_ortho = True
-            final_job = job
+            final_job = OMJob(job)
         else:
             job._is_reality = True
             final_job = RMJob(job)
@@ -9279,12 +9314,7 @@ class _OrthoRealityMappingTools(BaseAnalytics):
         )
 
         final_job = None
-        if self._is_ortho:
-            job._is_ortho = True
-            final_job = job
-        else:
-            job._is_reality = True
-            final_job = RMJob(job)
+        final_job = RMJob(job)
         if future:
             return final_job
         return final_job.result()

@@ -10,7 +10,6 @@ from ..models._arcgis_model import ArcGISModel, model_characteristics_folder
 HAS_FASTAI = True
 
 try:
-    import shap
     import transformers
     import torch
     import torch.nn as nn
@@ -712,38 +711,46 @@ class SequenceToSequence(ArcGISModel):
 
         :return: list of tuples(input , predicted output strings).
         """
-
-        if isinstance(text_list_for_exp, str):
-            text_list_for_exp = [text_list_for_exp]
-
-        # collect the model and tokenizer
-        emodel = self.learn.model._transformer
-        emask = self.learn.model._tokenizer
-
-        ###
-        # There is an issue with the fast tokenizer. So selecting the slow tokenizer
-        ###
-        if isinstance(emask, transformers.PreTrainedTokenizerFast):
-            if emask.name_or_path.find("T5"):
-                emask = transformers.T5TokenizerFast.from_pretrained(
-                    "google/t5-v1_1-base", from_slow=True
-                )
-
-        # initialize the explainer.
-        explainer = shap.Explainer(emodel, emask)
-
-        # validated the kwargs. So that we can match maximum length as passed to inference model
+        has_shap = True
         try:
-            for key, val in kwargs.items():
-                if hasattr(explainer.masker.model.inner_model.config, key):
-                    explainer.masker.model.inner_model.config.__dict__[key] = val
+            import shap
         except:
-            pass
+            has_shap = False
+            warnings.warn(
+                "SHAP is not installed. Model explainablity will not be available"
+            )
+        if has_shap:
+            if isinstance(text_list_for_exp, str):
+                text_list_for_exp = [text_list_for_exp]
 
-        # generate shap values and generate plot.
-        for record in text_list_for_exp:
-            self.shap_values = explainer([record], fixed_context=0)
-            shap.plots.text(self.shap_values)
+            # collect the model and tokenizer
+            emodel = self.learn.model._transformer
+            emask = self.learn.model._tokenizer
+
+            ###
+            # There is an issue with the fast tokenizer. So selecting the slow tokenizer
+            ###
+            if isinstance(emask, transformers.PreTrainedTokenizerFast):
+                if emask.name_or_path.find("T5"):
+                    emask = transformers.T5TokenizerFast.from_pretrained(
+                        "google/t5-v1_1-base", from_slow=True
+                    )
+
+            # initialize the explainer.
+            explainer = shap.Explainer(emodel, emask)
+
+            # validated the kwargs. So that we can match maximum length as passed to inference model
+            try:
+                for key, val in kwargs.items():
+                    if hasattr(explainer.masker.model.inner_model.config, key):
+                        explainer.masker.model.inner_model.config.__dict__[key] = val
+            except:
+                pass
+
+            # generate shap values and generate plot.
+            for record in text_list_for_exp:
+                self.shap_values = explainer([record], fixed_context=0)
+                shap.plots.text(self.shap_values)
 
     # def summarize(self, text_or_list, num_beams=4, max_len=50):
     #     if self._model_type not in['t5']:

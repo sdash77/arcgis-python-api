@@ -1,6 +1,9 @@
 import sys
 import unittest
 
+# sys.path.insert(
+#    0, r"C:\SVN\geosaurus_multiiwa_fix_handle_ports_properly\src"
+# )
 from unittest import mock
 
 mock_data = {
@@ -9,6 +12,21 @@ mock_data = {
     "ftp": "http://host:789",
 }
 from arcgis.auth.tools._util import merge_proxies, detect_proxy
+from arcgis.auth.tools._util import assemble_url, parse_url
+
+
+class TestUtilityFunctions(unittest.TestCase):
+    def test_assemble_url_proxy(self):
+        fake_url = "https://www.amazing_sites.com:65535/foo/bar"
+        parsed = parse_url(fake_url)
+        assert (
+            assemble_url(parsed) == "https://www.amazing_sites.com:65535/foo"
+        )
+
+    def test_assemble_url(self):
+        fake_url = "https://www.amazing_sites.com/foo/bar/toast/chicken/hotdog23?f=json"
+        parsed = parse_url(fake_url)
+        assert assemble_url(parsed) == "https://www.amazing_sites.com/foo"
 
 
 class TestProxyDetection(unittest.TestCase):
