@@ -16,7 +16,7 @@ except ImportError:
 
 
 class _WebExperience(_ItemDefinition):
-    """Clones an Web Expereince Item"""
+    """Clones an Web Experience Item"""
 
     def __init__(
         self,
@@ -106,7 +106,19 @@ class _WebExperience(_ItemDefinition):
             new_dict["attributes"]["portalUrl"] = target.url
             for k, v in new_dict["dataSources"].items():
                 v["portalUrl"] = target.url
+                orig_id = v["itemId"]
                 item = source.content.get(v["itemId"])
+
+                # if predefined in clone mapping
+                if orig_id in self._clone_mapping["Item IDs"]:
+                    new_id = self._clone_mapping["Item IDs"][orig_id]
+                    targ_item = target.content.get(new_id)
+                    if targ_item:
+                        if targ_item.type == item.type:
+                            v["itemId"] = new_id
+                            continue
+
+                # if not, try cloning item
                 clone_result = target.content.clone_items(
                     [item],
                     search_existing_items=search_ex,
@@ -119,6 +131,8 @@ class _WebExperience(_ItemDefinition):
                     v["itemId"] = clone_result[0].itemid
                     for cloned in clone_result:
                         self.created_items.append(cloned)
+
+                # if it wasn't cloned, search for the existing item
                 else:
                     targ_item = _search_org_for_existing_item(self.target, item)
                     v["itemId"] = targ_item.itemid
