@@ -228,24 +228,64 @@ class _StoryMapDefinition(CloneNode):
             webmap_mapper = {}
             for wm in web_maps:
                 webmap_to_copy = self.portal_item._gis.content.get(wm)
+
+                # check if webmap is in clone mapping
+                if wm in self._clone_mapping["Item IDs"]:
+                    new_id = self._clone_mapping["Item IDs"][wm]
+                    targ_item = self.target.content.get(new_id)
+                    if targ_item:
+                        if targ_item.type == webmap_to_copy.type:
+                            webmap_mapper[wm] = new_id
+                            continue
+
+                # otherwise, clone
                 cloned_webmaps = self.target.content.clone_items(
-                    [webmap_to_copy], search_existing_items=False
-                )  # Clones the WebMap
-                webmap_mapper[webmap_to_copy.id] = [
-                    i.id
-                    for i in cloned_webmaps
-                    if (i.type == "Web Map" or i.type == "Web Scene")
-                ]
-                if len(webmap_mapper[webmap_to_copy.id]) == 1:
-                    webmap_mapper[webmap_to_copy.id] = webmap_mapper[webmap_to_copy.id][
-                        0
+                    [webmap_to_copy],
+                    search_existing_items=self._search_existing,
+                    folder=self.folder,
+                    owner=self.owner,
+                    item_extent=self.item_extent,
+                    preserve_item_id=self._preserve_item_id,
+                )
+                if cloned_webmaps:
+                    for webmap in cloned_webmaps:
+                        self.created_items.append(webmap)
+                    webmap_mapper[webmap_to_copy.id] = [
+                        i.id
+                        for i in cloned_webmaps
+                        if (i.type == "Web Map" or i.type == "Web Scene")
                     ]
+                    if len(webmap_mapper[webmap_to_copy.id]) == 1:
+                        webmap_mapper[webmap_to_copy.id] = webmap_mapper[
+                            webmap_to_copy.id
+                        ][0]
+                # if nothing was cloned, means item exists. grab it
+                else:
+                    exist_item = _search_org_for_existing_item(
+                        self.target, webmap_to_copy
+                    )
+                    webmap_mapper[wm] = exist_item.id
+
             if themes:
                 for theme in themes:
                     theme_to_copy = self.portal_item._gis.content.get(theme)
+
+                    # check if theme is in clone mapping
+                    if theme in self._clone_mapping["Item IDs"]:
+                        new_id = self._clone_mapping["Item IDs"][theme]
+                        targ_item = self.target.content.get(new_id)
+                        if targ_item:
+                            if targ_item.type == theme_to_copy.type:
+                                webmap_mapper[theme] = new_id
+                                continue
+
+                    # otherwise, clone
                     cloned_theme = self.target.content.clone_items(
                         [theme_to_copy], search_existing_items=False
                     )
+                    if cloned_theme:
+                        for theme in cloned_theme:
+                            self.created_items.append(theme)
                     webmap_mapper[theme_to_copy.id] = [
                         i.id for i in cloned_theme if (i.type == "StoryMap Theme")
                     ]
