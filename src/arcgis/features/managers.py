@@ -604,7 +604,7 @@ class AttachmentManager(object):
         attachment_id               Optional string. Id of the attachment to download. This is only
                                     honored if return_all is False.
         -------------------------   ---------------------------------------------------------------
-        save_folder                 Optional string. Path to save data to.
+        save_path                   Optional string. Path to save data to.
         =========================   ===============================================================
 
         :return: A path to the folder where the attachement are saved
