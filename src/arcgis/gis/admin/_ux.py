@@ -859,13 +859,13 @@ class UX(object):
         ----------------    ---------------------------------------------------------------
         banner_file         Optional string. If uploading a custom banner, then path to the
                             banner file. If using a built-in banner, valid values are:
-                            
+
                             * banner-1
                             * banner-2
                             * banner-3
                             * banner-4
                             * banner-5
-                            
+
                             .. note::
                                 If `None`, existing banner is removed.
         ----------------    ---------------------------------------------------------------
