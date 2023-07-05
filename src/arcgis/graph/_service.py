@@ -117,7 +117,7 @@ class KnowledgeGraph:
         url = self._url + "/graph/search"
         cat_lu = {
             "both": _kgparser.esriNamedTypeCategory.both,
-            "both_entity_relationship": _kgparser.esriNamedTypeCategory.both_entity_relationshp,
+            "both_entity_relationship": _kgparser.esriNamedTypeCategory.both_entity_relationship,
             "relationships": _kgparser.esriNamedTypeCategory.relationship,
             "entities": _kgparser.esriNamedTypeCategory.entity,
             "meta_entity_provenance": _kgparser.esriNamedTypeCategory.meta_entity_provenance,
@@ -199,10 +199,11 @@ class KnowledgeGraph:
         input_transform: dict[str, Any] = None,
         include_provenance: bool = False,
         **kwargs,
-    ) -> List[dict]:
+    ):
         """
         Query the graph using an openCypher query. Allows for more customization than the base
-        `query()` function.
+        `query()` function. Creates a generator of the query results, from which users can 
+        access each row or add them to a list. See below for example usage.
         
 
         ===================    ===============================================================
@@ -222,6 +223,17 @@ class KnowledgeGraph:
         -------------------    ---------------------------------------------------------------
         **kwargs               Keyword arguments for the QuerySearchRequestEncoder.
         ===================    ===============================================================
+
+        .. code-block:: python
+
+            # Get a list of all query results
+            query_gen = knowledge_graph.query_streaming("MATCH path = (n)-[r]-(n2) RETURN path LIMIT 5")
+            results = list(gen)
+
+            # Grab one result at a time
+            query_gen = knowledge_graph.query_streaming("MATCH path = (n)-[r]-(n2) RETURN path LIMIT 5")
+            first_result = next(query_gen)
+            second_result = next(query_gen)
 
 
         """
@@ -263,8 +275,7 @@ class KnowledgeGraph:
         for chunk in response.iter_content(8192):
             did_push = query_dec.push_buffer(chunk)
             while query_dec.next_row():
-                rows.append(query_dec.get_current_row())
-        return rows
+                yield query_dec.get_current_row()
 
         
     @property

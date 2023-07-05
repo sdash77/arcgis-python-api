@@ -12,10 +12,10 @@ try:
     from arcgis.graph import KnowledgeGraph
 
     # url = "https://dev0018783.esri.com/server/rest/services/Hosted/KGS_PanamaPapers/KnowledgeGraphServer"
-    url = "https://dev0022980.esri.com/server/rest/services/Hosted/python_testing/KnowledgeGraphServer"
+    url = "https://dev0025946.esri.com/server/rest/services/Hosted/python_testing/KnowledgeGraphServer"
     gis = GIS(
         # "https://dev0018783.esri.com/portal/",
-        "https://dev0022980.esri.com/portal",
+        "https://dev0025946.esri.com/portal",
         "publisher2",
         "esri.agp123",
         # verify_cert=False,
@@ -62,7 +62,7 @@ class TestKGMethods(unittest.TestCase):
         with self.subTest(msg="Add test"):
             add_dict = {
                 "_objectType": "entity",
-                "_typeName": "Person",
+                "_typeName": "Document",
                 "_id": "{3e16d8fe-7f68-45ef-805a-a54d78995472}".upper(),
                 "_properties": {
                     "name": "Pikachu",
@@ -71,13 +71,13 @@ class TestKGMethods(unittest.TestCase):
 
             res = kg.apply_edits(adds = [add_dict])
             assert isinstance(res, dict)
-            time.sleep(1)
+            time.sleep(2)
             assert len(kg.search("Pikachu")) > 0
 
         with self.subTest(msg="Update test"):
             update_dict = {
                 "_objectType": "entity",
-                "_typeName": "Person",
+                "_typeName": "Document",
                 "_id": "{3e16d8fe-7f68-45ef-805a-a54d78995472}".upper(),
                 "_properties": {
                     "name": "Raichu",
@@ -86,19 +86,19 @@ class TestKGMethods(unittest.TestCase):
 
             res = kg.apply_edits(updates = [update_dict])
             assert isinstance(res, dict)
-            time.sleep(1)
+            time.sleep(2)
             assert len(kg.search("Raichu")) > 0
         
         with self.subTest(msg="Delete test"):
             delete_dict = {
                 "_objectType": "entity",
-                "_typeName": "Person",
+                "_typeName": "Document",
                 "_ids": ["{3e16d8fe-7f68-45ef-805a-a54d78995472}".upper()]
             }
 
             res = kg.apply_edits(deletes = [delete_dict])
             assert isinstance(res, dict)
-            time.sleep(1)
+            time.sleep(2)
             assert len(kg.search("Raichu")) == 0
 
 
