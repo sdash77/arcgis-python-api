@@ -7051,7 +7051,7 @@ class ContentManager(object):
         if max_items > 10000:
             raise Exception(
                 (
-                    "There is a limitation of 10,000 items that can be returned. Please use a smaller value for max_items."
+                    "There is a limitation of 10,000 items that can be returned. Please use a smaller value for max_items. This is a limitation documented here: https://developers.arcgis.com/rest/users-groups-and-items/considerations-and-limitations.htm"
                 )
             )
         itemlist = []
