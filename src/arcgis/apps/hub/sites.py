@@ -778,10 +778,10 @@ class SiteManager(object):
                 ]["settings"]["initiativeId"] = self.initiative.itemid
             except:
                 pass
+        site_data['values']['layout']['header']['component']['settings']['title'] = title
         site_data["values"]["map"] = self._gis.properties["defaultBasemap"]
         site_data["values"]["defaultExtent"] = self._gis.properties["defaultExtent"]
 
-        # site_data['values']['theme'] = self._gis.properties['portalProperties']['sharedTheme']
         return site_data
 
     def add(self, title, subdomain=None):
