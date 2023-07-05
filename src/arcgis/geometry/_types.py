@@ -845,7 +845,7 @@ class Geometry(BaseGeometry, metaclass=GeometryFactory):
         :return:
            A boolean indicating empty (True), or filled (False)
         """
-        if isinstance(self, Point):
+        if isinstance(self, Point) and self.get("x", "NaN") != "NaN":
             return False
         elif isinstance(self, Polygon):
             if "rings" in self:
@@ -2404,20 +2404,29 @@ class Geometry(BaseGeometry, metaclass=GeometryFactory):
                 dimension = 4
             if isinstance(second_geometry, Geometry):
                 second_geometry = second_geometry.as_arcpy
-            return Geometry(
+            r = Geometry(
                 self.as_arcpy.intersect(other=second_geometry, dimension=dimension)
             )
+            if r.is_empty == True:
+                return None
+            else:
+                return r
+
         elif HASARCPY and isinstance(self, Envelope):
             if isinstance(second_geometry, Envelope):
                 second_geometry = second_geometry.polygon
                 dimension = 4
             if isinstance(second_geometry, Geometry):
                 second_geometry = second_geometry.as_arcpy
-            return Geometry(
+            r = Geometry(
                 self.polygon.as_arcpy.intersect(
                     other=second_geometry, dimension=dimension
                 )
             )
+            if r.is_empty == True:
+                return None
+            else:
+                return r
         elif HASSHAPELY:
             if isinstance(second_geometry, Geometry):
                 second_geometry = second_geometry.as_shapely
