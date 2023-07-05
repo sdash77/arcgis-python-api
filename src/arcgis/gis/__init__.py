@@ -7050,7 +7050,9 @@ class ContentManager(object):
         """
         if max_items > 10000:
             raise Exception(
-                ("Use `advanced_search` fo" "r item queries over 10,000 Items.")
+                (
+                    "There is a limitation of 10,000 items that can be returned. Please use a smaller value for max_items."
+                )
             )
         itemlist = []
         if query is not None and query != "" and item_type is not None:
