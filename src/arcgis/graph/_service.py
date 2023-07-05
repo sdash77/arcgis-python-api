@@ -327,28 +327,32 @@ class KnowledgeGraph:
         dictionaries for each of these operations should be structured, please refer to the samples
         further below.
 
-        ================    ===============================================================
-        **Parameter**        **Description**
-        ----------------    ---------------------------------------------------------------
-        adds                Optional list of dicts. The list of objects to add to the
-                            graph, represented in dictionary format.
-        ----------------    ---------------------------------------------------------------
-        updates             Optional list of dicts. The list of existent graph objects that
-                            are to be updated, represented in dictionary format.
-        ----------------    ---------------------------------------------------------------
-        deletes             Optional list of dicts. The list of existent objects to remove
-                            from the graph, represented in dictionary format.
-        ----------------    ---------------------------------------------------------------
-        input_transform     Optional dict. Allows a user to specify custom quantization
-                            parameters for input geometry, which dictate how geometries are
-                            compressed and transferred to the server. Defaults to lossless
-                            WGS84 quantization.
-        ----------------    ---------------------------------------------------------------
-        cascade_delete      Optional boolean. When `True`, relationships connected to
-                            entities that are being deleted will automatically be deleted
-                            as well. When `False`, these relationships must be deleted
-                            manually first. Defaults to `False`.
-        ================    ===============================================================
+        =========================   ===============================================================
+        **Parameter**                **Description**
+        -------------------------   ---------------------------------------------------------------
+        adds                        Optional list of dicts. The list of objects to add to the
+                                    graph, represented in dictionary format.
+        -------------------------   ---------------------------------------------------------------
+        updates                     Optional list of dicts. The list of existent graph objects that
+                                    are to be updated, represented in dictionary format.
+        -------------------------   ---------------------------------------------------------------
+        deletes                     Optional list of dicts. The list of existent objects to remove
+                                    from the graph, represented in dictionary format.
+        -------------------------   ---------------------------------------------------------------
+        input_transform             Optional dict. Allows a user to specify custom quantization
+                                    parameters for input geometry, which dictate how geometries are
+                                    compressed and transferred to the server. Defaults to lossless
+                                    WGS84 quantization.
+        -------------------------   ---------------------------------------------------------------
+        cascade_delete              Optional boolean. When `True`, relationships connected to
+                                    entities that are being deleted will automatically be deleted
+                                    as well. When `False`, these relationships must be deleted
+                                    manually first. Defaults to `False`.
+        -------------------------   ---------------------------------------------------------------
+        cascade_delete_provenance   Optional boolean. When `True`, provenance entities tied to
+                                    deleted entities will automatically be deleted as well.
+                                    Defaults to `False`.
+        =========================   ===============================================================
 
         .. code-block:: python
 
