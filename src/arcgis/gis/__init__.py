@@ -1115,6 +1115,16 @@ class GIS(object):
             raise Exception("Please access your ArcGIS Online sites through your Hub.")
 
     @_lazy_property
+    def pages(self):
+        """
+        The ``pages`` property is the resource manager for a Page of an Enterprise Site. See :class:`~arcgis.apps.hub.pages` for more information.
+        """
+        if not self._portal.is_arcgisonline:
+            return arcgis.apps.hub.PageManager(self)
+        else:
+            raise Exception("Please access your ArcGIS Online pages through your Hub.")
+
+    @_lazy_property
     def notebook_server(
         self,
     ) -> list["NotebookServer"] | list["AGOLNotebookManager"]:
@@ -2825,7 +2835,7 @@ class UserManager(object):
         ================  ===============================================================================
         **Keys**          **Description**
         ----------------  -------------------------------------------------------------------------------
-        role	          String/Role. The role ID. To assign a custom role as the new member default,
+        role            String/Role. The role ID. To assign a custom role as the new member default,
                           provide a Role object.
 
                           Values: `administrator`, `publisher`, `editor`, `viewer` or custom `Role` object
@@ -16226,11 +16236,11 @@ class Item(dict):
         -----------------------    -------------------------------------------------------------
         tags                       Optional String. New set of tags (comma separated) of the destination item.
         -----------------------    -------------------------------------------------------------
-        folder	                   Optional String. Folder Id of the destination item. If the folder Id is not specified, then the item remains in the same folder.
+        folder                     Optional String. Folder Id of the destination item. If the folder Id is not specified, then the item remains in the same folder.
 
                                    If the administrator invokes a copy of an item belonging to another user, and does not specify the folder Id, the item gets created in the root folder of the administrator.
         -----------------------    -------------------------------------------------------------
-        include_resources	   Optional boolean. If true, the file resources of the original
+        include_resources    Optional boolean. If true, the file resources of the original
                                    item will be copied over to the new item. Private file resources
                                    will not be copied over. If false, the file resources of the
                                    original item will not be copied over to the new item. The

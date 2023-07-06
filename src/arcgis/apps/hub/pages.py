@@ -173,16 +173,7 @@ class Page(OrderedDict):
         resources = self.item.resources.list()
         for resource in resources:
             if "draft-" in resource["resource"]:
-                path = (
-                    self._gis.url
-                    + "/sharing/rest/content/items/"
-                    + self.itemid
-                    + "/resources/"
-                    + resource["resource"]
-                    + "?token="
-                    + self._gis._con.token
-                )
-                self.item.resources.remove(file=path)
+                self.item.resources.remove(file=resource["resource"])
         # Update the data of the page
         self.definition["values"]["layout"] = layout._json()
         return self.item.update(item_properties={"text": self.definition})
