@@ -38,8 +38,8 @@ class Hub(object):
     url                 Required string. If no URL is provided by user while connecting
                         to the GIS, then the URL will be ArcGIS Online.
     ----------------    ---------------------------------------------------------------
-    GIS                 Required authenticated GIS object for the ArcGIS Online 
-                        organization associated with your Hub. 
+    GIS                 Required authenticated GIS object for the ArcGIS Online
+                        organization associated with your Hub.
     ================    ===============================================================
 
     """

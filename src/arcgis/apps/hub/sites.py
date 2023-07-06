@@ -691,8 +691,8 @@ class SiteManager(object):
 
         if self._gis._portal.is_arcgisonline:
             # register site as an app
-            #_app_dict = site.register(app_type="browser", redirect_uris=[site.url])
-            #client_key = _app_dict["client_id"]
+            # _app_dict = site.register(app_type="browser", redirect_uris=[site.url])
+            # client_key = _app_dict["client_id"]
 
             # Check for length of domain
             if len(subdomain + "-" + self._gis.properties["urlKey"]) > 63:
@@ -749,7 +749,10 @@ class SiteManager(object):
                     "portalProperties"
                 ]["sharedTheme"]["header"]
             except KeyError:
-                site_data["values"]["theme"]["globalNav"] = {'background': '#fff', 'text': '#000000'}
+                site_data["values"]["theme"]["globalNav"] = {
+                    "background": "#fff",
+                    "text": "#000000",
+                }
         site_data["values"]["title"] = site.title
         site_data["values"]["layout"]["header"]["component"]["settings"][
             "title"
@@ -778,7 +781,9 @@ class SiteManager(object):
                 ]["settings"]["initiativeId"] = self.initiative.itemid
             except:
                 pass
-        site_data['values']['layout']['header']['component']['settings']['title'] = title
+        site_data["values"]["layout"]["header"]["component"]["settings"][
+            "title"
+        ] = title
         site_data["values"]["map"] = self._gis.properties["defaultBasemap"]
         site_data["values"]["defaultExtent"] = self._gis.properties["defaultExtent"]
 
