@@ -96,7 +96,8 @@ class KnowledgeGraph:
                             the `relationships`.  The default is to look in `both`.
 
                             The allowed values are: both, entities, relationships,
-                            and both_entity_relationship.
+                            and both_entity_relationship. Both and both_entity_relationship
+                            are functionally the same.
         ================    ===============================================================
 
         .. note::
@@ -198,8 +199,7 @@ class KnowledgeGraph:
         query: str,
         input_transform: dict[str, Any] = None,
         bind_param: dict[str, Any] = None,
-        **kwargs,
-        ):
+    ):
         """
         Query the graph using an openCypher query. Allows for more customization than the base
         `query()` function. Creates a generator of the query results, from which users can
@@ -218,17 +218,15 @@ class KnowledgeGraph:
                                compressed and transferred to the server. Defaults to lossless
                                WGS84 quantization.
         -------------------    ---------------------------------------------------------------
-        bind_param             Optional dict. The bind parameters used to filter 
-                               query results. Key of each pair is the string name for it, 
-                               which is how the parameter can be referenced in the query. The 
+        bind_param             Optional dict. The bind parameters used to filter
+                               query results. Key of each pair is the string name for it,
+                               which is how the parameter can be referenced in the query. The
                                value can be any "primitive" type value that may be found as
                                an attribute of an entity or relationship (e.g., string,
                                double, boolean, etc.), or a geometry.
 
                                Note: Including bind parameters not used in the query will
                                cause queries to yield nothing.
-        -------------------    ---------------------------------------------------------------
-        **kwargs               Keyword arguments for the QuerySearchRequestEncoder.
         ===================    ===============================================================
 
         .. code-block:: python
@@ -244,7 +242,6 @@ class KnowledgeGraph:
 
 
         """
-        
 
         self._validate_import()
         url = f"{self._url}/graph/query"
@@ -252,10 +249,10 @@ class KnowledgeGraph:
             "f": "pbf",
             "token": self._gis._con.token,
         }
-        headers = {'Content-Type': 'application/octet-stream'}
+        headers = {"Content-Type": "application/octet-stream"}
 
         # initialize encoder
-        r_enc= _kgparser.GraphQueryRequestEncoder()
+        r_enc = _kgparser.GraphQueryRequestEncoder()
         r_enc.open_cypher_query = query
 
         # set quant params
@@ -271,12 +268,11 @@ class KnowledgeGraph:
                 r_enc.set_param_key_value(k, v)
 
         # set provenance behavior
-        include_provenance = kwargs.pop("include_provenance", False)
-        if include_provenance == True:
-            r_enc.provenance_behavior = _kgparser.ProvenanceBehavior.include
-        else:
-            r_enc.provenance_behavior = _kgparser.ProvenanceBehavior.exclude
-        
+        # include_provenance = kwargs.pop("include_provenance", False)
+        # if include_provenance == True:
+        #     r_enc.provenance_behavior = _kgparser.ProvenanceBehavior.include
+        # else:
+        #     r_enc.provenance_behavior = _kgparser.ProvenanceBehavior.exclude
 
         r_enc.encode()
         error = r_enc.get_encoding_result().error
@@ -339,7 +335,6 @@ class KnowledgeGraph:
         deletes: list[dict[str, Any]] = [],
         input_transform: dict[str, Any] = None,
         cascade_delete: bool = False,
-        cascade_delete_provenance: bool = False,
     ) -> dict:
         """
         Allows users to add new graph entities/relationships, update existing
@@ -368,10 +363,6 @@ class KnowledgeGraph:
                                     entities that are being deleted will automatically be deleted
                                     as well. When `False`, these relationships must be deleted
                                     manually first. Defaults to `False`.
-        -------------------------   ---------------------------------------------------------------
-        cascade_delete_provenance   Optional boolean. When `True`, provenance entities tied to
-                                    deleted entities will automatically be deleted as well.
-                                    Defaults to `False`.
         =========================   ===============================================================
 
         .. code-block:: python
@@ -428,7 +419,7 @@ class KnowledgeGraph:
         for edit in deletes:
             enc.delete_from_ids(edit)
         enc.cascade_delete = cascade_delete
-        enc.cascade_delete_provenance = cascade_delete_provenance
+        # enc.cascade_delete_provenance = cascade_delete_provenance
 
         # encode and prepare for the post request
         enc.encode()
