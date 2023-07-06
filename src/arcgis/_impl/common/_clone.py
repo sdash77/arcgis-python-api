@@ -15,6 +15,7 @@ from arcgis.features import FeatureLayerCollection
 from arcgis.features import FeatureLayer
 from arcgis.mapping import MapImageLayer
 from arcgis.geometry import *
+from arcgis.apps.survey123 import SurveyManager
 import copy
 import urllib
 import time
@@ -5047,9 +5048,11 @@ class _FormDefinition(_ItemDefinition):
                 )
 
         # Replace the "field names"
-        for instance in xml.find("h:head/model/instance/", namespace):
-            for child in instance.iter():
-                child.tag = lookup.get(child.tag, child.tag)
+        instances = xml.find("h:head/model/instance/", namespace)
+        if instances:
+            for instance in instances:
+                for child in instance.iter():
+                    child.tag = lookup.get(child.tag, child.tag)
 
         # Add all original namespaces back
         with open(xml_file_path, "w") as xml_file:
@@ -5196,41 +5199,7 @@ class _FormDefinition(_ItemDefinition):
                                             field_mapping,
                                         )
 
-                elif os.path.splitext(path)[1].lower() == ".webform":
-                    try:
-                        with open(os.path.join(zip_dir, path)) as file:
-                            payload = json.loads(file.read())
-                    except UnicodeDecodeError:
-                        with open(os.path.join(zip_dir, path), "rb") as file:
-                            payload = json.load(file)
-
-                    file_changed = False
-
-                    # Find related service mapping and replace in webform
-                    for related_item in self.related_items:
-                        for key, value in clone_mapping["Services"].items():
-                            if _compare_url(related_item["url"], key):
-                                for layer_id in value["layer_field_mapping"]:
-                                    field_mapping = value["layer_field_mapping"][
-                                        layer_id
-                                    ]
-                                    model = payload["model"]
-                                    form = payload["form"]
-                                    _find_and_replace_fields_json(
-                                        payload, field_mapping, [XML_SURVEY]
-                                    )
-
-                                    payload["model"] = self._replace_model(
-                                        model, field_mapping
-                                    )
-                                    payload["form"] = self._replace_form(
-                                        form, field_mapping
-                                    )
-                                    file_changed = True
-
-                    if file_changed:
-                        with open(os.path.join(zip_dir, path), "w") as writer:
-                            json.dump(payload, writer, indent="  ")
+                        SurveyManager._xform2webform(os.path.join(zip_dir, path), self.target.url)
 
                 elif os.path.splitext(path)[1].lower() == ".iteminfo":
                     with open(os.path.join(zip_dir, path), "w") as file:
