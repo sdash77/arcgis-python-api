@@ -11,6 +11,7 @@ from arcgis.gis import GIS, Item
 from requests.utils import quote
 import xml.etree.ElementTree as ET
 from .exceptions import ServerError
+import requests
 
 ########################################################################
 
@@ -75,24 +76,50 @@ class SurveyManager:
         return Survey(item=item, sm=self)
 
     # ----------------------------------------------------------------------
-    def _xform2webform(self, xform: str):
-        """
-        converts the xform xml to JSON for the item
+    def _xform2webform(xform, portalUrl, connectVersion=None):
+        """Converts a XForm XML to Enketo Web form by Enketo Transformer"""
+        (dir_path, file_name) = os.path.split(xform)
+        xlsx_name = os.path.splitext(file_name)[0]
 
-        ============   ================================================
-        *Inputs*       *Description*
-        ------------   ------------------------------------------------
-        xform          Required String. xform xml string
-        ============   ================================================
+        # xform_tree = ET.parse(xform)
+        # root = xform_tree.getroot()
+        # xform_string = ET.tostring(root, encoding='utf8', method='xml')
 
-        :returns: dict
+        with open(xform, "r", encoding="utf-8") as intext:
+            xform_string = intext.read()
 
-        """
-        url = "https://{base}/api/xform2webform".format(base=self._baseurl)
-        params = {"xform": xform}
-        return self._gis._con.post(
-            path=url, postdata=params, files=None, verify_cert=False
-        )
+        url = "https://survey123.arcgis.com/api/xform2webform"
+        params = {"xform": xform_string}
+        if connectVersion:
+            params["connectVersion"] = connectVersion
+        try:
+            r = requests.post(url, params)
+            response_json = r.json()
+            r.close()
+        except requests.exceptions.ConnectionError as c:
+            return "Unable to complete request with message: " + str(c)
+        except requests.exceptions.Timeout as t:
+            return "Connection timed out: " + str(t)
+
+        else:
+            with open(
+                os.path.join(dir_path, xlsx_name + ".webform"), "w", encoding="utf-8"
+            ) as fp:
+                # with open(os.path.join(dir_path, xlsx_name + ".webform"), 'w') as fp:
+                response_json["surveyFormJson"]["portalUrl"] = portalUrl
+                webform = {
+                    "form": response_json["form"],
+                    "languageMap": response_json["languageMap"],
+                    "model": response_json["model"],
+                    "success": response_json["success"],
+                    "surveyFormJson": response_json["surveyFormJson"],
+                    "transformerVersion": response_json["transformerVersion"],
+                }
+
+                fp.write(json.dumps(webform, indent=2))
+                # fp.write(json.dumps(response_json, indent=2))
+                # fp.close()
+            return os.path.join(dir_path, xlsx_name + ".webform")
 
     # ----------------------------------------------------------------------
     def _xls2xform(self, file_path: str):
