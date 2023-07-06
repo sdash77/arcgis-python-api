@@ -7499,6 +7499,57 @@ class ContentManager(object):
             return res
 
     # ----------------------------------------------------------------------
+    def import_table(
+        self,
+        df: pd.DataFrame,
+        service_name: str,
+        *,
+        title: str = None,
+        publish_parameters: dict[str, Any] = None,
+    ) -> tuple[Item, Item]:
+        """
+        The `import_table` function takes a Pandas' DataFrame and publishes it
+        as a Hosted Table on a WebGIS.
+
+        ===================  ==========================================================================
+        **Parameter**         **Description**
+        -------------------  --------------------------------------------------------------------------
+        df                   Required DataFrame. Pandas dataframe
+        -------------------  --------------------------------------------------------------------------
+        service_name         Required String. The name of the service.
+        -------------------  --------------------------------------------------------------------------
+        title                Optional String. The name of the title of the created Item.
+        -------------------  --------------------------------------------------------------------------
+        publish_parameters   Optional dict[str,Any]. The publish parameters.  If given, the user is
+                             responsible for passing all the publish parameters defined
+                             `here <https://developers.arcgis.com/rest/users-groups-and-items/publish-item.htm>`_.
+        ===================  ==========================================================================
+
+        returns: CSV Item and Published Hosted Table Item
+
+        """
+        fname = tempfile.mkstemp(suffix=".csv")[1]
+
+        df.to_csv(fname)
+
+        pp: dict[str, Any] = {
+            "type": "CSV",
+            "title": title,
+        }
+        csv_item: Item = self.add(item_properties=pp, data=fname)
+        try:
+            os.remove(fname)
+        except:
+            pass
+        if publish_parameters is None:
+            publish_parameters: dict[str, Any] = self.analyze(
+                item=csv_item, file_type="csv"
+            )["publishParameters"]
+            publish_parameters["name"] = service_name
+            publish_parameters["locationType"] = "none"
+        return csv_item, csv_item.publish(publish_parameters)
+
+    # ----------------------------------------------------------------------
     def import_data(
         self,
         df,
