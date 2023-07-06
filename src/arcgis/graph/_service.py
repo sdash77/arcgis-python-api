@@ -199,7 +199,7 @@ class KnowledgeGraph:
         input_transform: dict[str, Any] = None,
         bind_param: dict[str, Any] = None,
         **kwargs,
-        ):
+    ):
         """
         Query the graph using an openCypher query. Allows for more customization than the base
         `query()` function. Creates a generator of the query results, from which users can
@@ -218,9 +218,9 @@ class KnowledgeGraph:
                                compressed and transferred to the server. Defaults to lossless
                                WGS84 quantization.
         -------------------    ---------------------------------------------------------------
-        bind_param             Optional dict. The bind parameters used to filter 
-                               query results. Key of each pair is the string name for it, 
-                               which is how the parameter can be referenced in the query. The 
+        bind_param             Optional dict. The bind parameters used to filter
+                               query results. Key of each pair is the string name for it,
+                               which is how the parameter can be referenced in the query. The
                                value can be any "primitive" type value that may be found as
                                an attribute of an entity or relationship (e.g., string,
                                double, boolean, etc.), or a geometry.
@@ -244,7 +244,6 @@ class KnowledgeGraph:
 
 
         """
-        
 
         self._validate_import()
         url = f"{self._url}/graph/query"
@@ -252,10 +251,10 @@ class KnowledgeGraph:
             "f": "pbf",
             "token": self._gis._con.token,
         }
-        headers = {'Content-Type': 'application/octet-stream'}
+        headers = {"Content-Type": "application/octet-stream"}
 
         # initialize encoder
-        r_enc= _kgparser.GraphQueryRequestEncoder()
+        r_enc = _kgparser.GraphQueryRequestEncoder()
         r_enc.open_cypher_query = query
 
         # set quant params
@@ -276,7 +275,6 @@ class KnowledgeGraph:
             r_enc.provenance_behavior = _kgparser.ProvenanceBehavior.include
         else:
             r_enc.provenance_behavior = _kgparser.ProvenanceBehavior.exclude
-        
 
         r_enc.encode()
         error = r_enc.get_encoding_result().error
