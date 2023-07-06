@@ -50,7 +50,7 @@ class KnowledgeGraph:
                 "An error occured with importing the Knowledge Graph libraries. Please ensure you "
                 "are using Python 3.7, 3.8, 3.9, or 3.10 on Windows or Linux platforms."
             )
-        
+
     def _getInputQuantParams(self, inputQuantParams: dict):
         clientCoreQuantParams = _kgparser.InputQuantizationParameters()
         clientCoreQuantParams.xy_resolution = inputQuantParams["xyResolution"]
@@ -192,7 +192,7 @@ class KnowledgeGraph:
             r = gqd.get_current_row()
             rows.append(r)
         return rows
-    
+
     def query_streaming(
         self,
         query: str,
@@ -202,9 +202,9 @@ class KnowledgeGraph:
         ):
         """
         Query the graph using an openCypher query. Allows for more customization than the base
-        `query()` function. Creates a generator of the query results, from which users can 
+        `query()` function. Creates a generator of the query results, from which users can
         access each row or add them to a list. See below for example usage.
-        
+
 
         ===================    ===============================================================
         **Parameter**           **Description**
@@ -281,7 +281,7 @@ class KnowledgeGraph:
         r_enc.encode()
         error = r_enc.get_encoding_result().error
         if error.error_code != 0:
-            raise Exception(error.error_message) 
+            raise Exception(error.error_message)
         query_dec = _kgparser.GraphQueryDecoder()
 
         session = self._gis._con._session
@@ -298,7 +298,6 @@ class KnowledgeGraph:
             while query_dec.next_row():
                 yield query_dec.get_current_row()
 
-        
     @property
     def _datamodel(self) -> object:
         """
