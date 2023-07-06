@@ -2,7 +2,7 @@ import sys
 
 #
 #  Update the Path to set the test area
-#  sys.path.insert(0, r"C:\SVN\geosaurus_issue_9325a\src")
+sys.path.insert(0, r"C:\SVN\geosaurus_issue_9325a\src")
 import logging
 import unittest
 import os
@@ -255,12 +255,11 @@ class TestImportTable(unittest.TestCase):
         for profile in profiles:
             gis = GIS(profile=profile, proxy=PROXIES, verify_cert=False)
             content = gis.content
-            source_item, pitem = content.import_table(
+            pitem = content.import_table(
                 df=self.df, service_name=f"a{uuid.uuid4().hex[:5]}b"
             )
             assert len(pitem.tables) > 0
             assert pitem.delete()
-            assert source_item.delete()
 
     def test_import_table_pp(self):
         """simple import table task"""
@@ -283,7 +282,7 @@ class TestImportTable(unittest.TestCase):
             pp['locationType'] = "none"
             pp['name'] = f"A{uuid.uuid4().hex[:5]}Z".upper()
 
-            source_item, pitem = content.import_table(
+            pitem = content.import_table(
                 df=self.df,
                 service_name=f"a{uuid.uuid4().hex[:5]}b",
                 publish_parameters=pp,
@@ -291,7 +290,6 @@ class TestImportTable(unittest.TestCase):
             )
             assert len(pitem.tables) > 0
             assert pitem.delete()
-            assert source_item.delete()
 
 
 if __name__ == "__main__":

@@ -7525,7 +7525,7 @@ class ContentManager(object):
                              `here <https://developers.arcgis.com/rest/users-groups-and-items/publish-item.htm>`_.
         ===================  ==========================================================================
 
-        returns: CSV Item and Published Hosted Table Item
+        returns: Published Hosted Table Item
 
         """
         fname = tempfile.mkstemp(suffix=".csv")[1]
@@ -7547,7 +7547,7 @@ class ContentManager(object):
             )["publishParameters"]
             publish_parameters["name"] = service_name
             publish_parameters["locationType"] = "none"
-        return csv_item, csv_item.publish(publish_parameters)
+        return csv_item.publish(publish_parameters)
 
     # ----------------------------------------------------------------------
     def import_data(
