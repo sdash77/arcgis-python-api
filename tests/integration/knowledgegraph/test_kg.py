@@ -6,6 +6,7 @@ import sys
 sys.path.insert(0, r"YOUR PATH HERE")
 import unittest
 from arcgis.gis import GIS
+from typing import Generator
 
 
 try:
@@ -49,6 +50,13 @@ class TestKGMethods(unittest.TestCase):
         assert isinstance(result, (list, tuple))
         if len(result) > 0:
             assert isinstance(result[0], list)
+    
+    def test_query_streaming(self):
+        bind = {"param1": "Charizard"}
+        query = """MATCH (n) WHERE n.name = $param1 RETURN n"""
+        gen = kg.query_streaming(query = query, bind_param = bind)
+        assert isinstance(gen, Generator)
+        assert len(list(gen)) > 0
 
     def test_search(self):
         search = kg.search("China")
@@ -63,7 +71,7 @@ class TestKGMethods(unittest.TestCase):
             add_dict = {
                 "_objectType": "entity",
                 "_typeName": "Document",
-                "_id": "{3e16d8fe-7f68-45ef-805a-a54d78995472}".upper(),
+                "_id": "{3e16d8fe-7f68-45ef-805a-a54d78995499}".upper(),
                 "_properties": {
                     "name": "Pikachu",
                 }
@@ -78,7 +86,7 @@ class TestKGMethods(unittest.TestCase):
             update_dict = {
                 "_objectType": "entity",
                 "_typeName": "Document",
-                "_id": "{3e16d8fe-7f68-45ef-805a-a54d78995472}".upper(),
+                "_id": "{3e16d8fe-7f68-45ef-805a-a54d78995499}".upper(),
                 "_properties": {
                     "name": "Raichu",
                 }
@@ -93,7 +101,7 @@ class TestKGMethods(unittest.TestCase):
             delete_dict = {
                 "_objectType": "entity",
                 "_typeName": "Document",
-                "_ids": ["{3e16d8fe-7f68-45ef-805a-a54d78995472}".upper()]
+                "_ids": ["{3e16d8fe-7f68-45ef-805a-a54d78995499}".upper()]
             }
 
             res = kg.apply_edits(deletes = [delete_dict])

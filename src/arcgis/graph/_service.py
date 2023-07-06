@@ -197,9 +197,9 @@ class KnowledgeGraph:
         self,
         query: str,
         input_transform: dict[str, Any] = None,
-        include_provenance: bool = False,
+        bind_param: dict[str, Any] = None,
         **kwargs,
-    ):
+        ):
         """
         Query the graph using an openCypher query. Allows for more customization than the base
         `query()` function. Creates a generator of the query results, from which users can 
@@ -218,8 +218,15 @@ class KnowledgeGraph:
                                compressed and transferred to the server. Defaults to lossless
                                WGS84 quantization.
         -------------------    ---------------------------------------------------------------
-        include_provenance     Optional boolean. Dictates whether provenance entities are
-                               included in the query results. Defaults to `False`.
+        bind_param             Optional dict. The bind parameters used to filter 
+                               query results. Key of each pair is the string name for it, 
+                               which is how the parameter can be referenced in the query. The 
+                               value can be any "primitive" type value that may be found as
+                               an attribute of an entity or relationship (e.g., string,
+                               double, boolean, etc.), or a geometry.
+
+                               Note: Including bind parameters not used in the query will
+                               cause queries to yield nothing.
         -------------------    ---------------------------------------------------------------
         **kwargs               Keyword arguments for the QuerySearchRequestEncoder.
         ===================    ===============================================================
@@ -237,11 +244,7 @@ class KnowledgeGraph:
 
 
         """
-
-        if input_transform:
-            quant_params = self._getInputQuantParams(input_transform)
-        else:
-            quant_params = _kgparser.InputQuantizationParameters.WGS84_lossless()
+        
 
         self._validate_import()
         url = f"{self._url}/graph/query"
@@ -250,13 +253,31 @@ class KnowledgeGraph:
             "token": self._gis._con.token,
         }
         headers = {'Content-Type': 'application/octet-stream'}
+
+        # initialize encoder
         r_enc= _kgparser.GraphQueryRequestEncoder()
         r_enc.open_cypher_query = query
+
+        # set quant params
+        if input_transform:
+            quant_params = self._getInputQuantParams(input_transform)
+        else:
+            quant_params = _kgparser.InputQuantizationParameters.WGS84_lossless()
         r_enc.input_quantization_parameters = quant_params
+
+        # set bind parameters
+        if bind_param:
+            for k, v in bind_param.items():
+                r_enc.set_param_key_value(k, v)
+
+        # set provenance behavior
+        include_provenance = kwargs.pop("include_provenance", False)
         if include_provenance == True:
             r_enc.provenance_behavior = _kgparser.ProvenanceBehavior.include
         else:
             r_enc.provenance_behavior = _kgparser.ProvenanceBehavior.exclude
+        
+
         r_enc.encode()
         error = r_enc.get_encoding_result().error
         if error.error_code != 0:
