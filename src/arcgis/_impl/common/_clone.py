@@ -5199,7 +5199,9 @@ class _FormDefinition(_ItemDefinition):
                                             field_mapping,
                                         )
 
-                        SurveyManager._xform2webform(os.path.join(zip_dir, path), self.target.url)
+                        SurveyManager._xform2webform(
+                            os.path.join(zip_dir, path), self.target.url
+                        )
 
                 elif os.path.splitext(path)[1].lower() == ".iteminfo":
                     with open(os.path.join(zip_dir, path), "w") as file:
