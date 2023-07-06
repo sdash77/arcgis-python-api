@@ -596,7 +596,7 @@ class AttachmentManager(object):
         * If a list of oid values are given, all the attachments for those object ids will be saved locally.
 
         =========================   ===============================================================
-        **Arguement**               **Description**
+        **Argument**                **Description**
         -------------------------   ---------------------------------------------------------------
         oid                         Optional list/string. A list of object Ids or a single value
                                     to download data from.
