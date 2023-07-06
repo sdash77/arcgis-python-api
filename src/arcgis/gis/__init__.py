@@ -7506,7 +7506,7 @@ class ContentManager(object):
         *,
         title: str = None,
         publish_parameters: dict[str, Any] = None,
-    ) -> tuple[Item, Item]:
+    ) -> Item:
         """
         The `import_table` function takes a Pandas' DataFrame and publishes it
         as a Hosted Table on a WebGIS.
