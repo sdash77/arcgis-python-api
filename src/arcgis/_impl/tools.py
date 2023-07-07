@@ -8999,7 +8999,7 @@ class _OrthoRealityMappingTools(BaseAnalytics):
         =========================================================================   ===========================================================================
         **Parameter**                                                                **Description**
         -------------------------------------------------------------------------   ---------------------------------------------------------------------------
-        image_collection                                                            Required String/Item. The adjusted input mosaic dataset.
+        mission                                                                     Required String/Item. The adjusted input image collection.
         -------------------------------------------------------------------------   ---------------------------------------------------------------------------
         scenario                                                                    Optional String. Specifies the type of imagery that will be used to generate the output products.
 
@@ -9008,9 +9008,11 @@ class _OrthoRealityMappingTools(BaseAnalytics):
                                                                                     - AERIAL_OBLIQUE: The input imagery will be defined as having been acquired with oblique camera systems.
         -------------------------------------------------------------------------   ---------------------------------------------------------------------------
         forward_overlap                                                             Optional Integer. The forward (in-strip) overlap percentage that will be used between the images.
+                                                                                    The default is 60.
                                                                                     This parameter is enabled when the scenario parameter is set to AERIAL_NADIR.
         -------------------------------------------------------------------------   ---------------------------------------------------------------------------
         sideward_overlap                                                            Optional Integer. The sideward (cross-strip) overlap percentage that will be used between the images.
+                                                                                    The default is 30.
                                                                                     This parameter is enabled when the scenario parameter is set to AERIAL_NADIR.
         -------------------------------------------------------------------------   ---------------------------------------------------------------------------
         quality                                                                     Optional String. Specifies the quality of the final product.
@@ -9020,7 +9022,7 @@ class _OrthoRealityMappingTools(BaseAnalytics):
                                                                                     - MEDIUM - Input images will be downsampled four times.
                                                                                     - LOW - Input images will be downsampled eight times.
         -------------------------------------------------------------------------   ---------------------------------------------------------------------------
-        area_of_interest                                                            Optional :class:`~arcgis.features.FeatureLayer`. The area of interest that will
+        area_of_interest                                                            Optional :class:`~arcgis.features.FeatureLayer` or String. The area of interest that will
                                                                                     be used to select images for processing. The area of interest can be computed automatically
                                                                                     or defined using an input feature.
                                                                                     If the value contains 3D geometries, the z-component will be ignored. If the value includes
@@ -9035,47 +9037,33 @@ class _OrthoRealityMappingTools(BaseAnalytics):
         correction_features                                                         Optional :class:`~arcgis.features.FeatureLayer`. A polygon that will define the extent of all surfaces that are not water bodies.
                                                                                     The value must be a 3D feature.
         -------------------------------------------------------------------------   ---------------------------------------------------------------------------
-        output_dsm_name                                                             Optional String. If not provided, an Image Service is created by the method and used as the output raster.
-                                                                                    This output will be created by default when the scenario type is set to "AERIAL_NADIR".
-                                                                                    You can pass in an existing Image Service Item from your GIS to use that instead.
-
-                                                                                    Alternatively, you can pass in the name of the output Image Service that should be created by this method to be
+        reconstruction_options                                                      Optional dict or shared data path (this path must be accessible by the server).
+                                                                                    This specifies the values for the tool parameters. If this parameter is specified, the properties of
+                                                                                    the file or dictionary will set the default values for the remaining optional parameters.
+                                                                                    The list of keywords and an example of this JSON can be found here:
+                                                                                    `Reconstruct Surface tool <https://pro.arcgis.com/en/pro-app/latest/tool-reference/reality-mapping/reconstruct-surface.htm>`_
+        -------------------------------------------------------------------------   ---------------------------------------------------------------------------
+        output_dsm_name                                                             Optional String. You can pass in the name of the output Image Service that should be created by this method to be
                                                                                     used as the output for the tool.
 
                                                                                     A RuntimeError is raised if a service by that name already exists.
         -------------------------------------------------------------------------   ---------------------------------------------------------------------------
-        output_true_ortho_name                                                      Optional String. If not provided, an Image Service is created by the method and used as the output raster.
-                                                                                    This output will be created by default when the scenario type is set to "AERIAL_NADIR".
-                                                                                    You can pass in an existing Image Service Item from your GIS to use that instead.
-
-                                                                                    Alternatively, you can pass in the name of the output Image Service that should be created by this method to be
+        output_true_ortho_name                                                      Optional String. You can pass in the name of the output Image Service that should be created by this method to be
                                                                                     used as the output for the tool.
 
                                                                                     A RuntimeError is raised if a service by that name already exists.
         -------------------------------------------------------------------------   ---------------------------------------------------------------------------
-        output_dsm_mesh_name                                                        Optional String. If not provided, an Image Service is created by the method and used as the output raster.
-                                                                                    This output will be created by default when the scenario type is set to "AERIAL_NADIR".
-                                                                                    You can pass in an existing Image Service Item from your GIS to use that instead.
-
-                                                                                    Alternatively, you can pass in the name of the output Image Service that should be created by this method to be
+        output_dsm_mesh_name                                                        Optional String. You can pass in the name of the output Image Service that should be created by this method to be
                                                                                     used as the output for the tool.
 
                                                                                     A RuntimeError is raised if a service by that name already exists.
         -------------------------------------------------------------------------   ---------------------------------------------------------------------------
-        output_point_cloud_name                                                     Optional String. If not provided, an Image Service is created by the method and used as the output raster.
-                                                                                    This output will be created by default when the scenario type is set to "DEFAULT" or "AERIAL_OBLIQUE".
-                                                                                    You can pass in an existing Image Service Item from your GIS to use that instead.
-
-                                                                                    Alternatively, you can pass in the name of the output Image Service that should be created by this method to be
+        output_point_cloud_name                                                     Optional String. You can pass in the name of the output Image Service that should be created by this method to be
                                                                                     used as the output for the tool.
 
                                                                                     A RuntimeError is raised if a service by that name already exists.
         -------------------------------------------------------------------------   ---------------------------------------------------------------------------
-        output_mesh_name                                                            Optional String. If not provided, an Image Service is created by the method and used as the output raster.
-                                                                                    This output will be created by default when the scenario type is set to "DEFAULT" or "AERIAL_OBLIQUE".
-                                                                                    You can pass in an existing Image Service Item from your GIS to use that instead.
-
-                                                                                    Alternatively, you can pass in the name of the output Image Service that should be created by this method to be
+        output_mesh_name                                                            Optional String. You can pass in the name of the output Image Service that should be created by this method to be
                                                                                     used as the output for the tool.
 
                                                                                     A RuntimeError is raised if a service by that name already exists.
@@ -9202,12 +9190,12 @@ class _OrthoRealityMappingTools(BaseAnalytics):
 
         output_products = {}
         if scenario.lower() in ["aerial_nadir"]:
-            # Generate DSM, True Ortho & DSM Mesh by default
             if forward_overlap is None:
                 forward_overlap = 60
             if sideward_overlap is None:
                 sideward_overlap = 30
 
+        if output_dsm_name is not None:
             (
                 output_dsm_raster,
                 output_dsm_service,
@@ -9218,6 +9206,7 @@ class _OrthoRealityMappingTools(BaseAnalytics):
             )
             output_products["DSM"] = output_dsm_raster
 
+        if output_true_ortho_name is not None:
             (
                 output_true_ortho_raster,
                 output_true_ortho_service,
@@ -9228,74 +9217,26 @@ class _OrthoRealityMappingTools(BaseAnalytics):
             )
             output_products["True_Ortho"] = output_true_ortho_raster
 
-            if output_dsm_mesh_name is None:
-                output_dsm_mesh_name = task + "_" + _id_generator()
-                output_dsm_mesh_dict = {"name": output_dsm_mesh_name}
-            else:
+        if output_dsm_mesh_name is not None:
+            if isinstance(output_dsm_mesh_name, str):
                 output_dsm_mesh_dict = {"name": output_dsm_mesh_name}
             if folderId is not None:
                 output_dsm_mesh_dict["folderId"] = folderId
             output_products["DSM_Mesh"] = output_dsm_mesh_dict
 
-            if output_point_cloud_name is not None:
-                output_point_cloud_dict = {"name": output_point_cloud_name}
-                if folderId is not None:
-                    output_point_cloud_dict["folderId"] = folderId
-                output_products["Point_Cloud"] = output_point_cloud_dict
-
-            if output_mesh_name is not None:
-                output_mesh_dict = {"name": output_mesh_name}
-                if folderId is not None:
-                    output_mesh_dict["folderId"] = folderId
-                output_products["Mesh"] = output_mesh_dict
-        else:
-            # Scenario is DEFAULT or AERIAL_OBLIQUE
-            # Generate Point Cloud & Mesh by default
-            if output_point_cloud_name is None:
-                output_point_cloud_name = task + "_" + _id_generator()
-                output_point_cloud_dict = {"name": output_point_cloud_name}
-            else:
+        if output_point_cloud_name is not None:
+            if isinstance(output_point_cloud_name, str):
                 output_point_cloud_dict = {"name": output_point_cloud_name}
             if folderId is not None:
                 output_point_cloud_dict["folderId"] = folderId
             output_products["Point_Cloud"] = output_point_cloud_dict
 
-            if output_mesh_name is None:
-                output_mesh_name = task + "_" + _id_generator()
-                output_mesh_dict = {"name": output_mesh_name}
-            else:
+        if output_mesh_name is not None:
+            if isinstance(output_mesh_name, str):
                 output_mesh_dict = {"name": output_mesh_name}
             if folderId is not None:
                 output_mesh_dict["folderId"] = folderId
             output_products["Mesh"] = output_mesh_dict
-
-            if output_dsm_name is not None:
-                (
-                    output_dsm_raster,
-                    output_dsm_service,
-                ) = self._set_output_raster(
-                    output_name=output_dsm_name,
-                    task=task,
-                    output_properties=kwargs,
-                )
-                output_products["DSM"] = output_dsm_raster
-
-            if output_true_ortho_name is not None:
-                (
-                    output_true_ortho_raster,
-                    output_true_ortho_service,
-                ) = self._set_output_raster(
-                    output_name=output_true_ortho_name,
-                    task=task,
-                    output_properties=kwargs,
-                )
-                output_products["True_Ortho"] = output_true_ortho_raster
-
-            if output_dsm_mesh_name is not None:
-                output_dsm_mesh_dict = {"name": output_dsm_mesh_name}
-                if folderId is not None:
-                    output_dsm_mesh_dict["folderId"] = folderId
-                output_products["DSM_Mesh"] = output_dsm_mesh_dict
 
         job = self._tbx.reconstruct_surface(
             image_collection=image_collection,

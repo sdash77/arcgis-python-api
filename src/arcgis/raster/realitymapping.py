@@ -1456,47 +1456,27 @@ def reconstruct_surface(
                                                                                 The list of keywords and an example of this JSON can be found here:
                                                                                 `Reconstruct Surface tool <https://pro.arcgis.com/en/pro-app/latest/tool-reference/reality-mapping/reconstruct-surface.htm>`_
     -------------------------------------------------------------------------   ---------------------------------------------------------------------------
-    output_dsm_name                                                             Optional String. If not provided, an Image Service is created by the method and used as the output raster.
-                                                                                This output will be created by default when the scenario type is set to "AERIAL_NADIR".
-                                                                                You can pass in an existing Image Service Item from your GIS to use that instead.
-
-                                                                                Alternatively, you can pass in the name of the output Image Service that should be created by this method to be
+    output_dsm_name                                                             Optional String. You can pass in the name of the output Image Service that should be created by this method to be
                                                                                 used as the output for the tool.
 
                                                                                 A RuntimeError is raised if a service by that name already exists.
     -------------------------------------------------------------------------   ---------------------------------------------------------------------------
-    output_true_ortho_name                                                      Optional String. If not provided, an Image Service is created by the method and used as the output raster.
-                                                                                This output will be created by default when the scenario type is set to "AERIAL_NADIR".
-                                                                                You can pass in an existing Image Service Item from your GIS to use that instead.
-
-                                                                                Alternatively, you can pass in the name of the output Image Service that should be created by this method to be
+    output_true_ortho_name                                                      Optional String. You can pass in the name of the output Image Service that should be created by this method to be
                                                                                 used as the output for the tool.
 
                                                                                 A RuntimeError is raised if a service by that name already exists.
     -------------------------------------------------------------------------   ---------------------------------------------------------------------------
-    output_dsm_mesh_name                                                        Optional String. If not provided, an Image Service is created by the method and used as the output raster.
-                                                                                This output will be created by default when the scenario type is set to "AERIAL_NADIR".
-                                                                                You can pass in an existing Image Service Item from your GIS to use that instead.
-
-                                                                                Alternatively, you can pass in the name of the output Image Service that should be created by this method to be
+    output_dsm_mesh_name                                                        Optional String. You can pass in the name of the output Image Service that should be created by this method to be
                                                                                 used as the output for the tool.
 
                                                                                 A RuntimeError is raised if a service by that name already exists.
     -------------------------------------------------------------------------   ---------------------------------------------------------------------------
-    output_point_cloud_name                                                     Optional String. If not provided, an Image Service is created by the method and used as the output raster.
-                                                                                This output will be created by default when the scenario type is set to "DEFAULT" or "AERIAL_OBLIQUE".
-                                                                                You can pass in an existing Image Service Item from your GIS to use that instead.
-
-                                                                                Alternatively, you can pass in the name of the output Image Service that should be created by this method to be
+    output_point_cloud_name                                                     Optional String. You can pass in the name of the output Image Service that should be created by this method to be
                                                                                 used as the output for the tool.
 
                                                                                 A RuntimeError is raised if a service by that name already exists.
     -------------------------------------------------------------------------   ---------------------------------------------------------------------------
-    output_mesh_name                                                            Optional String. If not provided, an Image Service is created by the method and used as the output raster.
-                                                                                This output will be created by default when the scenario type is set to "DEFAULT" or "AERIAL_OBLIQUE".
-                                                                                You can pass in an existing Image Service Item from your GIS to use that instead.
-
-                                                                                Alternatively, you can pass in the name of the output Image Service that should be created by this method to be
+    output_mesh_name                                                            Optional String. You can pass in the name of the output Image Service that should be created by this method to be
                                                                                 used as the output for the tool.
 
                                                                                 A RuntimeError is raised if a service by that name already exists.
