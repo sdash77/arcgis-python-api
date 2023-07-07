@@ -7,6 +7,8 @@ Python and is an invaluable tool in the API.
 
 """
 from __future__ import absolute_import, annotations
+
+import _datetime
 import base64
 import json
 import locale
@@ -7514,7 +7516,7 @@ class ContentManager(object):
         ===================  ==========================================================================
         **Parameter**         **Description**
         -------------------  --------------------------------------------------------------------------
-        df                   Required DataFrame. Pandas dataframe
+        df                   Required DataFrame. A Pandas dataframe containing the tabular information.
         -------------------  --------------------------------------------------------------------------
         service_name         Required String. The name of the service.
         -------------------  --------------------------------------------------------------------------
@@ -7528,10 +7530,12 @@ class ContentManager(object):
         returns: Published Hosted Table Item
 
         """
-        fname = tempfile.mkstemp(suffix=".csv")[1]
+        fname: str = tempfile.mkstemp(suffix=".csv")[1]
 
         df.to_csv(fname)
-
+        if title is None:
+            now: datetime = datetime.now()
+            title: str = f"Import Table created on: {now.strftime('%m/%d/%Y')}"
         pp: dict[str, Any] = {
             "type": "CSV",
             "title": title,
