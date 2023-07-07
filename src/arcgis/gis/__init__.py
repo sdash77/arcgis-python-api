@@ -13,6 +13,7 @@ import locale
 import io
 import os
 import re
+import uuid
 import time
 import shutil
 import tempfile
@@ -7499,6 +7500,64 @@ class ContentManager(object):
             params["async"] = False
             res = self._gis._con.post(gurl, params, files=files)
             return res
+
+    # ----------------------------------------------------------------------
+    def import_table(
+        self,
+        df: pd.DataFrame,
+        *,
+        service_name: str | None = None,
+        title: str | None = None,
+        publish_parameters: dict[str, Any] = None,
+    ) -> Item:
+        """
+        The `import_table` function takes a Pandas' DataFrame and publishes it
+        as a Hosted Table on a WebGIS.
+
+        ===================  ==========================================================================
+        **Parameter**         **Description**
+        -------------------  --------------------------------------------------------------------------
+        df                   Required DataFrame. A Pandas dataframe containing the tabular information.
+        -------------------  --------------------------------------------------------------------------
+        service_name         Optional String. The name of the service.
+        -------------------  --------------------------------------------------------------------------
+        title                Optional String. The name of the title of the created Item.
+        -------------------  --------------------------------------------------------------------------
+        publish_parameters   Optional dict[str,Any]. The publish parameters.  If given, the user is
+                             responsible for passing all the publish parameters defined
+                             `here <https://developers.arcgis.com/rest/users-groups-and-items/publish-item.htm>`_.
+        ===================  ==========================================================================
+
+        returns: Published Hosted Table Item
+
+        """
+        assert isinstance(
+            df, pd.DataFrame
+        ), f"The df parameter must be a Pandas' DataFrame, not {type(df).__name__}"
+        fname: str = tempfile.mkstemp(suffix=".csv")[1]
+
+        df.to_csv(fname)
+        if title is None:
+            now: datetime = datetime.now()
+            title: str = f"Import Table created on: {now.strftime('%m/%d/%Y')}"
+        if service_name is None:
+            service_name = f"import_table_{uuid.uuid4().hex[:3]}"
+        pp: dict[str, Any] = {
+            "type": "CSV",
+            "title": title,
+        }
+        csv_item: Item = self.add(item_properties=pp, data=fname)
+        try:
+            os.remove(fname)
+        except:
+            pass
+        if publish_parameters is None:
+            publish_parameters: dict[str, Any] = self.analyze(
+                item=csv_item, file_type="csv"
+            )["publishParameters"]
+            publish_parameters["name"] = service_name
+            publish_parameters["locationType"] = "none"
+        return csv_item.publish(publish_parameters)
 
     # ----------------------------------------------------------------------
     def import_data(
