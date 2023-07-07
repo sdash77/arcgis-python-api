@@ -70,7 +70,7 @@ class Pix2Pix(ArcGISModel):
         self._check_dataset_support(data)
         if self._data.chip_size % 256 == 0:
             bnds = ["o" for i in range(self._data.n_channel)]
-            if not hasattr(self._data, '_bands'):
+            if not hasattr(self._data, "_bands"):
                 self._data._bands = bnds
             else:
                 if not self._data._bands:
