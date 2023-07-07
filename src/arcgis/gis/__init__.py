@@ -15,6 +15,7 @@ import locale
 import io
 import os
 import re
+import uuid
 import time
 import shutil
 import tempfile
@@ -7504,9 +7505,9 @@ class ContentManager(object):
     def import_table(
         self,
         df: pd.DataFrame,
-        service_name: str,
         *,
-        title: str = None,
+        service_name: str | None = None,
+        title: str | None = None,
         publish_parameters: dict[str, Any] = None,
     ) -> Item:
         """
@@ -7518,7 +7519,7 @@ class ContentManager(object):
         -------------------  --------------------------------------------------------------------------
         df                   Required DataFrame. A Pandas dataframe containing the tabular information.
         -------------------  --------------------------------------------------------------------------
-        service_name         Required String. The name of the service.
+        service_name         Optional String. The name of the service.
         -------------------  --------------------------------------------------------------------------
         title                Optional String. The name of the title of the created Item.
         -------------------  --------------------------------------------------------------------------
@@ -7530,12 +7531,17 @@ class ContentManager(object):
         returns: Published Hosted Table Item
 
         """
+        assert isinstance(
+            df, pd.DataFrame
+        ), f"The df parameter must be a Pandas' DataFrame, not {type(df).__name__}"
         fname: str = tempfile.mkstemp(suffix=".csv")[1]
 
         df.to_csv(fname)
         if title is None:
             now: datetime = datetime.now()
             title: str = f"Import Table created on: {now.strftime('%m/%d/%Y')}"
+        if service_name is None:
+            service_name = f"import_table_{uuid.uuid4().hex[:3]}"
         pp: dict[str, Any] = {
             "type": "CSV",
             "title": title,

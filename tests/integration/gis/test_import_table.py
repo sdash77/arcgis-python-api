@@ -25,7 +25,10 @@ def enable_verbose_logging(root):
     root.addHandler(handler)
 
 
-profiles = ['your_dev_enterprise_profile', 'your_online_profile']
+profiles = [
+    'your_dev_enterprise_profile',
+    'your_online_profile',
+]
 PROXIES = detect_proxy(True)  # Handles Fiddler when True
 enable_verbose_logging(__logger__)
 
@@ -249,22 +252,53 @@ class TestImportTable(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         cls.df = pd.DataFrame(data=test_data)
+        cls.gis_objs = [
+            GIS(profile=profile, proxy=PROXIES, verify_cert=False)
+            for profile in profiles
+        ]
 
-    def test_import_table(self):
+    def test_assert_error(self):
+        """tests that the assertion error is raised"""
+        gis: GIS = None
+
+        for gis in self.gis_objs:
+            content = gis.content
+            with self.assertRaises(Exception) as context:
+                content.import_table("figgypudding", "streetcars")
+
+    def test_import_table_with_defaults(self):
+        """import table task with all defaults"""
+        for gis in self.gis_objs:
+            content = gis.content
+            pitem = content.import_table(df=self.df)
+            source_items = pitem.related_items(
+                rel_type="Service2Data", direction='forward'
+            )
+            assert len(source_items) > 0
+            assert pitem.title
+            assert len(pitem.tables) > 0
+            assert pitem.delete()
+            [item.delete() for item in source_items]
+
+    def test_import_table_with_service_name(self):
         """simple import table task"""
-        for profile in profiles:
-            gis = GIS(profile=profile, proxy=PROXIES, verify_cert=False)
+        for gis in self.gis_objs:
             content = gis.content
             pitem = content.import_table(
                 df=self.df, service_name=f"a{uuid.uuid4().hex[:5]}b"
             )
+            source_items = pitem.related_items(
+                rel_type="Service2Data", direction='forward'
+            )
+            assert len(source_items) > 0
+            assert pitem.title
             assert len(pitem.tables) > 0
             assert pitem.delete()
+            [item.delete() for item in source_items]
 
     def test_import_table_pp(self):
-        """simple import table task"""
-        for profile in profiles:
-            gis = GIS(profile=profile, proxy=PROXIES, verify_cert=False)
+        """simple import table task with publish parms"""
+        for gis in self.gis_objs:
             content = gis.content
             fname = os.path.join(
                 tempfile.gettempdir(), uuid.uuid4().hex[:4] + ".csv"
@@ -288,8 +322,13 @@ class TestImportTable(unittest.TestCase):
                 publish_parameters=pp,
                 title='(--CSV_TEST--)',
             )
+            source_items = pitem.related_items(
+                rel_type="Service2Data", direction='forward'
+            )
+            assert len(source_items) > 0
             assert len(pitem.tables) > 0
             assert pitem.delete()
+            [item.delete() for item in source_items]
 
 
 if __name__ == "__main__":
