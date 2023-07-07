@@ -16032,10 +16032,18 @@ class Item(dict):
             self._portal.url,
             self.id,
         )
-        res = self._portal.con.post(url, params)
-        if "commentId" in res:
-            return res["commentId"]
-        return None
+        try:
+            res = self._portal.con.post(url, params)
+            if "commentId" in res:
+                return res["commentId"]
+            return None
+        except Exception as e:
+            if e.args[0].find("Too many failures") > -1:
+                raise RuntimeError(
+                    "The number of comments allowed has been exceeded, please wait to post more comments"
+                )
+            else:
+                raise e
 
     # ----------------------------------------------------------------------
     @property
