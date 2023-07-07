@@ -7,8 +7,6 @@ Python and is an invaluable tool in the API.
 
 """
 from __future__ import absolute_import, annotations
-
-import _datetime
 import base64
 import json
 import locale
