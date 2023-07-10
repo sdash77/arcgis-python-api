@@ -859,13 +859,13 @@ class UX(object):
         ----------------    ---------------------------------------------------------------
         banner_file         Optional string. If uploading a custom banner, then path to the
                             banner file. If using a built-in banner, valid values are:
-                            
+
                             * banner-1
                             * banner-2
                             * banner-3
                             * banner-4
                             * banner-5
-                            
+
                             .. note::
                                 If `None`, existing banner is removed.
         ----------------    ---------------------------------------------------------------
@@ -1581,10 +1581,12 @@ class HomePageSettings(object):
             hp = self._reader_hp()
             footer = {
                 "contact": self.get_contact_email(),
-                "text": hp["footer"]["copy"],
+                "text": hp["footer"]["copy"] if "copy" in hp["footer"] else "",
                 "show_text": hp["footer"]["showCopy"],
-                "color": hp["footer"]["bgColor"],
-                "custom_color": hp["footer"]["bgCustom"],
+                "color": hp["footer"]["bgColor"] if "bgColor" in hp["footer"] else "",
+                "custom_color": hp["footer"]["bgCustom"]
+                if "bgCustom" in hp["footer"]
+                else "",
             }
             return footer
 

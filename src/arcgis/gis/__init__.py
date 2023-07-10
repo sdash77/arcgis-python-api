@@ -13,6 +13,7 @@ import locale
 import io
 import os
 import re
+import uuid
 import time
 import shutil
 import tempfile
@@ -1113,6 +1114,16 @@ class GIS(object):
             return arcgis.apps.hub.SiteManager(self)
         else:
             raise Exception("Please access your ArcGIS Online sites through your Hub.")
+
+    @_lazy_property
+    def pages(self):
+        """
+        The ``pages`` property is the resource manager for a Page of an Enterprise Site. See :class:`~arcgis.apps.hub.pages` for more information.
+        """
+        if not self._portal.is_arcgisonline:
+            return arcgis.apps.hub.PageManager(self)
+        else:
+            raise Exception("Please access your ArcGIS Online pages through your Hub.")
 
     @_lazy_property
     def notebook_server(
@@ -2825,7 +2836,7 @@ class UserManager(object):
         ================  ===============================================================================
         **Keys**          **Description**
         ----------------  -------------------------------------------------------------------------------
-        role	          String/Role. The role ID. To assign a custom role as the new member default,
+        role            String/Role. The role ID. To assign a custom role as the new member default,
                           provide a Role object.
 
                           Values: `administrator`, `publisher`, `editor`, `viewer` or custom `Role` object
@@ -7050,7 +7061,9 @@ class ContentManager(object):
         """
         if max_items > 10000:
             raise Exception(
-                ("Use `advanced_search` fo" "r item queries over 10,000 Items.")
+                (
+                    "There is a limitation of 10,000 items that can be returned. Please use a smaller value for max_items. This is a limitation documented here: https://developers.arcgis.com/rest/users-groups-and-items/considerations-and-limitations.htm"
+                )
             )
         itemlist = []
         if query is not None and query != "" and item_type is not None:
@@ -7487,6 +7500,64 @@ class ContentManager(object):
             params["async"] = False
             res = self._gis._con.post(gurl, params, files=files)
             return res
+
+    # ----------------------------------------------------------------------
+    def import_table(
+        self,
+        df: pd.DataFrame,
+        *,
+        service_name: str | None = None,
+        title: str | None = None,
+        publish_parameters: dict[str, Any] = None,
+    ) -> Item:
+        """
+        The `import_table` function takes a Pandas' DataFrame and publishes it
+        as a Hosted Table on a WebGIS.
+
+        ===================  ==========================================================================
+        **Parameter**         **Description**
+        -------------------  --------------------------------------------------------------------------
+        df                   Required DataFrame. A Pandas dataframe containing the tabular information.
+        -------------------  --------------------------------------------------------------------------
+        service_name         Optional String. The name of the service.
+        -------------------  --------------------------------------------------------------------------
+        title                Optional String. The name of the title of the created Item.
+        -------------------  --------------------------------------------------------------------------
+        publish_parameters   Optional dict[str,Any]. The publish parameters.  If given, the user is
+                             responsible for passing all the publish parameters defined
+                             `here <https://developers.arcgis.com/rest/users-groups-and-items/publish-item.htm>`_.
+        ===================  ==========================================================================
+
+        returns: Published Hosted Table Item
+
+        """
+        assert isinstance(
+            df, pd.DataFrame
+        ), f"The df parameter must be a Pandas' DataFrame, not {type(df).__name__}"
+        fname: str = tempfile.mkstemp(suffix=".csv")[1]
+
+        df.to_csv(fname)
+        if title is None:
+            now: datetime = datetime.now()
+            title: str = f"Import Table created on: {now.strftime('%m/%d/%Y')}"
+        if service_name is None:
+            service_name = f"import_table_{uuid.uuid4().hex[:3]}"
+        pp: dict[str, Any] = {
+            "type": "CSV",
+            "title": title,
+        }
+        csv_item: Item = self.add(item_properties=pp, data=fname)
+        try:
+            os.remove(fname)
+        except:
+            pass
+        if publish_parameters is None:
+            publish_parameters: dict[str, Any] = self.analyze(
+                item=csv_item, file_type="csv"
+            )["publishParameters"]
+            publish_parameters["name"] = service_name
+            publish_parameters["locationType"] = "none"
+        return csv_item.publish(publish_parameters)
 
     # ----------------------------------------------------------------------
     def import_data(
@@ -16020,10 +16091,18 @@ class Item(dict):
             self._portal.url,
             self.id,
         )
-        res = self._portal.con.post(url, params)
-        if "commentId" in res:
-            return res["commentId"]
-        return None
+        try:
+            res = self._portal.con.post(url, params)
+            if "commentId" in res:
+                return res["commentId"]
+            return None
+        except Exception as e:
+            if e.args[0].find("Too many failures") > -1:
+                raise RuntimeError(
+                    "The number of comments allowed has been exceeded, please wait to post more comments"
+                )
+            else:
+                raise e
 
     # ----------------------------------------------------------------------
     @property
@@ -16226,11 +16305,11 @@ class Item(dict):
         -----------------------    -------------------------------------------------------------
         tags                       Optional String. New set of tags (comma separated) of the destination item.
         -----------------------    -------------------------------------------------------------
-        folder	                   Optional String. Folder Id of the destination item. If the folder Id is not specified, then the item remains in the same folder.
+        folder                     Optional String. Folder Id of the destination item. If the folder Id is not specified, then the item remains in the same folder.
 
                                    If the administrator invokes a copy of an item belonging to another user, and does not specify the folder Id, the item gets created in the root folder of the administrator.
         -----------------------    -------------------------------------------------------------
-        include_resources	   Optional boolean. If true, the file resources of the original
+        include_resources    Optional boolean. If true, the file resources of the original
                                    item will be copied over to the new item. Private file resources
                                    will not be copied over. If false, the file resources of the
                                    original item will not be copied over to the new item. The

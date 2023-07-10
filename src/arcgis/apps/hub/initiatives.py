@@ -190,14 +190,24 @@ class Initiative(OrderedDict):
         =====================    ====================================================================
 
         """
-        # Fetch Initiative Collaboration group
-        _collab_group = self._gis.groups.get(self.collab_group_id)
-        # Fetch Content Group
-        _content_group = self._gis.groups.get(self.content_group_id)
-        # share items with groups
-        return self._gis.content.share_items(
-            items_list, groups=[_collab_group, _content_group]
-        )
+        # If input list is of item_ids, generate a list of corresponding items
+        if type(items_list[0]) == str:
+            items = [self._gis.content.get(item_id) for item_id in items_list]
+        else:
+            items = items_list
+        # Fetch existing sharing privileges for each item, to retain them after adding to content library
+        for item in items:
+            sharing = item.shared_with
+            everyone = sharing["everyone"]
+            org = sharing["org"]
+            groups = sharing["groups"]
+            # add current initiative's content group to list of groups to share to
+            groups.append(self.content_group_id)
+            # share item to this group
+            status = item.share(everyone=everyone, org=org, groups=groups)
+            if status["results"][0]["success"] == False:
+                return status
+        return status
 
     def delete(self) -> bool:
         """
