@@ -1973,11 +1973,13 @@ def clip(
     template_dict = {
         "rasterFunction": "Clip",
         "rasterFunctionArguments": {
-            "ClippingGeometry": geometry,
             "ClipType": 1 if clip_outside else 2,
             "Raster": raster,
         },
     }
+
+    if geometry is not None:
+        template_dict["rasterFunctionArguments"]["ClippingGeometry"] = geometry
 
     if astype is not None:
         template_dict["outputPixelType"] = astype.upper()
