@@ -4,6 +4,7 @@ Configures Social Providers for a Portal or ArcGIS Online
 from arcgis.gis import GIS
 from arcgis._impl.common._mixins import PropertyMap
 
+
 ########################################################################
 class SocialProviders(object):
     """
@@ -11,18 +12,20 @@ class SocialProviders(object):
 
 
     ===============     ====================================================================
-    **Argument**        **Description**
+    **Parameter**        **Description**
     ---------------     --------------------------------------------------------------------
     value               Required GIS.  This is an administrator connection to a GIS site.
     ===============     ====================================================================
 
-    :return: SocialProviders class
+    :return:
+        :class:`~arcgis.gis.admin.SocialProviders` object
 
     """
 
     _gis = None
     _portal = None
     _properties = None
+
     # ----------------------------------------------------------------------
     def __init__(self, gis):
         """Constructor"""
@@ -33,11 +36,11 @@ class SocialProviders(object):
 
     # ----------------------------------------------------------------------
     def __str__(self):
-        return "<%s at %s>" % (type(self).__name__, self._url)
+        return "< %s @ %s >" % (type(self).__name__, self._url)
 
     # ----------------------------------------------------------------------
     def __repr__(self):
-        return "<%s at %s>" % (type(self).__name__, self._url)
+        return "< %s @ %s >" % (type(self).__name__, self._url)
 
     # ----------------------------------------------------------------------
     @property
@@ -59,7 +62,7 @@ class SocialProviders(object):
         Gets/Sets for the Social Providers on the GIS
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         value               Optional dict or None.  If the value is None, the social provider
                             configuration is deleted.  If the value is a dictionary, a social

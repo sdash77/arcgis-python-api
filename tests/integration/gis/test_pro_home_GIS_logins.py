@@ -39,12 +39,11 @@ except ImportError:
 import arcgis
 
 try:
-    arcgis.gis.GIS(profile='your_enterprise_profile')
+    arcgis.gis.GIS(profile="your_enterprise_profile")
     _HAS_KEYRING = True
 except:
     _HAS_KEYRING = False
 
-# import pytest
 from arcgis.gis import GIS
 from arcgis.gis import ProfileManager
 

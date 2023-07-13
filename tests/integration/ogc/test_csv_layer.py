@@ -1,7 +1,6 @@
 import os
 import sys
 import unittest
-import pytest
 import pandas as pd
 from arcgis.gis import GIS
 from arcgis.mapping.ogc import CSVLayer
@@ -26,7 +25,7 @@ class TestCSVLayer(unittest.TestCase):
         assert csv.copyright is None
         assert csv.sql_expression is None
         assert csv.renderer
-        assert str(csv).find("<CSV") > -1
+        assert str(csv).find("< CSV") > -1
         csv.title = "test"
         assert csv.title == "test"
         assert csv._lyr_json

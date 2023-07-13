@@ -1,3 +1,4 @@
+from __future__ import annotations
 import json
 from collections import OrderedDict
 from urllib.request import HTTPError
@@ -5,6 +6,7 @@ from arcgis.gis._impl._con import Connection
 from arcgis.gis import GIS
 from arcgis._impl.common._mixins import PropertyMap
 from typing import Dict, Any, Optional, List
+
 
 ###########################################################################
 class KubeEnterpriseGroups:
@@ -24,11 +26,11 @@ class KubeEnterpriseGroups:
 
     # ----------------------------------------------------------------------
     def __str__(self):
-        return "<%s at %s>" % (type(self).__name__, self._url)
+        return "< %s @ %s >" % (type(self).__name__, self._url)
 
     # ----------------------------------------------------------------------
     def __repr__(self):
-        return "<%s at %s>" % (type(self).__name__, self._url)
+        return "< %s @ %s >" % (type(self).__name__, self._url)
 
     # ----------------------------------------------------------------------
     @property
@@ -48,7 +50,7 @@ class KubeEnterpriseGroups:
         Searches users in the configured enterprise user store.
 
         ===========================     ====================================================================
-        **Argument**                    **Description**
+        **Parameter**                    **Description**
         ---------------------------     --------------------------------------------------------------------
         query                           Optional String. Text to narrow down the user search.
         ---------------------------     --------------------------------------------------------------------
@@ -66,7 +68,7 @@ class KubeEnterpriseGroups:
         This operation returns a list of users that are currently assigned to the enterprise group within the enterprise user and group stores.
 
         ===========================     ====================================================================
-        **Argument**                    **Description**
+        **Parameter**                    **Description**
         ---------------------------     --------------------------------------------------------------------
         name                            Required String. The name of the group.
         ---------------------------     --------------------------------------------------------------------
@@ -95,7 +97,7 @@ class KubeEnterpriseGroups:
 
 
         ===========================     ====================================================================
-        **Argument**                    **Description**
+        **Parameter**                    **Description**
         ---------------------------     --------------------------------------------------------------------
         username                        Required String. The username to examine.
         ---------------------------     --------------------------------------------------------------------
@@ -128,7 +130,7 @@ class KubeEnterpriseGroups:
         membership, the database and indexes are updated for each group.
 
         ===========================     ====================================================================
-        **Argument**                    **Description**
+        **Parameter**                    **Description**
         ---------------------------     --------------------------------------------------------------------
         groups                          Required List[str]. The name of the groups to refresh.
         ===========================     ====================================================================
@@ -152,6 +154,7 @@ class KubeOrgSecurity(object):
     _gis = None
     _url = None
     _properties = None
+
     # ----------------------------------------------------------------------
     def __init__(self, url: str, gis: "GIS") -> "KubeOrgSecurity":
         self._url = url
@@ -160,11 +163,11 @@ class KubeOrgSecurity(object):
 
     # ----------------------------------------------------------------------
     def __str__(self):
-        return "<%s at %s>" % (type(self).__name__, self._url)
+        return "< %s @ %s >" % (type(self).__name__, self._url)
 
     # ----------------------------------------------------------------------
     def __repr__(self):
-        return "<%s at %s>" % (type(self).__name__, self._url)
+        return "< %s @ %s >" % (type(self).__name__, self._url)
 
     # ----------------------------------------------------------------------
     @property
@@ -209,7 +212,7 @@ class KubeEnterpriseUser:
         Searches users in the configured enterprise user store.
 
         ===========================     ====================================================================
-        **Argument**                    **Description**
+        **Parameter**                    **Description**
         ---------------------------     --------------------------------------------------------------------
         query                           Optional String. Text to narrow down the user search.
         ---------------------------     --------------------------------------------------------------------
@@ -223,25 +226,24 @@ class KubeEnterpriseUser:
 
     def create_user(
         self,
-        username,
-        password,
-        first_name,
-        last_name,
-        email,
-        role="org_user",
-        level=2,
-        provider="arcgis",
-        idp_username=None,
-        description=None,
-        user_license=None,
-    ):
+        username: str,
+        password: str,
+        first_name: str,
+        last_name: str,
+        email: str,
+        user_license: str,
+        role: str = "org_user",
+        provider: str = "arcgis",
+        idp_username: str | None = None,
+        description: str | None = None,
+    ) -> bool:
         """
         This operation is used to pre-create built-in or enterprise
         accounts within the portal. The provider parameter is used to
         indicate the type of user account.
 
         ===========================     ====================================================================
-        **Argument**                    **Description**
+        **Parameter**                    **Description**
         ---------------------------     --------------------------------------------------------------------
         username                        Required string. The name of the user account
         ---------------------------     --------------------------------------------------------------------
@@ -253,12 +255,15 @@ class KubeEnterpriseUser:
         ---------------------------     --------------------------------------------------------------------
         email                           Required string. The email for the account
         ---------------------------     --------------------------------------------------------------------
+        user_license	                Optional string. The user type for the account.
+
+                                        Values: creator, editor, advanced (GIS Advanced),
+                                                basic (GIS Basic), standard (GIS Standard), viewer,
+                                                fieldworker
+        ---------------------------     --------------------------------------------------------------------
         role                            Optional string. The role for the user account. The default value is
                                         org_user.
                                         Values org_admin | org_publisher | org_user | org_editor (Data Editor) | viewer
-        ---------------------------     --------------------------------------------------------------------
-        level                           Optional integer. The account level to assign the user.
-                                        Values 1 or 2
         ---------------------------     --------------------------------------------------------------------
         provider                        Optional string. The provider for the account. The default value is
                                         arcgis. Values arcgis | enterprise
@@ -268,13 +273,6 @@ class KubeEnterpriseUser:
                                         parameter is enterprise.
         ---------------------------     --------------------------------------------------------------------
         description                     Optional string. A user description
-        ---------------------------     --------------------------------------------------------------------
-        user_license	                Optional string. The user type for the account. (10.7+)
-
-                                        Values: creator, editor, advanced (GIS Advanced),
-                                                basic (GIS Basic), standard (GIS Standard), viewer,
-                                                fieldworker
-
         ===========================     ====================================================================
 
         :return: boolean
@@ -309,7 +307,6 @@ class KubeEnterpriseUser:
             "lastname": last_name,
             "email": email,
             "role": role,
-            "level": level,
             "provider": provider,
         }
         if idp_username:
@@ -321,14 +318,34 @@ class KubeEnterpriseUser:
         res = self._gis._portal.con.post(path=url, postdata=params)
         return res["status"] == "success"
 
-    def get_enterprise_user(self, username):
+    def get_enterprise_user(self, username: str) -> dict:
         """gets the enterprise user"""
         url = f"{self._url}/getEnterpriseUser"
         params = {"f": "json", "username": username}
         return self._gis._portal.con.post(url, params)
 
-    def refresh_membership(self, users):
-        """refreshes the user membership"""
+    def refresh_membership(self, users: list[str]) -> dict:
+        """
+        This operation iterates over every enterprise group configured in
+        your organization and determines whether the input user accounts
+        belong to any of the configured enterprise groups. If there is any
+        change in membership, the database and the indexes are updated for
+        each user account. While the portal automatically refreshes the
+        memberships during a user login and during a periodic refresh
+        (configured through the Update Identity Store operation), this
+        operation allows an administrator to force a refresh.
+
+        ===========================     ====================================================================
+        **Parameter**                    **Description**
+        ---------------------------     --------------------------------------------------------------------
+        users                           Optional list[str]. The comma-separated list of usernames for
+                                        whom the memberships need to be refreshed.
+        ===========================     ====================================================================
+
+        :returns: dict
+        """
+        if isinstance(users, (list, tuple)):
+            users = ",".join([str(user) for user in users])
         url = f"{self._url}/refreshMembership"
         params = {"f": "json", "users": users}
         return self._gis._portal.con.post(url, params)
@@ -349,6 +366,7 @@ class KubeOrganization:
     _security = None
     _federation = None
     _license = None
+
     # ----------------------------------------------------------------------
     def __init__(self, url, gis: "GIS", **kwargs):
         """class initializer"""
@@ -378,11 +396,11 @@ class KubeOrganization:
 
     # ----------------------------------------------------------------------
     def __str__(self):
-        return "<%s at %s>" % (type(self).__name__, self._url)
+        return "< %s @ %s >" % (type(self).__name__, self._url)
 
     # ----------------------------------------------------------------------
     def __repr__(self):
-        return "<%s at %s>" % (type(self).__name__, self._url)
+        return "< %s @ %s >" % (type(self).__name__, self._url)
 
     # ----------------------------------------------------------------------
     @property
@@ -480,6 +498,7 @@ class KubeOrgFederations:
     _gis = None
     _url = None
     _properties = None
+
     # ----------------------------------------------------------------------
     def __init__(self, url: str, gis: "GIS") -> "KubeOrgFederations":
         self._url = url
@@ -488,11 +507,11 @@ class KubeOrgFederations:
 
     # ----------------------------------------------------------------------
     def __str__(self):
-        return "<%s at %s>" % (type(self).__name__, self._url)
+        return "< %s @ %s >" % (type(self).__name__, self._url)
 
     # ----------------------------------------------------------------------
     def __repr__(self):
-        return "<%s at %s>" % (type(self).__name__, self._url)
+        return "< %s @ %s >" % (type(self).__name__, self._url)
 
     # ----------------------------------------------------------------------
     @property
@@ -518,6 +537,21 @@ class KubeOrgFederations:
         params = {"f": "json"}
         return self._con.get(path=url, params=params)
 
+    def unfederate(self, server_id: str) -> bool:
+        """
+        This operation unfederates a currently federated ArcGIS Server from
+        your organization. Before performing this operation, the federated
+        server should be taken out of read-only mode if it was already in
+        that state. This operation is not applicable to the hosting server
+        configured as part of the base deployment of ArcGIS Enterprise on
+        Kubernetes.
+
+        :returns: Bool
+        """
+        url = f"{self._url}/servers/{server_id}/unfederate"
+        params = {"f": "json"}
+        return self._con.post(url, params).pop("success", False)
+
     def federate(self, url: str, admin_url: str, username: str, password: str) -> bool:
         """
         This operation federates either a GIS Server or ArcGIS Image Server
@@ -528,6 +562,35 @@ class KubeOrgFederations:
         the organization's logs. After federation, administrators will be
         unable to set a server role for the federated server.
 
+        Once a server has been federated with an organization, services
+        that exist on the ArcGIS Server site at the time of federation are
+        automatically added to the portal as items. The administrator who
+        performs this operation will be assigned as the imported service's
+        owner and, once the operation is complete, can reassign ownership
+        to other members in the organization. Any subsequent items
+        published to the federated server are automatically added as items
+        on the portal and are owned by the user who publishes them.
+
+        ===========================     ====================================================================
+        **Parameter**                    **Description**
+        ---------------------------     --------------------------------------------------------------------
+        url                             Required string. The URL of the GIS or image server used by external
+                                        users when accessing the server site. If you've added the server to
+                                        your organization's reverse proxy server, the URL is the reverse
+                                        proxy server address.
+        ---------------------------     --------------------------------------------------------------------
+        admin_url                       Required string. The URL used to access the server when performing
+                                        administrative operations on the internal network. The URL must be
+                                        able to be used by the organization to communicate with all servers
+                                        in the site, even when one of them is unavailable.
+        ---------------------------     --------------------------------------------------------------------
+        username                        Required string. The username of the primary administrator account
+                                        for the server. If this account is disabled, you'll need to
+                                        reenable it.
+        ---------------------------     --------------------------------------------------------------------
+        password                        Required string. The password of the primary administrator account
+                                        for the server.
+        ===========================     ====================================================================
 
         :returns: bool
 
@@ -542,7 +605,7 @@ class KubeOrgFederations:
         url = f"{self._url}/servers/federate"
         return self._con.post(url, params).get("status", "failed") == "success"
 
-    def validate(self) -> dict:
+    def validate(self, server_id: str) -> dict:
         """
         The validate operation performs validation checks against all
         federated GIS Server and ArcGIS Image Server types within your
@@ -552,9 +615,20 @@ class KubeOrgFederations:
         organization servers. This response also includes any failure
         messages from failed validation checks.
 
+        ===========================     ====================================================================
+        **Parameter**                    **Description**
+        ---------------------------     --------------------------------------------------------------------
+        server_id                       Optional String. When present the validation will occur on that
+                                        single server.  If no `server_id` is given, then all servers are
+                                        validated.
+        ===========================     ====================================================================
+
         :returns: dict
         """
-        url = f"{self._url}/servers/validate"
+        if server_id:
+            url = f"{self._url}/servers/{server_id}/validate"
+        else:
+            url = f"{self._url}/servers/validate"
         params = {"f": "json"}
 
         return self._con.get(url, params)
@@ -576,6 +650,7 @@ class KubeOrgLicense:
     _gis = None
     _url = None
     _properties = None
+
     # ---------------------------------------------------------------------
     def __init__(self, url: str, gis: "GIS") -> "KubeOrgLicense":
         """
@@ -588,11 +663,11 @@ class KubeOrgLicense:
 
     # ----------------------------------------------------------------------
     def __str__(self):
-        return "<%s at %s>" % (type(self).__name__, self._url)
+        return "< %s @ %s >" % (type(self).__name__, self._url)
 
     # ----------------------------------------------------------------------
     def __repr__(self):
-        return "<%s at %s>" % (type(self).__name__, self._url)
+        return "< %s @ %s >" % (type(self).__name__, self._url)
 
     # ----------------------------------------------------------------------
     @property
@@ -607,6 +682,27 @@ class KubeOrgLicense:
         return self._properties
 
     # ----------------------------------------------------------------------
+    def export_gdb_license(self, out_folder: str = None) -> str:
+        """
+        The operation downloads a geodatabaseLicense.ecp file that
+        represents the authorization file needed when enabling, creating,
+        and updating an enterprise geodatabase in ArcGIS Pro for ArcGIS
+        Enterprise on Kubernetes deployments. Accessing this operation
+        automatically downloads the .ecp file; no parameters are required
+        and no JSON Response is returned for this operation.
+
+        ===========================     ====================================================================
+        **Parameter**                    **Description**
+        ---------------------------     --------------------------------------------------------------------
+        out_folder                      Optional string. The folder where the license file will be saved.
+        ===========================     ====================================================================
+
+        :returns: str
+        """
+        url = self._url + "/exportGeodatabaseLicense"
+        return self._con.get(url, params={}, try_json=False, out_folder=out_folder)
+
+    # ----------------------------------------------------------------------
     def update_license_manager(self, config: dict) -> bool:
         """
         This operation allows you to change the license server connection
@@ -616,10 +712,12 @@ class KubeOrgLicense:
         changes and set up connections with the backup license manager.
 
         ===========================     ====================================================================
-        **Argument**                    **Description**
+        **Parameter**                    **Description**
         ---------------------------     --------------------------------------------------------------------
         config                          Required Dict. The JSON representation of the license server
                                         connection information.
+
+                                        Example: ```{"hostname": "licensemanager.domain.com,backuplicensemanager.domain.com","port": 27000}```
         ===========================     ====================================================================
 
         :return: Boolean
@@ -639,9 +737,13 @@ class KubeOrgLicense:
         Applies a new license file to a specific organization, which contains the portal's user type and add-on licenses.
 
         ===========================     ====================================================================
-        **Argument**                    **Description**
+        **Parameter**                    **Description**
         ---------------------------     --------------------------------------------------------------------
-        license_file                    Required String. The kubernetes license file.
+        license_file                    Required String. The kubernetes license file. For deployments using
+                                        ArcGIS Enterprise on Kubernetes 10.9.1 or earlier, this file is an
+                                        ArcGIS Enterprise portal license file. For deployments using ArcGIS
+                                        Enterprise on Kubernetes 11.0 or later, this is an ArcGIS Enterprise
+                                        on Kubernetes license file.
         ===========================     ====================================================================
 
         :return: Boolean
@@ -667,9 +769,13 @@ class KubeOrgLicense:
 
 
         ===========================     ====================================================================
-        **Argument**                    **Description**
+        **Parameter**                    **Description**
         ---------------------------     --------------------------------------------------------------------
-        file                            Required String. The kubernetes license file.
+        file                            Required String. The kubernetes license file. For deployments using
+                                        ArcGIS Enterprise on Kubernetes 10.9.1 or earlier, this file is an
+                                        ArcGIS Enterprise portal license file. For deployments using ArcGIS
+                                        Enterprise on Kubernetes 11.0 or later, this is an ArcGIS Enterprise
+                                        on Kubernetes license file.
         ---------------------------     --------------------------------------------------------------------
         list_ut                         Optional Boolean. Returns a list of user types that are compatible
                                         with the Administrator role. This identifies the user type(s) that
@@ -698,6 +804,7 @@ class KubeOrganizations:
     _gis = None
     _url = None
     _properties = None
+
     # ----------------------------------------------------------------------
     def __init__(
         self, url: str, gis: "GIS", initialize: bool = True
@@ -733,11 +840,11 @@ class KubeOrganizations:
 
     # ----------------------------------------------------------------------
     def __str__(self):
-        return "<%s at %s>" % (type(self).__name__, self._url)
+        return "< %s @ %s >" % (type(self).__name__, self._url)
 
     # ----------------------------------------------------------------------
     def __repr__(self):
-        return "<%s at %s>" % (type(self).__name__, self._url)
+        return "< %s @ %s >" % (type(self).__name__, self._url)
 
     # ----------------------------------------------------------------------
     @property

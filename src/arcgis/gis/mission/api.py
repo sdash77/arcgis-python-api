@@ -1,3 +1,4 @@
+from __future__ import annotations
 from arcgis.gis._impl._con import Connection
 from arcgis._impl.common._mixins import PropertyMap
 from arcgis.gis import Item
@@ -5,16 +6,19 @@ from arcgis.gis.server._service import Service
 from arcgis._impl.backport import cached_property
 from functools import lru_cache
 from typing import Optional, Union
-from __future__ import annotations
+
 
 ###########################################################################
 class MissionJob(object):
-    """Represents a Single `Job` operation for Mission Server"""
+    """
+    Represents a Single `Job` operation for Mission Server
+    """
 
     _properties = None
     _url = None
     _con = None
     _gis = None
+
     # ---------------------------------------------------------------------
     def __init__(self, url: str, gis: "GIS", **kwargs) -> "MissionJob":
         self._url = url
@@ -23,15 +27,17 @@ class MissionJob(object):
 
     # ---------------------------------------------------------------------
     def __str__(self):
-        return f"<{self.__class__.__name__} @ {self._url}>"
+        return f"< {self.__class__.__name__} @ {self._url} >"
 
     # ---------------------------------------------------------------------
     def __repr__(self):
-        return f"<{self.__class__.__name__} @ {self._url}>"
+        return f"< {self.__class__.__name__} @ {self._url} >"
 
     # ---------------------------------------------------------------------
     @cached_property
     def properties(self):
+        """returns the properties of the resource"""
+
         if self._properties is None:
             try:
                 self._properties = PropertyMap(self._con.get(self._url, {"f": "json"}))
@@ -42,7 +48,6 @@ class MissionJob(object):
     # ---------------------------------------------------------------------
     @property
     def status(self) -> object:
-
         """
         Returns the status
 
@@ -77,6 +82,7 @@ class Mission(object):
     _url = None
     _con = None
     _gis = None
+
     # ---------------------------------------------------------------------
     def __init__(self, url: str, gis: "GIS", **kwargs) -> "Mission":
         self._url = url
@@ -103,6 +109,7 @@ class Mission(object):
     # ---------------------------------------------------------------------
     @cached_property
     def properties(self):
+        """returns the properties of the resource"""
         if self._properties is None:
             try:
                 r = self._con.get(self._url, {"f": "json"})
@@ -116,18 +123,19 @@ class Mission(object):
 
     # ---------------------------------------------------------------------
     def __str__(self):
-        return f"<{self.__class__.__name__} @ {self._url}>"
+        return f"< {self.__class__.__name__} @ {self._url} >"
 
     # ---------------------------------------------------------------------
     def __repr__(self):
-        return f"<{self.__class__.__name__} @ {self._url}>"
+        return f"< {self.__class__.__name__} @ {self._url} >"
 
     # ---------------------------------------------------------------------
     def delete(self) -> bool:
         """
-        Deletes a `Mission` from the server.
+        Deletes a :class:`~arcgis.gis.mission.api.Mission` from the server.
 
         :return: Boolean
+
         """
         params = {"f": "json"}
         url = f"{self._url}/delete"
@@ -151,8 +159,12 @@ class Mission(object):
         share_as_template: bool = False,
     ) -> dict:
         """
+
+        This method adds a report to the associated mission.
+
+
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
         title	               Required String. The name of the report.
         ------------------     --------------------------------------------------------------------
@@ -202,7 +214,6 @@ class Mission(object):
 class MissionCatalog:
     """
     The ArcGIS Mission Server catalog.
-
     """
 
     _con = None
@@ -210,6 +221,7 @@ class MissionCatalog:
     _url = None
     _admin = None
     _properties = None
+
     # ---------------------------------------------------------------------
     def __init__(self, gis: "GIS") -> "MissionCatalog":
         url = None
@@ -230,15 +242,17 @@ class MissionCatalog:
 
     # ---------------------------------------------------------------------
     def __str__(self):
-        return f"<{self.__class__.__name__} @ {self._url}>"
+        return f"< {self.__class__.__name__} @ {self._url} >"
 
     # ---------------------------------------------------------------------
     def __repr__(self):
-        return f"<{self.__class__.__name__} @ {self._url}>"
+        return f"< {self.__class__.__name__} @ {self._url} >"
 
     # ---------------------------------------------------------------------
     @cached_property
     def properties(self):
+        """returns the properties of the resource"""
+
         if self._properties is None:
             try:
                 self._properties = PropertyMap(self._con.get(self._url, {"f": "json"}))
@@ -276,7 +290,7 @@ class MissionCatalog:
         Creates a new `Mission` on the enterprise.
 
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
         title	               Required. String. The title of the mission. This is the human readable title that is displayed to users.
         ------------------     --------------------------------------------------------------------
@@ -311,7 +325,8 @@ class MissionCatalog:
         ==================     ====================================================================
 
 
-        :return: `MissionJob`
+        :return:
+            :class:`~arcgis.gis.mission.api.MissionJob`
 
 
         """
@@ -340,7 +355,7 @@ class MissionCatalog:
     # ---------------------------------------------------------------------
     @property
     def jobs(self) -> list:
-        """returns a list of jobs on the server"""
+        """returns a list of :class:`~arcgis.gis.mission.api.MissionJob` on the server"""
         url = f"{self._url}/jobs"
         params = {"f": "json"}
         resp = self._con.get(url, params)
@@ -350,7 +365,7 @@ class MissionCatalog:
     @property
     def missions(self) -> list:
         """
-        returns a list of missions on the server
+        returns a list of :class:`~arcgis.gis.mission.api.Mission` on the server
 
         :return: List
         """

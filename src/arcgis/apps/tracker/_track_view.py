@@ -10,7 +10,7 @@ class TrackView:
     A Track View
 
     ==================     ====================================================================
-    **Argument**           **Description**
+    **Parameter**           **Description**
     ------------------     --------------------------------------------------------------------
     item                   Required :class:`~arcgis.gis.Item`. The item that represents the
                            Track View.
@@ -93,7 +93,7 @@ class TrackViewerManager:
     It can be accessed from the TrackView as :py:attr:`~arcgis.apps.tracker.TrackView.viewers`
 
     ==================     ====================================================================
-    **Argument**           **Description**
+    **Parameter**           **Description**
     ------------------     --------------------------------------------------------------------
     track_view             Required :class:`~arcgis.apps.tracker.TrackView`. The Track View to
                            configure Track Viewers for.
@@ -108,9 +108,9 @@ class TrackViewerManager:
         Adds the specified usernames as Track Viewers
 
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
-        viewers                Required :class:`List` of :class:`String` or :class:`arcgis.gis.User`.
+        viewers                Required List of strings or :class:`~arcgis.gis.User`.
                                The list of usernames/users to add as Track Viewers.
         ==================     ====================================================================
         """
@@ -127,9 +127,9 @@ class TrackViewerManager:
     def delete(self, viewers):
         """
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
-        viewers                Required :class:`List` of :class:`String` or :class:`arcgis.gis.User`.
+        viewers                Required List of strings or :class:`~arcgis.gis.User`.
                                The list of usernames/users to remove as Track Viewers.
         ==================     ====================================================================
         """
@@ -157,9 +157,9 @@ class TrackViewerManager:
 
     def list(self):
         """
-        Lists all of the Track Viewers
+        List of all the Track Viewers
 
-        :return: :class:`List` of :class:`String` representing usernames
+        :return: List of strings representing usernames
         """
         results = self._track_view.group.get_members()
         usernames = results["users"]
@@ -174,7 +174,7 @@ class MobileUserManager:
     It can be accessed from the TrackView as :py:attr:`~arcgis.apps.tracker.TrackView.mobile_users`
 
     ==================     ====================================================================
-    **Argument**           **Description**
+    **Parameter**           **Description**
     ------------------     --------------------------------------------------------------------
     track_view             Required :class:`~arcgis.apps.tracker.TrackView`. The Track View to
                            configure Mobile Users for.
@@ -192,9 +192,9 @@ class MobileUserManager:
         Adds the specified usernames as Mobile Users
 
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
-        users                  Required :class:`List` of :class:`String` or :class:`arcgis.gis.User`.
+        users                  Required List of strings or :class:`~arcgis.gis.User`.
                                The list of usernames/users to add as Mobile Users
         ==================     ====================================================================
         """
@@ -212,9 +212,9 @@ class MobileUserManager:
     def delete(self, users):
         """
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
-        users                  Required :class:`List` of :class:`String` or :class:`arcgis.gis.User`.
+        users                  Required List of strings or :class:`~arcgis.gis.User`.
                                The list of usernames/users to remove as Mobile Users.
         ==================     ====================================================================
         """
@@ -229,9 +229,9 @@ class MobileUserManager:
 
     def list(self):
         """
-        Lists all of the Track Viewers
+        List of all the Track Viewers
 
-        :return: :class:`List` of :class:`String` representing usernames
+        :return: List of strings representing usernames
         """
         pattern = re.compile(self._VDQ_RE)
         match = pattern.match(self.view_definition_query)

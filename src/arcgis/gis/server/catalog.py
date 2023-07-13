@@ -1,6 +1,7 @@
+from __future__ import annotations
 import ssl
 import logging
-from typing import Optional
+from typing import Optional, Any
 from urllib.parse import urlparse
 from ._common import BaseServer
 from .._impl._con import Connection
@@ -9,6 +10,8 @@ from arcgis.gis import GIS
 from arcgis.gis._impl._profile import ServerProfileManager
 
 _log = logging.getLogger()
+
+
 ########################################################################
 class ServicesDirectory(BaseServer):
     """
@@ -37,18 +40,18 @@ class ServicesDirectory(BaseServer):
 
 
     =====================     ====================================================================
-    **Arguments**             **Description**
+    **Parameter**             **Description**
     ---------------------     --------------------------------------------------------------------
     url                       string required. The web address to the ArcGIS Server administration
                               end point.
 
-                              Example: https://mysite.com/arcgis
+                              Example: ``https://mysite.com/arcgis``
 
                               The URL should be formatted as follows:
                               <scheme>://<host>:<port (optional)>/<web adapter>
     ---------------------     --------------------------------------------------------------------
     baseurl                   optional string, the root URL to a site.
-                              Example: https://mysite.com/arcgis
+                              Example: ``https://mysite.com/arcgis``
     ---------------------     --------------------------------------------------------------------
     tokenurl                  optional string. Used when a site if federated or when the token
                               URL differs from the site's baseurl.  If a site is federated, the
@@ -97,6 +100,7 @@ class ServicesDirectory(BaseServer):
     _pmgr = None
     _adminurl = None
     _properties = None
+
     # ----------------------------------------------------------------------
     def __init__(
         self,
@@ -111,16 +115,38 @@ class ServicesDirectory(BaseServer):
     ):
         """Constructor"""
         super(ServicesDirectory, self)
+        ags_file = kwargs.pop("ags_file", None)
+        if url is None and ags_file:
+            import arcpy
+            from arcgis.auth._auth._token import _parse_arcgis_url
+
+            resp = arcpy.gp.getStandaloneServerToken(ags_file)
+            url = _parse_arcgis_url(resp.get("serverUrl", None)) + "/rest/services"
         profile = kwargs.pop("profile", None)
         if str(url).endswith("/"):
             url = url[:-1]
         if profile:
             # pm = self._pm
-            url, username, password, key_file, cert_file, client_id = self._profile_mgr(
-                profile, url, username, password, cert_file, key_file, client_id=None
+            (
+                url,
+                username,
+                password,
+                key_file,
+                cert_file,
+                client_id,
+            ) = self._profile_mgr(
+                profile,
+                url,
+                username,
+                password,
+                cert_file,
+                key_file,
+                client_id=None,
             )
-        if profile is None and url is None:
-            raise ValueError("A `url` must be given when a `profile` is not provided.")
+        if profile is None and url is None and ags_file is None:
+            raise ValueError(
+                "A `url` or 'ags_file' must be given when a `profile` is not provided."
+            )
         if url.lower().find("/rest") == -1 and url.endswith("/rest") == False:
             url = "%s/rest/services" % url
         if (
@@ -138,7 +164,6 @@ class ServicesDirectory(BaseServer):
         self._is_agol = kwargs.pop("is_agol", False)
         con = kwargs.pop("con", None)
         if verify_cert == False:
-
             ssl._create_default_https_context = ssl._create_unverified_context
         aurl = None
         if "admin_url" in kwargs:
@@ -146,7 +171,11 @@ class ServicesDirectory(BaseServer):
         if aurl is None:
             parsed = urlparse(url)
             wa = parsed.path[1:].split("/")[0]
-            self._adminurl = "%s://%s/%s/admin" % (parsed.scheme, parsed.netloc, wa)
+            self._adminurl = "%s://%s/%s/admin" % (
+                parsed.scheme,
+                parsed.netloc,
+                wa,
+            )
         else:
             self._adminurl = aurl
 
@@ -170,6 +199,7 @@ class ServicesDirectory(BaseServer):
                 verify_cert=verify_cert,
                 product="SERVER",
                 proxy=proxy,
+                ags_file=ags_file,
                 **kwargs,
             )
         self._gis = kwargs.pop("gis", None)
@@ -188,7 +218,14 @@ class ServicesDirectory(BaseServer):
         self._init(self._con)
 
     def _profile_mgr(
-        self, profile, url, username, password, cert_file, key_file, client_id=None
+        self,
+        profile,
+        url,
+        username,
+        password,
+        cert_file,
+        key_file,
+        client_id=None,
     ):
         if profile not in self._pm.list():
             _log.info("Adding new profile {} to config...".format(profile))
@@ -231,11 +268,11 @@ class ServicesDirectory(BaseServer):
 
     # ----------------------------------------------------------------------
     def __str__(self):
-        return "<%s at %s>" % (type(self).__name__, self.url)
+        return "< %s @ %s >" % (type(self).__name__, self.url)
 
     # ----------------------------------------------------------------------
     def __repr__(self):
-        return "<%s at %s>" % (type(self).__name__, self.url)
+        return "< %s @ %s >" % (type(self).__name__, self.url)
 
     # ----------------------------------------------------------------------
     def report(self, as_html: bool = True, folder: Optional[str] = None):
@@ -259,7 +296,10 @@ class ServicesDirectory(BaseServer):
                 # if s['name'].split('/')[-1].lower() == name.lower():
                 url = "%s/%s/%s" % (self._url, s["name"], s["type"])
                 data.append(
-                    [s["name"].split("/")[-1], """<a href="%s">Service</a>""" % url]
+                    [
+                        s["name"].split("/")[-1],
+                        """<a href="%s">Service</a>""" % url,
+                    ]
                 )
 
         df = pd.DataFrame(data=data, columns=columns)
@@ -292,7 +332,34 @@ class ServicesDirectory(BaseServer):
         return None
 
     # ----------------------------------------------------------------------
-    def list(self, folder: Optional[str] = None):
+    def footprints(self, folder: str | None = None, out_sr: dict | None = None) -> dict:
+        """
+        Returns the Services' extents for all services in a given folder.
+
+        =====================     ====================================================================
+        **Parameter**             **Description**
+        ---------------------     --------------------------------------------------------------------
+        folder                    Optional String. The name of the folder to examine for the footprints.
+        ---------------------     --------------------------------------------------------------------
+        out_sr                    Optional Integer.  The well-known ID of the spatial reference. The default is 4326.
+        =====================     ====================================================================
+
+        :returns: dict[str, Any]
+
+        """
+        params = {"f": "json", "option": "footprints"}
+        if out_sr:
+            params["outSR"] = out_sr
+        if folder and folder.lower() in [f.lower() for f in self.folders]:
+            url = f"{self._url}/{folder}"
+        elif folder is None:
+            url = self._url
+        return self._con.get(url, params)
+
+    # ----------------------------------------------------------------------
+    def list(
+        self, folder: Optional[str] = None, as_dict: bool = False
+    ) -> list | dict[str, Any]:
         """
         The ``list`` method returns a list of services at the given folder.
         The objects will vary in type according to the type of service. For
@@ -310,7 +377,7 @@ class ServicesDirectory(BaseServer):
             :class:`~arcgis.gis.nb.NotebookServer` objects, or the
             :class:`~arcgis.gis.server.ServiceManager.list` method of
             the :class:`~arcgis.gis.server.ServiceManager` class, which
-            returns a list of :class:`~arcgis.gis.server.Service` objects.
+            returns a list of :class:`~arcgis.gis.server.Service` objects and modules.
 
         """
         services = []
@@ -318,6 +385,8 @@ class ServicesDirectory(BaseServer):
             res = self._con.get(self._url, {"f": "json"})
         elif folder.lower() in [f.lower() for f in self.folders]:
             res = self._con.get("%s/%s" % (self._url, folder), {"f": "json"})
+        if as_dict:
+            return res
         if "services" in res:
             for s in res["services"]:
                 try:

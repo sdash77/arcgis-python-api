@@ -2,7 +2,6 @@
 import os
 import uuid
 import unittest
-import pytest
 from arcgis.gis import GIS
 from arcgis.gis._impl._profile import ProfileManager
 from arcgis.gis import login_profiles
@@ -68,6 +67,7 @@ class TestProfileManager(unittest.TestCase):
             assert pm.get(profile=DUMMY_PROFILE)["url"] == "AFAKEVALUE"
             pm.delete(DUMMY_PROFILE)
             assert DUMMY_PROFILE not in pm.list()
+
 
 if __name__ == "__main__":
     unittest.main()

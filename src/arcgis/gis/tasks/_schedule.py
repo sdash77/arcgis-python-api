@@ -1,11 +1,10 @@
-import os
-import sys
+from __future__ import annotations
 import json
 import datetime
-from typing import Optional
 from arcgis.gis import GIS, User, Item
 from arcgis._impl.common._isd import InsensitiveDict
 from arcgis._impl.common._utils import local_time_to_online
+
 
 ###########################################################################
 class BaseTask(object):
@@ -23,16 +22,16 @@ class BaseTask(object):
         self._gis = gis
 
     # ----------------------------------------------------------------------
-    def __str__(self):
+    def __str__(self) -> str:
         return f"<{self.__class__.__name__}>"
 
     # ----------------------------------------------------------------------
-    def __repr__(self):
+    def __repr__(self) -> str:
         return self.__str__()
 
     # ----------------------------------------------------------------------
     @property
-    def properties(self):
+    def properties(self) -> InsensitiveDict:
         if self._properties is None:
             params = {"f": "json"}
             res = self._gis._con.get(self._url, params)
@@ -46,7 +45,7 @@ class Run(BaseTask):
     Represents a single run of a scheduled task.
 
     ==================     ====================================================================
-    **Argument**           **Description**
+    **Parameter**           **Description**
     ------------------     --------------------------------------------------------------------
     url                    Required string. The URL to the REST endpoint.
     ------------------     --------------------------------------------------------------------
@@ -56,6 +55,7 @@ class Run(BaseTask):
 
     _gis = None
     _url = None
+
     # ----------------------------------------------------------------------
     def __init__(self, url: str, gis: GIS):
         super(Run, self)
@@ -63,11 +63,11 @@ class Run(BaseTask):
         self._gis = gis
 
     # ----------------------------------------------------------------------
-    def __str__(self):
+    def __str__(self) -> str:
         return f"<{self.__class__.__name__} @ {self.properties.runId}>"
 
     # ----------------------------------------------------------------------
-    def __repr__(self):
+    def __repr__(self) -> str:
         return self.__str__()
 
     # ----------------------------------------------------------------------
@@ -86,12 +86,12 @@ class Run(BaseTask):
         return res
 
     # ----------------------------------------------------------------------
-    def update(self, status: Optional[str] = None, description: Optional[str] = None):
+    def update(self, status: str | None = None, description: str | None = None) -> bool:
         """
         Updates the Run's Status Message and Result Message.
 
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
         status                 Optional String. The status of the run.  The allowed values are:
                                `scheduled`, `executing`, `succeeded`, `failed`, or `skipped`.
@@ -100,7 +100,7 @@ class Run(BaseTask):
                                current `Run`.
         ==================     ====================================================================
 
-        :return: Bool
+        :return: Boolean
 
         """
         params = {"f": "json"}
@@ -129,10 +129,10 @@ class Run(BaseTask):
 ###########################################################################
 class Task(BaseTask):
     """
-    Represents a schduled task that can be modified for a user.
+    Represents a scheduled task that can be modified for a user.
 
     ==================     ====================================================================
-    **Argument**           **Description**
+    **Parameter**           **Description**
     ------------------     --------------------------------------------------------------------
     url                    Required string. The URL to the REST endpoint.
     ------------------     --------------------------------------------------------------------
@@ -150,11 +150,11 @@ class Task(BaseTask):
         self._gis = gis
 
     # ----------------------------------------------------------------------
-    def __str__(self):
+    def __str__(self) -> str:
         return f"<Task @ {self.properties.id}>"
 
     # ----------------------------------------------------------------------
-    def __repr__(self):
+    def __repr__(self) -> str:
         return self.__str__()
 
     # ----------------------------------------------------------------------
@@ -178,13 +178,13 @@ class Task(BaseTask):
         The `enable` method allows administrators to enable or disable the scheduled task..
 
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
         enabled                Required Boolean.  If True, the status of the task is set to active.
                                If False, the task is set active to False.
         ==================     ====================================================================
 
-        :return: Bool
+        :return: Boolean
 
         """
         params = {"f": "json"}
@@ -204,7 +204,7 @@ class Task(BaseTask):
         """
         Starts a task if it is actively running.
 
-        :return: Bool
+        :return: Boolean
 
         """
         return self.update(is_active=True)
@@ -214,7 +214,7 @@ class Task(BaseTask):
         """
         Stops a task if it is actively running.
 
-        :return: Bool
+        :return: Boolean
 
         """
         return self.update(is_active=False)
@@ -222,28 +222,29 @@ class Task(BaseTask):
     # ----------------------------------------------------------------------
     def update(
         self,
-        item: Optional[Item] = None,
-        cron: Optional[str] = None,
-        task_type: Optional[str] = None,
+        item: Item | None = None,
+        cron: str | None = None,
+        task_type: str | None = None,
         occurences: int = 10,
-        start_date: Optional[datetime.datetime] = None,
-        end_date: Optional[datetime.datetime] = None,
-        title: Optional[str] = None,
-        parameters: Optional[dict] = None,
-        task_url: Optional[str] = None,
-        is_active: Optional[bool] = None,
+        start_date: datetime.datetime | None = None,
+        end_date: datetime.datetime | None = None,
+        title: str | None = None,
+        parameters: dict | None = None,
+        task_url: str | None = None,
+        is_active: bool | None = None,
     ) -> bool:
         """
         Updates the current Task
 
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
         item                   Optional Item. The item to update the schedule for.
         ------------------     --------------------------------------------------------------------
         cron                   Optional String. The executution time syntax.
         ------------------     --------------------------------------------------------------------
-        task_type              Optional String. The type of task. Two valid options are `ExecuteNotebook` or `UpdateInsightsWorkbook`.
+        task_type              Optional String. The type of task. Two valid options are
+                               ``ExecuteNotebook`` or ``UpdateInsightsWorkbook``
         ------------------     --------------------------------------------------------------------
         occurences             Optional Integer. The maximum number of occurrences this task should execute.
         ------------------     --------------------------------------------------------------------
@@ -260,7 +261,7 @@ class Task(BaseTask):
         is_active              Optional Bool. Determines if the tasks is currently running.
         ==================     ====================================================================
 
-        :return: bool or Dict on error.
+        :return: Boolean or Dict on error.
 
         """
         SPECIALS = {
@@ -343,7 +344,7 @@ class Task(BaseTask):
 
     # ----------------------------------------------------------------------
     @property
-    def runs(self):
+    def runs(self) -> list:
         """
         Returns the Runs for the Task.  The maximum number of runs returned is 30
 
@@ -369,7 +370,7 @@ class TaskManager(object):
     This operation is for Enterprise configuration 10.8.1+.
 
     ==================     ====================================================================
-    **Argument**           **Description**
+    **Parameter**           **Description**
     ------------------     --------------------------------------------------------------------
     url                    Required string. The URL to the REST endpoint.
     ------------------     --------------------------------------------------------------------
@@ -390,35 +391,35 @@ class TaskManager(object):
         self._gis = gis
 
     # ----------------------------------------------------------------------
-    def __str__(self):
+    def __str__(self) -> str:
         return f"<User {self._user.username} Tasks>"
 
     # ----------------------------------------------------------------------
-    def __repr__(self):
+    def __repr__(self) -> str:
         return self.__str__()
 
     # ----------------------------------------------------------------------
     def search(
         self,
-        item: Optional[Item] = None,
-        active: Optional[bool] = None,
-        types: Optional[str] = None,
-    ):
+        item: Item | None = None,
+        active: bool | None = None,
+        types: str | None = None,
+    ) -> list[Task]:
         """
         This property allows users to search for tasks based on criteria.
 
         ================  ===============================================================================
-        **Argument**      **Description**
+        **Parameter**      **Description**
         ----------------  -------------------------------------------------------------------------------
         item              Optional Item. The item to query tasks about.
         ----------------  -------------------------------------------------------------------------------
         active            Optional Bool. Queries tasks based on active status.
         ----------------  -------------------------------------------------------------------------------
         types             Optional String. The type of notebook execution for the item.  This can be
-                          `ExecuteNotebook`, or `UpdateInsightsWorkbook`.
+                          ``ExecuteNotebook``, or ``UpdateInsightsWorkbook``.
         ================  ===============================================================================
 
-        :return: List of Tasks
+        :return: List of :class:`~arcgis.gis.tasks.Task` objects
 
         """
         if item is None and active is None and types is None:
@@ -456,16 +457,16 @@ class TaskManager(object):
         cron: str,
         task_type: str,
         occurences: int = 10,
-        start_date: Optional[datetime.datetime] = None,
-        end_date: Optional[datetime.datetime] = None,
-        title: Optional[str] = None,
-        parameters: Optional[dict] = None,
+        start_date: datetime.datetime | None = None,
+        end_date: datetime.datetime | None = None,
+        title: str | None = None,
+        parameters: dict | None = None,
     ) -> Task:
         """
         Creates a new scheduled task for a notebook `Item`.
 
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
         item                   Required Item. The item to schedule a task on.
         ------------------     --------------------------------------------------------------------
@@ -477,37 +478,37 @@ class TaskManager(object):
         ------------------     --------------------------------------------------------------------
         task_type              Required String. The type of task, either executing a notebook or
                                updating an Insights workbook, that will be executed against the
-                               specified item.  For notebook server tasks use: `ExecuteNotebook`,
-                               for Insights notebook use: `UpdateInsightsWorkbook`. Use
-                               `ExecuteSceneCook` to cook scene tiles. Use `ExecuteWorkflowManager`
+                               specified item.  For notebook server tasks use ``ExecuteNotebook``,
+                               for Insights notebook use: ``UpdateInsightsWorkbook``. Use
+                               ``ExecuteSceneCook`` to cook scene tiles. Use ``ExecuteWorkflowManager``
                                to run workflow manager tasks.
         ------------------     --------------------------------------------------------------------
         occurences             Optional Integer. The total number of instance that can run at a single time.
         ------------------     --------------------------------------------------------------------
         start_date             Optional Datetime. The begin date for the task to run.
         ------------------     --------------------------------------------------------------------
-        start_date             Optional Datetime. The end date for the task to run.
+        end_date               Optional Datetime. The end date for the task to run.
         ------------------     --------------------------------------------------------------------
         title                  Optional String. The title of the scheduled task.
         ------------------     --------------------------------------------------------------------
         parameters             Optional Dict. Optional collection of Key/Values that will be given
                                to the task.  The dictionary will be added to the task run
-                               request. This parameter is required for `ExecuteSceneCook` tasks.
+                               request. This parameter is required for ``ExecuteSceneCook`` tasks.
 
-                               Example
+                               Example:
 
-                               ```
-                               {
-                                   "service_url": <scene service URL>,
-                                   "num_of_caching_service_instances": 2, //2 instances are required
-                                   "layer": "{<list of scene layers to cook>}", //The default is all layers
-                                   "update_mode": "PARTIAL_UPDATE_NODES"
-                               }
-                               ```
+                                   | {
+                                   |    "service_url": <scene service URL>,
+                                   |    "num_of_caching_service_instances": 2, (2 instances are required)
+                                   |    "layer": "{<list of scene layers to cook>}", //The default is all layers
+                                   |    "update_mode": "PARTIAL_UPDATE_NODES"
+                                   | }
+
 
         ==================     ====================================================================
 
-        :return: Task
+        :return:
+            :class:`~arcgis.gis.tasks.Task` object
 
         """
         SPECIALS = {
@@ -577,7 +578,13 @@ class TaskManager(object):
     # ----------------------------------------------------------------------
     @property
     def all(self) -> list:
-        """returns all the current user's tasks"""
+        """
+        returns all the current user's tasks
+
+        :return:
+            List of :class:`~arcgis.gis.tasks.Task` objects
+
+        """
         if self._tasks is None:
             self._tasks = []
             url = f"{self._gis._portal.resturl}community/users/{self._user.username}/tasks"

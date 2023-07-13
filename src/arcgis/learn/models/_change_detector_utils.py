@@ -236,7 +236,6 @@ class ResNet(nn.Module):
     def __init__(
         self, block, layers, output_stride, BatchNorm, pretrained=True, in_c=3
     ):
-
         self.inplanes = 64
         self.in_c = in_c
         # print('in_c: ',self.in_c)
@@ -504,7 +503,6 @@ class Decoder(nn.Module):
         self._init_weight()
 
     def forward(self, x, low_level_feat2, low_level_feat3, low_level_feat4):
-
         # x1 = self.dr1(low_level_feat1)
         x2 = self.dr2(low_level_feat2)
         x3 = self.dr3(low_level_feat3)

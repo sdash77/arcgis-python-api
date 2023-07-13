@@ -1,7 +1,42 @@
+from __future__ import annotations
+import hmac
+import time
+import base64
+import struct
 import typing
+
 import urllib.parse as urllib_parse
 import urllib.request
 from functools import lru_cache
+import importlib
+
+
+def hotp(key: str, counter: int, digits: int = 6, digest: str = "sha1"):
+    key = base64.b32decode(key.upper() + "=" * ((8 - len(key)) % 8))
+    counter = struct.pack(">Q", counter)
+    mac = hmac.new(key, counter, digest).digest()
+    offset = mac[-1] & 0x0F
+    binary = struct.unpack(">L", mac[offset : offset + 4])[0] & 0x7FFFFFFF
+    return str(binary)[-digits:].zfill(digits)
+
+
+def mfa_otp(
+    key: str, time_step: int = 30, digits: int = 6, digest: str = "sha1"
+) -> str:
+    """Creates the MFA Code for MFA logins"""
+    return hotp(key, int(time.time() / time_step), digits, digest)
+
+
+@lru_cache(maxsize=255)
+def check_module_exists(name: str) -> bool:
+    """Checks if a module exists"""
+    try:
+        res = importlib.util.find_spec(name)
+        if res is None:
+            return False
+        return True
+    except:
+        return False
 
 
 @lru_cache(maxsize=255)
@@ -12,6 +47,23 @@ def parse_url(url: str) -> object:
     :returns: Named Tuple
     """
     return urllib_parse.urlparse(url)
+
+
+@lru_cache(maxsize=255)
+def assemble_url(parsed: object) -> str:
+    """
+    creates the URL from a parsed URL
+    """
+    if parsed.port:
+        netloc: str = parsed.netloc.split(":")[0]
+        server_url = (
+            f'{parsed.scheme}://{netloc}:{parsed.port}/{parsed.path[1:].split("/")[0]}'
+        )
+    else:
+        server_url = (
+            f'{parsed.scheme}://{parsed.netloc}/{parsed.path[1:].split("/")[0]}'
+        )
+    return server_url
 
 
 def detect_proxy(replace_https: bool = True) -> typing.Optional[typing.Dict]:
@@ -29,7 +81,7 @@ def detect_proxy(replace_https: bool = True) -> typing.Optional[typing.Dict]:
          page for a full explination of the code.
 
     ===============     ====================================================================
-    **Argument**        **Description**
+    **Parameter**        **Description**
     ---------------     --------------------------------------------------------------------
     replace_https       Optional Boolean.  The autodetect method from `urllib.requests.getproxies`
                         assumes there is an `http` and `https` version of the proxy.  Many

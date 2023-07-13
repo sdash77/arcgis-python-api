@@ -1,17 +1,23 @@
+from __future__ import annotations
 import os
 from arcgis.gis import GIS
 from arcgis._impl.common._mixins import PropertyMap
+
 
 ########################################################################
 class SecurityManager(object):
     """
     This resource is a container for all resources and operations
     pertaining to security in your ArcGIS Mission Server site.
+    Security Manager can be accessed via the
+    :attr:`~arcgis.gis.mission.MissionServer.security` property of
+    :class:`~arcgis.gis.mission.MissionServer` class
     """
 
     _url = None
     _gis = None
     _properties = None
+
     # ----------------------------------------------------------------------
     def __init__(self, url, gis):
         """Constructor"""
@@ -34,7 +40,7 @@ class SecurityManager(object):
 
     # ----------------------------------------------------------------------
     def __str__(self):
-        return "<SecurityManager @ {url}>".format(url=self._url)
+        return "< SecurityManager @ {url} >".format(url=self._url)
 
     # ----------------------------------------------------------------------
     def __repr__(self):
@@ -46,7 +52,7 @@ class SecurityManager(object):
         Allows for the modification of the server role from federated to standalone.
 
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
         role                   Required String. The value that determines if the server is federated
                                or standalone.  This allowed values are: "FEDERATED_SERVER" or

@@ -1,11 +1,14 @@
-import sys, os
-
-# sys.path.insert(0, r"C:\SVN\achapkowski_geosaurus_fork_issue_4086\src")
+import os, uuid
 import unittest
 
 from arcgis.gis import GIS
 from arcgis.features import FeatureLayerCollection
-from arcgis.features.managers import WebHook, WebHookServiceManager
+from arcgis.features.managers import (
+    WebHook,
+    WebHookServiceManager,
+    WebHookEvents,
+    WebHookScheduleInfo,
+)
 
 hook_end_point_url = "https://en1dx5cd33emv.x.pipedream.net/"
 SKIPIF = False
@@ -21,9 +24,9 @@ except Exception as e:
     msg = f"An Error Occured {str(e)}"
 
 try:
-    from utils import NOTEBOOK_TESTS_DIR
+    from utils import INTEGRATION_TESTS_DIR
 
-    fp = os.path.join(NOTEBOOK_TESTS_DIR, "webhook_data.zip")
+    fp = os.path.join(INTEGRATION_TESTS_DIR, "features", "webhook_data.zip")
     if os.path.isfile(fp) == False:
         SKIPIF = True
         msg = "Missing file"
@@ -75,20 +78,42 @@ class TestFeatureServiceWebHook(unittest.TestCase):
 
         assert isinstance(whm, WebHookServiceManager)
         wh = whm.create(
-            "hook1test", "https://en1dx5cd33emv.x.pipedream.net", active=True
+            f"hook{uuid.uuid4().hex[:5]}test",
+            "https://en1dx5cd33emv.x.pipedream.net",
+            active=True,
         )
         assert wh.properties
         res = wh.edit(
             name=None,
-            change_types="FeatureCreated",
+            change_types="FeaturesCreated",
             hook_url=None,
             signature_key=None,
             active=None,
             schedule_info=None,
             payload_format=None,
         )
+        assert res
+        res2 = wh.edit(
+            name=None,
+            change_types=[WebHookEvents.FEATURESEDITED, WebHookEvents.FEATURESUPDATED],
+            hook_url=None,
+            signature_key=None,
+            active=None,
+            schedule_info=None,
+            payload_format=None,
+        )
+        assert res2
+        import datetime as _dt
+
+        res3 = wh.edit(
+            schedule_info=WebHookScheduleInfo(
+                name="whm test", start_at=_dt.datetime.now()
+            ),
+        )
+        assert res3
         assert wh.properties
         assert wh.delete()
+        assert len(whm.list) == 0
         pitem.delete()
         item.delete()
 
@@ -126,7 +151,9 @@ class TestFeatureServiceWebHook(unittest.TestCase):
         assert isinstance(whm, WebHookServiceManager)
 
         wh = whm.create(
-            "hook1test", "https://en1dx5cd33emv.x.pipedream.net", active=True
+            f"hook{uuid.uuid4().hex[:5]}test",
+            "https://en1dx5cd33emv.x.pipedream.net",
+            active=True,
         )
         assert wh.properties
         hooks = whm.list

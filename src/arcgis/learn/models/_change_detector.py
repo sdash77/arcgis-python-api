@@ -28,13 +28,13 @@ class ChangeDetector(ArcGISModel):
     https://www.mdpi.com/2072-4292/12/10/1662
 
     =====================   ===========================================
-    **Argument**            **Description**
+    **Parameter**            **Description**
     ---------------------   -------------------------------------------
     data                    Required fastai Databunch. Returned data object
-                            from `prepare_data` function.
+                            from :meth:`~arcgis.learn.prepare_data`  function.
     ---------------------   -------------------------------------------
     backbone                Optional function. Backbone CNN model to be used
-                            for creating the encoder of the `ChangeDetector`,
+                            for creating the encoder of the :class:`~arcgis.learn.ConnectNet`,
                             which is `resnet18` by default. It supports
                             the ResNet family of backbones.
     ---------------------   -------------------------------------------
@@ -47,13 +47,12 @@ class ChangeDetector(ArcGISModel):
                             saved.
     =====================   ===========================================
 
-    :return: ``ChangeDetector`` object
+    :return: :class:`~arcgis.learn.ConnectNet` object
     """
 
     def __init__(
         self, data, backbone=None, attention_type="PAM", pretrained_path=None, **kwargs
     ):
-
         if not HAS_FASTAI:
             raise_fastai_import_error(
                 import_exception=import_exception, message="", installation_steps=" "
@@ -67,7 +66,7 @@ class ChangeDetector(ArcGISModel):
                 f"Enter only compatible backbones from {', '.join(self.supported_backbones)}"
             )
 
-        super().__init__(data, backbone)
+        super().__init__(data, backbone, pretrained_path=pretrained_path)
         backbone = self._backbone.__name__.lower()
         self.SA_type = attention_type
         self.learn = get_learner(self._data, backbone, self.SA_type)
@@ -106,23 +105,22 @@ class ChangeDetector(ArcGISModel):
 
     @classmethod
     def from_model(cls, emd_path, data=None):
-
         """
         Creates a ChangeDetector model from an Esri Model Definition (EMD)
         file.
 
         =====================   ===========================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ---------------------   -------------------------------------------
         emd_path                Required string. Path to Deep Learning Package
                                 (DLPK) or Esri Model Definition(EMD) file.
         ---------------------   -------------------------------------------
         data                    Optional fastai Databunch. Returned
-                                data object from `prepare_data` function or
+                                data object from :meth:`~arcgis.learn.prepare_data`  function or
                                 None for inferencing.
         =====================   ===========================================
 
-        :return: ``ChangeDetector`` Object
+        :return: :class:`~arcgis.learn.ConnectNet` Object
         """
         emd_path = _get_emd_path(emd_path)
         emd_path = Path(emd_path)
@@ -141,7 +139,8 @@ class ChangeDetector(ArcGISModel):
                 c=2,  # change, no_change
                 chip_size=emd["ImageHeight"],
             )
-
+            data._is_empty = True
+            data._imagery_type = None
             data.emd_path = emd_path
             data.emd = emd
             for key, value in emd["DataAttributes"].items():
@@ -269,7 +268,7 @@ class ChangeDetector(ArcGISModel):
         Predict on a pair of images.
 
         =====================   ===========================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ---------------------   -------------------------------------------
         before_image            Required string. Path to image from before.
         ---------------------   -------------------------------------------
@@ -279,7 +278,7 @@ class ChangeDetector(ArcGISModel):
         **Kwargs**
 
         =====================   ===========================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ---------------------   -------------------------------------------
         crop_predict            Optional Boolean. If True, It will predict
                                 using a sliding window strategy. Typically, used

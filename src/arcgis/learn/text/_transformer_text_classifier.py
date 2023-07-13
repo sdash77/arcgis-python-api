@@ -88,7 +88,6 @@ backbone_models_reverse_map = {
 
 
 class TransformerForTextClassification(ArcGISTransformer):
-
     _supported_backbones = transformer_architectures
 
     def __init__(
@@ -143,7 +142,7 @@ class TransformerForTextClassification(ArcGISTransformer):
         Provides a list of available models for a given transformer architecture
 
         =====================   =================================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ---------------------   -------------------------------------------------
         architecture            Required string. The transformer architecture for
                                 which we wish to get the available models
@@ -163,7 +162,7 @@ class TransformerForTextClassification(ArcGISTransformer):
         Method to save the fine-tuned model to the disk
 
         =====================   =================================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ---------------------   -------------------------------------------------
         model_path              Required string. The disk location where the
                                 fine-tuned model has to be saved
@@ -187,7 +186,7 @@ class TransformerForTextClassification(ArcGISTransformer):
         Method to load the fine-tuned model which was saved on the disk
 
         =====================   ===========================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ---------------------   -------------------------------------------
         path                    Required string. The disk location from
                                 where the fine-tuned model has to be loaded
@@ -212,7 +211,7 @@ class TransformerForTextClassification(ArcGISTransformer):
         Return only the logits from the transfomer model
 
         =====================   ==============================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ---------------------   ----------------------------------------------
         input_ids               tensor object. tensor containing the token-ids
                                 got by calling tokenizer.encode method to the
@@ -250,7 +249,7 @@ class TransformerForTextClassification(ArcGISTransformer):
         Method to predict the class labels for an input text
 
         =====================   ==============================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ---------------------   ----------------------------------------------
         text                    Required string. The text for which we wish to
                                 predict the class
@@ -283,3 +282,53 @@ class TransformerForTextClassification(ArcGISTransformer):
             clas = self._config.id2label[torch.argmax(logits, dim=1)[0].item()]
             score = results[torch.argmax(logits, dim=1)[0]]
             return clas, score.item()
+
+    def predict_class_batch(
+        self, text_batch, device, is_multilabel_problem=False, thresh=None
+    ):
+        """
+        Method to predict the class labels for an input text
+
+        =====================   ==============================================
+        **Parameter**            **Description**
+        ---------------------   ----------------------------------------------
+        text_batch              Required list. The list of text for which we wish to
+                                predict the class
+        ---------------------   ----------------------------------------------
+
+        :return: the predicted label and the corresponding confidence score.
+        """
+        # device_type = next(self._transformer.parameters()).device.type
+        # device = torch.device("cuda:0" if device_type == "cuda" else "cpu")
+        encodings = self._tokenizer.batch_encode_plus(
+            text_batch, max_length=self._max_seq_len, padding=True, truncation=True
+        )
+        batch_token_ids = encodings["input_ids"]
+        results_list = []
+        sequence = torch.tensor(batch_token_ids).to(device)
+        logits = self._transformer(sequence)[0]
+        if is_multilabel_problem:
+            results = torch.sigmoid(logits)
+            for res in results:
+                category, raw_pred = [], []
+                for idx, x in enumerate(res):
+                    pred = 0
+                    if x.item() > thresh:
+                        pred = 1
+                        category.append(self._config.id2label[idx])
+                    raw_pred.append(pred)
+                results_list.append(
+                    (";".join(category), raw_pred, [round(x, 4) for x in res.tolist()])
+                )
+        else:
+            results = torch.softmax(logits, dim=1)
+            results_cls = [
+                (
+                    self._config.id2label[torch.argmax(logits, dim=1)[x].item()],
+                    results[x][torch.argmax(logits, dim=1)[0]].item(),
+                )
+                for x in range(len(logits))
+            ]
+            return results_cls
+
+        return results_list

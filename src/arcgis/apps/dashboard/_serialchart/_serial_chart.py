@@ -9,10 +9,10 @@ class SerialChart(_BaseWidget):
     Creates a dashboard Serial Chart widget.
 
     =========================   ===========================================
-    **Argument**                **Description**
+    **Parameter**                **Description**
     -------------------------   -------------------------------------------
-    item                        Required Portal Item object. Item object can
-                                be a Feature Layer or a MapWidget.
+    item                        Required Portal :class:`~arcgis.gis.Item` object. Item object can
+                                be a :class:`~arcgis.features.FeatureLayer`  or a MapWidget.
     -------------------------   -------------------------------------------
     name                        Optional string. Name of the serial chart
                                 widget.
@@ -80,7 +80,7 @@ class SerialChart(_BaseWidget):
     @property
     def events(self):
         """
-        :return: list of events attached to the widget.
+        :return: List of events attached to the widget.
         """
         return self._events
 
@@ -163,7 +163,6 @@ class SerialChart(_BaseWidget):
         return self._no_data
 
     def _convert_to_json(self):
-
         common_graph_properties = {
             "lineColorField": "_lineColor_",
             "fillColorsField": "_fillColor_",
@@ -1177,7 +1176,7 @@ class SerialChartData(object):
          Add value field to serial chart.
 
         =========================   ===========================================
-        **Argument**                **Description**
+        **Parameter**                **Description**
         -------------------------   -------------------------------------------
         value_field                 Required field or list of fields from input item.
                                     For groupByValues only one field is accepted.
@@ -1367,7 +1366,7 @@ class Events(object):
         Synchronize a mapWidget with SerialChart for triggered events.
 
         =========================   ===========================================
-        **Argument**                **Description**
+        **Parameter**                **Description**
         -------------------------   -------------------------------------------
         action_type                 Required string. Actions can be one of
                                     "zoom", "flash", "show_popup", "pan".
@@ -1407,7 +1406,7 @@ class Events(object):
         Synchronize non-mapWidget type widgets with SerialChart for triggered events.
 
         =========================   ===========================================
-        **Argument**                **Description**
+        **Parameter**                **Description**
         -------------------------   -------------------------------------------
         widget                      Required widget item or list of widget items
                                     .Name of the widgets to be synced.

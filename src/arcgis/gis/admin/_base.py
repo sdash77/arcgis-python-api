@@ -7,6 +7,7 @@ from ...gis._impl._con import Connection
 from ...gis import GIS
 from ..._impl.common._mixins import PropertyMap
 
+
 ###########################################################################
 class BasePortalAdmin(object):
     _con = None
@@ -59,11 +60,11 @@ class BasePortalAdmin(object):
 
     # ----------------------------------------------------------------------
     def __str__(self):
-        return "<%s at %s>" % (type(self).__name__, self._url)
+        return "< %s @ %s >" % (type(self).__name__, self._url)
 
     # ----------------------------------------------------------------------
     def __repr__(self):
-        return "<%s at %s>" % (type(self).__name__, self._url)
+        return "< %s @ %s >" % (type(self).__name__, self._url)
 
     # ----------------------------------------------------------------------
     def __iter__(self):

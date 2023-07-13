@@ -5,6 +5,8 @@ server.s
 from __future__ import absolute_import
 from __future__ import print_function
 from .._common import BaseServer
+from arcgis.gis import GIS
+
 
 ########################################################################
 class KML(BaseServer):
@@ -16,13 +18,14 @@ class KML(BaseServer):
     _con = None
     _url = None
     _json_dict = None
+
     # ----------------------------------------------------------------------
-    def __init__(self, url, gis, initialize=False):
+    def __init__(self, url: str, gis: GIS, initialize: bool = False):
         """
         Constructor
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         url                 Required string. The administration URL for the ArcGIS Server.
         ---------------     --------------------------------------------------------------------
@@ -39,7 +42,7 @@ class KML(BaseServer):
             self._init(gis)
 
     # ----------------------------------------------------------------------
-    def create_KMZ(self, kmz_as_json):
+    def create_KMZ(self, kmz_as_json: dict) -> dict:
         """
         Creates a KMZ file from json.
         See https://developers.arcgis.com/rest/enterprise-administration/server/createkmz.htm

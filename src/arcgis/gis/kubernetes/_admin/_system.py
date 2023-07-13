@@ -1,3 +1,4 @@
+from __future__ import annotations
 import json
 from arcgis.gis.kubernetes._admin._base import _BaseKube
 from ._deployment import DeploymentManager
@@ -83,6 +84,7 @@ class ServerManager(_BaseKube):
     _gis = None
     _con = None
     _properties = None
+
     # ----------------------------------------------------------------------
     @property
     def list(self):
@@ -159,7 +161,7 @@ class Indexer(_BaseKube):
         The operation allows you to generate or update the indexes for content, such as users, groups, and items stored in the database store.
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         mode                Required String. The mode in which the indexer should run.
                             Values: USER_MODE, GROUP_MODE, SEARCH_MODE, or FULL_MODE
@@ -204,7 +206,7 @@ class Container:
         Allows certain container registry properties to be updated after your organization has been configured.
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         value               Required dict. A dictionary of registry properties.
         ===============     ====================================================================
@@ -218,11 +220,12 @@ class Container:
         return self._con.post(url, params).get("status", "failed") == "success"
 
 
+###########################################################################
 class SystemManager(_BaseKube):
     """
-    This resource is an umbrella for a collection of system-wide resources
-    for your deployment such as the configuration store, licenses, and
-    deployment-wide security.
+    The system resource is a collection of system-wide resources for a
+    deployment, such as the configuration store and deployment-wide
+    security.
     """
 
     _recovery = None
@@ -231,13 +234,14 @@ class SystemManager(_BaseKube):
     _deployments = None
     _upgrades = None
     _license = None
+
     # ----------------------------------------------------------------------
     def __init__(self, url, gis, initialize=False):
         """Constructor
 
 
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
         url                    Required string. The machine URL.
         ------------------     --------------------------------------------------------------------
@@ -264,7 +268,7 @@ class SystemManager(_BaseKube):
         params = {"f": "json"}
         return [
             Container(url=f"{url}/{container['id']}", gis=self._gis)
-            for continer in self._con.get(url, params).get("containerRegistries", [])
+            for container in self._con.get(url, params).get("containerRegistries", [])
         ]
 
     # ----------------------------------------------------------------------
@@ -280,7 +284,16 @@ class SystemManager(_BaseKube):
     @property
     def upgrades(self) -> UpgradeManager:
         """
-        Returns access to the upgrade operations on the Enterprise
+        The upgrades resource provides access to child operations and
+        resources that are used to manage the release and patch updates that
+        can be applied to an ArcGIS Enterprise on Kubernetes deployment.
+        During the upgrade process, this resource returns detailed,
+        real-time messages regarding the status and progress of the
+        upgrade. While an upgrade is in progress, child operations and
+        resources for this resource will be inaccessible. Once completed,
+        all child endpoints will be operational, and the JSON view of the
+        resource will contain a log of the job messages and the completion
+        status.
         """
         url = f"{self._url}/upgrades"
         if self._upgrades is None:
@@ -388,7 +401,6 @@ class SystemManager(_BaseKube):
         :return: `Indexer`
         """
         if self._indexer is None:
-
             url = f"{self._url}/indexer"
             self._indexer = Indexer(url=url, gis=self._gis)
         return self._indexer

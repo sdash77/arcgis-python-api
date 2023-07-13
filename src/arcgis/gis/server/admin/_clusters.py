@@ -8,6 +8,9 @@ from __future__ import print_function
 import json
 from .._common import BaseServer
 from .parameters import ClusterProtocol
+from arcgis.gis import GIS
+from typing import Optional
+
 
 ########################################################################
 class Clusters(BaseServer):
@@ -17,7 +20,7 @@ class Clusters(BaseServer):
     configuration.
 
     ===============     ====================================================================
-    **Argument**        **Description**
+    **Parameter**        **Description**
     ---------------     --------------------------------------------------------------------
     url                 Required string. The administration URL for the ArcGIS Server.
     ---------------     --------------------------------------------------------------------
@@ -32,8 +35,9 @@ class Clusters(BaseServer):
     _json_dict = None
     _json = None
     _url = None
+
     # ----------------------------------------------------------------------
-    def __init__(self, url, gis, initialize=False):
+    def __init__(self, url: str, gis: GIS, initialize: bool = False):
         """Constructor"""
         super(Clusters, self).__init__(gis=gis, url=url)
         self._con = gis
@@ -46,7 +50,12 @@ class Clusters(BaseServer):
             self._init(gis)
 
     # ----------------------------------------------------------------------
-    def create_cluster(self, cluster_name, machine_names="", port=""):
+    def create_cluster(
+        self,
+        cluster_name: str,
+        machine_names: Optional[str] = None,
+        port: Optional[str] = None,
+    ) -> dict:
         """
         Creating a new cluster involves defining a clustering protocol that
         will be shared by all server machines participating in the cluster.
@@ -60,7 +69,7 @@ class Clusters(BaseServer):
         the compute power) dynamically.
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         cluster_name        Require string. The name of the cluster. This must be a unique name
                             within a site
@@ -78,6 +87,10 @@ class Clusters(BaseServer):
         :return: dict
 
         """
+        if port is None:
+            port = ""
+        if machine_names is None:
+            machine_names = ""
         url = self._url + "/create"
         params = {
             "f": "json",
@@ -88,7 +101,7 @@ class Clusters(BaseServer):
         return self._con.post(path=url, postdata=params)
 
     # ----------------------------------------------------------------------
-    def get_machines(self):
+    def get_machines(self) -> dict:
         """
         This operation lists all the server machines that don't participate
         in any cluster and are available to be added to a cluster.
@@ -116,7 +129,7 @@ class Cluster(BaseServer):
     machines from a cluster and re-assign them to another cluster.
 
     ===============     ====================================================================
-    **Argument**        **Description**
+    **Parameter**        **Description**
     ---------------     --------------------------------------------------------------------
     url                 Required string. The administration URL for the ArcGIS Server.
     ---------------     --------------------------------------------------------------------
@@ -132,8 +145,9 @@ class Cluster(BaseServer):
     _json_dict = None
     _json = None
     _url = None
+
     # ----------------------------------------------------------------------
-    def __init__(self, url, gis, initialize=False):
+    def __init__(self, url: str, gis: GIS, initialize: bool = False):
         """Constructor"""
         super(Cluster, self).__init__(gis=gis, url=url)
         self._con = gis
@@ -143,7 +157,7 @@ class Cluster(BaseServer):
 
     # ----------------------------------------------------------------------
     @property
-    def clusters(self):
+    def clusters(self) -> list:
         """returns the cluster object for each server"""
         if "clusters" in self.properties:
             Cs = []
@@ -154,7 +168,7 @@ class Cluster(BaseServer):
         return []
 
     # ----------------------------------------------------------------------
-    def start(self):
+    def start(self) -> bool:
         """
         Starts the cluster.  Starting a cluster involves starting all the
         server machines within the cluster and the GIS services that are
@@ -170,7 +184,7 @@ class Cluster(BaseServer):
         return res
 
     # ----------------------------------------------------------------------
-    def stop(self):
+    def stop(self) -> bool:
         """
         Stops a cluster. This also stops all the GIS services that are
         hosted on the cluster. This operation attempts to stop all the
@@ -185,7 +199,7 @@ class Cluster(BaseServer):
         return res
 
     # ----------------------------------------------------------------------
-    def delete(self):
+    def delete(self) -> bool:
         """
         Deletes the cluster configuration. All the server machines in the
         cluster will be stopped and returned to the pool of registered
@@ -200,7 +214,7 @@ class Cluster(BaseServer):
         return res
 
     # ----------------------------------------------------------------------
-    def cluster_services(self):
+    def cluster_services(self) -> dict:
         """
         This resource lists all the services that are currently deployed to
         the cluster (of machines). A service deployed to a cluster runs on
@@ -213,7 +227,7 @@ class Cluster(BaseServer):
         return self._con.post(path=url, postdata=params)
 
     # ----------------------------------------------------------------------
-    def cluster_machines(self):
+    def cluster_machines(self) -> dict:
         """
         This resource lists all the server machines that are currently
         participating in the cluster. Each server machine listing is
@@ -227,7 +241,7 @@ class Cluster(BaseServer):
         return self._con.get(path=url, postdata=params)
 
     # ----------------------------------------------------------------------
-    def add_machines(self, names):
+    def add_machines(self, names: str) -> dict:
         """
         Adds new server machines to the cluster. The server machines need
         to be registered with the site prior to this operation. When a
@@ -235,7 +249,7 @@ class Cluster(BaseServer):
         services that were deployed to cluster and prepares to run them.
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         names               Required string. A comma-separated list of machine names. The
                             machines must be registered prior to completing this operation.
@@ -249,13 +263,13 @@ class Cluster(BaseServer):
         return self._con.post(path=url, postdata=params)
 
     # ----------------------------------------------------------------------
-    def remove_machines(self, names):
+    def remove_machines(self, names: str) -> dict:
         """
         Removes server machines from the cluster. The server machines are
         returned back to the pool of registered server machines.
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         names               Required string. A comma-separated list of machine names. The
                             machines must be registered prior to completing this operation.
@@ -271,13 +285,13 @@ class Cluster(BaseServer):
         return res
 
     # ----------------------------------------------------------------------
-    def edit_protocol(self, cpo):
+    def edit_protocol(self, cpo: ClusterProtocol) -> dict:
         """
         Updates the Cluster Protocol. This will cause the cluster to be
         restarted with updated protocol configuration.
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         cpo                 Required ClusterProtocal object (CPO). The CPO is a configuration
                             object used to assist users in configuring protocols on ArcGIS Server.

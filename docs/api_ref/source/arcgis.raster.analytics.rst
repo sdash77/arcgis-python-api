@@ -203,3 +203,11 @@ summarize_categorical_raster
 export_to_tile_package
 ----------------------
 .. autofunction:: arcgis.raster.analytics.export_to_tile_package
+
+mosaic_image
+----------------------
+.. autofunction:: arcgis.raster.analytics.mosaic_image
+
+derive_continuous_flow
+----------------------
+.. autofunction:: arcgis.raster.analytics.derive_continuous_flow

@@ -14,7 +14,7 @@ DOMAIN_FORMAT = re.compile(
     r"((?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+"  # check for at least one subdomain (maximum length per subdomain: 63 characters), dashes in between allowed
     r"(?:[a-z0-9]{1,63})))"  # check for top level domain, no dashes allowed
     r"|localhost)"  # accept also "localhost" only
-    r"(:\d{1,5})?",  # port [optional]
+    r"(:[0-9]{1,5})?",  # port [optional]
     re.IGNORECASE,
 )
 SCHEME_FORMAT = re.compile(

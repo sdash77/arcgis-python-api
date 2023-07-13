@@ -26,11 +26,11 @@ class BasicAuth(_HttpAuthenticationType):
     This dataclass is used to specify a Basic HTTP Authentication scenario using username and password.
 
     ==================     ====================================================================
-    **Argument**           **Description**
+    **Parameter**           **Description**
     ------------------     --------------------------------------------------------------------
-    username               str. Username for basic authentication.
+    username               String. Username for basic authentication.
     ------------------     --------------------------------------------------------------------
-    password               str. Password for basic authentication.
+    password               String. Password for basic authentication.
     ==================     ====================================================================
     """
 
@@ -53,11 +53,11 @@ class CertificateAuth(_HttpAuthenticationType):
     This dataclass is used to specify a Basic HTTP Authentication scenario using username and password.
 
     =======================     ====================================================================
-    **Argument**                **Description**
+    **Parameter**                **Description**
     -----------------------     --------------------------------------------------------------------
-    pfx_file_http_location      str. HTTP path of the PFX file.
+    pfx_file_http_location      String. HTTP path of the PFX file.
     -----------------------     --------------------------------------------------------------------
-    password                    str. Password for certificate authentication.
+    password                    String. Password for certificate authentication.
     =======================     ====================================================================
     """
 

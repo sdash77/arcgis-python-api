@@ -167,7 +167,6 @@ def batch_to_tile(batch, batch_height, batch_width):
 
 class ChildImageClassifier:
     def initialize(self, model, model_as_file):
-
         if not HAS_TORCH:
             raise Exception(
                 "PyTorch is not installed. Install it using conda install -c pytorch pytorch torchvision"
@@ -195,6 +194,7 @@ class ChildImageClassifier:
         self.road_extractor = MultiTaskRoadExtractor.from_model(
             data=None, emd_path=model
         )
+        self._learnmodel = self.road_extractor
         self.model = self.road_extractor.learn.model.to(self.device)
         self.model.eval()
 
@@ -273,7 +273,6 @@ class ChildImageClassifier:
         return required_parameters
 
     def getConfiguration(self, **scalars):
-
         self.tytx = int(scalars.get("tile_size", self.json_info["ImageHeight"]))
         self.padding = int(
             scalars.get("padding", self.tytx // 4)

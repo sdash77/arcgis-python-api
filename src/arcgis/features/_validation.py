@@ -5,6 +5,7 @@ from arcgis.env import active_gis
 from arcgis._impl.common._mixins import PropertyMap
 from arcgis.features._version import Version
 
+
 ###########################################################################
 class ValidationManager(object):
     """
@@ -42,7 +43,7 @@ class ValidationManager(object):
     # ----------------------------------------------------------------------
     def __str__(self):
         url = self._url
-        return f"<ValidationManager @ {url}>"
+        return f"< ValidationManager @ {url} >"
 
     # ----------------------------------------------------------------------
     def __repr__(self):
@@ -61,36 +62,31 @@ class ValidationManager(object):
         self,
         error_features: list[dict[str, Any]],
         version: Optional[str] = None,
-        return_edits: Optional[bool] = None,
+        return_edits: bool = False,
         **kwargs,
     ):
         """
         Updates errors on the validation tables.
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         error_features      Required List.  The error features to be updated.
 
-                            **Syntax**
+                            Syntax:
 
-                            ```
-                            [
-                                {
-                                  "errorType" : "object" | "point" | "line" |
-                                               "polygon",
-                                  "features" : [
-                                    {
-                                      "globalId" : <guid>,
-                                      "fields" : {
-                                        "name1" : <value1>,
-                                        "name2" : <value2>
-                                      }
-                                    }
-                                  ]
-                                }
-                            ]
-                            ```
+
+                                | error_features = [{
+                                |      "errorType" : "object" | "point" | "line" |
+                                |                   "polygon",
+                                |      "features" : [
+                                |        {
+                                |          "globalId" : <guid>,
+                                |          "fields" : {
+                                |            "name1" : <value1>,
+                                |            "name2" : <value2>
+                                |          }}]}]
+
         ---------------     --------------------------------------------------------------------
         return_edits        Optional Boolean. `return_edits` returns features edited due to
                             errors update. Results returned are organized in a layer by layer
@@ -120,15 +116,12 @@ class ValidationManager(object):
 
         """
         url = self._url + "/updateErrors"
-
-        version = self._version
-        version_name = version.properties.versionName
-        session_id = version._guid
         params = {
             "f": "json",
-            "gdbVersion": version_name,
-            "sessionId": session_id,
+            "gdbVersion": self._version.properties.versionName,
+            "sessionId": self._version._guid,
             "errorFeatures": error_features,
+            "returnEdits": return_edits,
         }
         if len(kwargs) > 0:
             params.update(kwargs)
@@ -149,13 +142,26 @@ class ValidationManager(object):
         """
         Runs the topology rules and returns new errors if they exist.
 
+        Evaluation can be performed on different types of geodatabase rules (controlled by the evaluationType):
+
+        * Topology rules
+        * Validation and batch calculation attribute rules
+
+
         ====================     ====================================================================
-        **Argument**             **Description**
+        **Parameter**             **Description**
         --------------------     --------------------------------------------------------------------
-        evaluation               Required List of Strings.  An array of evaluation types.
-                                 Allowed Rule Types: `validation`, `calculation` and/or `topology`
+        evaluation               Required List of Strings.  A list of evaluation types.
+
+                                 Values:
+
+                                    "validationRules" | "calculationRules" | "topologyRules"
+
+                                 Example:
+
+                                    evaluation=["calculationRules"]
         --------------------     --------------------------------------------------------------------
-        area                     Optional Envelope/Dict. Extent area to evaluate.
+        area                     Optional :class:`~arcgis.geometry.Envelope` /Dict. Extent of the area to evaluate.
         --------------------     --------------------------------------------------------------------
         changes_in_version       Optional Boolean. representing whether to perform the evaluation on
                                  the features that have changed in the version (default is false).
@@ -170,22 +176,20 @@ class ValidationManager(object):
 
                                  If the `evaluation_type` is **topology** this parameter is ignored.
 
-                                 **Syntax**
+                                 Syntax
 
-                                 ```
-                                 [
-                                    {
-                                      "id" : <layerId1>,
-                                      "globalIds" : [ <globalId> ],
-                                      "objectIds" : [ <objectId> ]
-                                    },
-                                    {
-                                      "id" : <layerId2>,
-                                      "globalIds" : [ <globalId> ].
-                                      "objectIds" : [ <objectId> ]
-                                    }
-                                 ]
-                                 ```
+
+                                     | [{
+                                     |     "id" : <layerId1>,
+                                     |     "globalIds" : [ <globalId> ],
+                                     |     "objectIds" : [ <objectId> ]
+                                     |   },
+                                     |   {
+                                     |     "id" : <layerId2>,
+                                     |     "globalIds" : [ <globalId> ].
+                                     |     "objectIds" : [ <objectId> ]
+                                     |   }]
+
 
         --------------------     --------------------------------------------------------------------
         return_edits             Optional Boolean. returns features edited due to feature evaluation.
@@ -198,7 +202,7 @@ class ValidationManager(object):
 
         ====================     ====================================================================
 
-        :return: Dictionary indicating 'success' or 'error'
+        :return: The number of new errors identified along with the moment.
 
         """
         url = self._url + "/evaluate"

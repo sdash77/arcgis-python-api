@@ -53,6 +53,9 @@ try:
     from ._pointcnn_utils import AverageMetric
     from fastai.core import camel2snake
     import timm
+    from .._utils.evaluate_batchsize import estimate_batch_size
+    from .._utils.evaluate_batchsize import unsupported_models
+    from .._data import prepare_data
 
     # EarlyStoppingCallback should run as one
     # of the first callback so that stop training flag is set
@@ -116,7 +119,6 @@ def nostdout():
 
 
 def _get_device():
-
     if getattr(arcgis.env, "_processorType", "") == "GPU" and torch.cuda.is_available():
         device = torch.device("cuda")
     elif getattr(arcgis.env, "_processorType", "") == "CPU":
@@ -590,7 +592,6 @@ class ArcGISModel(object):
             data.path = Path(os.path.abspath("."))
 
         if getattr(self, "_is_edge_detection", False):
-
             if len(data.classes) > 2:
                 raise Exception(
                     "Found multi-labels in the data, This is a binary segmentation model and hence please export the data with binary labels."
@@ -605,6 +606,43 @@ class ArcGISModel(object):
         self._backend = getattr(self, "_backend", "pytorch")
         self._model_metrics_cache = None
         self._slice_lr = True
+        self._pretrained_path = kwargs.get("pretrained_path", None)
+        self._check_data_support_with_pretrained_path()
+        self._model_kwargs = kwargs
+        if self.__class__.__name__ not in unsupported_models:
+            if not getattr(data, "_is_empty", False) and hasattr(
+                data, "_estimate_batch"
+            ):
+                if data._estimate_batch:
+                    try:
+                        data._estimate_batch = False
+                        batch_size = estimate_batch_size(self, mode="none")
+                        self._data.train_dl.batch_size = (
+                            batch_size.recommended_batchsize
+                        )
+                        self._data.valid_dl.batch_size = (
+                            batch_size.recommended_batchsize
+                        )
+                    except Exception as e:
+                        data._estimate_batch = True
+
+    def _check_data_support_with_pretrained_path(self):
+        if self._data is not None and self._pretrained_path is not None:
+            with open(Path(self._pretrained_path).with_suffix(".emd")) as f:
+                emd = json.load(f)
+            if self._data.chip_size != emd["ImageHeight"]:
+                import copy
+                from .._data import prepare_data
+                import logging
+
+                logger = logging.getLogger()
+                logger.warning(
+                    f"""Setting the `chip_size` of input data ({self._data.chip_size}) to same as input model's ({emd["ImageHeight"]})."""
+                )
+                arcgis_init_kwargs = copy.deepcopy(self._data.arcgis_init_kwargs)
+                arcgis_init_kwargs["chip_size"] = emd["ImageHeight"]
+                arcgis_init_kwargs["resize_to"] = emd["resize_to"]
+                self._data = prepare_data(**arcgis_init_kwargs)
 
     def _check_backbone_support(self, backbone):
         "Fetches the backbone name and returns True if it is in the list of supported backbones"
@@ -640,8 +678,8 @@ class ArcGISModel(object):
                     # In case of maskrcnn make the batch norm trainable
                     next(params_iterator).requires_grad = True
                 self.learn.create_opt(slice(3e-3))
-            if hasattr(self, "_show_results_multispectral"):
-                self.show_results = self._show_results_multispectral
+        if hasattr(self, "_show_results_multispectral"):
+            self.show_results = self._show_results_multispectral
 
     # function for checking if data exists for using class functions.
     def _check_requisites(self):
@@ -697,7 +735,7 @@ class ArcGISModel(object):
         optimum learning rate for training the model.
 
         =====================   ===========================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ---------------------   -------------------------------------------
         allow_plot              Optional boolean. Display the plot of losses
                                 against the learning rates and mark the optimal
@@ -844,7 +882,7 @@ class ArcGISModel(object):
         specified learning rates
 
         =====================   ===========================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ---------------------   -------------------------------------------
         epochs                  Required integer. Number of cycles of training
                                 on the data. Increase it if underfitting.
@@ -875,11 +913,13 @@ class ArcGISModel(object):
         ---------------------   -------------------------------------------
         tensorboard             Optional boolean. Parameter to write the training log.
                                 If set to 'True' the log will be saved at
-                                <dataset-path>/training_log which can be visualized in
+                                `<dataset-path>/training_log` which can be visualized in
                                 tensorboard. Required tensorboardx version=2.1
 
                                 The default value is 'False'.
-                                **Note - Not applicable for Text Models
+
+                                .. note::
+                                    Not applicable for Text Models
         ---------------------   -------------------------------------------
         monitor                 Optional string. Parameter specifies
                                 which metric to monitor while checkpointing
@@ -922,7 +962,10 @@ class ArcGISModel(object):
             if arcgis.env.verbose:
                 logger.info("Fitting the model.")
 
-            if getattr(self, "_backend", "pytorch") == "tensorflow":
+            if (
+                not (type(self).__name__) == "EfficientDet"
+                and getattr(self, "_backend", "pytorch") == "tensorflow"
+            ):
                 checkpoint = False
 
             callbacks = kwargs["callbacks"] if "callbacks" in kwargs.keys() else []
@@ -937,8 +980,8 @@ class ArcGISModel(object):
                         learn=self.learn, monitor=monitor, min_delta=0.001, patience=5
                     )
                 )
+            self._is_checkpointed = checkpoint
             if checkpoint:
-                self._is_checkpointed = checkpoint
                 from datetime import datetime
 
                 now = datetime.now()
@@ -1017,7 +1060,6 @@ class ArcGISModel(object):
     def _create_emd_template(
         self, path, compute_metrics=True, save_inference_file=True
     ):
-
         _emd_template = {}
 
         # For old models - add lr, ModelName
@@ -1146,22 +1188,23 @@ class ArcGISModel(object):
             _emd_template["ImageryType"] = self._data._imagery_type
             if getattr(self._data, "_dataset_type", None) != "ChangeDetection":
                 _emd_template["ExtractBands"] = self._data._extract_bands
-            _emd_template["NormalizationStats"] = {
-                "band_min_values": self._data._band_min_values,
-                "band_max_values": self._data._band_max_values,
-                "band_mean_values": self._data._band_mean_values,
-                "band_std_values": self._data._band_std_values,
-                "scaled_min_values": self._data._scaled_min_values,
-                "scaled_max_values": self._data._scaled_max_values,
-                "scaled_mean_values": self._data._scaled_mean_values,
-                "scaled_std_values": self._data._scaled_std_values,
-            }
-            for _stat in _emd_template["NormalizationStats"]:
-                if _emd_template["NormalizationStats"][_stat] is not None:
-                    _emd_template["NormalizationStats"][_stat] = _emd_template[
-                        "NormalizationStats"
-                    ][_stat].tolist()
-            _emd_template["DoNormalize"] = self._data._do_normalize
+            if not getattr(self._data, "_dataset_type", None) == "SuperResolution":
+                _emd_template["NormalizationStats"] = {
+                    "band_min_values": self._data._band_min_values,
+                    "band_max_values": self._data._band_max_values,
+                    "band_mean_values": self._data._band_mean_values,
+                    "band_std_values": self._data._band_std_values,
+                    "scaled_min_values": self._data._scaled_min_values,
+                    "scaled_max_values": self._data._scaled_max_values,
+                    "scaled_mean_values": self._data._scaled_mean_values,
+                    "scaled_std_values": self._data._scaled_std_values,
+                }
+                for _stat in _emd_template["NormalizationStats"]:
+                    if _emd_template["NormalizationStats"][_stat] is not None:
+                        _emd_template["NormalizationStats"][_stat] = _emd_template[
+                            "NormalizationStats"
+                        ][_stat].tolist()
+                _emd_template["DoNormalize"] = self._data._do_normalize
         if (
             getattr(self._data, "_dataset_type", None) == "Pix2Pix"
             or getattr(self._data, "_dataset_type", None) == "CycleGAN"
@@ -1283,7 +1326,6 @@ class ArcGISModel(object):
             """
 
         if emd_template.get("ModelParameters", {}).get("model_name", False):
-
             HTML_TEMPLATE = f"""        
                 <p><b> {emd_template.get("ModelName").replace('>', '').replace('<', '')} </b></p>
                 <p><b>Model Name:</b> {emd_template.get('ModelParameters', {}).get('model_name')}</p>
@@ -1292,7 +1334,6 @@ class ArcGISModel(object):
             """
 
         else:
-
             HTML_TEMPLATE = f"""        
                     <p><b> {emd_template.get("ModelName").replace('>', '').replace('<', '')} </b></p>
                     <p><b>Backbone:</b> {emd_template.get('ModelParameters', {}).get('backbone')}</p>
@@ -1408,6 +1449,7 @@ class ArcGISModel(object):
         quantized = kwargs.get("quantized", False)  # True, False
         temp = self.learn.path
         temp1 = self.learn.model_dir
+        self._framework = framework
         if "\\" in name_or_path or "/" in name_or_path:
             path = Path(name_or_path)
             name = path.parts[-1]
@@ -1479,14 +1521,18 @@ class ArcGISModel(object):
         except Exception as e:
             raise e
         finally:
-
             self.learn.path = temp
             self.framework = framework
             self.learn.model_dir = temp1
 
-        _emd_template = self._create_emd_template(
-            saved_path.with_suffix(".pth"), compute_metrics, save_inference_file
-        )
+        if (type(self).__name__) == "EfficientDet":
+            _emd_template = self._create_emd_template(
+                saved_path, compute_metrics, save_inference_file
+            )
+        else:
+            _emd_template = self._create_emd_template(
+                saved_path.with_suffix(".pth"), compute_metrics, save_inference_file
+            )
 
         if framework.lower() == "tf-onnx":
             batch_size = kwargs.get("batch_size", 16)
@@ -1717,7 +1763,6 @@ class ArcGISModel(object):
         return get_post_processed_model(self, input_normalization=input_normalization)
 
     def _save_model_characteristics(self, model_characteristics_dir):
-
         import shutil
         import matplotlib.pyplot as plt
 
@@ -1761,12 +1806,18 @@ class ArcGISModel(object):
             except:
                 plt.close()
 
-        if self.__str__() == "<PointCNN>":
+        if self.__str__() in [
+            "<PointCNN>",
+            "<RandLANet>",
+            "<SQNSeg>",
+            "<MMDetection3D>",
+        ]:
             self.show_results(save_html=True, save_path=model_characteristics_dir)
         elif self.__str__() in [
             "<TextClassifier>",
             "<TransformerEntityRecognizer>",
             "<SequenceToSequence>",
+            "<TimeSeriesModel>",
         ]:
             pass
         elif hasattr(self, "show_results"):
@@ -1893,7 +1944,7 @@ class ArcGISModel(object):
         Learning Package zip for deployment to Image Server or ArcGIS Pro.
 
         =====================   ===========================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ---------------------   -------------------------------------------
         name_or_path            Required string. Name of the model to save. It
                                 stores it at the pre-defined location. If path
@@ -1907,11 +1958,16 @@ class ArcGISModel(object):
                                 Only models saved with the default framework
                                 (PyTorch) can be loaded using `from_model`.
                                 ``tflite`` framework (experimental support) is
-                                supported by ``SingleShotDetector - with tensorflow backend``,
-                                ``FeatureClassifier`` and ``RetinaNet - with tensorflow backend``.
-                                ``torchscript`` format is supported by
-                                ``SiamMask``, ``MaskRCNN``, ``SingleShotDetector``,
-                                ``YOLOv3`` and ``RetinaNet``.
+                                supported by :class:`~arcgis.learn.SingleShotDetector`
+                                - tensorflow backend only,
+                                :class:`~arcgis.learn.FeatureClassifier`and
+                                :class:`~arcgis.learn.RetinaNet` - tensorflow
+                                backend only.``torchscript`` format is supported by
+                                :class:`~arcgis.learn.SiamMask`,
+                                :class:`~arcgis.learn.MaskRCNN`,
+                                :class:`~arcgis.learn.SingleShotDetector`,
+                                :class:`~arcgis.learn.YOLOv3` and
+                                :class:`~arcgis.learn.RetinaNet`.
                                 For usage of SiamMask model in ArcGIS Pro >= 2.8,
                                 load the ``PyTorch`` framework saved model
                                 and export it with ``torchscript`` framework
@@ -1921,13 +1977,15 @@ class ArcGISModel(object):
                                 model files additionally generated inside
                                 'torch_scripts' folder.
                                 If framework is ``TF-ONNX`` (Only supported for
-                                ``SingleShotDetector``), ``batch_size`` can
-                                be passed as an optional keyword argument.
+                                :class:`~arcgis.learn.SingleShotDetector`),
+                                ``batch_size`` can be passed as an optional
+                                keyword argument.
         ---------------------   -------------------------------------------
         publish                 Optional boolean. Publishes the DLPK as an item.
         ---------------------   -------------------------------------------
-        gis                     Optional GIS Object. Used for publishing the item.
-                                If not specified then active gis user is taken.
+        gis                     Optional :class:`~arcgis.gis.GIS`  Object.
+                                Used for publishing the item. If not specified
+                                then active gis user is taken.
         ---------------------   -------------------------------------------
         compute_metrics         Optional boolean. Used for computing model
                                 metrics.
@@ -1963,7 +2021,7 @@ class ArcGISModel(object):
         Loads a compatible saved model for inferencing or fine tuning from the disk.
 
         =====================   ===========================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ---------------------   -------------------------------------------
         name_or_path            Required string. Name or Path to
                                 Deep Learning Package (DLPK) or

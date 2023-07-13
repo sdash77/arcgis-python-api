@@ -5,6 +5,8 @@ from typing import Optional
 from .._impl._con import Connection
 from .. import GIS
 from ._base import BasePortalAdmin
+from arcgis._impl.common._deprecate import deprecated
+
 
 ########################################################################
 class PasswordPolicy(BasePortalAdmin):
@@ -16,6 +18,7 @@ class PasswordPolicy(BasePortalAdmin):
     _gis = None
     _con = None
     _url = None
+
     # ----------------------------------------------------------------------
     def __init__(self, url, gis=None, **kwargs):
         """Constructor"""
@@ -33,11 +36,36 @@ class PasswordPolicy(BasePortalAdmin):
 
     # ----------------------------------------------------------------------
     def __str__(self):
-        return "<%s at %s>" % (type(self).__name__, self._url)
+        return "< %s @ %s >" % (type(self).__name__, self._url)
 
     # ----------------------------------------------------------------------
     def __repr__(self):
-        return "<%s at %s>" % (type(self).__name__, self._url)
+        return "< %s @ %s >" % (type(self).__name__, self._url)
+
+    # ----------------------------------------------------------------------
+    @property
+    def lockout_policy(self):
+        """gets/sets the current security policy"""
+        if self._properties is None:
+            self._init()
+        return self._properties["lockoutLoginPolicy"]
+
+    # ----------------------------------------------------------------------
+    @lockout_policy.setter
+    def lockout_policy(self, value=None) -> None:
+        """
+        Gets/Sets the lockout policy for the organization
+        """
+        url: str = f"{self._url}/lockoutLoginPolicy/update"
+        params: dict[str, str] = {
+            "f": "json",
+        }
+        if value is None:
+            value = {}
+        params.update(value)
+        res: dict = self._con.post(url, params)
+        if "success" in res:
+            self._properties = None
 
     # ----------------------------------------------------------------------
     @property
@@ -45,7 +73,7 @@ class PasswordPolicy(BasePortalAdmin):
         """gets/sets the current security policy"""
         if self._properties is None:
             self._init()
-        return self._properties
+        return self._properties["passwordPolicy"]
 
     # ----------------------------------------------------------------------
     @policy.setter
@@ -79,6 +107,7 @@ class PasswordPolicy(BasePortalAdmin):
         url = "%s/reset" % self._url
         params = {"f": "json"}
         res = self._con.post(url, params)
+        self._properties = None
         if "success" in res:
             return res["success"]
         return res
@@ -101,6 +130,7 @@ class Security(BasePortalAdmin):
     _eu = None
     _eg = None
     _ssl = None
+
     # ----------------------------------------------------------------------
     def __init__(self, url, gis=None, **kwargs):
         """Constructor"""
@@ -121,6 +151,10 @@ class Security(BasePortalAdmin):
     def enterpriseusers(self):
         """
         provides access into managing enterprise users
+
+        :return:
+            :class:`~arcgis.gis.admin.EnterpriseUsers` object
+
         """
         if self._eu is None:
             url = "%s/users" % self._url
@@ -130,7 +164,13 @@ class Security(BasePortalAdmin):
     # ----------------------------------------------------------------------
     @property
     def groups(self):
-        """provides access to managing Enterprise Groups with Portal"""
+        """
+        provides access to managing Enterprise Groups with Portal
+
+        :return:
+            :class:`~arcgis.gis.admin.EnterpriseGroups` object
+
+        """
         if self._eg is None:
             url = "%s/groups" % self._url
             self._eg = EnterpriseGroups(url=url, gis=self._gis)
@@ -145,7 +185,7 @@ class Security(BasePortalAdmin):
         configuration properties of the token service.
 
         ===========================     ====================================================================
-        **Argument**                    **Description**
+        **Parameter**                    **Description**
         ---------------------------     --------------------------------------------------------------------
         value                           Required string. A shared key value
         ===========================     ====================================================================
@@ -162,10 +202,9 @@ class Security(BasePortalAdmin):
         """
         See main ``tokens`` property docsring
         """
-        import six
 
         params = {"f": "json", "tokenConfig": None}
-        if isinstance(value, six.string_types):
+        if isinstance(value, str):
             params["tokenConfig"] = {"sharedKey": value}
         elif isinstance(value, dict) and "sharedKey" in value:
             params["tokenConfig"] = value
@@ -181,6 +220,11 @@ class Security(BasePortalAdmin):
         The OAuth resource contains a set of operations that update the
         OAuth2-specific properties of registered applications in Portal for
         ArcGIS.
+
+
+        :return:
+            :class:`~arcgis.gis.admin.OAuth` object
+
         """
         if self._oauth is None:
             url = "%s/oauth" % self._url
@@ -235,7 +279,7 @@ class Security(BasePortalAdmin):
         the format (.*).domain.com to allow access to all machines within a
         specified domain.
 
-        *example value*
+        *Example Value*
           {
            "disableServicesDirectory":false,
            "enableAutomaticAccountCreation":true,
@@ -258,7 +302,9 @@ class Security(BasePortalAdmin):
 
     # ----------------------------------------------------------------------
     def update_identity_store(
-        self, user_config: Optional[dict] = None, group_config: Optional[dict] = None
+        self,
+        user_config: Optional[dict] = None,
+        group_config: Optional[dict] = None,
     ):
         """
         You can use this operation to change the identity provider and
@@ -272,7 +318,7 @@ class Security(BasePortalAdmin):
         See: https://developers.arcgis.com/rest/enterprise-administration/portal/update-identity-store.htm
 
         ===========================     ====================================================================
-        **Argument**                    **Description**
+        **Parameter**                    **Description**
         ---------------------------     --------------------------------------------------------------------
         user_config                     Optional dict. The user store configuration
         ---------------------------     --------------------------------------------------------------------
@@ -303,14 +349,16 @@ class Security(BasePortalAdmin):
     # ----------------------------------------------------------------------
     @property
     def test_identity_store(
-        self, user_config: Optional[dict] = None, group_config: Optional[dict] = None
+        self,
+        user_config: Optional[dict] = None,
+        group_config: Optional[dict] = None,
     ):
         """
         This operation can be used to test the connection to a user or
         group store.
 
         ===========================     ====================================================================
-        **Argument**                    **Description**
+        **Parameter**                    **Description**
         ---------------------------     --------------------------------------------------------------------
         user_config                     Optional dict. The user store configuration
         ---------------------------     --------------------------------------------------------------------
@@ -342,10 +390,19 @@ class Security(BasePortalAdmin):
 
     # ----------------------------------------------------------------------
     @property
+    @deprecated(deprecated_in="2.1.0", removed_in="3.0.0", current_version="2.2.0")
     def ssl(self):
         """
+        .. note::
+            It is best practice and highly recommended to use the `ssl_certificates`
+            property on the Machine class.
+
         Provides access to managing and updating SSL Certificates on a
         Portal site.
+
+        :return:
+            :class:`~arcgis.gis.admin.SSLCertificates` object
+
         """
         if self._ssl is None:
             url = "%s/sslCertificates" % self._url
@@ -364,6 +421,7 @@ class OAuth(BasePortalAdmin):
     _gis = None
     _con = None
     _url = None
+
     # ----------------------------------------------------------------------
     def __init__(self, url, gis=None, **kwargs):
         """Constructor"""
@@ -391,7 +449,7 @@ class OAuth(BasePortalAdmin):
         developer.
 
         ===========================     ====================================================================
-        **Argument**                    **Description**
+        **Parameter**                    **Description**
         ---------------------------     --------------------------------------------------------------------
         current_id                      Required string. The current client ID of an existing application.
         ---------------------------     --------------------------------------------------------------------
@@ -401,7 +459,11 @@ class OAuth(BasePortalAdmin):
         :return: Boolean. True if successful else False
 
         """
-        params = {"f": "json", "currentAppID": current_id, "newAppID": new_id}
+        params = {
+            "f": "json",
+            "currentAppID": current_id,
+            "newAppID": new_id,
+        }
         url = "%s/changeAppID" % self._url
         res = self._con.post(path=url, postdata=params)
         if "status" in res:
@@ -444,6 +506,7 @@ class SSLCertificates(BasePortalAdmin):
     _gis = None
     _con = None
     _url = None
+
     # ----------------------------------------------------------------------
     def __init__(self, url, gis=None, **kwargs):
         """Constructor"""
@@ -468,14 +531,18 @@ class SSLCertificates(BasePortalAdmin):
 
     # ----------------------------------------------------------------------
     def update(
-        self, alias: str, protocols: str, cipher_suites: str, HSTS: bool = False
+        self,
+        alias: str,
+        protocols: str,
+        cipher_suites: str,
+        HSTS: bool = False,
     ):
         """
         Use this operation to configure the web server certificate, SSL
         protocols, and cipher suites used by the portal.
 
         ===========================     ====================================================================
-        **Argument**                    **Description**
+        **Parameter**                    **Description**
         ---------------------------     --------------------------------------------------------------------
         alias                           Required string. The name of the certificate. This is a required
                                         parameter. The certificate must be already present in the portal.
@@ -538,7 +605,7 @@ class SSLCertificates(BasePortalAdmin):
         store it in its keystore.
 
         ===========================     ====================================================================
-        **Argument**                    **Description**
+        **Parameter**                    **Description**
         ---------------------------     --------------------------------------------------------------------
         alias                           Required string. The name of the certificate. This is a required
                                         parameter.
@@ -623,7 +690,7 @@ class SSLCertificates(BasePortalAdmin):
         have a custom CA or specific intermediate certificates.
 
         ===========================     ====================================================================
-        **Argument**                    **Description**
+        **Parameter**                    **Description**
         ---------------------------     --------------------------------------------------------------------
         certificate                     Required string. The file location of the certificate file
         ---------------------------     --------------------------------------------------------------------
@@ -690,7 +757,7 @@ class SSLCertificates(BasePortalAdmin):
         Intermediate Certificate operation.
 
         ===========================     ====================================================================
-        **Argument**                    **Description**
+        **Parameter**                    **Description**
         ---------------------------     --------------------------------------------------------------------
         alias                           Required string. The name of the certificate
         ---------------------------     --------------------------------------------------------------------
@@ -716,7 +783,7 @@ class SSLCertificates(BasePortalAdmin):
         List of SSL Certificates as represented in the Portal Admin API
 
         ===========================     ====================================================================
-        **Argument**                    **Description**
+        **Parameter**                    **Description**
         ---------------------------     --------------------------------------------------------------------
         force                           Optional Boolean. If True, the certificate list will be refreshed,
                                         else, if a set of values is in memory, it will use those values.
@@ -725,7 +792,7 @@ class SSLCertificates(BasePortalAdmin):
         ===========================     ====================================================================
 
         :return:
-            List of SSLCertificate objects
+            List of :class: arcgis.gis.admin.SSLCertificate objects
 
         .. code-block:: python
 
@@ -765,12 +832,13 @@ class SSLCertificates(BasePortalAdmin):
         gets a single SSLCertificate object by the alias name
 
         ===========================     ====================================================================
-        **Argument**                    **Description**
+        **Parameter**                    **Description**
         ---------------------------     --------------------------------------------------------------------
         alias_name                      Required string. The common name of the certificate.
         ===========================     ====================================================================
 
-        :return: SSLCertificate Object
+        :return:
+            :class: `~arcgis.gis.admin.SSLCertificate` object
 
         .. code-block:: python
 
@@ -820,6 +888,7 @@ class SSLCertificate(BasePortalAdmin):
     _con = None
     _url = None
     _mgr = None
+
     # ----------------------------------------------------------------------
     def __init__(self, url, gis=None, **kwargs):
         """Constructor"""
@@ -861,7 +930,7 @@ class SSLCertificate(BasePortalAdmin):
         be imported into a client that is making HTTP requests.
 
         ===========================     ====================================================================
-        **Argument**                    **Description**
+        **Parameter**                    **Description**
         ---------------------------     --------------------------------------------------------------------
         out_path                        Required string. Save location of the certificate
         ===========================     ====================================================================
@@ -904,7 +973,7 @@ class SSLCertificate(BasePortalAdmin):
         the key store.
 
         ===========================     ====================================================================
-        **Argument**                    **Description**
+        **Parameter**                    **Description**
         ---------------------------     --------------------------------------------------------------------
         file_path                       Required string. The location of the certificate
         ===========================     ====================================================================
@@ -928,6 +997,7 @@ class EnterpriseGroups(BasePortalAdmin):
     _gis = None
     _con = None
     _url = None
+
     # ----------------------------------------------------------------------
     def __init__(self, url, gis=None, **kwargs):
         """Constructor"""
@@ -950,7 +1020,7 @@ class EnterpriseGroups(BasePortalAdmin):
         store. You can narrow down the search using the filter parameter.
 
         ===========================     ====================================================================
-        **Argument**                    **Description**
+        **Parameter**                    **Description**
         ---------------------------     --------------------------------------------------------------------
         query                           Optional string. Where clause into parse down results
         ---------------------------     --------------------------------------------------------------------
@@ -977,7 +1047,7 @@ class EnterpriseGroups(BasePortalAdmin):
         force a refresh.
 
         ===========================     ====================================================================
-        **Argument**                    **Description**
+        **Parameter**                    **Description**
         ---------------------------     --------------------------------------------------------------------
         groups                          Required string. The comma seperated list of group names to be
                                         refreshed
@@ -998,7 +1068,7 @@ class EnterpriseGroups(BasePortalAdmin):
         use the filter parameter to narrow down the user search.
 
         ===========================     ====================================================================
-        **Argument**                    **Description**
+        **Parameter**                    **Description**
         ---------------------------     --------------------------------------------------------------------
         name                            Optional string. The name of the enterprise group
         ---------------------------     --------------------------------------------------------------------
@@ -1026,7 +1096,7 @@ class EnterpriseGroups(BasePortalAdmin):
         configured enterprise group store.
 
         ===========================     ====================================================================
-        **Argument**                    **Description**
+        **Parameter**                    **Description**
         ---------------------------     --------------------------------------------------------------------
         username                        Optional string. The name of the user account
         ---------------------------     --------------------------------------------------------------------
@@ -1059,6 +1129,7 @@ class EnterpriseUsers(BasePortalAdmin):
     _gis = None
     _con = None
     _url = None
+
     # ----------------------------------------------------------------------
     def __init__(self, url, gis=None, **kwargs):
         """Constructor"""
@@ -1095,7 +1166,7 @@ class EnterpriseUsers(BasePortalAdmin):
         indicate the type of user account.
 
         ===========================     ====================================================================
-        **Argument**                    **Description**
+        **Parameter**                    **Description**
         ---------------------------     --------------------------------------------------------------------
         username                        Required string. The name of the user account
         ---------------------------     --------------------------------------------------------------------
@@ -1187,7 +1258,7 @@ class EnterpriseUsers(BasePortalAdmin):
         error is returned.
 
         ===========================     ====================================================================
-        **Argument**                    **Description**
+        **Parameter**                    **Description**
         ---------------------------     --------------------------------------------------------------------
         username                        Required string. Username of the enterprise account. For Windows
                                         Active Directory users, this can be either domain\\username or just
@@ -1210,7 +1281,7 @@ class EnterpriseUsers(BasePortalAdmin):
         authentication.
 
         ===========================     ====================================================================
-        **Argument**                    **Description**
+        **Parameter**                    **Description**
         ---------------------------     --------------------------------------------------------------------
         username                        Required string. Username of the enterprise account. For Windows
                                         Active Directory users, this can be either domain\\username or just
@@ -1223,7 +1294,11 @@ class EnterpriseUsers(BasePortalAdmin):
 
         """
         url = "%s/updateEnterpriseUser" % self._url
-        params = {"f": "json", "username": username, "idpUsername": idp_username}
+        params = {
+            "f": "json",
+            "username": username,
+            "idpUsername": idp_username,
+        }
         res = self._con.post(path=url, postdata=params)
         if "status" in res:
             return res["status"] == "success"
@@ -1236,7 +1311,7 @@ class EnterpriseUsers(BasePortalAdmin):
         store. You can narrow down the search using the filter parameter.
 
         ===========================     ====================================================================
-        **Argument**                    **Description**
+        **Parameter**                    **Description**
         ---------------------------     --------------------------------------------------------------------
         query                           Optional string. Where clause into parse down results
         ---------------------------     --------------------------------------------------------------------
@@ -1263,7 +1338,7 @@ class EnterpriseUsers(BasePortalAdmin):
         an administrator to force a refresh.
 
         ===========================     ====================================================================
-        **Argument**                    **Description**
+        **Parameter**                    **Description**
         ---------------------------     --------------------------------------------------------------------
         users                           Required string. A comma seperated list of users.
         ===========================     ====================================================================

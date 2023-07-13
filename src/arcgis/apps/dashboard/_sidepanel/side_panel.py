@@ -7,7 +7,7 @@ class SidePanel(object):
     Creates a dashboard Side Panel widget.
 
     =========================   ===========================================
-    **Argument**                **Description**
+    **Parameter**                **Description**
     -------------------------   -------------------------------------------
     title                       Optional string. Title of the header.
     -------------------------   -------------------------------------------

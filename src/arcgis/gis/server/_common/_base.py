@@ -2,12 +2,15 @@
 Contains the base class that all server object inherit from.
 """
 from __future__ import absolute_import
+from __future__ import annotations
 import json
+import functools
 from collections import OrderedDict
 from urllib.request import HTTPError
 from ..._impl._con import Connection
 from arcgis.gis import GIS
 from arcgis._impl.common._mixins import PropertyMap
+
 
 ###########################################################################
 class BaseServer(object):
@@ -40,6 +43,15 @@ class BaseServer(object):
         if initialize:
             self._init(gis)
 
+    @functools.lru_cache(maxsize=10)
+    def _server_version(self) -> list[float]:
+        """returns the server version number"""
+        params: dict[str, Any] = {"f": "json"}
+        url: str = self._url.split("/admin/")[0] + "/admin"
+        return [
+            int(v) for v in str(self._con.get(url, params)["currentVersion"]).split(".")
+        ]
+
     # ----------------------------------------------------------------------
     def _init(self, connection=None):
         """loads the properties into the class"""
@@ -62,11 +74,11 @@ class BaseServer(object):
 
     # ----------------------------------------------------------------------
     def __str__(self):
-        return "<%s at %s>" % (type(self).__name__, self._url)
+        return "< %s @ %s >" % (type(self).__name__, self._url)
 
     # ----------------------------------------------------------------------
     def __repr__(self):
-        return "<%s at %s>" % (type(self).__name__, self._url)
+        return "< %s @ %s >" % (type(self).__name__, self._url)
 
     # ----------------------------------------------------------------------
     @property

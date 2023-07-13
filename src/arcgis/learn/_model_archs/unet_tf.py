@@ -37,7 +37,6 @@ def get_unet_tf_head_output(
     skip_lyr_channels,
     mobile_optimized=False,
 ):
-
     # Get channel axis
     ca = channel_axis = get_channel_axis(data_format=data_format)
 

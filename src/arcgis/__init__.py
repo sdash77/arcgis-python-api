@@ -1,4 +1,4 @@
-__version__ = "2.0.1"
+__version__ = "2.2.0"
 
 from arcgis.auth.tools import LazyLoader
 
@@ -66,6 +66,13 @@ try:
 except ImportError as e:
     pass
 
+try:
+    # register with dask
+    from .features.geo import _dask  # noqa
+except Exception as e:
+    pass
+
+
 __all__ = [
     "GIS",
     "geocode",
@@ -75,6 +82,7 @@ __all__ = [
     "geometry",
     "geoprocessing",
     "network",
+    "notebook",
     "raster",
     "apps",
     "realtime",

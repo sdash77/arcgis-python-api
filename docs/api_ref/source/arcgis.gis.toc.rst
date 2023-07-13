@@ -16,6 +16,13 @@ Item
     :undoc-members:
     :show-inheritance:
 
+ItemDependency
+---------------
+.. autoclass:: arcgis.gis.ItemDependency
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
 User
 --------------
 .. autoclass:: arcgis.gis.User
@@ -154,6 +161,87 @@ PortalDataStore
     :undoc-members:
     :show-inheritance:
 
+StatusJob
+---------------------------
+.. autoclass:: arcgis.gis._impl._jb.StatusJob
+    :members:
+    :undoc-members:
+    :show-inheritance:
+    
+MarketPlaceManager
+------------------
+.. autoclass:: arcgis.gis.sharing.MarketPlaceManager
+    :members:
+    :undoc-members:
+    :show-inheritance:
+    
+ViewManager
+------------------
+.. autoclass:: arcgis.gis.ViewManager
+    :members:
+    :undoc-members:
+    :show-inheritance:    
+
+Enumerations
+------------
+ItemTypeEnum
+^^^^^^^^^^^^
+.. autoclass:: arcgis.gis._impl._dataclasses.ItemTypeEnum
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+MetadataFormatEnum
+^^^^^^^^^^^^^^^^^^
+.. autoclass:: arcgis.gis._impl._dataclasses.MetadataFormatEnum
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+ServiceTypeEnum
+^^^^^^^^^^^^^^^
+.. autoclass:: arcgis.gis._impl._dataclasses.ServiceTypeEnum
+    :members:
+    :undoc-members:
+    :show-inheritance:
+    
+SpatialRelationship
+^^^^^^^^^^^^^^^^^^^
+.. autoclass:: arcgis.gis._impl._dataclasses.SpatialRelationship
+    :members:
+    :undoc-members:
+    :show-inheritance:    
+    
+Dataclasses
+-----------
+ItemProperties
+^^^^^^^^^^^^^^
+.. autoclass:: arcgis.gis._impl._dataclasses.ItemProperties
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+CreateServiceParameter
+^^^^^^^^^^^^^^^^^^^^^^
+.. autoclass:: arcgis.gis._impl._dataclasses.CreateServiceParameter
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+ViewLayerDefParameter
+^^^^^^^^^^^^^^^^^^^^^	
+.. autoclass:: arcgis.gis._impl._dataclasses.ViewLayerDefParameter
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+SpatialFilter
+^^^^^^^^^^^^^
+.. autoclass:: arcgis.gis._impl._dataclasses.SpatialFilter
+    :members:
+    :undoc-members:
+    :show-inheritance:
+    
 Submodules
 --------------
 .. toctree::
@@ -161,10 +249,10 @@ Submodules
 
    arcgis.gis.admin
    arcgis.gis.server
+   arcgis.gis.agonb
    arcgis.gis.agoserver
    arcgis.gis.mission
    arcgis.gis.nb
    arcgis.gis.workflowmanager
    arcgis.gis.tasks
    arcgis.gis.sharing
-

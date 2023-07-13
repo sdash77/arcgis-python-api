@@ -31,7 +31,6 @@ except:
 
 
 def normalize_batch_imagenetstats(batch):
-
     imagenet_stats = [[0.485, 0.456, 0.406], [0.229, 0.224, 0.225]]
     mean = 255 * np.array(imagenet_stats[0], dtype=np.float32)
     std = 255 * np.array(imagenet_stats[1], dtype=np.float32)
@@ -218,7 +217,6 @@ def remove_bounding_boxes_in_padding(
 
 class ChildObjectDetector:
     def initialize(self, model, model_as_file):
-
         if not HAS_TORCH:
             raise Exception(
                 "PyTorch is not installed. Install it using conda install -c pytorch pytorch torchvision"
@@ -245,6 +243,7 @@ class ChildObjectDetector:
 
         self.json_emd_file = Path(model).parent
         self.model_extension = ModelExtension.from_model(emd_path=model)
+        self._learnmodel = self.model_extension
         self.model = self.model_extension.learn.model.to(self.device)
         self.model.eval()
 
@@ -340,7 +339,6 @@ class ChildObjectDetector:
         }
 
     def vectorize(self, **pixelBlocks):  # 8 x 3 x 224 x 224
-
         input_image = pixelBlocks["raster_pixels"].astype(np.float32)
         batch, batch_height, batch_width = tile_to_batch(
             input_image,
@@ -384,7 +382,6 @@ def detect_object(
     emd_path,
     **kwargs
 ):
-
     tile_height, tile_width = images.shape[2], images.shape[3]
     side = math.sqrt(batch_size)
     thres = kwargs.get("thresh", 0.5)
@@ -440,7 +437,6 @@ def detect_object(
 
 class ChildImageClassifier:
     def initialize(self, model, model_as_file):
-
         if not HAS_TORCH:
             raise Exception(
                 "PyTorch is not installed. Install it using conda install -c pytorch pytorch torchvision"
@@ -471,7 +467,6 @@ class ChildImageClassifier:
         self.model.eval()
 
     def getParameterInfo(self, required_parameters):
-
         required_parameters.extend(
             [
                 {
@@ -766,7 +761,6 @@ class ChildImageClassifier:
         return all_activations
 
     def updatePixelsTTA(self, tlc, shape, props, **pixelBlocks):  # 8 x 224 x 224 x 3
-
         class_values = [clas["Value"] for clas in self.json_info["Classes"]]
         is_contiguous = is_cont([0] + class_values)
 

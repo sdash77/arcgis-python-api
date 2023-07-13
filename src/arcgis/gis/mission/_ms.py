@@ -1,3 +1,4 @@
+from __future__ import annotations
 from arcgis.gis import GIS
 from arcgis._impl.common._mixins import PropertyMap
 from ._base import BaseMissionServer
@@ -6,6 +7,7 @@ from ._system import SystemManager
 from ._machines import MachineManager
 from ._security import SecurityManager
 from .api import MissionCatalog
+
 
 ###########################################################################
 class MissionServer(BaseMissionServer):
@@ -23,9 +25,9 @@ class MissionServer(BaseMissionServer):
     _system = None
     _logs = None
     _machine = None
+
     # ----------------------------------------------------------------------
     def __init__(self, url, gis=None):
-
         self.catalog = MissionCatalog(gis=gis)
         if url.lower().find("/admin") == -1:
             if url.endswith("/"):
@@ -62,7 +64,8 @@ class MissionServer(BaseMissionServer):
         """
         Provides access to the Mission server's logging system
 
-        :return: LogManager
+        :return:
+            :class:`~arcgis.gis.mission._logs.LogManager` object
 
         """
         if self._logs is None:
@@ -76,7 +79,8 @@ class MissionServer(BaseMissionServer):
         """
         returns access to the system properties of the ArcGIS Mission Server
 
-        :return: SystemManager
+        :return:
+            :class:`~arcgis.gis.mission._system.SystemManager`
 
         """
         if self._system is None:
@@ -91,7 +95,8 @@ class MissionServer(BaseMissionServer):
         Provides access to managing the registered machines with ArcGIS
         Mission Server
 
-        :return: MachineManager
+        :return:
+            :class:`~arcgis.gis.mission._machines.MachineManager`
 
         """
         if self._machine is None:
@@ -106,7 +111,8 @@ class MissionServer(BaseMissionServer):
         Provides access to managing the ArcGIS Mission Server's security
         settings.
 
-        :return: SecurityManager
+        :return:
+            :class:`~arcgis.gis.mission._security.SecurityManager`
 
         """
         if self._security is None:

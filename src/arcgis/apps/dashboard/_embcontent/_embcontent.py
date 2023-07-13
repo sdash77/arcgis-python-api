@@ -9,7 +9,7 @@ class EmbeddedContent(_BaseWidget):
     Creates a dashboard Embedded Content Widget.
 
     =========================   ===========================================
-    **Argument**                **Description**
+    **Parameter**                **Description**
     -------------------------   -------------------------------------------
     url                         Required string. Url of the embedded content
                                 or field name if item is not None.
@@ -27,7 +27,7 @@ class EmbeddedContent(_BaseWidget):
                                 minutes. It is only applicable for
                                 content_type = 'image'
     -------------------------   -------------------------------------------
-    item                        Optional Portal Item. To show content from
+    item                        Optional Portal :class:`~arcgis.gis.Item` . To show content from
                                 portal.
     -------------------------   -------------------------------------------
     layer                       Optional integer. Layer number when item is

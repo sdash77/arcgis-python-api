@@ -229,7 +229,6 @@ def remove_bounding_boxes_in_padding(
 
 class ChildObjectDetector:
     def initialize(self, model, model_as_file):
-
         if not HAS_TORCH:
             raise Exception(
                 "PyTorch is not installed. Install it using conda install -c pytorch pytorch torchvision"
@@ -258,6 +257,7 @@ class ChildObjectDetector:
             )
 
         self.retinanet = RetinaNet.from_model(emd_path=model)
+        self._learnmodel = self.retinanet
         self.retinanet.learn.model = self.retinanet.learn.model.to(self.device)
         self.retinanet.learn.model.eval()
 

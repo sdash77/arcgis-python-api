@@ -4,6 +4,7 @@ from arcgis.geometry import Geometry
 import numpy as np
 import pandas as pd
 
+
 # --------------------------------------------------------------------------
 def _chunks(l, n):
     """yield successive n-sized chunks from l."""
@@ -27,44 +28,35 @@ if [float(i) for i in pd.__version__.split(".")] < [1, 0, 0]:
         "esriFieldTypeGUID": str,
         "esriFieldTypeGlobalID": str,
         "esriFieldTypeXML": object,
+        "esriFieldTypeBigInteger": np.int64,
+        "esriFieldTypeTimeOnly": str,
+        "esriFieldTypeDateOnly": pd.datetime,
+        "esriFieldTypeTimestampOffset": str,
     }
 else:
     from datetime import datetime as _datetime
 
     _look_up_types = {
-        "esriFieldTypeSmallInteger": np.int32,
-        "esriFieldTypeInteger": np.int32,
-        "esriFieldTypeSingle": np.float64,
-        "esriFieldTypeDouble": np.float64,
-        "esriFieldTypeFloat": np.float64,
-        "esriFieldTypeString": str,
+        "esriFieldTypeSmallInteger": pd.Int32Dtype(),
+        "esriFieldTypeInteger": pd.Int32Dtype(),
+        "esriFieldTypeSingle": pd.Float64Dtype(),
+        "esriFieldTypeDouble": pd.Float64Dtype(),
+        "esriFieldTypeFloat": pd.Float64Dtype(),
+        "esriFieldTypeString": pd.StringDtype(),
         "esriFieldTypeDate": "<M8[us]",
-        "esriFieldTypeOID": np.int64,
+        "esriFieldTypeOID": pd.Int64Dtype(),
         "esriFieldTypeGeometry": object,
         "esriFieldTypeBlob": object,
         "esriFieldTypeRaster": object,
-        "esriFieldTypeGUID": str,
-        "esriFieldTypeGlobalID": str,
+        "esriFieldTypeGUID": pd.StringDtype(),
+        "esriFieldTypeGlobalID": pd.StringDtype(),
         "esriFieldTypeXML": object,
+        "esriFieldTypeBigInteger": pd.Int64Dtype(),  #  added 11.2
+        "esriFieldTypeTimeOnly": pd.StringDtype(),  #  added 11.2
+        "esriFieldTypeDateOnly": "<M8[us]",  #  added 11.2
+        "esriFieldTypeTimestampOffset": object,  #  added 11.2
     }
 
-# --------------------------------------------------------------------------
-_look_up_types_old = {
-    "esriFieldTypeBlob": object,
-    "esriFieldTypeDate": "<M8[us]",
-    "esriFieldTypeInteger": np.int32,
-    "esriFieldTypeSmallInteger": np.int32,
-    "esriFieldTypeDouble": float,
-    "esriFieldTypeFloat": float,
-    "esriFieldTypeSingle": float,
-    "esriFieldTypeString": str,
-    "esriFieldTypeGeometry": "O",
-    "esriFieldTypeOID": np.int64,
-    "esriFieldTypeGlobalID": str,
-    "esriFieldTypeRaster": "O",
-    "esriFieldTypeGUID": str,
-    "esriFieldTypeXML": "O",
-}
 
 # --------------------------------------------------------------------------
 def to_featureset(df):
@@ -107,12 +99,14 @@ def from_featureset(fset, sr=None):
 
         pandas_dtypes = {}
         for fld in fset.fields:
-            if "type" in fld:
-                pandas_dtypes[fld["name"]] = _look_up_types[fld["type"]]
-            elif "fieldType" in fld:
-                pandas_dtypes[fld["name"]] = _look_up_types[fld["fieldType"]]
-            else:
-                pandas_dtypes[fld["name"]] = "O"
+            if fld["name"].lower() != "shape":
+                if "type" in fld:
+                    pandas_dtypes[fld["name"]] = _look_up_types[fld["type"]]
+                elif "fieldType" in fld:
+                    pandas_dtypes[fld["name"]] = _look_up_types[fld["fieldType"]]
+                else:
+                    pandas_dtypes[fld["name"]] = "O"
+
         if sr is None:
             sr = {"wkid": 4326}
         for feat in fset.features:
@@ -131,11 +125,11 @@ def from_featureset(fset, sr=None):
 
         for fld in dt_fields:
             try:
-                df[fld] = pd.to_datetime(
-                    df[fld] / 1000, infer_datetime_format=True, unit="s"
-                )
+                df[fld] = pd.to_datetime(df[fld] / 1000, unit="s")
             except:
-                df[fld] = pd.to_datetime(df[fld], infer_datetime_format=True)
+                df[fld] = pd.to_datetime(
+                    df[fld],
+                )
         if gt and not "SHAPE" in df.columns:
             df["SHAPE"] = None
         if "SHAPE" in df.columns:
@@ -148,9 +142,11 @@ def from_featureset(fset, sr=None):
                     df.iat[i, df.columns.get_loc("SHAPE")] = None
         if pandas_dtypes:
             try:
-                return df.astype(pandas_dtypes)
-            except:
+                df = df.astype(pandas_dtypes)
+                df = df.convert_dtypes()
                 return df
+            except:
+                return df.convert_dtypes()
         return df
     else:
         return None

@@ -1,4 +1,6 @@
 import sys, os
+
+sys.path.insert(0, r"c:\SVN\geosaurus_issue_9708\src")
 import unittest
 from arcgis.auth import EsriAPIKeyAuth, EsriSession, EsriKerberosAuth
 
@@ -20,9 +22,9 @@ else:
 class TestMultiAuth(unittest.TestCase):
     def test_multi_auth(self):
         """tests using multiple authentication"""
-        auth1 = EsriAPIKeyAuth(api_key=API_KEY, referer="") + EsriKerberosAuth(
-            referer=""
-        )
+        auth1 = EsriAPIKeyAuth(
+            api_key=API_KEY, referer=""
+        ) + EsriKerberosAuth(referer="")
         auth1 += EsriAPIKeyAuth(api_key=API_KEY, referer="")
         auth3 = EsriAPIKeyAuth(api_key=API_KEY, referer="") + auth1
         assert auth1
@@ -30,9 +32,9 @@ class TestMultiAuth(unittest.TestCase):
 
     def test_multi_auth_and(self):
         """tests using multiple authentication"""
-        auth = EsriAPIKeyAuth(api_key=API_KEY, referer="") & EsriKerberosAuth(
-            referer=""
-        )
+        auth = EsriAPIKeyAuth(
+            api_key=API_KEY, referer=""
+        ) & EsriKerberosAuth(referer="")
         auth2 = EsriAPIKeyAuth(api_key=API_KEY, referer="") & auth
         assert auth
         assert auth2
@@ -67,9 +69,13 @@ class TestAPIKey(unittest.TestCase):
 
     def test_api_key_op(self):
         """Tests a web call using a API Key"""
-        auth = EsriAPIKeyAuth(api_key=API_KEY, auth=EsriKerberosAuth(referer=""))
+        auth = EsriAPIKeyAuth(
+            api_key=API_KEY, auth=EsriKerberosAuth(referer="")
+        )
         with EsriSession(auth=auth) as session:
-            resp = session.get(url=f"{SITE_URL}/sharing/rest/portals/self?f=json")
+            resp = session.get(
+                url=f"{SITE_URL}/sharing/rest/portals/self?f=json"
+            )
             assert resp.status_code == 200
             data = resp.json()
             assert "user" in data or "appInfo" in data

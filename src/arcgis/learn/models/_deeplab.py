@@ -116,7 +116,6 @@ class _DeepLabOverride(DeepLabV3):
             )  # backbone_features_channel 256
 
     def forward(self, x):
-
         if self.pointrend:
             result = self.modified_forward(x)
             if self.training:
@@ -131,7 +130,6 @@ class _DeepLabOverride(DeepLabV3):
                 return result["out"]
 
     def modified_forward(self, x):
-
         input_shape = x.shape[-2:]
         features = self.backbone(x)
         result = OrderedDict()
@@ -184,21 +182,20 @@ def _create_deeplab(
 class DeepLab(ArcGISModel):
     """
     Model architecture from https://arxiv.org/abs/1706.05587.
-    Creates a ``DeepLab`` Image Segmentation/ Pixel Classification model,
+    Creates a :class:`~arcgis.learn.DeepLab` Image Segmentation/ Pixel Classification model,
     based on https://github.com/pytorch/vision/tree/master/torchvision/models/segmentation.
 
     =====================   ===========================================
-    **Argument**            **Description**
+    **Parameter**            **Description**
     ---------------------   -------------------------------------------
-    data                    Required fastai Databunch. Returned data object from
-                            ``prepare_data`` function.
+    data                    Required fastai Databunch. Returned data object from function.
     ---------------------   -------------------------------------------
     backbone                Optional string. Backbone convolutional neural network
                             model used for feature extraction, which
                             is `resnet101` by default since it is pretrained in
                             torchvision.
                             Supported backbones: ResNet, DenseNet, VGG family and
-                            specified Timm models from
+                            specified Timm models(experimental support) from
                             :func:`~arcgis.learn.DeepLab.backbones`.
     ---------------------   -------------------------------------------
     pretrained_path         Optional string. Path where pre-trained model is
@@ -213,7 +210,7 @@ class DeepLab(ArcGISModel):
     **kwargs**
 
     =====================   ===========================================
-    **Argument**            **Description**
+    **Parameter**            **Description**
     ---------------------   -------------------------------------------
     class_balancing         Optional boolean. If True, it will balance the
                             cross-entropy loss inverse to the frequency
@@ -235,10 +232,11 @@ class DeepLab(ArcGISModel):
                             Default: 0
     ---------------------   -------------------------------------------
     dice_loss_average       Optional str.
-                            micro: Micro dice coefficient will be used for loss
-                            calculation.
-                            macro: Macro dice coefficient will be used for loss
-                            calculation.
+
+                            * micro: Micro dice coefficient will be used for loss calculation.
+
+                            * macro: Macro dice coefficient will be used for loss calculation.
+
                             A macro-average will compute the metric independently
                             for each class and then take the average (hence treating
                             all classes equally), whereas a micro-average will
@@ -258,7 +256,7 @@ class DeepLab(ArcGISModel):
                             at the cost of memory consumption. Default: False
     =====================   ===========================================
 
-    :return: ``DeepLab`` Object
+    :return: :class:`~arcgis.learn.DeepLab` Object
     """
 
     def __init__(
@@ -285,7 +283,7 @@ class DeepLab(ArcGISModel):
                 f"Enter only compatible backbones from {', '.join(self.supported_backbones)}"
             )
 
-        super().__init__(data, backbone, **kwargs)
+        super().__init__(data, backbone, pretrained_path=pretrained_path, **kwargs)
 
         self._pointrend = pointrend
 
@@ -447,21 +445,21 @@ class DeepLab(ArcGISModel):
     @classmethod
     def from_model(cls, emd_path, data=None):
         """
-        Creates a ``DeepLab`` semantic segmentation object from an Esri Model Definition (EMD) file.
+        Creates a :class:`~arcgis.learn.DeepLab` semantic segmentation object from an Esri Model Definition (EMD) file.
 
         =====================   ===========================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ---------------------   -------------------------------------------
         emd_path                Required string. Path to Deep Learning Package
                                 (DLPK) or Esri Model Definition(EMD) file.
         ---------------------   -------------------------------------------
         data                    Required fastai Databunch or None. Returned data
-                                object from ``prepare_data`` function or None for
+                                object from :meth:`~arcgis.learn.prepare_data`  function or None for
                                 inferencing.
 
         =====================   ===========================================
 
-        :return: `DeepLab` Object
+        :return: :class:`~arcgis.learn.DeepLab` Object
         """
 
         emd_path = _get_emd_path(emd_path)
@@ -491,6 +489,7 @@ class DeepLab(ArcGISModel):
             )
             empty_data.class_mapping = class_mapping
             empty_data.color_mapping = color_mapping
+            empty_data._is_empty = True
             empty_data = get_multispectral_data_params_from_emd(empty_data, emd)
             empty_data.emd_path = emd_path
             empty_data.emd = emd
@@ -623,7 +622,7 @@ class DeepLab(ArcGISModel):
         Displays the results of a trained model on a part of the validation set.
 
         =====================   ===========================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ---------------------   -------------------------------------------
         rows                    Optional int. Number of rows of results
                                 to be displayed.
@@ -648,7 +647,7 @@ class DeepLab(ArcGISModel):
         **kwargs**
 
         =====================   ===========================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ---------------------   -------------------------------------------
         rows                    Number of rows of data to be displayed, if
                                 batch size is smaller, then the rows will
@@ -667,12 +666,11 @@ class DeepLab(ArcGISModel):
             return fig
 
     def mIOU(self, mean=False, show_progress=True):
-
         """
         Computes mean IOU on the validation set for each class.
 
         =====================   ===========================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ---------------------   -------------------------------------------
         mean                    Optional bool. If False returns class-wise
                                 mean IOU, otherwise returns mean iou of all
@@ -715,7 +713,7 @@ class DeepLab(ArcGISModel):
         Computer per class precision, recall and f1-score on validation set.
 
         =====================   ===========================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ---------------------   -------------------------------------------
         self                    segmentation model object -> [PSPNetClassifier | UnetClassifier | DeepLab]
         ---------------------   -------------------------------------------

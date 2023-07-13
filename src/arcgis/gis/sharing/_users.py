@@ -29,7 +29,7 @@ class Invitation:
         deleted. This operation also creates a notification for the user
         indicating that the user's invitation was accepted.
 
-        :return: dict[str:str]
+        :return: Dict[str:str]
         """
         url = f"{self._url}/accept"
         res = self._gis._con.post(url, {"f": "json"})
@@ -44,7 +44,7 @@ class Invitation:
         they declined the invitation. The invited user is not added to the
         group.
 
-        :returns: dict[str:str]
+        :returns: Dict[str:str]
         """
         url = f"{self._url}/decline"
         res = self._gis._con.post(url, {"f": "json"})
@@ -68,7 +68,12 @@ class UserInvitationManager:
 
     @property
     def list(self) -> List[Invitation]:
-        """returns a list of all"""
+        """
+        returns a list of all invitations
+
+        :return: List of :class:`~arcgis.gis.sharing._users.Invitation` objects
+
+        """
         resp = self._gis._con.get(self._url, {"f": "json"})
         return [
             Invitation(self._url + f"/{invites['id']}", self._gis)

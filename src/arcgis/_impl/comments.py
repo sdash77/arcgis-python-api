@@ -7,6 +7,7 @@ from ..gis._impl._con import Connection
 from ..gis import GIS, Item
 from urllib.parse import unquote
 
+
 ########################################################################
 class Comment(dict):
     """
@@ -130,7 +131,7 @@ class Comment(dict):
 
         Parameters:
          :comment: updated comment text
-        Output:
+        :return:
          On successful update, the comment Id
          On unsuccessful update, JSON response message
         """

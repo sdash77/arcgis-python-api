@@ -9,6 +9,8 @@ import pandas as pd
 from ._base import BaseOpenData
 
 _PD_LESS_THAN1 = [int(v) for v in pd.__version__.split(".")] < [1, 0, 0]
+
+
 ###########################################################################
 class CSVLayer(BaseOpenData):
     r"""
@@ -16,18 +18,19 @@ class CSVLayer(BaseOpenData):
 
 
     ===============     ====================================================================
-    **Argument**        **Description**
+    **Parameter**        **Description**
     ---------------     --------------------------------------------------------------------
-    url_or_item         Required String or Item. The web address or `Item` to the CSV resource.
+    url_or_item         Required String or Item. The web address or :class:`~arcgis.gis.Item` to the CSV resource.
     ---------------     --------------------------------------------------------------------
-    gis                 Optional GIS. The GIS used to reference the service. The arcgis.env.active_gis is used if not specified.
+    gis                 Optional :class:`~arcgis.gis.GIS`. The GIS used to reference the service. The :attr:`~arcgis.env.active_gis` is used if not specified.
     ---------------     --------------------------------------------------------------------
     copyright           Optional String. Describes limitations and usage of the data.
     ---------------     --------------------------------------------------------------------
     delimiter           Optional String. The separator value. This can be the following:
-                        , (comma), ' ' (space), | (pipe), \\r (tab), or ; (semicolon).
+
+                            , (comma), ' ' (space), | (pipe), \\r (tab), or ; (semicolon).
     ---------------     --------------------------------------------------------------------
-    fields              Optional List. An array of dictionarys containing the field information.
+    fields              Optional List. An array of dictionaries containing the field information.
     ---------------     --------------------------------------------------------------------
     opacity             Optional Float.  This value can range between 1 and 0, where 0 is 100 percent transparent and 1 is completely opaque.
     ---------------     --------------------------------------------------------------------
@@ -48,6 +51,7 @@ class CSVLayer(BaseOpenData):
     _latitude = None
     _longitude = None
     _type = "CSV"
+
     # ----------------------------------------------------------------------
     def __init__(self, url_or_item, gis=None, **kwargs):
         """initializer"""
@@ -72,15 +76,15 @@ class CSVLayer(BaseOpenData):
     def __str__(self):
         if self._item:
             return f"<CSV @ {self._item.itemid}>"
-        return f"<CSV @ {self._url}>"
+        return f"< CSV @ {self._url} >"
 
     # ----------------------------------------------------------------------
     @property
     def latitude(self):
         """
         The latitude field name. If not specified, the class will look for
-        following field names in the CSV source: "lat", "latitude",
-        "y", "ycenter", "latitude83", "latdecdeg", "POINT-Y".
+        following field names in the CSV source:
+            "lat", "latitude", "y", "ycenter", "latitude83", "latdecdeg", "POINT-Y"
         """
         auto_lat = [
             "lat",
@@ -109,9 +113,8 @@ class CSVLayer(BaseOpenData):
     def longitude(self):
         """
         The longitude field name. If not specified, the `CSVLayer` will
-        look for following field names in the CSV source: "lon", "lng",
-        "long", "longitude", "x", "xcenter", "longitude83", "longdecdeg",
-        "POINT-X".
+        look for following field names in the CSV source:
+            "lon", "lng","long", "longitude", "x", "xcenter", "longitude83", "longdecdeg", "POINT-X"
         """
         auto_lat = [
             "lon",
@@ -144,8 +147,8 @@ class CSVLayer(BaseOpenData):
         Get/Set the Renderer of the CSV Layer
 
         :return:
-            ```InsensitiveDict```: A case-insensitive ``dict`` like object used to update and alter JSON
-            A varients of a case-less dictionary that allows for dot and bracket notation.
+            ``InsensitiveDict``: A case-insensitive ``dict`` like object used to update and alter JSON
+            A variant of a case-less dictionary that allows for dot and bracket notation.
 
         """
         from arcgis._impl.common._isd import InsensitiveDict
@@ -187,18 +190,18 @@ class CSVLayer(BaseOpenData):
         ===========   ==========================================
         **Values**    **Description**
         -----------   ------------------------------------------
-        ,             Comma
+        ,             comma
         -----------   ------------------------------------------
         " "           space
         -----------   ------------------------------------------
         ;             semicolon
         -----------   ------------------------------------------
-        |             pipe
+        `\|`          pipe
         -----------   ------------------------------------------
         `\r`          tab
         ===========   ==========================================
 
-        :return: string
+        :return: String
 
         """
         if self._delimiter is None:
@@ -234,7 +237,7 @@ class CSVLayer(BaseOpenData):
                     col_val = self._data[col].loc[idx]
                 except:
                     col_val = ""
-                if isinstance(col_val, (str, np.str)):
+                if isinstance(col_val, (str, str)):
                     fields.append({"name": col, "type": "string", "alias": col})
                 elif isinstance(
                     col_val,
@@ -247,7 +250,7 @@ class CSVLayer(BaseOpenData):
                     fields.append({"name": col, "type": "date", "alias": col})
                 elif isinstance(col_val, (np.int32, np.int16, np.int8)):
                     fields.append({"name": col, "type": "long", "alias": col})
-                elif isinstance(col_val, (int, np.int, np.int64)):
+                elif isinstance(col_val, (int, np.int64)):
                     fields.append({"name": col, "type": "integer", "alias": col})
                 elif isinstance(col_val, (float, np.float64)):
                     fields.append({"name": col, "type": "double", "alias": col})
@@ -304,7 +307,6 @@ class CSVLayer(BaseOpenData):
                 self._url,
                 sep=self.delimiter,
                 nrows=nrows,
-                infer_datetime_format=True,
                 parse_dates=True,
             )
         elif self._item:
@@ -316,7 +318,6 @@ class CSVLayer(BaseOpenData):
                 url,
                 sep=self.delimiter,
                 nrows=nrows,
-                infer_datetime_format=True,
                 parse_dates=True,
             )
         else:
@@ -328,6 +329,6 @@ class CSVLayer(BaseOpenData):
         """
         returns the CSV file as a DataFrame
 
-        :return: Pandas' DataFrame
+        :return: `Pandas DataFrame <https://pandas.pydata.org/docs/reference/api/pandas.DataFrame.html>`_
         """
         return self._df(False)

@@ -132,7 +132,6 @@ def _layer_input_gp(input_layer):
 
 
 def _feature_input(input_layer):
-
     input_param = input_layer
 
     input_layer_url = ""
@@ -307,18 +306,25 @@ def _analysis_job_results(gptool, task_url, job_info, job_id=None):
                     )
                 except:
                     param_result = gptool._con.get(result_url, params)
-
-                job_value = param_result.get("value")
-                result_values[key] = job_value
+                if isinstance(param_result, list):
+                    result_values[key] = [value.get("value") for value in param_result]
+                else:
+                    job_value = param_result.get("value")
+                    result_values[key] = job_value
         return result_values
     else:
         raise Exception("Unable to get analysis job results.")
 
 
 def _future_op(
-    gptool, task_url, job_info, job_id, param_db, return_values, return_messages
+    gptool,
+    task_url,
+    job_info,
+    job_id,
+    param_db,
+    return_values,
+    return_messages,
 ):
-
     job_info = _analysis_job_status(gptool, task_url, job_info)
     resp = _analysis_job_results(gptool, task_url, job_info, job_id)
 
@@ -348,7 +354,10 @@ def _future_op(
 
     num_returns = len(resp)
     if return_messages:
-        return _return_output(num_returns, output_dict, return_values), job_info
+        return (
+            _return_output(num_returns, output_dict, return_values),
+            job_info,
+        )
 
     return _return_output(num_returns, output_dict, return_values)
 
@@ -374,9 +383,13 @@ def _execute_gp_tool(
         and isinstance(gis._con, Connection)
     ):
         gis = gis._con
-    elif isinstance(gis, Connection):
+
+    if isinstance(gis, Connection):
         log = logging.getLogger()
         log.warning("Using Connection object over GIS object")
+        ngis = GIS(set_active=False)
+        ngis._con = gis
+        gis = ngis
 
     gp_params = {"f": "json"}
 
@@ -399,7 +412,9 @@ def _execute_gp_tool(
 
                 else:
                     try:
-                        from arcgis.features.geo._accessor import _is_geoenabled
+                        from arcgis.features.geo._accessor import (
+                            _is_geoenabled,
+                        )
                     except:
 
                         def _is_geoenabled(o):
@@ -417,7 +432,6 @@ def _execute_gp_tool(
                     elif isinstance(param_value, arcgis.gis.Layer):
                         gp_params[gp_param_name] = _layer_input_gp(param_value)
                     elif type(param_value) == str:
-
                         try:
                             klass = py_type
                             gp_params[gp_param_name] = klass.from_str(param_value)
@@ -430,7 +444,6 @@ def _execute_gp_tool(
                     gp_params[gp_param_name] = param_value.to_dict()
 
                 elif type(param_value) == str:
-
                     try:
                         klass = py_type
                         gp_params[gp_param_name] = klass.from_str(param_value)
@@ -516,7 +529,10 @@ def _execute_gp_tool(
 
         num_returns = len(resp)
         if return_messages:
-            return _return_output(num_returns, output_dict, return_values), job_info
+            return (
+                _return_output(num_returns, output_dict, return_values),
+                job_info,
+            )
 
         return _return_output(num_returns, output_dict, return_values)
 
@@ -546,7 +562,10 @@ def _execute_gp_tool(
 
         num_returns = len(resp["results"])
         if return_messages:
-            return _return_output(num_returns, output_dict, return_values), job_info
+            return (
+                _return_output(num_returns, output_dict, return_values),
+                job_info,
+            )
         return _return_output(num_returns, output_dict, return_values)
 
 

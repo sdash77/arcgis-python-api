@@ -4,6 +4,7 @@ Contains tools to manage a GIS' metadata properties
 from arcgis._impl.common._mixins import PropertyMap
 from .. import GIS
 
+
 ########################################################################
 class MetadataManager(object):
     """
@@ -14,6 +15,7 @@ class MetadataManager(object):
     _gis = None
     _portal = None
     _con = None
+
     # ----------------------------------------------------------------------
     def __init__(self, gis):
         """Constructor"""
@@ -23,11 +25,11 @@ class MetadataManager(object):
 
     # ----------------------------------------------------------------------
     def __str__(self):
-        return "<%s for %s>" % (type(self).__name__, self._gis._url)
+        return "< %s for %s >" % (type(self).__name__, self._gis._url)
 
     # ----------------------------------------------------------------------
     def __repr__(self):
-        return "<%s at %s>" % (type(self).__name__, self._gis._url)
+        return "< %s at %s >" % (type(self).__name__, self._gis._url)
 
     # ----------------------------------------------------------------------
     def enable(self, metadata_format: str = "arcgis"):
@@ -36,7 +38,7 @@ class MetadataManager(object):
         administrator to set the default metadata scheme.
 
         ===========================     ====================================================================
-        **Argument**                    **Description**
+        **Parameter**                    **Description**
         ---------------------------     --------------------------------------------------------------------
         metadata_format                 Required string. Sets the default metadata format. The allowed
                                         values are: inspire,iso19139-3.2,fgdc,iso19139,arcgis, or iso19115
@@ -79,7 +81,7 @@ class MetadataManager(object):
         properties.
 
         ===========================     ====================================================================
-        **Argument**                    **Description**
+        **Parameter**                    **Description**
         ---------------------------     --------------------------------------------------------------------
         metadata_format                 Required string. Sets the default metadata format. The allowed
                                         values are: inspire,iso19139-3.2,fgdc,iso19139,arcgis, or iso19115

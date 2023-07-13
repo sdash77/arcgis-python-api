@@ -530,16 +530,16 @@ def generate_service_areas(
     determine which residents are able to reach the store within three minutes and are thus more likely to shop there.
 
     =================================================     ========================================================================
-    **Argument**                                          **Description**
+    **Parameter**                                          **Description**
     -------------------------------------------------     ------------------------------------------------------------------------
-    facilities                                            Required FeatureSet. The facilities around which service areas are
+    facilities                                            Required :class:`~arcgis.features.FeatureSet` . The facilities around which service areas are
                                                           generated. You can load up to 1,000 facilities. The facilities feature set has an
                                                           associated attribute table. The fields in the attribute table are listed and
                                                           described below:
 
-                                                            * ``ObjectID``: The system-managed ID field.
-                                                            * ``Name``:  The name of the facility. If the name is not specified, a name is automatically
-                                                              generated at solve time.
+                                                          * ``ObjectID``: The system-managed ID field.
+                                                          * ``Name``:  The name of the facility. If the name is not specified, a name is automatically
+                                                            generated at solve time.
 
                                                           All fields from the input facilities are included in the output
                                                           polygons when the Polygons for Multiple Facilities parameter is set to Overlapping or Not
@@ -579,15 +579,15 @@ def generate_service_areas(
     travel_direction                                      Optional string. Specifies whether the direction of travel used to
                                                           generate the service area polygons is toward or away from the facilities.
 
-                                                            * ``Away From Facility`` - The service area is generated in the direction away from the facilities.
+                                                          * ``Away From Facility`` - The service area is generated in the direction away from the facilities.
 
-                                                            * ``Towards Facility`` - The service area is created in the direction towards the facilities.
+                                                          * ``Towards Facility`` - The service area is created in the direction towards the facilities.
 
-                                                              The direction of travel may change the shape of the polygons because impedances on opposite
-                                                              sides of streets may differ or one-way restrictions may exist, such as one-way streets. The
-                                                              direction you should choose depends on the nature of your service area analysis. The service
-                                                              area for a pizza delivery store, for example, should be created away from the facility,
-                                                              whereas the service area of a hospital should be created toward the facility.
+                                                          The direction of travel may change the shape of the polygons because impedances on opposite
+                                                          sides of streets may differ or one-way restrictions may exist, such as one-way streets. The
+                                                          direction you should choose depends on the nature of your service area analysis. The service
+                                                          area for a pizza delivery store, for example, should be created away from the facility,
+                                                          whereas the service area of a hospital should be created toward the facility.
 
                                                           Choice list: ['Away From Facility', 'Towards Facility']
     -------------------------------------------------     ------------------------------------------------------------------------
@@ -657,19 +657,19 @@ def generate_service_areas(
     -------------------------------------------------     ------------------------------------------------------------------------
     polygons_for_multiple_facilities                      Optional string.  Choose how service area polygons are generated when multiple facilities are present in the analysis.
 
-                                                            * ``Overlapping`` - Creates individual polygons for each facility. The polygons can overlap each other.
-                                                              This is the default value.
+                                                          * ``Overlapping`` - Creates individual polygons for each facility. The polygons can overlap each other.
+                                                            This is the default value.
 
-                                                            * ``Not Overlapping`` - Creates individual polygons such that a polygon from one facility cannot
-                                                              overlap polygons from other facilities; furthermore, any portion of the network can only be
-                                                              covered by the service area of the nearest facility.
-                                                            * ``Merge by Break Value`` - Creates and joins the polygons of different facilities that have the same
-                                                              break value.
+                                                          * ``Not Overlapping`` - Creates individual polygons such that a polygon from one facility cannot
+                                                            overlap polygons from other facilities; furthermore, any portion of the network can only be
+                                                            covered by the service area of the nearest facility.
+                                                          * ``Merge by Break Value`` - Creates and joins the polygons of different facilities that have the same
+                                                            break value.
 
-                                                            When using Overlapping or Not Overlapping, all fields from the input facilities are included in the
-                                                            output polygons, with the exception that values from the input ObjectID field are transferred to the
-                                                            FacilityOID field of the output polygons. The FacilityOID field is null when merging by break value,
-                                                            and the input fields are not included in the output.
+                                                          When using Overlapping or Not Overlapping, all fields from the input facilities are included in the
+                                                          output polygons, with the exception that values from the input ObjectID field are transferred to the
+                                                          FacilityOID field of the output polygons. The FacilityOID field is null when merging by break value,
+                                                          and the input fields are not included in the output.
 
                                                           Choice list: ['Overlapping', 'Not Overlapping', 'Merge by Break Value']
     -------------------------------------------------     ------------------------------------------------------------------------
@@ -677,15 +677,15 @@ def generate_service_areas(
                                                           polygons as disks or rings. This option is applicable only when multiple break
                                                           values are specified for the facilities.
 
-                                                            * ``Rings`` - The polygons representing larger breaks exclude the polygons of smaller breaks.
-                                                              This creates polygons going between consecutive breaks. Use this option if you want to
-                                                              find the area from one break to another. For instance, if you create 5- and 10-minute
-                                                              service areas, then the 10-minute service area polygon will exclude the area under the
-                                                              5-minute service area polygon. This is the default value.
+                                                          * ``Rings`` - The polygons representing larger breaks exclude the polygons of smaller breaks.
+                                                            This creates polygons going between consecutive breaks. Use this option if you want to
+                                                            find the area from one break to another. For instance, if you create 5- and 10-minute
+                                                            service areas, then the 10-minute service area polygon will exclude the area under the
+                                                            5-minute service area polygon. This is the default value.
 
-                                                            * ``Disks`` - Creates polygons going from the facility to the break. For instance, if you
-                                                              create 5- and 10-minute service areas, then the 10-minute service area polygon will
-                                                              include the area under the 5-minute service area polygon.
+                                                          * ``Disks`` - Creates polygons going from the facility to the break. For instance, if you
+                                                            create 5- and 10-minute service areas, then the 10-minute service area polygon will
+                                                            include the area under the 5-minute service area polygon.
 
                                                           Choice list: ['Rings', 'Disks']
     -------------------------------------------------     ------------------------------------------------------------------------
@@ -729,7 +729,7 @@ def generate_service_areas(
                                                           polygon boundaries. Simplifying a polygon reduces the number of vertices and tends
                                                           to reduce drawing times.
     -------------------------------------------------     ------------------------------------------------------------------------
-    point_barriers                                        Optional FeatureSet. Specify one or more points to act as temporary
+    point_barriers                                        Optional :class:`~arcgis.features.FeatureSet`  . Specify one or more points to act as temporary
                                                           restrictions or represent additional time or distance that may be required to travel on the
                                                           underlying streets. For example, a point barrier can be used to represent a fallen tree along a
                                                           street or time delay spent at a railroad crossing.
@@ -766,7 +766,7 @@ def generate_service_areas(
                                                             must be greater than or equal to zero, and its units are the same as those
                                                             specified in the Break Units parameter.
     -------------------------------------------------     ------------------------------------------------------------------------
-    line_barriers                                         Optional FeatureSet. Specify one or more lines that prohibit travel
+    line_barriers                                         Optional :class:`~arcgis.features.FeatureSet`  . Specify one or more lines that prohibit travel
                                                           anywhere the lines intersect the streets. For example, a parade or protest that blocks traffic
                                                           across several street segments can be modeled with a line barrier. A line barrier can also
                                                           quickly fence off several roads from being traversed, thereby channeling possible routes away
@@ -779,9 +779,10 @@ def generate_service_areas(
 
                                                           When specifying the line barriers, you can set a name property for each one by using the following
                                                           attribute:
-                                                             * ``Name``: The name of the barrier.
+
+                                                          * ``Name``: The name of the barrier.
     -------------------------------------------------     ------------------------------------------------------------------------
-    polygon_barriers                                      Optional FeatureSet. Specify polygons that either completely restrict travel or
+    polygon_barriers                                      Optional :class:`~arcgis.features.FeatureSet`  . Specify polygons that either completely restrict travel or
                                                           proportionately scale the time or distance required to travel on
                                                           the streets intersected by the polygons.
                                                           The service imposes a limit on the number of streets you
@@ -791,26 +792,27 @@ def generate_service_areas(
                                                           polygons should not exceed 2,000.
                                                           When specifying the polygon barriers, you can set properties for each one, such as its name or barrier type,
                                                           by using attributes. The polygon barriers can be specified with the following attributes:
-                                                            * ``Name``: The name of the barrier.
-                                                            * ``BarrierType``: Specifies whether the barrier restricts travel completely
-                                                              or scales the time or distance for traveling through it. The field
-                                                              value is specified as one of the following integers (use the numeric code, not the name in parentheses):
-                                                                * 0 (Restriction) - Prohibits traveling through any part of the barrier.
-                                                                  The barrier is referred to as a restriction polygon barrier since it
-                                                                  prohibits traveling on streets intersected by the barrier. One use
-                                                                  of this type of barrier is to model floods covering areas of the
-                                                                  street that make traveling on those streets impossible.
-                                                                * 1 (Scaled Cost) - Scales the time or distance required to travel the
-                                                                  underlying streets by a factor specified using the ScaledTimeFactor
-                                                                  or ScaledDistanceFactor fields. If the streets are partially
-                                                                  covered by the barrier, the travel time or distance is apportioned
-                                                                  and then scaled. For example, a factor 0.25 would mean that travel
-                                                                  on underlying streets is expected to be four times faster than
-                                                                  normal. A factor of 3.0 would mean it is expected to take three
-                                                                  times longer than normal to travel on underlying streets. This
-                                                                  barrier type is referred to as a scaled-cost polygon barrier. It
-                                                                  might be used to model storms that reduce travel speeds in specific
-                                                                  regions.
+
+                                                          * ``Name``: The name of the barrier.
+                                                          * ``BarrierType``: Specifies whether the barrier restricts travel completely or scales the time or distance for traveling through it. The field value is specified as one of the following integers (use the numeric code, not the name in parentheses):
+
+                                                            * 0 (Restriction) - Prohibits traveling through any part of the barrier.
+                                                              The barrier is referred to as a restriction polygon barrier since it
+                                                              prohibits traveling on streets intersected by the barrier. One use
+                                                              of this type of barrier is to model floods covering areas of the
+                                                              street that make traveling on those streets impossible.
+                                                            * 1 (Scaled Cost) - Scales the time or distance required to travel the
+                                                              underlying streets by a factor specified using the ScaledTimeFactor
+                                                              or ScaledDistanceFactor fields. If the streets are partially
+                                                              covered by the barrier, the travel time or distance is apportioned
+                                                              and then scaled. For example, a factor 0.25 would mean that travel
+                                                              on underlying streets is expected to be four times faster than
+                                                              normal. A factor of 3.0 would mean it is expected to take three
+                                                              times longer than normal to travel on underlying streets. This
+                                                              barrier type is referred to as a scaled-cost polygon barrier. It
+                                                              might be used to model storms that reduce travel speeds in specific
+                                                              regions.
+
                                                             * ``ScaledTimeFactor``: This is the factor by which the travel time of the streets
                                                               intersected by the barrier is multiplied. This field is applicable
                                                               only for scaled-cost barriers and only if the measurement units are time
@@ -1036,7 +1038,7 @@ def generate_service_areas(
                                                           'Truck with Trailers Restriction', 'Use Preferred Hazmat Routes', 'Use Preferred Truck Routes', 'Walking',
                                                           'Weight Restriction', 'Weight per Axle Restriction', 'Width Restriction']
     -------------------------------------------------     ------------------------------------------------------------------------
-    attribute_parameter_values                            Optional FeatureSet. Specify additional values required by some
+    attribute_parameter_values                            Optional :class:`~arcgis.features.FeatureSet`  . Specify additional values required by some
                                                           restrictions, such as the weight of a vehicle for Weight Restriction. You can also use the attribute
                                                           parameter to specify whether any restriction prohibits, avoids, or prefers travel on roads that use the
                                                           restriction. If the restriction is meant to avoid or prefer roads, you can further specify the degree
@@ -1047,92 +1049,75 @@ def generate_service_areas(
                                                           the Attribute Parameter Values parameter from a  feature class, the field names on the feature class must
                                                           match the fields as described below:
 
-                                                            * ``AttributeName``: Lists the name of the restriction.
+                                                          * ``AttributeName``: Lists the name of the restriction.
 
-                                                            * ``ParameterName``: Lists the name of the parameter associated with the
-                                                              restriction. A restriction can have one or more ParameterName field
-                                                              values based on its intended use.
+                                                          * ``ParameterName``: Lists the name of the parameter associated with the
+                                                            restriction. A restriction can have one or more ParameterName field
+                                                            values based on its intended use.
 
-                                                            * ``ParameterValue``: The value for ParameterName used by the tool
-                                                              when evaluating the restriction.
+                                                          * ``ParameterValue``: The value for ParameterName used by the tool
+                                                            when evaluating the restriction.
 
-                                                              Attribute Parameter Values is dependent on the Restrictions parameter. The ParameterValue field is
-                                                              applicable only if the restriction name is specified as the value for the Restrictions parameter.
+                                                            Attribute Parameter Values is dependent on the Restrictions parameter. The ParameterValue field is
+                                                            applicable only if the restriction name is specified as the value for the Restrictions parameter.
 
-                                                              In Attribute Parameter Values, each restriction (listed as AttributeName) has a ParameterName field
-                                                              value, Restriction Usage, that specifies whether the restriction prohibits, avoids, or prefers travel
-                                                              on the roads associated with the restriction and the degree to which the roads are avoided or
-                                                              preferred. The Restriction Usage ParameterName can be assigned any of the following string values or
-                                                              their equivalent numeric values listed within the parentheses:
+                                                            In Attribute Parameter Values, each restriction (listed as AttributeName) has a ParameterName field
+                                                            value, Restriction Usage, that specifies whether the restriction prohibits, avoids, or prefers travel
+                                                            on the roads associated with the restriction and the degree to which the roads are avoided or
+                                                            preferred. The Restriction Usage ParameterName can be assigned any of the following string values or
+                                                            their equivalent numeric values listed within the parentheses:
 
-                                                                PROHIBITED (-1) - Travel on the roads using the restriction is completely
-                                                                prohibited.
+                                                            *  PROHIBITED (-1) - Travel on the roads using the restriction is completely prohibited.
+                                                            *  AVOID_HIGH (5) - It is highly unlikely for the tool to include in the route the roads that are associated with the restriction.
+                                                            *  AVOID_MEDIUM (2) - It is unlikely for the tool to include in the route the roads that are associated with the restriction.
+                                                            *  AVOID_LOW (1.3) - It is somewhat unlikely for the tool to include in the route the roads that are associated with the restriction.
+                                                            *  PREFER_LOW (0.8) - It is somewhat likely for the tool to include in the route the roads that are associated with the restriction.
+                                                            *  PREFER_MEDIUM (0.5) - It is likely for the tool to include in the route the roads that are associated with the restriction.
+                                                            *  PREFER_HIGH (0.2) - It is highly likely for the tool to include in the route the roads that are associated with the restriction.
 
-                                                                AVOID_HIGH (5) - It
-                                                                is highly unlikely for the tool to include in the route the roads
-                                                                that are associated with the restriction.
-
-                                                                AVOID_MEDIUM (2) - It
-                                                                is unlikely for the tool to include in the route the roads that are
-                                                                associated with the restriction.
-
-                                                                AVOID_LOW (1.3) - It
-                                                                is somewhat unlikely for the tool to include in the route the roads
-                                                                that are associated with the restriction.
-
-                                                                PREFER_LOW (0.8) - It
-                                                                is somewhat likely for the tool to include in the route the roads
-                                                                that are associated with the restriction.
-
-                                                                PREFER_MEDIUM (0.5) - It is likely for the tool to include in the route the roads that
-                                                                are associated with the restriction.
-
-                                                                PREFER_HIGH (0.2) - It is highly likely for the tool to include in the route the roads
-                                                                that are associated with the restriction.
-
-                                                              In most cases, you can use the default value, PROHIBITED, for the Restriction Usage if the restriction
-                                                              is dependent on a vehicle-characteristic such as vehicle height. However, in some cases, the value for
-                                                              Restriction Usage depends on your routing preferences. For example, the Avoid Toll Roads restriction
-                                                              has the default value of AVOID_MEDIUM for the Restriction Usage parameter. This means that when the
-                                                              restriction is used, the tool will try to route around toll roads when it can. AVOID_MEDIUM also indicates
-                                                              how important it is to avoid toll roads when finding the best route; it has a medium priority. Choosing
-                                                              AVOID_LOW would put lower importance on avoiding tolls; choosing AVOID_HIGH instead would give it a higher
-                                                              importance and thus make it more acceptable for the service to generate longer routes to avoid tolls.
-                                                              Choosing PROHIBITED would entirely disallow travel on toll roads, making it impossible for a route to
-                                                              travel on any portion of a toll road. Keep in mind that avoiding or prohibiting toll roads, and thus
-                                                              avoiding toll payments, is the objective for some; in contrast, others prefer to drive on toll roads
-                                                              because avoiding traffic is more valuable to them than the money spent on tolls. In the latter case, you
-                                                              would choose PREFER_LOW, PREFER_MEDIUM, or PREFER_HIGH as the value for Restriction Usage. The higher the
-                                                              preference, the farther the tool will go out of its way to travel on the roads associated with the
-                                                              restriction.
+                                                            In most cases, you can use the default value, PROHIBITED, for the Restriction Usage if the restriction
+                                                            is dependent on a vehicle-characteristic such as vehicle height. However, in some cases, the value for
+                                                            Restriction Usage depends on your routing preferences. For example, the Avoid Toll Roads restriction
+                                                            has the default value of AVOID_MEDIUM for the Restriction Usage parameter. This means that when the
+                                                            restriction is used, the tool will try to route around toll roads when it can. AVOID_MEDIUM also indicates
+                                                            how important it is to avoid toll roads when finding the best route; it has a medium priority. Choosing
+                                                            AVOID_LOW would put lower importance on avoiding tolls; choosing AVOID_HIGH instead would give it a higher
+                                                            importance and thus make it more acceptable for the service to generate longer routes to avoid tolls.
+                                                            Choosing PROHIBITED would entirely disallow travel on toll roads, making it impossible for a route to
+                                                            travel on any portion of a toll road. Keep in mind that avoiding or prohibiting toll roads, and thus
+                                                            avoiding toll payments, is the objective for some; in contrast, others prefer to drive on toll roads
+                                                            because avoiding traffic is more valuable to them than the money spent on tolls. In the latter case, you
+                                                            would choose PREFER_LOW, PREFER_MEDIUM, or PREFER_HIGH as the value for Restriction Usage. The higher the
+                                                            preference, the farther the tool will go out of its way to travel on the roads associated with the
+                                                            restriction.
     -------------------------------------------------     ------------------------------------------------------------------------
     time_zone_for_time_of_day                             Optional string. Specifies the time zone or zones of the Time of Day
                                                           parameter.
 
-                                                            * ``Geographically Local``: The Time of Day parameter refers to the time zone or zones in which the facilities
-                                                              are located. Therefore, the start or end times of the service areas are staggered by time zone. Setting
-                                                              Time of Day to 9:00 a.m., choosing geographically local for Time Zone for Time of Day, and solving causes
-                                                              service areas to be generated for 9:00 a.m. Eastern Time for any facilities in the Eastern Time Zone,
-                                                              9:00 a.m. Central Time for facilities in the Central Time Zone, 9:00 a.m. Mountain Time for facilities in
-                                                              the Mountain Time Zone, and so on, for facilities in different time zones. If stores in a chain that span
-                                                              the U.S. open at 9:00 a.m. local time, this parameter value could be chosen to find market territories at
-                                                              opening time for all stores in one solve. First, the stores in the Eastern Time Zone open and a polygon is
-                                                              generated, then an hour later stores open in Central Time, and so on. Nine o'clock is always in local time
-                                                              but staggered in real time.
+                                                          * ``Geographically Local``: The Time of Day parameter refers to the time zone or zones in which the facilities
+                                                            are located. Therefore, the start or end times of the service areas are staggered by time zone. Setting
+                                                            Time of Day to 9:00 a.m., choosing geographically local for Time Zone for Time of Day, and solving causes
+                                                            service areas to be generated for 9:00 a.m. Eastern Time for any facilities in the Eastern Time Zone,
+                                                            9:00 a.m. Central Time for facilities in the Central Time Zone, 9:00 a.m. Mountain Time for facilities in
+                                                            the Mountain Time Zone, and so on, for facilities in different time zones. If stores in a chain that span
+                                                            the U.S. open at 9:00 a.m. local time, this parameter value could be chosen to find market territories at
+                                                            opening time for all stores in one solve. First, the stores in the Eastern Time Zone open and a polygon is
+                                                            generated, then an hour later stores open in Central Time, and so on. Nine o'clock is always in local time
+                                                            but staggered in real time.
 
-                                                            * ``UTC``: The Time of Day parameter refers to Coordinated Universal Time (UTC).
-                                                              Therefore, all facilities are reached or departed from simultaneously, regardless of the time zone each is
-                                                              in. Setting Time of Day to 2:00 p.m., choosing UTC, then solving causes service areas to be generated for
-                                                              9:00 a.m. Eastern Standard Time for any facilities in the Eastern Time Zone, 8:00 a.m. Central Standard
-                                                              Time for facilities in the Central Time Zone, 7:00 a.m. Mountain Standard Time for facilities in the
-                                                              Mountain Time Zone, and so on, for facilities in different time zones. The scenario above assumes standard
-                                                              time. During daylight saving time, the Eastern, Central, and Mountain Times would each be one hour ahead
-                                                              (that is, 10:00, 9:00, and 8:00 a.m., respectively). One of the cases in which the UTC option is useful is
-                                                              to visualize emergency-response coverage for a jurisdiction that is split into two time zones. The emergency
-                                                              vehicles are loaded as facilities. Time of Day is set to now in UTC. (You need to determine what  the current
-                                                              time and date are  in terms of UTC to correctly use this option.) Other properties are set and the analysis
-                                                              is solved. Even though a time-zone boundary divides the vehicles, the results show areas that can be reached
-                                                              given current traffic conditions. This same process  can be used for other times as well, not just for now.
+                                                          * ``UTC``: The Time of Day parameter refers to Coordinated Universal Time (UTC).
+                                                            Therefore, all facilities are reached or departed from simultaneously, regardless of the time zone each is
+                                                            in. Setting Time of Day to 2:00 p.m., choosing UTC, then solving causes service areas to be generated for
+                                                            9:00 a.m. Eastern Standard Time for any facilities in the Eastern Time Zone, 8:00 a.m. Central Standard
+                                                            Time for facilities in the Central Time Zone, 7:00 a.m. Mountain Standard Time for facilities in the
+                                                            Mountain Time Zone, and so on, for facilities in different time zones. The scenario above assumes standard
+                                                            time. During daylight saving time, the Eastern, Central, and Mountain Times would each be one hour ahead
+                                                            (that is, 10:00, 9:00, and 8:00 a.m., respectively). One of the cases in which the UTC option is useful is
+                                                            to visualize emergency-response coverage for a jurisdiction that is split into two time zones. The emergency
+                                                            vehicles are loaded as facilities. Time of Day is set to now in UTC. (You need to determine what  the current
+                                                            time and date are  in terms of UTC to correctly use this option.) Other properties are set and the analysis
+                                                            is solved. Even though a time-zone boundary divides the vehicles, the results show areas that can be reached
+                                                            given current traffic conditions. This same process  can be used for other times as well, not just for now.
 
                                                           Irrespective of the Time Zone for Time of Day setting, all facilities must be in the same time zone
                                                           when Time of Day has a nonnull value and Polygons for Multiple Facilities is set to create merged or
@@ -1213,28 +1198,28 @@ def generate_service_areas(
 
                                                           Choose from the following formats:
 
-                                                            * Feature Set - The output features are returned as feature classes and tables. This is the default.
-                                                            * JSON File - The output features are returned as a compressed file containing the
-                                                              JSON representation of the outputs. When this option is specified, the output is a single
-                                                              file (with a .zip extension) that contains one or more JSON files (with a .json extension)
-                                                              for each of the outputs created by the service.
-                                                            * GeoJSON File - The output features are returned as a compressed file containing the GeoJSON
-                                                              representation of the outputs. When this option is specified, the output is a single file
-                                                              (with a .zip extension) that contains one or more GeoJSON files (with a .geojson extension)
-                                                              for each of the outputs created by the service.
+                                                          * Feature Set - The output features are returned as feature classes and tables. This is the default.
+                                                          * JSON File - The output features are returned as a compressed file containing the
+                                                            JSON representation of the outputs. When this option is specified, the output is a single
+                                                            file (with a .zip extension) that contains one or more JSON files (with a .json extension)
+                                                            for each of the outputs created by the service.
+                                                          * GeoJSON File - The output features are returned as a compressed file containing the GeoJSON
+                                                            representation of the outputs. When this option is specified, the output is a single file
+                                                            (with a .zip extension) that contains one or more GeoJSON files (with a .geojson extension)
+                                                            for each of the outputs created by the service.
     -------------------------------------------------     ------------------------------------------------------------------------
-    gis                                                   Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
+    gis                                                   Optional, the :class:`~arcgis.gis.GIS` on which this tool runs. If not specified, the active GIS is used.
     -------------------------------------------------     ------------------------------------------------------------------------
-    future                                                Optional boolean. If True, a GPJob is returned instead of results.
-                                                          The GPJob can be queried on the status of the execution.
+    future                                                Optional boolean. If True, a future object will be returned and the process
+                                                          will not wait for the task to complete. The default is False, which means wait for results.
     =================================================     ========================================================================
 
-    : returns: the following as a named tuple:
+    :return: the following as a named tuple:
 
-        * service_areas - Service Areas as a FeatureSet
-        * solve_succeeded - Solve Succeeded as a boolean
+    * service_areas - Service Areas as a FeatureSet
+    * solve_succeeded - Solve Succeeded as a boolean
 
-    Click `GenerateServiceAreas`_ for additional help.
+    Click `GenerateServiceAreas <https://developers.arcgis.com/rest/network/api-reference/service-area-asynchronous-service.htm>`_ for additional help.
 
     .. code-block:: python
 

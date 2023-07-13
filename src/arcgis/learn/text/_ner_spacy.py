@@ -29,10 +29,10 @@ class _SpacyEntityRecognizer(ArcGISModel):
     Based on Spacy's `EntityRecognizer <https://spacy.io/api/entityrecognizer>`_
 
     =====================   ===========================================
-    **Argument**            **Description**
+    **Parameter**            **Description**
     ---------------------   -------------------------------------------
     data                    Requires data object returned from
-                            ``prepare_data`` function.
+                            :meth:`~arcgis.learn.prepare_data`  function.
     ---------------------   -------------------------------------------
     lang                    Optional string. Language-specific code,
                             named according to the language’s `ISO code <https://en.wikipedia.org/wiki/List_of_ISO_639-1_codes>`_
@@ -88,7 +88,6 @@ class _SpacyEntityRecognizer(ArcGISModel):
             self.load(pretrained_path)
 
     def lr_find(self, allow_plot=True):
-
         """
         Runs the Learning Rate Finder, and displays the graph of it's output.
         Helps in choosing the optimum learning rate for training the model.
@@ -176,12 +175,11 @@ class _SpacyEntityRecognizer(ArcGISModel):
         checkpoint=True,
         **kwargs,
     ):
-
         """
         Trains an EntityRecognition model for 'n' number of epochs..
 
         =====================   ===========================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ---------------------   -------------------------------------------
         epoch                   Optional integer. Number of times the model will train
                                 on the complete dataset.
@@ -411,7 +409,7 @@ class _SpacyEntityRecognizer(ArcGISModel):
         specified learning rates.
 
         =====================   ===========================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ---------------------   -------------------------------------------
         name_or_path            Required string. Name of the model to save. It
                                 stores it at the pre-defined location. If path
@@ -423,7 +421,6 @@ class _SpacyEntityRecognizer(ArcGISModel):
         return self._save(name_or_path, **kwargs)
 
     def _save_model_characteristics(self, model_characteristics_dir):
-
         if not os.path.exists(model_characteristics_dir):
             os.makedirs(model_characteristics_dir)
 
@@ -509,7 +506,7 @@ class _SpacyEntityRecognizer(ArcGISModel):
         Loads a saved EntityRecognition model from disk.
 
         =====================   ===========================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ---------------------   -------------------------------------------
         name_or_path            Required string. Path of the emd file.
         =====================   ===========================================
@@ -540,26 +537,25 @@ class _SpacyEntityRecognizer(ArcGISModel):
         if emd.get("metrics"):
             self.recorder.metrics = json.loads(emd.get("metrics"))
         self.saved_model_dir = deepcopy(self.model_dir)
-        print(self.model)
 
     @classmethod
     def from_model(cls, emd_path, data=None):
         """
-        Creates an EntityRecognizer from an Esri Model Definition (EMD) file.
+        Creates an :class:`~arcgis.learn.text.EntityRecognizer` from an Esri Model Definition (EMD) file.
 
         =====================   ===========================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ---------------------   -------------------------------------------
         emd_path                Required string. Path to Esri Model Definition
                                 file.
         ---------------------   -------------------------------------------
         data                    Required DatabunchNER object or None. Returned data
-                                object from `prepare_data` function or None for
+                                object from :meth:`~arcgis.learn.prepare_data` function or None for
                                 inferencing.
 
         =====================   ===========================================
 
-        :return: `EntityRecognizer` Object
+        :return: :class:`~arcgis.learn.text.EntityRecognizer` Object
         """
         emd_path = Path(emd_path)
         ner = cls(data=data)
@@ -597,7 +593,7 @@ class _SpacyEntityRecognizer(ArcGISModel):
         )  # creating an empty processed dataframe
         for i, adds in unprocessed_df[
             address_tag
-        ].iteritems():  # duplicating rows with multiple addresses to be one row per address
+        ].items():  # duplicating rows with multiple addresses to be one row per address
             if len(adds) > 0:  # adding data for address documents
                 for j, add in enumerate(adds):
                     curr_index = len(processed_df)
@@ -609,7 +605,7 @@ class _SpacyEntityRecognizer(ArcGISModel):
                 processed_df.loc[curr_index][address_tag] = ""
         drop_ids = []
 
-        for i, add in processed_df[address_tag].iteritems():
+        for i, add in processed_df[address_tag].items():
             if len(add.split(" ")) < 2:
                 drop_ids.append(i)
         del unprocessed_df
@@ -653,13 +649,13 @@ class _SpacyEntityRecognizer(ArcGISModel):
         """
         Extracts the entities from [documents in the mentioned path or text_list].
 
-        Field defined as 'address_tag' in `prepare_data()` function's class mapping
+        Field defined as 'address_tag' in :meth:`~arcgis.learn.prepare_data`  function's class mapping
         attribute will be treated as a location. In cases where trained model extracts
         multiple locations from a single document, that document will be replicated
         for each location in the resulting dataframe.
 
         =====================   ===========================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ---------------------   -------------------------------------------
         text_list               Required string(path) or list(documents).
                                 List of documents for entity extraction OR
@@ -679,8 +675,6 @@ class _SpacyEntityRecognizer(ArcGISModel):
         """
 
         if self._trained:
-            df = pd.DataFrame(columns=["TEXT", "Filename"] + self.entities)
-
             if isinstance(text_list, list):
                 item_list = pd.Series(text_list)
 
@@ -719,11 +713,8 @@ class _SpacyEntityRecognizer(ArcGISModel):
             #     return logging.warning('Model\'s address tag does not match with any field in your data, one of the below steps could resolve your issue:\n\
             #         1. Set address tag to the address field in your data [your_model._address_tag=\'your_address_field\']\n\
             #         2. If your data does not have any address field set _has_address=False [your_model._has_address=False]')
-
-            for i, item in progress_bar(
-                list(item_list.iteritems()), display=show_progress
-            ):
-                df.loc[i] = None
+            data_list = []
+            for i, item in progress_bar(list(item_list.items()), display=show_progress):
                 doc = self._extract_entities_text(
                     item
                 )  # predicting entities using entity_extractor model
@@ -735,15 +726,15 @@ class _SpacyEntityRecognizer(ArcGISModel):
                     else:
                         tmp_ents[ent.label_].extend([ent.text])
 
-                df.loc[i]["TEXT"] = text
+                tmp_ents["TEXT"] = text
                 if isinstance(i, Iterable):  # For test documents
-                    df.loc[i]["Filename"] = i
+                    tmp_ents["Filename"] = i
                 else:  # for show_results()
-                    df.loc[i]["Filename"] = "Example_" + str(i)
+                    tmp_ents["Filename"] = "Example_" + str(i)
 
-                for label in tmp_ents.keys():
-                    df.loc[i][label] = tmp_ents[label]
+                data_list.append(tmp_ents)
 
+            df = pd.DataFrame(data_list, columns=["TEXT", "Filename"] + self.entities)
             df.fillna("", inplace=True)
             if self._has_address:
                 df = self._post_process_address_df(
@@ -762,7 +753,7 @@ class _SpacyEntityRecognizer(ArcGISModel):
         Runs entity extraction on a random batch from the mentioned ds_type.
 
         =====================   ===========================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ---------------------   -------------------------------------------
         ds_type                 Optional string, defaults to valid.
         =====================   ===========================================
@@ -817,9 +808,7 @@ class _SpacyEntityRecognizer(ArcGISModel):
             return logging.warning("This model has not been trained")
 
     def metrics_per_label(self):
-
         if self._trained:  # for saving old(before metrics were implemented) models.
-
             if not len(self.recorder.metrics["metrics_per_label"]):
                 return None
 
@@ -837,7 +826,7 @@ class _SpacyEntityRecognizer(ArcGISModel):
         Plot training and validation losses.
 
         =====================   ===========================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ---------------------   -------------------------------------------
         show                    Optional bool. Defaults to True
                                 If set to False, figure will not be plotted
@@ -845,7 +834,7 @@ class _SpacyEntityRecognizer(ArcGISModel):
                                 will plot the figure and return nothing.
         =====================   ===========================================
 
-        :return: matplotlib.figure.Figure
+        :return: `matplotlib.figure.Figure <https://matplotlib.org/stable/api/figure_api.html#matplotlib.figure.Figure>`_
         """
         self._check_requisites()
 

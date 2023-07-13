@@ -1,12 +1,13 @@
+from __future__ import annotations
 import os
 from arcgis.gis import GIS
 from arcgis._impl.common._mixins import PropertyMap
 
 
+########################################################################
 class SiteManager(object):
     """
     Provides the ability to update and restore notebook sites.
-
     """
 
     _nb = None
@@ -39,11 +40,11 @@ class SiteManager(object):
 
     # ----------------------------------------------------------------------
     def __str__(self):
-        return "<SiteManager @ {url}>".format(url=self._url)
+        return "< SiteManager @ {url} >".format(url=self._url)
 
     # ----------------------------------------------------------------------
     def __repr__(self):
-        return "<SiteManager @ {url}>".format(url=self._url)
+        return "< SiteManager @ {url} >".format(url=self._url)
 
     # ----------------------------------------------------------------------
     @property
@@ -74,9 +75,9 @@ class SiteManager(object):
         If desired, you can create your own file system backups for these items.
 
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
-        location               Require String. The folder to save the site to.
+        location               Required String. The folder to save the site to.
         ==================     ====================================================================
 
         :return: string
@@ -104,9 +105,9 @@ class SiteManager(object):
         operation completes, as a report will be delivered to the page.
 
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
-        location               Require String. Path to the backup site file.
+        location               Required String. Path to the backup site file.
         ==================     ====================================================================
 
         :return: Boolean

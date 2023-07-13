@@ -69,7 +69,7 @@ def prepare_data_future(
     -For entity extraction from text, use IOB, BILUO or ner_json formats.
 
     =====================   ===========================================
-    **Argument**            **Description**
+    **Parameter**            **Description**
     ---------------------   -------------------------------------------
     path                    Required string. Path to data directory.
     ---------------------   -------------------------------------------
@@ -103,7 +103,7 @@ def prepare_data_future(
                             to `False` no transformation will take place and
                             `chip_size` parameter will also not take effect.
                             If the dataset_type is 'PointCloud', use
-                            `Transform3d` class from `arcgis.learn`.
+                            :class:`~arcgis.learn.Transform3d` .
     ---------------------   -------------------------------------------
     collate_fn              Optional function. Passed to PyTorch to collate data
                             into batches(usually default works).
@@ -111,7 +111,7 @@ def prepare_data_future(
     seed                    Optional integer. Random seed for reproducible
                             train-validation split.
     ---------------------   -------------------------------------------
-    dataset_type            Optional string. `prepare_data` function will infer
+    dataset_type            Optional string. :meth:`~arcgis.learn.prepare_data`  function will infer
                             the `dataset_type` on its own if it contains a
                             map.txt file. If the path does not contain the
                             map.txt file pass either of 'PASCAL_VOC_rectangles',
@@ -125,7 +125,7 @@ def prepare_data_future(
     **Keyword Arguments**
 
     =====================   ===========================================
-    **Argument**            **Description**
+    **Parameter**            **Description**
     ---------------------   -------------------------------------------
     imagery_type            Optional string. Type of imagery used to export
                             the training data, valid values are:

@@ -2,13 +2,23 @@
 Mapping Holds the Plot function for creating a FeatureCollection JSON plus the render options
 """
 import json
+from typing import Optional, Union
 import pandas as pd
 import arcgis
-from arcgis.mapping.renderer import generate_renderer
+from arcgis.mapping.renderer import (
+    generate_classbreaks,
+    generate_heatmap,
+    generate_simple,
+    generate_unique,
+)
 from arcgis.mapping.symbol import create_symbol, display_colormaps, show_styles
-
-from arcgis.features import FeatureCollection
-from arcgis.features import FeatureSet
+from arcgis.mapping.renderer import (
+    generate_renderer,
+    generate_classbreaks,
+    generate_heatmap,
+    generate_simple,
+    generate_unique,
+)
 from arcgis.widgets import MapView
 
 CLASSIFICATIONS = {
@@ -41,14 +51,14 @@ RENDERER_TYPES = {
 
 def plot(
     df,
-    map_widget=None,
-    name=None,
-    renderer_type=None,
-    symbol_type=None,
-    symbol_style=None,
-    col=None,
-    colors="jet",
-    alpha=1,
+    map_widget: Optional[Union[arcgis.mapping.WebMap, MapView]] = None,
+    name: Optional[str] = None,
+    renderer_type: Optional[str] = None,
+    symbol_type: Optional[str] = None,
+    symbol_style: Optional[str] = None,
+    col: Optional[Union[str, list]] = None,
+    colors: Optional[Union[str, list, object]] = "jet",
+    alpha: float = 1,
     **kwargs,
 ):
     """
@@ -61,17 +71,15 @@ def plot(
     ======================  =========================================================
     **Explicit Argument**   **Description**
     ----------------------  ---------------------------------------------------------
-    df                      required Spatially Enabled DataFrame or GeoSeries. This is the data
+    df                      Required Spatially Enabled DataFrame or GeoSeries. This is the data
                             to map.
     ----------------------  ---------------------------------------------------------
-    map_widget              optional WebMap object. This is the map to display the
+    map_widget              Optional WebMap object. This is the map to display the
                             data on.
     ----------------------  ---------------------------------------------------------
-    colors                  optional string/dict.  Color mapping.  For simple renderer,
-                            just provide a string.  For more robust renderers like
-                            unique renderer, a dictionary can be given.
+    name                    Optional string. The name to assign as a title of the map widget.
     ----------------------  ---------------------------------------------------------
-    renderer_type           optional string.  Determines the type of renderer to use
+    renderer_type           Optional string.  Determines the type of renderer to use
                             for the provided dataset. The default is 's' which is for
                             simple renderers.
 
@@ -86,11 +94,11 @@ def plot(
                                     visualization that emphasizes areas of higher
                                     density or weighted values.
     ----------------------  ---------------------------------------------------------
-    symbol_type             optional string. This is the type of symbol the user
+    symbol_type             Optional string. This is the type of symbol the user
                             needs to create.  Valid inputs are: simple, picture, text,
                             or carto.  The default is simple.
     ----------------------  ---------------------------------------------------------
-    symbol_type             optional string. This is the symbology used by the
+    symbol_style            Optional string. This is the symbology used by the
                             geometry.  For example 's' for a Line geometry is a solid
                             line. And '-' is a dash line.
 
@@ -130,15 +138,16 @@ def plot(
                              + '+' - Cross
 
     ----------------------  ---------------------------------------------------------
-    col                     optional string/list. Field or fields used for heatmap,
+    col                     Optional string/list. Field or fields used for heatmap,
                             class breaks, or unique renderers.
     ----------------------  ---------------------------------------------------------
-    colors                  optional string. The color map to draw from in order to
-                            visualize the data.  The default cmap is 'jet'. To get a
-                            visual representation of the allowed color maps,use
-                            the **display_colormaps** method.
+    colors                  Optional string. The colormap, RGB array, or list of
+                            either that determines the symbol color(s) for the data.
+                            The default cmap is 'jet'. To get a visual representation
+                            of the allowed color maps, use the **display_colormaps**
+                            method.
     ----------------------  ---------------------------------------------------------
-    alpha                   optional float.  This is a value between 0 and 1 with 1
+    alpha                   Optional float.  This is a value between 0 and 1 with 1
                             being the default value.  The alpha sets the transparancy
                             of the renderer when applicable.
     ======================  =========================================================
@@ -204,13 +213,12 @@ def plot(
         return
     elif renderer_type in [None, "s"]:
         renderer_type = "s"  # simple (default)
-        r = generate_renderer(
+        r = generate_simple(
             geometry_type=gt[0].lower(),
             sdf_or_series=df,
             label=name,
             symbol_type=symbol_type,
             symbol_style=symbol_style,
-            render_type=renderer_type,
             colors=colors,
             alpha=alpha,
             **kwargs,
@@ -230,44 +238,50 @@ def plot(
             for c in col:
                 kwargs["field%s" % idx] = c
                 idx += 1
+            r = generate_unique(
+                geometry_type=kwargs.pop("geometry_type", gt[0].lower()),
+                sdf_or_series=df,
+                symbol_type=symbol_type,
+                symbol_style=symbol_style,
+                colors=colors,
+                alpha=alpha,
+                **kwargs,
+            )
         elif renderer_type == "c":
             kwargs["field"] = col[0]
-        r = generate_renderer(
-            geometry_type=kwargs.pop("geometry_type", gt[0].lower()),
-            sdf_or_series=df,
-            label=name,
-            symbol_type=symbol_type,
-            symbol_style=symbol_style,
-            render_type=renderer_type,
-            colors=colors,
-            alpha=alpha,
-            **kwargs,
-        )
+            r = generate_classbreaks(
+                geometry_type=kwargs.pop("geometry_type", gt[0].lower()),
+                sdf_or_series=df,
+                symbol_type=symbol_type,
+                symbol_style=symbol_style,
+                colors=colors,
+                alpha=alpha,
+                **kwargs,
+            )
         fc.layer["layerDefinition"]["drawingInfo"]["renderer"] = r
     elif renderer_type in ["u", "u-a"]:
-        r = generate_renderer(
+        r = generate_unique(
             geometry_type=kwargs.pop("geometry_type", gt[0].lower()),
             sdf_or_series=df,
-            label=name,
             symbol_type=symbol_type,
             symbol_style=symbol_style,
-            render_type=renderer_type,
             colors=colors,
             alpha=alpha,
             **kwargs,
         )
         fc.layer["layerDefinition"]["drawingInfo"]["renderer"] = r
     elif renderer_type == "h":
-        r = generate_renderer(
-            geometry_type=kwargs.pop("geometry_type", gt[0].lower()),
+        r = generate_heatmap(
             sdf_or_series=df,
-            label=name,
-            symbol_type=symbol_type,
-            symbol_style=symbol_style,
-            render_type=renderer_type,
             colors=colors,
             alpha=alpha,
-            **kwargs,
+            blur_radius=kwargs.pop("blur_radius", 10),
+            field=kwargs.pop("field", None),
+            max_intensity=kwargs.pop("max_intensity", 10),
+            min_intensity=kwargs.pop("min_intensity", 0),
+            ratio=kwargs.pop("ratio", 0.01),
+            stops=kwargs.pop("stops", 3),
+            show_none=kwargs.pop("show_none", False),
         )
         fc.layer["layerDefinition"]["drawingInfo"]["renderer"] = r
     elif renderer_type == "str":

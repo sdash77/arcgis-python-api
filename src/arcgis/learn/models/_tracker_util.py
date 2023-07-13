@@ -23,7 +23,7 @@ class Track:
     Creates a Track object, used to maintain the state of a track.
 
     =====================   ===========================================
-    **Argument**            **Description**
+    **Parameter**            **Description**
     ---------------------   -------------------------------------------
     id                      Required int. ID for each track initialized
     ---------------------   -------------------------------------------
@@ -34,7 +34,7 @@ class Track:
     mask                    Required numpy array. Mask for the tack
     =====================   ===========================================
 
-    :return: `Track` Object
+    :return: :class:`~arcgis.learn.Track` Object
     """
 
     def __init__(self, id, label, bbox, mask):

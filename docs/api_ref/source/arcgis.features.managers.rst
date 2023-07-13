@@ -4,7 +4,7 @@ arcgis.features.managers module
 .. automodule:: arcgis.features.managers
 
 AttachmentManager
---------------
+-----------------
 .. autoclass:: arcgis.features.managers.AttachmentManager
     :members:
     :undoc-members:
@@ -16,14 +16,14 @@ SyncManager
     :undoc-members:
 
 FeatureLayerCollectionManager
---------------
+-----------------------------
 .. autoclass:: arcgis.features.managers.FeatureLayerCollectionManager
     :inherited-members:
     :members:
     :undoc-members:
 
 FeatureLayerManager
---------------
+-------------------
 .. autoclass:: arcgis.features.managers.FeatureLayerManager
     :inherited-members:
     :members:
@@ -44,28 +44,56 @@ Version
     :undoc-members:
 
 ParcelFabricManager
---------------
+-------------------
 .. autoclass:: arcgis.features._parcel.ParcelFabricManager
+    :inherited-members:
+    :members:
+    :undoc-members:
+    
+TopographicProductionManager
+----------------------------
+.. autoclass:: arcgis.features._topographic.TopographicProductionManager
+    :inherited-members:
+    :members:
+    :undoc-members:    
+
+TopographicProductionJobManager
+-------------------------------
+.. autoclass:: arcgis.features._topographic.TopographicProductionJobManager
+    :inherited-members:
+    :members:
+    :undoc-members:
+
+TraceConfiguration
+-------------------
+.. autoclass:: arcgis.features._trace_configuration.TraceConfiguration
+    :inherited-members:
+    :members:
+    :undoc-members:
+    
+TraceNetworkManager
+-------------------
+.. autoclass:: arcgis.features._trace.TraceNetworkManager
     :inherited-members:
     :members:
     :undoc-members:
 
 UtilityNetworkManager
---------------
+---------------------
 .. autoclass:: arcgis.features._utility.UtilityNetworkManager
     :inherited-members:
     :members:
     :undoc-members:
     
 ValidationManager
---------------
+-----------------
 .. autoclass:: arcgis.features._validation.ValidationManager
     :inherited-members:
     :members:
     :undoc-members:
 
 WebHookServiceManager
---------------
+---------------------
 .. autoclass:: arcgis.features.managers.WebHookServiceManager
     :inherited-members:
     :members:
@@ -74,6 +102,34 @@ WebHookServiceManager
 WebHook
 --------------
 .. autoclass:: arcgis.features.managers.WebHook
+    :inherited-members:
+    :members:
+    :undoc-members:
+
+WebHookEvents
+--------------
+.. autoclass:: arcgis.features.managers.WebHookEvents
+    :inherited-members:
+    :members:
+    :undoc-members:
+
+WebHookScheduleInfo
+-------------------
+.. autoclass:: arcgis.features.managers.WebHookScheduleInfo
+    :inherited-members:
+    :members:
+    :undoc-members:
+    
+NetworkDiagramManager
+---------------------
+.. autoclass:: arcgis.features._network_diagram.NetworkDiagramManager
+    :inherited-members:
+    :members:
+    :undoc-members:
+    
+Diagram
+---------------------
+.. autoclass:: arcgis.features._network_diagram.Diagram
     :inherited-members:
     :members:
     :undoc-members:

@@ -45,10 +45,10 @@ class CycleGAN(ArcGISModel):
     Creates a model object which generates images of type A from type B or type B from type A.
 
     =====================   ===========================================
-    **Argument**            **Description**
+    **Parameter**            **Description**
     ---------------------   -------------------------------------------
     data                    Required fastai Databunch. Returned data object from
-                            `prepare_data` function.
+                            :meth:`~arcgis.learn.prepare_data`  function.
     ---------------------   -------------------------------------------
     pretrained_path         Optional string. Path where pre-trained model is
                             saved.
@@ -60,7 +60,7 @@ class CycleGAN(ArcGISModel):
                             else it will use Binary Cross Entropy.
     =====================   ===========================================
 
-    :return: `CycleGAN` Object
+    :return: :class:`~arcgis.learn.CycleGAN` Object
     """
 
     def __init__(
@@ -102,20 +102,20 @@ class CycleGAN(ArcGISModel):
     @classmethod
     def from_model(cls, emd_path, data=None):
         """
-        Creates a CycleGAN object from an Esri Model Definition (EMD) file.
+        Creates a :class:`~arcgis.learn.CycleGAN` object from an Esri Model Definition (EMD) file.
 
         =====================   ===========================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ---------------------   -------------------------------------------
         data                    Required fastai Databunch or None. Returned data
-                                object from `prepare_data` function or None for
+                                object from :meth:`~arcgis.learn.prepare_data`  function or None for
                                 inferencing.
         ---------------------   -------------------------------------------
         emd_path                Required string. Path to Deep Learning Package
                                 (DLPK) or Esri Model Definition(EMD) file.
         =====================   ===========================================
 
-        :return: `CycleGAN` Object
+        :return: :class:`~arcgis.learn.CycleGAN` Object
         """
 
         if not HAS_FASTAI:
@@ -206,13 +206,13 @@ class CycleGAN(ArcGISModel):
         Displays the results of a trained model on a part of the validation set.
 
         =====================   ===========================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ---------------------   -------------------------------------------
         rows                    Optional int. Number of rows of results
                                 to be displayed.
         =====================   ===========================================
 
-         **kwargs**
+        **kwargs**
 
         =====================   ===========================================
         rgb_bands               Optional list of integers (band numbers)
@@ -233,7 +233,7 @@ class CycleGAN(ArcGISModel):
         Predicts and display the image.
 
         =====================   ===========================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ---------------------   -------------------------------------------
         img_path                Required path of an image.
         ---------------------   -------------------------------------------

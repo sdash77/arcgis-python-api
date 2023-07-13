@@ -29,11 +29,11 @@ except Exception as e:
 
 class TextGenerator(InferenceOnlyModel):
     """
-    Creates a `TextGenerator` Object.
+    Creates a :class:`~arcgis.learn.text.TextGenerator` Object.
     Based on the Hugging Face transformers library
 
     =====================   ===========================================
-    **Argument**            **Description**
+    **Parameter**            **Description**
     ---------------------   -------------------------------------------
     backbone                Optional string. Specifying the HuggingFace
                             transformer model name which will be used to
@@ -47,7 +47,7 @@ class TextGenerator(InferenceOnlyModel):
     **kwargs**
 
     =====================   ===========================================
-    **Argument**            **Description**
+    **Parameter**            **Description**
     ---------------------   -------------------------------------------
     pretrained_path         Option str. Path to a directory, where pretrained
                             model files are saved.
@@ -60,7 +60,7 @@ class TextGenerator(InferenceOnlyModel):
                             model.
     =====================   ===========================================
 
-    :return: `TextGenerator` Object
+    :return: :class:`~arcgis.learn.text.TextGenerator` Object
     """
 
     #: supported transformer architectures
@@ -76,7 +76,7 @@ class TextGenerator(InferenceOnlyModel):
         Generate text(s) for a text or a list of incomplete sentence(s)
 
         =====================   ===========================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ---------------------   -------------------------------------------
         text_or_list            Required string or list. A text/sentence
                                 or a list of texts/sentences to complete.
@@ -88,7 +88,7 @@ class TextGenerator(InferenceOnlyModel):
         **kwargs**
 
         =====================   ===========================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ---------------------   -------------------------------------------
         min_length              Optional integer. The minimum length of the
                                 sequence to be generated.

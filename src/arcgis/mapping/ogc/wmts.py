@@ -10,6 +10,7 @@ from arcgis._impl.common._mixins import PropertyMap
 
 from ._base import BaseOGC
 
+
 ###########################################################################
 class WMTSLayer(BaseOGC):
     """
@@ -17,13 +18,13 @@ class WMTSLayer(BaseOGC):
 
 
     ===============     ====================================================================
-    **Argument**        **Description**
+    **Parameter**        **Description**
     ---------------     --------------------------------------------------------------------
     url                 Required string. The web address of the endpoint.
     ---------------     --------------------------------------------------------------------
     version             Optional String. The version number of the WMTS service.  The default is `1.0.0`
     ---------------     --------------------------------------------------------------------
-    gis                 Optional GIS. The GIS used to reference the service by. The arcgis.env.active_gis is used if not specified.
+    gis                 Optional :class:`~arcgis.gis.GIS` . The GIS used to reference the service by. The arcgis.env.active_gis is used if not specified.
     ---------------     --------------------------------------------------------------------
     copyright           Optional String. Describes limitations and usage of the data.
     ---------------     --------------------------------------------------------------------
@@ -44,6 +45,7 @@ class WMTSLayer(BaseOGC):
     _reader = None
     _cap_reader = None
     _properties = None
+
     # ----------------------------------------------------------------------
     def __init__(self, url, version="1.0.0", gis=None, **kwargs):
         super(WMTSLayer, self)

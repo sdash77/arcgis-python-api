@@ -26,15 +26,17 @@ class RabbitMQ(_FeedTemplate, _HasTime, _HasGeometry):
     to create the feed.
 
     ==================      ====================================================================
-    **Argument**            **Description**
+    **Parameter**            **Description**
     ------------------      --------------------------------------------------------------------
-    label                   str. Unique label for the feed instance.
+    label                   String. Unique label for the feed instance.
     ------------------      --------------------------------------------------------------------
-    description             str. Feed description.
+    description             String. Feed description.
     ------------------      --------------------------------------------------------------------
-    host                    str. Host address of the RabbitMQ Server.
+    host                    String. Host address of the RabbitMQ Server.
 
-                            For example: rabbitmqbroker.centralus.cloudapp.azure.com
+                            For example:
+
+                                rabbitmqbroker.centralus.cloudapp.azure.com
     ------------------      --------------------------------------------------------------------
     port                    int. Port on which the RabbitMQ Server is accessible. The default is:
                             5672.
@@ -50,30 +52,29 @@ class RabbitMQ(_FeedTemplate, _HasTime, _HasGeometry):
     =====================   ====================================================================
     **Optional Argument**   **Description**
     =====================   ====================================================================
-    virtual_host            str. Virtual host of the RabbitMQ Server.
+    virtual_host            String. Virtual host of the RabbitMQ Server.
                             For example: virtualhost1
     ---------------------   --------------------------------------------------------------------
-    username                str. Username for server authentication.
+    username                String. Username for server authentication.
     ---------------------   --------------------------------------------------------------------
-    password                str. Password for server authentication.
+    password                String. Password for server authentication.
     ---------------------   --------------------------------------------------------------------
-    queue_name              str. Name of the queue over which messages will be received.
+    queue_name              String. Name of the queue over which messages will be received.
     ---------------------   --------------------------------------------------------------------
-    data_format             Union[DelimitedFormat, EsriJsonFormat, GeoJsonFormat, JsonFormat,
-                            XMLFormat]. An instance that contains the data format configuration
+    data_format             [:class:`~arcgis.realtime.velocity.input.EsriJsonFormat`, :class:`~arcgis.realtime.velocity.input.GeoJsonFormat`, :class:`~arcgis.realtime.velocity.input.DelimitedFormat`, :class:`~arcgis.realtime.velocity.input.JsonFormat`, :class:`~arcgis.realtime.velocity.input.XMLFormat`]. An instance that contains the data format configuration
                             for this feed. Configure only allowed formats. If this is not set
                             right during initialization, a format will be auto-detected and set
                             from a sample of the incoming data. This sample will be fetched from
                             the configuration provided so far in the init.
     ---------------------   --------------------------------------------------------------------
-    track_id_field          str. name of the field from the incoming data that should be set as
+    track_id_field          String. name of the field from the incoming data that should be set as
                             track ID.
     ---------------------   --------------------------------------------------------------------
-    geometry                Union[XYZGeometry, SingleFieldGeometry]. An instance of geometry
+    geometry                [:class:`~arcgis.realtime.velocity.feeds.XYZGeometry`, :class:`~arcgis.realtime.velocity.feeds.SingleFieldGeometry`]. An instance of geometry
                             configuration that will be used to create geometry objects from the
                             incoming data.
     ---------------------   --------------------------------------------------------------------
-    time                    Union[TimeInstant, TimeInterval]. An instance of time configuration
+    time                    [:class:`~arcgis.realtime.velocity.feeds.TimeInstant`, :class:`~arcgis.realtime.velocity.feeds.TimeInterval`]. An instance of time configuration
                             that will be used to create time information from the incoming data.
     =====================   ====================================================================
 

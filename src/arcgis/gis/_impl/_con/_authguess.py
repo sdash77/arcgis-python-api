@@ -13,7 +13,6 @@ except ImportError:
     HAS_SSPI = False
 
 try:
-
     from arcgis.auth import EsriKerberosAuth
 
     HAS_KERBEROS = True
@@ -148,7 +147,6 @@ class GuessAuth(auth.AuthBase, SupportMultiAuth):
                 raise Exception("Could not login to the site.")
         elif www_authenticate.find("ntlm") > -1:
             if HAS_SSPI:
-
                 self.auth = EsriWindowsAuth(
                     username=self.username,
                     password=self.password,

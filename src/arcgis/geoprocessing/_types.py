@@ -1,23 +1,25 @@
 import json
 import tempfile
 
+import arcgis
+
 
 class LinearUnit(object):
     """
     A data object containing a linear distance, used as input to some Geoprocessing tools
 
-        ================  ========================================================
-        **Argument**      **Description**
-        ----------------  --------------------------------------------------------
-        distance          required number, the value of the linear distance.
+    ================  ========================================================
+    **Parameter**      **Description**
+    ----------------  --------------------------------------------------------
+    distance          required number, the value of the linear distance.
 
-        ----------------  --------------------------------------------------------
-        units             required string,  unit type of the linear distance,
-                          such as "Meters", "Miles", "Kilometers", "Inches",
-                          "Points", "Feet", "Yards", "NauticalMiles",
-                          "Millimeters", "Centimeters", "DecimalDegrees",
-                          "Decimeters"
-        ================  ========================================================
+    ----------------  --------------------------------------------------------
+    units             required string,  unit type of the linear distance,
+                      such as "Meters", "Miles", "Kilometers", "Inches",
+                      "Points", "Feet", "Yards", "NauticalMiles",
+                      "Millimeters", "Centimeters", "DecimalDegrees",
+                      "Decimeters"
+    ================  ========================================================
     """
 
     def __init__(self, distance, units):
@@ -56,18 +58,18 @@ class DataFile(object):
     """
     A data object containing a data source, used as input/output by some Geoprocessing tools
 
-        ================  ========================================================
-        **Argument**      **Description**
-        ----------------  --------------------------------------------------------
-        url               optional string, URL to the location of the data file.
+    ================  ========================================================
+    **Parameter**      **Description**
+    ----------------  --------------------------------------------------------
+    url               optional string, URL to the location of the data file.
 
-        ----------------  --------------------------------------------------------
-        item_id           optional string,  The id of the uploaded file returned
-                          as a result of the upload operation.
+    ----------------  --------------------------------------------------------
+    item_id           optional string,  The id of the uploaded file returned
+                      as a result of the upload operation.
 
-        ----------------  --------------------------------------------------------
-        portal_item       optional Item. A data type item used for GP tool.
-        ================  ========================================================
+    ----------------  --------------------------------------------------------
+    portal_item       optional :class:`~arcgis.gis.Item`. A data type item used for GP tool.
+    ================  ========================================================
     """
 
     def __init__(self, url=None, item_id=None, portal_item=None):
@@ -114,20 +116,21 @@ class DataFile(object):
         if not save_path:
             save_path = tempfile.gettempdir()
         if data_path:
-            if self._con.product == "AGOL":
-                return self._con.get(
+            gis = arcgis.env.active_gis
+            if gis._con.product == "AGOL":
+                return gis._con.get(
                     path=data_path,
                     out_folder=save_path,
                     try_json=False,
                     add_token=False,
-                    token=self._token,
+                    token=gis._con.token,
                 )
             else:
-                return self._con.get(
+                return gis._con.get(
                     path=data_path,
                     out_folder=save_path,
                     try_json=False,
-                    token=self._token,
+                    token=gis._con.token,
                 )
 
 
@@ -136,18 +139,18 @@ class RasterData(object):
     A data object containing a raster data source,
     used as input/output by some Geoprocessing tools
 
-        ================  ========================================================
-        **Argument**      **Description**
-        ----------------  --------------------------------------------------------
-        url               optional string, URL to the location of the raster data
-                          file.
-        ----------------  --------------------------------------------------------
-        item_id           optional string,  The id of the uploaded file returned
-                          as a result of the upload operation.
-        ----------------  --------------------------------------------------------
-        format            optional string, Specifies the format of the raster
-                          data, such as "jpg", "tif", etc.
-        ================  ========================================================
+    ================  ========================================================
+    **Parameter**      **Description**
+    ----------------  --------------------------------------------------------
+    url               optional string, URL to the location of the raster data
+                      file.
+    ----------------  --------------------------------------------------------
+    item_id           optional string,  The id of the uploaded file returned
+                      as a result of the upload operation.
+    ----------------  --------------------------------------------------------
+    format            optional string, Specifies the format of the raster
+                      data, such as "jpg", "tif", etc.
+    ================  ========================================================
     """
 
     def __init__(self, url=None, format=None, item_id=None):

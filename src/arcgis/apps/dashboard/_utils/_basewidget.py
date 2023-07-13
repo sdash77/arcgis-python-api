@@ -3,7 +3,6 @@ import uuid
 
 class _BaseWidget(object):
     def __init__(self, name, title, description):
-
         self._title = ""
         self._name = ""
         self._description = ""
@@ -207,7 +206,6 @@ class NoDataProperties(object):
         show_title=True,
         show_description=True,
     ):
-
         nodata = NoDataProperties()
 
         if alignment not in ["top", "middle", "bottom"]:
@@ -346,7 +344,7 @@ def add_row(elements, height=1):
     Creates a Row Layout.
 
     =========================   ===========================================
-    **Argument**                **Description**
+    **Parameter**                **Description**
     -------------------------   -------------------------------------------
     elements                    Required List. Widgets that will be added
                                 to the row in the dashboard layout.
@@ -389,7 +387,7 @@ def add_column(elements, width=1):
     Creates a Column Layout.
 
     =========================   ===========================================
-    **Argument**                **Description**
+    **Parameter**                **Description**
     -------------------------   -------------------------------------------
     elements                    Required List. Widgets that will be added to
                                 the column in the dashboard layout.

@@ -1,6 +1,7 @@
 import importlib.util
 from typing import Union, Optional
 
+from arcgis.features.geo import _is_geoenabled
 from arcgis.env import active_gis
 from arcgis.geometry import find_transformation, SpatialReference, Point
 from arcgis.gis import GIS
@@ -35,23 +36,9 @@ def change_spatial_reference(
             spatial reference.
     Returns: Spatially Enabled DataFrame in the desired output spatial reference.
     """
-    # ensure the geometry is set
-    geom_col_lst = [
-        c
-        for c in input_dataframe.columns
-        if input_dataframe[c].dtype.name.lower() == "geometry"
-    ]
-    assert len(geom_col_lst) > 0, (
-        "The DataFrame does not appear to have a geometry column defined. This can be "
-        'accomplished using the "input_dataframe.spatial.set_geometry" method.'
-    )
 
-    # save the geometry column to a variable
-    geom_col = geom_col_lst[0]
-
-    # ensure the input spatially enabled dataframe validates
-    msg_valdf = "The DataFrame does not appear to be valid."
-    assert input_dataframe.spatial.validate(), msg_valdf
+    # ensure the input spatially enabled dataframe is valid
+    assert _is_geoenabled(input_dataframe), "The DataFrame does not appear to be valid."
 
     # if a spatial reference is set for the dataframe, just use it
     if input_dataframe.spatial.sr is not None:
@@ -59,7 +46,6 @@ def change_spatial_reference(
 
     # if a spatial reference is explicitly provided, but the data does not have one set, use the one provided
     elif input_spatial_reference is not None:
-
         # check the input
         assert isinstance(input_spatial_reference, int) or isinstance(
             input_spatial_reference, SpatialReference
@@ -76,7 +62,6 @@ def change_spatial_reference(
     # if the spatial reference is not set, common for data coming from geojson, check if values are in lat/lon
     # range, and if so, go with WGS84, as this is likely the case if in this range
     else:
-
         # get the bounding values for the data
         x_min, y_min, x_max, y_max = input_dataframe.spatial.full_extent
 
@@ -102,41 +87,44 @@ def change_spatial_reference(
 
     # copy the input spatially enabled dataframe since the project function changes the dataframe in place
     out_df = input_dataframe.copy()
-    out_df.spatial.set_geometry(geom_col)
+    out_df.spatial.set_geometry(input_dataframe.spatial.name)
 
-    # if arcpy is available, use it to find the transformation
-    if arcpy_avail and transformation_name is None:
+    # if a transformation was not explicitly provided, see if one is needed
+    if transformation_name is None:
+        # variable for saving the transformations if needed
+        trns_lst = []
 
-        # get any necessary transformations using arcpy, which returns only a list of transformation names
-        trns_lst = arcpy.ListTransformations(in_sr.as_arcpy, out_sr.as_arcpy)
+        # if arcpy is available, use it to find the transformation
+        if arcpy_avail:
+            # get any necessary transformations using arcpy, which returns only a list of transformation names
+            trns_lst = arcpy.ListTransformations(in_sr.as_arcpy, out_sr.as_arcpy)
 
-    # otherwise we will have to use the geometry rest endpoint to find transformations
-    elif transformation_name is None:
+        # otherwise we will have to use the geometry rest endpoint to find transformations
+        elif transformation_name is None:
+            # explicitly ensure find_transformations has a gis instance
+            gis = active_gis if active_gis else GIS()
 
-        # explicitly ensure find_transformations has a gis instance
-        gis = active_gis if active_gis else GIS()
+            # get any transformations, if needed due to changing geographic spatial reference, as a list of dicts
+            trns_lst = find_transformation(in_sr, out_sr, gis=gis)["transformations"]
 
-        # get any transformations, if needed due to changing geographic spatial reference, as a list of dicts
-        trns_lst = find_transformation(in_sr, out_sr, gis=gis)["transformations"]
+        # if a transformation was not explicitly provided and one was discovered to be needed above, get it
+        if len(trns_lst) > 0:
+            transformation_name = trns_lst[0]
 
-    # apply across the geometries using apply since it recognizes the transformation correctly if transformation
-    # is necessary and also tries arcpy first, and if not available, rolls back to rest resources elegantly
-    if len(trns_lst) or transformation_name is not None:
-        trns = transformation_name if transformation_name is not None else trns_lst[0]
-        out_df[geom_col] = out_df[geom_col].apply(
-            lambda geom: geom.project_as(out_sr, trns)
+    # project to new spatial reference using the apply method since the geoaccessor project method is not working
+    # reliably and only if necessary if the spatial reference is being changed
+    if in_sr.wkid != out_sr.wkid:
+        out_df[input_dataframe.spatial.name] = out_df[
+            input_dataframe.spatial.name
+        ].apply(
+            lambda geom: geom.project_as(
+                out_sr, transformation_name=transformation_name
+            )
         )
 
-    # otherwise, do the same thing using the apply method since the geoaccessor project method is not working reliably
-    # and only if necessary if the spatial reference is being changed
-    elif in_sr.wkid != out_sr.wkid:
-        out_df[geom_col] = out_df[geom_col].apply(lambda geom: geom.project_as(out_sr))
-
     # ensure the spatial column is set
-    if not len(
-        [c for c in out_df.columns if out_df[c].dtype.name.lower() == "geometry"]
-    ):
-        out_df.spatial.set_geometry(geom_col)
+    if not _is_geoenabled(out_df):
+        out_df.spatial.set_geometry(input_dataframe.spatial.name)
 
     return out_df
 
@@ -204,7 +192,7 @@ def get_weighted_centroid(
     # check the input dataframe
     msg_valdf = "A valid Spatially Enabled DataFrame must be provided."
     assert isinstance(input_dataframe, pd.DataFrame), msg_valdf
-    assert input_dataframe.spatial.validate(), msg_valdf
+    assert _is_geoenabled(input_dataframe), msg_valdf
 
     # ensure the input columns are in the dataframe
     in_cols = input_dataframe.columns

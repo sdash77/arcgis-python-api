@@ -4,13 +4,11 @@
 # -------------------------------------------------------------------------------
 
 # Code to import test package for relative imports when running locally
-#import sys
-#sys.path.insert(0, r"local_path_to_repo\geosaurus\tests")
-
 import unittest
 from integration.dino_utils.dino_precondition_checks import PreconditionChecks
 from integration.dino_utils.dino_precondition_checks import PortalUtils
 from integration.dino_utils.dino_configs import DinoConfigs
+from integration.config import QALAB_ROOT_PATH
 from configparser import ConfigParser
 import datetime
 
@@ -76,7 +74,7 @@ class Test_ContentManager_portal_builtin(unittest.TestCase):
         _conf_reader2 = ConfigParser()
         _conf_reader2.read(DinoConfigs.root_init_file, "UTF-8")
 
-        cls.qalab_base_path = _conf_reader2["test_data"]["qalab_base_path"]
+        cls.qalab_base_path = QALAB_ROOT_PATH
         cls.qalab_cls_path = (
             cls.qalab_base_path + _conf_reader2["test_data"]["qalab_ContentManager_cls"]
         )
@@ -278,7 +276,7 @@ class Test_ContentManager_ago_builtin(unittest.TestCase):
         _conf_reader2 = ConfigParser()
         _conf_reader2.read(DinoConfigs.root_init_file, "UTF-8")
 
-        cls.qalab_base_path = _conf_reader2["test_data"]["qalab_base_path"]
+        cls.qalab_base_path = QALAB_ROOT_PATH
         cls.qalab_cls_path = (
             cls.qalab_base_path + _conf_reader2["test_data"]["qalab_ContentManager_cls"]
         )
@@ -384,30 +382,28 @@ class Test_ContentManager_ago_builtin(unittest.TestCase):
             # read input data
             import pandas as pd
             from pathlib import Path
-            
+
             # Returns SSL certificate expired error as of 4.25.22
-            #df = pd.read_html(
-                 #"https://en.wikipedia.org/wiki/Estimated_number_of_civilian_guns_per_capita_by_country"
-            #)[0]
-            
+            # df = pd.read_html(
+            # "https://en.wikipedia.org/wiki/Estimated_number_of_civilian_guns_per_capita_by_country"
+            # )[0]
+
             # pd.read_html() failed when reading directly from string as path, succeeds using Path
             qa_path = Path(self.qalab_cls_path)
             qa_file = qa_path / "estimated_guns_by_country.html"
-            
+
             df = pd.read_html(qa_file)[0]
-  
+
             # data engineering to clean/restructure dataframe
             df.columns = df.columns.str.replace(" ", "_")
-            df.rename(columns={"Unnamed:_0":"id_number"}, inplace=True) 
+            df.rename(columns={"Unnamed:_0": "id_number"}, inplace=True)
             df.drop(labels=0, axis=0, inplace=True)
             df.reset_index(drop=True, inplace=True)
 
             # geocode and publish
             publish_output = self.gis.content.import_data(
                 df,
-                {
-                    "CountryCode": "Country_or_subnational_area"
-                },
+                {"CountryCode": "Country_or_subnational_area"},
             )
 
             # validate
@@ -488,6 +484,7 @@ class Test_ContentManager_ago_builtin(unittest.TestCase):
 # TestModule
 def tearDownModule():
     print("**End GIS module Tests**")
+
 
 if __name__ == "__main__":
     unittest.main()

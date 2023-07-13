@@ -11,21 +11,22 @@ from arcgis.features import FeatureLayerCollection, FeatureLayer
 
 class VersionManager(object):
     """
-    VersionManager allows users to manage the branch versioning for FeatureLayerCollection
+    VersionManager allows users to manage the branch versioning for :class:`~arcgis.features.FeatureLayerCollection`
     services. The Version Management Service is responsible for exposing the management
     capabilities necessary to support feature services that work with branch versioned
     datasets.
 
-    See the following for more information: https://developers.arcgis.com/rest/services-reference/version-management-service.htm
+    See the `Version Management Service <https://developers.arcgis.com/rest/services-reference/version-management-service.htm>`_ for more information
 
     ===============     ====================================================================
-    **Argument**        **Description**
+    **Parameter**        **Description**
     ---------------     --------------------------------------------------------------------
     url                 Required String.  The URI to the web resource.
     ---------------     --------------------------------------------------------------------
-    gis                 Required GIS. The enterprise connection to the Portal site.
+    gis                 Required :class:`~arcgis.gis.GIS` . The enterprise connection to the Portal site. A connection
+                        can be passed in such as a Service Directory connection.
     ---------------     --------------------------------------------------------------------
-    flc                 Optional FeatureLayerCollection. This is the parent container that
+    flc                 Optional :class:`~arcgis.features.FeatureLayerCollection` . This is the parent container that
                         the branch versioning is enabled on.
     ===============     ====================================================================
 
@@ -43,9 +44,12 @@ class VersionManager(object):
         """init"""
         if isinstance(gis, GIS):
             self._gis = gis
+            self._con = self._gis._portal.con
+        elif hasattr(gis, "_con"):
+            self._gis = gis
+            self._con = gis._con
         else:
             raise ValueError("gis must be of type GIS")
-        self._con = self._gis._portal.con
         self._url = url
         if isinstance(flc, FeatureLayer):
             self._flc = flc.container
@@ -57,7 +61,7 @@ class VersionManager(object):
 
     # ----------------------------------------------------------------------
     def __str__(self):
-        return "<VersionManager @ {url}>".format(url=self._url)
+        return "< VersionManager @ {url} >".format(url=self._url)
 
     # ----------------------------------------------------------------------
     def __repr__(self):
@@ -82,14 +86,16 @@ class VersionManager(object):
         and access (default is public) may be optionally set.
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         name                Required String. The name of the version
         ---------------     --------------------------------------------------------------------
         permission          Optional String. The access permissions of the new version. The
                             default access permission is public.
 
-                            Values: "private" | "public" | "protected" | "hidden"
+                            Values:
+
+                                "private" | "public" | "protected" | "hidden"
         ---------------     --------------------------------------------------------------------
         description         Optional String. The description of the new version
         ===============     ====================================================================
@@ -119,7 +125,7 @@ class VersionManager(object):
 
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         version             Required String. The name of the version that is locked.
         ---------------     --------------------------------------------------------------------
@@ -182,7 +188,7 @@ class VersionManager(object):
         and will be returned.
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         owner               Optional String. A filter the versions by the owner.
         ---------------     --------------------------------------------------------------------
@@ -203,7 +209,7 @@ class VersionManager(object):
         Finds and Locations a Version by it's name
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         version             Required String. This is the name of the version to locate.
         ---------------     --------------------------------------------------------------------
@@ -213,9 +219,9 @@ class VersionManager(object):
 
                             Values:
 
-                                - edit - starts editing mode
-                                - read - starts reading mode
-                                - None - no mode is started.  This is default.
+                            - edit - starts editing mode
+                            - read - starts reading mode
+                            - None - no mode is started.  This is default.
         ===============     ====================================================================
 
         """
@@ -233,13 +239,13 @@ class Version(object):
     A `Version` represents a single branch in the version tree.
 
     ===============     ====================================================================
-    **Argument**        **Description**
+    **Parameter**        **Description**
     ---------------     --------------------------------------------------------------------
     url                 Required String.  The URI to the web resource.
     ---------------     --------------------------------------------------------------------
-    gis                 Required GIS. The enterprise connection to the Portal site.
+    gis                 Required :class:`~arcgis.gis.GIS` . The enterprise connection to the Portal site.
     ---------------     --------------------------------------------------------------------
-    flc                 Optional FeatureLayerCollection. This is the parent container that
+    flc                 Optional :class:`~arcgis.features.FeatureLayerCollection` . This is the parent container that
                         the branch versioning is enabled on.
     ---------------     --------------------------------------------------------------------
     session_guid        Optional String. If a GUID is known for specific version, a user
@@ -251,8 +257,8 @@ class Version(object):
 
                         Allowed Values:
 
-                            + edit - starts an edit session
-                            + read - starts a read session
+                        + edit - starts an edit session
+                        + read - starts a read session
 
     ===============     ====================================================================
 
@@ -268,7 +274,7 @@ class Version(object):
     _validation = None
     # ----------------------------------------------------------------------
 
-    def __init__(self, url, flc, gis=None, session_guid=None, mode=None):
+    def __init__(self, url, flc=None, gis=None, session_guid=None, mode=None):
         """Constructor"""
         if mode:
             self.mode = mode
@@ -298,7 +304,12 @@ class Version(object):
         """
         Provides access to a validation manager.
 
-        :return: :class:`~arcgis.features.ValidationManager`
+        :return:
+            :class:`~arcgis.features._validation.ValidationManager`
+
+
+
+
         """
         if self._validation is None:
             from arcgis.mapping import MapImageLayer
@@ -321,7 +332,9 @@ class Version(object):
         """
         Provides access to a parcel fabric manager
 
-        :return: :class:`~arcgis.features.ParcelFabricManager`
+        :return:
+            :class:`~arcgis.features._parcel.ParcelFabricManager`
+
         """
         if (
             "controllerDatasetLayers" in self._flc.properties
@@ -372,27 +385,29 @@ class Version(object):
     # ----------------------------------------------------------------------
     @property
     def layers(self):
-        """returns the layers in the FeatureLayerCollection"""
+        """returns the layers in the :class:`~arcgis.features.FeatureLayerCollection`"""
         return self._flc.layers
 
     # ----------------------------------------------------------------------
     @property
     def tables(self):
-        """returns the tables in the FeatureLayerCollection"""
+        """returns the tables in the :class:`~arcgis.features.FeatureLayerCollection`"""
         return self._flc.tables
 
     # ----------------------------------------------------------------------
     @property
     def mode(self):
         """
-        The `mode` allows versoin editors to start and stop edit, read, or
+        The `mode` allows version editors to start and stop edit, read, or
         view mode.
 
         ==================      ====================================================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ------------------      --------------------------------------------------------------------
         value                   Required string.
+
                                 Values:
+
                                 + edit - calls the `start_editing` method and creates a lock
                                 + read - calls the `start_reading` method and creates a lock
                                 + None - terminates all sessions and lets a user view the version information (default)
@@ -499,10 +514,12 @@ class Version(object):
         Get/Set the Property to Save the Changes.
 
         ==================      ====================================================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ------------------      --------------------------------------------------------------------
         value                   Required bool.
-                                Values: True | False
+                                Values:
+
+                                    True | False
         ==================      ====================================================================
 
         When set to true, any edits performed on the version will be saved.
@@ -555,10 +572,10 @@ class Version(object):
         Starts an edit session for the current user.
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         save                Optional Boolean. States if the values should be saved. If the value
-                            is set, the `save_edits` property will be overrided.
+                            is set, it will override the :attr:`~arcgis.features._version.Version.save_edits` property.
         ===============     ====================================================================
 
 
@@ -640,7 +657,7 @@ class Version(object):
         version.
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         moment              Required String. Moment representing the new tail of the version;
                             all forward moments will be trimmed.
@@ -676,7 +693,7 @@ class Version(object):
         conflicts exist, they should be resolved.
 
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
         end_with_conflict      Optional Boolean. Specifies if the reconcile should abort when
                                conflicts are found. The default is False
@@ -692,7 +709,9 @@ class Version(object):
                                .. note::
                                    This parameter was introduced at ArcGIS Enterprise 10.9
 
-                               Values: `byObject` | `byAttribute`
+                               Values:
+
+                                   byObject | byAttribute
 
         ------------------     --------------------------------------------------------------------
         future                 Optional boolean. If `True`, the request is processed as an asynchronous
@@ -705,7 +724,8 @@ class Version(object):
                                The default is `False`.
         ==================     ====================================================================
 
-        :returns: Boolean
+        :return: Boolean.
+        If ``future = True``, then the result is a `Future <https://docs.python.org/3/library/concurrent.futures.html>`_ object. Call ``result()`` to get the response.
 
         """
         if self._mode == "edit":
@@ -741,27 +761,25 @@ class Version(object):
         `DeleteUpdate` conflicts are identified during the last reconcile.
 
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
         rows                   Required List.  An array of the rows to be restored
 
-                               **Syntax**
+                               Syntax
 
-                               [
-
-                                    {
-
-                                       "layerId": <layerId>,
-                                       "objectIds":[<objectId>]
-
-                                    }
-                               ]
+                                   | [{
+                                   |        "layerId": <layerId>,
+                                   |        "objectIds":[<objectId>]
+                                   |     }]
 
 
 
         ==================     ====================================================================
 
-        :return: Boolean and String. Bool: True if successful else False. String: the moment
+        :return:
+            Boolean and String.
+            Bool: True if successful else False.
+            String: the moment
 
         """
         url = "%s/restoreRows" % self._url
@@ -782,11 +800,11 @@ class Version(object):
         permission: Optional[str] = None,
     ):
         """
-        The ```alter``` operation changes the geodatabase version's name,
+        The ``alter`` operation changes the geodatabase version's name,
         description, and access permissions.
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         owner               Optional String. The new name of the owner.
         ---------------     --------------------------------------------------------------------
@@ -794,7 +812,9 @@ class Version(object):
         ---------------     --------------------------------------------------------------------
         permission          Optional String. The new access level of the version.
 
-                            Values: private, public, protected, or hidden
+                            Values:
+
+                                "private" | "public" | "protected" | "hidden"
         ---------------     --------------------------------------------------------------------
         description         Optional String. The description of the new version
         ===============     ====================================================================
@@ -828,9 +848,8 @@ class Version(object):
         layers=None,
         future=False,
     ):
-
         """
-        The ```differences``` operation allows you to view differences between
+        The ``differences`` operation allows you to view differences between
         the current version and the default version. The two versions can
         be compared to check for the following conditions.
 
@@ -838,23 +857,33 @@ class Version(object):
         - Updates - features that have different attributes or geometry in the current version than the default version
         - Deletions - features that are present in the default version but not in the current version
 
-        Both differences and conflicts will be returned. It is the clients
+        Both differences and conflicts will be returned. It is the clients'
         responsibility to determine which are differences, and which are conflicts.
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         result_type         Required String.  Determines the type of results to return.
                             The default result type is `objectIds`.
 
-                            Values : `objectIds` or `features`
+                            Values :
+
+                                "objectIds" | "features"
         ---------------     --------------------------------------------------------------------
         moment              Required String. Moment used to compare current version with
                             default.
         ---------------     --------------------------------------------------------------------
         from_moment         Optional string. Time epoch value in milliseconds specifying the
                             time from which to obtain the differences between this value
-                            and the specific `moment` argument.
+                            and the specified ``moment`` argument value.
+
+                            .. note::
+                                - By default, if this parameter is not specified, the ``differences`` operation returns the edits (inserts, updates, and deletes) at the specified value of the ``moment`` argument.
+
+                                - This parameter is only supported on the default version. For a named branch, this parameter will return an error if specified. The common ancestor moment is automatically used.
+
+                                - This parameter was introduced at ArcGIS Enterprise 10.9
+
         ---------------     --------------------------------------------------------------------
         layers              Optional list. The layer id values for which differences should
                             be returned. If not specified, the differences for all layers will
@@ -916,7 +945,7 @@ class Version(object):
     # ----------------------------------------------------------------------
     def conflicts(self):
         """
-        The ```conflicts``` operation allows you to view the conflicts by layer
+        The ``conflicts`` operation allows you to view the conflicts by layer
         and type (update-update, update-delete, delete-update) that were
         identified during the last Reconcile operation. The features that
         are in conflicts will also be returned as they existed in the branch,
@@ -938,40 +967,34 @@ class Version(object):
         set_inspected: bool = False,
     ):
         """
-        The ```inspect``` operation allows the client to annotate conflicts
+        The ``inspect`` operation allows the client to annotate conflicts
         from the conflict set that was obtained during the last reconcile
         operation. Users can mark the conflicts as being inspected;
         additionally, a description or note can be associated with the
         conflict.
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         conflicts           Required List.  The conflicts that are being inspected (removed)
                             from the conflict set.
 
                             Parameter Format:
 
-                            [
-                                {
-                                  "layerId" : <layerId>,
-                                  "features" : [
-                                    {
-                                      "objectId" : <objectId>,
-                                      "note" : string
-                                    }
-                                  ]
-                                }
-                            ]
+                                | [{
+                                |      "layerId" : <layerId>,
+                                |      "features" : [{
+                                |          "objectId" : <objectId>,
+                                |          "note" : string
+                                |        }]}]
 
                             The objectId key is required. The note parameter is optional.
-
         ---------------     --------------------------------------------------------------------
         inspect_all         Optional Boolean. This parameter, if true, will mark all conflicts
                             as being inspected.
         ---------------     --------------------------------------------------------------------
         set_inspected       Optional Boolean. If True, the examined values will be set to
-                            inspected. If ```inspect_all``` is True, this parameter is ignored.
+                            inspected. If ``inspect_all`` is True, this parameter is ignored.
         ===============     ====================================================================
 
 
@@ -1000,7 +1023,7 @@ class Version(object):
         will have to reconcile again before posting.
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         rows                Optional List of dictionaries representing the features or objects
                             for posting a subset of edits in the current version. The
@@ -1022,7 +1045,7 @@ class Version(object):
                                         }
                                        ]
         ---------------     --------------------------------------------------------------------
-        future              Optional Boolean. If `True", the operation runs as an asynchronous
+        future              Optional Boolean. If "True", the operation runs as an asynchronous
                             job. The results are returned as a Url pointing to a location that
                             indicates the status of the job.
         ===============     ====================================================================
@@ -1096,16 +1119,16 @@ class Version(object):
         =====================   ===========================================
         **Inputs**              **Description**
         ---------------------   -------------------------------------------
-        layer                   Required FeatureLayer. The layer to perform
+        layer                   Required :class:`~arcgis.features.FeatureLayer` . The layer to perform
                                 the edit on.
         ---------------------   -------------------------------------------
-        adds                    Optional FeatureSet/List. The array of
+        adds                    Optional :class:`~arcgis.features.FeatureSet` /List. The array of
                                 features to be added.
         ---------------------   -------------------------------------------
-        updates                 Optional FeatureSet/List. The array of
-                                features to be updateded.
+        updates                 Optional :class:`~arcgis.features.FeatureSet` /List. The array of
+                                features to be updated.
         ---------------------   -------------------------------------------
-        deletes                 Optional FeatureSet/List. string of OIDs to
+        deletes                 Optional :class:`~arcgis.features.FeatureSet` /List. String of OIDs to
                                 remove from service
         ---------------------   -------------------------------------------
         use_global_ids          Optional boolean. Instead of referencing
@@ -1135,6 +1158,7 @@ class Version(object):
                 gdb_version=self.properties.versionName,
                 use_global_ids=use_global_ids,
                 rollback_on_failure=rollback_on_failure,
+                session_id=self._guid,
             )
         else:
             raise Exception(
@@ -1147,7 +1171,10 @@ class Version(object):
         import concurrent.futures
 
         tp = concurrent.futures.ThreadPoolExecutor(1)
-        future = tp.submit(fn=fn, **inputs)
+        try:
+            future = tp.submit(fn=fn, **inputs)
+        except:
+            future = tp.submit(fn, **inputs)
         tp.shutdown(False)
         return future
 

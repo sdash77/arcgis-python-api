@@ -1,4 +1,4 @@
-from .._layer import ImageryLayer, Raster
+from .._layer import ImageryLayer, Raster, RasterCollection, _ArcpyRasterCollection
 from arcgis.gis import Item
 import numbers
 from arcgis.features.layer import FeatureLayer
@@ -13,9 +13,74 @@ from arcgis.auth import (
 )
 import requests
 
+_aggregating_functions = [
+    "max",
+    "min",
+    "med",
+    "mean",
+    "majority",
+    "sum",
+    "std",
+    "variety",
+    "geometric_median",
+    "minority",
+    "merge_rasters",
+]
+
 
 def _raster_input(raster, raster2=None):
     layer = None
+
+    # if input is a rastercollection, get the list of rasters and use that as the input
+
+    if isinstance(raster, RasterCollection) or isinstance(raster2, RasterCollection):
+        import inspect
+
+        fn_name_l2 = inspect.stack()[2][3]
+        fn_name_l1 = inspect.stack()[1][3]
+        if (
+            fn_name_l2 != "to_multidimensional_raster"
+            and fn_name_l1 != "_simple_collection"
+        ):
+            if (
+                not fn_name_l2 in _aggregating_functions
+                and not fn_name_l1 in _aggregating_functions
+            ):
+                raise RuntimeError(
+                    "RasterCollection object cannot be specified as input to non aggregating functions"
+                )
+            if isinstance(raster, RasterCollection):
+                if (
+                    hasattr(raster, "_ras_coll_engine")
+                ) and raster._ras_coll_engine != _ArcpyRasterCollection:
+                    raster = raster._ras_coll_engine_obj._rasters_list
+                else:
+                    if hasattr(raster, "_ras_coll_engine_obj"):
+                        return (
+                            raster._ras_coll_engine_obj,
+                            raster._ras_coll_engine_obj,
+                            raster._ras_coll_engine_obj,
+                        )
+                    else:
+                        return raster, raster, raster
+
+            if (
+                isinstance(raster2, RasterCollection)
+            ) and raster2._ras_coll_engine != _ArcpyRasterCollection:
+                if (
+                    hasattr(raster2, "_ras_coll_engine")
+                ) and raster2._ras_coll_engine != _ArcpyRasterCollection:
+                    raster2 = raster2._ras_coll_engine_obj._rasters_list
+                else:
+                    if hasattr(raster2, "_ras_coll_engine_obj"):
+                        return (
+                            raster2._ras_coll_engine_obj,
+                            raster2._ras_coll_engine_obj,
+                            raster2._ras_coll_engine_obj,
+                        )
+                    else:
+                        return raster2, raster2, raster2
+
     if isinstance(raster, Raster):
         if hasattr(raster, "_engine_obj"):
             raster = raster._engine_obj
@@ -262,7 +327,7 @@ def _get_raster_url(raster, layer):
     if isinstance(raster, (ImageryLayer, Raster)):
         if raster._fn is not None:
             if raster._datastore_raster and layer._datastore_raster:
-                if raster._uri == layer._uri:
+                if raster._uri == layer._uri or isinstance(raster._uri, bytes):
                     raster = raster._fn
                 else:
                     raster = _replace_raster_url(raster._fn, raster._uri)
@@ -330,7 +395,6 @@ def _get_raster_url(raster, layer):
 
 
 def _get_raster_ra(raster):
-
     if isinstance(raster, (ImageryLayer, Raster)):
         try:
             url = raster._url
@@ -498,7 +562,6 @@ def _find_object_ref(rft_dict, record, instance):
 
 
 def _replace_object_id(rft_dict, record):
-
     if isinstance(rft_dict, dict):
         if "_object_ref_id" in rft_dict.keys():
             ref_value = record[rft_dict["_object_ref_id"]]
@@ -604,3 +667,35 @@ def _generate_layer_token(layer, url):
             return token
     else:
         return None
+
+
+def _set_multidimensional_rules(function_chain=None, function_chain_ra=None):
+    from ... import env
+
+    match_variables = env.match_variables
+    union_dimension = env.union_dimension
+
+    if (match_variables is not None) and isinstance(match_variables, bool):
+        if (
+            function_chain is not None
+        ) and "MatchVariable" not in function_chain.keys():
+            function_chain["rasterFunctionArguments"]["MatchVariable"] = match_variables
+        if (
+            function_chain_ra is not None
+        ) and "MatchVariable" not in function_chain_ra.keys():
+            function_chain_ra["rasterFunctionArguments"][
+                "MatchVariable"
+            ] = match_variables
+    if (union_dimension is not None) and isinstance(union_dimension, bool):
+        if (
+            function_chain is not None
+        ) and "UnionDimension" not in function_chain.keys():
+            function_chain["rasterFunctionArguments"][
+                "UnionDimension"
+            ] = union_dimension
+        if (
+            function_chain_ra is not None
+        ) and "UnionDimension" not in function_chain.keys():
+            function_chain_ra["rasterFunctionArguments"][
+                "UnionDimension"
+            ] = union_dimension

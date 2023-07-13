@@ -2,12 +2,14 @@ from typing import Tuple
 from requests.auth import AuthBase
 from ._schain import SupportMultiAuth
 from ..tools._lazy import LazyLoader
-from ..tools import parse_url
+from ..tools import parse_url, assemble_url
 
 os = LazyLoader("os")
 tempfile = LazyLoader("tempfile")
 _dt = LazyLoader("datetime")
 requests = LazyLoader("requests")
+
+
 ###########################################################################
 class EsriPKIAuth(AuthBase, SupportMultiAuth):
     """Handles PKI authentication when tokens are needed"""
@@ -19,7 +21,11 @@ class EsriPKIAuth(AuthBase, SupportMultiAuth):
     _session = None
 
     def __init__(
-        self, cert: Tuple[str], referer: str = None, verify_cert: bool = True, **kwargs
+        self,
+        cert: Tuple[str],
+        referer: str = None,
+        verify_cert: bool = True,
+        **kwargs,
     ):
         self._server_log = {}
         self._server_log_time = {}
@@ -55,18 +61,13 @@ class EsriPKIAuth(AuthBase, SupportMultiAuth):
     def generate_portal_server_token(self, r, **kwargs):
         """generates a server token using Portal token"""
         parsed = parse_url(r.url)
+        server_url = assemble_url(parsed)
         if (
             r.text.lower().find("invalid token") > -1
             or r.text.lower().find("token required") > -1
             or r.text.lower().find("token not found") > -1
-        ) or parsed.netloc in self._server_log:
+        ) or server_url in self._server_log:
             expiration = 16000
-            if parsed.port:
-                server_url = f'{parsed.scheme}://{parsed.netloc}:{parsed.port}/{parsed.path[1:].split("/")[0]}'
-            else:
-                server_url = (
-                    f'{parsed.scheme}://{parsed.netloc}/{parsed.path[1:].split("/")[0]}'
-                )
             postdata = {
                 "request": "getToken",
                 "serverURL": server_url,
@@ -75,11 +76,11 @@ class EsriPKIAuth(AuthBase, SupportMultiAuth):
             }
             if expiration:
                 postdata["expiration"] = expiration
-            if parsed.netloc in self._server_log:
-                token_url = self._server_log[parsed.netloc]
-                self._server_log_time[
-                    parsed.netloc
-                ] = _dt.datetime.now() + _dt.timedelta(minutes=expiration)
+            if server_url in self._server_log:
+                token_url = self._server_log[server_url]
+                self._server_log_time[server_url] = _dt.datetime.now() + _dt.timedelta(
+                    minutes=expiration
+                )
             else:
                 info = self._session.get(
                     server_url + "/rest/info?f=json",
@@ -89,9 +90,9 @@ class EsriPKIAuth(AuthBase, SupportMultiAuth):
                     proxies=self._proxies,
                 ).json()
                 token_url = info["authInfo"]["tokenServicesUrl"]
-                self._server_log[parsed.netloc] = token_url
+                self._server_log[server_url] = token_url
             if server_url in self._tokens:
-                if _dt.datetime.now() >= self._server_log_time[parsed.netloc]:
+                if _dt.datetime.now() >= self._server_log_time[server_url]:
                     del self._tokens[server_url]
                     return self.generate_portal_server_token(r)
                 token_str = self._tokens[server_url]

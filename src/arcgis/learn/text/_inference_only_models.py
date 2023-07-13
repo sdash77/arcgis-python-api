@@ -69,7 +69,7 @@ class InferenceOnlyModel:
         Saves the translator model files on a specified path on the local disk.
 
         =====================   ===========================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ---------------------   -------------------------------------------
         name_or_path            Required string. Path to save
                                 model files on the local disk.
@@ -89,18 +89,18 @@ class InferenceOnlyModel:
     @classmethod
     def from_model(cls, emd_path, **kwargs):
         """
-        Creates an SequenceToSequence model object from an
+        Creates an :class:`~arcgis.learn.text.SequenceToSequence` model object from an
         Esri Model Definition (EMD) file.
 
         =====================   ===========================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ---------------------   -------------------------------------------
         emd_path                Required string. Path to
                                 Esri Model Definition(EMD) file or the folder
                                 with saved model files.
         =====================   ===========================================
 
-        :return: SequenceToSequence Object
+        :return: :class:`~arcgis.learn.text.SequenceToSequence` Object
         """
         emd_path = _get_emd_path(emd_path)
         with open(emd_path) as f:

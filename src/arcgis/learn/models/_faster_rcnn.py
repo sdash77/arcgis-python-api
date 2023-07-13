@@ -52,7 +52,10 @@ class MyFasterRCNN:
         These two arguments comes from dataset which you have prepared from prepare_data method above.
 
         """
-        (self.fasterrcnn_kwargs, kwargs,) = self.fastai.core.split_kwargs_by_func(
+        (
+            self.fasterrcnn_kwargs,
+            kwargs,
+        ) = self.fastai.core.split_kwargs_by_func(
             kwargs, self.torchvision.models.detection.FasterRCNN.__init__
         )
 
@@ -112,7 +115,7 @@ class MyFasterRCNN:
                 backbone, pretrained_backbone, backbone_cut
             )
             if "timm" in backbone.__module__:
-                from ._maskrcnn import TimmFPNBackbone
+                from arcgis.learn.models._maskrcnn import TimmFPNBackbone
 
                 try:
                     backbone_small = TimmFPNBackbone(backbone_small, data.chip_size)
@@ -184,15 +187,18 @@ class MyFasterRCNN:
         # torchvision FasterRCNN model gives losses only on training mode that is why set your model in train mode
         # such that you can get losses for your validation datset as well after each epoch.
         train = kwargs.get("train")
+        learn.model.train()
         if train:
             self.model.roi_heads.train_val = False
+            self.model.rpn.train_val = False
             self.model.train_val = False
             self.model.transform.train_val = False
         else:
+            learn.model.backbone.eval()  # to get feature in eval mode for evaluation
             self.model.roi_heads.train_val = True
+            self.model.rpn.train_val = True
             self.model.train_val = True
             self.model.transform.train_val = True
-        learn.model.train()
 
         target_list = []
 
@@ -256,6 +262,7 @@ class MyFasterRCNN:
         xb - tensor with shape [N, C, H, W]
         """
         self.model.roi_heads.train_val = False
+        self.model.rpn.train_val = False
         self.model.train_val = False
         self.model.transform.train_val = False
         self.nms_thres = self.model.roi_heads.nms_thresh
@@ -277,8 +284,8 @@ class MyFasterRCNN:
         return list(xb)  # model input require in the formate of list
 
     def transform_input_multispectral(self, xb, thresh=0.5, nms_overlap=0.1):
-
         self.model.roi_heads.train_val = False
+        self.model.rpn.train_val = False
         self.model.train_val = False
         self.model.transform.train_val = False
         self.nms_thres = self.model.roi_heads.nms_thresh
@@ -329,7 +336,6 @@ class MyFasterRCNN:
 
         post_processed_pred = []
         for p in pred:
-
             bbox, label, score = p["boxes"], p["labels"], p["scores"]
             # convert bboxes in range -1 to 1.
             bbox = bbox / (chip_size / 2) - 1
@@ -346,7 +352,6 @@ class MyFasterRCNN:
 
 
 def forward_roi(self, features, proposals, image_shapes, targets=None):
-
     """
     Arguments:
         features (List[Tensor])
@@ -359,7 +364,6 @@ def forward_roi(self, features, proposals, image_shapes, targets=None):
 
     if targets is not None:
         for t in targets:
-
             floating_point_types = (torch.float, torch.double, torch.half)
             assert (
                 t["boxes"].dtype in floating_point_types
@@ -367,6 +371,8 @@ def forward_roi(self, features, proposals, image_shapes, targets=None):
             assert t["labels"].dtype == torch.int64, "target labels must of int64 type"
 
     if self.training:
+        if train_val:
+            original_prpsl = [p.clone() for p in proposals]
         (
             proposals,
             matched_idxs,
@@ -394,10 +400,17 @@ def forward_roi(self, features, proposals, image_shapes, targets=None):
             "loss_box_reg": loss_box_reg,
         }
     if not self.training or train_val:
-
-        boxes, scores, labels = self.postprocess_detections(
-            class_logits, box_regression, proposals, image_shapes
-        )
+        if train_val:
+            box_features = self.box_roi_pool(features, original_prpsl, image_shapes)
+            box_features = self.box_head(box_features)
+            class_logits, box_regression = self.box_predictor(box_features)
+            boxes, scores, labels = self.postprocess_detections(
+                class_logits, box_regression, original_prpsl, image_shapes
+            )
+        else:
+            boxes, scores, labels = self.postprocess_detections(
+                class_logits, box_regression, proposals, image_shapes
+            )
         num_images = len(boxes)
         for i in range(num_images):
             result.append(
@@ -412,7 +425,6 @@ def forward_roi(self, features, proposals, image_shapes, targets=None):
 
 
 def postprocess_transform(self, result, image_shapes, original_image_sizes):
-
     train_val = getattr(self, "train_val", False)
 
     if not self.training or train_val:
@@ -429,10 +441,29 @@ def postprocess_transform(self, result, image_shapes, original_image_sizes):
     return result
 
 
+def post_nms_top_n(self):
+    train_val = getattr(self, "train_val", False)
+
+    if train_val:
+        return self._post_nms_top_n["testing"]
+    elif self.training:
+        return self._post_nms_top_n["training"]
+    return self._post_nms_top_n["testing"]
+
+
+def pre_nms_top_n(self):
+    train_val = getattr(self, "train_val", False)
+
+    if train_val:
+        self._pre_nms_top_n["testing"]
+    elif self.training:
+        return self._pre_nms_top_n["training"]
+    return self._pre_nms_top_n["testing"]
+
+
 if HAS_FASTAI:
 
     def eager_outputs_modified(self, losses, detections):
-
         train_val = getattr(self, "train_val", False)
 
         if train_val:
@@ -449,16 +480,16 @@ class FasterRCNN(ModelExtension):
     based on https://github.com/pytorch/vision/blob/master/torchvision/models/detection/faster_rcnn.py.
 
     =============================   =============================================
-    **Argument**                    **Description**
+    **Parameter**                    **Description**
     -----------------------------   ---------------------------------------------
     data                            Required fastai Databunch. Returned data object from
-                                    ``prepare_data`` function.
+                                    :meth:`~arcgis.learn.prepare_data`  function.
     -----------------------------   ---------------------------------------------
     backbone                        Optional string. Backbone convolutional neural network
                                     model used for feature extraction, which
                                     is `resnet50` by default.
                                     Supported backbones: ResNet family and specified Timm
-                                    models from :func:`~arcgis.learn.FasterRCNN.backbones`.
+                                    models(experimental support) from :func:`~arcgis.learn.FasterRCNN.backbones`.
     -----------------------------   ---------------------------------------------
     pretrained_path                 Optional string. Path where pre-trained model is
                                     saved.
@@ -467,7 +498,7 @@ class FasterRCNN(ModelExtension):
     **kwargs**
 
     =============================   =============================================
-    **Argument**                    **Description**
+    **Parameter**                    **Description**
     -----------------------------   ---------------------------------------------
     rpn_pre_nms_top_n_train         Optional int. Number of proposals to keep before
                                     applying NMS during training.
@@ -538,11 +569,12 @@ class FasterRCNN(ModelExtension):
                                     Default: 0.25
     =============================   =============================================
 
-    :return: ``FasterRCNN`` Object
+    :return:
+        :class:`~arcgis.learn.FasterRCNN` Object
+
     """
 
     def __init__(self, data, backbone="resnet50", pretrained_path=None, **kwargs):
-
         self._check_dataset_support(data)
         backbone_name = backbone if type(backbone) is str else backbone.__name__
         if backbone_name not in self.supported_backbones:
@@ -560,6 +592,12 @@ class FasterRCNN(ModelExtension):
         )
         self.learn.model.transform.postprocess = types.MethodType(
             postprocess_transform, self.learn.model.transform
+        )
+        self.learn.model.rpn.post_nms_top_n = types.MethodType(
+            post_nms_top_n, self.learn.model.rpn
+        )
+        self.learn.model.rpn.pre_nms_top_n = types.MethodType(
+            pre_nms_top_n, self.learn.model.rpn
         )
         self.learn.metrics = [AveragePrecision(self, data.c - 1)]
         idx = self._freeze()
@@ -599,7 +637,7 @@ class FasterRCNN(ModelExtension):
 
     @staticmethod
     def _supported_backbones():
-        timm_models = filter_timm_models()
+        timm_models = filter_timm_models(["*repvgg*", "*tresnet*"])
         timm_backbones = list(map(lambda m: "timm:" + m, timm_models))
         return [*_resnet_family] + timm_backbones
 
@@ -618,18 +656,19 @@ class FasterRCNN(ModelExtension):
         Creates a ``FasterRCNN`` object from an Esri Model Definition (EMD) file.
 
         =====================   ===========================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ---------------------   -------------------------------------------
         emd_path                Required string. Path to Deep Learning Package
                                 (DLPK) or Esri Model Definition(EMD) file.
         ---------------------   -------------------------------------------
         data                    Required fastai Databunch or None. Returned data
-                                object from ``prepare_data`` function or None for
+                                object from :meth:`~arcgis.learn.prepare_data`  function or None for
                                 inferencing.
 
         =====================   ===========================================
 
-        :return: `FasterRCNN` Object
+        :return:
+            :class:`~arcgis.learn.FasterRCNN` Object
         """
         emd_path = _get_emd_path(emd_path)
 
@@ -658,7 +697,6 @@ class FasterRCNN(ModelExtension):
 
         data_passed = True
         if data is None:
-
             data_passed = False
             train_tfms = []
             val_tfms = []
@@ -706,12 +744,11 @@ class FasterRCNN(ModelExtension):
         visualize=False,
         resize=False,
     ):
-
         """
         Runs prediction on an Image. This method is only supported for RGB images.
 
         =====================   ===========================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ---------------------   -------------------------------------------
         image_path              Required. Path to the image file to make the
                                 predictions on.
@@ -777,13 +814,12 @@ class FasterRCNN(ModelExtension):
         },
         resize=False,
     ):
-
         """
         Runs prediction on a video and appends the output VMTI predictions in the metadata file.
         This method is only supported for RGB images.
 
         =====================   ===========================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ---------------------   -------------------------------------------
         input_video_path        Required. Path to the video file to make the
                                 predictions on.
@@ -853,12 +889,11 @@ class FasterRCNN(ModelExtension):
         mean=False,
         show_progress=True,
     ):
-
         """
         Computes average precision on the validation set for each class.
 
         =====================   ===========================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ---------------------   -------------------------------------------
         detect_thresh           Optional float. The probability above which
                                 a detection will be considered for computing
@@ -878,12 +913,11 @@ class FasterRCNN(ModelExtension):
         """
 
     def show_results(self, rows=5, thresh=0.5, nms_overlap=0.1):
-
         """
         Displays the results of a trained model on a part of the validation set.
 
         =====================   ===========================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ---------------------   -------------------------------------------
         rows                    Optional int. Number of rows of results
                                 to be displayed.

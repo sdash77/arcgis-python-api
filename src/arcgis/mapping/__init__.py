@@ -17,7 +17,6 @@ from ._types import (
     OfflineMapAreaManager,
     PackagingJob,
 )
-from ._types import SceneLayer
 from .forms import (
     FormFieldElement,
     FormExpressionInfo,
@@ -30,8 +29,9 @@ from arcgis.mapping._scenelyrs import (
     Object3DLayer,
     IntegratedMeshLayer,
     Point3DLayer,
+    VoxelLayer,
 )
-from arcgis.mapping._scenelyrs import PointCloudLayer, BuildingLayer
+from arcgis.mapping._scenelyrs import PointCloudLayer, BuildingLayer, SceneLayer
 from arcgis.mapping._scenelyrs import (
     SceneLayerManager,
     EnterpriseSceneLayerManager,
@@ -42,9 +42,15 @@ from arcgis.mapping._msl import (
     MapTable,
     MapRasterLayer,
 )
-from ._utils import export_map, get_layout_templates
+from ._utils import export_map, get_layout_templates, create_colormap
 from .symbol import create_symbol, display_colormaps, show_styles
-from .renderer import generate_renderer
+from .renderer import (
+    generate_renderer,
+    generate_simple,
+    generate_classbreaks,
+    generate_heatmap,
+    generate_unique,
+)
 
 __all__ = [
     "WebMap",

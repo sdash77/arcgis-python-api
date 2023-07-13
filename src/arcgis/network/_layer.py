@@ -14,7 +14,6 @@ from arcgis.network import _utils
 from arcgis._impl.common._utils import _validate_url
 
 try:
-
     import pandas as pd
     from arcgis.features.geo import _is_geoenabled
 
@@ -29,6 +28,7 @@ except ImportError:
 from arcgis.gis import Item
 
 _log = logging.getLogger(__name__)
+
 
 ###########################################################################
 def _handle_spatial_inputs(data, do_not_locate=True, has_z=False, where=None):
@@ -227,7 +227,10 @@ class NetworkLayer(Layer):
         import concurrent.futures
 
         tp = concurrent.futures.ThreadPoolExecutor(1)
-        future = tp.submit(fn=fn, **inputs)
+        try:
+            future = tp.submit(fn=fn, **inputs)
+        except:
+            future = tp.submit(fn, **inputs)
         tp.shutdown(False)
         return future
 
@@ -305,7 +308,7 @@ class RouteLayer(NetworkLayer):
 
 
         ===================================     ====================================================================
-        **Argument**                            **Description**
+        **Parameter**                            **Description**
         -----------------------------------     --------------------------------------------------------------------
         stops                                   Required Points/FeatureSet/a list of Features. The set of stops
                                                 loaded as network locations during analysis. Stops can be specified
@@ -462,8 +465,8 @@ class RouteLayer(NetworkLayer):
         preserve_objectid                       Optional Boolean.  If True, all objectid values are maintained.  The
                                                 default is False.
         -----------------------------------     --------------------------------------------------------------------
-        future                                  Optional Boolean.  If True, the process is run asynchronously. The
-                                                default is False.
+        future                                  Optional boolean. If True, a future object will be returned and the process
+                                                will not wait for the task to complete. The default is False, which means wait for results.
         -----------------------------------     --------------------------------------------------------------------
         time_windows_are_utc                    Optional boolean. Specify whether the TimeWindowStart and TimeWindowEnd
                                                 attribute values on stops are specified in coordinated universal time (UTC)
@@ -690,7 +693,7 @@ class ServiceAreaLayer(NetworkLayer):
         query parameters.
 
         ===================================     ====================================================================
-        **Argument**                            **Description**
+        **Parameter**                            **Description**
         -----------------------------------     --------------------------------------------------------------------
         facilities                              The set of facilities loaded as network locations
                                                 during analysis. Facilities can be specified using
@@ -867,9 +870,8 @@ class ServiceAreaLayer(NetworkLayer):
         preserve_objectid                       Optional Boolean.  If True, all objectid values are
                                                 maintained.  The default is False.
         -----------------------------------     --------------------------------------------------------------------
-        future                                  Optional Boolean.  If True, the process is run asynchronously.
-                                                The default is False. If True, a NAJob is returned instead of the
-                                                results.
+        future                                  Optional boolean. If True, a future object will be returned and the process
+                                                will not wait for the task to complete. The default is False, which means wait for results.
         -----------------------------------     --------------------------------------------------------------------
         ignore_invalid_locations                If true, the solver will ignore invalid
                                                 locations. Otherwise, it will raise an error.
@@ -1065,7 +1067,7 @@ class ClosestFacilityLayer(NetworkLayer):
         parameters.
 
         ===================================     ====================================================================
-        **Argument**                            **Description**
+        **Parameter**                            **Description**
         -----------------------------------     --------------------------------------------------------------------
         facilities                              The set of facilities loaded as network locations
                                                 during analysis. Facilities can be specified using
@@ -1253,9 +1255,8 @@ class ClosestFacilityLayer(NetworkLayer):
         preserve_objectid                       Optional Boolean.  If True, all objectid values are
                                                 maintained. The default is False.
         -----------------------------------     --------------------------------------------------------------------
-        future                                  Optional Boolean.  If True, the process is run asynchronously.
-                                                The default is False. If True, a NAJob is returned instead of the
-                                                results.
+        future                                  Optional boolean. If True, a future object will be returned and the process
+                                                will not wait for the task to complete. The default is False, which means wait for results.
         -----------------------------------     --------------------------------------------------------------------
         ignore_invalid_locations                If true, the solver will ignore invalid
                                                 locations. Otherwise, it will raise an error.
@@ -1471,7 +1472,7 @@ class ODCostMatrixLayer(NetworkLayer):
         based on Euclidean distance.
 
         ====================================     ====================================================================
-        **Argument**                             **Description**
+        **Parameter**                             **Description**
         ------------------------------------     --------------------------------------------------------------------
         origins                                  Required FeatureLayer/SeDF/FeatureSet.
                                                  Specifies the starting points from which to travel to the destinations.
@@ -1554,7 +1555,8 @@ class ODCostMatrixLayer(NetworkLayer):
         ------------------------------------     --------------------------------------------------------------------
         overrides                                Optional Dict. Specify additional settings that can influence the behavior of the solver.
         ------------------------------------     --------------------------------------------------------------------
-        future                                   Optional boolean. If True, the result will be a `SolveJob` object and results will be returned asynchronously.
+        future                                   Optional boolean. If True, a future object will be returned and the process
+                                                 will not wait for the task to complete. The default is False, which means wait for results.
         ------------------------------------     --------------------------------------------------------------------
         geometry_precision                       Optional Integer. Use this parameter to specify the number of decimal places in the response geometries returned by solve operation. This applies to x/y values only (not m- or z-values).
         ------------------------------------     --------------------------------------------------------------------

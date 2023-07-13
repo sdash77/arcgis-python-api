@@ -78,7 +78,7 @@ def calculate_motion_statistics(
         Only available at ArcGIS Enterprise 10.9 and later.
 
     ======================  ===============================================================
-    **Argument**            **Description**
+    **Parameter**            **Description**
     ----------------------  ---------------------------------------------------------------
     input_layer             Required layer. The time-enabled point features that will be
                             grouped into tracks and analyzed. The input layer must be of
@@ -87,10 +87,19 @@ def calculate_motion_statistics(
     track_fields            Required String. The fields used to identify distinct tracks.
                             There can be multiple trackFields in seperated by commas.
     ----------------------  ---------------------------------------------------------------
-    motion_statistics       Optional String. The type of motion statistics to calulcated.
-                            The allowed values are: `distance`, `speed`, `acceleration`,
-                            `duration` or `elevation`, `slope`, `idle`, `bearing`, or `all` (default).
+    motion_statistics       Optional String. The type of motion statistics to calculated.
+                            The allowed values are:
+                             * ``distance``
+                             * ``speed``
+                             * ``acceleration``
+                             * ``duration``
+                             * ``elevation``
+                             * ``slope``
+                             * ``idle``
+                             * ``bearing``
+                             * ``all``
 
+                             ``all`` is the default.
     ----------------------  ---------------------------------------------------------------
     track_history_window    Optional Integer. The number of observations (including the
                             current observation) that will be used when calculating summary
@@ -101,11 +110,11 @@ def calculate_motion_statistics(
                             observation and the previous three observations. This parameter
                             does not affect instantaneous statistics or idle classification.
     ----------------------  ---------------------------------------------------------------
-    idle_tol_dist           Optional Float. Used along with `idle_time_tol` to decide if an
+    idle_tol_dist           Optional Float. Used along with ``idle_time_tol`` to decide if an
                             entity is idling. An entity is idling when it hasn't moved more
                             than this distance in at least the amount of time specified by
-                            `idle_time_tol`. The units of the time values are supplied by
-                            the `idle_tol_dist` parameter.
+                            ``idle_time_tol``. The units of the time values are supplied by
+                            the ``idle_tol_unit`` parameter.
 
                             This value is only used for statistics in the Idle group.
     ----------------------  ---------------------------------------------------------------
@@ -117,61 +126,104 @@ def calculate_motion_statistics(
     ----------------------  ---------------------------------------------------------------
     time_boundary_split     Optional Float. A time boundary allows your to analyze values within a defined time span.
     ----------------------  ---------------------------------------------------------------
-    split_unit              Optional String. The unit of time represented in the `time_boundary_split`.
+    split_unit              Optional String. The unit of time represented in the ``time_boundary_split``.
     ----------------------  ---------------------------------------------------------------
     time_bound_ref          Optional Datetime. A date that specifies the reference time to
                             align the time boundary to, represented in milliseconds from epoch.
     ----------------------  ---------------------------------------------------------------
     dist_method             Optional String. The method used to calculate distances between
-                            track observations. There are two methods to choose from: `Planar`
-                            and `Geodesic`. The `Planar` method measures distances using an
-                            Euclidean plane and will not calculate statistics across the
-                            date line. When the `Geodesic` method is used to calculate
-                            distance and the spatial reference can be panned, calculations
-                            will cross the date line when appropriate. If the spatial
-                            reference cannot be panned, calculations will be limited to the
-                            coordinate system extent and may not wrap.
+                            track observations.
+
+                            There are two methods to choose from:
+                             * ``Planar`` - measures distances using an
+                               Euclidean plane and will not calculate statistics across the
+                               date line.
+                             * ``Geodesic`` - calculations vary depending upon:
+
+                               * If the spatial reference can be panned, calculations
+                                 will cross the date line when appropriate
+                               * If the spatial reference cannot be panned, calculations will be limited to the
+                                 coordinate system extent and may not wrap.
     ----------------------  ---------------------------------------------------------------
     distance_unit           Optional String. The units for all results in the Distance
                             motion statistics group.
-                            Values: Meters (default) | Kilometers | Feet | Miles | NauticalMiles | Yards
+
+                            Options:
+                             * ``Meters``
+                             * ``Kilometers``
+                             * ``Feet``
+                             * ``Miles``
+                             * ``NauticalMiles``
+                             * ``Yards``
+
+                            ``Meters`` is the default.
     ----------------------  ---------------------------------------------------------------
     duration_unit           Optional String. The units for all results in the Duration motion statistics group.
 
-                            Values: Milliseconds | Seconds (default) | Minutes | Hours | Days | Weeks| Months | Years
+                            Options:
+                                * ``Milliseconds``
+                                * ``Seconds``
+                                * ``Minutes``
+                                * ``Hours``
+                                * ``Days``
+                                * ``Weeks``
+                                * ``Months``
+                                * ``Years``
+
+                            ``Seconds`` is the default.
     ----------------------  ---------------------------------------------------------------
     speed_unit              Optional String. The units for all results in the Speed motion statistics group.
 
-                            Values: MetersPerSecond (default) | KilometersPerHour | FeetPerSecond | MilesPerHour | NauticalMilesPerHour
+                            Options:
+                             * ``MetersPerSecond`` (default)
+                             * ``KilometersPerHour``
+                             * ``FeetPerSecond``
+                             * ``MilesPerHour``
+                             * ``NauticalMilesPerHour``
+
+                            ``MetersPerSecond`` is the default.
     ----------------------  ---------------------------------------------------------------
     accel_unit              Optional String. The units for all results in the Acceleration motion statistics group.
 
-                            Values: MetersPerSecondSquared (default) | FeetPerSecondSquared
+                            Options:
+                              * ``MetersPerSecondSquared``
+                              * ``FeetPerSecondSquared``
+
+                            ``MetersPerSecondSquared`` is the default.
     ----------------------  ---------------------------------------------------------------
     elev_unit               Optional String. The units for all results in the Elevation motion statistics group.
 
-                            Values: Meters (default) | Kilometers | Feet | Miles | NauticalMiles | Yards
+                            Options:
+                                * ``Meters``
+                                * ``Kilometers``
+                                * ``Feet``
+                                * ``Miles``
+                                * ``NauticalMiles``
+                                * ``Yards``
+
+                            ``Meters`` is the default.
     ----------------------  ---------------------------------------------------------------
     output_name             optional string. The task will create a feature service of the
                             results. You define the name of the service.
     ----------------------  ---------------------------------------------------------------
-    gis                     optional GIS. The GIS object where the analysis will take place.
+    gis                     optional :class:`~arcgis.gis.GIS`. The GIS object where the analysis will take place.
     ----------------------  ---------------------------------------------------------------
     context                 Optional dict. The context parameter contains additional settings that affect task execution. For this task, there are five settings:
 
-                            #. Extent (``extent``) - A bounding box that defines the analysis area. Only those features that intersect the bounding box will be analyzed.
-                            #. Processing spatial reference (``processSR``) - The features will be projected into this coordinate system for analysis.
-                            #. Output spatial reference (``outSR``) - The features will be projected into this coordinate system after the analysis to be saved. The output spatial reference for the spatiotemporal big data store is always WGS84.
-                            #. Data store (``dataStore``) - Results will be saved to the specified data store. For ArcGIS Enterprise, the default is the spatiotemporal big data store.
-                            #. Default aggregation styles (``defaultAggregationStyles``) - If set to 'True', results will have square, hexagon, and triangle aggregation styles enabled on results map services.
+                                * ``extent`` - A bounding box that defines the analysis area. Only those features that intersect the bounding box will be analyzed.
+                                * ``processSR`` - The features will be projected into this coordinate system for analysis.
+                                * ``outSR`` - The features will be projected into this coordinate system after the analysis to be saved. The output spatial reference for the spatiotemporal big data store is always WGS84.
+                                * ``dataStore`` - Results will be saved to the specified data store. For ArcGIS Enterprise, the default is the spatiotemporal big data store.
+                                * ``defaultAggregationStyles`` - If set to 'True', results will have square, hexagon, and triangle aggregation styles enabled on results map services.
     ----------------------  ---------------------------------------------------------------
-    future                  optional boolean. If 'True', a GPJob is returned instead of
+    future                  optional boolean. If ``True``, a GPJob is returned instead of
                             results. The GPJob can be queried on the status of the execution.
 
-                            The default value is 'False'.
+                            The default value is ``False``.
     ======================  ===============================================================
 
-    :return: result_layer : Output Features as :class:`~arcgis.features.FeatureLayer`.
+    :return:
+        :class:`~arcgis.features.FeatureLayer`
 
     """
 
@@ -296,12 +348,14 @@ def enrich_from_grid(
         Only available at ArcGIS Enterprise 10.7 and later.
 
     ======================  ===============================================================
-    **Argument**            **Description**
+    **Parameter**            **Description**
     ----------------------  ---------------------------------------------------------------
     input_layer             Required layer. The point features that will be enriched
                             by the multi-variable grid. See :ref:`Feature Input<gaxFeatureInput>`.
     ----------------------  ---------------------------------------------------------------
-    grid_layer              Required layer. The multivariable grid layer created using the Build Multi-Variable Grid task.
+    grid_layer              Required layer. The multivariable grid layer created using the
+                            `Build Multi-Variable Grid <https://enterprise.arcgis.com/en/portal/latest/use/geoanalytics-build-multi-variable-grid.htm>`_
+                            tool.
                             See :ref:`Feature Input<gaxFeatureInput>`.
     ----------------------  ---------------------------------------------------------------
     enrichment_attributes   optional string. A list of fields in the multi-variable grid
@@ -312,23 +366,23 @@ def enrich_from_grid(
     output_name             optional string. The task will create a feature service of the
                             results. You define the name of the service.
     ----------------------  ---------------------------------------------------------------
-    gis                     optional GIS. The GIS object where the analysis will take place.
+    gis                     optional :class:`~arcgis.gis.GIS`. The GIS object where the analysis will take place.
     ----------------------  ---------------------------------------------------------------
     context                 Optional dict. The context parameter contains additional settings that affect task execution. For this task, there are five settings:
 
-                            #. Extent (``extent``) - A bounding box that defines the analysis area. Only those features that intersect the bounding box will be analyzed.
-                            #. Processing spatial reference (``processSR``) - The features will be projected into this coordinate system for analysis.
-                            #. Output spatial reference (``outSR``) - The features will be projected into this coordinate system after the analysis to be saved. The output spatial reference for the spatiotemporal big data store is always WGS84.
-                            #. Data store (``dataStore``) - Results will be saved to the specified data store. For ArcGIS Enterprise, the default is the spatiotemporal big data store.
-                            #. Default aggregation styles (``defaultAggregationStyles``) - If set to 'True', results will have square, hexagon, and triangle aggregation styles enabled on results map services.
+                             * ``extent`` - A bounding box that defines the analysis area. Only those features that intersect the bounding box will be analyzed.
+                             * ``outSR`` - The features will be projected into this coordinate system after the analysis to be saved. The output spatial reference for the spatiotemporal big data store is always WGS84.
+                             * ``dataStore`` - Results will be saved to the specified data store. For ArcGIS Enterprise, the default is the spatiotemporal big data store.
+                             * ``defaultAggregationStyles`` - If set to 'True', results will have square, hexagon, and triangle aggregation styles enabled on results map services.
     ----------------------  ---------------------------------------------------------------
-    future                  optional boolean. If 'True', a GPJob is returned instead of
+    future                  optional boolean. If ``True``, a GPJob is returned instead of
                             results. The GPJob can be queried on the status of the execution.
 
-                            The default value is 'False'.
+                            The default value is ``False``.
     ======================  ===============================================================
 
-    :return: result_layer : Output Features as :class:`~arcgis.features.FeatureLayer`.
+    :return:
+        :class:`~arcgis.features.FeatureLayer`
 
     .. code-block:: python
 

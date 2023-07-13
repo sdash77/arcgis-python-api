@@ -3,14 +3,11 @@
 # Purpose:     Sanity tests for ArcGIS Python API
 # -------------------------------------------------------------------------------
 import unittest
-import sys
-
-sys.path.insert(0, r"C:\ipython_workfolder\geosaurus\tests")
 from integration.dino_utils.dino_precondition_checks import PreconditionChecks
 from integration.dino_utils.dino_precondition_checks import PortalUtils
 from integration.dino_utils.dino_configs import DinoConfigs
-
-sys.path.insert(0, r"C:\ipython_workfolder\geosaurus\sys")
+from integration.config import QALAB_ROOT_PATH
+from configparser import ConfigParser
 import datetime
 import os
 
@@ -64,7 +61,7 @@ class Test_DatastoreManager_portal_builtin(unittest.TestCase):
         Get class test asset location
         :return:
         """
-        cls.gis = GIS(profile="your_enterprise_profile", verify_cert=False)
+        cls.gis = GIS(profile="your_ent_admin_profile", verify_cert=False)
         if cls.gis is None:
             cls.class_skip = True
 
@@ -300,6 +297,12 @@ class Test_DatastoreManager_portal_builtin(unittest.TestCase):
             ga_DM = geoanalytics.get_datastores(self.gis)
 
             # add unittest_ChicagoCrime BDFS
+            _conf_reader = ConfigParser()
+            _conf_reader.read(DinoConfigs.root_init_file, "UTF-8")
+            self.qalab_base_path = QALAB_ROOT_PATH
+            self.qalab_cls_path = (
+                self.qalab_base_path + _conf_reader["test_data"]["qalab_DatastoreManager_cls"]
+            )
             bdfs_title = "unittest_fortune500"
             data_path = os.path.join(self.qalab_cls_path, "fortune500_BDFS")
             print("Registering datastore from: " + data_path)

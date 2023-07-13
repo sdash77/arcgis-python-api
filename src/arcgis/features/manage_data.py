@@ -15,6 +15,7 @@ from arcgis.features.layer import FeatureLayer, FeatureLayerCollection
 from arcgis.gis import GIS, Item
 from .._impl.common._utils import inspect_function_inputs
 
+
 # ----------------------------------------------------------------------
 def generate_tessellation(
     extent_layer: Union[
@@ -34,12 +35,13 @@ def generate_tessellation(
     gis: Optional[GIS] = None,
     estimate: bool = False,
     future: bool = False,
+    bin_resolution: Optional[int] = None,
 ):
     """
     Generates a tessellated grid of regular polygons.
 
     ====================================     ====================================================================
-    **Parameter**                            **Description**
+    **Parameter**                             **Description**
     ------------------------------------     --------------------------------------------------------------------
     extent_layer                             Optional layer. A layer defining the processing extent.
     ------------------------------------     --------------------------------------------------------------------
@@ -52,8 +54,8 @@ def generate_tessellation(
                                              'NauticalMiles'.
     ------------------------------------     --------------------------------------------------------------------
     bin_type                                 Optional String. The type of shape to tessellate.
-                                             Allowed values are: 'SQUARE', 'HEXAGON', 'TRIANGLE', 'DIAMOND', or
-                                             'TRANSVERSEHEXAGON'.
+                                             Allowed values are: 'SQUARE', 'HEXAGON', 'TRIANGLE', 'DIAMOND',
+                                             'TRANSVERSEHEXAGON', or `H3_HEXAGON`.
     ------------------------------------     --------------------------------------------------------------------
     intersect_study_area                     Optional Boolean. A boolean defines whether to keep only tessellations intersect with the study area.
 
@@ -81,11 +83,17 @@ def generate_tessellation(
                                                                 "outSR": {"wkid": 3857},
                                                                 "overwrite": True}
     ------------------------------------     --------------------------------------------------------------------
-    gis                                      Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
+    gis                                      Optional, the :class:`~arcgis.gis.GIS`  on which this tool runs. If not specified, the active GIS is used.
     ------------------------------------     --------------------------------------------------------------------
     estimate                                 Optional Boolean. If True, the number of credits to run the operation will be returned.
     ------------------------------------     --------------------------------------------------------------------
-    future                                   Optional boolean. If True, the result will be a GPJob object and results will be returned asynchronously.
+    future                                   Optional boolean. If True, a future object will be returned and the process
+                                             will not wait for the task to complete. The default is False, which means wait for results.
+    ------------------------------------     --------------------------------------------------------------------
+    bin_resolution                           Optional Integer. This becomes required when H3_HEXAGON is used.
+                                             The H3 resolution of the hexagons. Resolution ranges from 0 to 15.
+                                             With each increasing resolution size, the area of the polygons will
+                                             be one seventh the size.
     ====================================     ====================================================================
 
     .. note::
@@ -93,10 +101,12 @@ def generate_tessellation(
 
     :return:
         :class:`~arcgis.features.FeatureLayer` if out_put name specified or
-        a :class:`~arcgis.features.FeatureLayerCollection`
+        a :class:`~arcgis.features.FeatureLayerCollection`.
+        If ``future = True``, then the result is a :class:`~concurrent.futures.Future` object. Call ``result()`` to get the response.
 
     """
-
+    if not bin_resolution is None and (bin_resolution > 15 or bin_resolution < 0):
+        raise ValueError("bin_resolution must be between 0 to 15")
     gis = _arcgis.env.active_gis if gis is None else gis
     if not ((context and "extent" in context) or extent_layer):
         raise ValueError("Tool requires an extent_layer or defined extent.")
@@ -111,6 +121,7 @@ def generate_tessellation(
         "gis": gis,
         "estimate": estimate,
         "future": future,
+        "bin_resolution": bin_resolution,
     }
     params = inspect_function_inputs(
         fn=gis._tools.featureanalysis._tbx.generate_tessellations, **kwargs
@@ -149,7 +160,7 @@ def dissolve_boundaries(
     if they have the same value for State_Name. The end result is a layer of state boundaries.
 
     ====================================     =====================================================================================
-    **Parameter**                            **Description**
+    **Parameter**                             **Description**
     ------------------------------------     -------------------------------------------------------------------------------------
     input_layer                              Required layer. The layer containing polygon features that will be dissolved. See :ref:`Feature Input<FeatureInput>`.
     ------------------------------------     -------------------------------------------------------------------------------------
@@ -163,11 +174,11 @@ def dissolve_boundaries(
                                              Adjacent counties will be merged together if they have the same value for State_Name. The end result is a layer of
                                              state boundaries.If two or more fields are specified, the values in these fields must be the same for the boundary to be dissolved.
     ------------------------------------     -------------------------------------------------------------------------------------
-    summary_fields                           | Optional list of strings.
+    summary_fields                           Optional list of strings.
                                              A list of field names and statistical summary types that you
                                              wish to calculate from the polygons that are dissolved together:
 
-                                             | *["fieldName summary type", "fieldName2 summaryType"]*
+                                             *["fieldName summary type", "fieldName2 summaryType"]*
 
                                              `fieldName` is the name of one of the numeric fields found in the
                                              input_layer.
@@ -204,7 +215,7 @@ def dissolve_boundaries(
 
                                              - ``extent`` - a bounding box that defines the analysis area. Only those features in the input_layer that intersect the bounding box will be analyzed.
                                              - ``outSR`` - the output features will be projected into the output spatial reference referred to by the `wkid`.
-                                             - ``overwrite`` - if True, then the feature layer in output_name will be overwritten with new feature layer. Available for ArcGIS Online or Enterprise 10.9.1+
+                                             - ``overwrite`` - if True, then the feature layer in output_name will be overwritten with new feature layer. Available for ArcGIS Online or Enterprise 11+
 
                                                 .. code-block:: python
 
@@ -225,17 +236,20 @@ def dissolve_boundaries(
                                              share a common attribute table but are not visibly connected) are allowed in
                                              the output feature class.
 
-                                             | Choice list: [``True``, ``False``]
+                                             Choice list: [``True``, ``False``]
 
-                                               * ``True``: Specifies multipart features are allowed.
-                                               * ``False``: Specifies multipart features are not allowed. Instead of creating multipart features, individual features will be created for each part.
+                                             * ``True``: Specifies multipart features are allowed.
+                                             * ``False``: Specifies multipart features are not allowed. Instead of creating multipart features, individual features will be created for each part.
 
                                              The default value is ``True``.
     ------------------------------------     -------------------------------------------------------------------------------------
-    future                                   Optional boolean. If True, the result will be a :class:`~arcgis.geoprocessing.GPJob` object and results will be returned asynchronously.
+    future                                   Optional boolean. If True, a future object will be returned and the process
+                                             will not wait for the task to complete. The default is False, which means wait for results.
     ====================================     =====================================================================================
 
-    :return: result_layer : :class:`~arcgis.features.FeatureLayer` if output_name is specified, else :class:`Feature Collection <arcgis.features.FeatureCollection>`.
+    :return:
+        result_layer : :class:`~arcgis.features.FeatureLayer` if output_name is specified, else :class:`Feature Collection <arcgis.features.FeatureCollection>`.
+        If ``future = True``, then the result is a :class:`~concurrent.futures.Future` object. Call ``result()`` to get the response.
 
 
     .. code-block:: python
@@ -300,7 +314,7 @@ def extract_data(
     File geodatabases and shapefiles are added to a zip file that can be downloaded.
 
     ===================================    =========================================================
-    **Argument**                           **Description**
+    **Parameter**                           **Description**
     -----------------------------------    ---------------------------------------------------------
     input_layers                           Required list of strings. A list of input layers to be extracted. See :ref:`Feature Input<FeatureInput>`.
     -----------------------------------    ---------------------------------------------------------
@@ -313,7 +327,7 @@ def extract_data(
     -----------------------------------    ---------------------------------------------------------
     data_format                            Optional string. A keyword defining the output data format for your extracted data.
 
-                                           Choice list: ``['FileGeodatabase', 'ShapeFile', 'KML', 'CSV']``
+                                           Choice list: ['FileGeodatabase', 'ShapeFile', 'KML', 'CSV']
 
                                            The default is 'CSV'.
 
@@ -342,14 +356,16 @@ def extract_data(
 
                                            For more information on these and other item properties, see the Item resource page in the `ArcGIS REST API. <https://developers.arcgis.com/rest/users-groups-and-items/item.htm>`_
     -----------------------------------    ---------------------------------------------------------
-    gis                                    Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
+    gis                                    Optional, the :class:`~arcgis.gis.GIS`  on which this tool runs. If not specified, the active GIS is used.
     -----------------------------------    ---------------------------------------------------------
     estimate                               Optional boolean. If True, the number of credits to run the operation will be returned.
     -----------------------------------    ---------------------------------------------------------
-    future                                 Optional boolean. If True, the result will be a GPJob object and results will be returned asynchronously.
+    future                                 Optional boolean. If True, a future object will be returned and the process
+                                           will not wait for the task to complete. The default is False, which means wait for results.
     ===================================    =========================================================
 
     :return: result_layer : :class:`~arcgis.features.FeatureLayer` if output_name is specified, else :class:`Feature Collection <arcgis.features.FeatureCollection>`.
+    If ``future = True``, then the result is a :class:`~concurrent.futures.Future` object. Call ``result()`` to get the response.
 
     .. code-block:: python
 
@@ -361,6 +377,8 @@ def extract_data(
                                  data_format='ShapeFile',
                                  output_name='state highway extracted')
     """
+    if data_format is None:
+        data_format = "CSV"
     gis = _arcgis.env.active_gis if gis is None else gis
     kwargs = {
         "input_layers": input_layers,
@@ -397,7 +415,7 @@ def merge_layers(
         str,
         dict[str, Any],
     ],
-    merging_attributes: Union[list[str]] = [],
+    merging_attributes: list[str] = [],
     output_name: Optional[Union[str, FeatureLayer]] = None,
     context: Optional[dict] = None,
     gis: Optional[GIS] = None,
@@ -415,16 +433,14 @@ def merge_layers(
     * I have two layers containing parcel information for contiguous townships. I want to join them together into a single layer, keeping only the fields that have the same name and type on the two layers.
 
     ================    ===============================================================
-    **Argument**        **Description**
+    **Parameter**        **Description**
     ----------------    ---------------------------------------------------------------
     input_layer         Required feature layer. The point, line or polygon features with the ``merge_layer``. See :ref:`Feature Input<FeatureInput>`.
     ----------------    ---------------------------------------------------------------
     merge_layer         Required feature layer. The point, line, or polygon features to merge with the ``input_layer``.
                         The ``merge_layer`` must contain the same feature type (point, line, or polygon) as the ``input_layer``. See :ref:`Feature Input<FeatureInput>`.
     ----------------    ---------------------------------------------------------------
-    merge_attributes    Optional list. Defines how the fields in ``merge_layer`` will be
-                        modified. By default, all fields from both inputs will be
-                        included in the output layer.
+    merge_attributes    Optional list. Defines how the fields in ``merge_layer`` will be modified. By default, all fields from both inputs will be included in the output layer.
 
                         If a field exists in one layer but not the other, the output
                         layer will still contain the field. The output field will
@@ -439,12 +455,10 @@ def merge_layers(
                         specified ``merge_layer`` field:
 
                         + ``Remove`` - The field in the ``merge_layer`` will be removed from the output layer.
-                        + ``Rename`` - The field in the ``merge_layer`` will be renamed in the output layer.
-                            You cannot rename a field in the ``merge_layer`` to a field in the ``input_layer``. If you want to make field names equivalent, use Match.
-                        + ``Match`` - A field in the ``merge_layer`` is made equivalent to a field in the ``input_layer`` specified by merge value.
-                            For example, the ``input_layer`` has a field named CODE and the ``merge_layer`` has a field named STATUS.
-                            You can match STATUS to CODE, and the output will contain the CODE field with values of the STATUS field used for features copied from the ``merge_layer``.
-                            Type casting is supported (for example, float to integer, integer to string) except for string to numeric.
+
+                        + ``Rename`` - The field in the ``merge_layer`` will be renamed in the output layer. You cannot rename a field in the ``merge_layer`` to a field in the ``input_layer``. If you want to make field names equivalent, use Match.
+
+                        + ``Match`` - A field in the ``merge_layer`` is made equivalent to a field in the ``input_layer`` specified by merge value. For example, the ``input_layer`` has a field named CODE and the ``merge_layer`` has a field named STATUS. You can match STATUS to CODE, and the output will contain the CODE field with values of the STATUS field used for features copied from the ``merge_layer``. Type casting is supported (for example, float to integer, integer to string) except for string to numeric.
     ----------------    ---------------------------------------------------------------
     output_name         Optional string or :class:`~arcgis.features.FeatureLayer`. Existing
                         feature layer will cause the new layer to be appended to the Feature Service.
@@ -469,14 +483,16 @@ def merge_layers(
                                             "outSR": {"wkid": 3857},
                                             "overwrite": True}
     ----------------    ---------------------------------------------------------------
-    gis                 Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
+    gis                 Optional, the :class:`~arcgis.gis.GIS`  on which this tool runs. If not specified, the active GIS is used.
     ----------------    ---------------------------------------------------------------
     estimate            Optional boolean. If True, the estimated number of credits required to run the operation will be returned.
     ----------------    ---------------------------------------------------------------
-    future              Optional boolean. If True, the result will be a GPJob object and results will be returned asynchronously.
+    future              Optional boolean. If True, a future object will be returned and the process
+                        will not wait for the task to complete. The default is False, which means wait for results.
     ================    ===============================================================
 
     :return: result_layer : :class:`~arcgis.features.FeatureLayer` if ``output_name`` is specified, else Feature Collection.
+    If ``future = True``, then the result is a :class:`~concurrent.futures.Future` object. Call ``result()`` to get the response.
 
     .. code-block:: python
 
@@ -535,9 +551,9 @@ def overlay_layers(
     """
     .. image:: _static/images//overlay_layers/overlay_layers.png
 
-    .. |Intersect| image:: _static/images/overlay_layers/Intersect.png
-    .. |Union| image:: _static/images/overlay_layers/Union.png
-    .. |Erase| image:: _static/images/overlay_layers/Erase.png
+    .. |Intersect| image:: _static/images/overlay_layers/overlay_intersect.png
+    .. |Union| image:: _static/images/overlay_layers/overlay_union.png
+    .. |Erase| image:: _static/images/overlay_layers/overlay_erase.png
 
 
     The ``overlay_layers`` method combines two or more layers into one single layer.
@@ -554,7 +570,7 @@ def overlay_layers(
     + What wells are within abandoned military bases?
 
     ================    ===============================================================
-    **Argument**        **Description**
+    **Parameter**        **Description**
     ----------------    ---------------------------------------------------------------
     input_layer         Required layer. The point, line, or polygon features that will be
                         overlayed with the ``overlay_layer``. See :ref:`Feature Input<FeatureInput>`.
@@ -590,13 +606,12 @@ def overlay_layers(
 
                         Choice list: ['Input', 'Line', 'Point']
 
-                            *  ``Input`` - The features returned will be the same geometry type as
-                            the ``input_layer`` or ``overlay_layer`` with the lowest dimension geometry.
-                            If all inputs are polygons, the output will contain polygons. If one or more of
-                            the inputs are lines and none of the inputs are points, the output will be line.
-                            If one or more of the inputs are points, the output will contain points. This is the default.
-                            *  ``Line`` - Line intersections will be returned. This is only valid if none of the inputs are points.
-                            *  ``Point`` - Point intersections will be returned. If the inputs are line or polygon, the output will be a multipoint layer.
+                        *  ``Input`` - The features returned will be the same geometry type as the ``input_layer`` or ``overlay_layer`` with the lowest dimension geometry.
+                           If all inputs are polygons, the output will contain polygons. If one or more of the inputs are lines and none of the inputs are points, the output will be line. If one or more of the inputs are points, the output will contain points. This is the default.
+
+                        *  ``Line`` - Line intersections will be returned. This is only valid if none of the inputs are points.
+
+                        *  ``Point`` - Point intersections will be returned. If the inputs are line or polygon, the output will be a multipoint layer.
     ----------------    ---------------------------------------------------------------
     tolerance           Optional float. A float value of the minimum distance separating all feature coordinates
                         as well as the distance a coordinate can move in X or Y (or both). The units of tolerance are the same as the units of the ``input_layer``.
@@ -624,12 +639,15 @@ def overlay_layers(
                                             "outSR": {"wkid": 3857},
                                             "overwrite": True}
     ----------------    ---------------------------------------------------------------
-    gis                 Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
+    gis                 Optional, the :class:`~arcgis.gis.GIS`  on which this tool runs. If not specified, the active GIS is used.
     ----------------    ---------------------------------------------------------------
-    future              Optional boolean. If True, the result will be a GPJob object and results will be returned asynchronously.
+    future              Optional boolean. If True, a future object will be returned and the process
+                        will not wait for the task to complete. The default is False, which means wait for results.
     ================    ===============================================================
 
-    :return: result_layer : :class:`~arcgis.features.FeatureLayer` if ``output_name`` is specified, else Feature Collection.
+    :return:
+        result_layer : :class:`~arcgis.features.FeatureLayer` if ``output_name`` is specified, else Feature Collection.
+    If ``future = True``, then the result is a :class:`~concurrent.futures.Future` object. Call ``result()`` to get the response.
 
 
     .. code-block:: python
@@ -673,7 +691,6 @@ def create_route_layers(
     estimate: bool = False,
     future: bool = False,
 ):
-
     """
     The ``create_route_layers`` method creates route layer items on the portal from the input route data.
 
@@ -683,7 +700,7 @@ def create_route_layers(
 
 
     =========================    =========================================================
-    **Parameter**                **Description**
+    **Parameter**                 **Description**
     -------------------------    ---------------------------------------------------------
     route_data                   Required item. The item id for the route data item that is used to create route layer items.
                                  Before running this task, the route data must be added to your portal as an item.
@@ -712,14 +729,16 @@ def create_route_layers(
                                  If a folder with the specified name exists, the items will be created in the existing folder.
                                  If a value for folder_name is not specified, the route layer items are created in the root folder of your online workspace.
     -------------------------    ---------------------------------------------------------
-    gis                          Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
+    gis                          Optional, the :class:`~arcgis.gis.GIS`  on which this tool runs. If not specified, the active GIS is used.
     -------------------------    ---------------------------------------------------------
     estimate                     Optional boolean. If True, the estimated number of credits required to run the operation will be returned.
     -------------------------    ---------------------------------------------------------
-    future                       Optional boolean. If True, the result will be a GPJob object and results will be returned asynchronously.
+    future                       Optional boolean. If True, a future object will be returned and the process
+                                 will not wait for the task to complete. The default is False, which means wait for results.
     =========================    =========================================================
 
-    :return: result_layer : A list (items) or an :class:`~arcgis.gis.Item`
+    :return: result_layer : A list (items) or an :class:`~arcgis.gis.Item`.
+    If ``future = True``, then the result is a :class:`~concurrent.futures.Future` object. Call ``result()`` to get the response.
 
     .. code-block:: python
 

@@ -10,9 +10,9 @@ class PieChart(_BaseWidget):
     Creates a dashboard Pie Chart widget.
 
     =========================   ===========================================
-    **Argument**                **Description**
+    **Parameter**                **Description**
     -------------------------   -------------------------------------------
-    item                        Required Portal Item object. Item object can
+    item                        Required Portal :class:`~arcgis.gis.Item` object. Item object can
                                 be a Table Layer or a MapWidget.
     -------------------------   -------------------------------------------
     name                        Optional string. Name of the pie chart
@@ -81,7 +81,7 @@ class PieChart(_BaseWidget):
     @property
     def events(self):
         """
-        :return: list of events attached to the widget.
+        :return: List of events attached to the widget.
         """
         return self._events
 
@@ -130,21 +130,21 @@ class PieChart(_BaseWidget):
     @property
     def max_features(self):
         """
-        :return: max number of features to display.
+        :return: Maximum number of features to display.
         """
         return self._max_features
 
     @max_features.setter
     def max_features(self, value):
         """
-        Set max number of features to display.
+        Set maximum number of features to display.
         """
         self._max_features = int(value)
 
     @property
     def show_last_update(self):
         """
-        :return: show last update or not.
+        :return: Show last update or not.
         """
         return self._show_last_update
 
@@ -158,7 +158,7 @@ class PieChart(_BaseWidget):
     @property
     def labels(self):
         """
-        :return: show labels or not.
+        :return: Show labels or not.
         """
         return self._labels
 
@@ -179,7 +179,6 @@ class PieChart(_BaseWidget):
         return hex_number
 
     def _convert_to_json(self):
-
         self._fields_slices = []
         self._statistic_fields = []
 
@@ -569,7 +568,6 @@ class PieChartProperties(object):
         inner_radius=0,
         hover_text=True,
     ):
-
         chart = PieChartProperties()
 
         chart._text_color = text_color
@@ -933,7 +931,7 @@ class Events(object):
         Synchronize a mapWidget with PieChart for triggered events.
 
         =========================   ===========================================
-        **Argument**                **Description**
+        **Parameter**                **Description**
         -------------------------   -------------------------------------------
         action_type                 Required string. Actions can be one of
                                     "zoom", "flash", "show_popup", "pan".
@@ -973,7 +971,7 @@ class Events(object):
         Synchronize non-mapWidget type widgets with PieChart for triggered events.
 
         =========================   ===========================================
-        **Argument**                **Description**
+        **Parameter**                **Description**
         -------------------------   -------------------------------------------
         widget                      Required widget item or list of widget items
                                     .Name of the widgets to be synced.

@@ -15,7 +15,9 @@ with the server properties API.
 from __future__ import absolute_import
 from __future__ import print_function
 from .._common import BaseServer
-from urllib.parse import urlparse
+from arcgis.gis import GIS
+from typing import Optional
+
 
 ########################################################################
 class Uploads(BaseServer):
@@ -41,7 +43,7 @@ class Uploads(BaseServer):
     _url = None
 
     # ----------------------------------------------------------------------
-    def __init__(self, url, gis, initialize=False):
+    def __init__(self, url: str, gis: GIS, initialize: bool = False):
         """Constructor"""
         if url.lower().find("uploads") < -1:
             self._url = url + "/uploads"
@@ -53,7 +55,7 @@ class Uploads(BaseServer):
 
     # ----------------------------------------------------------------------
     @property
-    def uploads(self):
+    def uploads(self) -> dict:
         """
         returns a collection of all the items that have been uploaded to
         the server.
@@ -72,12 +74,12 @@ class Uploads(BaseServer):
         return self._con.get(path=self._url, params=params)
 
     # ----------------------------------------------------------------------
-    def delete(self, item_id):
+    def delete(self, item_id: str) -> bool:
         """
         Deletes the uploaded item and its configuration.
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         item_id             Required string. unique ID of the item
         ===============     ====================================================================
@@ -94,7 +96,7 @@ class Uploads(BaseServer):
         return res
 
     # ----------------------------------------------------------------------
-    def item(self, item_id):
+    def item(self, item_id: str) -> dict:
         """
         This resource represents an item that has been uploaded to the
         server. Various workflows upload items and then process them on the
@@ -116,13 +118,13 @@ class Uploads(BaseServer):
         return self._con.get(path=url, params=params)
 
     # ----------------------------------------------------------------------
-    def upload(self, path, description=None):
+    def upload(self, path: str, description: Optional[str] = None) -> bool:
         """
         Uploads a new item to the server. Once the operation is completed
         successfully, the JSON structure of the uploaded item is returned.
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         path                Required string. The file location to upload
         ---------------     --------------------------------------------------------------------
@@ -146,27 +148,27 @@ class Uploads(BaseServer):
         return False, res
 
     # ----------------------------------------------------------------------
-    def _service_configuration(self, upload_id):
+    def _service_configuration(self, upload_id: str) -> dict:
         """gets the serviceconfiguration.json info for an uploaded sd file"""
         url = self._url + "/%s/serviceconfiguration.json" % upload_id
         params = {"f": "json"}
         return self._con.get(path=url, params=params)
 
     # ----------------------------------------------------------------------
-    def _initial_cache_settings(self, upload_id):
+    def _initial_cache_settings(self, upload_id: str) -> dict:
         """gets the initial cache settings for a given uploaded sd file"""
         url = self._url + "/%s/serviceconfiguration.json" % upload_id
         params = {"f": "json"}
         return self._con.get(path=url, params=params)
 
     # ----------------------------------------------------------------------
-    def upload_by_part(self, item_id, part_number, part):
+    def upload_by_part(self, item_id: str, part_number: int, part: str) -> dict:
         """
         Uploads a new item to the server. Once the operation is completed
         successfully, the JSON structure of the uploaded item is returned.
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         item_id             Required string. Item ID to upload to.
         ---------------     --------------------------------------------------------------------
@@ -186,14 +188,14 @@ class Uploads(BaseServer):
         return self._con.post(path=url, postdata=params, files=files)
 
     # ----------------------------------------------------------------------
-    def commit(self, item_id, parts=None):
+    def commit(self, item_id: str, parts: Optional[list] = None) -> bool:
         """
         Use this operation to complete the upload of all the parts that
         make an item. The parts parameter indicates to the server all the
         parts that make up the item.
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         item_id             Required string. Item ID to commit.
         ---------------     --------------------------------------------------------------------

@@ -1,3 +1,4 @@
+from __future__ import annotations
 from arcgis.gis import GIS
 from arcgis._impl.common._isd import InsensitiveDict
 from typing import Dict, Any, Union, Optional
@@ -22,6 +23,7 @@ class UsageStatistics:
     _gis = None
     _url = None
     _properties = None
+
     # ---------------------------------------------------------------------
     def __init__(self, url: str, gis: GIS) -> None:
         """initializer"""
@@ -44,7 +46,7 @@ class UsageStatistics:
         Updates the credentials for the metrics viewer and metrics API.
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         resource            Required String.  Specifies whether the updated credentials will be
                             applied to the metrics viewer (`grafana`) or the metrics

@@ -13,6 +13,7 @@ class InvitationManager(object):
     _gis = None
     _url = None
     _invites = None
+
     # ----------------------------------------------------------------------
     def __init__(self, url, gis):
         self._url = url
@@ -20,11 +21,11 @@ class InvitationManager(object):
 
     # ----------------------------------------------------------------------
     def __str__(self):
-        return "<InvitationManager @ {url}>".format(url=self._url)
+        return "< InvitationManager @ {url} >".format(url=self._url)
 
     # ----------------------------------------------------------------------
     def __repr__(self):
-        return "<InvitationManager @ {url}>".format(url=self._url)
+        return "< InvitationManager @ {url} >".format(url=self._url)
 
     # ----------------------------------------------------------------------
     def __len__(self):

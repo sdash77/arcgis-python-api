@@ -76,9 +76,9 @@ class _ReservedFields:
         Checks if a given field name is a reserved name. This is a case-insensitive comparison.
 
         ==============     =====================================
-        **Argument**       **Description**
+        **Parameter**       **Description**
         --------------     -------------------------------------
-        field_name         str. A field name to test
+        field_name         String. A field name to test
         ==============     =====================================
 
         :return: True if field_name is a reserved name
@@ -91,9 +91,9 @@ class _ReservedFields:
         Checks if a given field name is not a reserved name. This is a case-insensitive comparison.
 
         ==============     =====================================
-        **Argument**       **Description**
+        **Parameter**       **Description**
         --------------     -------------------------------------
-        field_name         str. A field name to test
+        field_name         String. A field name to test
         ==============     =====================================
 
         :return: True if field_name is not a reserved name

@@ -10,12 +10,293 @@ specific data item. This operation helps you determine if a
 particular data item can be safely deleted or refreshed.
 """
 from __future__ import absolute_import
+from __future__ import annotations
 import os
 import re
 import json
 from .._common import BaseServer
 from ..._impl._con import Connection
 from .._common.util import contextmanager, _tempinput
+from arcgis.gis import GIS
+from typing import Optional, Any
+
+###########################################################################
+
+
+class Datastore(BaseServer):
+    """
+    Represents a single Datastore in the Data Store Manager.
+
+
+    """
+
+    _path = None
+    _datastore = None
+    _json_dict = None
+    _json = None
+    _con = None
+    _url = None
+    _properties = None
+
+    def __init__(
+        self,
+        datastore: "DataStoreManager",
+        path: str,
+        datadict: Optional[dict] = None,
+        **kwargs,
+    ):
+        self._path = path
+
+        super(Datastore, self).__init__(
+            datastore=datastore,
+            path=path,
+            url=datastore._url + "%s" % path,
+            connection=datastore._con,
+            initialize=True,
+            datadict=datadict,
+        )
+        path = "/items%s" % path
+        if datastore:
+            self._con = datastore._con
+        self._datastore = datastore
+        self._properties = None
+        self._url = "%s%s" % (datastore._url, path)
+        if kwargs.pop("initialize", False):
+            self._init()
+
+    # ----------------------------------------------------------------------
+    def __str__(self) -> str:
+        state = [
+            "   %s=%r" % (attribute, value)
+            for (attribute, value) in self._json_dict.items()
+        ]
+        return "\n".join(state)
+
+    # ----------------------------------------------------------------------
+    def __repr__(self) -> str:
+        return '<%s title:"%s" type:"%s">' % (
+            type(self).__name__,
+            self._url,
+            self.type,
+        )
+
+    # ----------------------------------------------------------------------
+    @property
+    def manifest(self) -> dict:
+        """
+        Gets the manifest resource for a big data file share.
+        """
+        data_item_manifest_url = self._url + "/manifest"
+        if data_item_manifest_url.find("/bigDataFileShares") != -1:
+            params = {
+                "f": "json",
+            }
+            res = self._con.post(data_item_manifest_url, params, verify_cert=False)
+        else:
+            res = {}
+        return res
+
+    # ----------------------------------------------------------------------
+    @manifest.setter
+    def manifest(self, value: dict):
+        """
+        Sets the manifest resource for a big data file share.
+        """
+        manifest_upload_url = self._url + "/manifest/update"
+        if manifest_upload_url.find("/bigDataFileShares") != -1:
+            with _tempinput(json.dumps(value)) as tempfilename:
+                # Build the files list (tuples)
+                files = []
+                files.append(
+                    (
+                        "manifest",
+                        tempfilename,
+                        os.path.basename(tempfilename),
+                    )
+                )
+
+                postdata = {"f": "pjson"}
+
+                resp = self._.con.post(
+                    manifest_upload_url, postdata, files, verify_cert=False
+                )
+                if resp["status"] == "success":
+                    return True
+                else:
+                    return False
+        else:
+            return None
+
+    # ---------------------------------------------------------------------
+    @property
+    def hints(self) -> dict:
+        """
+        Gets the hints resource for a big data file share. Hints
+        are advanced parameters to control the generation of a manifest.
+
+        Sets the hints resource for a big data file share. Hints
+        are advanced parameters to control the generation of a manifest.
+
+        Upload a hints file for a big data file share item. This will
+        replace the existing hints file. To apply the control parameters in
+        the hints file and regenerate the manifest, use the editDataItem to
+        edit the big data file share (using the same data store item as
+        input) which will regenerate the manifest. When a manifest is
+        regenerated, it will be updated only for datasets that have hints
+        and for new datasets that are added to the existing big data file
+        share location.
+
+        ==================     ====================================================================
+        **Parameter**           **Description**
+        ------------------     --------------------------------------------------------------------
+        hints                  Required string. The hints file to be uploaded.
+        ==================     ====================================================================
+        """
+        params = {"download": True, "read": True}
+        url = self._url + "/hints"
+        return self._con.get(path=url, params=params)
+
+    # ---------------------------------------------------------------------
+    @hints.setter
+    def hints(self, hints: str):
+        """
+        See main ``hints`` property docstring.
+        """
+        params = {"f": "json"}
+        files = {"hints": hints}
+
+        url = self._url + "/hints/update"
+        if url.find("/bigDataFileShares") == -1:
+            return None
+        return self._con.post(path=url, files=files, postdata=params)
+
+    # ----------------------------------------------------------------------
+    @property
+    def ref_count(self) -> dict:
+        """
+        The total number of references to this data item that exist on the
+        server. You can use this property to determine if this data item
+        can be safely deleted or taken down for maintenance.
+
+        :return:
+           A number indictaing the number of references to this data item.
+        """
+        return self.totalRefCount
+
+    # ----------------------------------------------------------------------
+    def delete(self) -> bool:
+        """
+        Unregisters this data item from the data store.
+
+        :return:
+           A boolean indicating success (True) or failure (False).
+        """
+        params = {"f": "json", "itempath": self.path, "force": True}
+        path = self._datastore._url + "/unregisterItem"
+
+        resp = self._con.post(path, params, verify_cert=False)
+        if resp:
+            return resp.get("success")
+        else:
+            return False
+
+    # ----------------------------------------------------------------------
+    def update(self, item: str) -> bool:
+        """
+        Edits this data item to update its connection information.
+
+        ==================     ====================================================================
+        **Parameter**           **Description**
+        ------------------     --------------------------------------------------------------------
+        item                   Required string. The dict representation of the updated item.
+        ==================     ====================================================================
+
+        :return:
+            True if the data item was successfully updated, False if the update failed.
+
+        """
+        params = {"f": "json", "item": item}
+        path = self._datastore._url + "/items" + self.path + "/edit"
+
+        resp = self._con.post(path, params, verify_cert=False)
+        if resp["status"] == "success":
+            self.regenerate()
+            return True
+        else:
+            return False
+
+    # ----------------------------------------------------------------------
+    def validate(self) -> bool:
+        """
+        Validates that this data item's path (for file shares) or connection string (for databases)
+        is accessible to every server node in the site. This is necessary for the data item to be
+        registered and used successfully with the server's data store.
+
+        :return:
+            True if the data item was successfully validated.
+        """
+        params = {"f": "json", "item": self._json_dict}
+        path = self._datastore._url + "/validateDataItem"
+        if (
+            "provider" in params["item"]
+            and params["item"]["provider"] == "ArcGIS Data Store"
+        ):
+            path = (
+                self._url
+                + "/machines/"
+                + params["item"]["info"]["machines"][0]["name"]
+                + "/validate"
+            )
+            res = self._con.post(path, {"f": "json"}, verify_cert=False)
+        else:
+            res = self._con.post(path, params, verify_cert=False)
+
+        return res["status"] == "success"
+
+    # ----------------------------------------------------------------------
+    @property
+    def lifecycleinfos(self) -> dict[str, Any]:
+        """
+        Returns information regarding when the data store item was created and last edited.
+
+        """
+        url: str = f"{self._url}/lifecycleinfos"
+        params: dict[str, str] = {"f": "json"}
+        return self._con.get(url, params=params)
+
+    # ----------------------------------------------------------------------
+    def regenerate(self) -> bool:
+        """
+        This regenerates the manifest for a big data file share. You can
+        regenerate a manifest if you have added new data or if you have
+        uploaded a hints file using the edit resource.
+
+        :return: Boolean. True = Success, False = Failure
+
+        """
+        url = self._datastore._url + "/regenerate"
+        params = {"f": "json"}
+        res = self._con.post(url, params)
+        if "success" in res:
+            return res["success"]
+        return res
+
+    # ----------------------------------------------------------------------
+    @property
+    def datasets(self) -> list:
+        """
+        Gets the datasets in the data store (currently implemented for big data file shares).
+        """
+        data_item_manifest_url = self._url + "/manifest"
+
+        params = {"f": "json"}
+
+        try:
+            res = self._con.post(data_item_manifest_url, params, verify_cert=False)
+            return res["datasets"]
+        except:
+            return None
+
 
 ########################################################################
 class DataStoreManager(BaseServer):
@@ -38,11 +319,12 @@ class DataStoreManager(BaseServer):
 
 
     ==================     ====================================================================
-    **Argument**           **Description**
+    **Parameter**           **Description**
     ------------------     --------------------------------------------------------------------
     url                    Required string. The URL to the Data Store URL.
     ------------------     --------------------------------------------------------------------
-    gis                    Optional string. The GIS, Server, or ServicesDirectory object.
+    gis                    Optional string. The :class:`~arcgis.gis.GIS`, :class:`~arcgis.gis.server.Server`,
+                           or :class:`~arcgis.gis.server.catalog.ServicesDirectory` object.
     ==================     ====================================================================
 
     """
@@ -54,7 +336,8 @@ class DataStoreManager(BaseServer):
     _gis = None
     _datastores = None
     # ----------------------------------------------------------------------
-    def __init__(self, url, gis=None, **kwargs):
+
+    def __init__(self, url: str, gis: GIS = None, **kwargs):
         """Constructor
         Inputs:
            url - admin url
@@ -75,19 +358,20 @@ class DataStoreManager(BaseServer):
             self._init()
 
     # ----------------------------------------------------------------------
-    def __str__(self):
+    def __str__(self) -> str:
         return "<%s for %s>" % (type(self).__name__, self._url)
 
     # ----------------------------------------------------------------------
-    def __repr__(self):
+    def __repr__(self) -> str:
         return "<%s for %s>" % (type(self).__name__, self._url)
 
     # ----------------------------------------------------------------------
-    def list(self):
+    def list(self) -> list:
         """Retrieves a list of datastore objects.
 
         :return:
-           The list of datastore items.
+           The list of :class:`~arcgis.gis.server.Datastore` objects.
+
         """
         self._datastores = None
         if self._datastores is None:
@@ -103,7 +387,7 @@ class DataStoreManager(BaseServer):
 
     # ----------------------------------------------------------------------
     @property
-    def config(self):
+    def config(self) -> dict:
         """
         Gets the data store configuration properties. These properties
         affect the behavior of the data holdings of the server. For
@@ -120,7 +404,7 @@ class DataStoreManager(BaseServer):
         to the server at publish time
 
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
         config                 Required string. A JSON string containing the data store configuration.
         ==================     ====================================================================
@@ -136,7 +420,7 @@ class DataStoreManager(BaseServer):
 
     # ----------------------------------------------------------------------
     @config.setter
-    def config(self, config):
+    def config(self, config: dict):
         """
         See main ``config`` property docstring.
         """
@@ -163,7 +447,7 @@ class DataStoreManager(BaseServer):
         `PortalDataStore.register` method.
 
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
         path                   Required string. The item path for the database, cloud, or file
                                share data store for which you want to create a data store item.
@@ -183,12 +467,12 @@ class DataStoreManager(BaseServer):
         return res
 
     # ----------------------------------------------------------------------
-    def get(self, path):
+    def get(self, path: str) -> Datastore:
         """
         Retrieves the data item object at the given path.
 
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
         path                   Required string. The path to the data item.
         ==================     ====================================================================
@@ -209,13 +493,15 @@ class DataStoreManager(BaseServer):
             return None
 
     # ----------------------------------------------------------------------
-    def add_folder(self, name, server_path, client_path=None):
+    def add_folder(
+        self, name: str, server_path: str, client_path: Optional[str] = None
+    ) -> Datastore:
         """
         Registers a folder with the data store.
 
 
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
         name                   Required string. The unique fileshare name on the server.
         ------------------     --------------------------------------------------------------------
@@ -236,7 +522,10 @@ class DataStoreManager(BaseServer):
         item = {
             "type": "folder",
             "path": "/fileShares/" + name,
-            "info": {"path": server_path, "dataStoreConnectionType": conn_type},
+            "info": {
+                "path": server_path,
+                "dataStoreConnectionType": conn_type,
+            },
         }
         if client_path is not None:
             item["clientPath"] = client_path
@@ -245,15 +534,15 @@ class DataStoreManager(BaseServer):
             return Datastore(self, "/fileShares/" + name)
         else:
             return None
-        return
+        return None
 
     # ----------------------------------------------------------------------
-    def add(self, item):
+    def add(self, item: dict) -> Datastore:
         """
         Registers a new data item with the data store.
 
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
         item                   Required String, Dict. The dictionary representing the data item.
                                See https://developers.arcgis.com/rest/enterprise-administration/server/dataitem.htm
@@ -265,20 +554,23 @@ class DataStoreManager(BaseServer):
         """
         res = self._register_data_item(item=item)
         if res["status"] == "success" or res["status"] == "exists":
-
             return Datastore(self, item["path"])
         else:
-
             return res
 
     # ----------------------------------------------------------------------
-    def add_bigdata(self, name, server_path=None, connection_type="fileShare"):
+    def add_bigdata(
+        self,
+        name: str,
+        server_path: Optional[str] = None,
+        connection_type: str = "fileShare",
+    ) -> Datastore:
         """
         Registers a bigdata fileshare with the data store.
 
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         name                Required string. The unique bigdata fileshare name on the server.
         ---------------     --------------------------------------------------------------------
@@ -305,7 +597,10 @@ class DataStoreManager(BaseServer):
         item = {
             "path": "/bigDataFileShares/" + name,
             "type": "bigDataFileShare",
-            "info": {"connectionString": path_str, "connectionType": connection_type},
+            "info": {
+                "connectionString": path_str,
+                "connectionType": connection_type,
+            },
         }
         res = self._register_data_item(item=item)
 
@@ -314,27 +609,31 @@ class DataStoreManager(BaseServer):
         return output
 
     # ----------------------------------------------------------------------
-    def generate_connection_string(self, sde):
+    def generate_connection_string(self, sde: str) -> str:
         """
         Converts an SDE connection file to a string with encrypted password.
 
 
         ===============   ====================================================
-        **Parameters**    **Description**
+        **Parameter**     **Description**
         ---------------   ----------------------------------------------------
         sde               required string.  Path to SDE connection file.
         ===============   ====================================================
 
-        returns: string on success, None on failure
+        :return:
+            string on success, None on failure
 
-        **Usage**:
+        .. code-block:: python
 
-        >>> con = dm.create_connection_string("c:\\myfolder\\postgres_db.sde")
-        >>> print(con)
-        'ENCRYPTED_PASSWORD=************************;SERVER=localhost;
-        INSTANCE=sde:postgresql:localhost,5432;DBCLIENT=postgresql;
-        DB_CONNECTION_PROPERTIES=localhost,5432;DATABASE=esri_spatial;
-        USER=sde;VERSION=sde.DEFAULT;AUTHENTICATION_MODE=DBMS'
+            # Usage
+
+            >>> con = dm.generate_connection_string("c:\\myfolder\\postgres_db.sde")
+            >>> print(con)
+            'ENCRYPTED_PASSWORD=************************;SERVER=localhost;
+            INSTANCE=sde:postgresql:localhost,5432;DBCLIENT=postgresql;
+            DB_CONNECTION_PROPERTIES=localhost,5432;DATABASE=esri_spatial;
+            USER=sde;VERSION=sde.DEFAULT;AUTHENTICATION_MODE=DBMS'
+
         """
         if str(sde).lower().endswith(".sde"):
             base_url = os.path.dirname(self._url)
@@ -350,11 +649,11 @@ class DataStoreManager(BaseServer):
                 sd_url = f"{os.path.dirname(base_url)}/rest/services"
                 d = ServicesDirectory(
                     url=sd_url,
-                    portal_connection=self._con._portal_connection,
+                    portal_connection=self._con._portal_connection or self._con,
                 )
             elif isinstance(self._con, Connection):
                 sd_url = f"{os.path.dirname(base_url)}/rest/services"
-                d = ServicesDirectory(url=sd_url)
+                d = ServicesDirectory(url=sd_url, portal_connection=self._con)
                 d._con = self._con
 
             try:
@@ -369,12 +668,18 @@ class DataStoreManager(BaseServer):
                 )
                 up.delete(item_id=upload_res[1]["item"]["itemID"])
                 return res
-        return
+        return None
 
     # ----------------------------------------------------------------------
     def add_cloudstore(
-        self, name, conn_str, object_store, provider, managed=False, folder=None
-    ):
+        self,
+        name: str,
+        conn_str: str,
+        object_store: str,
+        provider: str,
+        managed: bool = False,
+        folder: Optional[str] = None,
+    ) -> Datastore:
         """
         Cloud Store data item represents a connection to a Amazon or Microsoft Azure store.
         Connection information for the data store item is stored within conn_str as a
@@ -387,7 +692,7 @@ class DataStoreManager(BaseServer):
         store are optional.
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         name                Required string. The name of the cloud store.
         ---------------     --------------------------------------------------------------------
@@ -408,7 +713,8 @@ class DataStoreManager(BaseServer):
         ===============     ====================================================================
 
 
-        :return: DataStore
+        :return:
+            :class:`~arcgis.gis.server.Datastore` object or None
 
         """
         item = {
@@ -428,15 +734,21 @@ class DataStoreManager(BaseServer):
             return Datastore(self, "/cloudStores/" + name)
         else:
             return None
-        return
+        return None
 
     # ----------------------------------------------------------------------
-    def add_database(self, name, conn_str, client_conn_str=None, conn_type="shared"):
+    def add_database(
+        self,
+        name: str,
+        conn_str: str,
+        client_conn_str: Optional[str] = None,
+        conn_type: str = "shared",
+    ) -> Datastore:
         """
         Registers a database with the data store.
 
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
         name                   Required string. The unique database name on the server.
         ------------------     --------------------------------------------------------------------
@@ -476,10 +788,10 @@ class DataStoreManager(BaseServer):
             return Datastore(self, "/enterpriseDatabases/" + name)
         else:
             return None
-        return
+        return None
 
     # ----------------------------------------------------------------------
-    def get_total_refcount(self, path):
+    def get_total_refcount(self, path: str) -> dict:
         """
         The total number of references to a given data item
         that exists on the server. You can use this operation to
@@ -487,7 +799,7 @@ class DataStoreManager(BaseServer):
         down for maintenance.
 
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
         path                   Required string. The complete hierarchical path to the item.
         ==================     ====================================================================
@@ -502,13 +814,13 @@ class DataStoreManager(BaseServer):
         return self._con.post(path=url, postdata=params)
 
     # ----------------------------------------------------------------------
-    def make_datastore_machine_primary(self, item_name, machine_name):
+    def make_datastore_machine_primary(self, item_name: str, machine_name: str) -> bool:
         """
         Promotes a standby machine to the primary Data Store machine. The
         existing primary machine is downgraded to a standby machine.
 
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
         item_name              Required string. The primary machine item name in the data store.
         ------------------     --------------------------------------------------------------------
@@ -532,18 +844,22 @@ class DataStoreManager(BaseServer):
         return self._con.post(path=url, postdata=params)
 
     # ----------------------------------------------------------------------
-    def get_relational_datastore_type(self, type_id):
+    def get_relational_datastore_type(self, type_id: str) -> list:
         """
         This resource lists the properties of a registered relational data
         store of the given type. The properties returned are those that client
         applications must provide when creating a Relational Database
         Connection portal item.
 
+        .. note::
+            This method only works if using ArcGIS Insights.
+
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
         type_id                Required string. The datastore type ID of interest.
-                               See https://developers.arcgis.com/rest/enterprise-administration/server/relational-data-store-types.htm
+                               See `Relational Data Store Types <https://developers.arcgis.com/rest/enterprise-administration/server/relational-data-store-types.htm>`_
+                               for details.
         ==================     ====================================================================
 
 
@@ -551,7 +867,6 @@ class DataStoreManager(BaseServer):
            A JSON string listing the properties
 
         """
-        """ jenn note: useful would be a list of possible datastore type IDs -- ??? esri.teradata, esri.sqlserver, esri.hana """
 
         params = {"f": "json"}
         url = self._url + "/relationalDatastoreTypes/{i}".format(i=type_id)
@@ -559,7 +874,7 @@ class DataStoreManager(BaseServer):
 
     # ----------------------------------------------------------------------
     @property
-    def relational_datastore_types(self):
+    def relational_datastore_types(self) -> dict:
         """
         Gets a list of the relational data store types that have been
         registered with the server. Each registered relational data store
@@ -577,13 +892,18 @@ class DataStoreManager(BaseServer):
 
     # ----------------------------------------------------------------------
     def search(
-        self, parent_path=None, ancestor_path=None, types=None, id=None, **kwargs
-    ):
+        self,
+        parent_path: Optional[str] = None,
+        ancestor_path: Optional[str] = None,
+        types: Optional[str] = None,
+        id: Optional[str] = None,
+        **kwargs,
+    ) -> list:
         """
         Use this operation to search through the various data items that are registered in the server's data store.
 
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
         parent_path            Optional string. The path of the parent under which to find items.
         ------------------     --------------------------------------------------------------------
@@ -617,12 +937,12 @@ class DataStoreManager(BaseServer):
         return self._con.post(path=url, postdata=params)
 
     # ----------------------------------------------------------------------
-    def _register_data_item(self, item):
+    def _register_data_item(self, item: str) -> dict:
         """
         Registers a new data item with the server's data store.
 
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
         item                   Required string. The JSON representing the data item.
                                See https://developers.arcgis.com/rest/enterprise-administration/server/dataitem.htm
@@ -637,7 +957,7 @@ class DataStoreManager(BaseServer):
 
     # ----------------------------------------------------------------------
     @property
-    def data_items(self):
+    def data_items(self) -> dict:
         """
         Gets the list of data items that are the root of all other data items in the data store.
         """
@@ -646,7 +966,7 @@ class DataStoreManager(BaseServer):
         return self._con.get(path=url, params=params)
 
     # ----------------------------------------------------------------------
-    def validate(self):
+    def validate(self) -> bool:
         """
         Validates all the items in the data store.
 
@@ -658,13 +978,13 @@ class DataStoreManager(BaseServer):
         return self._con.post(path=url, postdata=params)
 
     # ----------------------------------------------------------------------
-    def make_primary(self, datastore_name, machine_name):
+    def make_primary(self, datastore_name: str, machine_name: str) -> bool:
         """
         Promotes a standby machine to the primary Data Store machine. The
         existing primary machine is downgraded to a standby machine.
 
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
         datastore_name         Required string. The primary machine name in the data store.
         ------------------     --------------------------------------------------------------------
@@ -684,13 +1004,13 @@ class DataStoreManager(BaseServer):
         return self._con.post(path=url, postdata=params)
 
     # ----------------------------------------------------------------------
-    def remove_datastore_machine(self, item_name, machine_name):
+    def remove_datastore_machine(self, item_name: str, machine_name: str) -> bool:
         """
         Removes a standby machine from the Data Store. This operation is
         not supported on the primary Data Store machine.
 
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
         item_name              Required string. The standby machine item name in the data store.
         ------------------     --------------------------------------------------------------------
@@ -709,12 +1029,12 @@ class DataStoreManager(BaseServer):
         return self._con.post(path=url, postdata=params)
 
     # ----------------------------------------------------------------------
-    def start(self, item_name, machine_name):
+    def start(self, item_name: str, machine_name: str) -> bool:
         """
         Starts the database instance running on the Data Store machine.
 
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
         item_name              Required string. The database item name in the data store to start.
         ------------------     --------------------------------------------------------------------
@@ -734,13 +1054,13 @@ class DataStoreManager(BaseServer):
         return self._con.post(path=url, postdata=params)
 
     # ----------------------------------------------------------------------
-    def stop(self, item_name, machine_name):
+    def stop(self, item_name: str, machine_name: str) -> bool:
         """
         Stop the database instance running on the Data Store machine.
 
 
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
         item_name              Required string. The database item name in the data store to stop.
         ------------------     --------------------------------------------------------------------
@@ -760,14 +1080,14 @@ class DataStoreManager(BaseServer):
         return self._con.post(path=url, postdata=params)
 
     # ----------------------------------------------------------------------
-    def _unregister_data_item(self, path):
+    def _unregister_data_item(self, path: str) -> dict:
         """
         Unregisters a data item that has been previously registered with
         the server's data store.
 
 
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
         path                   Required string. The path to the share folder.
         ==================     ====================================================================
@@ -788,12 +1108,12 @@ class DataStoreManager(BaseServer):
         return self._con.post(path=url, postdata=params)
 
     # ----------------------------------------------------------------------
-    def validate_egdb(self, data_store_name, name):
+    def validate_egdb(self, data_store_name: str, name: str) -> dict:
         """
         Checks the status of the given ArcGIS Data Store and provides a health check response.
 
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
         data_store_name        Required string. The item name of the data store.
         ------------------     --------------------------------------------------------------------
@@ -810,254 +1130,3 @@ class DataStoreManager(BaseServer):
         )
         params = {"f": "json"}
         return self._con.post(path=url, postdata=params)
-
-
-###########################################################################
-class Datastore(BaseServer):
-    """
-    Represents a single Datastore in the Data Store Manager.
-
-
-    """
-
-    _path = None
-    _datastore = None
-    _json_dict = None
-    _json = None
-    _con = None
-    _url = None
-    _properties = None
-
-    def __init__(self, datastore, path, datadict=None, **kwargs):
-        self._path = path
-
-        super(Datastore, self).__init__(
-            datastore=datastore,
-            path=path,
-            url=datastore._url + "%s" % path,
-            connection=datastore._con,
-            initialize=True,
-            datadict=datadict,
-        )
-        path = "/items%s" % path
-        if datastore:
-            self._con = datastore._con
-        self._datastore = datastore
-        self._properties = None
-        self._url = "%s%s" % (datastore._url, path)
-        if kwargs.pop("initialize", False):
-            self._init()
-
-    # ----------------------------------------------------------------------
-    def __str__(self):
-        state = [
-            "   %s=%r" % (attribute, value)
-            for (attribute, value) in self._json_dict.items()
-        ]
-        return "\n".join(state)
-
-    # ----------------------------------------------------------------------
-    def __repr__(self):
-        return '<%s title:"%s" type:"%s">' % (type(self).__name__, self._url, self.type)
-
-    # ----------------------------------------------------------------------
-    @property
-    def manifest(self):
-        """
-        Gets the manifest resource for a big data file share.
-        """
-        data_item_manifest_url = self._url + "/manifest"
-        if data_item_manifest_url.find("/bigDataFileShares") != -1:
-            params = {
-                "f": "json",
-            }
-            res = self._con.post(data_item_manifest_url, params, verify_cert=False)
-        else:
-            res = {}
-        return res
-
-    # ----------------------------------------------------------------------
-    @manifest.setter
-    def manifest(self, value):
-        """
-        Sets the manifest resource for a big data file share.
-        """
-        manifest_upload_url = self._url + "/manifest/update"
-        if manifest_upload_url.find("/bigDataFileShares") != -1:
-            with _tempinput(json.dumps(value)) as tempfilename:
-                # Build the files list (tuples)
-                files = []
-                files.append(("manifest", tempfilename, os.path.basename(tempfilename)))
-
-                postdata = {"f": "pjson"}
-
-                resp = self._.con.post(
-                    manifest_upload_url, postdata, files, verify_cert=False
-                )
-                if resp["status"] == "success":
-                    return True
-                else:
-                    return False
-        else:
-            return None
-
-    # ---------------------------------------------------------------------
-    @property
-    def hints(self):
-        """
-        Gets the hints resource for a big data file share. Hints
-        are advanced parameters to control the generation of a manifest.
-
-        Sets the hints resource for a big data file share. Hints
-        are advanced parameters to control the generation of a manifest.
-
-        Upload a hints file for a big data file share item. This will
-        replace the existing hints file. To apply the control parameters in
-        the hints file and regenerate the manifest, use the editDataItem to
-        edit the big data file share (using the same data store item as
-        input) which will regenerate the manifest. When a manifest is
-        regenerated, it will be updated only for datasets that have hints
-        and for new datasets that are added to the existing big data file
-        share location.
-
-        ==================     ====================================================================
-        **Argument**           **Description**
-        ------------------     --------------------------------------------------------------------
-        name                   Required string. The name of the big data item to update.
-        ------------------     --------------------------------------------------------------------
-        hints                  Required string. The hints file to be uploaded.
-        ==================     ====================================================================
-        """
-        params = {"download": True, "read": True}
-        url = self._url + "/hints"
-        return self._con.get(path=url, params=params)
-
-    # ---------------------------------------------------------------------
-    @hints.setter
-    def hints(self, hints):
-        """
-        See main ``hints`` property docstring.
-        """
-        params = {"f": "json"}
-        files = {"hints": hints}
-
-        url = self._url + "/hints/update"
-        if url.find("/bigDataFileShares") == -1:
-            return None
-        return self._con.post(path=url, files=files, postdata=params)
-
-    # ----------------------------------------------------------------------
-    @property
-    def ref_count(self):
-        """
-        The total number of references to this data item that exist on the
-        server. You can use this property to determine if this data item
-        can be safely deleted or taken down for maintenance.
-
-        :return:
-           A number indictaing the number of references to this data item.
-        """
-        return self.totalRefCount
-
-    # ----------------------------------------------------------------------
-    def delete(self):
-        """
-        Unregisters this data item from the data store.
-
-        :return:
-           A boolean indicating success (True) or failure (False).
-        """
-        params = {"f": "json", "itempath": self.path, "force": True}
-        path = self._datastore._url + "/unregisterItem"
-
-        resp = self._con.post(path, params, verify_cert=False)
-        if resp:
-            return resp.get("success")
-        else:
-            return False
-
-    # ----------------------------------------------------------------------
-    def update(self, item):
-        """
-        Edits this data item to update its connection information.
-
-        ==================     ====================================================================
-        **Argument**           **Description**
-        ------------------     --------------------------------------------------------------------
-        item                   Required string. The dict representation of the updated item.
-        ==================     ====================================================================
-
-        :return:
-            True if the data item was successfully updated, False if the update failed.
-
-        """
-        params = {"f": "json", "item": item}
-        path = self._datastore._url + "/items" + self.path + "/edit"
-
-        resp = self._con.post(path, params, verify_cert=False)
-        if resp["status"] == "success":
-            self.regenerate()
-            return True
-        else:
-            return False
-
-    # ----------------------------------------------------------------------
-    def validate(self):
-        """
-        Validates that this data item's path (for file shares) or connection string (for databases)
-        is accessible to every server node in the site. This is necessary for the data item to be
-        registered and used successfully with the server's data store.
-
-        :return:
-            True if the data item was successfully validated.
-        """
-        params = {"f": "json", "item": self._json_dict}
-        path = self._datastore._url + "/validateDataItem"
-        if (
-            "provider" in params["item"]
-            and params["item"]["provider"] == "ArcGIS Data Store"
-        ):
-            path = (
-                self._url
-                + "/machines/"
-                + params["item"]["info"]["machines"][0]["name"]
-                + "/validate"
-            )
-            res = self._con.post(path, {"f": "json"}, verify_cert=False)
-        else:
-            res = self._con.post(path, params, verify_cert=False)
-
-        return res["status"] == "success"
-
-    # ----------------------------------------------------------------------
-    def regenerate(self):
-        """
-        This regenerates the manifest for a big data file share. You can
-        regenerate a manifest if you have added new data or if you have
-        uploaded a hints file using the edit resource.
-
-        :return: Boolean. True = Success, False = Failure
-
-        """
-        url = self._datastore._url + "/regenerate"
-        params = {"f": "json"}
-        res = self._con.post(url, params)
-        if "success" in res:
-            return res["success"]
-        return res
-
-    # ----------------------------------------------------------------------
-    @property
-    def datasets(self):
-        """
-        Gets the datasets in the data store (currently implemented for big data file shares).
-        """
-        data_item_manifest_url = self._url + "/manifest"
-
-        params = {"f": "json"}
-
-        try:
-            res = self._con.post(data_item_manifest_url, params, verify_cert=False)
-            return res["datasets"]
-        except:
-            return None

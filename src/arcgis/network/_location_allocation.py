@@ -60,47 +60,42 @@ def solve_location_allocation(
     affected population.
 
     ======================================  ==========================================================================================================================================
-    **Argument**                             **Description**
+    **Parameter**                             **Description**
     --------------------------------------  ------------------------------------------------------------------------------------------------------------------------------------------
-    facilities                              Required FeatureSet. Specify one or more ``facilities`` (up to 1,000). The tool chooses the best locations
+    facilities                              Required :class:`~arcgis.features.FeatureSet` . Specify one or more ``facilities`` (up to 1,000). The tool chooses the best locations
                                             from the set of ``facilities`` you specify here. In a competitive analysis, in which  you try to find the best
                                             locations in the face of competition, the ``facilities`` of the competitors are specified here as well.
                                             When defining the ``facilities``, you can set properties for each one, such as the facility name or type, by using attributes.
                                             ``Facilities`` can be specified with the following fields: Name-The name of the facility. The name is included in the name of
                                             output allocation lines if the facility is part of the solution.
-                                               * ``FacilityType`` - Specifies whether the facility is a candidate, required, or competitor facility. The field value is
-                                                 specified as one of the following integers (use the numeric code, not the name in parentheses):
-                                                   * 0 (Candidate) - A facility that may be part of the solution.
-                                                   * 1 (Required) - A facility that must be part of the solution.
-                                                   * 2 (Competitor) - A rival facility that potentially removes demand from your ``facilities``. Competitor ``facilities`` are
-                                                     specific to the Maximize Market Share and Target Market Share problem types; they are ignored in other problem types.
-                                                     Weight-The relative weighting of the facility, which is used to rate the attractiveness, desirability, or bias of one
-                                                     facility compared to another.  For example, a value of 2.0 could capture the preference of customers who prefer, at
-                                                     a ratio of 2 to 1, shopping in one facility over another facility. Factors that potentially affect facility weight
-                                                     include square footage, neighborhood, and age of the building. Weight values other than one are only honored by the
-                                                     maximize market share and target market share problem types; they are ignored in other problem types.
-                                               * ``Capacity`` - The Capacity field is specific to the Maximize Capacitated Coverage problem type; the other problem types
-                                                 ignore this field.  Capacity specifies how much weighted demand the facility is capable of supplying. Excess demand won't
-                                                 be allocated to a facility even if that demand is within the facility's default measurement cutoff. Any value assigned to
-                                                 the Capacity field overrides the Default Capacity parameter (Default_Capacity in Python) for the given facility.
-                                               * ``CurbApproach`` - Specifies the direction a vehicle may arrive at or depart from the facility. The field value is
-                                                 specified as one of the following integers (use the numeric code, not the name in parentheses):
-                                                   * 0 (Either side of vehicle)-The facility can be visited from either the right or left side of the vehicle.
-                                                   * 1 (Right side of vehicle)-Arrive at or depart the facility so that it is on the right side of the vehicle.
-                                                     This is typically used for vehicles such as buses that must arrive with the bus stop on the right-hand side so
-                                                     that passengers can disembark at the curb.
-                                                   * 2 (Left side of vehicle)-Arrive at or depart the facility so that it is on the left side of the vehicle. When the
-                                                     vehicle approaches and departs the facility, the curb must be on the left side of the vehicle. This is typically used for vehicles such as buses that
-                                                     must arrive with the bus stop on the left-hand side so that passengers can disembark at the curb.
 
-                                                 The ``CurbApproach`` property is designed to work with both kinds of national driving standards: right-hand traffic (United States) and
-                                                 left-hand traffic (United Kingdom). First, consider a facility on the left side of a vehicle. It is always on the left side regardless
-                                                 of whether the vehicle travels on the left or right half of the road. What may change with national driving standards is your decision
-                                                 to approach a facility  from one of two directions, that is, so it ends up on the right or left side of the vehicle. For example,
-                                                 if you want to arrive at a facility and not have a lane of traffic between the vehicle and the incident, you would choose Right side
-                                                 of vehicle (1) in the United States but Left side of vehicle (2) in the United Kingdom.
+                                            * ``FacilityType`` - Specifies whether the facility is a candidate, required, or competitor facility. The field value is
+                                              specified as one of the following integers (use the numeric code, not the name in parentheses):
+
+                                              * 0 (Candidate) - A facility that may be part of the solution.
+                                              * 1 (Required) - A facility that must be part of the solution.
+                                              * 2 (Competitor) - A rival facility that potentially removes demand from your ``facilities``. Competitor ``facilities`` are specific to the Maximize Market Share and Target Market Share problem types; they are ignored in other problem types. Weight-The relative weighting of the facility, which is used to rate the attractiveness, desirability, or bias of one facility compared to another. For example, a value of 2.0 could capture the preference of customers who prefer, at a ratio of 2 to 1, shopping in one facility over another facility. Factors that potentially affect facility weight include square footage, neighborhood, and age of the building. Weight values other than one are only honored by the maximize market share and target market share problem types; they are ignored in other problem types.
+
+                                            * ``Capacity`` - The Capacity field is specific to the Maximize Capacitated Coverage problem type; the other problem types
+                                              ignore this field.  Capacity specifies how much weighted demand the facility is capable of supplying. Excess demand won't
+                                              be allocated to a facility even if that demand is within the facility's default measurement cutoff. Any value assigned to
+                                              the Capacity field overrides the Default Capacity parameter (Default_Capacity in Python) for the given facility.
+
+                                            * ``CurbApproach`` - Specifies the direction a vehicle may arrive at or depart from the facility. The field value is
+                                              specified as one of the following integers (use the numeric code, not the name in parentheses):
+
+                                              * 0 (Either side of vehicle)-The facility can be visited from either the right or left side of the vehicle.
+                                              * 1 (Right side of vehicle)-Arrive at or depart the facility so that it is on the right side of the vehicle. This is typically used for vehicles such as buses that must arrive with the bus stop on the right-hand side so that passengers can disembark at the curb.
+                                              * 2 (Left side of vehicle)-Arrive at or depart the facility so that it is on the left side of the vehicle. When the vehicle approaches and departs the facility, the curb must be on the left side of the vehicle. This is typically used for vehicles such as buses that must arrive with the bus stop on the left-hand side so that passengers can disembark at the curb.
+
+                                              The ``CurbApproach`` property is designed to work with both kinds of national driving standards: right-hand traffic (United States) and
+                                              left-hand traffic (United Kingdom). First, consider a facility on the left side of a vehicle. It is always on the left side regardless
+                                              of whether the vehicle travels on the left or right half of the road. What may change with national driving standards is your decision
+                                              to approach a facility  from one of two directions, that is, so it ends up on the right or left side of the vehicle. For example,
+                                              if you want to arrive at a facility and not have a lane of traffic between the vehicle and the incident, you would choose Right side
+                                              of vehicle (1) in the United States but Left side of vehicle (2) in the United Kingdom.
     --------------------------------------  ------------------------------------------------------------------------------------------------------------------------------------------
-    demand_points                           Required FeatureSet. Specify one or more demand points (up to 10,000). The tool chooses the best facilities based in
+    demand_points                           Required :class:`~arcgis.features.FeatureSet` . Specify one or more demand points (up to 10,000). The tool chooses the best facilities based in
                                             large part on how they serve the demand points specified here.   When defining the demand points, you can set
                                             properties for each one, such as the demand-point name or weight, by using attributes. Demand points can be specified
                                             with the following fields: Name-The name of the demand point. The name is included in the name of an output allocation
@@ -117,21 +112,23 @@ def solve_location_allocation(
                                             beyond the travel distance indicated here. This field value overrides the value of the Default Measurement Cutoff parameter.
                                             The units for this attribute value are specified by the Measurement Units parameter. The attribute value is referenced during the
                                             analysis only when the measurement units are distance based. The default value is null, which means there isn't an override cutoff.
-                                                * ``CurbApproach`` - Specifies the direction a vehicle may arrive at or depart from the demand point.
-                                                  The field value is specified as one of the following integers (use the numeric code, not the name in parentheses):
-                                                    * 0 (Either side of vehicle)-The demand point can be visited from either the right or left side of the vehicle.
-                                                    * 1 (Right side of vehicle)-Arrive at or depart the demand point so that it is on the right side of the vehicle. This is typically used for
-                                                      vehicles such as buses that must arrive with the bus stop on the right-hand side so that passengers can disembark at the curb.
-                                                    * 2 (Left side of vehicle)-Arrive at or depart the demand point so that it is on the left side of the vehicle. When the vehicle approaches
-                                                      and departs the demand point, the curb must be on the left side of the vehicle. This is typically used for vehicles such as buses that must
-                                                      arrive with the bus stop on the left-hand side so that passengers can disembark at the curb.
 
-                                                  The ``CurbApproach`` property is designed to work with both kinds of national driving standards: right-hand traffic (United States) and
-                                                  left-hand traffic (United Kingdom). First, consider a demand point on the left side of a vehicle. It is always on the left side regardless
-                                                  of whether the vehicle travels on the left or right half of the road. What may change with national driving standards is your decision to
-                                                  approach a demand point  from one of two directions, that is, so it ends up on the right or left side of the vehicle. For example, if you
-                                                  want to arrive at a demand point and not have a lane of traffic between the vehicle and the demand point, you would choose Right side of vehicle
-                                                  (1) in the United States but Left side of vehicle (2) in the United Kingdom.
+                                            * ``CurbApproach`` - Specifies the direction a vehicle may arrive at or depart from the demand point.
+                                              The field value is specified as one of the following integers (use the numeric code, not the name in parentheses):
+
+                                              * 0 (Either side of vehicle)-The demand point can be visited from either the right or left side of the vehicle.
+                                              * 1 (Right side of vehicle)-Arrive at or depart the demand point so that it is on the right side of the vehicle. This is typically used for
+                                                vehicles such as buses that must arrive with the bus stop on the right-hand side so that passengers can disembark at the curb.
+                                              * 2 (Left side of vehicle)-Arrive at or depart the demand point so that it is on the left side of the vehicle. When the vehicle approaches
+                                                and departs the demand point, the curb must be on the left side of the vehicle. This is typically used for vehicles such as buses that must
+                                                arrive with the bus stop on the left-hand side so that passengers can disembark at the curb.
+
+                                              The ``CurbApproach`` property is designed to work with both kinds of national driving standards: right-hand traffic (United States) and
+                                              left-hand traffic (United Kingdom). First, consider a demand point on the left side of a vehicle. It is always on the left side regardless
+                                              of whether the vehicle travels on the left or right half of the road. What may change with national driving standards is your decision to
+                                              approach a demand point  from one of two directions, that is, so it ends up on the right or left side of the vehicle. For example, if you
+                                              want to arrive at a demand point and not have a lane of traffic between the vehicle and the demand point, you would choose Right side of vehicle
+                                              (1) in the United States but Left side of vehicle (2) in the United Kingdom.
     --------------------------------------  ------------------------------------------------------------------------------------------------------------------------------------------
     measurement_units                       Required string. Specify the units that should be used to measure the travel times or travel distances between
                                             demand points and facilities. The tool chooses the best facilities based on which ones can reach, or be reached by,
@@ -149,100 +146,104 @@ def solve_location_allocation(
     --------------------------------------  ------------------------------------------------------------------------------------------------------------------------------------------
     problem_type                            Optional string. Specifies the objective of the location-allocation analysis. The default objective is to minimize impedance.
 
-                                                * ``Minimize Impedance``: This is also known as the P-Median problem type. Facilities are located such that the sum of all
-                                                  weighted travel time or distance between demand points and solution facilities is minimized.
-                                                  (Weighted travel is the amount of demand allocated to a facility multiplied by the travel distance or time to the facility.) This problem type is traditionally used to
-                                                  locate warehouses, because it can reduce the overall transportation costs of delivering goods to outlets. Since Minimize Impedance reduces the overall distance the public
-                                                  needs to travel to reach the chosen facilities, the minimize impedance problem without an impedance cutoff is ordinarily regarded as more equitable than other problem
-                                                  types for locating some public-sector facilities such as libraries, regional airports, museums, department of motor vehicles offices, and health clinics.
-                                                  The following list describes how the minimize impedance problem type handles demand:
-                                                    * A demand point that cannot reach any facilities, due to setting a cutoff distance or time, is not allocated.
-                                                    * A demand point that can only reach one facility has all its demand weight allocated to that facility.
-                                                    * A demand point that can reach two or more facilities has all its demand weight allocated to the nearest facility only.
-                                                * ``Maximize Coverage``: Facilities are located such that as much demand as possible is allocated to solution facilities
-                                                  within the impedance cutoff. Maximize Coverage is frequently used to locate fire stations, police stations, and ERS centers, because emergency services are often required to
-                                                  arrive at all demand points within a specified response time. Note that it is important for all organizations, and critical for emergency services, to have accurate and precise data so that
-                                                  analysis results correctly model real-world results. Pizza delivery businesses, as opposed to eat-in pizzerias, try to locate stores where they can cover the most people within a certain drive time.
-                                                  People who order pizzas for delivery don't typically worry about how far away the pizzeria is; they are mainly concerned with the pizza arriving within an advertised time window. Therefore, a
-                                                  pizza-delivery business would subtract pizza-preparation time from their advertised delivery time and solve a maximize coverage problem to choose the candidate facility that would capture the most
-                                                  potential customers in the coverage area. (Potential customers of eat-in pizzerias are more affected by distance, since they need to travel to the restaurant; thus, the attendance maximizing or
-                                                  market share problem types would better suit eat-in restaurants.)
-                                                  The following list describes how the Maximize Coverage problem handles demand:
-                                                    * A demand point that cannot reach any facilities due to cutoff distance or time is not allocated.
-                                                    * A demand point that can only reach one facility has all its demand weight allocated to that facility.
-                                                    * A demand point that can reach two or more facilities has all its demand weight allocated to the nearest facility only.
-                                                * ``Maximize Capacitated Coverage``: Facilities are located such that all or the greatest amount of demand can be served without exceeding the capacity of any facility. Maximize
-                                                  Capacitated Coverage behaves like  either the Minimize Impedance or Maximize Coverage problem type but with the added constraint of capacity. You can specify a capacity for an individual facility
-                                                  by assigning a numeric value to  its corresponding Capacity field on the input facilities. If the Capacity field value is null, the facility is assigned a capacity from the Default Capacity property.
-                                                  Use-cases for Maximize Capacitated Coverage include creating territories that encompass a given number of people or businesses, locating hospitals or other medical facilities with a limited number
-                                                  of beds or patients who can be treated, or locating warehouses whose inventory isn't assumed to be unlimited.
-                                                  The following list describes how the Maximize Capacitated Coverage problem handles demand:
-                                                    * Unlike Maximize Coverage, Maximize Capacitated Coverage doesn't require a value for the Default Measurement
-                                                    Cutoff; however, when an cutoff is specified, any demand point outside the cutoff time or distance of all facilities is not allocated.
-                                                    * An allocated demand point has all or none of its demand weight assigned to a facility; that is, demand isn't apportioned with this problem type.
-                                                    * If the total demand that can reach a facility is greater than the capacity of the facility, only the demand points that maximize
-                                                    total captured demand and minimize total weighted travel are allocated.
+                                            * ``Minimize Impedance``: This is also known as the P-Median problem type. Facilities are located such that the sum of all
+                                              weighted travel time or distance between demand points and solution facilities is minimized.
+                                              (Weighted travel is the amount of demand allocated to a facility multiplied by the travel distance or time to the facility.) This problem type is traditionally used to
+                                              locate warehouses, because it can reduce the overall transportation costs of delivering goods to outlets. Since Minimize Impedance reduces the overall distance the public
+                                              needs to travel to reach the chosen facilities, the minimize impedance problem without an impedance cutoff is ordinarily regarded as more equitable than other problem
+                                              types for locating some public-sector facilities such as libraries, regional airports, museums, department of motor vehicles offices, and health clinics.
+                                              The following list describes how the minimize impedance problem type handles demand:
+                                              * A demand point that cannot reach any facilities, due to setting a cutoff distance or time, is not allocated.
+                                              * A demand point that can only reach one facility has all its demand weight allocated to that facility.
+                                              * A demand point that can reach two or more facilities has all its demand weight allocated to the nearest facility only.
 
-                                                 .. note::
-                                                    You may notice an apparent inefficiency when a demand point is allocated to a facility that isn't the  nearest solution facility. This may occur when demand points have varying weights and when the
-                                                    demand point in question can reach more than one facility. This kind of result indicates the nearest solution facility didn't have adequate capacity for the weighted demand, or the most efficient
-                                                    solution for the entire problem required one or more local inefficiencies. In either case, the solution is correct.
+                                            * ``Maximize Coverage``: Facilities are located such that as much demand as possible is allocated to solution facilities
+                                              within the impedance cutoff. Maximize Coverage is frequently used to locate fire stations, police stations, and ERS centers, because emergency services are often required to
+                                              arrive at all demand points within a specified response time. Note that it is important for all organizations, and critical for emergency services, to have accurate and precise data so that
+                                              analysis results correctly model real-world results. Pizza delivery businesses, as opposed to eat-in pizzerias, try to locate stores where they can cover the most people within a certain drive time.
+                                              People who order pizzas for delivery don't typically worry about how far away the pizzeria is; they are mainly concerned with the pizza arriving within an advertised time window. Therefore, a
+                                              pizza-delivery business would subtract pizza-preparation time from their advertised delivery time and solve a maximize coverage problem to choose the candidate facility that would capture the most
+                                              potential customers in the coverage area. (Potential customers of eat-in pizzerias are more affected by distance, since they need to travel to the restaurant; thus, the attendance maximizing or
+                                              market share problem types would better suit eat-in restaurants.)
+                                              The following list describes how the Maximize Coverage problem handles demand:
+                                              * A demand point that cannot reach any facilities due to cutoff distance or time is not allocated.
+                                              * A demand point that can only reach one facility has all its demand weight allocated to that facility.
+                                              * A demand point that can reach two or more facilities has all its demand weight allocated to the nearest facility only.
 
-                                                * ``Minimize Facilities``: Facilities are chosen such that as much weighted demand as
-                                                  possible are allocated to solution facilities within the travel time or distance cutoff; additionally, the number of facilities required to cover demand is minimized. Minimize Facilities is the
-                                                  same as Maximize Coverage but with the exception of the number of facilities to locate, which in this case is determined by the solver. When the cost of building facilities is not a limiting factor,
-                                                  the same kinds of organizations that use Maximize Coverage (emergency response, for instance) use Minimize Facilities so that all possible demand points will be covered.
-                                                  The following list describes how the Minimize Facilities problem handles demand:
-                                                    * A demand point that cannot reach any facilities due to a cutoff distance or time is not allocated.
-                                                    * A demand point that can only  reach one facility has all its demand weight allocated to that facility.
-                                                    * A demand point that can reach two or more facilities has all its demand weight allocated to the nearest facility only.
-                                                * ``Maximize Attendance``: Facilities are chosen such that as much demand weight as possible is allocated to facilities while
-                                                  assuming the demand weight decreases in relation to the distance between the facility and the demand point. Specialty stores
-                                                  that have little or no competition benefit from this problem type, but it may also be beneficial to general retailers and restaurants that
-                                                  don't have the data on competitors necessary to perform market share problem types. Some businesses that might benefit from this problem
-                                                  type include coffee shops, fitness centers, dental and medical offices, and electronics stores. Public transit bus stops are often
-                                                  chosen with the help of Maximize Attendance. Maximize Attendance assumes that the farther people have to travel to reach your facility,
-                                                  the less likely they are to use it. This is reflected in how the amount of demand allocated to facilities diminishes with distance.
-                                                  The following list describes how the Maximize Attendance problem handles demand:
-                                                    * A demand point that cannot reach any facilities due to a cutoff distance or time is not allocated.
-                                                    * When a demand point can reach a facility, its demand weight is only partially allocated to the facility.
-                                                      The amount allocated decreases as a function of the maximum cutoff distance (or time) and the travel distance (or time) between the facility and the demand point.
-                                                    * The weight of a demand point that can reach more than one facility is proportionately allocated to the nearest facility only.
-                                                * ``Maximize Market Share``: A specific number of facilities are chosen such that the allocated demand is maximized in the presence
-                                                  of competitors. The goal is to capture as much of the total market share as possible with a given number of facilities,
-                                                  which you specify. The total market share is the sum of all demand weight for valid demand points. The market share problem
-                                                  types require the most data because, along with knowing your own facilities' weight,
-                                                  you also need to know that of your competitors' facilities. The same types of facilities that use the Maximize Attendance problem type
-                                                  can also use market share problem types given that they have comprehensive
-                                                  information that includes competitor data. Large discount stores typically use  Maximize Market Share to locate a finite set of new stores.
-                                                  The market share problem types use a Huff model, which is also known as a gravity model or spatial interaction.
-                                                  The following list describes how the Maximize Market Share problem handles demand:
-                                                    * A demand point that cannot reach any facilities due to a cutoff distance or time is not allocated.
-                                                    * A demand point that can only reach one facility has all its demand weight allocated to that facility.
-                                                    * A demand point that can reach two or more facilities has all its demand weight allocated to them; furthermore, the weight is
-                                                      split among the facilities proportionally to the facilities' attractiveness (facility weight) and inversely proportional to
-                                                      the distance between the facility and demand point. Given equal facility weights,
-                                                      this means more demand weight is assigned to near facilities than far facilities.
-                                                    * The total market share, which can be used to calculate the captured market share, is the sum of the weight of all valid demand points.
-                                                * ``Target Market Share``: Target Market Share chooses the minimum number of facilities necessary to capture a specific percentage
-                                                  of the total market share in the presence of competitors. The total market share is the
-                                                  sum of all demand weight for valid demand points. You set the percent of the market share you want to reach and let the solver choose
-                                                  the fewest number of facilities necessary to meet that threshold.
-                                                  The market share problem types require the most data because, along with knowing your own facilities' weight, you also need to know
-                                                  that of your competitors' facilities. The same types of facilities that use
-                                                  the Maximize Attendance problem type can also use market share problem types given that they have comprehensive information that includes
-                                                  competitor data. Large discount stores typically use the Target Market Share
-                                                  problem type when they want to know how much expansion would be required to reach a certain level of the market share or see what strategy would be needed just to maintain their current market share given the introduction
-                                                  of new competing facilities. The results often represent what stores would like to do if budgets weren't a concern. In other cases where budget is a concern, stores revert to the Maximize Market Share problem and
-                                                  simply capture as much of the market share as possible with a limited number of facilities.
-                                                  The following list describes how the target market share problem handles demand:
-                                                    * The total market share, which is used in calculating the captured market share, is the sum of the weight of all valid demand points.
-                                                    * A demand point that cannot reach any facilities due to a cutoff distance or time is not allocated.
-                                                    * A demand point that can only reach one facility has all its demand weight allocated to that facility.
-                                                    * A demand point that can reach two or more facilities has all its demand weight allocated to them; furthermore,
-                                                      the weight is split among the facilities proportionally to the facilities' attractiveness (facility weight) and inversely
-                                                      proportional to the distance between the facility and demand point. Given equal facility weights, this means more demand
-                                                      weight is assigned to near facilities than far facilities.
+                                            * ``Maximize Capacitated Coverage``: Facilities are located such that all or the greatest amount of demand can be served without exceeding the capacity of any facility. Maximize
+                                              Capacitated Coverage behaves like  either the Minimize Impedance or Maximize Coverage problem type but with the added constraint of capacity. You can specify a capacity for an individual facility
+                                              by assigning a numeric value to  its corresponding Capacity field on the input facilities. If the Capacity field value is null, the facility is assigned a capacity from the Default Capacity property.
+                                              Use-cases for Maximize Capacitated Coverage include creating territories that encompass a given number of people or businesses, locating hospitals or other medical facilities with a limited number
+                                              of beds or patients who can be treated, or locating warehouses whose inventory isn't assumed to be unlimited.
+                                              The following list describes how the Maximize Capacitated Coverage problem handles demand:
+                                              * Unlike Maximize Coverage, Maximize Capacitated Coverage doesn't require a value for the Default Measurement Cutoff; however, when an cutoff is specified, any demand point outside the cutoff time or distance of all facilities is not allocated.
+                                              * An allocated demand point has all or none of its demand weight assigned to a facility; that is, demand isn't apportioned with this problem type.
+                                              * If the total demand that can reach a facility is greater than the capacity of the facility, only the demand points that maximize total captured demand and minimize total weighted travel are allocated.
+
+                                              .. note::
+                                                You may notice an apparent inefficiency when a demand point is allocated to a facility that isn't the  nearest solution facility. This may occur when demand points have varying weights and when the
+                                                demand point in question can reach more than one facility. This kind of result indicates the nearest solution facility didn't have adequate capacity for the weighted demand, or the most efficient
+                                                solution for the entire problem required one or more local inefficiencies. In either case, the solution is correct.
+
+                                            * ``Minimize Facilities``: Facilities are chosen such that as much weighted demand as
+                                              possible are allocated to solution facilities within the travel time or distance cutoff; additionally, the number of facilities required to cover demand is minimized. Minimize Facilities is the
+                                              same as Maximize Coverage but with the exception of the number of facilities to locate, which in this case is determined by the solver. When the cost of building facilities is not a limiting factor,
+                                              the same kinds of organizations that use Maximize Coverage (emergency response, for instance) use Minimize Facilities so that all possible demand points will be covered.
+                                              The following list describes how the Minimize Facilities problem handles demand:
+                                              * A demand point that cannot reach any facilities due to a cutoff distance or time is not allocated.
+                                              * A demand point that can only  reach one facility has all its demand weight allocated to that facility.
+                                              * A demand point that can reach two or more facilities has all its demand weight allocated to the nearest facility only.
+
+                                            * ``Maximize Attendance``: Facilities are chosen such that as much demand weight as possible is allocated to facilities while
+                                              assuming the demand weight decreases in relation to the distance between the facility and the demand point. Specialty stores
+                                              that have little or no competition benefit from this problem type, but it may also be beneficial to general retailers and restaurants that
+                                              don't have the data on competitors necessary to perform market share problem types. Some businesses that might benefit from this problem
+                                              type include coffee shops, fitness centers, dental and medical offices, and electronics stores. Public transit bus stops are often
+                                              chosen with the help of Maximize Attendance. Maximize Attendance assumes that the farther people have to travel to reach your facility,
+                                              the less likely they are to use it. This is reflected in how the amount of demand allocated to facilities diminishes with distance.
+                                              The following list describes how the Maximize Attendance problem handles demand:
+                                              * A demand point that cannot reach any facilities due to a cutoff distance or time is not allocated.
+                                              * When a demand point can reach a facility, its demand weight is only partially allocated to the facility. The amount allocated decreases as a function of the maximum cutoff distance (or time) and the travel distance (or time) between the facility and the demand point.
+                                              * The weight of a demand point that can reach more than one facility is proportionately allocated to the nearest facility only.
+
+                                            * ``Maximize Market Share``: A specific number of facilities are chosen such that the allocated demand is maximized in the presence
+                                              of competitors. The goal is to capture as much of the total market share as possible with a given number of facilities,
+                                              which you specify. The total market share is the sum of all demand weight for valid demand points. The market share problem
+                                              types require the most data because, along with knowing your own facilities' weight,
+                                              you also need to know that of your competitors' facilities. The same types of facilities that use the Maximize Attendance problem type
+                                              can also use market share problem types given that they have comprehensive
+                                              information that includes competitor data. Large discount stores typically use  Maximize Market Share to locate a finite set of new stores.
+                                              The market share problem types use a Huff model, which is also known as a gravity model or spatial interaction.
+                                              The following list describes how the Maximize Market Share problem handles demand:
+
+                                              * A demand point that cannot reach any facilities due to a cutoff distance or time is not allocated.
+                                              * A demand point that can only reach one facility has all its demand weight allocated to that facility.
+                                              * A demand point that can reach two or more facilities has all its demand weight allocated to them; furthermore, the weight is
+                                                split among the facilities proportionally to the facilities' attractiveness (facility weight) and inversely proportional to
+                                                the distance between the facility and demand point. Given equal facility weights,
+                                                this means more demand weight is assigned to near facilities than far facilities.
+                                              * The total market share, which can be used to calculate the captured market share, is the sum of the weight of all valid demand points.
+
+                                            * ``Target Market Share``: Target Market Share chooses the minimum number of facilities necessary to capture a specific percentage
+                                              of the total market share in the presence of competitors. The total market share is the
+                                              sum of all demand weight for valid demand points. You set the percent of the market share you want to reach and let the solver choose
+                                              the fewest number of facilities necessary to meet that threshold.
+                                              The market share problem types require the most data because, along with knowing your own facilities' weight, you also need to know
+                                              that of your competitors' facilities. The same types of facilities that use
+                                              the Maximize Attendance problem type can also use market share problem types given that they have comprehensive information that includes
+                                              competitor data. Large discount stores typically use the Target Market Share
+                                              problem type when they want to know how much expansion would be required to reach a certain level of the market share or see what strategy would be needed just to maintain their current market share given the introduction
+                                              of new competing facilities. The results often represent what stores would like to do if budgets weren't a concern. In other cases where budget is a concern, stores revert to the Maximize Market Share problem and
+                                              simply capture as much of the market share as possible with a limited number of facilities.
+                                              The following list describes how the target market share problem handles demand:
+
+                                              * The total market share, which is used in calculating the captured market share, is the sum of the weight of all valid demand points.
+                                              * A demand point that cannot reach any facilities due to a cutoff distance or time is not allocated.
+                                              * A demand point that can only reach one facility has all its demand weight allocated to that facility.
+                                              * A demand point that can reach two or more facilities has all its demand weight allocated to them; furthermore,
+                                                the weight is split among the facilities proportionally to the facilities' attractiveness (facility weight) and inversely
+                                                proportional to the distance between the facility and demand point. Given equal facility weights, this means more demand
+                                                weight is assigned to near facilities than far facilities.
 
                                             Choice list:['Maximize Attendance', 'Maximize Capacitated Coverage', 'Maximize Coverage', 'Maximize Market Share', 'Minimize Facilities', 'Minimize Impedance', 'Target Market Share']
     --------------------------------------  ------------------------------------------------------------------------------------------------------------------------------------------
@@ -284,17 +285,9 @@ def solve_location_allocation(
                                             and costdf is the transformed travel time or distance between the facility and demand point. Lambda (λ) denotes the impedance parameter.
                                             The Measurement Units setting determines whether travel time or distance is analyzed.
 
-                                                * ``Linear``: costdf = λ * impedancedf The transformed
-                                                travel time or distance between the facility and the demand point is the same as the time or distance of the shortest path between the
-                                                two locations. With this option, the impedance parameter (λ) is always set to one. This is the default.
-                                                * ``Power``: costdf = impedancedfλ The transformed travel time or distance between the facility and the demand point is equal to the time or distance of the shortest
-                                                path raised to the power specified by the impedance parameter (λ). Use the Power option with a positive impedance parameter to specify
-                                                higher weight to nearby facilities.
-
-                                                * ``Exponential``: costdf = e(λ * impedancedf) The transformed travel time or distance between the
-                                                facility and the demand point is equal to the mathematical constant e raised to the power specified by the shortest-path network
-                                                impedance multiplied with the impedance parameter (λ). Use the Exponential  option with a positive impedance parameter to specify a
-                                                high weight to nearby facilities.
+                                            * ``Linear``: costdf = λ * impedancedf The transformed travel time or distance between the facility and the demand point is the same as the time or distance of the shortest path between the two locations. With this option, the impedance parameter (λ) is always set to one. This is the default.
+                                            * ``Power``: costdf = impedancedfλ The transformed travel time or distance between the facility and the demand point is equal to the time or distance of the shortest path raised to the power specified by the impedance parameter (λ). Use the Power option with a positive impedance parameter to specify higher weight to nearby facilities.
+                                            * ``Exponential``: costdf = e(λ * impedancedf) The transformed travel time or distance between the facility and the demand point is equal to the mathematical constant e raised to the power specified by the shortest-path network impedance multiplied with the impedance parameter (λ). Use the Exponential option with a positive impedance parameter to specify a high weight to nearby facilities.
 
                                             Choice list: ['Linear', 'Power', 'Exponential']
     --------------------------------------  ------------------------------------------------------------------------------------------------------------------------------------------
@@ -307,8 +300,8 @@ def solve_location_allocation(
     travel_direction                        Optional string. Specify whether to measure travel times or distances from facilities to demand points or from demand
                                             points to facilities. The default value is to measure from facilities to demand points.
 
-                                                * ``Facility to Demand``: Direction of travel is from facilities to demand points. This is the default.
-                                                * ``Demand to Facility``: Direction of travel is from demand points to facilities.
+                                            * ``Facility to Demand``: Direction of travel is from facilities to demand points. This is the default.
+                                            * ``Demand to Facility``: Direction of travel is from demand points to facilities.
 
                                             Travel times and distances may change based on direction of travel. If going from point A to point B,
                                             you may encounter less traffic or have a shorter path, due to one-way streets and turn restrictions,
@@ -335,15 +328,15 @@ def solve_location_allocation(
     --------------------------------------  ------------------------------------------------------------------------------------------------------------------------------------------
     time_zone_for_time_of_day               Optional string. Specifies the time zone of the Time of Day parameter. The default is geographically local.
 
-                                                * ``Geographically Local``: The Time of Day parameter refers to the time zone in which the facilities or demand
-                                                  points are located. If Travel Direction is facilities to demand points, this is the time zone of the facilities.
-                                                  If Travel Direction is demand points to facilities, this is the time zone of the demand points.
-                                                * ``UTC``: The Time of Day parameter refers to Coordinated Universal Time (UTC). Choose this option if you want to choose the best
-                                                  location for a specific time, such as now, but aren't certain in which time zone the facilities or demand
-                                                  points will be located. Irrespective of the Time Zone for Time of Day setting, the following rules are
-                                                  enforced by the tool if your facilities and demand points are in multiple time zones: All facilities must
-                                                  be in the same time zone when specifying a time of day and travel is from facility to demand. All demand
-                                                  points must be in the same time zone when specifying a time of day and travel is from demand to facility.
+                                            * ``Geographically Local``: The Time of Day parameter refers to the time zone in which the facilities or demand
+                                              points are located. If Travel Direction is facilities to demand points, this is the time zone of the facilities.
+                                              If Travel Direction is demand points to facilities, this is the time zone of the demand points.
+                                            * ``UTC``: The Time of Day parameter refers to Coordinated Universal Time (UTC). Choose this option if you want to choose the best
+                                              location for a specific time, such as now, but aren't certain in which time zone the facilities or demand
+                                              points will be located. Irrespective of the Time Zone for Time of Day setting, the following rules are
+                                              enforced by the tool if your facilities and demand points are in multiple time zones: All facilities must
+                                              be in the same time zone when specifying a time of day and travel is from facility to demand. All demand
+                                              points must be in the same time zone when specifying a time of day and travel is from demand to facility.
 
                                             Choice list:['Geographically Local', 'UTC']
     --------------------------------------  ------------------------------------------------------------------------------------------------------------------------------------------
@@ -353,63 +346,64 @@ def solve_location_allocation(
                                             represents an intersection or dead end. To accommodate, the U-turn policy parameter is implicitly specified by how
                                             many edges, or streets, connect to the junction, which is known as junction valency. The acceptable values for this
                                             parameter are listed below; each is followed by a description of its meaning in terms of junction valency.
-                                                * ``Allowed``: U-turns are permitted at junctions with any number of connected edges, or streets. This is the default value.
-                                                * ``Not Allowed``: U-turns are prohibited at all junctions, regardless of junction valency.
-                                                * ``Allowed only at Dead Ends``: U-turns are prohibited at all junctions, except those that have only one adjacent edge (a dead end).
-                                                * ``Allowed only at Intersections and Dead Ends``: U-turns are prohibited at junctions where exactly two adjacent edges meet but are
-                                                  permitted at intersections (junctions with three or more adjacent edges) and dead ends (junctions with exactly one adjacent edge).
-                                                  Oftentimes, networks modeling streets have extraneous junctions in the middle of road segments. This option prevents vehicles from
-                                                  making U-turns at these locations. This parameter is ignored unless Travel Mode is set to Custom.
+
+                                            * ``Allowed``: U-turns are permitted at junctions with any number of connected edges, or streets. This is the default value.
+                                            * ``Not Allowed``: U-turns are prohibited at all junctions, regardless of junction valency.
+                                            * ``Allowed only at Dead Ends``: U-turns are prohibited at all junctions, except those that have only one adjacent edge (a dead end).
+                                            * ``Allowed only at Intersections and Dead Ends``: U-turns are prohibited at junctions where exactly two adjacent edges meet but are
+                                              permitted at intersections (junctions with three or more adjacent edges) and dead ends (junctions with exactly one adjacent edge).
+                                              Oftentimes, networks modeling streets have extraneous junctions in the middle of road segments. This option prevents vehicles from
+                                              making U-turns at these locations. This parameter is ignored unless Travel Mode is set to Custom.
 
                                             Choice list: ['Allowed', 'Not Allowed', 'Allowed Only at Dead Ends', 'Allowed Only at Intersections and Dead Ends']
     --------------------------------------  ------------------------------------------------------------------------------------------------------------------------------------------
-    point_barriers                          Optional FeatureSet. Specify one or more points to act as temporary
+    point_barriers                          Optional :class:`~arcgis.features.FeatureSet` . Specify one or more points to act as temporary
                                             restrictions or represent additional time or distance that may be
                                             required to travel on the underlying streets. For example, a point
                                             barrier can be used to represent a fallen tree along a street or
-                                            time delay spent at a railroad crossing.
-                                              The tool imposes a limit of 250 points that can be added
-                                            as barriers.
+                                            time delay spent at a railroad crossing. The tool imposes a limit of 250 points that can be added as barriers.
                                             When specifying the point barriers, you can set properties for each one, such as its name or barrier type,
                                             by using attributes. The point barriers can be specified with the following attributes:
+
                                             * ``Name``: The name of the barrier.
-                                            * ``BarrierType``: Specifies whether the point barrier restricts travel
-                                              completely or adds time or distance when it is crossed. The value
-                                              for this attribute is specified as one of the following
-                                              integers (use the numeric code, not the name in parentheses):
-                                                  * 0 (Restriction)-Prohibits travel through the barrier. The barrier
-                                                    is referred to as a restriction point barrier since it acts as a
-                                                    restriction.
-                                                  * 2 (Added Cost)-Traveling through the barrier increases the travel
-                                                    time or distance by the amount specified in the
-                                                    Additional_Time or Additional_Distance field. This barrier type is
-                                                    referred to as an added-cost point barrier.
+
+                                            * ``BarrierType``: Specifies whether the point barrier restricts travel completely or adds time or distance when it is crossed. The value for this attribute is specified as one of the following integers (use the numeric code, not the name in parentheses):
+
+                                              * 0 (Restriction)-Prohibits travel through the barrier. The barrier
+                                                is referred to as a restriction point barrier since it acts as a
+                                                restriction.
+
+                                              * 2 (Added Cost)-Traveling through the barrier increases the travel
+                                                time or distance by the amount specified in the
+                                                Additional_Time or Additional_Distance field. This barrier type is
+                                                referred to as an added-cost point barrier.
+
                                             * ``Additional_Time``: Indicates how much travel time is added when the
                                               barrier is traversed. This field is applicable only for added-cost
                                               barriers and only if the measurement units are time based. This field
-                                              value must be greater than or equal to zero, and its units are the same as those specified in the
-                                             Measurement Units parameter.
+                                              value must be greater than or equal to zero, and its units are the same as those specified in the Measurement Units parameter.
+
                                             * ``Additional_Distance``: Indicates how much distance is added when the barrier is
                                               traversed. This field is applicable only for added-cost barriers
                                               and only if the measurement units are distance based. The field value
                                               must be greater than or equal to zero, and its units are the same as those specified in the
                                               Measurement Units parameter.
     --------------------------------------  ------------------------------------------------------------------------------------------------------------------------------------------
-    line_barriers                           Optional FeatureSet. Specify one or more lines that prohibit travel anywhere
+    line_barriers                           Optional :class:`~arcgis.features.FeatureSet` . Specify one or more lines that prohibit travel anywhere
                                             the lines intersect the streets. For example, a parade or protest
                                             that blocks traffic across several street segments can be modeled
                                             with a line barrier. A line barrier can also quickly fence off
                                             several roads from being traversed, thereby channeling possible
                                             routes away from undesirable parts of the street
-                                            network.
-                                             The tool imposes a limit on the number of streets you can
+                                            network. The tool imposes a limit on the number of streets you can
                                             restrict using the Line Barriers parameter. While there is no limit on
                                             the number of lines you can specify as line barriers, the combined
                                             number of streets intersected by all the lines cannot exceed
-                                            500.
-                                            When specifying the line barriers, you can set a name property for each one by using the following attribute: Name: The name of the barrier.
+                                            500. When specifying the line barriers, you can set a name property for each one by using the following attribute:
+
+                                            * Name: The name of the barrier.
     --------------------------------------  ------------------------------------------------------------------------------------------------------------------------------------------
-    polygon_barriers                        Optional FeatureSet. Specify polygons that either completely restrict travel or
+    polygon_barriers                        Optional :class:`~arcgis.features.FeatureSet` . Specify polygons that either completely restrict travel or
                                             proportionately scale the time or distance required to travel on
                                             the streets intersected by the polygons.
                                             The service imposes a limit on the number of streets you
@@ -419,30 +413,20 @@ def solve_location_allocation(
                                             polygons should not exceed 2,000.
                                             When specifying the polygon barriers, you can set properties for each one, such as its name or barrier type,
                                             by using attributes. The polygon barriers can be specified with the following attributes:
+
                                             * ``Name``: The name of the barrier.
                                             * ``BarrierType``: Specifies whether the barrier restricts travel completely
                                               or scales the time or distance for traveling through it. The field
                                               value is specified as one of the following integers (use the numeric code, not the name in parentheses):
-                                                * 0 (Restriction) - Prohibits traveling through any part of the barrier.
-                                                 The barrier is referred to as a restriction polygon barrier since it
-                                                 prohibits traveling on streets intersected by the barrier. One use
-                                                 of this type of barrier is to model floods covering areas of the
-                                                 street that make traveling on those streets impossible.
-                                                * 1 (Scaled Cost) - Scales the time or distance required to travel the
-                                                 underlying streets by a factor specified using the ScaledTimeFactor
-                                                 or ScaledDistanceFactor fields. If the streets are partially
-                                                 covered by the barrier, the travel time or distance is apportioned
-                                                 and then scaled. For example, a factor 0.25 would mean that travel
-                                                 on underlying streets is expected to be four times faster than
-                                                 normal. A factor of 3.0 would mean it is expected to take three
-                                                 times longer than normal to travel on underlying streets. This
-                                                 barrier type is referred to as a scaled-cost polygon barrier. It
-                                                 might be used to model storms that reduce travel speeds in specific
-                                                 regions.
-                                              ScaledTimeFactor: This is the factor by which the travel time of the streets
+
+                                              * 0 (Restriction) - Prohibits traveling through any part of the barrier. The barrier is referred to as a restriction polygon barrier since it prohibits traveling on streets intersected by the barrier. One use of this type of barrier is to model floods covering areas of the street that make traveling on those streets impossible.
+                                              * 1 (Scaled Cost) - Scales the time or distance required to travel the underlying streets by a factor specified using the ScaledTimeFactor or ScaledDistanceFactor fields. If the streets are partially covered by the barrier, the travel time or distance is apportioned and then scaled. For example, a factor 0.25 would mean that travel on underlying streets is expected to be four times faster than normal. A factor of 3.0 would mean it is expected to take three times longer than normal to travel on underlying streets. This barrier type is referred to as a scaled-cost polygon barrier. It might be used to model storms that reduce travel speeds in specific regions.
+
+                                            * ``ScaledTimeFactor``: This is the factor by which the travel time of the streets
                                               intersected by the barrier is multiplied. This field is applicable
                                               only for scaled-cost barriers and only if the measurement units are time
                                               based. The field value must be greater than zero.
+
                                             * ``ScaledDistanceFactor``: This is the factor by which the distance of the streets
                                               intersected by the barrier is multiplied. This attribute is
                                               applicable only for scaled-cost barriers and only if the measurement
@@ -450,7 +434,9 @@ def solve_location_allocation(
                                               zero.
     --------------------------------------  ------------------------------------------------------------------------------------------------------------------------------------------
     use_hierarchy                           Optional boolean. Specify whether hierarchy should be used when finding the shortest path between the
-                                            facilities and demand points. Checked (True):
+                                            facilities and demand points.
+
+                                            Checked (True):
                                             Use hierarchy when measuring between facilities and demand points. When
                                             hierarchy is used, the tool prefers higher-order streets (such as
                                             freeways) to lower-order streets (such as local roads), and can be used
@@ -459,6 +445,7 @@ def solve_location_allocation(
                                             true when finding routes to faraway locations, because drivers on long-distance trips tend to prefer traveling on freeways where stops, intersections, and turns can be avoided. Using hierarchy is computationally faster,
                                             especially for long-distance routes, since the tool can determine the
                                             best route from a relatively smaller subset of streets.
+
                                             Unchecked (False):
                                             Do not use hierarchy when measuring between facilities and demand points. If
                                             hierarchy is not used, the tool considers all the streets and doesn't
@@ -673,7 +660,7 @@ def solve_location_allocation(
                                             'Roads Under Construction Prohibited', 'Semi or Tractor with One or More Trailers Prohibited', 'Single Axle Vehicles Prohibited',
                                             'Tandem Axle Vehicles Prohibited', 'Through Traffic Prohibited', 'Truck with Trailers Restriction', 'Use Preferred Hazmat Routes', 'Use Preferred Truck Routes', 'Walking', 'Weight Restriction', 'Weight per Axle Restriction', 'Width Restriction']
     --------------------------------------  ------------------------------------------------------------------------------------------------------------------------------------------
-    attribute_parameter_values              Optional FeatureSet. Specify additional values required by some restrictions, such as the weight of a vehicle
+    attribute_parameter_values              Optional :class:`~arcgis.features.FeatureSet` . Specify additional values required by some restrictions, such as the weight of a vehicle
                                             for Weight Restriction. You can also use the attribute parameter to specify whether any restriction prohibits,
                                             avoids, or prefers travel on roads that use the restriction. If the restriction is
                                             meant to avoid or prefer roads, you can further specify the degree
@@ -682,160 +669,152 @@ def solve_location_allocation(
                                             prefer them.
                                             The value you provide for this parameter is ignored unless Travel Mode is set to Custom, which is the default value.
                                             If you specify the Attribute Parameter Values parameter from a feature class, the field names on the feature class must match the fields as described below:
-                                                * ``AttributeName``: Lists the name of the restriction.
-                                                * ``ParameterName``: Lists the name of the parameter associated with the restriction. A restriction can have one or more ParameterName field
-                                                  values based on its intended use.
-                                                * ``ParameterValue``: The value for ParameterName used by the tool when evaluating the restriction.
-                                                  Attribute Parameter Values is dependent on the Restrictions parameter. The ParameterValue field is applicable only
-                                                  if the restriction name is specified as the value for the
-                                                  Restrictions parameter.
-                                                  In Attribute Parameter Values, each restriction (listed as AttributeName) has a ParameterName field
-                                                  value, Restriction Usage, that specifies whether the restriction
-                                                  prohibits, avoids, or prefers travel on the roads associated with
-                                                  the restriction and the degree to which the roads are avoided or
-                                                  preferred. The Restriction Usage ParameterName can be assigned any of
-                                                  the following string values or their equivalent numeric values
-                                                  listed within the parentheses:
-                                                    * ``PROHIBITED`` (-1) - Travel on the roads using the restriction is completely
-                                                     prohibited.
-                                                    * ``AVOID_HIGH`` (5) - It
-                                                     is highly unlikely for the tool to include in the route the roads
-                                                     that are associated with the restriction.
-                                                    * ``AVOID_MEDIUM`` (2) - It
-                                                     is unlikely for the tool to include in the route the roads that are
-                                                     associated with the restriction.
-                                                    * ``AVOID_LOW`` (1.3) - It
-                                                      is somewhat unlikely for the tool to include in the route the roads
-                                                     that are associated with the restriction.
-                                                    * ``PREFER_LOW`` (0.8) - It
-                                                     is somewhat likely for the tool to include in the route the roads
-                                                     that are associated with the restriction.
-                                                    * ``PREFER_MEDIUM`` (0.5) - It is likely for the tool to include in the route the roads that
-                                                     are associated with the restriction.
-                                                    * ``PREFER_HIGH`` (0.2) - It is highly likely for the tool to include in the route the roads
-                                                     that are associated with the restriction.
-                                                  In most cases, you can use the default value, PROHIBITED,
-                                                  for the Restriction Usage if the restriction is dependent on a
-                                                  vehicle-characteristic such as vehicle height. However, in some
-                                                  cases, the value for Restriction Usage depends on your routing
-                                                  preferences. For example, the Avoid Toll Roads restriction has the
-                                                  default value of AVOID_MEDIUM for the Restriction Usage parameter.
-                                                  This means that when the restriction is used, the tool will try to
-                                                  route around toll roads when it can. AVOID_MEDIUM also indicates
-                                                  how important it is to avoid toll roads when finding the best
-                                                  route; it has a medium priority. Choosing AVOID_LOW would put lower
-                                                  importance on avoiding tolls; choosing AVOID_HIGH instead would
-                                                  give it a higher importance and thus make it more acceptable for
-                                                  the service to generate longer routes to avoid tolls. Choosing
-                                                  PROHIBITED would entirely disallow travel on toll roads, making it
-                                                  impossible for a route to travel on any portion of a toll road.
-                                                  Keep in mind that avoiding or prohibiting toll roads, and thus
-                                                  avoiding toll payments, is the objective for some; in contrast,
-                                                  others prefer to drive on toll roads because avoiding traffic is
-                                                  more valuable to them than the money spent on tolls. In the latter
-                                                  case, you would choose PREFER_LOW, PREFER_MEDIUM, or PREFER_HIGH as
-                                                  the value for Restriction Usage. The higher the preference, the
-                                                  farther the tool will go out of its way to travel on the roads
-                                                  associated with the restriction.
 
-                                                  ========================================  =========================  =======================
-                                                  **AttributeName**                         **ParameterName**          **ParameterValue**
-                                                  ----------------------------------------  -------------------------  -----------------------
-                                                  Any Hazmat Prohibited                     Restriction Usage          PROHIBITED
+                                            * ``AttributeName``: Lists the name of the restriction.
+                                            * ``ParameterName``: Lists the name of the parameter associated with the restriction. A restriction can have one or more ParameterName field
+                                              values based on its intended use.
+                                            * ``ParameterValue``: The value for ParameterName used by the tool when evaluating the restriction.
+                                              Attribute Parameter Values is dependent on the Restrictions parameter. The ParameterValue field is applicable only
+                                              if the restriction name is specified as the value for the
+                                              Restrictions parameter.
+                                              In Attribute Parameter Values, each restriction (listed as AttributeName) has a ParameterName field
+                                              value, Restriction Usage, that specifies whether the restriction
+                                              prohibits, avoids, or prefers travel on the roads associated with
+                                              the restriction and the degree to which the roads are avoided or
+                                              preferred. The Restriction Usage ParameterName can be assigned any of
+                                              the following string values or their equivalent numeric values
+                                              listed within the parentheses:
 
-                                                  ----------------------------------------  -------------------------  -----------------------
-                                                  Avoid Carpool Roads                       Restriction Usage          PROHIBITED
-                                                  ----------------------------------------  -------------------------  -----------------------
-                                                  Avoid Express Lanes                       Restriction Usage          PROHIBITED
-                                                  ----------------------------------------  -------------------------  -----------------------
-                                                  Avoid Ferries                             Restriction Usage          AVOID_MEDIUM
-                                                  ----------------------------------------  -------------------------  -----------------------
-                                                  Avoid Gates                               Restriction Usage          AVOID_MEDIUM
-                                                  ----------------------------------------  -------------------------  -----------------------
-                                                  Avoid Limited Access Roads                Restriction Usage          AVOID_MEDIUM
-                                                  ----------------------------------------  -------------------------  -----------------------
-                                                  Avoid Private Roads                       Restriction Usage          AVOID_MEDIUM
-                                                  ----------------------------------------  -------------------------  -----------------------
-                                                  Avoid Roads Unsuitable for Pedestrians    Restriction Usage          AVOID_HIGH
-                                                  Avoid Stairways                           Restriction Usage          AVOID_HIGH
-                                                  ----------------------------------------  -------------------------  -----------------------
-                                                  Avoid Toll Roads                          Restriction Usage          AVOID_MEDIUM
-                                                  ----------------------------------------  -------------------------  -----------------------
-                                                  Avoid Toll Roads for Trucks               Restriction Usage          AVOID_MEDIUM
-                                                  ----------------------------------------  -------------------------  -----------------------
-                                                  Avoid Truck Restricted Roads              Restriction Usage          AVOID_HIGH
-                                                  ----------------------------------------  -------------------------  -----------------------
-                                                  Avoid Unpaved Roads                       Restriction Usage          AVOID_HIGH
-                                                  ----------------------------------------  -------------------------  -----------------------
-                                                  Axle Count Restriction                    Number of Axles            0
+                                              * ``PROHIBITED`` (-1) - Travel on the roads using the restriction is completely prohibited.
+                                              * ``AVOID_HIGH`` (5) - It is highly unlikely for the tool to include in the route the roads that are associated with the restriction.
+                                              * ``AVOID_MEDIUM`` (2) - It is unlikely for the tool to include in the route the roads that are associated with the restriction.
+                                              * ``AVOID_LOW`` (1.3) - It is somewhat unlikely for the tool to include in the route the roads that are associated with the restriction
+                                              * ``PREFER_LOW`` (0.8) - It is somewhat likely for the tool to include in the route the roads that are associated with the restriction.
+                                              * ``PREFER_MEDIUM`` (0.5) - It is likely for the tool to include in the route the roads that are associated with the restriction.
+                                              * ``PREFER_HIGH`` (0.2) - It is highly likely for the tool to include in the route the roads that are associated with the restriction.
 
-                                                                                            Restriction Usage          PROHIBITED
-                                                  ----------------------------------------  -------------------------  -----------------------
-                                                  Driving a Bus                             Restriction Usage          PROHIBITED
-                                                  ----------------------------------------  -------------------------  -----------------------
-                                                  Driving a Taxi                            Restriction Usage          PROHIBITED
-                                                  ---------------------------------------  -------------------------  -----------------------
-                                                  Driving a Truck                           Restriction Usage          PROHIBITED
-                                                  ----------------------------------------  -------------------------  -----------------------
-                                                  Driving an Automobile                     Restriction Usage          PROHIBITED
-                                                  ----------------------------------------  -------------------------  -----------------------
-                                                  Driving an Emergency Vehicle              Restriction Usage          PROHIBITED
-                                                  ----------------------------------------  -------------------------  -----------------------
-                                                  Height Restriction                        Restriction Usage          PROHIBITED
+                                              In most cases, you can use the default value, PROHIBITED,
+                                              for the Restriction Usage if the restriction is dependent on a
+                                              vehicle-characteristic such as vehicle height. However, in some
+                                              cases, the value for Restriction Usage depends on your routing
+                                              preferences. For example, the Avoid Toll Roads restriction has the
+                                              default value of AVOID_MEDIUM for the Restriction Usage parameter.
+                                              This means that when the restriction is used, the tool will try to
+                                              route around toll roads when it can. AVOID_MEDIUM also indicates
+                                              how important it is to avoid toll roads when finding the best
+                                              route; it has a medium priority. Choosing AVOID_LOW would put lower
+                                              importance on avoiding tolls; choosing AVOID_HIGH instead would
+                                              give it a higher importance and thus make it more acceptable for
+                                              the service to generate longer routes to avoid tolls. Choosing
+                                              PROHIBITED would entirely disallow travel on toll roads, making it
+                                              impossible for a route to travel on any portion of a toll road.
+                                              Keep in mind that avoiding or prohibiting toll roads, and thus
+                                              avoiding toll payments, is the objective for some; in contrast,
+                                              others prefer to drive on toll roads because avoiding traffic is
+                                              more valuable to them than the money spent on tolls. In the latter
+                                              case, you would choose PREFER_LOW, PREFER_MEDIUM, or PREFER_HIGH as
+                                              the value for Restriction Usage. The higher the preference, the
+                                              farther the tool will go out of its way to travel on the roads
+                                              associated with the restriction.
 
-                                                                                            Vehicle Height (meters)    0
-                                                  ----------------------------------------  -------------------------  -----------------------
-                                                  Kingpin to Rear Axle                      Restriction Usage          PROHIBITED
-                                                  Length Restriction
-                                                                                            Vehicle Kingpin to Rear    0
-                                                                                            Axle Length (meters)
-                                                  ----------------------------------------  -------------------------  -----------------------
-                                                  Length Restriction                        Restriction Usage          PROHIBITED
-                                                                                            Vehicle Length (meters)    0
-                                                  ----------------------------------------  -------------------------  -----------------------
-                                                  Preferred for Pedestrians                 Restriction Usage          PREFER_LOW
-                                                  ----------------------------------------  -------------------------  -----------------------
-                                                  Riding a Motorcycle                       Restriction Usage          PROHIBITED
-                                                  ----------------------------------------  -------------------------  -----------------------
-                                                  Roads Under Construction Prohibited       Restriction Usage          PROHIBITED
-                                                  ----------------------------------------  -------------------------  -----------------------
-                                                  Semi or Tractor with One                  Restriction Usage          PROHIBITED
-                                                  or more trailers prohibited
-                                                  ----------------------------------------  -------------------------  -----------------------
-                                                  Single Axle Vehicles Prohibited           Restriction Usage          PROHIBITED
-                                                  ----------------------------------------  -------------------------  -----------------------
-                                                  Tandem Axle Vehicles Prohibited           Restriction Usage          PROHIBITED
-                                                  ----------------------------------------  -------------------------  -----------------------
-                                                  Through Traffic Prohibited                Restriction Usage          AVOID_HIGH
-                                                  ----------------------------------------  -------------------------  -----------------------
-                                                  Truck with Trailers Restriction           Restriction Usage          PROHIBITED
+                                              ========================================  =========================  =======================
+                                              **AttributeName**                         **ParameterName**          **ParameterValue**
+                                              ----------------------------------------  -------------------------  -----------------------
+                                              Any Hazmat Prohibited                     Restriction Usage          PROHIBITED
 
-                                                                                            Number of Trailers         0
-                                                                                            on Truck
-                                                  ----------------------------------------  -------------------------  -----------------------
-                                                  Use Preferred Hazmat Routes               Restriction Usage          PREFER_MEDIUM
-                                                  ----------------------------------------  -------------------------  -----------------------
-                                                  Use Preferred Truck Routes                Restriction Usage          PREFER_HIGH
-                                                  ----------------------------------------  -------------------------  -----------------------
-                                                  Walking                                   Restriction Usage          PROHIBITED
-                                                  ----------------------------------------  -------------------------  -----------------------
-                                                  WalkTime                                  Walking Speed (km/h)       5
-                                                  ----------------------------------------  -------------------------  -----------------------
-                                                  Weight Restriction                        Restriction Usage          PROHIBITED
+                                              ----------------------------------------  -------------------------  -----------------------
+                                              Avoid Carpool Roads                       Restriction Usage          PROHIBITED
+                                              ----------------------------------------  -------------------------  -----------------------
+                                              Avoid Express Lanes                       Restriction Usage          PROHIBITED
+                                              ----------------------------------------  -------------------------  -----------------------
+                                              Avoid Ferries                             Restriction Usage          AVOID_MEDIUM
+                                              ----------------------------------------  -------------------------  -----------------------
+                                              Avoid Gates                               Restriction Usage          AVOID_MEDIUM
+                                              ----------------------------------------  -------------------------  -----------------------
+                                              Avoid Limited Access Roads                Restriction Usage          AVOID_MEDIUM
+                                              ----------------------------------------  -------------------------  -----------------------
+                                              Avoid Private Roads                       Restriction Usage          AVOID_MEDIUM
+                                              ----------------------------------------  -------------------------  -----------------------
+                                              Avoid Roads Unsuitable for Pedestrians    Restriction Usage          AVOID_HIGH
+                                              Avoid Stairways                           Restriction Usage          AVOID_HIGH
+                                              ----------------------------------------  -------------------------  -----------------------
+                                              Avoid Toll Roads                          Restriction Usage          AVOID_MEDIUM
+                                              ----------------------------------------  -------------------------  -----------------------
+                                              Avoid Toll Roads for Trucks               Restriction Usage          AVOID_MEDIUM
+                                              ----------------------------------------  -------------------------  -----------------------
+                                              Avoid Truck Restricted Roads              Restriction Usage          AVOID_HIGH
+                                              ----------------------------------------  -------------------------  -----------------------
+                                              Avoid Unpaved Roads                       Restriction Usage          AVOID_HIGH
+                                              ----------------------------------------  -------------------------  -----------------------
+                                              Axle Count Restriction                    Number of Axles            0
 
-                                                                                            Vehicle Weight             0
-                                                                                            (kilograms)
-                                                  ----------------------------------------  -------------------------  -----------------------
-                                                  Weight per Axle Restriction               Restriction Usage          PROHIBITED
+                                                                                        Restriction Usage          PROHIBITED
+                                              ----------------------------------------  -------------------------  -----------------------
+                                              Driving a Bus                             Restriction Usage          PROHIBITED
+                                              ----------------------------------------  -------------------------  -----------------------
+                                              Driving a Taxi                            Restriction Usage          PROHIBITED
+                                              ---------------------------------------  -------------------------  -----------------------
+                                              Driving a Truck                           Restriction Usage          PROHIBITED
+                                              ----------------------------------------  -------------------------  -----------------------
+                                              Driving an Automobile                     Restriction Usage          PROHIBITED
+                                              ----------------------------------------  -------------------------  -----------------------
+                                              Driving an Emergency Vehicle              Restriction Usage          PROHIBITED
+                                              ----------------------------------------  -------------------------  -----------------------
+                                              Height Restriction                        Restriction Usage          PROHIBITED
 
-                                                                                            Vehicle Weight per         0
-                                                                                            Axle (kilograms)
-                                                  ----------------------------------------  -------------------------  -----------------------
-                                                  Width Restriction                         Restriction Usage          PROHIBITED
+                                                                                        Vehicle Height (meters)    0
+                                              ----------------------------------------  -------------------------  -----------------------
+                                              Kingpin to Rear Axle                      Restriction Usage          PROHIBITED
+                                              Length Restriction
+                                                                                        Vehicle Kingpin to Rear    0
+                                                                                        Axle Length (meters)
+                                              ----------------------------------------  -------------------------  -----------------------
+                                              Length Restriction                        Restriction Usage          PROHIBITED
+                                                                                        Vehicle Length (meters)    0
+                                              ----------------------------------------  -------------------------  -----------------------
+                                              Preferred for Pedestrians                 Restriction Usage          PREFER_LOW
+                                              ----------------------------------------  -------------------------  -----------------------
+                                              Riding a Motorcycle                       Restriction Usage          PROHIBITED
+                                              ----------------------------------------  -------------------------  -----------------------
+                                              Roads Under Construction Prohibited       Restriction Usage          PROHIBITED
+                                              ----------------------------------------  -------------------------  -----------------------
+                                              Semi or Tractor with One                  Restriction Usage          PROHIBITED
+                                              or more trailers prohibited
+                                              ----------------------------------------  -------------------------  -----------------------
+                                              Single Axle Vehicles Prohibited           Restriction Usage          PROHIBITED
+                                              ----------------------------------------  -------------------------  -----------------------
+                                              Tandem Axle Vehicles Prohibited           Restriction Usage          PROHIBITED
+                                              ----------------------------------------  -------------------------  -----------------------
+                                              Through Traffic Prohibited                Restriction Usage          AVOID_HIGH
+                                              ----------------------------------------  -------------------------  -----------------------
+                                              Truck with Trailers Restriction           Restriction Usage          PROHIBITED
 
-                                                                                            Vehicle Width              0
-                                                                                            (meters)
-                                                  ========================================  =========================  =======================
+                                                                                        Number of Trailers         0
+                                                                                        on Truck
+                                              ----------------------------------------  -------------------------  -----------------------
+                                              Use Preferred Hazmat Routes               Restriction Usage          PREFER_MEDIUM
+                                              ----------------------------------------  -------------------------  -----------------------
+                                              Use Preferred Truck Routes                Restriction Usage          PREFER_HIGH
+                                              ----------------------------------------  -------------------------  -----------------------
+                                              Walking                                   Restriction Usage          PROHIBITED
+                                              ----------------------------------------  -------------------------  -----------------------
+                                              WalkTime                                  Walking Speed (km/h)       5
+                                              ----------------------------------------  -------------------------  -----------------------
+                                              Weight Restriction                        Restriction Usage          PROHIBITED
+
+                                                                                        Vehicle Weight             0
+                                                                                        (kilograms)
+                                              ----------------------------------------  -------------------------  -----------------------
+                                              Weight per Axle Restriction               Restriction Usage          PROHIBITED
+
+                                                                                        Vehicle Weight per         0
+                                                                                        Axle (kilograms)
+                                              ----------------------------------------  -------------------------  -----------------------
+                                              Width Restriction                         Restriction Usage          PROHIBITED
+
+                                                                                        Vehicle Width              0
+                                                                                        (meters)
+                                              ========================================  =========================  =======================
 
     --------------------------------------  ------------------------------------------------------------------------------------------------------------------------------------------
     allocation_line_shape                   Optional string. The default is to output straight lines.
@@ -872,17 +851,21 @@ def solve_location_allocation(
 
                                             Choice list:['Drive Time', 'Truck Time', 'Walk Time']
     --------------------------------------  ------------------------------------------------------------------------------------------------------------------------------------------
-    gis                                     Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
+    gis                                     Optional, the :class:`~arcgis.gis.GIS` on which this tool runs. If not specified, the active GIS is used.
+    --------------------------------------  ------------------------------------------------------------------------------------------------------------------------------------------
+    future                                  Optional boolean. If True, a future object will be returned and the process
+                                            will not wait for the task to complete. The default is False, which means wait for results.
     ======================================  ==========================================================================================================================================
 
-    : returns the following as a named tuple:
-        * solve_succeeded - Solve Succeeded as a bool
-        * output_allocation_lines - Output Allocation Lines as a FeatureSet
-        * output_facilities - Output Facilities as a FeatureSet
+    :return: the following as a named tuple:
 
-        * output_demand_points - Output Demand Points as a FeatureSet
+    * solve_succeeded - Solve Succeeded as a bool
+    * output_allocation_lines - Output Allocation Lines as a FeatureSet
+    * output_facilities - Output Facilities as a FeatureSet
 
-    Click `solveLocationAllocation`_ for additional help.
+    * output_demand_points - Output Demand Points as a FeatureSet
+
+    Click `solveLocationAllocation <https://developers.arcgis.com/rest/network/api-reference/location-allocation-service.htm>`_ for additional help.
     """
 
     if gis is None:

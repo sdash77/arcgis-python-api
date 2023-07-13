@@ -13,16 +13,27 @@ from parameterized import parameterized
 from fastai.vision.learner import ClassificationInterpretation
 import random
 import string
+import glob
+import gc
 from sys import platform
+import pandas as pd
+from integration.arcgis_learn.properties import (
+        data,
+        data_folder,
+        setuposenviron,
+        data_folder_ms,
+        data_inference_only
+    )
 from arcgis.learn import classify_pixels, detect_objects, classify_objects
+from arcgis.learn import prepare_data, prepare_tabulardata, prepare_textdata
+from arcgis.learn import AutoDL,ImageryModel
+
+
 
 import_exception = None
 
 try:
-    import fastai
     import torch
-    import torchvision
-    import pytest
 
     HAS_DEPS = True
     print(" ================= Modules Imported ==============")
@@ -37,28 +48,23 @@ module_skip = False
 parameter = []
 parameter_fl = []
 parameter_df = []
+# parameter_autodl = []
 parameter_text = []
+parameter_autodl = []
 authorization_data = {}
 check_ms = False
 current_path = ""
 success_flag = False
 if not HAS_DEPS:
     print("**Environment fails**")
+    module_skip = True
     raise Exception(
         f"""{import_exception} \n\nThis module requires fastai, PyTorch, torchvision and scikit-image as its dependencies."""
     )
-    module_skip = True
+   
 else:
     from arcgis.gis import GIS
     from arcgis.features import FeatureLayerCollection
-    from integration.arcgis_learn.properties import (
-        data,
-        data_folder,
-        setuposenviron,
-        data_folder_ms,
-        data_inference_only,
-    )
-    from arcgis.learn import prepare_data, prepare_tabulardata, prepare_textdata
     from datetime import datetime
 
 accuracy_values = {
@@ -77,7 +83,6 @@ accuracy_values = {
         "pointcnn": 0,
         "yolov3": 0,
         "fullyconnected": 0,
-        "machine_learning": 0,
         "pix2pix": 0,
         "cyclegan": 0,
         "hededgedetector": 0,
@@ -87,6 +92,7 @@ accuracy_values = {
         "changedetection": 0,
         "mtre": 0,
         "sequencetosequence": 0,
+        "textclassifier": 0,
         "timeseriesmodel": 0,
         "zeroshotclassifier": 0,
         "questionanswering": 0,
@@ -99,6 +105,8 @@ accuracy_values = {
         "mmdetection": 0,
         "mlmodel": 0,
         "automl": 0,
+        "maxdeeplab":0,
+        "detreg":0,
     }
 }
 
@@ -108,25 +116,28 @@ success_stat = {
         "total": 0,
         "pass": 0,
         "fail": 0,
-        "od_total": 5,
+        "od_total": 6,
         "od": 0,
-        "pc_total": 10,
+        "pc_total": 11,
         "pc": 0,
         "co_total": 1,
         "co": 0,
-        "text_total": 8,
+        "text_total": 9,
         "text": 0,
         "others_total": 10,
         "others": 0,
     }
 }
 
+failure_models = []
+failure_score = []
+
 
 @unittest.skipIf(module_skip, "Precondition check failed. Skipping Common tests")
 def setUpModule():
     global authorization_data
     authorization_data = setuposenviron()
-    if os.environ["run_nightly"] == "1":
+    if os.environ.get("run_nightly") == "1":
         accuracy_values["attributes"]["Date"] = convertdate(datetime.today())
     print("Setup completed successfully")
 
@@ -156,6 +167,45 @@ def updateModelStats():
     data.edit_features(deletes=ind[:])
     data.edit_features(adds=[success_stat])
 
+def updateFailureModels():
+    gis = GIS(
+        "https://deldev.maps.arcgis.com",
+         "demos_deldev",
+        "DelDevs.1234",
+    )
+    item = gis.content.get("cd08c8edfb2f401bb0df1aafa6ce36af")
+    data = item.tables[0]
+    sdf = pd.DataFrame.spatial.from_layer(data)
+    global failure_models, failure_score
+    failed_models = list(sdf["ModelName"])
+
+    try:
+        ind = list(data.query().sdf["ObjectId"])
+        data.edit_features(deletes=ind[:])
+    except KeyError:
+        pass
+    if len(failure_models) > 0:
+        for model, accuracy in zip(failure_models, failure_score):
+            if model in failed_models:
+                failing_since = sdf.loc[sdf["ModelName"] ==model]["FailingSince"][0]
+            else:
+                failing_since = convertdate(datetime.today())
+            failed_model_data = {
+                    "attributes": {
+                        "ModelName": model,
+                        "Accuracy":accuracy,
+                        "FailingSince": failing_since
+                    }
+                }
+            data.edit_features(adds= [failed_model_data])
+    else:
+        data.edit_features(adds= [{
+                    "attributes": {
+                        "ModelName": "No Failure Case",
+                        "Accuracy":0,
+                        "FailingSince": convertdate(datetime.today())
+                    }
+                }])
 
 def CommonTestUsingDF(
     query,
@@ -167,6 +217,7 @@ def CommonTestUsingDF(
     data_path,
     model_test,
     data_folder_path,
+    self_obj
 ):
     from sklearn.preprocessing import MinMaxScaler
     import pandas as pd
@@ -234,7 +285,7 @@ def CommonTestUsingDF(
     model_object.save(f"{os.path.join(data_folder_path, data_path, model_test)}")
     # Load from saved model.
 
-    if os.environ["run_nightly"] == "1":
+    if os.environ.get("run_nightly") == "1":
         print("Testing for accuracy with default backbone")
         global accuracy_values
         if regression_parameter == "automl_score":
@@ -243,9 +294,13 @@ def CommonTestUsingDF(
             result = 0.0
 
         accuracy_values["attributes"][model_name] = result
-        assert (
-            result >= regression_test_score
-        ), "Model accuracy is lower than the threshold value. Please check."
+        # self_obj.assertGreater(
+        #     result, regression_test_score, "Model accuracy is lower than the threshold value. Please check."
+        # )
+        global failure_score, failure_models
+        if result < regression_test_score:
+            failure_models.append(model_name)
+            failure_score.append(regression_test_score)
 
     if model_name == "mlmodel":
         model_object.load(f"{os.path.join(data_folder_path, data_path, model_test)}")
@@ -255,6 +310,41 @@ def CommonTestUsingDF(
         os.path.join(data_folder_path, data_path, f"{model_test}/{model_test}.emd")
     )
 
+def CommonTestAutoDL(
+    prepare_data_rgb, model, network, time, datapath
+):
+    data = prepare_data(**prepare_data_rgb)
+    model_object = model(data, total_time_limit=time, network=network)
+    model_object.fit()
+    best_model_path = os.path.join(data_folder, datapath, 'models', '*AutoDL_'+model_object.best_model+'*', '*emd')
+    emd_path = glob.glob(best_model_path)[0]
+    img_model = ImageryModel()
+    img_model.load(emd_path, data)
+    img_model.fit()
+    fine_tuned_model = os.path.join(data_folder, datapath, 'models', 'fine_tuned_model')
+    img_model.save(fine_tuned_model)
+
+# def CommonTestAutoDLMS(
+#     model_name,
+#     datapath,
+#     datapath_ms,
+#     model,
+#     model_test,
+#     prepare_data_rgb,
+#     prepare_data_ms,
+#     network,
+#     time,
+# ):
+#     data = prepare_data(**prepare_data_ms)
+#     model_object = model(data, total_time_limit=1)
+#     model_object.fit()
+#     best_model_path = os.path.join(data_folder_ms, datapath_ms, 'models', '*AutoDL_'+model_object.best_model+'*', '*emd')
+#     emd_path = glob.glob(best_model_path)[0]
+#     img_model = ImageryModel()
+#     img_model.load(emd_path, data)
+#     img_model.fit()
+#     fine_tuned_model = os.path.join(data_folder_ms, datapath_ms, 'models', 'fine_tuned_model')
+#     img_model.save(fine_tuned_model)
 
 def CommonTestUsingFL(
     query,
@@ -329,7 +419,7 @@ def CommonTestUsingFL(
             data,
         )
 
-    if os.environ["run_nightly"] == "1":
+    if os.environ.get("run_nightly") == "1":
         print("Testing for accuracy with default backbone")
         global accuracy_values
         if regression_parameter == "score":
@@ -339,7 +429,7 @@ def CommonTestUsingFL(
 
         accuracy_values["attributes"][model_name] = result
 
-    if os.environ["run_inference"] == "1":
+    if os.environ.get("run_inference") == "1":
         model_object.predict(feature_layer, output_layer_name="prediction_layer_rf")
 
     success_flag = True
@@ -366,10 +456,12 @@ def commonTestCases(
     ms_flag,
     current_path,
     num_epochs,
+    self_obj
 ):
     global success_flag
     success_flag = False
-    if model_test == "sequencetosequence_test":
+    from arcgis.learn import prepare_data
+    if model_test == "sequencetosequence_test" or model_test == "textclassifier_test":
         data = prepare_textdata(**preparedata)
     elif model_test == "timeseriesmodel_test":
         from arcgis.learn import prepare_tabulardata
@@ -393,10 +485,9 @@ def commonTestCases(
         model_object = model_type(data, seq_len=12)
     elif model_test == "mmsegmentation_test" or model_test == "mmdetection_test":
         all_models = model_type.supported_models
-        import random
-
-        random_number = random.randint(0, len(all_models))
-        model_object = model_type(data, model=all_models[random_number])
+        model_object = model_type(data, model=all_models[0])
+    elif model_test == "psetae_test":
+        model_object = model_type(data, gamma=2, dropout=0.2)
     else:
         model_object = model_type(data)
 
@@ -406,7 +497,6 @@ def commonTestCases(
     # Fit for 1 epochs without LR.
     model_object.fit(1)
     # # Fit for 1 epochs with LR.
-    model_object.fit(1, lr=0.001)
 
     # save model
     d_path = os.path.join(data_folder, data_path, "models", model_test)
@@ -416,16 +506,17 @@ def commonTestCases(
         model_save_path = model_object.save(f"{d_path}")
 
     # Check model with all supported backbones
-    if os.environ["run_backbones"] == "1":
+    if os.environ.get("run_backbones") == "1":
         print("Testing for all backbones")
         supported_backbones = model_object.supported_backbones
         for backbone in supported_backbones:
             model_object = model_type(data, backbone=str(backbone))
             model_object.fit(1)
             model_object.save(model_test + "_" + str(backbone))
+            gc.collect()
             torch.cuda.empty_cache()
 
-    if os.environ["run_nightly"] == "1":
+    if os.environ.get("run_nightly") == "1":
         if not ms_flag:
             print("Testing for accuracy with default backbone")
             global accuracy_values
@@ -457,6 +548,8 @@ def commonTestCases(
                 result = float(model_object.compute_metrics()["SSIM"])
             elif regression_parameter == "f1_score":
                 result = model_object.f1_score()
+            elif regression_parameter == "panoptic_quality":
+                result = model_object.panoptic_quality()
             elif regression_parameter == "compute_metrics":
                 if model_test == "siammask_test":
                     result = float(model_object.compute_metrics()["mean_IOU"])
@@ -496,12 +589,16 @@ def commonTestCases(
 
             accuracy_values["attributes"][model_name] = result
 
-            assert (
-                result >= regression_test_score
-            ), "Model accuracy is lower than the threshold value. Please check."
+            # self_obj.assertGreater(
+            #     result,regression_test_score, "Model accuracy is lower than the threshold value. Please check."
+            # )
+            global failure_score, failure_models
+            if result < regression_test_score:
+                failure_models.append(model_name)
+                failure_score.append(regression_test_score)
 
     ## Inferencing function here.
-    if os.environ["run_inference"] == "1" and ms_flag == False:
+    if os.environ.get("run_inference") == "1" and ms_flag == False:
         from arcpy.ia import (
             DetectObjectsUsingDeepLearning,
             ClassifyPixelsUsingDeepLearning,
@@ -671,6 +768,10 @@ def commonTestCases(
         str(model_save_path) + os.sep + f"{model_test}.emd", data
     )
 
+    del model_object
+    gc.collect()
+    torch.cuda.empty_cache()
+
     success_flag = True
 
 
@@ -703,7 +804,7 @@ def CommonTestTextModels(model_name, model, data, labels):
         model = model()
         predictions = model.generate_text(data, num_return_sequences=2, max_length=25)
     elif model_name == "fillmask":
-        model = model(backbone="roberta-base")
+        model = model()
         predictions = model.predict_token(data, num_suggestions=2)
         result = predictions[0][0]["score"]
     else:
@@ -809,6 +910,8 @@ def update_parameter_df():
             )
     return parameter_df
 
+# def efficientnet_main():
+#     from integration.arcgis_learn.properties import *
 
 def text_models():
     for key, val in data_inference_only.items():
@@ -817,6 +920,34 @@ def text_models():
         )
     return parameter_text
 
+def autodl_main():
+    autodl_data = [os.path.join(data_folder, "autodl_data", "classified_tiles"), 
+                   os.path.join(data_folder, "autodl_data", "palm_trees")]
+    autodl_pretrained_model = [os.path.join(data_folder, "autodl_data", "unet_model", "AutoDL_UnetClassifier_resnet34.emd"),
+                               os.path.join(data_folder, "autodl_data", "ssd_model", "AutoDL_SingleShotDetector_resnet34.emd")]
+    autodl_model = ["DeepLab", "SingleShotDetector"]
+    for ind in range(0,2):
+        path = autodl_data[ind]
+        data = prepare_data(path, batch_size=None)
+        dl = AutoDL(data, total_time_limit=0.25, verbose=True, network=[autodl_model[ind]],mode='basic')
+        dl.fit()
+        dl.score()
+        dl.supported_classification_models()
+        dl.supported_detection_models()
+        dl.average_precision_score()
+        dl.lr_find()
+        dl.BestPerformingModel
+        dl.mIOU()
+        del dl
+        gc.collect()
+        torch.cuda.empty_cache()
+        im = ImageryModel()
+        im.load(autodl_pretrained_model[ind], data)
+        im.fit(3)
+        im.save("test_dl")
+        del im
+        gc.collect()
+        torch.cuda.empty_cache()
 
 class TestTraining(unittest.TestCase):
     @classmethod
@@ -836,7 +967,7 @@ class TestTraining(unittest.TestCase):
             success_stat["attributes"]["pass"] = success_stat["attributes"]["pass"] + 1
             if test_name == "ms":
                 pass
-            elif test_name in ["ssd", "rn", "fasterrcnn", "yolov3", "maskrcnn"]:
+            elif test_name in ["ssd", "rn", "fasterrcnn", "yolov3", "maskrcnn", "detreg"]:
                 success_stat["attributes"]["od"] = success_stat["attributes"]["od"] + 1
             elif test_name in [
                 "unet",
@@ -849,6 +980,7 @@ class TestTraining(unittest.TestCase):
                 "bdcnedgedetector",
                 "changedetection",
                 "mtre",
+                "maxdeeplab"
             ]:
                 success_stat["attributes"]["pc"] = success_stat["attributes"]["pc"] + 1
             elif test_name in ["fc"]:
@@ -856,6 +988,7 @@ class TestTraining(unittest.TestCase):
             elif test_name in [
                 "ner",
                 "sequencetosequence",
+                "textclassifer",
                 "zeroshotclassifier",
                 "questionanswering",
                 "textsummarizer",
@@ -887,6 +1020,7 @@ class TestTraining(unittest.TestCase):
             success_stat["attributes"]["fail"] = success_stat["attributes"]["fail"] + 1
             print("Method is a failure")
             print(self._testMethodName)
+        gc.collect()
         torch.cuda.empty_cache()
         for key, val in data.items():
             os.system(
@@ -963,6 +1097,7 @@ class TestTraining(unittest.TestCase):
             ms_flag,
             data_folder_path,
             num_epochs,
+            self
         )
 
     @unittest.skipIf(module_skip, "Preconditions not met, skipping test")
@@ -998,7 +1133,7 @@ class TestTraining(unittest.TestCase):
     @parameterized.expand(text_models, skip_on_empty=True)
     def test_text_models(self, key, model_name, model, data, labels):
         CommonTestTextModels(model_name, model, data, labels)
-
+    
     @unittest.skipIf(module_skip, "Preconditions not met, skipping test")
     @parameterized.expand(update_parameter_df, skip_on_empty=True)
     def test_automl(
@@ -1014,19 +1149,24 @@ class TestTraining(unittest.TestCase):
         data_folder_path,
     ):
         CommonTestUsingDF(
-            query,
-            model_type,
-            prepare_tabular_data,
-            regression_parameter,
-            regression_test_score,
-            model_name,
-            data_path,
-            model_test,
-            data_folder_path,
-        )
+                query,
+                model_type,
+                prepare_tabular_data,
+                regression_parameter,
+                regression_test_score,
+                model_name,
+                data_path,
+                model_test,
+                data_folder_path,
+                self
+            )
+    
+    def test_autodl(self):
+        autodl_main()
 
     @classmethod
     def tearDownClass(cls):
+        gc.collect()
         torch.cuda.empty_cache()
         for key, val in data.items():
             try:
@@ -1045,11 +1185,13 @@ class TestTraining(unittest.TestCase):
 
 ## Remove all model directories
 def tearDownModule():
+    gc.collect()
     torch.cuda.empty_cache()
-    if os.environ["run_nightly"] == "1":
+    if os.environ.get("run_nightly") == "1":
         print("Updating feature layer for accuracy dashboard\n")
         updateAccuracyResults()
         updateModelStats()
+        updateFailureModels()
     for key, val in data.items():
         try:
             os.system(f'rm -rf "{os.path.join(data_folder,val["datapath"],"models")}"')

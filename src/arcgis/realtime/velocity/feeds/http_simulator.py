@@ -22,15 +22,15 @@ class HttpSimulator(_FeedTemplate, _HasTime, _HasGeometry):
     the feed.
 
     ============================    ====================================================================
-    **Argument**                    **Description**
+    **Parameter**                    **Description**
     ----------------------------    --------------------------------------------------------------------
-    label                           str. Unique label for this feed instance.
+    label                           String. Unique label for this feed instance.
     ----------------------------    --------------------------------------------------------------------
-    description                     str. Feed description.
+    description                     String. Feed description.
     ----------------------------    --------------------------------------------------------------------
-    url                             str. The full URL to the externally accessible simulation file.
+    url                             String. The full URL to the externally accessible simulation file.
     ----------------------------    --------------------------------------------------------------------
-    field_separator                 str. The character, or delimiter, which separates field values in
+    field_separator                 String. The character, or delimiter, which separates field values in
                                     the simulation file. The default is: ,.
     ----------------------------    --------------------------------------------------------------------
     features_per_execution          int. The number of records (features) to simulate at a time. The default
@@ -52,20 +52,20 @@ class HttpSimulator(_FeedTemplate, _HasTime, _HasGeometry):
     ============================    ====================================================================
     **Optional Argument**           **Description**
     ============================    ====================================================================
-    data_format                     Union[DelimitedFormat].
+    data_format                     [:class:`~arcgis.realtime.velocity.input.DelimitedFormat`].
                                     An instance that contains the data format
                                     configuration for this feed. Configure only allowed formats.
                                     If this is not set right during initialization, a format will be
                                     auto-detected and set from a sample of the incoming data. This sample
                                     will be fetched from the configuration provided so far in the init.
     ----------------------------    --------------------------------------------------------------------
-    track_id_field                  str. Name of the field from the incoming data that should be set as
+    track_id_field                  String. Name of the field from the incoming data that should be set as
                                     track ID.
     ----------------------------    --------------------------------------------------------------------
-    geometry                        Union[XYZGeometry, SingleFieldGeometry]. An instance of geometry configuration
+    geometry                        [:class:`~arcgis.realtime.velocity.feeds.XYZGeometry`, :class:`~arcgis.realtime.velocity.feeds.SingleFieldGeometry`]. An instance of geometry configuration
                                     that will be used to create geometry objects from the incoming data.
     ----------------------------    --------------------------------------------------------------------
-    time                            Union[TimeInstant, TimeInterval]. An instance of time configuration that
+    time                            [:class:`~arcgis.realtime.velocity.feeds.TimeInstant`, :class:`~arcgis.realtime.velocity.feeds.TimeInterval`]. An instance of time configuration that
                                     will be used to create time information from the incoming data.
     ============================    ====================================================================
 

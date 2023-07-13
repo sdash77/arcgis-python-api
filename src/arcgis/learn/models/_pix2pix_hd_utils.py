@@ -715,9 +715,9 @@ def encode_input(
 
 
 class Pix2PixHDModel(nn.Module):
-    def __init__(self, label_nc, input_nc, output_nc, **kwargs):
+    def __init__(self, label_nc, input_nc, output_nc, gpu_ids, **kwargs):
         super().__init__()
-        self.gpu_ids = [0]
+        self.gpu_ids = gpu_ids
         ngf = kwargs.get("n_gen_filters", 64)
         n_downsample_global = kwargs.get("n_downsample_global", 4)
         n_blocks_global = kwargs.get("n_blocks_global", 9)
@@ -788,9 +788,10 @@ class Pix2PixHDLoss(nn.Module):
         lambda_feat=10.0,
         l1_loss=True,
         lambda_l1=100.0,
+        gpu_ids=[],
     ):
         super().__init__()
-        self.gpu_ids = [0]
+        self.gpu_ids = gpu_ids
         self.Tensor = torch.cuda.FloatTensor if self.gpu_ids else torch.Tensor
         self.p2p_model = p2p_model
         self.criterionGAN = GANLoss(use_lsgan=self.p2p_model.lsgan, tensor=self.Tensor)
@@ -810,7 +811,6 @@ class Pix2PixHDLoss(nn.Module):
         return self.p2p_model.D.forward(input_concat)
 
     def forward(self, output, target):
-
         fake_image = output[0]
 
         # Real Detection and Loss
@@ -927,7 +927,6 @@ class Pix2PixHDTrainer(LearnerCallback):
             self.G_l1_smter.add_value(self.loss_func.loss_G_l1.detach().cpu())
 
     def on_batch_end(self, last_input, last_output, **kwargs):
-
         self.G.zero_grad()
         fake_image = last_output[0].detach()
         input_label, real_image = last_input

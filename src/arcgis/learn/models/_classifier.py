@@ -1,6 +1,5 @@
 import arcgis as _arcgis
-from ._arcgis_model import ArcGISModel
-from ._timm_utils import timm_config, filter_timm_models, _get_feature_size
+from ._arcgis_model import ArcGISModel, _change_tail
 from ..._impl.common._deprecate import deprecated
 from .._data import _check_esri_files, _raise_fastai_import_error
 import random
@@ -9,6 +8,7 @@ import traceback
 
 try:
     import pandas
+    import gc
     import tempfile
     import numpy as np
     import json
@@ -30,7 +30,8 @@ try:
     from fastai.vision.image import open_image
     from fastai.data_block import MultiCategoryList
     from fastai.vision.data import ImageDataBunch, ImageList
-    from fastai.vision import imagenet_stats, normalize
+    from fastai.vision import imagenet_stats, normalize, flatten_model
+    from fastai.torch_core import split_model_idx
     from fastai.basic_train import Learner, LearnerCallback
     from torch.utils.data.sampler import WeightedRandomSampler
     from fastai.vision.learner import (
@@ -38,16 +39,13 @@ try:
         ClassificationInterpretation,
         cnn_config,
     )
-    from ._arcgis_model import _set_multigpu_callback, _resnet_family
+    from ._arcgis_model import _set_multigpu_callback, _resnet_family, _get_device
     from fastai.vision.transform import (
         crop,
         rotate,
         dihedral_affine,
         brightness,
         contrast,
-        skew,
-        rand_zoom,
-        get_transforms,
     )
     import torch.nn.functional as functional
     import glob
@@ -65,6 +63,18 @@ try:
     from matplotlib import pyplot as plt
     from .._utils.image_classification import adapt_fastai_databunch
     import copy
+    import timm
+    from ._timm_utils import (
+        timm_config,
+        filter_timm_models,
+        _get_feature_size,
+        test_cnn_trnsfrmr,
+        gradcam_trnsfrmr,
+    )
+    from fastai.vision import learner
+
+    learner._test_cnn = test_cnn_trnsfrmr
+    ClassificationInterpretation.GradCAM = gradcam_trnsfrmr
 
     HAS_FASTAI = True
 except Exception as e:
@@ -123,16 +133,16 @@ class FeatureClassifier(ArcGISModel):
     geographical feature based on the imagery it overlaps with.
 
     =====================   ===========================================
-    **Argument**            **Description**
+    **Parameter**            **Description**
     ---------------------   -------------------------------------------
     data                    Required fastai Databunch. Returned data object from
-                            `prepare_data` function.
+                            :meth:`~arcgis.learn.prepare_data`  function.
     ---------------------   -------------------------------------------
     backbone                Optional string. Backbone convolutional neural network
                             model used for feature extraction, which is ``resnet34``
                             by default.
                             Supported backbones: ResNet family and specified Timm
-                            models from :func:`~arcgis.learn.FeatureClassifier.backbones`.
+                            models(experimental support) from :func:`~arcgis.learn.FeatureClassifier.backbones`.
     ---------------------   -------------------------------------------
     pretrained_path         Optional string. Path where pre-trained model is
                             saved.
@@ -149,10 +159,10 @@ class FeatureClassifier(ArcGISModel):
     backend                 Optional string. Controls the backend framework to be used
                             for this model, which is 'pytorch' by default.
 
-                            valid options are 'pytorch', 'tensorflow'
+                            valid options are "``pytorch``", "``tensorflow``"
     =====================   ===========================================
 
-    :return: `FeatureClassifier` Object
+    :return: :class:`~arcgis.learn.FeatureClassifier` Object
     """
 
     def __init__(
@@ -166,19 +176,20 @@ class FeatureClassifier(ArcGISModel):
         *args,
         **kwargs,
     ):
-
         # condition when databunch is from fastai
         # it will not contain class_mapping
         if not hasattr(data, "class_mapping"):
             data = adapt_fastai_databunch(data)
+
+        self._free_memory()
 
         self._backend = backend
         if self._backend == "tensorflow":
             super().__init__(data, None)
             self._intialize_tensorflow(data, backbone, pretrained_path, mixup, kwargs)
         else:
-
-            super().__init__(data, backbone, **kwargs)
+            super().__init__(data, backbone, pretrained_path=pretrained_path, **kwargs)
+            data = self._data
 
             backbone_cut = None
             backbone_split = None
@@ -238,14 +249,40 @@ class FeatureClassifier(ArcGISModel):
             else:
                 head = None
 
-            self.learn = cnn_learner(
-                data,
-                self._backbone,
-                metrics=metrics,
-                cut=backbone_cut,
-                split_on=backbone_split,
-                custom_head=head,
+            self._transformer = (
+                type(backbone) is str
+                and backbone in FeatureClassifier.transformer_backbones()
             )
+
+            if self._transformer:
+                from ._timm_utils import create_trnsfrmr_model
+
+                trnsfrmr_model = create_trnsfrmr_model(
+                    self._backbone.__name__,
+                    num_classes=data.c,
+                    img_size=self._data.chip_size,
+                    pretrained=True,
+                )
+                if self._is_multispectral:
+                    trnsfrmr_model = _change_tail(trnsfrmr_model, data)
+
+                self.learn = Learner(
+                    data,
+                    model=trnsfrmr_model,
+                    metrics=metrics,
+                )
+                idx = self._freeze()
+                self.learn.layer_groups = split_model_idx(self.learn.model, [idx])
+                self.learn.create_opt(lr=3e-3)
+            else:
+                self.learn = cnn_learner(
+                    data,
+                    self._backbone,
+                    metrics=metrics,
+                    cut=backbone_cut,
+                    split_on=backbone_split,
+                    custom_head=head,
+                )
             if oversample:
                 self.learn.callbacks.append(OverSamplingCallback(self.learn))
             self._arcgis_init_callback()  # make first conv weights learnable
@@ -278,6 +315,20 @@ class FeatureClassifier(ArcGISModel):
     def __repr__(self):
         return "<%s>" % (type(self).__name__)
 
+    def _freeze(self):
+        idx = len(flatten_model(self.learn.model[0])) // 2
+        for layer in flatten_model(self.learn.model[0])[:idx]:
+            if isinstance(layer, (torch.nn.BatchNorm2d)):
+                continue
+            for p in layer.parameters():
+                p.requires_grad = False
+
+        return idx
+
+    def _free_memory(self):
+        gc.collect()
+        torch.cuda.empty_cache()
+
     @staticmethod
     def _available_metrics():
         return ["valid_loss", "accuracy"]
@@ -288,15 +339,24 @@ class FeatureClassifier(ArcGISModel):
         return FeatureClassifier._supported_backbones()
 
     @staticmethod
+    def transformer_backbones():
+        """Supported list of transformer backbones for this model."""
+        trnsfrmr_model = timm.list_models("vit_*", pretrained=True)
+        return list(map(lambda m: "timm:" + m, trnsfrmr_model))
+
+    @staticmethod
     def backbones():
         """Supported list of backbones for this model."""
         return FeatureClassifier._supported_backbones()
 
     @staticmethod
     def _supported_backbones():
-        timm_models = filter_timm_models()
+        timm_models = filter_timm_models(["*repvgg*", "*tresnet*"])
         timm_backbones = list(map(lambda m: "timm:" + m, timm_models))
-        return [*_resnet_family, models.mobilenet_v2.__name__] + timm_backbones
+        trnsfrmr_bckbn = FeatureClassifier.transformer_backbones()
+        return [*_resnet_family, models.mobilenet_v2.__name__] + sorted(
+            timm_backbones + trnsfrmr_bckbn
+        )
 
     @property
     def supported_datasets(self):
@@ -312,7 +372,7 @@ class FeatureClassifier(ArcGISModel):
         Displays the results of a trained model on a part of the validation set.
 
         =====================   ===========================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ---------------------   -------------------------------------------
         rows                    Optional int. Number of rows of results
                                 to be displayed.
@@ -329,7 +389,7 @@ class FeatureClassifier(ArcGISModel):
         Displays the results of a trained model on a part of the validation set.
 
         =====================   ===========================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ---------------------   -------------------------------------------
         rows                    Optional int. Number of rows of results
                                 to be displayed.
@@ -349,12 +409,14 @@ class FeatureClassifier(ArcGISModel):
         Runs prediction on an Image. Works with RGB images only.
 
         =====================   ===========================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ---------------------   -------------------------------------------
         img_path                Required. Path to the image file to make the
                                 predictions on.
+        ---------------------   -------------------------------------------
         visualize               Optional: Set this parameter to True to
                                 visualize the image being predicted.
+        ---------------------   -------------------------------------------
         gradcam                 Optional: Set this parameter to True to
                                 get gradcam visualization to help with
                                 explanability of the prediction. If set
@@ -511,17 +573,19 @@ class FeatureClassifier(ArcGISModel):
         Creates a Feature classifier from an Esri Model Definition (EMD) file.
 
         =====================   ===========================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ---------------------   -------------------------------------------
         emd_path                Required string. Path to Deep Learning Package
                                 (DLPK) or Esri Model Definition(EMD) file.
         ---------------------   -------------------------------------------
         data                    Required fastai Databunch or None. Returned data
-                                object from `prepare_data` function or None for
+                                object from :meth:`~arcgis.learn.prepare_data`  function or None for
                                 inferencing.
         =====================   ===========================================
 
-        :return: `FeatureClassifier` Object
+        :return:
+            :class:`~arcgis.learn.FeatureClassifier` Object
+
         """
         if not HAS_FASTAI:
             _raise_fastai_import_error(import_exception=import_exception)
@@ -593,6 +657,7 @@ class FeatureClassifier(ArcGISModel):
             data.emd_path = emd_path
             data.emd = emd
             data = get_multispectral_data_params_from_emd(data, emd)
+            data.device = _get_device()
 
         resize_to = emd.get("resize_to")
         data.resize_to = resize_to
@@ -605,7 +670,7 @@ class FeatureClassifier(ArcGISModel):
         **kwargs**
 
         =====================   ===========================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ---------------------   -------------------------------------------
         thresh                  confidence score threshold for multilabel predictions,
                                 defaults to 0.5
@@ -705,10 +770,10 @@ class FeatureClassifier(ArcGISModel):
         Plots the hard examples with their heatmaps.
 
         =====================   ===========================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ---------------------   -------------------------------------------
         num_examples            Number of hard examples to plot
-                                ``prepare_data`` function.
+                                :meth:`~arcgis.learn.prepare_data`  function.
         =====================   ===========================================
         """
         self._check_requisites()
@@ -791,13 +856,13 @@ class FeatureClassifier(ArcGISModel):
         Works with RGB images only.
 
         =====================   ===========================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ---------------------   -------------------------------------------
         folder                  Required String. Folder containing images to inference on.
         ---------------------   -------------------------------------------
         feature_layer_name      Required String. The name of the feature layer used to publish.
         ---------------------   -------------------------------------------
-        gis                     Optional GIS Object, the GIS on which this tool runs. If not specified,
+        gis                     Optional :class:`~arcgis.gis.GIS`  Object, the GIS on which this tool runs. If not specified,
                                 the active GIS is used.
         ---------------------   -------------------------------------------
         prediction_field        Optional String. The field name to use to add predictions.
@@ -805,7 +870,7 @@ class FeatureClassifier(ArcGISModel):
         confidence_field        Optional String. The field name to use to add confidence.
         =====================   ===========================================
 
-        :return: `FeatureCollection` Object
+        :return: :class:`~arcgis.features.FeatureCollection` Object
         """
         return self._create_feature_layer(
             self._extract_images_geo_data(folder),
@@ -981,7 +1046,6 @@ class FeatureClassifier(ArcGISModel):
         confidence_field=None,
         predict_function=_prediction_function,
     ):
-
         features = feature_layer.query().features
         features_to_update = []
 
@@ -1083,17 +1147,16 @@ class FeatureClassifier(ArcGISModel):
         confidence_field=None,
         predict_function=None,
     ):
-
         """
-        Deprecated in ArcGIS version 1.9.1 and later: Use the Classify Objects Using Deep Learning tool or arcgis.learn.classify_objects()
+        Deprecated in ArcGIS version 1.9.1 and later: Use the Classify Objects Using Deep Learning tool or :meth:`~arcgis.learn.classify_objects`
 
         Classifies the exported images and updates the feature layer with the prediction results in the ``output_label_field``.
         Works with RGB images only.
 
         ====================================     ====================================================================
-        **Argument**                             **Description**
+        **Parameter**                             **Description**
         ------------------------------------     --------------------------------------------------------------------
-        feature_layer                            Required. Feature Layer for classification.
+        feature_layer                            Required. :class:`~arcgis.features.FeatureLayer` for classification.
         ------------------------------------     --------------------------------------------------------------------
         labeled_tiles_directory                  Required. Folder structure containing images and labels folder. The
                                                  chips should have been generated using the export training data tool in
@@ -1457,7 +1520,6 @@ class FeatureClassifier(ArcGISModel):
         batch_size,
         overwrite,
     ):
-
         # class values
         class_values = list(self._data.class_mapping.keys())
 
@@ -1663,6 +1725,11 @@ class FeatureClassifier(ArcGISModel):
             del update_cursor
         return True
 
+    def _reshape_tensor(self, x):
+        h, w = self.learn.model[0].patch_embed.grid_size
+        embed_dim = self.learn.model[0].embed_dim
+        return x[1:, :].reshape(h, w, embed_dim).permute(2, 0, 1)
+
     def _gradCAM(
         self, im, cl, heatmap_thresh: int = 16, image: bool = True, grad_vis=False
     ):
@@ -1692,8 +1759,12 @@ class FeatureClassifier(ArcGISModel):
                     preds = m(xb)
                     preds[0, cat1].backward()
         acts = hook_a.stored[0].cpu()  # activation maps
+        grad = hook_g.stored[0][0].cpu()
+        if self._transformer:
+            acts = self._reshape_tensor(acts)
+            grad = self._reshape_tensor(grad)
+
         if (acts.shape[-1] * acts.shape[-2]) >= heatmap_thresh:
-            grad = hook_g.stored[0][0].cpu()
             grad_chan = grad.mean(1).mean(1)
             mult = F.relu(((acts * grad_chan[..., None, None])).sum(0))
             if image:
@@ -1718,7 +1789,7 @@ class FeatureClassifier(ArcGISModel):
 
     @deprecated(
         deprecated_in="1.7.1",
-        details="Please use arcgis.learn.classify_objects() instead",
+        details="Please use :meth:`~arcgis.learn.classify_objects` instead",
     )
     def categorize_features(
         self,
@@ -1736,14 +1807,14 @@ class FeatureClassifier(ArcGISModel):
         """
         Categorizes each feature by classifying its attachments or an image of its geographical area (using the provided Imagery Layer)
         and updates the feature layer with the prediction results in the ``output_label_field``.
-        Deprecated, Use the Classify Objects Using Deep Learning tool or arcgis.learn.classify_objects()
+        Deprecated, Use the Classify Objects Using Deep Learning tool or :meth:`~arcgis.learn.classify_objects`
 
         ====================================     ====================================================================
-        **Argument**                             **Description**
+        **Parameter**                             **Description**
         ------------------------------------     --------------------------------------------------------------------
-        feature_layer                            Required. Public Feature Layer or path of local feature class for classification with read, write, edit permissions.
+        feature_layer                            Required. Public :class:`~arcgis.features.FeatureLayer` or path of local feature class for classification with read, write, edit permissions.
         ------------------------------------     --------------------------------------------------------------------
-        raster                                   Optional. Imagery layer or path of local raster to be used for exporting image chips. (Requires arcpy)
+        raster                                   Optional. :class:`~arcgis.raster.ImageryLayer` or path of local raster to be used for exporting image chips. (Requires arcpy)
         ------------------------------------     --------------------------------------------------------------------
         class_value_field                        Required string. Output field to be added in the layer, containing class value of predictions.
         ------------------------------------     --------------------------------------------------------------------

@@ -13,6 +13,10 @@ export_point_dataset
 ^^^^^^^^^^^^^^^^^^^^
 .. autofunction:: arcgis.learn.export_point_dataset
 
+estimate_batch_size
+^^^^^^^^^^^^^^^^^^^
+.. autofunction:: arcgis.learn.estimate_batch_size
+
 prepare_data
 ^^^^^^^^^^^^
 .. autofunction:: arcgis.learn.prepare_data
@@ -30,6 +34,7 @@ Transform3d
 .. autoclass:: arcgis.learn.Transform3d
     :members:
     :undoc-members:
+
 
 Automated Machine Learning
 ----------------------------
@@ -109,6 +114,13 @@ MMDetection
 DETReg
 ^^^^^^^^^^^^^^^^^^
 .. autoclass:: arcgis.learn.DETReg
+    :members:
+    :inherited-members:
+    :undoc-members:
+
+EfficientDet
+^^^^^^^^^^^^^^^^^^
+.. autoclass:: arcgis.learn.EfficientDet
     :members:
     :inherited-members:
     :undoc-members:
@@ -238,6 +250,27 @@ PointCNN
     :inherited-members:
     :undoc-members:
 
+RandLANet
+^^^^^^^^
+.. autoclass:: arcgis.learn.RandLANet
+    :members:
+    :inherited-members:
+    :undoc-members:
+
+SQNSeg
+^^^^^^^^
+.. autoclass:: arcgis.learn.SQNSeg
+    :members:
+    :inherited-members:
+    :undoc-members:
+
+MMDetection3D
+^^^^^^^^
+.. autoclass:: arcgis.learn.MMDetection3D
+    :members:
+    :inherited-members:
+    :undoc-members:
+
 Object Tracking Models
 ------------------------
 SiamMask
@@ -273,7 +306,7 @@ ScannedMapDigitizer
     :members:
 
 Feature, Tabular and Timeseries models
--------------------------------
+--------------------------------------
 FullyConnectedNetwork
 ^^^^^^^^^^^^^^^^^^^^^
 .. autoclass:: arcgis.learn.FullyConnectedNetwork
@@ -291,6 +324,13 @@ MLModel
 TimeSeriesModel
 ^^^^^^^^^^^^^^^
 .. autoclass:: arcgis.learn.TimeSeriesModel
+    :members:
+    :inherited-members:
+    :undoc-members:
+
+PSETAE
+^^^^^^^^^^^^^^^
+.. autoclass:: arcgis.learn.PSETAE
     :members:
     :inherited-members:
     :undoc-members:

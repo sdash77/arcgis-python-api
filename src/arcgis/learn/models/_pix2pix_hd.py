@@ -27,10 +27,10 @@ class Pix2PixHD(ArcGISModel):
     Creates a model object which generates fake images of type B from type A.
 
     =====================   ===========================================
-    **Argument**            **Description**
+    **Parameter**            **Description**
     ---------------------   -------------------------------------------
     data                    Required fastai Databunch. Returned data object from
-                            `prepare_data` function.
+                            :meth:`~arcgis.learn.prepare_data` function.
     ---------------------   -------------------------------------------
     pretrained_path         Optional string. Path where pre-trained model is
                             saved.
@@ -90,11 +90,11 @@ class Pix2PixHD(ArcGISModel):
                             Default: 100 (not supported for 3 band imagery)
     =====================   ===========================================
 
-    :return: `Pix2PixHD` Object
+    :return: :class:`~arcgis.learn.Pix2PixHD` Object
     """
 
     def __init__(self, data, pretrained_path=None, *args, **kwargs):
-        super().__init__(data, pretrained_path=None, *args, **kwargs)
+        super().__init__(data, pretrained_path=pretrained_path, **kwargs)
         self._check_dataset_support(data)
         # input_nc=3, output_nc=3,
         self.kwargs = kwargs
@@ -111,13 +111,19 @@ class Pix2PixHD(ArcGISModel):
             l1_loss = True
         elif self._data.label_nc:
             self.input_nc = label_nc
-        pix2pix_hd = Pix2PixHDModel(label_nc, self.input_nc, self.output_nc, **kwargs)
+        if self._device.type == "cuda":
+            gpu_ids = [torch.cuda.current_device()]
+        else:
+            gpu_ids = []
+        pix2pix_hd = Pix2PixHDModel(
+            label_nc, self.input_nc, self.output_nc, gpu_ids, **kwargs
+        )
 
         self.learn = Learner(
             data,
             pix2pix_hd,
             loss_func=Pix2PixHDLoss(
-                pix2pix_hd, vgg_loss, lambda_feat, l1_loss, lambda_l1
+                pix2pix_hd, vgg_loss, lambda_feat, l1_loss, lambda_l1, gpu_ids
             ),
             callback_fns=[Pix2PixHDTrainer],
             opt_func=partial(optim.Adam, betas=(0.5, 0.99)),
@@ -140,7 +146,7 @@ class Pix2PixHD(ArcGISModel):
         Displays the results of a trained model on a part of the validation set.
 
         =====================   ===========================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ---------------------   -------------------------------------------
         rows                    Optional int. Number of rows of results
                                 to be displayed.
@@ -158,22 +164,21 @@ class Pix2PixHD(ArcGISModel):
 
     @classmethod
     def from_model(cls, emd_path, data=None):
-
         """
-        Creates a Pix2PixHD object from an Esri Model Definition (EMD) file.
+        Creates a :class:`~arcgis.learn.Pix2PixHD` object from an Esri Model Definition (EMD) file.
 
         =====================   ===========================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ---------------------   -------------------------------------------
         emd_path                Required string. Path to Deep Learning Package
                                 (DLPK) or Esri Model Definition(EMD) file.
         ---------------------   -------------------------------------------
         data                    Required fastai Databunch or None. Returned data
-                                object from `prepare_data` function or None for
+                                object from :meth:`~arcgis.learn.prepare_data` function or None for
                                 inferencing.
         =====================   ===========================================
 
-        :return: `Pix2PixHD` Object
+        :return: :class:`~arcgis.learn.Pix2PixHD` Object
         """
         if not HAS_FASTAI:
             _raise_fastai_import_error(import_exception=import_exception)
@@ -192,6 +197,7 @@ class Pix2PixHD(ArcGISModel):
         chip_size = emd["ImageHeight"]
         norm_stats = emd.get("norm_stats")
         kwargs = emd.get("Kwargs", {})
+        _ = [kwargs.pop(key) for key in ["backbone", "backend"] if key in kwargs.keys()]
         if emd.get("ArcGISLearnVersion") < "2.0.1":
             if "gen_network" not in kwargs:
                 kwargs["gen_network"] = "global"
@@ -275,7 +281,7 @@ class Pix2PixHD(ArcGISModel):
         Predicts and display the image.
 
         =====================   ===========================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ---------------------   -------------------------------------------
         img_path                Required path of an image.
         =====================   ===========================================

@@ -6,28 +6,32 @@ class DatePicker(object):
     Creates a Date Selector widget for Side Panel or Header.
 
     =========================   ===========================================
-    **Argument**                **Description**
+    **Parameter**                **Description**
     -------------------------   -------------------------------------------
     range                       Optional boolean. True to create a range
                                 selector.
     -------------------------   -------------------------------------------
     operator                    Optional String. Operator for non range
                                 datepicker.
-                                Options: "is", "is not", "is before",
-                                "is or is before", "is after",
-                                "is or is after".
+
+                                Options:
+
+                                    | "is", "is not", "is before",
+                                    | "is or is before", "is after",
+                                    | "is or is after".
     -------------------------   -------------------------------------------
     label                       Optional String. Label for the widget.
     -------------------------   -------------------------------------------
-    **kwargs                    If "range" is True, provide two parameters
+    kwargs                      If "range" is True, provide two parameters
                                 "min_value" and "max_value". If "range" is
                                 False provide single parameter "value".
+
                                 Allowed values:
-                                None, "Today", or a fixed value in
-                                24 hours format
-                                (year, month, day, hour, minutes)
-                                or
-                                (year, month, day)
+
+                                    | None, "Today", or a fixed value in 24 hours format
+                                    | (year, month, day, hour, minutes)
+                                    | or
+                                    | (year, month, day)
     =========================   ===========================================
     """
 
@@ -128,7 +132,6 @@ class DatePicker(object):
         self.label = label
 
     def _convert_to_json(self):
-
         if self._selection_type == "range":
             self._operator_logic = "between"
         else:
@@ -174,7 +177,7 @@ class NumberSelector(object):
     Creates a Number Selector widget for Side Panel or Header.
 
     =========================   ===========================================
-    **Argument**                **Description**
+    **Parameter**                **Description**
     -------------------------   -------------------------------------------
     range                       Optional boolean. True to create a range
                                 selector.
@@ -188,13 +191,17 @@ class NumberSelector(object):
     **Keyword Arguments**
 
     =========================   ===========================================
-    **Argument**                **Description**
+    **Parameter**                **Description**
     -------------------------   -------------------------------------------
     operator                    Optional string for non-range input.
-                                Allowed: "equal", "not equal", "greater than",
-                                "greater than or equal", "less than",
-                                "less than or equal".
-                                Default: "equal"
+
+                                Allowed:
+
+                                    | "equal", "not equal", "greater than",
+                                    | "greater than or equal", "less than",
+                                    | "less than or equal".
+
+                                    | Default: "equal"
     -------------------------   -------------------------------------------
     increment_factor            Optional int for slider and spinner input.
     =========================   ===========================================
@@ -203,7 +210,6 @@ class NumberSelector(object):
     def __init__(
         self, range=False, display_type="spinner", label="Select a number", **kwargs
     ):
-
         self._json = {}
         self._display_type = display_type
         self.type = "numberSelectorWidget"
@@ -280,16 +286,16 @@ class NumberSelector(object):
         Set the item to pick values from for spinner and slider display type.
 
         =========================   ===========================================
-        **Argument**                **Description**
+        **Parameter**                **Description**
         -------------------------   -------------------------------------------
-        item                        Required Portal Item. Item to pick values from.
+        item                        Required Portal :class:`~arcgis.gis.Item` . Item to pick values from.
         -------------------------   -------------------------------------------
         field                       Required String. Field from the Portal Item.
         -------------------------   -------------------------------------------
         default                     Optional String. Default value statistic.
                                     Options: "min", "max", "avg"
         -------------------------   -------------------------------------------
-        layer_id                    Optional Int. Layer Id for the item.
+        layer_id                    Optional integer. Layer Id for the item.
         =========================   ===========================================
         """
 
@@ -338,7 +344,7 @@ class NumberSelector(object):
         Set the item to pick values from for spinner and slider display type.
 
         =========================   ===========================================
-        **Argument**                **Description**
+        **Parameter**                **Description**
         -------------------------   -------------------------------------------
         lower_limit                 Optional integer. Set the lower limit.
         -------------------------   -------------------------------------------
@@ -348,7 +354,7 @@ class NumberSelector(object):
         **Keyword Arguments**
 
         =========================   ===========================================
-        **Argument**                **Description**
+        **Parameter**                **Description**
         -------------------------   -------------------------------------------
         default                     Optional integer. Set default value for
                                     non-range selector.
@@ -374,7 +380,6 @@ class NumberSelector(object):
         }
 
     def _convert_to_json(self):
-
         # self._dataset = {
         #     "type": "serviceDataset",
         #     "dataSource": {
@@ -468,7 +473,7 @@ class CategorySelector(object):
         Set defined values for the dropdown.
 
         =========================   ===========================================
-        **Argument**                **Description**
+        **Parameter**                **Description**
         -------------------------   -------------------------------------------
         key_value_pairs             Optional list of tuples. The tuple should
                                     contain labels and their corresponding values.
@@ -511,19 +516,15 @@ class CategorySelector(object):
         Set feature values for dropdown.
 
         =========================   ===========================================
-        **Argument**                **Description**
+        **Parameter**                **Description**
         -------------------------   -------------------------------------------
-        item                        Required Portal Item.
-                                    Dropdown values will be populated from this.
+        item                        Required Portal :class:`~arcgis.gis.Item` . Dropdown values will be populated from this.
         -------------------------   -------------------------------------------
-        line_item_text              Optional String.
-                                    This text will be displayed with options.
+        line_item_text              Optional String. This text will be displayed with options.
         -------------------------   -------------------------------------------
-        field_name                  Optional String.
-                                    Data from this field will be added to list.
+        field_name                  Optional String. Data from this field will be added to list.
         -------------------------   -------------------------------------------
-        max_features                Optional Integer.
-                                    Set max features to display.
+        max_features                Optional Integer. Set max features to display.
         =========================   ===========================================
         """
         self._categories_from = "features"
@@ -556,9 +557,9 @@ class CategorySelector(object):
         Set group by values for dropdown.
 
         =========================   ===========================================
-        **Argument**                **Description**
+        **Parameter**                **Description**
         -------------------------   -------------------------------------------
-        item                        Required Portal Item.
+        item                        Required Portal :class:`~arcgis.gis.Item` .
                                     Dropdown values will be populated from this.
         -------------------------   -------------------------------------------
         category_field              Optional String. This string denotes the

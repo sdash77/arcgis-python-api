@@ -7,62 +7,42 @@ build:
   number: '0'
 package:
   name: arcgis
-  version: 2.0.1
+  version: 2.2.0
 requirements:
   build:
   - python
-  - cachetools
-  - ujson >=3
   - setuptools
-  - six
-  - notebook
-  - jupyter_client <=6.1.12
-  - ipywidgets >=7
-  - widgetsnbextension >=3
-  - pandas >=1.3.5
-  - numpy >=1.16.2
-  - matplotlib
-  - keyring >=23.0.0
-  - pyshp >=2
-  - requests >=1.27.1
-  - requests-toolbelt
-  - requests-kerberos
-  - requests-oauthlib
-  - requests_ntlm
-  - requests-negotiate-sspi [win]
-  - pywin32-security [win]
-  - lerc
-  - winkerberos      [win]
-  - cryptography
-  - lxml
-  - certifi
   run:
   - python
-  - six
+  - urllib3 <2
+  - pillow
   - cachetools
   - notebook
   - jupyter_client <=6.1.12
-  - ipywidgets >=7
+  - ipywidgets >=7,<8
   - widgetsnbextension >=3
-  - pandas >=1.3.5
+  - pandas >=2.0.0
   - ujson >=3
-  - numpy >=1.16.2
+  - numpy >=1.21.6
   - pyshp >=2
   - matplotlib
-  - keyring >=23.0.0
-  - requests >=1.27.1
+  - keyring >=23.3.0
+  - requests >=2.27.1
   - requests-toolbelt
   - requests-kerberos
   - requests-oauthlib
-  - requests_ntlm
-  - requests-negotiate-sspi [win]
   - pywin32-security [win]
   - lerc
-  - winkerberos      [win]
-  - python-certifi-win32 [win]
+  - python-certifi-win32 [win and py<310]
+  - truststore [py>=310]
   - cryptography
   - lxml
   - certifi
+  - dask >=2023.3.2
+  - geomet
+  - requests-gssapi
+  - pyspnego >=0.8.0
+  - matplotlib-inline
 source:
   path: ../../src
 test:

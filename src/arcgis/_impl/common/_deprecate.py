@@ -11,10 +11,15 @@ import textwrap
 import warnings
 import re
 
-__version__ = "2.0.1"
+__version__ = "2.2.0"
 
 # This is mostly here so automodule docs are ordered more ideally.
-__all__ = ["deprecated", "message_location", "DeprecatedWarning", "UnsupportedWarning"]
+__all__ = [
+    "deprecated",
+    "message_location",
+    "DeprecatedWarning",
+    "UnsupportedWarning",
+]
 
 # message_location provides some simple
 message_location = "top"
@@ -140,7 +145,7 @@ def deprecated(deprecated_in=None, removed_in=None, current_version=None, detail
     # building up the docstring weird.
     if deprecated_in is None and removed_in is not None:
         raise TypeError(
-            "Cannot set removed_in to a value " "without also setting deprecated_in"
+            "Cannot set removed_in to a value without also setting deprecated_in"
         )
 
     # Only warn when it's appropriate. There may be cases when it makes sense
@@ -179,9 +184,7 @@ def deprecated(deprecated_in=None, removed_in=None, current_version=None, detail
             # of the parts.
             parts = {
                 "deprecated_in": " %s" % deprecated_in if deprecated_in else "",
-                "removed_in": "\n   This was removed in %s." % removed_in
-                if removed_in
-                else "",
+                "removed_in": "\n   Removed in: %s." % removed_in if removed_in else "",
                 "details": " %s" % details if details else "",
             }
 

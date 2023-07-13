@@ -7,6 +7,7 @@ from arcgis.mapping import create_symbol
 from arcgis._impl.common._isd import InsensitiveDict
 from ._base import BaseOGC
 
+
 ###########################################################################
 class GeoRSSLayer(BaseOGC):
     """
@@ -18,9 +19,9 @@ class GeoRSSLayer(BaseOGC):
     simple strings or an array of JSON objects.
 
     ===============     ====================================================================
-    **Argument**        **Description**
+    **Parameter**        **Description**
     ---------------     --------------------------------------------------------------------
-    url                 Required string. The URL of the GeoRSS sevice.
+    url                 Required String. The URL of the GeoRSS sevice.
     ---------------     --------------------------------------------------------------------
     copyright           Optional String. Describes limitations and usage of the data.
     ---------------     --------------------------------------------------------------------
@@ -43,6 +44,7 @@ class GeoRSSLayer(BaseOGC):
     _point_symbol = None
     _polygon_symbol = None
     _type = "GeoRSS"
+
     # ----------------------------------------------------------------------
     def __init__(self, url, **kwargs):
         super(GeoRSSLayer, self)
@@ -67,8 +69,8 @@ class GeoRSSLayer(BaseOGC):
         Gets/Sets the Point Symbol for Point Geometries
 
         :return:
-            ```InsensitiveDict```: A case-insensitive ``dict`` like object used to update and alter JSON
-            A varients of a case-less dictionary that allows for dot and bracket notation.
+            ``InsensitiveDict``: A case-insensitive ``dict`` like object used to update and alter JSON
+            A variants of a case-less dictionary that allows for dot and bracket notation.
         """
         if self._point_symbol is None:
             self._point_symbol = InsensitiveDict(
@@ -83,8 +85,8 @@ class GeoRSSLayer(BaseOGC):
         Gets/Sets the Point Symbol for Point Geometries
 
         :return:
-            ```InsensitiveDict```: A case-insensitive ``dict`` like object used to update and alter JSON
-            A varients of a case-less dictionary that allows for dot and bracket notation.
+            ``InsensitiveDict``: A case-insensitive ``dict`` like object used to update and alter JSON
+            A variants of a case-less dictionary that allows for dot and bracket notation.
         """
         if isinstance(value, dict):
             self._point_symbol = InsensitiveDict(value)
@@ -102,8 +104,8 @@ class GeoRSSLayer(BaseOGC):
         Gets/Sets the Line Symbol for Polyline Geometries
 
         :return:
-            ```InsensitiveDict```: A case-insensitive ``dict`` like object used to update and alter JSON
-            A varients of a case-less dictionary that allows for dot and bracket notation.
+            ``InsensitiveDict``: A case-insensitive ``dict`` like object used to update and alter JSON
+            A variants of a case-less dictionary that allows for dot and bracket notation.
         """
         if self._line_symbol is None:
             self._line_symbol = InsensitiveDict(
@@ -118,8 +120,8 @@ class GeoRSSLayer(BaseOGC):
         Gets/Sets the Line Symbol for Polyline Geometries
 
         :return:
-            ```InsensitiveDict```: A case-insensitive ``dict`` like object used to update and alter JSON
-            A varients of a case-less dictionary that allows for dot and bracket notation.
+            ``InsensitiveDict``: A case-insensitive ``dict`` like object used to update and alter JSON
+            A variants of a case-less dictionary that allows for dot and bracket notation.
         """
         if isinstance(value, dict):
             self._line_symbol = InsensitiveDict(value)
@@ -137,8 +139,8 @@ class GeoRSSLayer(BaseOGC):
         Gets/Sets the Polygon Symbol for Polygon Geometries
 
         :return:
-            ```InsensitiveDict```: A case-insensitive ``dict`` like object used to update and alter JSON
-            A varients of a case-less dictionary that allows for dot and bracket notation.
+            ``InsensitiveDict``: A case-insensitive ``dict`` like object used to update and alter JSON
+            A variants of a case-less dictionary that allows for dot and bracket notation.
         """
         if self._polygon_symbol is None:
             self._polygon_symbol = InsensitiveDict(
@@ -153,8 +155,8 @@ class GeoRSSLayer(BaseOGC):
         Gets/Sets the Polygon Symbol for Polygon Geometries
 
         :return:
-            ```InsensitiveDict```: A case-insensitive ``dict`` like object used to update and alter JSON
-            A varients of a case-less dictionary that allows for dot and bracket notation.
+            ``InsensitiveDict``: A case-insensitive ``dict`` like object used to update and alter JSON
+            A variants of a case-less dictionary that allows for dot and bracket notation.
         """
         if isinstance(value, dict):
             self._polygon_symbol = InsensitiveDict(value)

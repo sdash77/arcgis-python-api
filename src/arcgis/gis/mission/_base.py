@@ -1,3 +1,4 @@
+from __future__ import annotations
 from arcgis.gis import GIS
 from arcgis._impl.common._mixins import PropertyMap
 
@@ -11,6 +12,7 @@ class BaseMissionServer(object):
     _gis = None
     _con = None
     _properties = None
+
     # ----------------------------------------------------------------------
     def __init__(self, url, gis=None):
         self._url = url
@@ -25,7 +27,7 @@ class BaseMissionServer(object):
 
     # ----------------------------------------------------------------------
     def __str__(self):
-        return f"<{self.__class__.__name__} @ {self._url}>"
+        return f"< {self.__class__.__name__} @ {self._url} >"
 
     # ----------------------------------------------------------------------
     def __repr__(self):

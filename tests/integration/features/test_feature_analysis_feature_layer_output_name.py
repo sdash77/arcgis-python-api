@@ -3,7 +3,6 @@ import sys
 import string
 import random
 import unittest
-import pytest
 import pandas as pd
 from arcgis.gis import GIS
 from arcgis.features.analysis import aggregate_points
@@ -19,15 +18,14 @@ class TestPassingDictionaries(unittest.TestCase):
     def test_analysis_on_existing_fl(self):
         """tests adding to an existing feature layer"""
         gis = GIS(
-            "https://deldev.maps.arcgis.com",
-            "demos_deldev",
-            "DelDevs.1234",
+            profile="your_online_api_data_owner_profile",
             verify_cert=False,
         )
+        print(gis.users.me)
         point_item = gis.content.get("1923d4e74ac947dab4f8c94d2c2a7a9c")
-        polygon_item = gis.content.get("78778fe9e4244f71b8194122d1f228ae")
+        polygon_item = gis.content.get("4880937c7c684b9ead67e2570d946fbf")
         point_layer = point_item.layers[0]
-        polygon_layer = polygon_item.layers[3]
+        polygon_layer = polygon_item.layers[0]
         # 1). Step 1 - create an initial output:
         agg_init = aggregate_points(
             point_layer=point_layer,

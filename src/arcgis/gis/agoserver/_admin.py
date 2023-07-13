@@ -15,13 +15,14 @@ _imagemgr = LazyLoader("arcgis.raster._layer")
 
 _log = logging.getLogger()
 
+
 ###########################################################################
 class AGOLServerManager:
     """
     Represents a Single AGO Server
 
     ==================     ====================================================================
-    **Argument**           **Description**
+    **Parameter**           **Description**
     ------------------     --------------------------------------------------------------------
     url                    Required String. The url string to the ArcGIS Online Server
     ------------------     --------------------------------------------------------------------
@@ -41,11 +42,11 @@ class AGOLServerManager:
 
     # ---------------------------------------------------------------------
     def __str__(self):
-        return f"<AGOLServerManager @ {self._url}>"
+        return f"< AGOLServerManager @ {self._url} >"
 
     # ---------------------------------------------------------------------
     def __repr__(self):
-        return f"<AGOLServerManager @ {self._url}>"
+        return f"< AGOLServerManager @ {self._url} >"
 
     @property
     @lru_cache(maxsize=100)
@@ -82,16 +83,16 @@ class AGOLServerManager:
         Returns a single service manager.
 
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
         name                   Required String. The name of the service.
         ==================     ====================================================================
 
-        :returns: Union[VectorTileLayerManager,
-                        ImageryLayerCacheManager,
-                        SceneLayerManager,
-                        FeatureLayerCollectionManager,
-                        MapImageLayerManager]
+        :returns: Union[:class:`~arcgis.mapping.VectorTileLayer`,
+                        :class:`~arcgis.raster.ImageryLayerCacheManager`,
+                        :class:`~arcgis.mapping.SceneLayerManager`,
+                        :class:`~arcgis.features.managers.FeatureLayerCollectionManager`,
+                        :class:`~arcgis.mapping.MapImageLayerManager`]
         """
 
         if self.is_tile_server == False:
@@ -110,7 +111,7 @@ class AGOLServerManager:
         Returns the status of a given service by name.
 
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
         name                   Required String. The name of the service.
         ==================     ====================================================================
@@ -158,7 +159,6 @@ class AGOLServerManager:
                     url = f"{self._url}/{name}.{service['type']}"
                 serivce_type = service["type"].lower()
                 if serivce_type == "mapserver":
-
                     services.append(
                         _mapservermgr.MapImageLayerManager(url=url, gis=self._gis)
                     )
@@ -170,15 +170,12 @@ class AGOLServerManager:
                     )
 
                 elif serivce_type.find("vector") > -1:
-
                     services.append(
                         _mapservermgr.VectorTileLayerManager(url=url, gis=self._gis)
                     )
                 elif serivce_type == "sceneserver":
-
                     services.append(_scenemgr.SceneLayerManager(url=url, gis=self._gis))
                 elif serivce_type == "imageserver":
-
                     services.append(
                         _imagemgr.ImageryLayerCacheManager(url, gis=self._gis)
                     )
@@ -194,7 +191,7 @@ class AGOLServersManager:
     ArcGIS Online.
 
     ==================     ====================================================================
-    **Argument**           **Description**
+    **Parameter**           **Description**
     ------------------     --------------------------------------------------------------------
     gis                    Required GIS. The connection to ArcGIS Online.
     ==================     ====================================================================
@@ -258,6 +255,6 @@ class AGOLServersManager:
         """
         Returns a list of all server managers
 
-        :returns: List[AGOLServerManager]
+        :returns: List[:class:`~arcgis.gis.agoserver.AGOLServerManager`]
         """
         return self.tile_server + self.feature_server
