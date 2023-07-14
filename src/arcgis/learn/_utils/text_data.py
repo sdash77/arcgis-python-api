@@ -90,7 +90,7 @@ def show_text_xys(self, xs, ys, max_len: int = max_len):
     dataframe_style = (
         df.style.set_table_styles([dict(selector="th", props=[("text-align", "left")])])
         .set_properties(**{"text-align": "left"})
-        .hide_index()
+        .hide(axis="index")
     )
     display(dataframe_style)
 
@@ -112,7 +112,7 @@ def show_text_xyzs(self, xs, ys, zs, max_len: int = max_len):
     dataframe_style = (
         df.style.set_table_styles([dict(selector="th", props=[("text-align", "left")])])
         .set_properties(**{"text-align": "left"})
-        .hide_index()
+        .hide(axis="index")
     )
     display(dataframe_style)
 
@@ -718,7 +718,7 @@ class TextDataObject:
                 [dict(selector="th", props=[("text-align", "left")])]
             )
             .set_properties(**{"text-align": "left"})
-            .hide_index()
+            .hide(axis="index")
         )
 
     def create_empty_object_for_ner(
