@@ -358,8 +358,8 @@ def detect_objects_image_space(
     for batch_idx in range(batch_size):
         num_boxes = num_boxes + len(preds[batch_idx])
 
-    bounding_boxes = np.empty(shape=(num_boxes, 4), dtype=np.float)
-    scores = np.empty(shape=(num_boxes), dtype=np.float)
+    bounding_boxes = np.empty(shape=(num_boxes, 4), dtype=float)
+    scores = np.empty(shape=(num_boxes), dtype=float)
     classes = np.empty(shape=(num_boxes), dtype=np.uint8)
 
     idx = 0
