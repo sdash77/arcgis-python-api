@@ -174,13 +174,14 @@ class StoryMap(object):
         # Create draft resource name
         draft = "draft_" + str(int(time.time() * 1000)) + ".json"
         # Will be posted as a draft
+        sm_version = self._gis._con.get("https://storymaps.arcgis.com/version")
         keywords = ",".join(
             [
                 "arcgis-storymaps",
                 "StoryMap",
                 "Web Application",
                 "smstatusdraft",
-                "smversiondraft:21.43.0",
+                "smversiondraft:" + sm_version,
                 "python-api",
                 "smeditorapp:python-api-" + arcgis.__version__,
                 "smdraftresourceid:" + draft,
@@ -1100,11 +1101,13 @@ class StoryMap(object):
                     or "smpublisherapp"
                 ) in keyword:
                     keywords.remove(keyword)
-
+            sm_version = self._gis._con.get("https://storymaps.arcgis.com/version")[
+                "version"
+            ]
             new_keywords = [
                 "smstatuspublished",
-                "smversiondraft:21.43.0",
-                "smversionpublished:21.43.0",
+                "smversiondraft:" + sm_version,
+                "smversionpublished:" + sm_version,
                 "python-api",
                 "smpublisherapp:python-api-" + arcgis.__version__,
                 "smdraftresourceid:" + draft,
@@ -1166,18 +1169,18 @@ class StoryMap(object):
                 # Unpublished changes mode
                 new_keywords = [
                     "smstatusunpublishedchanges",
-                    "smversiondraft:21.43.0",
+                    "smversiondraft:" + sm_version,
                     "python-api",
                     "smeditorapp:python-api-" + arcgis.__version__,
                     "smdraftresourceid:" + draft,
-                    "smversionpublished:21.43.0",
+                    "smversionpublished:" + sm_version,
                     "smpublisheddate:" + str(int(time.time() * 1000)),
                 ]
             if previously_published is False:
                 # Draft mode
                 new_keywords = [
                     "smstatusdraft",
-                    "smversiondraft:21.43.0",
+                    "smversiondraft:" + sm_version,
                     "python-api",
                     "smeditorapp:python-api-" + arcgis.__version__,
                     "smdraftresourceid:" + draft,
