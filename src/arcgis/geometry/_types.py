@@ -3215,9 +3215,9 @@ class Point(Geometry):
         import numpy as np
 
         if "x" in self and "y" in self and "z" in self:
-            return np.array([self["x"], self["y"], self["z"]], dtype=object)
+            return np.array([self["x"], self["y"], self["z"]], dtype=float)
         elif "x" in self and "y" in self:
-            return np.array([self["x"], self["y"]], dtype=object)
+            return np.array([self["x"], self["y"]], dtype=float)
         else:
             return np.array([])
 
@@ -3601,10 +3601,10 @@ class Envelope(Geometry):
                         self["ymax"],
                         self["zmax"],
                     ],
-                    dtype=object,
+                    dtype=float,
                 )
             return np.array(
-                [self["xmin"], self["ymin"], self["xmax"], self["ymax"]], dtype=object
+                [self["xmin"], self["ymin"], self["xmax"], self["ymax"]], dtype=float
             )
         else:
             return np.array([])
