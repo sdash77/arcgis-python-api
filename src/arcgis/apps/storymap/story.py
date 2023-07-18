@@ -1063,9 +1063,8 @@ class StoryMap(object):
 
         # Add new draft with time in milliseconds
         draft = "draft_" + str(int(time.time() * 1000)) + ".json"
-        self._add_resource(
-            resource_name=draft, text=json.dumps(self._properties), access="private"
-        )
+        json_str = json.dumps(self._properties, ensure_ascii=False)
+        self._add_resource(resource_name=draft, text=json_str, access="private")
 
         # Find type keywords to use based on whether to publish or not
         # PUBLISH MODE
