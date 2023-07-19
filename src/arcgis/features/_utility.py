@@ -94,6 +94,7 @@ class UtilityNetworkManager(object):
         result_types: list[dict] | None = None,
         trace_config_global_id: str | None = None,
         out_sr: int | None = None,
+        pbf: bool = False,
     ) -> dict:
         """
         A trace refers to a pre-configured algorithm that systematically
@@ -182,6 +183,9 @@ class UtilityNetworkManager(object):
                                    trace type parameter is ignored.
         -----------------------    --------------------------------------------------
         out_sr                     Optional Integer. The output spatial reference.
+        -----------------------    --------------------------------------------------
+        pbf                        Optional Boolean. If True, the results are returned in
+                                   the PBF format. The default is False.
         =======================    ==================================================
 
         :return:
@@ -204,7 +208,7 @@ class UtilityNetworkManager(object):
         if isinstance(configuration, TraceConfiguration):
             configuration = configuration.to_dict()
         params = {
-            "f": "json",
+            "f": "pbf" if pbf is True else "json",
             "gdbVersion": self._version_name,
             "sessionId": self._version_guid,
             "traceType": trace_type,
