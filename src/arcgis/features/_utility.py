@@ -224,7 +224,10 @@ class UtilityNetworkManager(object):
             params["resultTypes"] = result_types
         if out_sr:
             params["outSR"] = out_sr
-        return self._con.post(url, params)
+        if pbf is True:
+            return self._con.post(url, params, force_bytes=True)
+        else:
+            return self._con.post(url, params)
 
     # ----------------------------------------------------------------------
     def disable_topology(self) -> dict:
