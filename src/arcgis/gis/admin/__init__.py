@@ -37,5 +37,11 @@ from ._catagoryschema import CategoryManager
 from ._idp import IdentityProviderManager
 from ._wh import WebhookManager, Webhook
 from ._usage import AGOLUsageReports
+from ._dsmgr import (
+    DataStoreMetricsManager,
+    DataStoreAggregation,
+    DataStoreTimeUnit,
+    DataStoreMetric,
+)
 
 __all__ = ["PortalAdminManager", "AGOLAdminManager"]
