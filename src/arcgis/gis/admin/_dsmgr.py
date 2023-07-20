@@ -2,6 +2,7 @@ from __future__ import annotations
 import logging
 from arcgis.auth.tools import LazyLoader
 from enum import Enum
+from functools import lru_cache
 
 _arcgis = LazyLoader("arcgis")
 requests = LazyLoader("requests")
@@ -9,9 +10,16 @@ _dt = LazyLoader("datetime")
 
 logger = logging.getLogger(__name__)
 
+__all__ = [
+    "DataStoreMetric",
+    "DataStoreTimeUnit",
+    "DataStoreAggregation",
+    "DataStoreMetricsManager",
+]
+
 
 class DataStoreMetric(Enum):
-    """ """
+    """The allowed metric values"""
 
     # Average CPU Time
     AVG_CPU = "db_avg_cpu"
@@ -28,20 +36,32 @@ class DataStoreMetric(Enum):
 class DataStoreTimeUnit(Enum):
     """Time Units for DataStore Metrics class"""
 
+    # a period of twenty-four hours as a unit of time
     DAY = "d"
+    # a period of time equal to a twenty-fourth part of a day and night and divided into 60 minutes.
     HOUR = "h"
+    # a period of time equal to sixty seconds or a sixtieth of an hour.
     MINUTE = "m"
+    #  a unit of time in the International System of Units (SI), historically defined as 1/86400 of a day
     SECOND = "s"
+    # a period of time equal to one thousandth of a second.
     MILLISECOND = "ms"
 
 
 class DataStoreAggregation(Enum):
+    # a number expressing the central or typical value in a set of data
     AVG = "avg"
+    # determine the total number of (a collection of items).
     COUNT = "count"
+    # a maximum amount
     MAX = "max"
+    # a minimum amount
     MIN = "min"
+    # a quantity calculated to indicate the extent of deviation for a group as a whole.
     STDEV = "stdev"
+    # the total amount resulting from the addition of two or more numbers, amounts, or items.
     SUM = "sum"
+    # a statistical measurement of the spread between numbers in a data set
     VARIANCE = "variance"
 
 
@@ -207,7 +227,8 @@ class DataStoreMetricsManager:
         ]
 
     # ---------------------------------------------------------------------
-    def _query(
+    @lru_cache(maxsize=255)
+    def query(
         self,
         metric: DataStoreMetric,
         bin_size: float | int,
@@ -219,9 +240,34 @@ class DataStoreMetricsManager:
         ago_unit: DataStoreTimeUnit | None = None,
     ) -> list[dict[str, Any]]:
         """
-        private query operationthe datastore on ArcGIS Online for various statistics
+        A query operation used to gather metrics about the ArcGIS Online Datastore
+
+        ====================  =========================================================
+        **Parameter**         **Description**
+        --------------------  ---------------------------------------------------------
+        metric                Required DataStoreMetric. The statistical method to gather.
+        --------------------  ---------------------------------------------------------
+        bin_size              Required Float or Int. The size of the bin to aggregate on.
+        --------------------  ---------------------------------------------------------
+        bin_unit              Required DataStoreTimeUnit. The size of the bin.
+        --------------------  ---------------------------------------------------------
+        aggregation           Required DataStoreAggregation. The type of aggregation to perform.
+        --------------------  ---------------------------------------------------------
+        start_time            Optional datetime.datetime. The starting date point.
+        --------------------  ---------------------------------------------------------
+        end_time              Optional datetime.datetime. The ending date point.
+        --------------------  ---------------------------------------------------------
+        ago                   Optional Int. The time to look back from today.
+        --------------------  ---------------------------------------------------------
+        ago_unit              Optional DataStoreTimeUnit. The time unit to look back.
+        ====================  =========================================================
+
         :returns: list[dict[str,Any]]
         """
+        if ago is None and start_time is None and end_time is None:
+            logger.warning("No ago was supplied, defaulting to ago=1")
+            ago = 1
+            ago_unit = DataStoreTimeUnit.DAY
         params: dict[str, Any] = {
             "f": "json",
         }
@@ -244,7 +290,13 @@ class DataStoreMetricsManager:
             assert isinstance(
                 ago_unit, DataStoreTimeUnit
             ), "`ago_unit` must be a DataStoreTimeUnit"
-            params["ago_unit"] = ago_unit.value
+            params["agoUnit"] = ago_unit.value
+        if bin_unit:
+            bin_unit
+            assert isinstance(
+                bin_unit, DataStoreTimeUnit
+            ), "`ago_unit` must be a DataStoreTimeUnit"
+            params["binUnit"] = bin_unit.value
         if bin_size:
             assert isinstance(
                 bin_size, (int, float)

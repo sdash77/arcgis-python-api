@@ -63,6 +63,51 @@ class Test_DatastoreMetrics(unittest.TestCase):
         with self.assertRaises(AssertionError) as context:
             dmm.query_resource_usage(query_period='dog')
 
+    def test_query_ago(self):
+        dmm = self.gis.admin.datastore_metrics
+        from arcgis.gis.admin._dsmgr import (
+            DataStoreMetricsManager,
+            DataStoreAggregation,
+            DataStoreTimeUnit,
+            DataStoreMetric,
+        )
+
+        for e in DataStoreMetric._member_names_:
+            metric = getattr(DataStoreMetric, e)
+            res = dmm.query(
+                metric=metric,
+                bin_size=1,
+                bin_unit=DataStoreTimeUnit.HOUR,
+                ago=7,
+                ago_unit=DataStoreTimeUnit.DAY,
+                aggregation=DataStoreAggregation.SUM,
+            )
+            assert isinstance(res, list)
+
+    def test_query_datetimes(self):
+        dmm = self.gis.admin.datastore_metrics
+        from arcgis.gis.admin._dsmgr import (
+            DataStoreMetricsManager,
+            DataStoreAggregation,
+            DataStoreTimeUnit,
+            DataStoreMetric,
+        )
+        import datetime as _dt
+
+        stop = _dt.datetime.now()
+        start = stop - _dt.timedelta(days=14)
+        for e in DataStoreMetric._member_names_:
+            metric = getattr(DataStoreMetric, e)
+            res = dmm.query(
+                metric=metric,
+                bin_size=1,
+                bin_unit=DataStoreTimeUnit.HOUR,
+                start_time=start,
+                end_time=stop,
+                aggregation=DataStoreAggregation.SUM,
+            )
+            assert isinstance(res, list)
+
 
 if __name__ == "__main__":
     unittest.main()
