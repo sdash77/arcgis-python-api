@@ -1,8 +1,9 @@
 from __future__ import annotations
 import logging
-from arcgis.auth.tools import LazyLoader
 from enum import Enum
+from typing import Any
 from functools import lru_cache
+from arcgis.auth.tools import LazyLoader
 
 _arcgis = LazyLoader("arcgis")
 requests = LazyLoader("requests")
