@@ -3171,116 +3171,233 @@ class UserManager(object):
         email_text: Optional[str] = None,
     ):
         """
-        The ``create`` operation is used to pre-create built-in or enterprise accounts within the Enterprise portal,
-        or built-in users in an ArcGIS Online organization account.
+        The ``create`` operation is used to create built-in or pre-create organization-specific identity
+        store accounts for use in a Web GIS. See the respective documentation for complete details
+        about configurating identity stores and managing access to your deployment:
+        
+        * ``ArcGIS Enterprise`` - `Manage access to your portal <https://enterprise.arcgis.com/en/portal/latest/administer/windows/managing-access-to-your-portal.htm>`_
+        * ``ArcGIS Online`` - `Invite and add members <https://doc.arcgis.com/en/arcgis-online/administer/invite-users.htm>`_
 
         .. note::
             Only an administrator can call this method.
-
-            A member's `user_type` determines the default `role` that can be assigned to the member. User types
-            compatible with each role are noted in the table below (within the `user_type` section).
-
-        **To create a viewer account, choose role='viewer' and user_type='viewer'**
-
-        .. note:
-            When Portal for ArcGIS is connected to an enterprise identity store, enterprise users sign
-            into portal using their enterprise credentials. By default, new installations of Portal for
-            ArcGIS do not allow accounts from an enterprise identity store to be registered to the portal
+            
+        .. note::
+            When Portal for ArcGIS is connected to an
+            `organization specific identity store <https://enterprise.arcgis.com/en/portal/latest/administer/windows/managing-access-to-your-portal.htm#ESRI_SECTION2_4E6A70E10A9444DD92662208198B8876>`_,
+            users can sign into portal using their organization specific credentials, also known as
+            their enterprise credentials. By default, new installations of Portal for ArcGIS do not
+            allow accounts from an enterprise identity store to be registered to the portal
             automatically. Only users with accounts that have been pre-created can sign in to the portal.
             Alternatively, you can configure the portal to register enterprise accounts the first time
             the user connects to the website.
 
+        The `user_type` argument determines which `role` can be assigned to the member. A
+        full explanation of `user types` and their compatibility with a particular `role`
+        can be found in the
+        `User types, roles, and privileges <https://enterprise.arcgis.com/en/portal/latest/administer/windows/roles.htm>`_
+        documentation.
+
+        An organization administrator may configure `New Member Defaults`. When a Web GIS is configured
+        with these values, any new user will receive these default values unless overridden by the
+        corresponding arguments in this method. See the following documentation for additional details:
+            
+        * `ArcGIS Online <https://doc.arcgis.com/en/arcgis-online/administer/configure-new-member-defaults.htm>`_
+        * `ArcGIS Enterprise <https://enterprise.arcgis.com/en/portal/latest/administer/windows/configure-new-member-defaults.htm>`_
+            
+        To query the organization for `New Member Defaults`, run the following code:
+            
+        .. code-block:: python
+            
+            >>> gis = GIS(profile="your_admin_profile")
+                
+            >>> gis.users.user_settings
+                
         ================  ===============================================================================
         **Parameter**      **Description**
         ----------------  -------------------------------------------------------------------------------
-        username          Required string. The user name, which must be unique in the Portal, and
-                          6-24 characters long.
+        username          Required string. The user name, which must be unique in the Enterprise or
+                          in all of ArcGIS Online. Must be between 6 to 24 characters long.
         ----------------  -------------------------------------------------------------------------------
-        password          Required string. The password for the user.  It must be at least 8 characters.
-                          This is a required parameter only if
-                          the provider is arcgis; otherwise, the password parameter is ignored.
-                          If creating an account in an ArcGIS Online org, it can be set as None to let
-                          the user set their password by clicking on a link that is emailed to him/her.
-                          When the `provider` is **enterprise**, password is optional.
+        password          Required string if the `provider` argument is `arcgis`. If the argument is
+                          `enterprise`, meaning an 
+                          `organization-specific identity provider
+                          <https://enterprise.arcgis.com/en/portal/latest/administer/windows/managing-access-to-your-portal.htm#ESRI_SECTION2_4E6A70E10A9444DD92662208198B8876>`_
+                          is configured, the password parameter is optional (or ignored if present).
+                          
+                          .. note::
+                             If creating an ArcGIS Online organization user, the argument can be `None`
+                             and users can subsequently set their password by clicking on a link that
+                             is emailed to them.
         ----------------  -------------------------------------------------------------------------------
-        firstname         Required string. The first name for the user
+        firstname         Required string. The first name for the user.
         ----------------  -------------------------------------------------------------------------------
-        lastname          Required string. The last name for the user
+        lastname          Required string. The last name for the user.
         ----------------  -------------------------------------------------------------------------------
-        email             Required string. The email address for the user. This is important to have correct.
+        email             Required string. The email address for the user. This is important!
         ----------------  -------------------------------------------------------------------------------
         description       Optional string. The description of the user account.
         ----------------  -------------------------------------------------------------------------------
-        thumbnail         Optional string. The URL to user's image.
+        thumbnail         Optional string. The URL to an image to represent the user.
         ----------------  -------------------------------------------------------------------------------
-        role              Optional string. The :class:`role <arcgis.gis.Role>` for the user account. The
-                          default value is ``org_user``. Other possible values are ``org_publisher``,
-                          ``org_admin``, ``viewer``, ``viewplusedit`` or a custom :class:`role_id <arcgis.gis.Role>`
-                          value obtained from the :func:`~RoleManager.all` method of the :class:`RoleManager` class.
-
+        role              Optional string. The :class:`role <arcgis.gis.Role>` name or `role_id` value to
+                          assign the new member. To assign one of the `default Administrator, Publisher,
+                          or User roles <https://enterprise.arcgis.com/en/portal/latest/administer/windows/member-roles.htm#ESRI_SECTION1_C30D73392D964D51A8B606128A8A6E8F>`_
+                          enter ``org_admin``, ``org_publisher``, or ``org_user``, respectively.
+                          For any other default role, or a custom role within the organization, enter
+                          the `role_id` value returned from the :meth:`~arcgis.gis.RoleManager.all` method
+                          on the :class:`~arcgis.gis.RoleManager` class.
+                          
+                          .. code-block:: python
+                          
+                              >>> from arcgis.gis import GIS
+                              
+                              >>> gis = GIS(profile="your_org_admin_profile")
+                              
+                              >>> for org_role in gis.users.roles.all():
+                                      print(f"{org_role.name:25}{org_role.role_id}")
         ----------------  -------------------------------------------------------------------------------
-        provider          Optional string. The provider for the account. The default value is arcgis.
-                          The other possible value is enterprise.
+        provider          Optional string. The identity provider for the account. The default value is
+                          `arcgis`. Possible values:
+                          
+                          * `arcgis` - built-in identity provider
+                          * `enterprise` - organization-specific identity provider
+                          
+                          See documentation for managing organizational access for explanation of different
+                          identity provider options:
+                          
+                          * `ArcGIS Enterprise <https://enterprise.arcgis.com/en/portal/latest/administer/windows/managing-access-to-your-portal.htm>`_
+                          * `ArcGIS Online <https://doc.arcgis.com/en/arcgis-online/administer/invite-users.htm>`_
         ----------------  -------------------------------------------------------------------------------
-        idp_username      Optional string. The name of the user as stored by the enterprise user store.
-                          This parameter is only required if the provider parameter is enterprise.
+        idp_username      Required if `provider` argument is `enterprise`, otherwise not used. The name
+                          of the user as stored by the organization-specific identity store. 
         ----------------  -------------------------------------------------------------------------------
-        level             Optional integer. The account level. (ArcGIS Enterprise prior to version 10.7.
-                          See `User types, roles, and privileges <https://enterprise.arcgis.com/en/portal/latest/administer/windows/roles.htm>`_
-                          for full details.) The GIS Professional `user_type` can be assigned at the following three levels, which correspond to the three license levels of ArcGIS Pro:
-                           - GIS Professional Basic
-                           - GIS Professional Standard
-                           - GIS Professional Advanced
+        level             **Deprecated** Optional integer. The Web GIS system automatically sets this
+                          argument based upon the `user_type` and `role` arguments. See
+                          `Levels <https://enterprise.arcgis.com/en/portal/10.6/administer/windows/roles.htm#ESRI_SECTION1_08925CEF37334C619D52BC027C3C8DE1>`_
+                          for detailed description.
+                          
+                          .. note::
+                              This parameter was deprecated with the 10.7 release.
         ----------------  -------------------------------------------------------------------------------
-        user_type         Required string. The account user type. This can be creator, viewer, etc.  The
-                          type effects what applications a user can use and what actions they can do in
-                          the organization. (ArcGIS Enterprise 10.7+ and ArcGIS Online.
-                          See `User types, roles, and privileges <https://enterprise.arcgis.com/en/portal/latest/administer/windows/roles.htm>`_
-                          for full details.)
-                           - Members assigned the ``viewer`` role cannot create or share content, or perform analysis, and the ``viewer`` role is compatible with all user types.
-                           - The Data Editor role ``viewplusedit`` is compatible with all user types except ``viewer``.
-                           - The ``org_user``, ``org_publisher``, and ``org_admin`` roles are compatible with the Creator, GIS Professional, Storyteller, and Insights Analyst user types.
-                           - A complete list of `user_type` values can be obtained from the `license_types` property on the `UserManager`.
+        user_type         Required string, unless specified in the `New Member Defaults`. The user type
+                          license for an organization member. See
+                          `user types <https://enterprise.arcgis.com/en/portal/latest/administer/windows/user-types-orgs.htm>`_
+                          for detailed descriptions of each `user type`. Each `user_type` is 
+                          compatible with specific `roles` in the organization. Compatibility is
+                          determined by the `privileges` assigned to each `role`. Only certain `role`
+                          arguments will work with specific `user types`. The potential values 
+                          for this argument depend upon the organizational subscription and 
+                          licensing. Run the following query as an administrator to determine the
+                          possible values:
+                          
+                          .. code-block:: python
+                          
+                              >>> for utype in gis.users.license_types:
+                                      print(f"{utype['id]}")
+                          
+                          .. note::
+                              See the :attr:`~arcgis.gis.UserManager.license_types` property on the
+                              :class:`~arcgis.gis.UserManager` class.
         ----------------  -------------------------------------------------------------------------------
         credits           Optional Float. The number of credits to assign a user.  The default is None,
-                          which means unlimited. (10.7+)
+                          unless specified in the `New Member Defaults`.
+                          
+                          The following code will return the default value if it has been set:
+                          
+                          .. code-block:: python
+                          
+                              >>> gis = GIS(profile="your_admin_profile")
+                              
+                              >>> gis.properties.defaultUserCreditAssignment
+                              
+                          .. note::
+                              Only applies to ArcGIS Online organizations.
         ----------------  -------------------------------------------------------------------------------
-        groups            Optional List. An array of Group objects to provide access to for a given
-                          user. (10.7+)
+        groups            Optional List of :class:`~arcgis.gis.Group` objects to which the new user will
+                          be added. If `None`, user will be assigned to any groups specified in the
+                          `New Member Defaults`.
         ----------------  -------------------------------------------------------------------------------
         email_text        Optional string. Custom text to include in the invitation email. This text will
-                          be appended to the top of the default email text. ArcGIS Online only.
+                          be appended to the top of the default email text. `ArcGIS Online` only.
         ================  ===============================================================================
 
         :return:
             The :class:`user <arcgis.gis.User>` if successfully created, None if unsuccessful.
 
         .. code-block:: python
-            :emphasize-lines: 10,18
+            
+            #Usage Example 1: New ArcGIS Online user using `New Member Defaults`
+            
+            >>> ago = GIS(profile='your_online_admin_profile')
+            
+            >>> for k,v in ago.users.user_settings.items():
+            >>>     print(f'{k:20}{v}')
+            
+            role                org_publisher
+            userLicenseType     advancedUT
+            groups              ['96c9a826e654481ba2cf8f6d04137b32']
+            userType            arcgisonly
+            apps                []
+            appBundles          []
+            categories          []
+            
+            >>> new_user = ago.users.create(username= 'new_unique_username',
+                                            password= '<strong_password>',
+                                            firstname= 'user_firstname',
+                                            lastname= 'user_lastname',
+                                            email= 'user_email@company.com',
+                                            description= 'new user using member defaults'))
 
-            # Usage Example: Assign custom role to a new user
+            # Usage Example 2: New ArcGIS Online user with custom role and non-default `user_type`
 
+            # Get RoleManager and print `role_id` values for `role` argument
             >>> role_mgr = gis.users.roles
 
             >>> for role in role_mgr.all():
-            >>>     print(f"{role.name}  {role.role_id}")
+            >>>     print(f'{role.name}  {role.role_id}')
 
             Viewer              iAAAAAAAAAAAAAAA
             Data Editor         iBBBBBBBBBBBBBBB
             CustomRole          bKrTCjFF9tKbaFk8
 
-            >>> user1 = gis.users.create(username='new_user_1',
+            # Print valid values for `user_type` argument
+            >>> [ut['id'] for ut in ago.users.license_types]
+            
+            ['advancedUT',
+            'basicUT',
+            'creatorUT',
+            'editorUT',
+            'fieldWorkerUT',
+            'GISProfessionalAdvUT',
+            'GISProfessionalBasicUT',
+            'GISProfessionalStdUT',
+            'IndoorsUserUT',
+            'insightsAnalystUT',
+            'liteUT',
+            'standardUT',
+            'storytellerUT',
+            'viewerUT']
+            
+            >>> user1 = ago.users.create(username='new_unique_username',
                                          password='<strong_password>',
-                                         firstname='New',
-                                         lastname='User',
-                                         email='namee@organization.com',
-                                         description='User with custom role assigned',
+                                         firstname="user_firstname",
+                                         lastname="user_lastname",
+                                         email="user_email@company.com",
+                                         description="Test user with custom role and non-default user type.",
                                          role='bKrTCjFF9tKbaFk8',
-                                         user_type='Creator')
-
-            >>> if user1: # setting the start_page of the newly created user
-            >>>     user1.landing_page = "organization"
-
+                                         user_type='creatorUT')
+                                         
+            # Usage Example 3: New User invited with an email:
+            
+            >>> user_e = ago.users.create(username="new_invited_uk_Q42eklm",
+                                          password="S8V3*t4L8tr!&",
+                                          firstname="user_firstname",
+                                          lastname="user_lastname",
+                                          email="user_email@company.com",
+                                          description="Test for an invited user to Online.",
+                                          user_type="creatorUT",
+                                          role="XBH3xJArWxYuK2qX",
+                                          email_text="Welcome aboard the Web GIS organization!")
         """
         if any(
             [
@@ -3634,7 +3751,7 @@ class UserManager(object):
 
         if groups is None:
             groups = []
-
+        
         if user_type.lower() in levels:
             user_type = levels[user_type.lower()]
 
@@ -9799,12 +9916,12 @@ class Group(dict):
         ================  ========================================================
         **Parameter**      **Description**
         ----------------  --------------------------------------------------------
-        usernames         Required list of strings.
-                          A comma-separated list of users to be removed.
+        usernames         Required list of strings. A comman-separated list of
+                          users to be removed.
         ================  ========================================================
 
         :return:
-            A dictionary with a key notRemoved that is a list of users not removed.
+            A dictionary with a key notRemoved that is a list of users not removed.      
         """
         users = []
         if isinstance(usernames, (list, tuple)) == False:
