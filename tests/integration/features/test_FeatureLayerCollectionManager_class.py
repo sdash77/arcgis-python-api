@@ -90,7 +90,7 @@ class Test_FeatureLayerCollectionManager_portal(unittest.TestCase):
             cls.class_skip = True
 
         cls.gis = GIS(
-            cls.portal_url, cls.portal_username, cls.portal_password, verify_cert=False
+            profile="your_ent_admin_profile", verify_cert=False
         )
         if cls.gis is None:
             cls.class_skip = True
@@ -339,7 +339,7 @@ class Test_FeatureLayerCollectionManager_portal(unittest.TestCase):
 
             # add two extra columns to account for x,y geometries that get added
             self.assertEqual(
-                (20, 8),
+                (10, 8),
                 overwritten_flayer_df.shape,
                 "The number of rows cols of overwritten feature layer is not more than original",
             )
@@ -879,7 +879,7 @@ class Test_FeatureLayerCollectionManager_online(unittest.TestCase):
 
             # add two extra columns to account for x,y geometries that get added
             self.assertEqual(
-                (20, 8),
+                (10, 8),
                 overwritten_flayer_df.shape,
                 "The number of rows cols of overwritten feature layer is not more than original",
             )

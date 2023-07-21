@@ -1,6 +1,6 @@
 import sys, json, uuid
 
-# sys.path.insert(0, r"c:\SVN\geosaurus_master\src")
+sys.path.insert(0, r"c:\SVN\geosaurus_issue_9708\src")
 import unittest
 
 try:
@@ -57,7 +57,8 @@ class TestURLParseLogic(unittest.TestCase):
     def test_test_parse_logic(self):
         assert _parse_arcgis_url(url=None) == "https://www.arcgis.com"
         assert (
-            _parse_arcgis_url(url="https://www.arcgis.com") == "https://www.arcgis.com"
+            _parse_arcgis_url(url="https://www.arcgis.com")
+            == "https://www.arcgis.com"
         )
         assert (
             _parse_arcgis_url(url="https://www.arcgis.com/sharing/rest")
@@ -68,11 +69,15 @@ class TestURLParseLogic(unittest.TestCase):
             == "https://www.arcgis.com"
         )
         assert (
-            _parse_arcgis_url(url="http://pythonapi.playground.esri.com/portal")
+            _parse_arcgis_url(
+                url="http://pythonapi.playground.esri.com/portal"
+            )
             == "http://pythonapi.playground.esri.com/portal"
         )
         assert (
-            _parse_arcgis_url(url="http://pythonapi.playground.esri.com/portal/home")
+            _parse_arcgis_url(
+                url="http://pythonapi.playground.esri.com/portal/home"
+            )
             == "http://pythonapi.playground.esri.com/portal"
         )
         assert (
@@ -114,7 +119,6 @@ class TestArcGISTokenAuth(unittest.TestCase):
     """
 
     def test_suspend(self):
-
         username = "gisprostd1"
         password = "portalaccount1"
         builtin = EsriBuiltInAuth(
@@ -142,7 +146,6 @@ class TestArcGISTokenAuth(unittest.TestCase):
             verify_cert=False,
         )
         with EsriSession(auth=auth, verify_cert=False) as session:
-
             data = session.post(
                 url="https://www.arcgis.com/sharing/rest/search",
                 data={"f": "json", "q": "map"},

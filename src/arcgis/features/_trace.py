@@ -110,6 +110,7 @@ class TraceNetworkManager(object):
 
 
                                 .. code-block:: python
+
                                     [{
                                         "traceLocationType" : "startingPoint" | "barrier",
                                         "globalId" : <guid>,
@@ -231,6 +232,7 @@ class TraceNetworkManager(object):
         envelope                                    Required Dictionary or Envelope. The envelope of the area to validate.
 
                                                     .. code-block:: python
+
                                                         {
                                                             "xmin": <minimum x-coordinate>,
                                                             "ymin": <minimum y-coordinate>,

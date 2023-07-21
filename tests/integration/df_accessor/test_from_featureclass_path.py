@@ -4,21 +4,21 @@ import pandas as pd
 from arcgis.features import GeoAccessor, GeoSeriesAccessor
 
 
-RUN = os.path.isdir("./testdata.gdb")
+RUN = os.path.dirname(os.path.realpath(__file__))
 
 
 @unittest.skipIf(RUN == False, "missing data")
 class TestFromFeatureClass(unittest.TestCase):
     def test_from_string_fc(self):
         """tests reading a SHP/FGDB from fiona"""
-        fc = r"./testdata.gdb/world30"
+        fc = os.path.join(RUN, "world30.shp")
         assert isinstance(pd.DataFrame.spatial.from_featureclass(fc), pd.DataFrame)
 
     def test_from_path_fc(self):
         """tests reading a SHP/FGDB from fiona"""
         from pathlib import Path
 
-        fc = r"./testdata.gdb/world30"
+        fc = os.path.join(RUN, "world30.shp")
         assert isinstance(
             pd.DataFrame.spatial.from_featureclass(Path(fc)), pd.DataFrame
         )

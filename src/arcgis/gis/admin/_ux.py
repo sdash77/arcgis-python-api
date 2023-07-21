@@ -1,11 +1,28 @@
 from __future__ import annotations
+
+import concurrent.futures
+import uuid
+import tempfile
+from enum import Enum
 import os
 import json
+from typing import Any
 from arcgis._impl.common._deprecate import deprecated
 from arcgis.auth.tools import LazyLoader
 from arcgis.gis import Group, User
+from arcgis.gis.clone._ux import UXCloner
 
 _basemap_definitions = LazyLoader("arcgis.mapping._basemap_definitions")
+_arcgis_gis = LazyLoader("arcgis.gis")
+
+
+class StockImage(Enum):
+    RIVERVIOLET = "1"
+    RIVEREMERALD = "2"
+    GEOLOGYAMBER = "3"
+    GEOLOGYLILAC = "4"
+    SOILGOLD = "5"
+    SOILSILVER = "6"
 
 
 ###########################################################################
@@ -15,6 +32,8 @@ class UX(object):
     to set informational banner, background, logo, name etc. There are also other helper classes to call from this.
     By calling the 'org_map_editor' or 'homepage_editor' more methods can be found to change org settings specific
     to those categories."""
+
+    _cloner: UXCloner | None = None
 
     # ----------------------------------------------------------------------
     def __init__(self, gis):
@@ -33,6 +52,58 @@ class UX(object):
             )
         else:
             self._new_hp = False
+
+    # ----------------------------------------------------------------------
+    def clone(
+        self,
+        *,
+        targets: list[_arcgis_gis.GIS | None] | None = None,
+        workspace_folder: str | None = None,
+        package_save_folder: str | None = None,
+        package_name: str | None = None,
+    ) -> list[concurrent.futures.Future]:
+        """
+        Copies the UX settings from the source WebGIS site to the destination WebGIS site or to
+        a `.uxpk` offline file.
+        When directly connected to two WebGIS', this method performs the clone operation immediately.
+        When cloning in an offline situation, a `.uxpk` is created and stored on the user's local
+        hard drive.
+
+        ====================  ===============================================================
+        **Parameter**         **Description**
+        --------------------  ---------------------------------------------------------------
+        targets               list[GIS | None]. The sites to clone to. If None is given, then
+                              a local file is returned.
+        --------------------  ---------------------------------------------------------------
+        workspace_folder      Optional String. The workspace where the temporary files are
+                              processed.
+        --------------------  ---------------------------------------------------------------
+        package_save_folder   Optional String. The output folder where the offline package is
+                              saved.
+        --------------------  ---------------------------------------------------------------
+        package_name          Optional String. The saved package name minus the extension.
+        ====================  ===============================================================
+
+        :returns: list[concurrent.futures.Future]
+
+        """
+        if self._cloner is None:
+            self._cloner = UXCloner(gis=self._gis)
+        return self._cloner.clone(
+            targets=targets,
+            workspace_folder=workspace_folder,
+            package_save_folder=package_save_folder,
+            package_name=package_name,
+        )
+
+    # ----------------------------------------------------------------------
+    def load_offline_configuration(self, package: str) -> concurrent.futures.Future:
+        """
+        Loads the UX configuration file into the current active portal.
+        """
+        if self._cloner is None:
+            self._cloner = UXCloner(gis=self._gis)
+        return self._cloner.load_offline_configuration(package)
 
     # ----------------------------------------------------------------------
     @property
@@ -92,12 +163,15 @@ class UX(object):
         :return: string
         """
         try:
-            res = json.loads(
-                open(self._portal_resources.get("localizedOrgProperties"), "r").read()
-            )
+            with open(
+                self._portal_resources.get("localizedOrgProperties"), "r"
+            ) as reader:
+                res = json.loads(reader.read())
+
         except:
             # if summary has never been set for org then need to create the resource
             self.summary = ""
+            return self.summary
         return res["default"]["description"]
 
     # ----------------------------------------------------------------------
@@ -171,8 +245,9 @@ class UX(object):
         """
         Get and set the contact link for the site.
         """
-        if "links" in self._gis.properties["portalProperties"]:
-            return self._gis.properties["portalProperties"]["links"]
+        props: dict = self._gis._get_properties()
+        if "links" in props["portalProperties"]:
+            return props["portalProperties"]["links"]
         else:
             return None
 
@@ -181,7 +256,9 @@ class UX(object):
     def contact_link(self, url: str):
         portal_properties = self._gis.properties["portalProperties"]
         if url:
-            portal_properties["links"] = {"contactUs": {"url": {url}, "visible": True}}
+            portal_properties["links"] = {
+                "contactUs": {"url": f"{url}", "visible": True}
+            }
         else:
             portal_properties["links"] = {"contactUs": {"url": "", "visible": False}}
 
@@ -361,14 +438,24 @@ class UX(object):
         """
         Gets/Sets the featured content group information.
 
+        If you set the featured content, reinstantiate to update the gis properties and see the updated
+        list of featured_content.
+
         ================  ===============================================================
         **Parameter**      **Description**
         ----------------  ---------------------------------------------------------------
-        content           Required dictionary, defines the group and count of the feature
+        content           Required list or dictionary, defines the group(s) of the feature
                           content area on an organizational site.  A value of None will
-                          reset the value back to the install defaults.
+                          reset the value back to no featured groups.
+
+                          To add a new group to the list you must pass in the list of current
+                          featured content and include the new group in the list. "id" key must be in
+                          the dictionary, extra keys are ok.
+
+                          It is also acceptable to pass a list of Group class instances.
+
                           Example:
-                          {'group': <group id>, 'count' : 12}
+                          [{"id": <group_id>}, {"id": <group_id>}, etc.]
         ================  ===============================================================
 
         :return: dictionary
@@ -376,63 +463,69 @@ class UX(object):
 
         .. code-block:: python
             *Usage Example*
-            >>> data = ux.get_featured_content()
-            >>> ux.set_featured_content = data
+            >>> data = ux.featured_content
+            >>> ux.featured_content = data
             True
 
         """
-        return {
-            "group": self._gis.properties["homePageFeaturedContent"],
-            "count": self._gis.properties["homePageFeaturedContentCount"],
-        }
+        return self._gis.properties["featuredGroups"]
 
     # ----------------------------------------------------------------------
     @featured_content.setter
-    def featured_content(self, content: dict):
+    def featured_content(self, contents: dict):
         """
         See main ``featured_content`` property docstring
         """
         from .. import Group
 
-        if content is None:
-            content = {
-                "homePageFeaturedContent": "",
-                "homePageFeaturedContentCount": 12,
-                "featuredItemsGroupQuery": "",
-                "featuredGroupsId": "",
-                "clearEmptyFields": True,
-            }
-        elif "group" in content and isinstance(content["group"], Group):
-            gid = content["group"].groupid
-            content["homePageFeaturedContent"] = gid
-            content["featuredGroupsId"] = f"id:{gid}"
-            content["featuredItemsGroupQuery"] = f"id:{gid}"
+        featured_groups = []
+        if isinstance(contents, list):
+            for content in contents:
+                if isinstance(content, Group):
+                    group_id = content.id
+                    group_title = content.title
+                    group_owner = content.owner
+                    featured_groups.append(
+                        {
+                            "id": group_id,
+                            "title": group_title,
+                            "owner": group_owner,
+                        }
+                    )
+                elif (
+                    isinstance(contents, dict)
+                    and "id" in contents
+                    and isinstance(contents["id"], str)
+                ) or isinstance(contents, str):
+                    if isinstance(contents, dict):
+                        contents = contents["id"]
+                    group = Group(self._gis, contents)
+                    group_id = group.id
+                    group_title = group.title
+                    group_owner = group.owner
+                    featured_groups.append(
+                        {
+                            "id": group_id,
+                            "title": group_title,
+                            "owner": group_owner,
+                        }
+                    )
         elif (
-            isinstance(content, dict)
-            and "group" in content
-            and isinstance(content["group"], str)
-        ):
-            c = {}
-            c["homePageFeaturedContent"] = content["group"]
-            c["featuredItemsGroupQuery"] = f"id:{content['group']}"
-            c["featuredGroupsId"] = f"id:{content['group']}"
-            if "count" in content:
-                c["homePageFeaturedContentCount"] = content["count"]
-            else:
-                c["homePageFeaturedContentCount"] = 12
-            content = c
-        elif isinstance(content, str):
-            c = {}
-            c["homePageFeaturedContent"] = content
-            c["homePageFeaturedContentCount"] = 12
-            c["featuredItemsGroupQuery"] = f"id:{content}"
-            c["featuredGroupsId"] = f"id:{content}"
-            content = c
-        if not "featuredItemsGroupQuery" in self._gis.properties:
-            content.pop("featuredItemsGroupQuery", None)
-        if not "featuredGroupsId" in self._gis.properties:
-            content.pop("featuredGroupsId", None)
-        self._gis.update_properties(content)
+            isinstance(contents, dict)
+            and "id" in contents
+            and isinstance(contents["id"], str)
+        ) or isinstance(contents, str):
+            if isinstance(contents, dict):
+                contents = contents["id"]
+            group = Group(self._gis, contents)
+            group_id = group.id
+            group_title = group.title
+            group_owner = group.owner
+            featured_groups.append(
+                {"id": group_id, "title": group_title, "owner": group_owner}
+            )
+
+        self._gis.update_properties({"featuredGroups": featured_groups})
 
     # ----------------------------------------------------------------------
     def navigation_bar(
@@ -540,7 +633,11 @@ class UX(object):
         shared_theme = {
             "header": {"background": "no-color", "text": "no-color"},
             "button": {"background": "no-color", "text": "no-color"},
-            "body": {"background": "no-color", "text": "no-color", "link": "no-color"},
+            "body": {
+                "background": "no-color",
+                "text": "no-color",
+                "link": "no-color",
+            },
             "logo": {"small": ""},
         }
         if "sharedTheme" in portal_properties:
@@ -602,7 +699,11 @@ class UX(object):
         group = self._gis.properties["featuredItemsGroupQuery"]
         if "id:" in group:
             # must use [3::] to slice string since format of: "id:123abc"
-            return self._gis.groups.search(group[3::])[0]
+            gallery_grps = self._gis.groups.search(group[3::])
+            if len(gallery_grps) > 0:
+                return gallery_grps[0]
+            else:
+                return group
         else:
             return group
 
@@ -661,7 +762,7 @@ class UX(object):
 
     # ----------------------------------------------------------------------
     @property
-    @deprecated(deprecated_in="2.1.0", removed_in="3.0.0", current_version="2.1.0")
+    @deprecated(deprecated_in="2.1.0", removed_in="3.0.0", current_version="2.2.0")
     def enable_comments(self):
         """
         Get/Set item commenting and comments.
@@ -679,7 +780,7 @@ class UX(object):
 
     # ----------------------------------------------------------------------
     @enable_comments.setter
-    @deprecated(deprecated_in="2.1.0", removed_in="3.0.0", current_version="2.1.0")
+    @deprecated(deprecated_in="2.1.0", removed_in="3.0.0", current_version="2.2.0")
     def enable_comments(self, enable: bool = False):
         """
         See main ``enable_comments`` property docstring.
@@ -687,7 +788,7 @@ class UX(object):
         self.item_settings.enable_comments = enable
 
     # ----------------------------------------------------------------------
-    @deprecated(deprecated_in="2.1.0", removed_in="3.0.0", current_version="2.1.0")
+    @deprecated(deprecated_in="2.1.0", removed_in="3.0.0", current_version="2.2.0")
     def set_background(
         self, background_file: str | None = None, is_built_in: bool = True
     ):
@@ -718,7 +819,7 @@ class UX(object):
         )
 
     # ----------------------------------------------------------------------
-    @deprecated(deprecated_in="2.1.0", removed_in="3.0.0", current_version="2.1.0")
+    @deprecated(deprecated_in="2.1.0", removed_in="3.0.0", current_version="2.2.0")
     def get_background(self, download_path: str):
         """
         Get your organization's home page background image. You can use the `set_background()` method to set an image
@@ -737,7 +838,7 @@ class UX(object):
         return self.homepage_settings.get_background(download_path=download_path)
 
     # ----------------------------------------------------------------------
-    @deprecated(deprecated_in="2.1.0", removed_in="3.0.0", current_version="2.1.0")
+    @deprecated(deprecated_in="2.1.0", removed_in="3.0.0", current_version="2.2.0")
     def set_banner(
         self,
         banner_file: str | None = None,
@@ -757,9 +858,16 @@ class UX(object):
         **Parameter**        **Description**
         ----------------    ---------------------------------------------------------------
         banner_file         Optional string. If uploading a custom banner, then path to the
-                            banner file. If using a built-in banner, valid values are
-                            banner-1, banner-2, banner-3, banner-4, banner-5. If None, existing
-                            banner is remove.
+                            banner file. If using a built-in banner, valid values are:
+
+                            * banner-1
+                            * banner-2
+                            * banner-3
+                            * banner-4
+                            * banner-5
+
+                            .. note::
+                                If `None`, existing banner is removed.
         ----------------    ---------------------------------------------------------------
         is_built_in         Optional bool, default=False. Specify True if using a built-in
                             banner file.
@@ -859,7 +967,7 @@ class UX(object):
         return update_result
 
     # ----------------------------------------------------------------------
-    @deprecated(deprecated_in="2.1.0", removed_in="3.0.0", current_version="2.1.0")
+    @deprecated(deprecated_in="2.1.0", removed_in="3.0.0", current_version="2.2.0")
     def get_banner(self, download_path: str):
         """
         Get your organization's home page banner image. You can use the `set_banner()` method to set an image or custom HTML
@@ -897,7 +1005,7 @@ class UX(object):
 
     # ----------------------------------------------------------------------
     @property
-    @deprecated(deprecated_in="2.1.0", removed_in="3.0.0", current_version="2.1.0")
+    @deprecated(deprecated_in="2.1.0", removed_in="3.0.0", current_version="2.2.0")
     def default_extent(self):
         """
         Get/Set the site's default extent
@@ -921,7 +1029,7 @@ class UX(object):
 
     # ----------------------------------------------------------------------
     @default_extent.setter
-    @deprecated(deprecated_in="2.1.0", removed_in="3.0.0", current_version="2.1.0")
+    @deprecated(deprecated_in="2.1.0", removed_in="3.0.0", current_version="2.2.0")
     def default_extent(self, extent: dict):
         """
         See main ``default_extent`` property docstring
@@ -930,7 +1038,7 @@ class UX(object):
 
     # ----------------------------------------------------------------------
     @property
-    @deprecated(deprecated_in="2.1.0", removed_in="3.0.0", current_version="2.1.0")
+    @deprecated(deprecated_in="2.1.0", removed_in="3.0.0", current_version="2.2.0")
     def default_basemap(self):
         """
         Get/Set the site's default basemap.
@@ -953,7 +1061,7 @@ class UX(object):
 
     # ----------------------------------------------------------------------
     @default_basemap.setter
-    @deprecated(deprecated_in="2.1.0", removed_in="3.0.0", current_version="2.1.0")
+    @deprecated(deprecated_in="2.1.0", removed_in="3.0.0", current_version="2.2.0")
     def default_basemap(self, value: str):
         """
         See main ``default_basemap`` property docstring
@@ -962,7 +1070,7 @@ class UX(object):
 
     # ----------------------------------------------------------------------
     @property
-    @deprecated(deprecated_in="2.1.0", removed_in="3.0.0", current_version="2.1.0")
+    @deprecated(deprecated_in="2.1.0", removed_in="3.0.0", current_version="2.2.0")
     def vector_basemap(self):
         """
         Get/Set the default vector basemap
@@ -980,7 +1088,7 @@ class UX(object):
 
     # ----------------------------------------------------------------------
     @vector_basemap.setter
-    @deprecated(deprecated_in="2.1.0", removed_in="3.0.0", current_version="2.1.0")
+    @deprecated(deprecated_in="2.1.0", removed_in="3.0.0", current_version="2.2.0")
     def vector_basemap(self, basemap: dict):
         """
         See main ``vector_basemap`` property docstring
@@ -1013,9 +1121,20 @@ class HomePageSettings(object):
         else:
             self._new_hp = False
 
+    def _reader_hp(self) -> dict[str, Any]:
+        """reads the homepage settings as a dictionary."""
+        with open(self._portal_resources.get("home.page.json"), "r") as reader:
+            return json.loads(reader.read())
+        return {}
+
     # ----------------------------------------------------------------------
     def set_background(
-        self, background_file: str | None = None, is_built_in: bool = True
+        self,
+        background_file: str | None = None,
+        is_built_in: bool = True,
+        stock_image: StockImage | None = None,
+        layout: str | None = None,
+        opacity: int | None = None,
     ):
         """
         Configure your home page by setting the organization's background image. You can choose no image, a built-in image
@@ -1035,6 +1154,15 @@ class HomePageSettings(object):
         ----------------    ---------------------------------------------------------------
         is_built_in         Optional bool, default=True. The built-in background is set by default.
                             If uploading a custom image, this parameter is ignored.
+        ----------------    ---------------------------------------------------------------
+        stock_image         Optional instance of StockImage class or string that represents
+                            a stock image key.
+        ----------------    ---------------------------------------------------------------
+        layout              Optional string. The layout height of the cover image. The values are:
+                            "Full-height", "Two-thirds-height", or "Half-height".
+        ----------------    ---------------------------------------------------------------
+        opacity             Optional int that represent the opacity of the header. The value is
+                            anything from 0 to 1 included.
         ================    ===============================================================
 
         :return: True | False
@@ -1089,15 +1217,28 @@ class HomePageSettings(object):
                     )
                 background_update_val = key_val
                 cover_type = "custom"
-            elif is_built_in:
+                cover_image_stock = ""
+            elif is_built_in and stock_image is not None:
                 cover_type = "stock"
                 background_update_val = ""
-            hp = json.loads(
-                open(self._portal_resources.get("home.page.json"), "r").read()
-            )
+                if isinstance(stock_image, str):
+                    # User passed in string of the stock image key
+                    stock_image = StockImage[stock_image]
+                cover_image_stock = stock_image.value
 
+            hp = self._reader_hp()
             hp["header"]["coverImg"] = background_update_val
             hp["header"]["coverType"] = cover_type
+            hp["header"]["coverImgStock"] = cover_image_stock
+            if layout and layout in [
+                "Full-height",
+                "Two-thirds-height",
+                "Half-height",
+            ]:
+                hp["header"]["coverImgLayout"] = layout
+            if opacity is not None and (opacity >= 0 or opacity <= 1):
+                hp["header"]["opacity"] = opacity
+
             params = {
                 "key": "home.page.json",
                 "text": hp,
@@ -1108,7 +1249,7 @@ class HomePageSettings(object):
             )
 
     # ----------------------------------------------------------------------
-    def get_background(self, download_path: str):
+    def get_background(self, download_path: str | None = None):
         """
         Get your organization's home page background image. You can use the `set_background()` method to set an image
         as the home page background image.
@@ -1118,47 +1259,74 @@ class HomePageSettings(object):
         ================  ===============================================================
         **Parameter**      **Description**
         ----------------  ---------------------------------------------------------------
-        download_path     required string. Folder path to download the background file.
+        download_path     Required string. Folder path to download the background file.
+                          If the background image is a stock image then an instance of the
+                          StockImage class will be returned and the download_path will be ignored.
+                          If you know the background is a stock image then don't provide a download path.
         ================  ===============================================================
 
-        :return: Path to downloaded background file. If None, then background is not set and nothing was downloaded.
+        :return: Path to downloaded background file. If the cover image is a stock image then the stock image's name from the StockImage class will be returned.
         """
 
         # create a portal resource manager obj
         # find existing banner resource file
         bckgrnd_path = None
-        if self._new_hp is False:
-            resource_list = self._portal_resources.list()
-            e_background = [
-                banner
-                for banner in resource_list
-                if banner["key"].startswith("background")
-            ]
-            for background in e_background:
-                try:
-                    bckgrnd_path = self._portal_resources.get(
-                        background["key"], download_path
+        if self._new_hp:
+            # Need to read the homepage settings
+            hp = json.loads(
+                open(
+                    self._portal_resources.get("home.page.json"),
+                    "r",
+                ).read()
+            )
+            # Have to check the cover type first
+            cover_type = hp["header"]["coverType"]
+            if cover_type == "stock":
+                return StockImage(hp["header"]["coverImgStock"]).name
+            else:
+                if download_path is None:
+                    raise ValueError(
+                        "A download path is needed since the background is not a stock image."
                     )
-
-                except:
-                    if self._new_hp:
-                        # see if named something else
-                        hp = json.loads(
-                            open(
-                                self._portal_resources.get("home.page.json"), "r"
-                            ).read()
+                # If not stock then image is set
+                resource_list = self._portal_resources.list()
+                e_background = [
+                    banner
+                    for banner in resource_list
+                    if banner["key"].startswith("background")
+                ]
+                for background in e_background:
+                    try:
+                        bckgrnd_path = self._portal_resources.get(
+                            background["key"], download_path
                         )
-                        background = hp["header"]["coverImg"]
-                        if background:
-                            bckgrnd_path = self._portal_resources.get(
-                                background["key"], download_path
+
+                    except:
+                        if self._new_hp:
+                            # see if named something else
+                            hp = json.loads(
+                                open(
+                                    self._portal_resources.get("home.page.json"),
+                                    "r",
+                                ).read()
                             )
-                    else:
-                        continue
+                            background = hp["header"]["coverImg"]
+                            if background:
+                                bckgrnd_path = self._portal_resources.get(
+                                    background["key"], download_path
+                                )
+                        else:
+                            continue
         return bckgrnd_path
 
     # ----------------------------------------------------------------------
-    def set_logo(self, logo_file: str | None = None, show_logo: bool | None = None):
+    def set_logo(
+        self,
+        logo_file: str | None = None,
+        show_logo: bool | None = None,
+        alignment: str | None = None,
+        position: str | None = None,
+    ):
         """
         Configure your home page by setting the organization's logo image. For best results the logo file should be
         65 x 65 pixels in dimension.
@@ -1171,6 +1339,12 @@ class HomePageSettings(object):
         logo_file           Optional string. Specify path to image file. If None, existing thumbnail is removed.
         ----------------    ---------------------------------------------------------------
         show_logo           Optional bool. Specify whether the logo is visible on the homepage or not.
+        ----------------    ---------------------------------------------------------------
+        alignment           Optional string. Values can either be "center" or "left". This will set
+                            the alignment for the title and logo on the header.
+        ----------------    ---------------------------------------------------------------
+        position            Optional string. Set the title and logo position on the homepage.
+                            Values: "middle" | "above" | "below" | "top3rd" | "bottom3rd"
         ================    ===============================================================
 
         :return: True | False
@@ -1185,11 +1359,11 @@ class HomePageSettings(object):
         if logo_file is not None and os.path.isfile(logo_file):
             fpath = Path(logo_file)
             f_splits = fpath.name.split(".")
-            if len(f_splits) > 1 and f_splits[1] == "png":
+            if len(f_splits) > 1 and f_splits[-1] == "png":
                 key_val = "thumbnail.png"
-            elif len(f_splits) > 1 and f_splits[1] == "jpg":
+            elif len(f_splits) > 1 and f_splits[-1] == "jpg":
                 key_val = "thumbnail.jpg"
-            elif len(f_splits) > 1 and f_splits[1] == "gif":
+            elif len(f_splits) > 1 and f_splits[-1] == "gif":
                 key_val = "thumbnail.gif"
 
             self._portal_resources.add(key_val, logo_file)
@@ -1209,12 +1383,22 @@ class HomePageSettings(object):
 
         # extra step for new homepage editor
         if self._new_hp:
-            hp = json.loads(
-                open(self._portal_resources.get("home.page.json"), "r").read()
-            )
-            if show_logo:
+            hp = self._reader_hp()
+            if show_logo is not None:
                 hp["header"]["showLogo"] = show_logo
             hp["header"]["logo"] = key_val
+
+            if alignment and alignment in ["center", "left"]:
+                hp["header"]["titleLogoAlign"] = alignment
+            if position and position in [
+                "middle",
+                "above",
+                "below",
+                "top3rd",
+                "bottom3rd",
+            ]:
+                hp["header"]["titleLogoPos"] = position
+
             params = {
                 "key": "home.page.json",
                 "text": hp,
@@ -1241,7 +1425,11 @@ class HomePageSettings(object):
                         "color:#369;'>{}</span></div>".format(self._gis.properties.name)
                     )
             return self._gis.update_properties(
-                {"clearEmptyFields": True, "thumbnail": "", "rotatorPanels": rp}
+                {
+                    "clearEmptyFields": True,
+                    "thumbnail": "",
+                    "rotatorPanels": rp,
+                }
             )
 
     # ----------------------------------------------------------------------
@@ -1263,9 +1451,7 @@ class HomePageSettings(object):
             if "thumbnail" in props:
                 resource = props["thumbnail"]
         else:
-            hp = json.loads(
-                open(self._portal_resources.get("home.page.json"), "r").read()
-            )
+            hp = self._reader_hp()
             resource = hp["header"]["logo"]
         if resource is not None and len(str(resource)) > 0:
             output = self._portal_resources.get(
@@ -1280,6 +1466,8 @@ class HomePageSettings(object):
         title: str | None = None,
         show_title: bool | None = None,
         color: str | None = None,
+        alignment: str | None = None,
+        position: str | None = None,
     ):
         """
         Set the homepage title and it's visibility
@@ -1294,20 +1482,34 @@ class HomePageSettings(object):
         color               Optional string. Specifies the font color for the for the
                             title. This property recognizes common color
                             names (such as red or blue) and hexadecimal color values.
+        ----------------    ---------------------------------------------------------------
+        alignment           Optional string. Values can either be "center" or "left". This will set
+                            the alignment for the title and logo on the header.
+        ----------------    ---------------------------------------------------------------
+        position            Optional string. Set the title and logo position on the homepage.
+                            Values: "middle" | "above" | "below" | "top3rd" | "bottom3rd"
         ================    ===============================================================
 
         :return: True | False
         """
         if self._new_hp:
-            hp = json.loads(
-                open(self._portal_resources.get("home.page.json"), "r").read()
-            )
+            hp = self._reader_hp()
             if title:
                 hp["header"]["title"] = title
             if show_title:
                 hp["header"]["showTitle"] = show_title
             if color:
                 hp["header"]["titleColor"] = color
+            if alignment and alignment in ["center", "left"]:
+                hp["header"]["titleLogoAlign"] = alignment
+            if position and position in [
+                "middle",
+                "above",
+                "below",
+                "top3rd",
+                "bottom3rd",
+            ]:
+                hp["header"]["titleLogoPos"] = position
             params = {
                 "key": "home.page.json",
                 "text": hp,
@@ -1327,13 +1529,13 @@ class HomePageSettings(object):
         :return: Dict or None if using old homepage
         """
         if self._new_hp:
-            hp = json.loads(
-                open(self._portal_resources.get("home.page.json"), "r").read()
-            )
+            hp = self._reader_hp()
             title = {
                 "title": hp["header"]["title"],
                 "show_title": hp["header"]["showTitle"],
                 "color": hp["header"]["titleColor"],
+                "position": hp["header"]["titleLogoPos"],
+                "alignment": hp["header"]["titleLogoAlign"],
             }
             return title
         else:
@@ -1345,9 +1547,7 @@ class HomePageSettings(object):
     ):
         """Set the email shown in the footer of the homepage and whether it is visible."""
         if self._new_hp:
-            hp = json.loads(
-                open(self._portal_resources.get("home.page.json"), "r").read()
-            )
+            hp = self._reader_hp()
             if email:
                 hp["footer"]["contact"] = email
             if show_email:
@@ -1367,20 +1567,131 @@ class HomePageSettings(object):
     def get_contact_email(self):
         """Get the email and whether it is shown from the footer of the homepage."""
         if self._new_hp:
-            hp = json.loads(
-                open(self._portal_resources.get("home.page.json"), "r").read()
-            )
+            hp = self._reader_hp()
             contact = {
                 "email": hp["footer"]["contact"],
                 "show_email": hp["footer"]["showContact"],
             }
             return contact
 
+    # ----------------------------------------------------------------------
+    def get_footer(self):
+        """Get the footer of the homepage"""
+        if self._new_hp:
+            hp = self._reader_hp()
+            footer = {
+                "contact": self.get_contact_email(),
+                "text": hp["footer"]["copy"] if "copy" in hp["footer"] else "",
+                "show_text": hp["footer"]["showCopy"],
+                "color": hp["footer"]["bgColor"] if "bgColor" in hp["footer"] else "",
+                "custom_color": hp["footer"]["bgCustom"]
+                if "bgCustom" in hp["footer"]
+                else "",
+            }
+            return footer
+
+    # ----------------------------------------------------------------------
+    def set_footer(self, text: str, show_text: bool | None = None):
+        """Set the text and the visibility of the text in the footer"""
+        if self._new_hp:
+            hp = self._reader_hp()
+            if text:
+                hp["footer"]["copy"] = text
+            if show_text:
+                hp["footer"]["showCopy"] = show_text
+            params = {
+                "key": "home.page.json",
+                "text": hp,
+                "f": "json",
+            }
+            return self._portal_resources.add(
+                key="home.page.json", text=json.dumps(params["text"])
+            )
+        else:
+            return None
+
+    # ----------------------------------------------------------------------
+    def get_typography(self):
+        """Get the footer of the homepage"""
+        if self._new_hp:
+            hp = self._reader_hp()
+            if hp["useCustomTypography"] == True:
+                return hp["customTypography"]
+            else:
+                return hp["typography"]
+
+    # ----------------------------------------------------------------------
+    def set_typography(self, font_family: list, custom: bool = False):
+        """
+        ================    ===============================================================
+        **Parameter**        **Description**
+        ----------------    ---------------------------------------------------------------
+        font_family         Optional list. The combination of fonts to use for typography
+                            of the homepage. The first string represents the title font and
+                            the second string represents the body font. If a custom typography
+                            will be set, specify custom = True parameter
+
+                            Values:
+                            ["Avenir Next", "Avenir Next"]
+                            ["Avenir Next", "Noto Serif"]
+                            ["Noto Serif", "Avenir Next"]
+                            ["Noto Serif", "Noto Serif"]
+        ----------------    ---------------------------------------------------------------
+        custom              Optional bool. If True, a custom list of typography was passed in
+                            as the value for the font_family parameter.
+        ================    ===============================================================
+
+        """
+        if self._new_hp:
+            hp = self._reader_hp()
+            if custom:
+                hp["useCustomTypography"] = True
+                hp["customTypography"] = font_family
+            else:
+                hp["useCustomTypography"] = False
+                hp["typography"] = font_family
+            params = {
+                "key": "home.page.json",
+                "text": hp,
+                "f": "json",
+            }
+            return self._portal_resources.add(
+                key="home.page.json", text=json.dumps(params["text"])
+            )
+        else:
+            return None
+
+    # ----------------------------------------------------------------------
+    def set_base_color(self, color: str):
+        """
+        Set the base color with a string color name.
+        """
+        if self._new_hp:
+            hp = self._reader_hp()
+            hp["baseColor"] = color
+            params = {
+                "key": "home.page.json",
+                "text": hp,
+                "f": "json",
+            }
+            return self._portal_resources.add(
+                key="home.page.json", text=json.dumps(params["text"])
+            )
+        else:
+            return None
+
+    # ----------------------------------------------------------------------
+    def get_base_color(self):
+        if self._new_hp:
+            hp = self._reader_hp()
+            return hp["baseColor"]
+
 
 ##############################################################################
 class MapSettings(object):
     """Helper class that can be called off of UX class using the 'map_settings' property.
-    Edit org map settings such as the default extent, default basemap, etc."""
+    Edit org map settings such as the default extent, default basemap, etc.
+    """
 
     # ----------------------------------------------------------------------
     def __init__(self, gis):
@@ -1529,7 +1840,11 @@ class MapSettings(object):
         group = self._gis.properties["basemapGalleryGroupQuery"]
         if "id:" in group:
             # must use [3::] to slice string since format of: "id:123abc"
-            return self._gis.groups.search(group[3::])[0]
+            groups = self._gis.groups.search(group[3::])
+            if groups:
+                return self._gis.groups.search(group[3::])[0]
+            else:
+                return None
         else:
             return group
 
@@ -1584,7 +1899,7 @@ class MapSettings(object):
     @default_mapviewer.setter
     def default_mapviewer(self, value: str):
         if value not in ["modern", "classic"]:
-            raise ValueError("The two accepted values are 'modern' or 'classi'")
+            raise ValueError("The two accepted values are 'modern' or 'classic'")
 
         portal_properties = self._gis.properties["portalProperties"]
         portal_properties["mapViewer"] = value
@@ -1602,7 +1917,7 @@ class MapSettings(object):
     # ----------------------------------------------------------------------
     @units.setter
     def units(self, value: str):
-        if value not in ["english", "classic"]:
+        if value not in ["english", "classic", "metric"]:
             raise ValueError("The two accepted values are 'english' and 'metric'")
 
         self._gis.update_properties({"units": value})
@@ -1660,7 +1975,11 @@ class MapSettings(object):
             group = self._gis.properties["templatesGroupQuery"]
             if "id:" in group:
                 # must use [3::] to slice string since format of: "id:123abc"
-                return self._gis.groups.search(group[3::])[0]
+                groups = self._gis.groups.search(group[3::])
+                if groups:
+                    return groups[0]
+                else:
+                    return None
             else:
                 return group
         else:
@@ -1748,7 +2067,10 @@ class MapSettings(object):
             group = self._gis.properties["analysisLayersGroupQuery"]
             if "id:" in group:
                 # must use [3::] to slice string since format of: "id:123abc"
-                return self._gis.groups.search(group[3::])[0]
+                groups = self._gis.groups.search(group[3::])
+                if groups:
+                    return groups[0]
+                return "Default"
             else:
                 return group
         else:
@@ -1841,7 +2163,12 @@ class ItemSettings(object):
 
         Values: 'arcgis' | 'fgdc' | 'inspire' | 'iso19139' | 'iso19139-3.2' | 'iso19115'
         """
-        return self._gis.properties["metadataFormats"][0]
+        if (
+            "metadataFormats" in self._gis.properties
+            and self._gis.properties["metadataFormats"]
+        ):
+            return self._gis.properties["metadataFormats"][0]
+        return "arcgis"
 
     # ----------------------------------------------------------------------
     @metadata_format.setter
@@ -1863,7 +2190,8 @@ class ItemSettings(object):
 #############################################################################
 class SecuritySettings(object):
     """Helper class that can be called off of UX class using the 'security_settings' property.
-    Edit org item settings such as the informational banner, password policy, etc."""
+    Edit org item settings such as the informational banner, password policy, etc.
+    """
 
     # ----------------------------------------------------------------------
     def __init__(self, gis):
@@ -1973,10 +2301,13 @@ class SecuritySettings(object):
     # ----------------------------------------------------------------------
     @anonymous_access.setter
     def anonymous_access(self, access: bool):
-        if access is True:
+        if access is True or access != "private":
             access = "public"
-            bing = self._gis.properties["canShareBingPublic"]
-        elif access is False:
+            if "canShareBingPublic" in self._gis.properties:
+                bing = self._gis.properties["canShareBingPublic"]
+            else:
+                bing = False
+        elif access is False or access == "private":
             access = "private"
             bing = False
         self._gis.update_properties({"canShareBingPublic": bing, "access": access})
@@ -2184,7 +2515,19 @@ class SecuritySettings(object):
     # ----------------------------------------------------------------------
     @allowed_origins.setter
     def allowed_origins(self, allowed_origins: list[str]):
-        self._gis.update_properties({"allowedOrigins": allowed_origins})
+        if isinstance(allowed_origins, (tuple, list)):
+            allowed_origins = ",".join(allowed_origins)
+            self._gis.update_properties({"allowedOrigins": allowed_origins})
+        elif allowed_origins is None or allowed_origins == "":
+            allowed_origins = ""
+            self._gis.update_properties(
+                {
+                    "allowedOrigins": allowed_origins,
+                    "clearEmptyFields": True,
+                }
+            )
+        else:
+            self._gis.update_properties({"allowedOrigins": allowed_origins})
 
     # ----------------------------------------------------------------------
     @property
@@ -2199,12 +2542,26 @@ class SecuritySettings(object):
         to be able to use enterprise logins to access the secured content
         through web applications hosted on these portals.
         """
-        return self._gis.properties["allowedRedirectUris"]
+        if "allowedRedirectUris" in self._gis.properties:
+            return self._gis.properties["allowedRedirectUris"]
+        return None
 
     # ----------------------------------------------------------------------
     @allowed_redirect_uris.setter
     def allowed_redirect_uris(self, uris: list[str]):
-        self._gis.update_properties({"allowedRedirectUris": uris})
+        if isinstance(uris, (tuple, list)):
+            uris = ",".join(uris)
+            self._gis.update_properties({"allowedRedirectUris": uris})
+        elif uris is None or uris == "":
+            uris = ""
+            self._gis.update_properties(
+                {
+                    "allowedRedirectUris": uris,
+                    "clearEmptyFields": True,
+                }
+            )
+        else:
+            self._gis.update_properties({"allowedRedirectUris": uris})
 
     # ----------------------------------------------------------------------
     @property
@@ -2216,12 +2573,14 @@ class SecuritySettings(object):
         Set a list of trusted servers that clients can send credentials to when
         making Cross-Origin Resource Sharing (CORS) requests to access web-tier secured services.
         """
-        return self._gis.properties["authorizedCrossOriginDomains"]
+        if "authorizedCrossOriginDomains" in self._gis.properties:
+            return self._gis.properties["authorizedCrossOriginDomains"]
+        return None
 
     # ----------------------------------------------------------------------
     @trusted_servers.setter
-    def truster_servers(self, servers: list):
-        self._gis.properties({"authorizedCrossOriginDomains": servers})
+    def trusted_servers(self, servers: list):
+        self._gis.update_properties({"authorizedCrossOriginDomains": servers})
 
     # ----------------------------------------------------------------------
     def set_org_access_notice(
@@ -2290,6 +2649,7 @@ class SecuritySettings(object):
         title: str | None = None,
         text: str | None = None,
         button_type: str | None = None,
+        enabled: bool | None = False,
     ):
         """
         Provide a notice of terms to be displayed to all users who access your
@@ -2320,9 +2680,9 @@ class SecuritySettings(object):
             button_type = "acceptAndDecline"
         notice = {"title": title, "text": text, "buttons": button_type}
         if title and text:
-            notice["enabled"] = True
+            notice["enabled"] = enabled
         else:
-            notice["enabled"] = False
+            notice["enabled"] = enabled
 
         org_settings["anonymousAccessNotice"] = notice
         org_settings["clearEmptyFields"] = True
@@ -2392,7 +2752,11 @@ class SecuritySettings(object):
         # perform update
 
         return self._gis.update_properties(
-            {"mfaEnabled": enabled, "mfaAdmins": admins, "clearEmptyFields": True}
+            {
+                "mfaEnabled": enabled,
+                "mfaAdmins": admins,
+                "clearEmptyFields": True,
+            }
         )
 
     # ----------------------------------------------------------------------
@@ -2479,7 +2843,7 @@ class SecuritySettings(object):
         """
         if self._gis._is_agol is True:
             return None
-        url = self._portal.resturl + "portals/self/emailSettings/update"
+        url = self._portal.resturl + "portals/self/setEmailSettings"
         params = {
             "f": "json",
             "smtpHost": smtp_host,
@@ -2582,7 +2946,10 @@ class SecuritySettings(object):
         """
         if self._gis._is_agol is True:
             url = self._portal.resturl + "portals/self/setSigninSettings"
-            params = {"f": "json", "blockUnapprovedThirdpartyApps": block_unapproved}
+            params = {
+                "f": "json",
+                "blockUnapprovedThirdpartyApps": block_unapproved,
+            }
 
             return self._gis._con.post(url, params)
         else:
@@ -2671,7 +3038,12 @@ class SecuritySettings(object):
                         "f": "json",
                         "signinOptionsOrder": {
                             "logins": ["arcgis", "social"],
-                            "social": ["facebook", "google", "github", "apple"],
+                            "social": [
+                                "facebook",
+                                "google",
+                                "github",
+                                "apple",
+                            ],
                         },
                     }
                 # specify order if passed in
@@ -2681,7 +3053,12 @@ class SecuritySettings(object):
                 # configure the social providers
                 for network in social_networks:
                     networks = []
-                    if network.lower() in ["facebook", "google", "github", "apple"]:
+                    if network.lower() in [
+                        "facebook",
+                        "google",
+                        "github",
+                        "apple",
+                    ]:
                         networks.append(network)
                 url = self._portal.resturl + "portals/self/socialProviders/configure"
                 params = {

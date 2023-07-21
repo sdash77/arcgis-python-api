@@ -2,23 +2,11 @@
 Tests the ability to specify the Generate Token Authentication Handler
 """
 import sys
-
-# sys.path.insert(0, r"C:\SVN\geosaurus_master_issue_7487\src")
 import unittest
 from arcgis.gis import GIS, ProfileManager
 from arcgis.auth import EsriBuiltInAuth, EsriGenTokenAuth
 
-if not "gpportal" in ProfileManager().list():
-    gis = GIS(
-        url="https://gpportal.esri.com/portal",
-        username="admin",
-        password="esri.agp",
-        verify_cert=False,
-        profile="gpportal",
-    )
-    del gis
-
-PROFILES = ["your_online_profile", "gpportal"]
+PROFILES = ["your_online_profile", "your_enterprise_profile"]
 
 
 class TestUseGenTokenGIS(unittest.TestCase):

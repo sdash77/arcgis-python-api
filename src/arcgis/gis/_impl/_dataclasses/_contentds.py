@@ -215,6 +215,7 @@ class ItemProperties:
     service_proxy: dict | None = None
     categories: list[str] | None = None
     text: dict | str | None = None
+    extension: str | None = None
     _dict_data: dict | None = field(init=False)
 
     def __str__(self):
@@ -250,6 +251,7 @@ class ItemProperties:
             "serviceProxyFilter": self.service_proxy,
             "categories": ",".join(self.categories or []),
             "text": self.text or None,
+            "extension": self.extension or None,
         }
 
     def to_dict(self):
@@ -279,6 +281,7 @@ class ItemProperties:
             "serviceProxyFilter": self.service_proxy,
             "categories": ",".join(self.categories or []),
             "text": self.text or None,
+            "extension": self.extension or None,
         }
 
     @classmethod

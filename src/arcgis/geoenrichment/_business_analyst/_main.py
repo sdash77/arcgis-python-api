@@ -1789,7 +1789,9 @@ class BusinessAnalyst(object):
 
         # if a proximity type is provided, validate
         if proximity_type is not None:
-            proximity_type = validate_network_travel_mode(country, proximity_type)
+            proximity_type = validate_network_travel_mode(
+                country, proximity_type, proximity_metric
+            )
 
             # provide defaults if nothing provided for any of the proximity metrics
             proximity_type = (
@@ -1960,6 +1962,7 @@ class BusinessAnalyst(object):
         params = {
             "f": "json",
             "analysisVariables": evars,
+            "appID": "esripythonapi",
         }
 
         # if any legacy parameters provided, add them to the payload

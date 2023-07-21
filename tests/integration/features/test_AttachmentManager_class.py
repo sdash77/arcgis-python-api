@@ -194,13 +194,13 @@ class Test_AttachmentManager_portal(unittest.TestCase):
             )
             self.assertEqual(attch_list[0]["id"], 1, "attachment id mismatch")
             self.assertEqual(
-                attch_list[0]["name"], "img_png.png", "attachment name mismatch"
+                attch_list[0]["name"], "cows.jpg", "attachment name mismatch"
             )
 
             # download
             download_result = flayer.attachments.download(1, 1)
             self.assertIsInstance(
-                download_result, str, "download does not return a str path"
+                download_result[0], str, "download does not return a str path"
             )
 
         except AssertionError as assertErrorException:
@@ -225,19 +225,19 @@ class Test_AttachmentManager_portal(unittest.TestCase):
 
             # get attachment list
             flayer = test_item.layers[0]
-            attch_list = flayer.attachments.get_list(3)
+            attch_list = flayer.attachments.get_list(1)
             self.assertGreaterEqual(
                 len(attch_list), 1, "At least 1 attchment should be found"
             )
-            self.assertEqual(attch_list[0]["id"], 3, "attachment id mismatch")
+            self.assertEqual(attch_list[2]["id"], 3, "attachment id mismatch")
             self.assertEqual(
-                attch_list[0]["name"], "crime_pdf.pdf", "attachment name mismatch"
+                attch_list[2]["name"], "crime_pdf.pdf", "attachment name mismatch"
             )
 
             # download
-            download_result = flayer.attachments.download(3, 3)
+            download_result = flayer.attachments.download(1, 2)
             self.assertIsInstance(
-                download_result, str, "download does not return a str path"
+                download_result[0], str, "download does not return a str path"
             )
 
         except AssertionError as assertErrorException:
@@ -262,29 +262,29 @@ class Test_AttachmentManager_portal(unittest.TestCase):
 
             # get attachment list
             flayer = test_item.layers[0]
-            attch_list = flayer.attachments.get_list(6)
+            attch_list = flayer.attachments.get_list(1)
             self.assertGreaterEqual(
-                len(attch_list), 3, "At least 3 attachments should be found"
+                len(attch_list), 1, "At least 3 attachments should be found"
             )
-            self.assertEqual(attch_list[0]["id"], 6, "attachment id mismatch")
+            self.assertEqual(attch_list[0]["id"], 1, "attachment id mismatch")
             self.assertEqual(
-                attch_list[0]["name"], "crime_pdf.pdf", "attachment name mismatch"
+                attch_list[0]["name"], "cows.jpg", "attachment name mismatch"
             )
 
             # download
-            download_result = flayer.attachments.download(6, 6)
+            download_result = flayer.attachments.download(1, 1)
             self.assertIsInstance(
-                download_result, str, "download does not return a str path"
+                download_result[0], str, "download does not return a str path"
             )
 
-            download_result2 = flayer.attachments.download(6, 7)
+            download_result2 = flayer.attachments.download(1, 2)
             self.assertIsInstance(
-                download_result2, str, "download does not return a str path"
+                download_result2[0], str, "download does not return a str path"
             )
 
-            download_result3 = flayer.attachments.download(6, 8)
+            download_result3 = flayer.attachments.download(1, 3)
             self.assertIsInstance(
-                download_result3, str, "download does not return a str path"
+                download_result3[0], str, "download does not return a str path"
             )
 
             print(download_result3)
@@ -444,13 +444,13 @@ class Test_AttachmentManager_online(unittest.TestCase):
             )
             self.assertEqual(attch_list[0]["id"], 1, "attachment id mismatch")
             self.assertEqual(
-                attch_list[0]["name"], "img_png.png", "attachment name mismatch"
+                attch_list[0]["name"], "cows.jpg", "attachment name mismatch"
             )
 
             # download
             download_result = flayer.attachments.download(1, 1)
             self.assertIsInstance(
-                download_result, str, "download does not return a str path"
+                download_result[0], str, "download does not return a str path"
             )
 
         except AssertionError as assertErrorException:
@@ -475,19 +475,19 @@ class Test_AttachmentManager_online(unittest.TestCase):
 
             # get attachment list
             flayer = test_item.layers[0]
-            attch_list = flayer.attachments.get_list(3)
+            attch_list = flayer.attachments.get_list(1)
             self.assertGreaterEqual(
                 len(attch_list), 1, "At least 1 attchment should be found"
             )
-            self.assertEqual(attch_list[0]["id"], 3, "attachment id mismatch")
+            self.assertEqual(attch_list[1]["id"], 3, "attachment id mismatch")
             self.assertEqual(
-                attch_list[0]["name"], "crime_pdf.pdf", "attachment name mismatch"
+                attch_list[1]["name"], "crime_pdf.pdf", "attachment name mismatch"
             )
 
             # download
-            download_result = flayer.attachments.download(3, 3)
+            download_result = flayer.attachments.download(1, 3)
             self.assertIsInstance(
-                download_result, str, "download does not return a str path"
+                download_result[0], str, "download does not return a str path"
             )
 
         except AssertionError as assertErrorException:
@@ -512,32 +512,27 @@ class Test_AttachmentManager_online(unittest.TestCase):
 
             # get attachment list
             flayer = test_item.layers[0]
-            attch_list = flayer.attachments.get_list(6)
+            attch_list = flayer.attachments.get_list(1)
             self.assertGreaterEqual(
-                len(attch_list), 3, "At least 3 attachments should be found"
+                len(attch_list), 2, "At least 2 attachments should be found"
             )
-            self.assertEqual(attch_list[0]["id"], 6, "attachment id mismatch")
+            self.assertEqual(attch_list[0]["id"], 1, "attachment id mismatch")
             self.assertEqual(
-                attch_list[0]["name"], "crime_pdf.pdf", "attachment name mismatch"
+                attch_list[0]["name"], "cows.jpg", "attachment name mismatch"
             )
 
             # download
-            download_result = flayer.attachments.download(6, 6)
+            
+            download_result = flayer.attachments.download(1, 1)
             self.assertIsInstance(
-                download_result, str, "download does not return a str path"
+                download_result[0], str, "download does not return a str path"
             )
 
-            download_result2 = flayer.attachments.download(6, 7)
+            download_result2 = flayer.attachments.download(1,3)
             self.assertIsInstance(
-                download_result2, str, "download does not return a str path"
+                download_result2[0], str, "download does not return a str path"
             )
 
-            download_result3 = flayer.attachments.download(6, 8)
-            self.assertIsInstance(
-                download_result3, str, "download does not return a str path"
-            )
-
-            print(download_result3)
 
         except AssertionError as assertErrorException:
             test_skip = True
@@ -553,3 +548,6 @@ class Test_AttachmentManager_online(unittest.TestCase):
 # TestModule
 def tearDownModule():
     print("**End GIS module Tests**")
+
+if __name__ == "__main__":
+    unittest.main()

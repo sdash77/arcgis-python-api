@@ -12,7 +12,6 @@ try:
     import numpy as np
 except ImportError as e:
     pass
-from six import add_metaclass
 from functools import partial, lru_cache
 
 _number_type = (int, float)
@@ -297,8 +296,7 @@ class GeometryFactory(type):
         return type.__call__(cls, iterable, **kwargs)
 
 
-@add_metaclass(GeometryFactory)
-class Geometry(BaseGeometry):
+class Geometry(BaseGeometry, metaclass=GeometryFactory):
     """
     The base class for all geometries.
 
@@ -422,7 +420,11 @@ class Geometry(BaseGeometry):
             if shape == 2:
                 res = [avgs[:, 0].mean(), avgs[:, 1].mean()]
             elif shape > 2:
-                res = [avgs[:, 0].mean(), avgs[:, 1].mean(), avgs[:, 2].mean()]
+                res = [
+                    avgs[:, 0].mean(),
+                    avgs[:, 1].mean(),
+                    avgs[:, 2].mean(),
+                ]
             for a in res:
                 yield a
                 del a
@@ -438,7 +440,11 @@ class Geometry(BaseGeometry):
             if shape == 2:
                 res = [avgs[:, 0].mean(), avgs[:, 1].mean()]
             elif shape > 2:
-                res = [avgs[:, 0].mean(), avgs[:, 1].mean(), avgs[:, 2].mean()]
+                res = [
+                    avgs[:, 0].mean(),
+                    avgs[:, 1].mean(),
+                    avgs[:, 2].mean(),
+                ]
             for a in res:
                 yield a
                 del a
@@ -839,7 +845,7 @@ class Geometry(BaseGeometry):
         :return:
            A boolean indicating empty (True), or filled (False)
         """
-        if isinstance(self, Point):
+        if isinstance(self, Point) and self.get("x", "NaN") != "NaN":
             return False
         elif isinstance(self, Polygon):
             if "rings" in self:
@@ -1253,21 +1259,33 @@ class Geometry(BaseGeometry):
                 return
             geom = self["points"][0]
             return Geometry(
-                {"x": geom[0], "y": geom[1], "spatialReference": {"wkid": 4326}}
+                {
+                    "x": geom[0],
+                    "y": geom[1],
+                    "spatialReference": {"wkid": 4326},
+                }
             )
         elif isinstance(self, Polygon):
             if len(self["rings"]) == 0:
                 return
             geom = self["rings"][0][0]
             return Geometry(
-                {"x": geom[0], "y": geom[1], "spatialReference": {"wkid": 4326}}
+                {
+                    "x": geom[0],
+                    "y": geom[1],
+                    "spatialReference": {"wkid": 4326},
+                }
             )
         elif isinstance(self, Polyline):
             if len(self["paths"]) == 0:
                 return
             geom = self["paths"][0][0]
             return Geometry(
-                {"x": geom[0], "y": geom[1], "spatialReference": {"wkid": 4326}}
+                {
+                    "x": geom[0],
+                    "y": geom[1],
+                    "spatialReference": {"wkid": 4326},
+                }
             )
         return
 
@@ -1395,7 +1413,8 @@ class Geometry(BaseGeometry):
         elif HASARCPY:
             return Geometry(
                 arcpy.PointGeometry(
-                    getattr(self.as_arcpy, "labelPoint", None), self.spatial_reference
+                    getattr(self.as_arcpy, "labelPoint", None),
+                    self.spatial_reference,
                 )
             )
 
@@ -1433,7 +1452,8 @@ class Geometry(BaseGeometry):
         elif HASARCPY:
             return Geometry(
                 arcpy.PointGeometry(
-                    getattr(self.as_arcpy, "lastPoint", None), self.spatial_reference
+                    getattr(self.as_arcpy, "lastPoint", None),
+                    self.spatial_reference,
                 )
             )
         elif isinstance(self, Point):
@@ -1443,14 +1463,22 @@ class Geometry(BaseGeometry):
                 return
             geom = self["rings"][-1][-1]
             return Geometry(
-                {"x": geom[0], "y": geom[1], "spatialReference": {"wkid": 4326}}
+                {
+                    "x": geom[0],
+                    "y": geom[1],
+                    "spatialReference": {"wkid": 4326},
+                }
             )
         elif isinstance(self, Polyline):
             if self["paths"] == 0:
                 return
             geom = self["paths"][-1][-1]
             return Geometry(
-                {"x": geom[0], "y": geom[1], "spatialReference": {"wkid": 4326}}
+                {
+                    "x": geom[0],
+                    "y": geom[1],
+                    "spatialReference": {"wkid": 4326},
+                }
             )
         return
 
@@ -1667,7 +1695,14 @@ class Geometry(BaseGeometry):
                 )
             )
         elif HASSHAPELY:
-            return self.centroid
+            centroid_tuple = self.centroid
+            return Point(
+                {
+                    "x": centroid_tuple[0],
+                    "y": centroid_tuple[1],
+                    "spatialReference": self.spatial_reference,
+                }
+            )
         elif isinstance(self, Point):
             return self
         return
@@ -1726,9 +1761,8 @@ class Geometry(BaseGeometry):
         ---------------     --------------------------------------------------------------------
         method              Optional String. PLANAR measurements reflect the projection of geographic
                             data onto the 2D surface (in other words, they will not take into
-                            account the curvature of the earth). GEODESIC, GREAT_ELLIPTIC,
-                            LOXODROME, and PRESERVE_SHAPE measurement types may be chosen as
-                            an alternative, if desired.
+                            account the curvature of the earth). GEODESIC, GREAT_ELLIPTIC, and
+                            LOXODROME measurement types may be chosen as an alternative, if desired.
         ===============     ====================================================================
 
         :return: A tuple of angle and distance to another :class:`~arcgis.geometry.Point` using a measurement type.
@@ -1825,7 +1859,10 @@ class Geometry(BaseGeometry):
         HASARCPY, HASSHAPELY = _check_geometry_engine()
         if HASARCPY and isinstance(envelope, (list, tuple)) and len(envelope) == 4:
             envelope = arcpy.Extent(
-                XMin=envelope[0], YMin=envelope[1], XMax=envelope[2], YMax=envelope[3]
+                XMin=envelope[0],
+                YMin=envelope[1],
+                XMax=envelope[2],
+                YMax=envelope[3],
             )
             return Geometry(self.as_arcpy.clip(envelope))
         elif (
@@ -2367,20 +2404,29 @@ class Geometry(BaseGeometry):
                 dimension = 4
             if isinstance(second_geometry, Geometry):
                 second_geometry = second_geometry.as_arcpy
-            return Geometry(
+            r = Geometry(
                 self.as_arcpy.intersect(other=second_geometry, dimension=dimension)
             )
+            if r.is_empty == True:
+                return None
+            else:
+                return r
+
         elif HASARCPY and isinstance(self, Envelope):
             if isinstance(second_geometry, Envelope):
                 second_geometry = second_geometry.polygon
                 dimension = 4
             if isinstance(second_geometry, Geometry):
                 second_geometry = second_geometry.as_arcpy
-            return Geometry(
+            r = Geometry(
                 self.polygon.as_arcpy.intersect(
                     other=second_geometry, dimension=dimension
                 )
             )
+            if r.is_empty == True:
+                return None
+            else:
+                return r
         elif HASSHAPELY:
             if isinstance(second_geometry, Geometry):
                 second_geometry = second_geometry.as_shapely
@@ -2595,7 +2641,6 @@ class Geometry(BaseGeometry):
             >>> geom2.type
                 arcgis.geometry.Geometry
         """
-        from six import string_types, integer_types
 
         HASARCPY, HASSHAPELY = _check_geometry_engine()
 
@@ -2606,9 +2651,9 @@ class Geometry(BaseGeometry):
                 spatial_reference = SpatialReference(spatial_reference).as_arcpy
             elif isinstance(spatial_reference, arcpy.SpatialReference):
                 spatial_reference = spatial_reference
-            elif isinstance(spatial_reference, integer_types):
+            elif isinstance(spatial_reference, int):
                 spatial_reference = arcpy.SpatialReference(spatial_reference)
-            elif isinstance(spatial_reference, string_types):
+            elif isinstance(spatial_reference, str):
                 spatial_reference = arcpy.SpatialReference(text=spatial_reference)
             else:
                 raise ValueError("Invalid spatial reference object.")
@@ -2643,9 +2688,9 @@ class Geometry(BaseGeometry):
             ):
                 out_srid = spatial_reference.get("wkid", None)
                 out_srid = spatial_reference.get("latestWkid", out_srid)
-            elif isinstance(spatial_reference, integer_types):
+            elif isinstance(spatial_reference, int):
                 out_srid = spatial_reference
-            elif isinstance(spatial_reference, string_types):
+            elif isinstance(spatial_reference, str):
                 out_srid = spatial_reference
             else:
                 raise ValueError("Invalid spatial reference object.")
@@ -2725,7 +2770,10 @@ class Geometry(BaseGeometry):
 
     # ----------------------------------------------------------------------
     def segment_along_line(
-        self, start_measure: float, end_measure: float, use_percentage: bool = False
+        self,
+        start_measure: float,
+        end_measure: float,
+        use_percentage: bool = False,
     ):
         """
         Retrieves a :class:`~arcgis.geometry.Polyline` between ``start`` and ``end``
@@ -3058,7 +3106,7 @@ class MultiPoint(Geometry):
         import numpy as np
 
         if "points" in self:
-            return np.array(self["points"])
+            return np.array(self["points"], dtype=object)
         else:
             return np.array([])
 
@@ -3176,9 +3224,9 @@ class Point(Geometry):
         import numpy as np
 
         if "x" in self and "y" in self and "z" in self:
-            return np.array([self["x"], self["y"], self["z"]])
+            return np.array([self["x"], self["y"], self["z"]], dtype=float)
         elif "x" in self and "y" in self:
-            return np.array([self["x"], self["y"]])
+            return np.array([self["x"], self["y"]], dtype=float)
         else:
             return np.array([])
 
@@ -3193,7 +3241,13 @@ class Point(Geometry):
                 coordkey = d
         coordinates = data[coordkey]
 
-        return cls({"x": coordinates[0], "y": coordinates[1], "spatialReference": sr})
+        return cls(
+            {
+                "x": coordinates[0],
+                "y": coordinates[1],
+                "spatialReference": sr,
+            }
+        )
 
 
 ########################################################################
@@ -3238,7 +3292,7 @@ class Polygon(Geometry):
         ----------------  -------------------------------------------------------------------------------
         scale_factor      An optional float. Multiplication factor for the SVG stroke-width.  Default is 1.
         ----------------  -------------------------------------------------------------------------------
-        fill_color      An optional string. Hex string for fill color. Default is to use "#66cc99" if geometry is
+        fill_color        An optional string. Hex string for fill color. Default is to use "#66cc99" if geometry is
                           valid, and "#ff3333" if invalid.
         ================  ===============================================================================
 
@@ -3302,7 +3356,7 @@ class Polygon(Geometry):
         import numpy as np
 
         if "rings" in self:
-            return np.array(self["rings"])
+            return np.array(self["rings"], dtype=object)
         else:
             return np.array([])
 
@@ -3429,7 +3483,7 @@ class Polyline(Geometry):
         import numpy as np
 
         if "paths" in self:
-            return np.array(self["paths"])
+            return np.array(self["paths"], dtype=object)
         else:
             return np.array([])
 
@@ -3555,9 +3609,12 @@ class Envelope(Geometry):
                         self["xmax"],
                         self["ymax"],
                         self["zmax"],
-                    ]
+                    ],
+                    dtype=float,
                 )
-            return np.array([self["xmin"], self["ymin"], self["xmax"], self["ymax"]])
+            return np.array(
+                [self["xmin"], self["ymin"], self["xmax"], self["ymax"]], dtype=float
+            )
         else:
             return np.array([])
 

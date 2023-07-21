@@ -1638,6 +1638,25 @@ class TestWorkflowManager(unittest.TestCase):
 
     # endregion
 
+    # region Update Job Version
+
+    # Disabled this test because it requires external set up to work.
+    # def test_update_job_version_successfully_returns(self):
+    #     # Arrange
+    #     job_id = self.create_job()[0]
+    #     job = self.connection.workflow_manager.jobs.get(job_id)
+    #
+    #
+    #     # Act
+    #     actual = job.set_job_version(data_source_name="Gas_Utility_Network",
+    #                                  version_name="admin.ANGEL123",
+    #                                  administered=True)
+    #
+    #     # Assert
+    #     self.assertTrue(actual, "Incorrect return type")
+
+    # endregion
+
     # region Job Location
 
     def test_get_job_location_returns_no_location_set(self):

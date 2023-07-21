@@ -10,7 +10,7 @@ import lxml.html
 
 from ._schain import SupportMultiAuth
 from ..tools._lazy import LazyLoader
-from ..tools import parse_url
+from ..tools import parse_url, assemble_url
 
 warnings = LazyLoader("warnings")
 re = LazyLoader("re")
@@ -270,9 +270,24 @@ class EsriOAuth2Auth(AuthBase, SupportMultiAuth):
                 "password": self._password,
                 "oauth_state": oauth_info["oauth_state"],
             }
-            content = self._session.post(
-                "%s/oauth2/signin" % self.baseurl, data=parameters
-            ).text
+            resp = self._session.post(
+                "%s/oauth2/signin" % self.baseurl,
+                data=parameters,
+                verify=False,
+                proxies=self._proxies,
+                allow_redirects=False,
+            )
+            if resp.status_code == 302:
+                url = resp.headers["Location"]
+                if url.find("acceptTermsAndConditions") > -1:
+                    r2 = self._session.post(
+                        url, data={"acceptTermsAndConditions": True}
+                    )
+                    content = r2.text
+                elif url.find("oauth2/approval") > -1:
+                    r2 = self._session.get(url)
+                    content = r2.text
+
             soup = lxml.html.fromstring(content)
             codes = [
                 t[len("SUCCESS code=") :]
@@ -322,12 +337,7 @@ class EsriOAuth2Auth(AuthBase, SupportMultiAuth):
             # Recreate the request without the token
             #
             parsed = parse_url(r.url)
-            if parsed.port:
-                server_url = (
-                    f"{parsed.scheme}://{parsed.netloc}:{parsed.port}/{parsed.path}"
-                )
-            else:
-                server_url = f"{parsed.scheme}://{parsed.netloc}/{parsed.path}"
+            server_url = assemble_url(parsed)
             self._invalid_token_urls.add(server_url)
             r.content
             r.raw.release_conn()
@@ -344,12 +354,7 @@ class EsriOAuth2Auth(AuthBase, SupportMultiAuth):
         if self._invalid_token_urls is None:
             self._invalid_token_urls = set()
         parsed = parse_url(r.url)
-        if parsed.port:
-            server_url = (
-                f"{parsed.scheme}://{parsed.netloc}:{parsed.port}/{parsed.path}"
-            )
-        else:
-            server_url = f"{parsed.scheme}://{parsed.netloc}/{parsed.path}"
+        server_url = assemble_url(parsed)
         if not server_url in self._invalid_token_urls:
             r.register_hook("response", self.handle_40x)
             if self.legacy == False:

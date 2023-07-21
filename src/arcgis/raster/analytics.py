@@ -9663,6 +9663,122 @@ def export_to_tile_package(
     )
 
 
+def derive_continuous_flow(
+    input_surface_raster: ImageryLayer,
+    input_depressions_data: Optional[FeatureLayer] = None,
+    input_weight_raster: Optional[ImageryLayer] = None,
+    flow_direction_type: Optional[str] = "D8",
+    force_flow: Optional[str] = "NORMAL",
+    output_flow_accumulation_raster_name: Optional[str] = None,
+    output_flow_direction_raster_name: Optional[str] = None,
+    context: Optional[dict[str, Any]] = None,
+    *,
+    gis: Optional[GIS] = None,
+    future: bool = False,
+    **kwargs,
+):
+    """
+    Generates a raster of accumulated flow into each cell from an input surface raster with no prior sink or depression filling required.
+    
+    ====================================     ====================================================================
+    **Argument**                             **Description**
+    ------------------------------------     --------------------------------------------------------------------
+    input_surface_raster                     Required :class:`~arcgis.raster.ImageryLayer` object. The input elevation surface.
+    ------------------------------------     --------------------------------------------------------------------
+    input_depressions_data                   Optional :class:`~arcgis.features.FeatureLayer`/ :class:`~arcgis.raster.ImageryLayer`.\
+                                             A dataset that defines real depressions. The depressions can\
+                                             be defined either through a raster or a feature layer.\
+                                            
+                                             If input is a raster, the depression cells must take a valid value, including\
+                                             zero, and the areas that are not depressions must be NoData.
+    ------------------------------------     --------------------------------------------------------------------
+    input_weight_raster                      Optional :class:`~arcgis.raster.ImageryLayer`. A raster that defines the fraction of flow that contributes\
+                                             to flow accumulation at each cell. The weight is only applied to flow accumulation.
+                                             
+                                             If no weight raster is specified, a default weight of 1 will be applied to each cell. 
+    ------------------------------------     --------------------------------------------------------------------
+    flow_direction_type                      Optional string. Specifies the flow direction type to use.
+    
+                                             Choice list: ['D8', 'MFD'] 
+    
+                                                - D8 is for the D8 flow direction type. This is the default. 
+                                                - MFD is for the Multi Flow Direction type.
+    ------------------------------------     --------------------------------------------------------------------
+    force_flow                               Optional string. Specifies if edge cells will always flow outward or follow normal flow rules.
+    
+                                             Choice list: ['NORMAL', 'FORCE']. The default value is 'NORMAL'.
+    ------------------------------------     --------------------------------------------------------------------
+    output_flow_accumulation_raster_name     Optional string. If not provided, an Image Service is created by the method and\
+                                             used as the output raster.
+                                             
+                                             The output raster representing flow accumulation (number of upstream cells\
+                                             draining to each cell). The output raster is of floating-point type. You can pass\
+                                             in an existing Image Service Item from your GIS to use that instead. 
+                                            
+                                             Alternatively, you can pass in the name of the output Image Service that should be\
+                                             created by this method to be used as the output for the tool. A RuntimeError is\
+                                             raised if a service by that name already exists.
+    ------------------------------------     --------------------------------------------------------------------
+    output_flow_direction_raster_name        Optional string. Name of the flow_direction_raster. This parameter determines\
+                                             whether flow_direction_raster should be generated or not. Set this parameter,\
+                                             in order to generate the flow_direction_raster.
+    ------------------------------------     --------------------------------------------------------------------
+    context                                  Context contains additional settings that affect task execution.
+
+                                             context parameter overwrites values set through arcgis.env parameter
+
+                                             This function has the following settings:
+
+                                              - Extent (extent): A bounding box that defines the analysis area.
+
+                                                Example:
+                                                    {"extent: {"xmin": -122.68, 
+                                                    "ymin": 45.53,
+                                                    "xmax": -122.45,
+                                                    "ymax": 45.6,
+                                                    "spatialReference": {"wkid": 4326}}}
+
+                                              - Output Spatial Reference (outSR): The output raster will be
+                                                projected into the output spatial reference.
+
+                                                Example:
+                                                    {"outSR": {spatial reference}}
+
+                                              - Snap Raster (snapRaster): The output raster will have its
+                                                cells aligned with the specified snap raster.
+
+                                                Example:
+                                                    {'snapRaster': {'url': '<image_service_url>'}}
+
+                                              - Cell Size (cellSize): The output raster will have the resolution
+                                                specified by cell size.
+
+                                                Example:
+                                                    {'cellSize': 11} or {'cellSize': {'url': <image_service_url>}}  or {'cellSize': 'MaxOfIn'}
+    ------------------------------------     --------------------------------------------------------------------
+    gis                                      Optional GIS. The GIS on which this tool runs. If not specified, the active GIS is used.
+    ------------------------------------     --------------------------------------------------------------------
+    future                                   Keyword only parameter. Optional Boolean. If True, the result will be a GPJob object and
+                                             results will be returned asynchronously.
+    ====================================     ====================================================================     
+
+    """
+
+    gis = _arcgis.env.active_gis if gis is None else gis
+    return gis._tools.rasteranalysis.derive_continuous_flow(
+        input_surface_raster=input_surface_raster,
+        output_flow_accumulation_raster_name=output_flow_accumulation_raster_name,
+        input_depressions_data=input_depressions_data,
+        input_weight_raster=input_weight_raster,
+        output_flow_direction_raster_name=output_flow_direction_raster_name,
+        flow_direction_type=flow_direction_type,
+        force_flow=force_flow,
+        context=context,
+        future=future,
+        **kwargs,
+    )
+
+
 def mosaic_image(
     input_rasters: list[ImageryLayer],
     target_raster: ImageryLayer,

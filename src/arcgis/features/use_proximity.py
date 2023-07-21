@@ -1336,7 +1336,7 @@ def plan_routes(
                                     |                            |                                                                                                          |
                                     |                            | Five of the six stops are clustered near the starting location, but one stop is set apart                |
                                     |                            | and requires a much longer drive to be reached. Dividing the stops equally between the two               |
-                                    |                            | routes ( ``max_stops_per_route`` =3) causes unbalanced travel times.                                       |
+                                    |                            | routes ( ``max_stops_per_route`` =3) causes unbalanced travel times.                                     |
                                     +----------------------------+----------------------------------------------------------------------------------------------------------+
                                     | |unbalanced|               | Unbalanced stops per route but balanced travel times:                                                    |
                                     |                            |                                                                                                          |

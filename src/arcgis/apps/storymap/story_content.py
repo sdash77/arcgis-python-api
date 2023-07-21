@@ -3,13 +3,13 @@ from enum import Enum
 from typing import Optional, Union
 import uuid
 from arcgis.auth.tools import LazyLoader
+from PIL import Image as PImage
 
 arcgis = LazyLoader("arcgis")
 urllib3 = LazyLoader("urllib3")
 requests = LazyLoader("requests")
 mimetypes = LazyLoader("mimetypes")
 os = LazyLoader("os")
-_Image = LazyLoader("PIL.Image")
 _io = LazyLoader("io")
 _parse = LazyLoader("urllib.parse")
 
@@ -31,7 +31,10 @@ class TextStyles(Enum):
 
 class Scales(Enum):
     """
-    Represents the supported scales for the webmap view.
+    Scale is a unitless way of describing how any distance on the map translates
+    to a real-world distance. For example, a map at a 1:24,000 scale communicates that 1 unit
+    on the screen represents 24,000 of the same unit in the real world.
+    So one inch on the screen represents 24,000 inches in the real world.
     """
 
     WORLD = {"scale": 147914382, "zoom": 2}
@@ -59,17 +62,57 @@ class Scales(Enum):
 
 
 ###############################################################################################################
-class Image(object):
+class Separator:
+    """
+    Class representing a `separator`. You can use this class to edit and remove separators from a storymap.
+    """
+
+    def __init__(self, **kwargs) -> None:
+        # Can be created from scratch or already exist in story
+        # Separator is not an immersive node
+        self._story = kwargs.pop("story", None)
+        self._type = "separator"
+        self.node = kwargs.pop("node_id", "n-" + uuid.uuid4().hex[0:6])
+
+    # ----------------------------------------------------------------------
+    def __repr__(self) -> str:
+        return "Image"
+
+    # ----------------------------------------------------------------------
+    def _add_separator(self, story=None):
+        # Assign the story
+        self._story = story
+
+        # Create separator nodes.
+        self._story._properties["nodes"][self.node] = {
+            "type": "separator",
+        }
+
+    # ----------------------------------------------------------------------
+    def delete(self):
+        """
+        Delete the node
+
+        :return: True if successful.
+        """
+        return self._story._delete(self.node)
+
+
+###############################################################################################################
+class Image:
     """
     Class representing an `image` from a url or file.
 
     .. warning::
         Image must be smaller than 10 MB to avoid having issues when saving or publishing.
 
+    .. note::
+        Once you create an Image instance you must add it to the story to be able to edit it further.
+
     ==================      ====================================================================
     **Parameter**            **Description**
     ------------------      --------------------------------------------------------------------
-    path                    Required String. The file path to the image that will be added.
+    path                    Required String. The file path or url to the image that will be added.
     ==================      ====================================================================
     """
 
@@ -83,8 +126,8 @@ class Image(object):
         self.node = kwargs.pop("node_id", None)
         # If node exists in story, then create from resources and node dictionary provided.
         # If node doesn't already exist, create a new instance.
-        existing = self._check_node()
-        if existing is True:
+        self._existing = self._check_node()
+        if self._existing is True:
             # Get the resource node id
             self.resource_node = self._story._properties["nodes"][self.node]["data"][
                 "image"
@@ -106,7 +149,7 @@ class Image(object):
                 self._path = self._story._properties["resources"][self.resource_node][
                     "data"
                 ]["resourceId"]
-        elif existing is False:
+        else:
             # Create a new instance of Image
             self._path = path
             self.node = "n-" + uuid.uuid4().hex[0:6]
@@ -132,7 +175,7 @@ class Image(object):
             If nothing is returned, make sure your content has been added
             to the story.
         """
-        if self._check_node() is True:
+        if self._existing is True:
             return {
                 "node_dict": self._story._properties["nodes"][self.node],
                 "resource_dict": self._story._properties["resources"][
@@ -155,7 +198,7 @@ class Image(object):
         :return:
             The image that is being used.
         """
-        if self._check_node() is True:
+        if self._existing is True:
             if self._url is False:
                 return self._story._properties["resources"][self.resource_node]["data"][
                     "resourceId"
@@ -168,7 +211,7 @@ class Image(object):
     # ----------------------------------------------------------------------
     @image.setter
     def image(self, path):
-        if self._check_node() is True:
+        if self._existing is True:
             self._update_image(path)
             return self.image
 
@@ -187,13 +230,13 @@ class Image(object):
         :return:
             The caption that is being used.
         """
-        if self._check_node() is True:
+        if self._existing is True:
             return self._story._properties["nodes"][self.node]["data"]["caption"]
 
     # ----------------------------------------------------------------------
     @caption.setter
     def caption(self, caption):
-        if self._check_node() is True:
+        if self._existing is True:
             if isinstance(caption, str):
                 self._story._properties["nodes"][self.node]["data"]["caption"] = caption
             return self.caption
@@ -218,7 +261,7 @@ class Image(object):
     # ----------------------------------------------------------------------
     @alt_text.setter
     def alt_text(self, alt_text):
-        if self._check_node() is True:
+        if self._existing is True:
             self._story._properties["nodes"][self.node]["data"]["alt"] = alt_text
             return self.alt_text
 
@@ -230,13 +273,13 @@ class Image(object):
 
         Values: `small` | `wide` | `full` | `float`
         """
-        if self._check_node() is True:
+        if self._existing is True:
             return self._story._properties["nodes"][self.node]["config"]["size"]
 
     # ----------------------------------------------------------------------
     @display.setter
     def display(self, display):
-        if self._check_node() is True:
+        if self._existing is True:
             self._story._properties["nodes"][self.node]["config"]["size"] = display
             return self.display
 
@@ -253,6 +296,7 @@ class Image(object):
     def _add_image(self, caption=None, alt_text=None, display=None, story=None):
         # Assign the story
         self._story = story
+        self._existing = True
         # Make an add resource call if not url
         if self._url is False:
             self._story._add_resource(self._path)
@@ -271,7 +315,7 @@ class Image(object):
         # Create resource node. Different if file path or url
         if self._url is False:
             # Get image properties and create the resourceId that corresponds to the resource added
-            im = _Image.open(self._path)
+            im = PImage.open(self._path)
             w, h = im.size
             self._story._properties["resources"][self.resource_node] = {
                 "type": "image",
@@ -285,7 +329,7 @@ class Image(object):
         else:
             # Get image properties and assign the image src
             data = requests.get(self._path).content
-            im = _Image.open(_io.BytesIO(data))
+            im = PImage.open(_io.BytesIO(data))
             w, h = im.size
             self._story._properties["resources"][self.resource_node] = {
                 "type": "image",
@@ -305,7 +349,7 @@ class Image(object):
             self._url = True
             # Update the height and width for the image
             data = requests.get(new_image).content
-            im = _Image.open(_io.BytesIO(data))
+            im = PImage.open(_io.BytesIO(data))
             w, h = im.size
             self._story._properties["resources"][self.resource_node]["data"][
                 "height"
@@ -334,7 +378,7 @@ class Image(object):
         else:
             # Update the height and width for the image
             self._url = False
-            im = _Image.open(new_image)
+            im = PImage.open(new_image)
             w, h = im.size
             self._story._properties["resources"][self.resource_node]["data"][
                 "height"
@@ -387,9 +431,12 @@ class Image(object):
 
 
 ###############################################################################################################
-class Video(object):
+class Video:
     """
     Class representing a `video` from a url or file
+
+    .. note::
+        Once you create a Video instance you must add it to the story to be able to edit it further.
 
     ==================      ====================================================================
     **Parameter**            **Description**
@@ -414,8 +461,8 @@ class Video(object):
         self._url = False
         self.node = kwargs.pop("node_id", None)
         # Check if node already in story, else create new instance
-        existing = self._check_node()
-        if existing is True:
+        self._existing = self._check_node()
+        if self._existing is True:
             # If node is type video then video came from file path
             if self._story._properties["nodes"][self.node]["type"] == "video":
                 self.resource_node = self._story._properties["nodes"][self.node][
@@ -444,6 +491,10 @@ class Video(object):
         return "Video"
 
     # ----------------------------------------------------------------------
+    def __repr__(self) -> str:
+        return "Video"
+
+    # ----------------------------------------------------------------------
     @property
     def properties(self):
         """
@@ -457,7 +508,7 @@ class Video(object):
         .. note::
             To change various properties of the Video use the other property setters.
         """
-        if self._check_node() is True:
+        if self._existing is True:
             vid_dict = {
                 "node_dict": self._story._properties["nodes"][self.node],
             }
@@ -482,7 +533,7 @@ class Video(object):
         :return:
             The video that is being used.
         """
-        if self._check_node() is True:
+        if self._existing is True:
             if self.resource_node:
                 # If resouce node exists it means the video comes from a file path
                 return self._story._properties["resources"][self.resource_node]["data"][
@@ -495,7 +546,7 @@ class Video(object):
     # ----------------------------------------------------------------------
     @video.setter
     def video(self, path):
-        if self._check_node() is True:
+        if self._existing is True:
             self._update_video(path)
             return self.video
 
@@ -514,13 +565,13 @@ class Video(object):
         :return:
             The caption that is being used.
         """
-        if self._check_node() is True:
+        if self._existing is True:
             return self._story._properties["nodes"][self.node]["data"]["caption"]
 
     # ----------------------------------------------------------------------
     @caption.setter
     def caption(self, caption):
-        if self._check_node() is True:
+        if self._existing is True:
             if isinstance(caption, str):
                 self._story._properties["nodes"][self.node]["data"]["caption"] = caption
             return self.caption
@@ -540,13 +591,13 @@ class Video(object):
         :return:
             The alternate text that is being used.
         """
-        if self._check_node() is True:
+        if self._existing is True:
             return self._story._properties["nodes"][self.node]["data"]["alt"]
 
     # ----------------------------------------------------------------------
     @alt_text.setter
     def alt_text(self, alt_text):
-        if self._check_node() is True:
+        if self._existing is True:
             self._story._properties["nodes"][self.node]["data"]["alt"] = alt_text
             return self.alt_text
 
@@ -561,7 +612,7 @@ class Video(object):
         .. note::
             Cannot change display when video is created from a url
         """
-        if self._check_node() is True:
+        if self._existing is True:
             if self._url is True:
                 return self._story._properties["nodes"][self.node]["data"]["display"]
             else:
@@ -570,7 +621,7 @@ class Video(object):
     # ----------------------------------------------------------------------
     @display.setter
     def display(self, display):
-        if self._check_node() is True:
+        if self._existing is True:
             if self._url is True:
                 self._story._properties["nodes"][self.node]["data"]["display"] = display
         return self.display
@@ -596,6 +647,7 @@ class Video(object):
     ):
         # Add the story to the node
         self._story = story
+        self._existing = True
         if node_id:
             # If node already exists (updating node)
             self.node = node_id
@@ -695,10 +747,13 @@ class Video(object):
 
 
 ###############################################################################################################
-class Audio(object):
+class Audio:
     """
     This class represents content that is of type `audio`. It can be created from
     a file path and added to the story.
+
+    .. note::
+        Once you create an Audio instance you must add it to the story to be able to edit it further.
 
     ==================      ====================================================================
     **Parameter**            **Description**
@@ -721,8 +776,8 @@ class Audio(object):
         self._type = "audio"
         self.node = kwargs.pop("node_id", None)
         # If node does not exist yet, create new instance
-        existing = self._check_node()
-        if existing is True:
+        self._existing = self._check_node()
+        if self._existing is True:
             # Get existing resouce node
             self.resource_node = self._story._properties["nodes"][self.node]["data"][
                 "audio"
@@ -742,6 +797,10 @@ class Audio(object):
         return "Audio"
 
     # ----------------------------------------------------------------------
+    def __repr__(self) -> str:
+        return "Audio"
+
+    # ----------------------------------------------------------------------
     @property
     def properties(self):
         """
@@ -754,7 +813,7 @@ class Audio(object):
             If nothing is returned, make sure the content is part of the story.
 
         """
-        if self._check_node() is True:
+        if self._existing is True:
             return {
                 "node_dict": self._story._properties["nodes"][self.node],
                 "resource_dict": self._story._properties["resources"][
@@ -777,7 +836,7 @@ class Audio(object):
         :return:
             The audio that is being used.
         """
-        if self._check_node() is True:
+        if self._existing is True:
             return self._story._properties["resources"][self.resource_node]["data"][
                 "resourceId"
             ]
@@ -789,7 +848,7 @@ class Audio(object):
             raise ValueError(
                 "To add an audio from an embedded url, use the Embed content class. Update audio with file path only."
             )
-        if self._check_node() is True:
+        if self._existing is True:
             self._update_audio(path)
             return self.audio
 
@@ -808,13 +867,13 @@ class Audio(object):
         :return:
             The caption that is being used.
         """
-        if self._check_node() is True:
+        if self._existing is True:
             return self._story._properties["nodes"][self.node]["data"]["caption"]
 
     # ----------------------------------------------------------------------
     @caption.setter
     def caption(self, caption):
-        if self._check_node() is True:
+        if self._existing is True:
             if isinstance(caption, str):
                 self._story._properties["nodes"][self.node]["data"]["caption"] = caption
             return self.caption
@@ -834,13 +893,13 @@ class Audio(object):
         :return:
             The alternate text that is being used.
         """
-        if self._check_node() is True:
+        if self._existing is True:
             return self._story._properties["nodes"][self.node]["data"]["alt"]
 
     # ----------------------------------------------------------------------
     @alt_text.setter
     def alt_text(self, alt_text):
-        if self._check_node() is True:
+        if self._existing is True:
             self._story._properties["nodes"][self.node]["data"]["alt"] = alt_text
             return self.alt_text
 
@@ -852,7 +911,7 @@ class Audio(object):
 
         Values: `small` | `wide` | float`
         """
-        if self._check_node() is True:
+        if self._existing is True:
             return self._story._properties["nodes"][self.node]["config"]["size"]
 
     # ----------------------------------------------------------------------
@@ -880,6 +939,7 @@ class Audio(object):
         story=None,
     ):
         self._story = story
+        self._existing = True
         # Make an add resource call
         self._story._add_resource(self._path)
         # Create image nodes
@@ -930,10 +990,13 @@ class Audio(object):
 
 
 ###############################################################################################################
-class Embed(object):
+class Embed:
     """
     Class representing a `webpage` or `embedded audio`.
     Embed will show as a card in the story.
+
+    .. note::
+        Once you create an Embed instance you must add it to the story to be able to edit it further.
 
     ==================      ====================================================================
     **Parameter**            **Description**
@@ -950,8 +1013,8 @@ class Embed(object):
         self._type = "embed"
         self.node = kwargs.pop("node_id", None)
         # If node doesn't already exist, create new instance
-        existing = self._check_node()
-        if existing is True:
+        self._existing = self._check_node()
+        if self._existing is True:
             # Get the link path
             self._path = self._story._properties["nodes"][self.node]["data"]["url"]
         else:
@@ -972,13 +1035,17 @@ class Embed(object):
             A dictionary depicting the node dictionary for the embed.
             If nothing is returned, make sure the content is part of the story.
         """
-        if self._check_node() is True:
+        if self._existing is True:
             return {
                 "node_dict": self._story._properties["nodes"][self.node],
             }
 
     # ----------------------------------------------------------------------
     def __str__(self) -> str:
+        return "Embed"
+
+    # ----------------------------------------------------------------------
+    def __repr__(self) -> str:
         return "Embed"
 
     # ----------------------------------------------------------------------
@@ -996,13 +1063,13 @@ class Embed(object):
         :return:
             The embed that is being used.
         """
-        if self._check_node() is True:
+        if self._existing is True:
             return self._story._properties["nodes"][self.node]["data"]["url"]
 
     # ----------------------------------------------------------------------
     @link.setter
     def link(self, path):
-        if self._check_node() is True:
+        if self._existing is True:
             self._update_link(path)
             return self.link
 
@@ -1021,13 +1088,13 @@ class Embed(object):
         :return:
             The caption that is being used.
         """
-        if self._check_node() is True:
+        if self._existing is True:
             return self._story._properties["nodes"][self.node]["data"]["caption"]
 
     # ----------------------------------------------------------------------
     @caption.setter
     def caption(self, caption):
-        if self._check_node() is True:
+        if self._existing is True:
             if isinstance(caption, str):
                 self._story._properties["nodes"][self.node]["data"]["caption"] = caption
             return self.caption
@@ -1047,13 +1114,13 @@ class Embed(object):
         :return:
             The alternate text that is being used.
         """
-        if self._check_node() is True:
+        if self._existing is True:
             return self._story._properties["nodes"][self.node]["data"]["alt"]
 
     # ----------------------------------------------------------------------
     @alt_text.setter
     def alt_text(self, alt_text):
-        if self._check_node() is True:
+        if self._existing is True:
             self._story._properties["nodes"][self.node]["data"]["alt"] = alt_text
             return self.alt_text
 
@@ -1065,13 +1132,13 @@ class Embed(object):
 
         Values: `card` | `inline`
         """
-        if self._check_node() is True:
+        if self._existing is True:
             return self._story._properties["nodes"][self.node]["data"]["display"]
 
     # ----------------------------------------------------------------------
     @display.setter
     def display(self, display):
-        if self._check_node():
+        if self._existing:
             self._story._properties["nodes"][self.node]["data"]["display"] = display
             return self.display
 
@@ -1087,6 +1154,7 @@ class Embed(object):
     # ----------------------------------------------------------------------
     def _add_link(self, caption=None, alt_text=None, display="card", story=None):
         self._story = story
+        self._existing = True
         sections = _parse.urlparse(self._path)
         # Create embed node, no resource node needed
         self._story._properties["nodes"][self.node] = {
@@ -1126,9 +1194,12 @@ class Embed(object):
 
 
 ###############################################################################################################
-class Map(object):
+class Map:
     """
     Class representing a `webmap` or `webscene` for the story
+
+    .. note::
+        Once you create a Map instance you must add it to the story to be able to edit it further.
 
     =================       ====================================================================
     **Parameter**            **Description**
@@ -1145,32 +1216,58 @@ class Map(object):
         self._story = kwargs.pop("story", None)
         self.node = kwargs.pop("node_id", None)
         # Check if node exists else create new instance
-        existing = self._check_node()
-        if existing:
+        self._existing = self._check_node()
+        if self._existing:
             # Gather all exisiting properties needed
             self.resource_node = self._story._properties["nodes"][self.node]["data"][
                 "map"
             ]
             # The item id is in the resource node
             self._path = self.resource_node[2::]
-            self._map_layers = self._story._properties["resources"][self.resource_node][
-                "data"
-            ]["mapLayers"]
-            self._extent = self._story._properties["resources"][self.resource_node][
-                "data"
-            ]["extent"]
-            self._center = self._story._properties["resources"][self.resource_node][
-                "data"
-            ]["center"]
-            self._viewpoint = self._story._properties["resources"][self.resource_node][
-                "data"
-            ]["viewpoint"]
-            self._zoom = self._story._properties["resources"][self.resource_node][
-                "data"
-            ]["zoom"]
-            self._type = self._story._properties["resources"][self.resource_node][
-                "data"
-            ]["itemType"]
+            rdata = self._story._properties["resources"][self.resource_node]["data"]
+            ndata = self._story._properties["nodes"][self.node]["data"]
+            # map layers
+            if "mapLayers" in ndata:
+                self._map_layers = ndata["mapLayers"]
+            elif "mapLayers" in rdata:
+                self._map_layers = rdata["mapLayers"]
+            else:
+                self._map_layers = None
+
+            # extent
+            if "extent" in ndata:
+                self._extent = ndata["extent"]
+            elif "extent" in rdata:
+                self._extent = rdata["extent"]
+            else:
+                self._extent = {}
+
+            # center
+            if "center" in ndata:
+                self._center = ndata["center"]
+            elif "center" in rdata:
+                self._center = rdata["center"]
+            else:
+                self._center = None
+
+            # viewpoint
+            if "viewpoint" in ndata:
+                self._viewpoint = ndata["viewpoint"]
+            elif "viewpoint" in rdata:
+                self._viewpoint = rdata["viewpoint"]
+            else:
+                self._viewpoint = {"rotation": 0, "scale": -1, "targetGeometry": {}}
+
+            # zoom
+            if "zoom" in ndata:
+                self._zoom = ndata["zoom"]
+            elif "zoom" in rdata:
+                self._zoom = rdata["zoom"]
+            else:
+                self._zoom = 2
+
+            # only in rdata
+            self._type = rdata["itemType"]
             if self._type == "Web Scene":
                 self._lighting_date = self._story._properties["resources"][
                     self.resource_node
@@ -1238,35 +1335,20 @@ class Map(object):
                         layer_props["visible"] = False
                     layers.append(layer_props)
                 self._map_layers = layers
-                # Create the Map View to use
-                view = arcgis.widgets.MapView(
-                    arcgis.env.active_gis, map_item, mode="3D"
-                )
-                self._extent = view.extent
-                if map_item._mapview.center is None:
-                    x_center = (self._extent["xmin"] + self._extent["xmax"]) / 2
-                    y_center = (self._extent["ymin"] + self._extent["ymax"]) / 2
-                    self._center = {
-                        "spatialReference": map_item.definition.spatialReference,
-                        "x": x_center,
-                        "y": y_center,
-                    }
-                else:
-                    self._center = map_item._mapview.center
-                self._zoom = view.zoom if view.zoom > -1 else 2
-                self._viewpoint = {
-                    "rotation": map_item._mapview.rotation,
-                    "scale": map_item._mapview.scale,
-                    "targetGeometry": self._center,
-                }
-                self._camera = map_item["initialState"]["viewpoint"]
+                self._extent = None
+                self._center = map_item["initialState"]["viewpoint"]["camera"][
+                    "position"
+                ]
+                self._zoom = 2
+                self._viewpoint = map_item["initialState"]["viewpoint"]
+                self._camera = map_item["initialState"]["viewpoint"]["camera"]
                 self._lighting_date = map_item["initialState"]["environment"][
                     "lighting"
                 ]["datetime"]
 
     # ----------------------------------------------------------------------
-    def __str__(self) -> str:
-        return "%s" % self._type
+    def __repr__(self):
+        return self._type
 
     # ----------------------------------------------------------------------
     @property
@@ -1318,7 +1400,7 @@ class Map(object):
         :return:
             The item id for the map that is being used.
         """
-        if self._check_node() is True:
+        if self._existing is True:
             map_id = self._story._properties["resources"][self.resource_node]["data"][
                 "itemId"
             ]
@@ -1327,7 +1409,7 @@ class Map(object):
     # ----------------------------------------------------------------------
     @map.setter
     def map(self, map):
-        if self._check_node() is True:
+        if self._existing is True:
             self._update_map(map)
             return self.map
 
@@ -1361,20 +1443,30 @@ class Map(object):
                                 | 'xmax': 6068184.160383142,
                                 | 'ymax': 6642754.094035632}
         ------------------  ----------------------------------------
-        scale               Optional Scales Value. Define the scale of the map.
-                            If none specified, current scale is kept.
-                            Find the available scales in the
-                            :class:`~arcgis.apps.storymap.story_content.Scales` Class.
+        scale               Optional Scales enum class value or dict with 'scale' and 'zoom' keys.
+
+                            Scale is a unitless way of describing how any distance on the map translates
+                            to a real-world distance. For example, a map at a 1:24,000 scale communicates that 1 unit
+                            on the screen represents 24,000 of the same unit in the real world.
+                            So one inch on the screen represents 24,000 inches in the real world.
         ==================  ========================================
 
         :return: The current viewpoint dictionary
         """
+        rdata_dict = self._story._properties["resources"][self.resource_node]["data"]
         if "viewpoint" not in self._story._properties["nodes"][self.node]["data"]:
-            self._story._properties["nodes"][self.node]["data"][
-                "viewpoint"
-            ] = self._story._properties["resources"][self.resource_node]["data"][
-                "viewpoint"
-            ]
+            try:
+                self._story._properties["nodes"][self.node]["data"][
+                    "viewpoint"
+                ] = rdata_dict["viewpoint"]
+            except:
+                self._story._properties["nodes"][self.node]["data"]["viewpoint"] = {
+                    "rotation": 0,
+                    "scale": -1,
+                    "targetGeometry": {},
+                }
+
+        change_made = False
         # set new extent if specified
         if extent:
             if isinstance(extent, dict):
@@ -1383,9 +1475,12 @@ class Map(object):
                         "Extent dictionary missing one or more of these keys: 'xmin', 'xmax', 'ymin', 'ymax'"
                     )
                 if "spatialReference" not in extent:
-                    extent["spatialReference"] = self._story._properties["resources"][
-                        self.resource_node
-                    ]["data"]["extent"]["spatialReference"]
+                    try:
+                        extent["spatialReference"] = self._story._properties[
+                            "resources"
+                        ][self.resource_node]["data"]["extent"]["spatialReference"]
+                    except:
+                        extent["spatialReference"] = {"wkid": 4326}
 
                 # In order to correctly edit, the viewpoint, extent, and center must be updated.
                 # update extent
@@ -1402,6 +1497,8 @@ class Map(object):
                 self._story._properties["nodes"][self.node]["data"]["viewpoint"][
                     "targetGeometry"
                 ] = self._story._properties["nodes"][self.node]["data"]["center"]
+
+                change_made = True
         # set new scale if specified
         if scale:
             if isinstance(scale, Scales):
@@ -1411,13 +1508,31 @@ class Map(object):
                 self._story._properties["nodes"][self.node]["data"][
                     "zoom"
                 ] = scale.value["zoom"]
+                change_made = True
+            elif isinstance(scale, dict):
+                self._story._properties["nodes"][self.node]["data"]["viewpoint"][
+                    "scale"
+                ] = scale["scale"]
+                self._story._properties["nodes"][self.node]["data"]["zoom"] = scale[
+                    "zoom"
+                ]
+
+        if change_made:
+            # Once the update made, remove the original information from resources
+            new_data = {
+                "itemId": rdata_dict["itemId"],
+                "itemType": rdata_dict["itemType"],
+                "type": "minimal",
+            }
+            self._story._properties["resources"][self.resource_node]["data"] = new_data
+
         return self._story._properties["nodes"][self.node]["data"]["viewpoint"]
 
     # ----------------------------------------------------------------------
     @property
     def show_legend(self):
         """Get/Set the showing legend toggle. True if enabled and False if disabled"""
-        if self._check_node() is True:
+        if self._existing is True:
             if "isShowingLegend" in self._story._properties["nodes"][self.node]["data"]:
                 return self._story._properties["nodes"][self.node]["data"][
                     "isShowingLegend"
@@ -1440,7 +1555,7 @@ class Map(object):
             If set to True, make sure `show_legend` is also True. Otherwise, you will not
             see the legend pinned.
         """
-        if self._check_node() is True:
+        if self._existing is True:
             if "legendPinned" in self._story._properties["nodes"][self.node]["data"]:
                 return self._story._properties["nodes"][self.node]["data"][
                     "legendPinned"
@@ -1457,7 +1572,7 @@ class Map(object):
     @property
     def show_search(self):
         """Get/Set the search toggle. True if enabled and False if disabled"""
-        if self._check_node() is True:
+        if self._existing is True:
             if "search" in self._story._properties["nodes"][self.node]["data"]:
                 return self._story._properties["nodes"][self.node]["data"]["search"]
             else:
@@ -1472,7 +1587,7 @@ class Map(object):
     @property
     def time_slider(self):
         """Get/Set the time slider toggle. True if enabled and False if disabled"""
-        if self._check_node() is True:
+        if self._existing is True:
             if "time_slider" in self._story._properties["nodes"][self.node]["data"]:
                 return self._story._properties["nodes"][self.node]["data"]["timeSlider"]
             else:
@@ -1498,13 +1613,13 @@ class Map(object):
         :return:
             The caption that is being used.
         """
-        if self._check_node() is True:
+        if self._existing is True:
             return self._story._properties["nodes"][self.node]["data"]["caption"]
 
     # ----------------------------------------------------------------------
     @caption.setter
     def caption(self, caption):
-        if self._check_node() is True:
+        if self._existing is True:
             if isinstance(caption, str):
                 self._story._properties["nodes"][self.node]["data"]["caption"] = caption
             return self.caption
@@ -1524,13 +1639,13 @@ class Map(object):
         :return:
             The alternate text that is being used.
         """
-        if self._check_node() is True:
+        if self._existing is True:
             return self._story._properties["nodes"][self.node]["data"]["alt"]
 
     # ----------------------------------------------------------------------
     @alt_text.setter
     def alt_text(self, alt_text):
-        if self._check_node() is True:
+        if self._existing is True:
             self._story._properties["nodes"][self.node]["data"]["alt"] = alt_text
             return self.alt_text
 
@@ -1542,7 +1657,7 @@ class Map(object):
 
         Values: `standard` | `wide` | `full` | `float right` | `float left`
         """
-        if self._check_node() is True:
+        if self._existing is True:
             if "config" in self._story._properties["nodes"][self.node]:
                 return self._story._properties["nodes"][self.node]["config"]["size"]
             else:
@@ -1551,7 +1666,7 @@ class Map(object):
     # ----------------------------------------------------------------------
     @display.setter
     def display(self, display):
-        if self._check_node() is True:
+        if self._existing is True:
             if "float" in display.lower():
                 self._story._properties["nodes"][self.node]["config"]["size"] = "float"
                 if "right" in display.lower():
@@ -1581,7 +1696,7 @@ class Map(object):
     # ----------------------------------------------------------------------
     def _add_map(self, caption=None, alt_text=None, display=None, story=None):
         self._story = story
-
+        self._existing = True
         # Create webmap nodes
         # This represents the map as seen in the story
         self._story._properties["nodes"][self.node] = {
@@ -1605,7 +1720,7 @@ class Map(object):
                 "viewpoint": self._viewpoint,
                 "itemId": self._path.id,
                 "itemType": self._type,
-                "type": "default",
+                "type": "minimal",
             },
         }
 
@@ -1681,9 +1796,12 @@ class Map(object):
 
 
 ###############################################################################################################
-class Text(object):
+class Text:
     """
     Class representing a `text` and a style of text.
+
+    .. note::
+        Once you create a Text instance you must add it to the story to be able to edit it further.
 
     ==================      ====================================================================
     **Parameter**            **Description**
@@ -1774,8 +1892,8 @@ class Text(object):
         self._type = "text"
         self.node = kwargs.pop("node_id", None)
         # Check if node exists in story else create new instance.
-        existing = self._check_node()
-        if existing is True:
+        self._existing = self._check_node()
+        if self._existing is True:
             self._text = self._story._properties["nodes"][self.node]["data"]["text"]
             self._style = self._story._properties["nodes"][self.node]["data"]["type"]
         else:
@@ -1800,6 +1918,10 @@ class Text(object):
         return "Text"
 
     # ----------------------------------------------------------------------
+    def __repr__(self) -> str:
+        return "Text"
+
+    # ----------------------------------------------------------------------
     @property
     def properties(self):
         """
@@ -1809,7 +1931,7 @@ class Text(object):
             The Text dictionary for the node.
             If nothing is returned, make sure the content is part of the story.
         """
-        if self._check_node() is True:
+        if self._existing is True:
             return {
                 "node_dict": self._story._properties["nodes"][self.node],
             }
@@ -1830,13 +1952,13 @@ class Text(object):
             The text for the node.
             If nothing is returned, make sure the content is part of the story.
         """
-        if self._check_node() is True:
+        if self._existing is True:
             return self._story._properties["nodes"][self.node]["data"]["text"]
 
     # ----------------------------------------------------------------------
     @text.setter
     def text(self, text):
-        if self._check_node() is True:
+        if self._existing is True:
             self._story._properties["nodes"][self.node]["data"]["text"] = text
             return self.text
 
@@ -1852,6 +1974,7 @@ class Text(object):
     # ----------------------------------------------------------------------
     def _add_text(self, story=None):
         self._story = story
+        self._existing = True
         self._story._properties["nodes"][self.node] = {
             "type": "text",
             "data": {
@@ -1876,9 +1999,12 @@ class Text(object):
 
 
 ###############################################################################################################
-class Button(object):
+class Button:
     """
     Class representing a `button`.
+
+    .. note::
+        Once you create a Button instance you must add it to the story to be able to edit it further.
 
     ==================      ====================================================================
     **Parameter**            **Description**
@@ -1900,8 +2026,8 @@ class Button(object):
         self._type = "button"
         self.node = kwargs.pop("node_id", None)
         # Check if node exists else create new instance
-        existing = self._check_node()
-        if existing is True:
+        self._existing = self._check_node()
+        if self._existing is True:
             self._link = self._story._properties["nodes"][self.node]["data"]["link"]
             self._text = self._story._properties["nodes"][self.node]["data"]["text"]
         else:
@@ -1914,6 +2040,10 @@ class Button(object):
         return "Button"
 
     # ----------------------------------------------------------------------
+    def __repr__(self) -> str:
+        return "Button"
+
+    # ----------------------------------------------------------------------
     @property
     def properties(self):
         """
@@ -1923,7 +2053,7 @@ class Button(object):
             The Button dictionary for the node.
             If nothing is returned, make sure the content is part of the story.
         """
-        if self._check_node() is True:
+        if self._existing is True:
             return {"node_dict": self._story._properties["nodes"][self.node]}
 
     # ----------------------------------------------------------------------
@@ -1942,13 +2072,13 @@ class Button(object):
             The text for the node.
             If nothing is returned, make sure the content is part of the story.
         """
-        if self._check_node() is True:
+        if self._existing is True:
             return self._story._properties["nodes"][self.node]["data"]["text"]
 
     # ----------------------------------------------------------------------
     @text.setter
     def text(self, text):
-        if self._check_node() is True:
+        if self._existing is True:
             self._story._properties["nodes"][self.node]["data"]["text"] = text
             return self.text
 
@@ -1968,13 +2098,13 @@ class Button(object):
             The link being used.
             If nothing is returned, make sure the content is part of the story.
         """
-        if self._check_node() is True:
+        if self._existing is True:
             return self._story._properties["nodes"][self.node]["data"]["link"]
 
     # ----------------------------------------------------------------------
     @link.setter
     def link(self, link):
-        if self._check_node() is True:
+        if self._existing is True:
             self._story._properties["nodes"][self.node]["data"]["link"] = link
             return self.link
 
@@ -1988,6 +2118,7 @@ class Button(object):
     # ----------------------------------------------------------------------
     def _add_button(self, story):
         self._story = story
+        self._existing = True
         self._story._properties["nodes"][self.node] = {
             "type": "button",
             "data": {"text": self._text, "link": self._link},
@@ -2005,12 +2136,15 @@ class Button(object):
 
 
 ###############################################################################################################
-class Gallery(object):
+class Gallery:
     """
     Class representing an `image gallery`
 
     To begin with a new gallery, simply call the class. Once added to the story,
     you can add up to 12 images.
+
+    .. note::
+        Once you create a Gallery instance you must add it to the story to be able to edit it further.
 
     .. code-block:: python
 
@@ -2022,7 +2156,7 @@ class Gallery(object):
         # Create a gallery and add to story before adding images to it.
         >>> gallery = Gallery()
         >>> my_story.add(gallery)
-        >>> gallery.add([image1, image2, image3])
+        >>> gallery.add_images([image1, image2, image3])
     """
 
     def __init__(self, **kwargs):
@@ -2032,16 +2166,20 @@ class Gallery(object):
         self._type = "gallery"
         self.node = kwargs.pop("node_id", None)
         # Check if node exists, else create new empty instance
-        existing = self._check_node()
-        if existing is True:
+        self._existing = self._check_node()
+        if self._existing is True:
             self._children = self._story._properties["nodes"][self.node]["children"]
-        elif existing is False:
+        else:
             # Create new empty instance
             self._children = []
             self.node = "n-" + uuid.uuid4().hex[0:6]
 
     # ----------------------------------------------------------------------
     def __str__(self) -> str:
+        return "Image Gallery"
+
+    # ----------------------------------------------------------------------
+    def __repr__(self) -> str:
         return "Image Gallery"
 
     # ----------------------------------------------------------------------
@@ -2054,7 +2192,7 @@ class Gallery(object):
             A dictionary depicting the node in the story.
             If nothing is returned, make sure the gallery is part of the story.
         """
-        if self._check_node() is True:
+        if self._existing is True:
             return {
                 "node_dict": self._story._properties["nodes"][self.node],
             }
@@ -2069,7 +2207,7 @@ class Gallery(object):
         ==================      ====================================================================
         **Parameter**            **Description**
         ------------------      --------------------------------------------------------------------
-        node_list               List of node ids for the images in the gallery. Nodes must already be
+        images                  List of node ids for the images in the gallery. Nodes must already be
                                 in the gallery and this list will adjust the order of the images.
 
                                 To add new images to the gallery use:
@@ -2082,10 +2220,13 @@ class Gallery(object):
             A list of node ids in order of image appearance in the gallery.
             If nothing is returned, make sure the gallery is part of the story.
         """
-        if self._check_node():
+        if self._existing:
             # Update incase addition or removal was made in between last check.
             self._children = self._story._properties["nodes"][self.node]["children"]
-            return self._children
+            images = []
+            for child in self._children:
+                images.append(Image(story=self._story, node_id=child))
+            return images
         else:
             raise Warning(
                 "Image Gallery must be added to the story before adding Images."
@@ -2093,10 +2234,17 @@ class Gallery(object):
 
     # ----------------------------------------------------------------------
     @images.setter
-    def images(self, node_list):
-        if self._check_node():
-            self._children = node_list
-            self._story._properties["nodes"][self.node]["children"] = node_list
+    def images(self, images):
+        if self._existing:
+            if images != self.images:
+                raise ValueError(
+                    "You cannot add or remove images through this method, only rearrange them."
+                )
+            children = []
+            for image in images:
+                children.append(image.node)
+            self._children = children
+            self._story._properties["nodes"][self.node]["children"] = children
         return self.images
 
     # ----------------------------------------------------------------------
@@ -2154,13 +2302,13 @@ class Gallery(object):
 
         Values: `jigsaw` | `square-dynamic`
         """
-        if self._check_node() is True:
+        if self._existing is True:
             return self._story._properties["nodes"][self.node]["config"]["size"]
 
     # ----------------------------------------------------------------------
     @display.setter
     def display(self, display):
-        if self._check_node() is True:
+        if self._existing is True:
             self._story._properties["nodes"][self.node]["config"]["size"] = display
             return self.display
 
@@ -2173,7 +2321,7 @@ class Gallery(object):
         images                  Required list of images of type Image.
         ==================      ====================================================================
         """
-        if self._check_node():
+        if self._existing:
             if len(self.images) == 12:
                 raise Warning(
                     "Maximum amount of images permitted is 12. Use Gallery.delete(image_node) to remove images before adding."
@@ -2189,7 +2337,7 @@ class Gallery(object):
         return self.images
 
     # ----------------------------------------------------------------------
-    def delete_image(self, image: str):
+    def delete_image(self, image: str | Image):
         """
         The delete_image method is used to delete one image from the gallery. To see a list of images
         used in the gallery, use the :meth:`~arcgis.apps.storymap.story_content.Gallery.images` property.
@@ -2197,11 +2345,13 @@ class Gallery(object):
         ==================      ====================================================================
         **Parameter**            **Description**
         ------------------      --------------------------------------------------------------------
-        image                   Required String. The node id for the image to be removed from the gallery.
+        image                   Required String. The node id for the image to be removed from the gallery or the Image instance.
         ==================      ====================================================================
 
         :return: The current list of images in the gallery.
         """
+        if isinstance(image, Image):
+            image = image.node
         if image in self.images:
             # Remove from the gallery list
             self._story._properties["nodes"][self.node]["children"].remove(image)
@@ -2211,7 +2361,7 @@ class Gallery(object):
     # ----------------------------------------------------------------------
     def _add_gallery(self, caption=None, alt_text=None, display=None, story=None):
         self._story = story
-
+        self._existing = True
         # Create image nodes
         self._story._properties["nodes"][self.node] = {
             "type": "gallery",
@@ -2224,6 +2374,18 @@ class Gallery(object):
         }
 
     # ----------------------------------------------------------------------
+    def delete(self):
+        """
+        Delete the node
+
+        :return: True if successful.
+        """
+        if self._existing is True:
+            return self._story._delete(self.node)
+        else:
+            return False
+
+    # ----------------------------------------------------------------------
     def _check_node(self):
         if self._story is None:
             return False
@@ -2234,14 +2396,17 @@ class Gallery(object):
 
 
 ###############################################################################################################
-class Swipe(object):
+class Swipe:
     """
-    Create an Swipe object from a pre-existing ``swipe`` node.
+    Create an Swipe node.
+
+    .. note::
+        Once you create a Swipe instance you must add it to the story to be able to edit it further.
 
     ===============     ====================================================================
     **Parameter**        **Description**
     ---------------     --------------------------------------------------------------------
-    node                Required String. The node id for the swipe type.
+    node_id             Required String. The node id for the swipe type.
     ---------------     --------------------------------------------------------------------
     story               Required :class:`~arcgis.apps.storymap.story.StoryMap` that the swipe belongs to.
     ===============     ====================================================================
@@ -2251,37 +2416,71 @@ class Swipe(object):
         >>> my_story.nodes #use to find swipe node id
 
         # Method 1: Use the Swipe Class
-        >>> swipe = Swipe(my_story, <node_id>)
+        >>> swipe = Swipe()
 
         # Method 2: Use the get method in story
         >>> swipe = my_story.get(node = <node_id>)
 
     """
 
-    def __init__(self, story, node: str):
-        # Content must already exist in story
-        # Swipe is not an immersive node
-        self.node = node
-        self._story = story
+    def __init__(self, **kwargs):
+        self._story = kwargs.pop("story", None)
         self._type = "swipe"
+        if "node" in kwargs:
+            # legacy
+            self.node = kwargs.pop("node", None)
+        else:
+            self.node = kwargs.pop("node_id", None)
+
         # Find the type of media that the swipe supports.
         # Both contents are of the same type so only need to look at one.
-        if "data" in self._story._properties["nodes"][self.node]:
-            self._slides = self._story._properties["nodes"][self.node]["data"][
-                "contents"
-            ]
-            media_node = self._story._properties["nodes"][self.node]["data"][
-                "contents"
-            ]["0"]
-            self._media_type = story._properties["nodes"][media_node]["type"]
+        # Check if node exists else create new instance
+        self._existing = self._check_node()
+        if self._existing is True:
+            if "data" in self._story._properties["nodes"][self.node]:
+                self._slides = self._story._properties["nodes"][self.node]["data"][
+                    "contents"
+                ]
+                # get the media for the swipe (image or map)
+                media_node = self._story._properties["nodes"][self.node]["data"][
+                    "contents"
+                ]["0"]
+
+                # Find the type, this is important since swipe must only have one media type
+                if media_node == "":
+                    # First position is empty
+                    # Check the second position
+                    second_media = self._story._properties["nodes"][self.node]["data"][
+                        "contents"
+                    ]["1"]
+                    if second_media == "":
+                        # No media set yet, type is empty
+                        self._media_type = ""
+                    else:
+                        self._media_type = self._story._properties["nodes"][
+                            second_media
+                        ]["type"]
+                else:
+                    # Use the media type of the first position
+                    self._media_type = self._story._properties["nodes"][media_node][
+                        "type"
+                    ]
+
+            else:
+                # Empty swipe node
+                self._slides = []
+                self._media_type = ""
         else:
-            # Empty swipe node
+            self.node = "n-" + uuid.uuid4().hex[0:6]
             self._slides = []
-            media_node = None
             self._media_type = ""
 
     # ----------------------------------------------------------------------
     def __str__(self) -> str:
+        return "Swipe"
+
+    # ----------------------------------------------------------------------
+    def __repr__(self) -> str:
         return "Swipe"
 
     # ----------------------------------------------------------------------
@@ -2293,9 +2492,12 @@ class Swipe(object):
         :return:
             A dictionary depicting the node in the story.
         """
-        return {
-            "node_dict": self._story._properties["nodes"][self.node],
-        }
+        if self._existing is True:
+            return {
+                "node_dict": self._story._properties["nodes"][self.node],
+            }
+        else:
+            return None
 
     # ----------------------------------------------------------------------
     @property
@@ -2312,14 +2514,17 @@ class Swipe(object):
         :return:
             The caption that is being used.
         """
-        return self._story._properties["nodes"][self.node]["data"]["caption"]
+        if self._existing is True:
+            return self._story._properties["nodes"][self.node]["data"]["caption"]
+        else:
+            return None
 
     # ----------------------------------------------------------------------
     @caption.setter
     def caption(self, caption):
-        if isinstance(caption, str):
-            self._story._properties["nodes"][self.node]["data"]["caption"] = caption
-        return self.caption
+        if self._existing is True:
+            if isinstance(caption, str):
+                self._story._properties["nodes"][self.node]["data"]["caption"] = caption
 
     # ----------------------------------------------------------------------
     @property
@@ -2336,13 +2541,16 @@ class Swipe(object):
         :return:
             The alternate text that is being used.
         """
-        return self._story._properties["nodes"][self.node]["data"]["alt"]
+        if self._existing is True:
+            return self._story._properties["nodes"][self.node]["data"]["alt"]
+        else:
+            return None
 
     # ----------------------------------------------------------------------
     @alt_text.setter
     def alt_text(self, alt_text):
-        self._story._properties["nodes"][self.node]["data"]["alt"] = alt_text
-        return self.alt_text
+        if self._existing is True:
+            self._story._properties["nodes"][self.node]["data"]["alt"] = alt_text
 
     # ----------------------------------------------------------------------
     def edit(
@@ -2354,40 +2562,51 @@ class Swipe(object):
         Edit the media content of a Swipe item. To save your edits and see them
         in the StoryMap's builder, make sure to save the story.
 
+        Use this method to add new content if your swipe is empty. You can specify the content to add
+        and which side of the swipe it should be on.
+
         ===============     ====================================================================
         **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
-        content             Required story content of type: :class:`~arcgis.apps.storymap.story_content.Image` or :class:`~arcgis.apps.storymap.story_content.Map` . Must be the same media
+        content             Required story content of type: :class:`~arcgis.apps.storymap.story_content.Image`
+                            or :class:`~arcgis.apps.storymap.story_content.Map`. Must be the same media type
                             on both panels.
         ---------------     --------------------------------------------------------------------
         position            Optional String. Either "right" or "left". Default is "right" so content
                             will be added to right panel.
         ===============     ====================================================================
 
+        :return: True if successful
         """
-        # Media type must be same for right and left slide.
-        if isinstance(content, Image) and self._media_type == "webmap":
-            raise ValueError(
-                "Media type is established as webmap. Can only accept another webmap."
-            )
-        if isinstance(content, Map) and self._media_type == "image":
-            raise ValueError(
-                "Media type is established as image. Can only accept another image."
-            )
-        # Add node to story.
-        self._add_item_story(content)
+        if self._existing is True:
+            # Media type must be same for right and left slide.
+            if isinstance(content, Image) and self._media_type == "webmap":
+                raise ValueError(
+                    "Media type is established as webmap. Can only accept another webmap."
+                )
+            if isinstance(content, Map) and self._media_type == "image":
+                raise ValueError(
+                    "Media type is established as image. Can only accept another image."
+                )
+            # Add node to story.
+            self._add_item_story(content)
 
-        if "data" not in self._story._properties["nodes"][self.node]:
-            self._story._properties["nodes"][self.node]["data"] = {"contents": {}}
-        # Add to content in position wanted
-        if position == "left":
-            self._story._properties["nodes"][self.node]["data"]["contents"][
-                "0"
-            ] = content.node
+            if "data" not in self._story._properties["nodes"][self.node]:
+                self._story._properties["nodes"][self.node]["data"] = {"contents": {}}
+            # Add to content in position wanted
+            if position == "left":
+                self._story._properties["nodes"][self.node]["data"]["contents"][
+                    "0"
+                ] = content.node
+            else:
+                self._story._properties["nodes"][self.node]["data"]["contents"][
+                    "1"
+                ] = content.node
+            return True
         else:
-            self._story._properties["nodes"][self.node]["data"]["contents"][
-                "1"
-            ] = content.node
+            raise KeyError(
+                "The instance of Swipe must first be added to the story before you can start editing."
+            )
 
     # ----------------------------------------------------------------------
     def delete(self):
@@ -2396,7 +2615,26 @@ class Swipe(object):
 
         :return: True if successful.
         """
-        return self._story._delete(self.node)
+        if self._existing is True:
+            return self._story._delete(self.node)
+        else:
+            return False
+
+    # ----------------------------------------------------------------------
+    def _add_swipe(self, caption=None, alt_text=None, display=None, story=None):
+        self._story = story
+        self._existing = True
+        # Create swipe node
+        self._story._properties["nodes"][self.node] = {
+            "type": "swipe",
+            "data": {
+                "contents": {"0": "", "1": ""},
+                "caption": "" if caption is None else caption,
+                "alt": "" if alt_text is None else alt_text,
+            },
+        }
+        if display:
+            self._story._properties["nodes"][self.node]["config"] = {"size": display}
 
     # ----------------------------------------------------------------------
     def _add_item_story(self, content):
@@ -2409,22 +2647,33 @@ class Swipe(object):
             content._add_map(story=self._story)
             self._media_type = "webmap"
 
+    # ----------------------------------------------------------------------
+    def _check_node(self):
+        if self._story is None:
+            return False
+        elif self.node is None:
+            return False
+        else:
+            return True
+
 
 ###############################################################################################################
-class Sidecar(object):
+class Sidecar:
     """
-    Create an Sidecar immersive object from a pre-existing ``immersive`` node.
+    Create an Sidecar immersive object.
 
-    A sidecar is composed of slides. Slides are composed of two nodes: a narrative panel and a media node.
+    A sidecar is composed of slides. Slides are composed of two sub structures: a narrative panel and a media panel.
     The media node can be a(n): Image, Video, Embed, Map, or Swipe.
     The narrative panel can contain mulitple types of content including Image, Video, Embed, Button, Text, Map, and more.
+
+    .. note::
+        Once you create a Sidecar instance you must add it to the story to be able to edit it further.
 
     ===============     ====================================================================
     **Parameter**        **Description**
     ---------------     --------------------------------------------------------------------
-    node_id             Required String. The node id for the sidecar type.
-    ---------------     --------------------------------------------------------------------
-    story               Required :class:`~arcgis.apps.storymap.story.StoryMap` that the sidecar belongs to.
+    style               Optional string that depicts the sidecar style.
+                        Values: 'floating-panel' | 'docked-panel' | 'slideshow'
     ===============     ====================================================================
 
     .. code-block:: python
@@ -2432,26 +2681,58 @@ class Sidecar(object):
         >>> my_story.nodes #use to find sidecar node id
 
         # Method 1: Use the Sidecar Class
-        >>> sidecar = Sidecar(my_story, <node_id>)
+        >>> sidecar = Sidecar("floating-panel") # create from scratch
 
         # Method 2: Use the get method in story
-        >>> sidecar = my_story.get(node = <node_id>)
+        >>> sidecar = my_story.content_list()[3] # sidecar is fourth item in story
     """
 
-    def __init__(self, story, node: str):
-        # Content must already exist in the story
-        # Sidecar is an immersive node
-        self._story = story
-        self.node = node
-        self._type = story._properties["nodes"][node]["data"]["type"]
-        if self._type != "sidecar":
-            raise Exception("This node is not of type sidecar.")
-        self._subtype = story._properties["nodes"][node]["data"]["subtype"]
-        self._slides = story._properties["nodes"][node]["children"]
+    def __init__(self, style: Optional[str] = None, **kwargs):
+        # Can be created from scratch or already exist in story
+        self._story = kwargs.pop("story", None)
+        self._type = "immersive"
+        if "node" in kwargs:
+            # legacy
+            self.node = kwargs.pop("node", None)
+        else:
+            self.node = kwargs.pop("node_id", None)
+        # Check if node exists else create new instance
+        self._existing = self._check_node()
+        if self._existing is True:
+            self._style = self._story._properties["nodes"][self.node]["data"]["subtype"]
+            self._slides = self._story._properties["nodes"][self.node]["children"]
+        else:
+            self.node = "n-" + uuid.uuid4().hex[0:6]
+            self._style = style if style else "floating-panel"
+            self._slides = []
 
     # ----------------------------------------------------------------------
     def __str__(self) -> str:
         return "Sidecar"
+
+    # ----------------------------------------------------------------------
+    def __repr__(self) -> str:
+        return "Sidecar"
+
+    # ----------------------------------------------------------------------
+    def _add_sidecar(
+        self,
+        story=None,
+    ):
+        # Add the story to the node
+        self._story = story
+        self._existing = True
+        # Create timeline nodes
+        self._story._properties["nodes"][self.node] = {
+            "type": "immersive",
+            "data": {
+                "type": "sidecar",
+                "subtype": self._style,
+                "narrativePanelPosition": "start",
+                "narrativePanelSize": "medium",
+            },
+            "children": [],
+        }
 
     # ----------------------------------------------------------------------
     @property
@@ -2463,7 +2744,7 @@ class Sidecar(object):
             A list where the first item is the node id for the sidecar. Next
             items are slides with the dictionary their children.
         """
-        sidecar_tree = [self.node]
+        sidecar_tree = []
         for slide in self._slides:
             narrative_panel = self._story._properties["nodes"][slide]["children"][0]
             children = (
@@ -2471,10 +2752,11 @@ class Sidecar(object):
                 if "children" in self._story._properties["nodes"][narrative_panel]
                 else ""
             )
-            narrative_children = {}
+            narrative_children = []
             for child in children:
                 info = self._story._properties["nodes"][child]
-                narrative_children[info["type"]] = child
+                narrative_children.append({info["type"]: child})
+
             # there will always be a narrative panel node but not always a media node
             if len(self._story._properties["nodes"][slide]["children"]) == 2:
                 media_item = self._story._properties["nodes"][slide]["children"][1]
@@ -2498,13 +2780,53 @@ class Sidecar(object):
         return sidecar_tree
 
     # ----------------------------------------------------------------------
+    @property
+    def content_list(self):
+        """
+        Get a list of all the content within the sidecar in order of appearance.
+        The content will be displayed in the following order:
+        A list of the content in slide 1, a list of the content in slide 2, etc.
+        Each sub-list will contain content found in the narrative panel, if any, and the media content, if any.
+        """
+        contents = []
+        # get the values from the nodes list and return only these
+        sidecar_dict = self.properties
+        for slide in sidecar_dict:
+            content = []
+            # get the entire slide dict
+            slide_dict = list(slide.values())[0]
+            if (
+                "narrative_panel" in slide_dict
+                and "children" in slide_dict["narrative_panel"]
+                and len(slide_dict["narrative_panel"]["children"]) > 0
+            ):
+                # Get the content that are children of the narrative panel
+                children = slide_dict["narrative_panel"]["children"]
+                for child in children:
+                    # Get each class from the node value
+                    content.append(self.get(list(child.values())[0]))
+            if "media" in slide_dict and (
+                slide_dict["media"] is not None or slide_dict["media"] != {}
+            ):
+                # Get the media content for the slide
+                media = list(slide_dict["media"].values())[0]
+
+                if media == None or media == "":
+                    pass
+                else:
+                    # Get the class using the node value
+                    content.append(self.get(media))
+            contents.append(content)
+        return contents
+
+    # ----------------------------------------------------------------------
     def edit(
         self,
         content: Union[Image, Video, Map, Embed],
         slide_number: int,
     ):
         """
-        Edit method can be used to edit the type of media in a slide of the Sidecar.
+        Edit method can be used to edit the **type** of media in a slide of the Sidecar.
         This is done by specifying the slide number and the media content to be added.
         The media can only be of type: Image, Video, Map, or Embed.
 
@@ -2527,6 +2849,7 @@ class Sidecar(object):
         ==================      =======================================================================
 
         .. code-block:: python
+
             # Get sidecar from story and see the properties
             sc = story.get(<sidecar_node_id>)
             sc.properties
@@ -2549,7 +2872,7 @@ class Sidecar(object):
 
         """
         # Find media child
-        slide = self.properties[slide_number]
+        slide = self.properties[slide_number - 1]
         slide_node = list(slide.keys())[0]
         media_node = list(slide[slide_node]["media"].values())[0]
 
@@ -2575,6 +2898,7 @@ class Sidecar(object):
         :return: An class instance of the node type.
 
         .. code-block:: python
+
             # Find the nodes associated with the sidecar
             sc = story.get(<sidecar_node_id>)
             sc.properties
@@ -2591,9 +2915,142 @@ class Sidecar(object):
         return self._story._assign_node_class(node_id)
 
     # ----------------------------------------------------------------------
+    def add_action(
+        self,
+        slide_number: int,
+        text: str,
+        viewpoint: dict,
+        extent: dict | None = None,
+        map_layers: list[dict] | None = None,
+    ):
+        """
+        Add a map action button to a slide. You can specify the data of the action.
+
+        ===============     ====================================================================
+        **Parameter**        **Description**
+        ---------------     --------------------------------------------------------------------
+        slide_number        Required Integer. The slide that the map action will be added to. First slide is 1.
+        ---------------     --------------------------------------------------------------------
+        text                Required String. The map action button text
+        ---------------     --------------------------------------------------------------------
+        viewpoint           Required Dictionary. The viewpoint to be set. The minimum keys to include are
+                            an x and y center point in the target geometry.
+
+                            Example:
+                                viewpoint = {
+                                    "rotation": 0,
+                                    "scale": 18055.954822,
+                                    "targetGeometry": {
+                                        "spatialReference": {
+                                            "latestWkid": 3857,
+                                            "wkid": 102100
+                                        },
+                                        "x": -8723429.856341356,
+                                        "y": 4019095.847955684
+                                    }
+                                }
+        ---------------     --------------------------------------------------------------------
+        extent              Optional Dictionary. The extent of the map that will be shown when
+                            the action button is used.
+
+                            Example:
+                                extent = {
+                                    "spatialReference": {
+                                        "latestWkid": 3857,
+                                        "wkid": 102100
+                                    },
+                                    "xmin": -8839182.968379805,
+                                    "ymin": 3907027.5240857545,
+                                    "xmax": -8824335.075635428,
+                                    "ymax": 3915378.269425899
+                                }
+        ---------------     --------------------------------------------------------------------
+        map_layers          Optional list of dictionaries. Each dictionary represents a map layer
+                            and the parameters set on the map layer.
+
+                            Example:
+                                map_layers = [
+                                    {
+                                        "id": "18511776c33-layer-2",
+                                        "title": "USA Forest Type",
+                                        "visible": true
+                                    }
+                                ]
+        ===============     ====================================================================
+
+        :return: The node id for the action that was added to the slide
+        """
+        # create node for the action
+        node = "n-" + uuid.uuid4().hex[0:6]
+
+        # find the target map
+        slide_node = self._slides[slide_number - 1]
+        slide_dict = self.properties[slide_number][slide_node]
+        if "media" not in slide_dict:
+            raise ValueError(
+                "The slide needs a webmap or expressmap for the map action to be created."
+            )
+
+        # get the map type
+        map_type = list(slide_dict["media"].keys())[0]
+        if map_type not in ["expressmap", "webmap"]:
+            raise ValueError(
+                "The slide needs a webmap or expressmap for the map action to be created."
+            )
+        map_node = slide_dict["media"][map_type]
+
+        # compose the action dict
+        action_dict = {
+            "origin": node,
+            "trigger": "ActionButton_Apply",
+            "target": map_node,
+            "event": "ExpressMap_UpdateData"
+            if map_type == "expressmap"
+            else "WebMap_UpdateData",
+            "data": {},
+        }
+        if extent and not viewpoint:
+            action_dict["data"]["extent"] = extent
+            x_center = (extent["xmin"] + extent["xmax"]) / 2
+            y_center = (extent["ymin"] + extent["ymax"]) / 2
+            viewpoint = {
+                "rotation": 0,
+                "targetGeometry": {
+                    "spatialReference": extent["spatialReference"]
+                    if "spatialReference" in extent
+                    else {"latestWkid": 3857, "wkid": 102100},
+                    "x": x_center,
+                    "y": y_center,
+                },
+            }
+        if map_layers:
+            action_dict["data"]["mapLayers"] = map_layers
+        if viewpoint:
+            action_dict["data"]["viewpoint"] = viewpoint
+
+        # add to actions list in story properties
+        if "actions" in self._story._properties:
+            self._story._properties["actions"].append(action_dict)
+        else:
+            self._story._properties["actions"] = [action_dict]
+
+        # compose the node dict in story properties
+        self._story._properties["nodes"][node] = {
+            "type": "action-button",
+            "data": {"text": text},
+            "config": {"size": "wide"},
+        }
+
+        # add to the narrative panel
+        narrative_panel_node = slide_dict["narrative_panel"]["panel"]
+        self._story._properties["nodes"][narrative_panel_node]["children"].append(node)
+
+        return node
+
+    # ----------------------------------------------------------------------
     def add_slide(
         self,
-        contents: list,
+        contents: list | None = None,
         media: Image | Video | Map | Embed | None = None,
         slide_number: int = None,
     ):
@@ -2604,7 +3061,7 @@ class Sidecar(object):
         =======================     ====================================================================
         **Parameter**                **Description**
         -----------------------     --------------------------------------------------------------------
-        contents                    Required list of story content item(s). The instances of story content that
+        contents                    Optional list of story content item(s). The instances of story content that
                                     will be added to the narrative panel such as Text, Image, Embed, etc.
         -----------------------     --------------------------------------------------------------------
         media                       Optional item that is a story content item.
@@ -2617,6 +3074,7 @@ class Sidecar(object):
         =======================     ====================================================================
 
         .. code-block:: python
+
             # Get sidecar from story and see the properties
             sc = story.get(<sidecar_node_id>)
             sc.properties
@@ -2637,53 +3095,70 @@ class Sidecar(object):
         # Loop to:
         # 1. Add the content to the story if not already added
         # 2. Add the node ids to list to pass as children later
-        np_children = []
-        for content in contents:
-            self._add_item_story(content)
-            np_children.append(content.node)
-        if media:
-            self._add_item_story(media)
+        if self._existing:
+            np_children = []
+            if contents:
+                for content in contents:
+                    self._add_item_story(content)
+                    np_children.append(content.node)
+            if media:
+                self._add_item_story(media)
 
-        # For reference on some styles, grab first slide to go off of
-        first_slide = self._story.properties["nodes"][self._slides[0]]
-        first_np = self._story.properties["nodes"][first_slide["children"][0]]
+            # For reference on some styles, grab first slide to go off of
+            if len(self._slides) > 0:
+                first_slide = self._story.properties["nodes"][self._slides[0]]
+                first_np = self._story.properties["nodes"][first_slide["children"][0]]
+                data = first_np["data"]  # keep same settings as other slide
+            else:
+                if self._style == "slideshow":
+                    data = {"position": "start-top", "panelStyle": "themed"}
+                else:
+                    data = {
+                        "position": "start",
+                        "size": "small",
+                        "panelStyle": "themed",
+                    }
 
-        # Create narrative panel node
-        np_node = "n-" + uuid.uuid4().hex[0:6]
-        np_def = {
-            "type": "immersive-narrative-panel",
-            "data": first_np["data"],  # keep same settings as other slide
-            "children": np_children,
-        }
-        self._story._properties["nodes"][np_node] = np_def
+            # Create narrative panel node
+            np_node = "n-" + uuid.uuid4().hex[0:6]
+            np_def = {
+                "type": "immersive-narrative-panel",
+                "data": data,
+                "children": np_children,
+            }
+            self._story._properties["nodes"][np_node] = np_def
 
-        # Create slide node and add the other nodes to it
-        slide_node = "n-" + uuid.uuid4().hex[0:6]
-        slide_def = {
-            "type": "immersive-slide",
-            "data": {"transition": "fade"},
-            "children": [np_node],  # First listed node is the Narrative Panel
-        }
-        # If no media given then put a background color instead
-        if media:
-            slide_def["children"].append(media.node)
+            # Create slide node and add the other nodes to it
+            slide_node = "n-" + uuid.uuid4().hex[0:6]
+            slide_def = {
+                "type": "immersive-slide",
+                "data": {"transition": "fade"},
+                "children": [np_node],  # First listed node is the Narrative Panel
+            }
+            # If no media given then put a background color instead
+            if media:
+                slide_def["children"].append(media.node)
+            else:
+                slide_def["data"]["backgroundColor"] = "#FFFFFF"
+            self._story._properties["nodes"][slide_node] = slide_def
+
+            # Add slide node to sidecar node children at position indicated or last.
+            if slide_number is None:
+                # If no slide number then insert slide last
+                slide_number = len(self._slides) + 1
+            else:
+                # Correct for the indexing (user puts position 1, index is 0)
+                slide_number = slide_number - 1
+            self._story._properties["nodes"][self.node]["children"].insert(
+                slide_number, slide_node
+            )
+            # Update slide definition for the class to relect new list
+            self._slides = self._story._properties["nodes"][self.node]["children"]
+            return {"New Slide": slide_node}
         else:
-            slide_def["data"]["backgroundColor"] = "#FFFFFF"
-        self._story._properties["nodes"][slide_node] = slide_def
-
-        # Add slide node to sidecar node children at position indicated or last.
-        if slide_number is None:
-            # If no slide number then insert slide last
-            slide_number = len(self._slides) + 1
-        else:
-            # Correct for the indexing (user puts position 1, index is 0)
-            slide_number = slide_number - 1
-        self._story._properties["nodes"][self.node]["children"].insert(
-            slide_number, slide_node
-        )
-        # Update slide definition for the class to relect new list
-        self._slides = self._story._properties["nodes"][self.node]["children"]
-        return {"New Slide": slide_node}
+            return Exception(
+                "The sidecar must first be added to a story before editing."
+            )
 
     # ----------------------------------------------------------------------
     def remove_slide(self, slide: str):
@@ -2717,9 +3192,10 @@ class Sidecar(object):
         # Get narrative panel, always first child of the slide
         narrative_panel = self._story._properties["nodes"][slide]["children"][0]
         # Delete the children of the narrative panel
-        children = self._story._properties["nodes"][narrative_panel]["children"]
-        for child in children:
-            self._story._delete(child)
+        if "children" in self._story._properties["nodes"][narrative_panel]:
+            children = self._story._properties["nodes"][narrative_panel]["children"]
+            for child in children:
+                self._story._delete(child)
         # Delete the narrative panel itself
         self._story._delete(narrative_panel)
 
@@ -2746,22 +3222,41 @@ class Sidecar(object):
             content._add_button(story=self._story)
         elif isinstance(content, Audio):
             content._add_audio(display="wide", story=self._story)
+        elif isinstance(content, Timeline):
+            content._add_timeline(story=self._story)
+        elif isinstance(content, Swipe):
+            content._add_swipe(story=self._story)
+
+    # ----------------------------------------------------------------------
+    def _check_node(self):
+        # Node is not in the story if no story or node id is present
+        if self._story is None:
+            return False
+        elif self.node is None:
+            return False
+        else:
+            return True
 
 
 ###############################################################################################################
-class Timeline(object):
+class Timeline:
     """
     Create a Timeline object from a pre-existing `timeline` node.
 
     A timeline is composed of events.
     Events are composed of maximum three nodes: an image, a sub-heading text, and a paragraph text.
 
+    .. note::
+        Once you create a Timeline instance you must add it to the story to be able to edit it further.
+
     ===============     ====================================================================
     **Parameter**        **Description**
     ---------------     --------------------------------------------------------------------
-    node_id             Required String. The node id for the timeline type.
-    ---------------     --------------------------------------------------------------------
-    story               Required :class:`~arcgis.apps.storymap.story.StoryMap` that the timeline belongs to.
+    style               Required string, the style type of the timeline. If the timeline will be
+                        added to a Sidecar, then only `waterfall` and `single-sided` are allowed.
+
+
+                        Values: 'waterfall' | 'single-side' | 'condensed'
     ===============     ====================================================================
 
     .. code-block:: python
@@ -2775,20 +3270,49 @@ class Timeline(object):
         >>> timeline = my_story.get(node = <node_id>)
     """
 
-    def __init__(self, story, node: str):
-        # Content must already exist in the story
-        # Timeline is not an immersive node
-        self._story = story
-        self.node = node
-        self._type = story._properties["nodes"][node]["type"]
-        if self._type != "timeline":
-            raise Exception("This node is not of type timeline.")
-        self._subtype = story._properties["nodes"][node]["data"]["type"]
-        self._events = story._properties["nodes"][node]["children"]
+    def __init__(self, style: Optional[str] = None, **kwargs):
+        # Can be created from scratch or already exist in story
+        self._story = kwargs.pop("story", None)
+        self._type = "timeline"
+        if "node" in kwargs:
+            # legacy
+            self.node = kwargs.pop("node", None)
+        else:
+            self.node = kwargs.pop("node_id", None)
+        # Check if node exists else create new instance
+        self._existing = self._check_node()
+        if self._existing is True:
+            self._style = self._story._properties["nodes"][self.node]["data"]["type"]
+            self._events = self._story._properties["nodes"][self.node]["children"]
+        else:
+            self.node = "n-" + uuid.uuid4().hex[0:6]
+            self._style = style if style else "waterfall"
+            self._events = []
 
     # ----------------------------------------------------------------------
     def __str__(self) -> str:
         return "Timeline"
+
+    # ----------------------------------------------------------------------
+    def __repr__(self) -> str:
+        return "Timeline"
+
+    # ----------------------------------------------------------------------
+    def _add_timeline(
+        self,
+        story=None,
+    ):
+        # Add the story to the node
+        self._story = story
+        # Create timeline nodes
+        self._story._properties["nodes"][self.node] = {
+            "type": "timeline",
+            "data": {
+                "type": self._style,
+            },
+            "children": [],
+        }
+        self._existing = True
 
     # ----------------------------------------------------------------------
     @property
@@ -2803,30 +3327,40 @@ class Timeline(object):
         timeline = {self.node: {}}
         for event in self._events:
             timeline[self.node][event] = {}
-            for child in self._story._properties["nodes"][event]["children"]:
-                node_type = self._story._properties["nodes"][child]["type"]
-                if node_type == "text":
-                    node_type = self._story._properties["nodes"][child]["data"]["type"]
-                    if node_type == "h3":
-                        node_type = "subheading"
-                timeline[self.node][event][node_type] = child
+            if "children" in self._story._properties["nodes"][event]:
+                for child in self._story._properties["nodes"][event]["children"]:
+                    node_type = self._story._properties["nodes"][child]["type"]
+                    if node_type == "text":
+                        node_type = self._story._properties["nodes"][child]["data"][
+                            "type"
+                        ]
+                        if node_type == "h3":
+                            node_type = "subheading"
+                    timeline[self.node][event][node_type] = child
+            else:
+                node_type = self._story._properties["nodes"][event]["type"]
+                timeline[self.node][event] = node_type
         return timeline
 
     # ----------------------------------------------------------------------
     @property
-    def style(self):
+    def style(self) -> str:
         """
         Get/Set the style of the timeline
 
         Values: `waterfall` | `single-slide` | `condensed`
         """
-        return self._story._properties["nodes"][self.node]["data"]["type"]
+        if self._existing is True:
+            return self._story._properties["nodes"][self.node]["data"]["type"]
+        else:
+            return self._style
 
     # ----------------------------------------------------------------------
     @style.setter
     def style(self, style):
-        self._story._properties["nodes"][self.node]["data"]["type"] = style
-        return self.style
+        if self._existing is True:
+            self._story._properties["nodes"][self.node]["data"]["type"] = style
+            self._style = style
 
     # ----------------------------------------------------------------------
     def edit(
@@ -2835,7 +3369,7 @@ class Timeline(object):
         event: int,
     ):
         """
-        Edit event text or image content.
+        Edit event text or image content. To add a new event use the `add_event` method.
 
         ===============     ====================================================================
         **Parameter**        **Description**
@@ -2862,7 +3396,7 @@ class Timeline(object):
         if isinstance(content, Text):
             # Can either be the heading or subheading of the timeline.
             # Need to either replace old or add new if not already existing.
-            if position:
+            if position is not None:
                 old_text_node = self._story._properties["nodes"][event]["children"].pop(
                     position
                 )
@@ -2874,7 +3408,7 @@ class Timeline(object):
                 self._story._properties["nodes"][event]["children"].append(content.node)
         elif isinstance(content, Image):
             # Remove current image content and add new content if image already present
-            if position:
+            if position is not None:
                 old_image_node = self._story._properties["nodes"][event][
                     "children"
                 ].pop(position)
@@ -2887,6 +3421,69 @@ class Timeline(object):
                 self._story._properties["nodes"][event]["children"].append(content.node)
 
     # ----------------------------------------------------------------------
+    def add_event(
+        self, contents: list[Image | Text] | None = None, position: int | None = None
+    ) -> bool:
+        """
+        Add event or spacer to the timeline.
+
+        ===============     ====================================================================
+        **Parameter**        **Description**
+        ---------------     --------------------------------------------------------------------
+        contents            Optional item list that will be in the event. Need to be passed in
+                            by order of appearance.
+                            Item type can be :class:`~arcgis.apps.storymap.story_content.Image` or :class:`~arcgis.apps.storymap.story_content.Text` .
+
+                            Text can only be of style TextStyles.SUBHEADING or TextStyles.PARAGRAPH
+
+                            .. note::
+                                To create timeline spacer, do not pass in any value for this parameter.
+        ---------------     --------------------------------------------------------------------
+        position            Optional Integer. The position at which the even will be added. First event is 1.
+                            If None, then the event will be added to the end.
+        ===============     ====================================================================
+
+        """
+        if self._existing is True:
+            # Check if able to add event (20 max)
+            if len(self._events) == 20:
+                raise ValueError(
+                    "There is a maximum of 20 events allowed per timeline. To remove an event use the `remove_event` method."
+                )
+
+            event_node = "n-" + uuid.uuid4().hex[0:6]
+            if position:
+                self._story._properties["nodes"][self.node]["children"].insert(
+                    position - 1, event_node
+                )
+            else:
+                self._story._properties["nodes"][self.node]["children"].append(
+                    event_node
+                )
+            if contents:
+                contents_ids = []
+                for content in contents:
+                    # Check to see if content has been added to node properties
+                    if content.node not in self._story._properties["nodes"]:
+                        self._add_item_story(content)
+                    contents_ids.append(content.node)
+                self._story._properties["nodes"][event_node] = {
+                    "type": "timeline-event",
+                    "children": contents_ids,
+                }
+            else:
+                self._story._properties["nodes"][event_node] = {
+                    "type": "timeline-spacer"
+                }
+
+            # update self._events
+            self._events = self._story._properties["nodes"][self.node]["children"]
+
+            return True
+        else:
+            return Exception("The node must be part of a story before editing")
+
+    # ----------------------------------------------------------------------
     def remove_event(self, event: str):
         """
         Remove an event from the timeline.
@@ -2897,10 +3494,10 @@ class Timeline(object):
         event               Required String. The node id for the timeline event that will be removed.
         ===============     ====================================================================
         """
-        self._story._properties["nodes"][self.node]["children"].remove(event)
-        self._events.remove(event)
-        self._story._delete(event)
         self._remove_associated(event)
+        self._story._properties["nodes"][self.node]["children"].remove(event)
+        self._story._delete(event)
+        return True
 
     # ----------------------------------------------------------------------
     def delete(self):
@@ -2914,10 +3511,11 @@ class Timeline(object):
     # ----------------------------------------------------------------------
     def _remove_associated(self, event):
         # Remove narrative panel and text associated
-        children = self._story._properties["nodes"][event]["children"]
-        for child in children:
-            self._story._delete(child)
-        self._story._delete(event)
+        if "children" in self._story._properties["nodes"][event]:
+            children = self._story._properties["nodes"][event]["children"]
+            for child in children:
+                self._story._delete(child)
+            self._story._delete(event)
 
     # ----------------------------------------------------------------------
     def _find_position_content(self, content, event_node):
@@ -2938,6 +3536,7 @@ class Timeline(object):
                 position = self._story._properties["nodes"][event_node][
                     "children"
                 ].index(child)
+                return position
             elif (
                 self._story._properties["nodes"][child]["type"] == content_type
                 and self._story._properties["nodes"][child]["data"]["type"] == subtype
@@ -2945,6 +3544,7 @@ class Timeline(object):
                 position = self._story._properties["nodes"][event_node][
                     "children"
                 ].index(child)
+                return position
             else:
                 # Content type doesn't exist yet and will need to be added in.
                 position = None
@@ -2952,18 +3552,31 @@ class Timeline(object):
 
     # ----------------------------------------------------------------------
     def _add_item_story(self, content):
-        if content.node in self.story._properties["nodes"]:
+        if content.node in self._story._properties["nodes"]:
             content.node = "n-" + uuid.uuid4().hex[0:6]
         if isinstance(content, Image):
             content._add_image(story=self._story)
         elif isinstance(content, Text):
             content._add_text(story=self._story)
 
+    # ----------------------------------------------------------------------
+    def _check_node(self):
+        # Node is not in the story if no story or node id is present
+        if self._story is None:
+            return False
+        elif self.node is None:
+            return False
+        else:
+            return True
+
 
 ###############################################################################################################
-class MapTour(object):
+class MapTour:
     """
     Create a MapTour object from a pre-existing `maptour` node.
+
+    .. note::
+        Once you create a MapTour instance you must add it to the story to be able to edit it further.
 
     ===============     ====================================================================
     **Parameter**        **Description**
@@ -2984,20 +3597,33 @@ class MapTour(object):
         >>> maptour = my_story.get(node = <node_id>)
     """
 
-    def __init__(self, story, node: str):
+    def __init__(self, **kwargs):
         # Content must already exist in the story
         # Map Tour is not an immersive node
-        self._story = story
-        self.node = node
-        self.map = story._properties["nodes"][node]["data"]["map"]
-        if story._properties["nodes"][node]["type"] != "tour":
-            raise Exception("This node is not of type tour.")
-        self._type = story._properties["nodes"][node]["data"]["type"]
-        self._subtype = story._properties["nodes"][node]["data"]["subtype"]
-        self._places = story._properties["nodes"][node]["data"]["places"]
+        self._story = kwargs.pop("story", None)
+        self.node = kwargs.pop("node_id", None)
+        self._existing = self._check_node()
+
+        if self._existing:
+            self.map = self._story._properties["nodes"][self.node]["data"]["map"]
+            if self._story._properties["nodes"][self.node]["type"] != "tour":
+                raise Exception("This node is not of type tour.")
+            self._type = self._story._properties["nodes"][self.node]["data"]["type"]
+            self._subtype = self._story._properties["nodes"][self.node]["data"][
+                "subtype"
+            ]
+            self._places = self._story._properties["nodes"][self.node]["data"]["places"]
+        else:
+            raise ValueError(
+                "You cannot create a Map Tour from scratch at this time. Please use an existing Map Tour."
+            )
 
     # ----------------------------------------------------------------------
     def __str__(self) -> str:
+        return "Map Tour"
+
+    # ----------------------------------------------------------------------
+    def __repr__(self) -> str:
         return "Map Tour"
 
     # ----------------------------------------------------------------------
@@ -3048,6 +3674,7 @@ class MapTour(object):
         :return: An class instance of the node type.
 
         .. code-block:: python
+
             # Find the nodes associated with the map tour
             mt = story.get(<maptour_node_id>)
             mt.places
@@ -3062,3 +3689,168 @@ class MapTour(object):
 
         """
         return self._story._assign_node_class(node_id)
+
+    # ----------------------------------------------------------------------
+    def _check_node(self):
+        # Node is not in the story if no story or node id is present
+        if self._story is None:
+            return False
+        elif self.node is None:
+            return False
+        else:
+            return True
+
+
+###############################################################################################################
+class MapAction:
+    """
+    Within the sidecar block, there are stationary media panels and scrolling narrative panels works hand in hand
+    to deliver an immersive experience. If the media panel consists of a web map or web scene, the map actions
+    functionality allows authors to include options for further interactivity.
+    Simply put, map actions are buttons that change something on the map or scene when toggled.
+    These buttons can be configured to modify the map extent, the visibility of different layers etc., and this can be
+    useful to include additional details without deviating from the primary narrative.
+
+    There are two main types: Inline text map actions and map action blocks in sidecar.
+
+    To create a map action you must use the `create_action` method found in the sidecar.
+
+    ===============     ====================================================================
+    **Parameter**        **Description**
+    ---------------     --------------------------------------------------------------------
+    node_id             Required String. The node id for the map tour type.
+    ---------------     --------------------------------------------------------------------
+    story               Required :class:`~arcgis.apps.storymap.story.StoryMap` that the map tour belongs to.
+    ===============     ====================================================================
+
+    """
+
+    def __init__(self, **kwargs) -> None:
+        node = kwargs.pop("node_id", None)
+        story = kwargs.pop("story", None)
+        if node:
+            self.node = node
+            self._story = story
+            actions = story._properties["actions"]
+            for action in actions:
+                if action["origin"] == node:
+                    self.target = action["target"]
+                    self.properties = action
+        else:
+            self.node = "n-" + uuid.uuid4().hex[0:6]
+            self._story = story
+
+    # ----------------------------------------------------------------------
+    def __str__(self) -> str:
+        return "Map Action"
+
+    # ----------------------------------------------------------------------
+    def __repr__(self) -> str:
+        return "Map Action"
+
+    # ----------------------------------------------------------------------
+    @property
+    def viewpoint(self) -> dict:
+        for action in self._story._properties["actions"]:
+            if action["origin"] == self.node:
+                return action["data"]["viewpoint"]
+
+    # ----------------------------------------------------------------------
+    @property
+    def text(self) -> str:
+        """
+        Get/Set the button text for a map action button.
+        """
+        node_dict = self._story._properties["nodes"][self.node]
+        if "text" in node_dict["data"]:
+            return node_dict["data"]["text"]
+        return ""
+
+    # ----------------------------------------------------------------------
+    @text.setter
+    def text(self, text: str) -> None:
+        """"""
+        if isinstance(text, str):
+            self._story._properties["nodes"][self.node]["data"]["text"] = text
+        else:
+            raise TypeError("Text must be of type string.")
+
+    # ----------------------------------------------------------------------
+    def set_viewpoint(
+        self, target_geometry: dict, scale: Scales, rotation: int | None = None
+    ):
+        """
+        Set the extent and/or scale for the map action in the story.
+
+        To see the current viewpoint call the `viewpoint` property on the Map Action
+        node.
+
+        ==================  ========================================
+        **Parameter**        **Description**
+        ------------------  ----------------------------------------
+        target_geometry     Required dictionary representing the target geometry of the
+                            viewpoint.
+
+                            Example:
+                                | {'spatialReference': {'latestWkid': 3857, 'wkid': 102100},
+                                | 'x': -609354.6306080809,
+                                | 'y': 2885721.2797636474}
+        ------------------  ----------------------------------------
+        scale               Required Scales enum class value or int.
+
+                            Scale is a unitless way of describing how any distance on the map translates
+                            to a real-world distance. For example, a map at a 1:24,000 scale communicates that 1 unit
+                            on the screen represents 24,000 of the same unit in the real world.
+                            So one inch on the screen represents 24,000 inches in the real world.
+        ------------------  ----------------------------------------
+        rotation            Optional float. Determine the rotation for an
+                            action on a 3D map.
+        ==================  ========================================
+
+        :return: The current viewpoint dictionary
+        """
+        for idx, action in enumerate(self._story._properties["actions"]):
+            if action["origin"] == self.node:
+                if rotation is None:
+                    if "viewpoint" in self._story._properties["actions"][idx]["data"]:
+                        rotation = (
+                            self._story._properties["actions"][idx]["data"][
+                                "viewpoint"
+                            ]["rotation"]
+                            if "rotation"
+                            in self._story._properties["actions"][idx]["data"][
+                                "viewpoint"
+                            ]
+                            else 0
+                        )
+                if isinstance(scale, Scales):
+                    scale = scale.value
+                self._story._properties["actions"][idx]["data"]["viewpoint"] = {
+                    "rotation": rotation,
+                    "scale": scale,
+                    "targetGeometry": target_geometry,
+                }
+        return self.viewpoint
+
+    # ----------------------------------------------------------------------
+    def delete(self):
+        """
+        Delete the map action.
+        """
+        for idx, action in enumerate(self._story._properties["actions"]):
+            if action["origin"] == self.node:
+                del self._story._properties["actions"][idx]
+        return self._story._delete(self.node)
+
+    # ----------------------------------------------------------------------
+    def _check_node(self):
+        # Node is not in the story if no story or node id is present
+        if self._story is None:
+            return False
+        elif self.node is None:
+            return False
+        else:
+            return True
+
+
+###############################################################################################################

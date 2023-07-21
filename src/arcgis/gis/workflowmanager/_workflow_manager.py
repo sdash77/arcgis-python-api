@@ -20,6 +20,31 @@ def _underscore_to_camelcase(name):
     return "".join(next(c)(x) if x else "_" for x in name.split("_"))
 
 
+def _check_license(gis):
+    user_url = f"{gis._portal.resturl}community/self"
+    raw_user = gis._con.get(user_url, {"returnUserLicenseTypeExtensions": True})
+    if "userLicenseTypeExtensions" in raw_user:
+        licenses = raw_user["userLicenseTypeExtensions"]
+        has_license = "workflow" in licenses
+    else:
+        has_license = False
+
+    if has_license is False:
+        raise ValueError(
+            "No Workflow Manager license is available for the current user"
+        )
+
+
+def _initialize(instance, gis):
+    instance._gis = gis
+    if instance._gis.users.me is None:
+        raise ValueError("An authenticated `GIS` is required.")
+
+    instance._url = instance._wmx_server_url[0]
+    if instance._url is None:
+        raise ValueError("No WorkflowManager Registered with your Organization")
+
+
 class WorkflowManagerAdmin:
     """
     Represents a series of CRUD functions for Workflow Manager Items
@@ -32,48 +57,53 @@ class WorkflowManagerAdmin:
     """
 
     def __init__(self, gis):
-        self._gis = gis
-        if self._gis.users.me is None:
-            raise ValueError("An authenticated `GIS` is required.")
-        if not any(
-            prov.itemid == "50a5f00bcc574358b15eab0e2bdadf39"
-            for prov in self._gis.users.me.provisions
-        ):
-            raise ValueError(
-                "No Workflow Manager license is available for the current user"
-            )
-        self._url = self._wmx_server_url[0]
-        if self._url is None:
-            raise ValueError("No WorkflowManager Registered with your Organization")
-        if not any(
-            prov.itemid == "50a5f00bcc574358b15eab0e2bdadf39"
-            for prov in self._gis.users.me.provisions
-        ):
-            raise ValueError(
-                "No Workflow Manager license is available for the current user"
-            )
+        _initialize(self, gis)
+        _check_license(gis)
 
     @property
     def _wmx_server_url(self):
         """locates the WMX server"""
         baseurl = self._gis._portal.resturl
-        res = self._gis._con.get(f"{baseurl}/portals/self/servers", {"f": "json"})
-        for s in res["servers"]:
-            server_functions = [
-                x.strip() for x in s.get("serverFunction", "").lower().split(",")
-            ]
-            if "workflowmanager" in server_functions:
-                self._url = s.get("url", None)
-                self._private_url = s.get("adminUrl", None)
-                if self._url is None:
-                    raise RuntimeError("Cannot find a WorkflowManager Server")
-                self._url += f"/workflow"
-                self._private_url += f"/workflow"
-                return self._url, self._private_url
-        raise RuntimeError(
-            "Unable to locate Workflow Manager Server. Please contact your ArcGIS Enterprise "
-            "Administrator to ensure Workflow Manager Server is properly configured."
-        )
+
+        # Set org_id
+        info_result = self._gis.properties
+        self.is_enterprise = info_result["isPortal"]
+
+        if self.is_enterprise:
+            self.org_id = "workflow"
+            res = self._gis.servers
+            for s in res["servers"]:
+                server_functions = [
+                    x.strip() for x in s.get("serverFunction", "").lower().split(",")
+                ]
+                if "workflowmanager" in server_functions:
+                    self._url = s.get("url", None)
+                    self._private_url = s.get("adminUrl", None)
+                    if self._url is None:
+                        raise RuntimeError("Cannot find a WorkflowManager Server")
+                    self._url += f"/{self.org_id}"
+                    self._private_url += f"/{self.org_id}"
+                    return self._url, self._private_url
+            raise RuntimeError(
+                "Unable to locate Workflow Manager Server. Please contact your ArcGIS Enterprise "
+                "Administrator to ensure Workflow Manager Server is properly configured."
+            )
+        # is Arcgis Online
+        else:
+            self.org_id = info_result["id"]
+
+            helper_services = info_result["helperServices"]
+            if helper_services is None:
+                raise RuntimeError("Cannot find helper functions")
+
+            self._url = helper_services["workflowManager"]["url"]
+            if self._url is None:
+                raise RuntimeError("Cannot get Workflow Manager url")
+
+            self._url += f"/{self.org_id}"
+            self._private_url = f"/{self.org_id}"
+            return self._url, self._private_url
+
         return None
 
     def create_item(self, name: str) -> tuple:
@@ -206,6 +236,96 @@ class WorkflowManagerAdmin:
             return return_obj["success"]
         return return_obj
 
+    def export_item(
+        self,
+        item: Item,
+        job_template_ids: Optional[str] = None,
+        diagram_ids: Optional[str] = None,
+        include_other_configs: bool = True,
+    ):
+        """
+        Exports a new Workflow Manager configuration (.wmc) file based on the indicated item. This configuration file
+        includes the version, job templates, diagrams, roles, role-group associations, lookup tables, charts and
+        queries, templates, and user settings of the indicated item. Encrypted settings for the item will only have
+        their key but not the value exported. This file can be used with the import endpoint to update other item
+        configurations. Configurations from Workflow items with a server that is on a more recent version will not
+        import due to incompatability.
+
+        =====================  =========================================================
+        **Argument**           **Description**
+        ---------------------  ---------------------------------------------------------
+        item                   Required Item. The Workflow Manager Item to be exported
+        ---------------------  ---------------------------------------------------------
+        job_template_ids       Optional. The job template(s) to be exported. If job template is exported,
+                               the associated diagram must be included to be exported.
+        ---------------------  ---------------------------------------------------------
+        diagram_ids            Optional. The diagram(s) to be exported. If not defined, all diagrams are exported.
+                               If defined as empty, no diagram is exported
+        ---------------------  ---------------------------------------------------------
+        include_other_configs  Optional. If false other configurations are not exported including templates,
+                               User defined settings, shared searches, shared queries, email settings etc.
+        =====================  =========================================================
+
+        :return:
+            success object
+
+        """
+        params = {"includeOtherConfiguration": include_other_configs}
+        if job_template_ids is not None:
+            params["jobTemplateIds"] = job_template_ids
+        if diagram_ids is not None:
+            params["diagramIds"] = diagram_ids
+
+        url = "{base}/admin/{id}/export".format(base=self._url, id=item.id)
+        return_obj = self._gis._con.post(
+            url, params=params, try_json=False, json_encode=False, post_json=True
+        )
+
+        if "error" in return_obj:
+            return_obj = json.loads(return_obj)
+            self._gis._con._handle_json_error(return_obj["error"], 0)
+        return return_obj
+
+    def import_item(self, item: Item, config_file):
+        """
+        Imports a new Workflow Manager configuration from the selected .wmc file. Configurations from Workflow
+        items with a server that is on a more recent version will not import due to incompatability. This will
+        completely replace the version, job templates, diagrams, roles, role-group associations, lookup tables,
+        charts and queries, templates, and user settings of the indicated item, and it is recommended to back
+        up configurations before importing. Any encrypted settings included will only have their key imported
+        and will need the value updated. Importing will fail if any jobs exist in the destination item.
+        Excess scheduled tasks will be dropped based on the portal limit.
+
+        ==================  =========================================================
+        **Argument**        **Description**
+        ------------------  ---------------------------------------------------------
+        item                Required Item. The Workflow Manager Item that to import the configuration to.
+        ------------------  ---------------------------------------------------------
+        config_file         Required. The file path to the workflow manager configuration file.
+        ==================  =========================================================
+
+        :return:
+            success object
+
+        """
+
+        url = "{base}/admin/{id}/import".format(base=self._url, id=item.id)
+
+        return_obj = self._gis._con.post(
+            url,
+            files={"file": config_file},
+            try_json=False,
+            json_encode=False,
+            post_json=True,
+        )
+        return_obj = json.loads(return_obj)
+
+        if "error" in return_obj:
+            self._gis._con._handle_json_error(return_obj["error"], 0)
+        elif "success" in return_obj:
+            return return_obj["success"]
+        return return_obj
+
 
 class JobManager:
     """
@@ -226,20 +346,7 @@ class JobManager:
         if item is None:
             raise ValueError("Item cannot be None")
         self._item = item
-        self._gis = item._gis
-        if self._gis.users.me is None:
-            raise ValueError("An authenticated `GIS` is required.")
-
-        self._url = self._wmx_server_url[0]
-        if self._url is None:
-            raise ValueError("No WorkflowManager Registered with your Organization")
-        if not any(
-            prov.itemid == "50a5f00bcc574358b15eab0e2bdadf39"
-            for prov in self._gis.users.me.provisions
-        ):
-            raise ValueError(
-                "No Workflow Manager license is available for the current user"
-            )
+        _initialize(self, item._gis)
 
     def _handle_error(self, info):
         """Basic error handler - separated into a function to allow for expansion in future releases"""
@@ -251,23 +358,47 @@ class JobManager:
     def _wmx_server_url(self):
         """locates the WMX server"""
         baseurl = self._gis._portal.resturl
-        res = self._gis._con.get(f"{baseurl}/portals/self/servers", {"f": "json"})
-        for s in res["servers"]:
-            server_functions = [
-                x.strip() for x in s.get("serverFunction", "").lower().split(",")
-            ]
-            if "workflowmanager" in server_functions:
-                self._url = s.get("url", None)
-                self._private_url = s.get("adminUrl", None)
-                if self._url is None:
-                    raise RuntimeError("Cannot find a WorkflowManager Server")
-                self._url += f"/workflow/{self._item.id}"
-                self._private_url += f"/workflow/{self._item.id}"
-                return self._url, self._private_url
-        raise RuntimeError(
-            "Unable to locate Workflow Manager Server. Please contact your ArcGIS Enterprise "
-            "Administrator to ensure Workflow Manager Server is properly configured."
-        )
+
+        # Set org_id
+        info_result = self._gis.properties
+        self.is_enterprise = info_result["isPortal"]
+
+        if self.is_enterprise:
+            self.org_id = "workflow"
+            res = self._gis.servers
+            for s in res["servers"]:
+                server_functions = [
+                    x.strip() for x in s.get("serverFunction", "").lower().split(",")
+                ]
+                if "workflowmanager" in server_functions:
+                    self._url = s.get("url", None)
+                    self._private_url = s.get("adminUrl", None)
+                    if self._url is None:
+                        raise RuntimeError("Cannot find a WorkflowManager Server")
+                    self._url += f"/{self.org_id}/{self._item.id}"
+                    self._private_url += f"/{self.org_id}/{self._item.id}"
+                    return self._url, self._private_url
+            raise RuntimeError(
+                "Unable to locate Workflow Manager Server. Please contact your ArcGIS Enterprise "
+                "Administrator to ensure Workflow Manager Server is properly configured."
+            )
+        # is Arcgis Online
+        else:
+            self.org_id = info_result["id"]
+
+            helper_services = info_result["helperServices"]
+            if helper_services is None:
+                raise RuntimeError("Cannot find helper services")
+
+            wm_service = helper_services["workflowManager"]
+            self._url = wm_service["url"]
+            if self._url is None:
+                raise RuntimeError("Cannot get Workflow Manager url")
+
+            self._url += f"/{self.org_id}/{self._item.id}"
+            self._private_url = f"/{self.org_id}/{self._item.id}"
+            return self._url, self._private_url
+
         return None
 
     def close(self, job_ids: list):
@@ -762,7 +893,7 @@ class WorkflowManager:
 
         # USAGE EXAMPLE: Creating a WorkflowManager object from a workflow item
 
-        from arcgis.workflow import WorkflowManager
+        from arcgis.gis.workflowmanager import WorkflowManager
         from arcgis.gis import GIS
 
         # connect to your GIS and get the web map item
@@ -772,7 +903,7 @@ class WorkflowManager:
         # create a WorkflowManager object from the workflow item
         wm = WorkflowManager(wf_item)
         type(wm)
-        >> arcgis.workflowmanager.WorkflowManager
+        >> arcgis.gis.workflowmanager.WorkflowManager
 
         # explore the users in this workflow using the 'users' property
         wm.users
@@ -780,27 +911,14 @@ class WorkflowManager:
     """
 
     def __init__(self, item):
-        """initializer"""
         if item is None:
             raise ValueError("Item cannot be None")
         self._item = item
-        self._gis = item._gis
-        if self._gis.users.me is None:
-            raise ValueError("An authenticated `GIS` is required.")
+        _initialize(self, item._gis)
+        _check_license(item._gis)
 
         self.job_manager = JobManager(item)
         self.saved_searches_manager = SavedSearchesManager(item)
-
-        self._url = self._wmx_server_url[0]
-        if self._url is None:
-            raise ValueError("No WorkflowManager Registered with your Organization")
-        if not any(
-            prov.itemid == "50a5f00bcc574358b15eab0e2bdadf39"
-            for prov in self._gis.users.me.provisions
-        ):
-            raise ValueError(
-                "No Workflow Manager license is available for the current user"
-            )
 
     def _handle_error(self, info):
         """Basic error handler - separated into a function to allow for expansion in future releases"""
@@ -812,23 +930,46 @@ class WorkflowManager:
     def _wmx_server_url(self):
         """locates the WMX server"""
         baseurl = self._gis._portal.resturl
-        res = self._gis._con.get(f"{baseurl}/portals/self/servers", {"f": "json"})
-        for s in res["servers"]:
-            server_functions = [
-                x.strip() for x in s.get("serverFunction", "").lower().split(",")
-            ]
-            if "workflowmanager" in server_functions:
-                self._url = s.get("url", None)
-                self._private_url = s.get("adminUrl", None)
-                if self._url is None:
-                    raise RuntimeError("Cannot find a WorkflowManager Server")
-                self._url += f"/workflow/{self._item.id}"
-                self._private_url += f"/workflow/{self._item.id}"
-                return self._url, self._private_url
-        raise RuntimeError(
-            "Unable to locate Workflow Manager Server. Please contact your ArcGIS Enterprise "
-            "Administrator to ensure Workflow Manager Server is properly configured."
-        )
+
+        # Set org_id
+        info_result = self._gis.properties
+        self.is_enterprise = info_result["isPortal"]
+
+        if self.is_enterprise:
+            self.org_id = "workflow"
+            res = self._gis.servers
+            for s in res["servers"]:
+                server_functions = [
+                    x.strip() for x in s.get("serverFunction", "").lower().split(",")
+                ]
+                if "workflowmanager" in server_functions:
+                    self._url = s.get("url", None)
+                    self._private_url = s.get("adminUrl", None)
+                    if self._url is None:
+                        raise RuntimeError("Cannot find a WorkflowManager Server")
+                    self._url += f"/{self.org_id}/{self._item.id}"
+                    self._private_url += f"/{self.org_id}/{self._item.id}"
+                    return self._url, self._private_url
+            raise RuntimeError(
+                "Unable to locate Workflow Manager Server. Please contact your ArcGIS Enterprise "
+                "Administrator to ensure Workflow Manager Server is properly configured."
+            )
+        # is Arcgis Online
+        else:
+            self.org_id = info_result["id"]
+
+            helper_services = info_result["helperServices"]
+            if helper_services is None:
+                raise RuntimeError("Cannot find helper functions")
+
+            self._url = helper_services["workflowManager"]["url"]
+            if self._url is None:
+                raise RuntimeError("Cannot get Workflow Manager url")
+
+            self._url += f"/{self.org_id}/{self._item.id}"
+            self._private_url = f"/{self.org_id}/{self._item.id}"
+            return self._url, self._private_url
+
         return None
 
     @property
@@ -1446,7 +1587,7 @@ class WorkflowManager:
         ===============     ====================================================================
         **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
-        body                Required object. :class:`Job Template <arcgis.gis.workflowmanger.JobTemplate>`
+        template            Required object. :class:`Job Template <arcgis.gis.workflowmanger.JobTemplate>`
                             body. Existing Job Template object that inherits required/optional fields.
         ===============     ====================================================================
 
@@ -1844,20 +1985,7 @@ class SavedSearchesManager:
         if item is None:
             raise ValueError("Item cannot be None")
         self._item = item
-        self._gis = item._gis
-        if self._gis.users.me is None:
-            raise ValueError("An authenticated `GIS` is required.")
-
-        self._url = self._wmx_server_url[0]
-        if self._url is None:
-            raise ValueError("No WorkflowManager Registered with your Organization")
-        if not any(
-            prov.itemid == "50a5f00bcc574358b15eab0e2bdadf39"
-            for prov in self._gis.users.me.provisions
-        ):
-            raise ValueError(
-                "No Workflow Manager license is available for the current user"
-            )
+        _initialize(self, item._gis)
 
     def _handle_error(self, info):
         """Basic error handler - separated into a function to allow for expansion in future releases"""
@@ -1869,23 +1997,46 @@ class SavedSearchesManager:
     def _wmx_server_url(self):
         """locates the WMX server"""
         baseurl = self._gis._portal.resturl
-        res = self._gis._con.get(f"{baseurl}/portals/self/servers", {"f": "json"})
-        for s in res["servers"]:
-            server_functions = [
-                x.strip() for x in s.get("serverFunction", "").lower().split(",")
-            ]
-            if "workflowmanager" in server_functions:
-                self._url = s.get("url", None)
-                self._private_url = s.get("adminUrl", None)
-                if self._url is None:
-                    raise RuntimeError("Cannot find a WorkflowManager Server")
-                self._url += f"/workflow/{self._item.id}"
-                self._private_url += f"/workflow/{self._item.id}"
-                return self._url, self._private_url
-        raise RuntimeError(
-            "Unable to locate Workflow Manager Server. Please contact your ArcGIS Enterprise "
-            "Administrator to ensure Workflow Manager Server is properly configured."
-        )
+
+        # Set org_id
+        info_result = self._gis.properties
+        self.is_enterprise = info_result["isPortal"]
+
+        if self.is_enterprise:
+            self.org_id = "workflow"
+            res = self._gis.servers
+            for s in res["servers"]:
+                server_functions = [
+                    x.strip() for x in s.get("serverFunction", "").lower().split(",")
+                ]
+                if "workflowmanager" in server_functions:
+                    self._url = s.get("url", None)
+                    self._private_url = s.get("adminUrl", None)
+                    if self._url is None:
+                        raise RuntimeError("Cannot find a WorkflowManager Server")
+                    self._url += f"/{self.org_id}/{self._item.id}"
+                    self._private_url += f"/{self.org_id}/{self._item.id}"
+                    return self._url, self._private_url
+            raise RuntimeError(
+                "Unable to locate Workflow Manager Server. Please contact your ArcGIS Enterprise "
+                "Administrator to ensure Workflow Manager Server is properly configured."
+            )
+        # is Arcgis Online
+        else:
+            self.org_id = info_result["id"]
+
+            helper_services = info_result["helperServices"]
+            if helper_services is None:
+                raise RuntimeError("Cannot find helper functions")
+
+            self._url = helper_services["workflowManager"]["url"]
+            if self._url is None:
+                raise RuntimeError("Cannot get Workflow Manager url")
+
+            self._url += f"/{self.org_id}/{self._item.id}"
+            self._private_url = f"/{self.org_id}/{self._item.id}"
+            return self._url, self._private_url
+
         return None
 
     def create(
@@ -2576,6 +2727,65 @@ class Job(object):
         url = "{base}/jobs/{jobId}/comments".format(base=self._url, jobId=self.job_id)
         return_obj = self._gis._con.get(url)
         return return_obj["jobComments"]
+
+    def set_job_version(
+        self, data_source_name, version_guid=None, version_name=None, administered=False
+    ):
+        """
+        Sets the version of the job.
+
+        ================    ===================================================================
+        **Argument**        **Description**
+        ----------------    -------------------------------------------------------------------
+        data_source_name    Required. The name of the data source for the job version to be set.
+        ----------------    -------------------------------------------------------------------
+        version_guid        Optional. The guid of the version to be set. If the value is null or not defined,
+                            the versionName must be defined. versionGuid is preferred to be defined for better
+                            performance.
+        ----------------    -------------------------------------------------------------------
+        version_name        Optional. The name of the version to be set. If the value is null or not defined,
+                            the versionGuid must be defined.
+        ----------------    -------------------------------------------------------------------
+        administered        Optional. If true, the version can be claimed. If not defined, the default value is false.
+        ================    ===================================================================
+
+        :return:
+            success object
+
+        """
+
+        url = "{base}/jobs/{jobId}/update".format(base=self._url, jobId=self.job_id)
+
+        params = {
+            "dataSourceName": data_source_name,
+            "workflowAdministered": administered,
+        }
+        if version_guid is not None:
+            params["versionGuid"] = version_guid
+        if version_name is not None:
+            params["versionName"] = version_name
+
+        post_object = {"versions": [params]}
+
+        return_obj = json.loads(
+            self._gis._con.post(
+                url,
+                params=post_object,
+                post_json=True,
+                try_json=False,
+                json_encode=False,
+            )
+        )
+        if "error" in return_obj:
+            self._gis._con._handle_json_error(return_obj["error"], 0)
+        elif "success" in return_obj:
+            return return_obj["success"]
+        return_obj = {
+            _camelCase_to_underscore(k): v
+            for k, v in return_obj.items()
+            if v is not None and not k.startswith("_")
+        }
+        return return_obj
 
 
 class WMRole(object):

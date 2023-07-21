@@ -41,4 +41,5 @@ Submodules
    arcgis.apps.workforce
    arcgis.apps.storymap
    arcgis.apps.survey123
+   arcgis.apps.expbuilder
    arcgis.apps.tracker
