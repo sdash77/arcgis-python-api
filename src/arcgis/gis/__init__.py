@@ -3155,7 +3155,7 @@ class UserManager(object):
     def create(
         self,
         username: str,
-        password: str,
+        password: str | None,
         firstname: str,
         lastname: str,
         email: str,
@@ -3189,6 +3189,12 @@ class UserManager(object):
             automatically. Only users with accounts that have been pre-created can sign in to the portal.
             Alternatively, you can configure the portal to register enterprise accounts the first time
             the user connects to the website.
+
+
+        .. note:
+            To invite users via email on ArcGIS Online, set `password` to `None` and provide an
+            `email_text` value.  Sending invitations via email cannot have passwords set by
+            administrators.
 
         ================  ===============================================================================
         **Parameter**      **Description**
