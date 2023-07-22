@@ -5023,91 +5023,309 @@ class Role(object):
         """
         The ``privileges`` method retrieves and sets the privileges for the custom role as a list of strings.
 
-        Supported **Administrator Privileges** with predefined permissions for:
+        **Administrator Privileges**:
 
         *Members*
 
-                1. portal:admin:viewUsers: grants the ability to view full member account information within organization.
-                2. portal:admin:updateUsers: grants the ability to update member account information within organization.
-                3. portal:admin:deleteUsers: grants the ability to delete member accounts within organization.
-                4. portal:admin:inviteUsers: grants the ability to invite members to organization. (This privilege is only applicable to ArcGIS Online.)
-                5. portal:admin:disableUsers: grants the ability to enable and disable member accounts within organization.
-                6. portal:admin:changeUserRoles: grants the ability to change the role a member is assigned within organization; however, it does not grant the ability to promote a member to, or demote a member from, the Administrator role. That privilege is reserved for the Administrator role alone.
-                7. portal:admin:manageLicenses: grants the ability to assign licenses to members of organization.
-                8. portal:admin:reassignUsers: grants the ability to assign all groups and content of a member to another within organization.
+        =======================================      ========================================================================
+        **Privilege**                                **Description**
+        ---------------------------------------      ------------------------------------------------------------------------
+        portal:admin:viewUsers                       Grants the ability to view full member account information within
+                                                     organization.
+        ---------------------------------------      ------------------------------------------------------------------------
+        portal:admin:updateUsers                     Grants the ability to update member account information within organization.
+        ---------------------------------------      ------------------------------------------------------------------------
+        portal:admin:deleteUsers                     Grants the ability to delete member accounts within organization.
+        ---------------------------------------      ------------------------------------------------------------------------
+        portal:admin:inviteUsers                     Grants the ability to invite members to organization.
+        ---------------------------------------      ------------------------------------------------------------------------
+        portal:admin:disableUsers                    Grants the ability to enable and disable member accounts within organization.
+        ---------------------------------------      ------------------------------------------------------------------------
+        portal:admin:changeUserRoles                 Grants the ability to change the role a member is assigned within
+                                                     the organization. However, it does not grant the ability to promote 
+                                                     or demote a member from the Administrator role. That privilege is reserved
+                                                     for the Administrator role alone.
+        ---------------------------------------      ------------------------------------------------------------------------
+        portal:admin:manageLicenses                  Grants the ability to assign licenses to members of organization.
+        ---------------------------------------      ------------------------------------------------------------------------
+        portal:admin:updateMemberCategorySchema      Grants the ability to configure categories for members.
+        =======================================      ========================================================================
+        
+        *Groups*
 
-            *Groups*
+        =====================================       ========================================================================
+        **Privilege**                               **Description**
+        -------------------------------------       ------------------------------------------------------------------------
+        portal:admin:viewGroups                     Grants the ability to view all groups within organization.
+        -------------------------------------       ------------------------------------------------------------------------
+        portal:admin:updateGroups                   Grants the ability to update groups within organization.
+        -------------------------------------       ------------------------------------------------------------------------
+        portal:admin:deleteGroups                   Grants the ability to delete groups within organization.
+        -------------------------------------       ------------------------------------------------------------------------
+        portal:admin:reassignGroups                 Grants the ability to reassign groups to other members within organization.
+        -------------------------------------       ------------------------------------------------------------------------
+        portal:admin:assignToGroups                 Grants the ability to assign members to, and remove members from
+                                                    groups within organization.
+        -------------------------------------       ------------------------------------------------------------------------
+        portal:admin:manageEnterpriseGroups         Grants the ability to link group membership to an enterprise group.
+        -------------------------------------       ------------------------------------------------------------------------
+        portal:admin:createUpdateCapableGroup       Grants the ability to create a group with update capabilities.
+        =====================================       ========================================================================
+        
 
-                1. portal:admin:viewGroups: grants the ability to view all groups within organization.
-                2. portal:admin:updateGroups: grants the ability to update groups within organization.
-                3. portal:admin:deleteGroups: grants the ability to delete groups within organization.
-                4. portal:admin:reassignGroups: grants the ability to reassign groups to other members within organization.
-                5. portal:admin:assignToGroups: grants the ability to assign members to, and remove members from, groups within organization.
-                6. portal:admin:manageEnterpriseGroups: grants the ability to link group membership to an enterprise group. (This privilege is only applicable to ArcGIS Enterprise.)
+        *Content*
+ 
+        =====================================     ========================================================================
+        **Privilege**                             **Description**
+        -------------------------------------     ------------------------------------------------------------------------
+        portal:admin:viewItems                    Grants the ability to view all content within organization.
+        -------------------------------------     ------------------------------------------------------------------------
+        portal:admin:updateItems                  Grants the ability to update content within organization.
+        -------------------------------------     ------------------------------------------------------------------------
+        portal:admin:deleteItems                  Grants the ability to delete content within organization.
+        -------------------------------------     ------------------------------------------------------------------------
+        portal:admin:reassignItems                Grants the ability to reassign content to other members within organization.
+        -------------------------------------     ------------------------------------------------------------------------
+        portal:admin:shareToGroup                 Grants the ability to share other member's content to groups the user belongs to.
+        -------------------------------------     ------------------------------------------------------------------------
+        portal:admin:shareToOrg                   Grants the ability to share other member's content to organization.
+        -------------------------------------     ------------------------------------------------------------------------
+        portal:admin:shareToPublic                Grants the ability to share other member's content to all users of the portal.
+        -------------------------------------     ------------------------------------------------------------------------
+        portal:admin:updateItemCategorySchema     Grants the ability to create and update content categories in the organization.
+        =====================================     ========================================================================
+        
+        *Webhooks* (*ArcGIS Enterprise* only)
+        
+        ===============================     ========================================================================
+        **Privilege**                       **Description**
+        -------------------------------     ------------------------------------------------------------------------
+        portal:admin:manageWebhooks         Grant the ability to create, edit, delete and manage all webhooks within
+                                            the organization.
+        ===============================     ========================================================================                                   
+        
+        *ArcGIS Marketplace Subscriptions* (*ArcGIS Online* only)
 
-            *Content*
-
-                1. portal:admin:viewItems: grants the ability to view all content within organization.
-                2. portal:admin:updateItems: grants the ability to update content within organization.
-                3. portal:admin:deleteItems: grants the ability to delete content within organization.
-                4. portal:admin:reassignItems: grants the ability to reassign content to other members within organization.
-                5. portal:admin:shareToGroup: grants the ability to share other member's content to groups the user belongs to.
-                6. portal:admin:shareToOrg: grants the ability to share other member's content to organization.
-                7. portal:admin:shareToPublic: grants the ability to share other member's content to all users of the portal.
-
-            *ArcGIS Marketplace Subscriptions*
-
-                1. marketplace:admin:purchase: grants the ability to request purchase information about apps and data in ArcGIS Marketplace. (This privilege is only applicable to ArcGIS Online.)
-                2. marketplace:admin:startTrial: grants the ability to start trial subscriptions in ArcGIS Marketplace. (This privilege is only applicable to ArcGIS Online.)
-                3. marketplace:admin:manage: grants the ability to create listings, list items and manage subscriptions in ArcGIS Marketplace. (This privilege is only applicable to ArcGIS Online.)
-
+        ===============================     ========================================================================
+        **Privilege**                       **Description**
+        -------------------------------     ------------------------------------------------------------------------
+        marketplace:admin:purchase          Grants the ability to request purchase information about apps and data
+                                            in ArcGIS Marketplace.
+        -------------------------------     ------------------------------------------------------------------------
+        marketplace:admin:startTrial        Grants the ability to start trial subscriptions in ArcGIS Marketplace.
+        -------------------------------     ------------------------------------------------------------------------
+        marketplace:admin:manage            Grants the ability to create listings, list items and manage
+                                            subscriptions in ArcGIS Marketplace.
+        ===============================     ========================================================================
+        
+        *Organization Settings*
+        
+        ===================================     ========================================================================
+        **Privilege**                           **Description**
+        -----------------------------------     ------------------------------------------------------------------------
+        portal:admin:manageSecurity             Grants ability to manage security and infrastructure settings
+        -----------------------------------     ------------------------------------------------------------------------
+        portal:admin:manageWebsite              Grants the ability to manage the website settings.
+        -----------------------------------     ------------------------------------------------------------------------
+        portal:admin:manageCollaborations       Grants the ability to administer the organization's collaborations.
+        -----------------------------------     ------------------------------------------------------------------------
+        portal:admin:manageCredits              Grants the ability to manage the organization's credit budget settings.
+                                                (*ArcGIS Online* only)
+        -----------------------------------     ------------------------------------------------------------------------
+        portal:admin:manageServers              Grants the ability to manage the servers federated with the
+                                                organization. (*ArcGIS Enterprise* only)
+        -----------------------------------     ------------------------------------------------------------------------
+        portal:admin:manageUtilityServices      Grants the ability to manage the utility services configured with the
+                                                organization.
+        -----------------------------------     ------------------------------------------------------------------------
+        portal:admin:manageRoles                Grants the ability to manage the organization's roles.
+        -----------------------------------     ------------------------------------------------------------------------
+        portal:admin:createGPWebhook            Grants the ability to create, edit and delete their own
+                                                geoprocessing webhook. (*ArcGIS Enterprise* only)
+        ===================================     ========================================================================
+        
+        
         **Publisher Privileges:**
-
-            *Content*
-
-                1. portal:publisher:publishFeatures: grants the ability to publish hosted feature layers from shapefiles, CSVs, etc.
-                2. portal:publisher:publishTiles: grants the ability to publish hosted tile layers from tile packages, features, etc.
-                3. portal:publisher:publishScenes: grants the ability to publish hosted scene layers.
-
+        
+        *Content*
+ 
+        ==========================================    =========================================================================
+        **Privilege**                                 **Description**
+        ------------------------------------------    -------------------------------------------------------------------------
+        portal:publisher:publishFeatures              Grants the ability to publish hosted feature layers.
+        ------------------------------------------    -------------------------------------------------------------------------
+        portal:publisher:publishTiles                 Grants the ability to publish hosted tile layers.
+        ------------------------------------------    -------------------------------------------------------------------------
+        portal:publisher:publishScenes                Grants the ability to publish hosted scene layers.
+        ------------------------------------------    -------------------------------------------------------------------------
+        portal:publisher:publishServerServices        Grants the ability to publish non-hosted server services.
+                                                      (*ArcGIS Enterprise* only)
+        ------------------------------------------    -------------------------------------------------------------------------
+        portal:publisher:publishServerGPServices      Grants the ability to publish non-hosted geoprocessing services
+                                                      (*ArcGIS Enterprise* only)
+        ------------------------------------------    -------------------------------------------------------------------------
+        portal:publisher:publishKnowledgeGraph        Grants the ability to create and publish knowledge graphs.
+                                                      (*ArcGIS Enterprise* only)
+        ------------------------------------------    -------------------------------------------------------------------------
+        portal:publisher:bulkPublishFromDataStores    Grants the ability to publish web layers from a registered data store.
+                                                      (*ArcGIS Enterprise* only)
+        ------------------------------------------    -------------------------------------------------------------------------
+        portal:publisher:enumerateDataStores          Grants the ability to get list of datasets from a registered data store.
+                                                      (*ArcGIS Enterprise* only)
+        ------------------------------------------    -------------------------------------------------------------------------
+        portal:pulisher:registerDataStores            Grants the ability to register data stores to the Enterprise. (*ArcGIS
+                                                      Enterprise* only)
+        ------------------------------------------    -------------------------------------------------------------------------
+        portal:publisher:publishTiledImagery          Grants the ability to publish hosted tiled imagery layers from a single
+                                                      image or collection of images.
+        ------------------------------------------    -------------------------------------------------------------------------
+        portal:publisher:publishDynamicImagery        Grants the ability to publish hosted dynamic imagery layers from a single
+                                                      image or collection of images.
+        ------------------------------------------    -------------------------------------------------------------------------
+        premium:publisher:createNotebooks             Grants the ability to create and edit interactive notebooks items.
+        ------------------------------------------    -------------------------------------------------------------------------
+        premium:publisher:scheduleNotebooks           Grants the ability to schedule future automated runs of a notebook.
+        ------------------------------------------    -------------------------------------------------------------------------
+        portal:publisher:createDataPipelines          Grants the ability to create, edit and run data pipelines.
+        ==========================================    =========================================================================
+        
+        *Premium Content*
+        
+        =========================================    =================================================================================
+        **Privilege**                                **Description**
+        -----------------------------------------    ---------------------------------------------------------------------------------
+        premium:publisher:geoanalytics               Grants the ability to use big data analytics. ()
+        -----------------------------------------    ---------------------------------------------------------------------------------
+        premium:publisher:rasteranalysis             Grants the ability to use raster analystics.
+        -----------------------------------------    ---------------------------------------------------------------------------------
+        premium:publisher:createAdvancedNotebooks    Grants the ability to publish a notebook as a geoprocessing service.
+                                                     (*ArcGIS Enterprise* only)
+        =========================================    =================================================================================
+        
+        
         **User Privileges:**
+        
+        *Members*
+        
+        ===============================     ========================================================================
+        **Privilege**                       **Description**
+        -------------------------------     ------------------------------------------------------------------------
+        portal:user:viewOrgUsers            Grants members to view other organization members.
+        ===============================     ========================================================================
 
-            *Groups*
+        *Groups*
+        
+        ===========================================    ========================================================================
+        **Privilege**                                  **Description**
+        -------------------------------------------    ------------------------------------------------------------------------
+        portal:user:createGroup                        Grants the ability for a member to create, edit, and delete their own groups.
+        -------------------------------------------    ------------------------------------------------------------------------
+        portal:user:joinGroup                          Grants the ability to join groups within organization.
+        -------------------------------------------    ------------------------------------------------------------------------
+        portal:user:joinNonOrgGroup                    Grants the ability to join groups external to the organization.
+                                                       (*ArcGIS Online* only)
+        -------------------------------------------    ------------------------------------------------------------------------
+        portal:user:viewOrgGroups                      Grants members the ability to view groups shared to the organization.
+        -------------------------------------------    ------------------------------------------------------------------------
+        portal:user:addExternalMembersToGroup          Grants the abitlity to create groups that allow external members,
+                                                       as well as invite external members to groups (*ArcGIS Online* only)
+        -------------------------------------------    ------------------------------------------------------------------------                                          
+        portal:user:manageCollaborationGroupMembers    Grants the ability to manage members in partnered collaboration groups.
+                                                       (*ArcGIS Online* only)
+        ===========================================    ========================================================================
+        
+        *Content*
+        
+        ===============================     ========================================================================
+        **Privilege**                       **Description**
+        -------------------------------     ------------------------------------------------------------------------
+        portal:user:createItem              Grants the ability for a member to create, edit, and delete their own
+                                            content.
+        -------------------------------     ------------------------------------------------------------------------
+        portal:user:viewTracks              Grants the ability to to view members' location tracks via shared track
+                                            views when location sharing is enabled. (*ArcGIS Enterprise* only)
+        -------------------------------     ------------------------------------------------------------------------
+        portal:user:reassignItems           Grants users the ability to reassign their own content to other
+                                            organization members with the receive items privilege.
+        -------------------------------     ------------------------------------------------------------------------
+        portal:user:receiveItems            Grants users the ability to receive items reassigned to them by other
+                                            organization members with the reassign items privilege.
+        -------------------------------     ------------------------------------------------------------------------
+        portal:user:viewOrgItems            Grants members the ability to view content shared with the organization.
+        ===============================     ========================================================================
+        
+        *Sharing*
 
-                1. portal:user:createGroup: grants the ability for a member to create, edit, and delete their own groups.
-                2. portal:user:joinGroup: grants the ability to join groups within organization.
-                3. portal:user:joinNonOrgGroup: grants the ability to join groups external to the organization. (This privilege is only applicable to ArcGIS Online.)
+        =================================     ========================================================================
+        **Privilege**                         **Description**
+        ---------------------------------     ------------------------------------------------------------------------
+        portal:user:shareToGroup              Grants the ability to share content to groups.
+        ---------------------------------     ------------------------------------------------------------------------
+        portal:user:shareToOrg                Grants the ability to share content to organization.
+        ---------------------------------     ------------------------------------------------------------------------
+        portal:user:shareToPublic             Grants the ability to share content to all users of portal.
+        ---------------------------------     ------------------------------------------------------------------------
+        portal:user:shareGroupToOrg           Grants the ability to make groups discoverable by the organization.
+        ---------------------------------     ------------------------------------------------------------------------
+        portal:user:shareGroupToPublic        Grants the ability to make groups discoverable by all users of portal.
+        =================================     ========================================================================
+        
+        *Premium Content*
 
-            *Content*
+        ===============================     ========================================================================
+        **Privilege**                       **Description**
+        -------------------------------     ------------------------------------------------------------------------
+        premium:user:geocode                Grants the ability to perform large-volume geocoding tasks with the
+                                            Esri World Geocoder such as publishing a CSV of addresses as hosted
+                                            feature layer.
+        -------------------------------     ------------------------------------------------------------------------
+        premium:user:networkanalysis        Grants the ability to perform network analysis tasks such as routing
+                                            and drive-time areas.
+        -------------------------------     ------------------------------------------------------------------------
+        premium:user:geoenrichment          Grants the ability to geoenrich features.
+        -------------------------------     ------------------------------------------------------------------------
+        premium:user:demographics           Grants the ability to make use of premium demographic data.
+        -------------------------------     ------------------------------------------------------------------------
+        premium:user:spatialanalysis        Grants the ability to perform spatial analysis tasks.
+        -------------------------------     ------------------------------------------------------------------------
+        premium:user:elevation              Grants the ability to perform analytical tasks on elevation data.
+        -------------------------------     ------------------------------------------------------------------------
+        premium:user:featurereport          Grants the ability to create feature reports. (*ArcGIS Online* only)
+        ===============================     ========================================================================
+        
+        *Features*
 
-                1. portal:user:createItem: grants the ability for a member to create, edit, and delete their own content.
+        ===============================     ========================================================================
+        **Privilege**                       **Description**
+        -------------------------------     ------------------------------------------------------------------------
+        features:user:edit                  Grants the ability to edit features in editable layers, according to the
+                                            edit options enabled on the layer.
+        -------------------------------     ------------------------------------------------------------------------
+        features:user:fullEdit              Grants the ability to add, delete, and update features in a hosted
+                                            feature layer regardless of the editing options enabled on the layer.
+        ===============================     ========================================================================
+        
+        *Version Management* (*ArcGIS Enterprise* only)
+        
+        ===============================     ========================================================================
+        **Privilege**                       **Description**
+        -------------------------------     ------------------------------------------------------------------------
+        features:user:manageVersions        Grant the ability to manage version locks and view, alter, delete, edit,
+                                            reconcile, and post to all branch versions accessed through
+                                            ArcGIS Server feature layers. 
+        ===============================     ========================================================================
+        
+        *Open Data* (*ArcGIS Online* only)
 
-            *Sharing*
-
-                1. portal:user:shareToGroup: grants the ability to share content to groups.
-                2. portal:user:shareToOrg: grants the ability to share content to organization.
-                3. portal:user:shareToPublic: grants the ability to share content to all users of portal.
-                4. portal:user:shareGroupToOrg: grants the ability to make groups discoverable by the organization.
-                5. portal:user:shareGroupToPublic: grants the ability to make groups discoverable by all users of portal.
-
-            *Premium Content*
-
-                1. premium:user:geocode: grants the ability to perform large-volume geocoding tasks with the Esri World Geocoder such as publishing a CSV of addresses as hosted feature layer.
-                2. premium:user:networkanalysis: grants the ability to perform network analysis tasks such as routing and drive-time areas.
-                3. premium:user:geoenrichment: grants the ability to geoenrich features.
-                4. premium:user:demographics: grants the ability to make use of premium demographic data.
-                5. premium:user:spatialanalysis: grants the ability to perform spatial analysis tasks.
-                6. premium:user:elevation: grants the ability to perform analytical tasks on elevation data.
-
-            *Features*
-
-                1. features:user:edit: grants the ability to edit features in editable layers, according to the edit options enabled on the layer.
-                2. features:user:fullEdit: grants the ability to add, delete, and update features in a hosted feature layer regardless of the editing options enabled on the layer.
-
-            *Open Data*
-
-                1. opendata:user:openDataAdmin: grants the ability to manage Open Data Sites for the organization. (This privilege is only applicable to ArcGIS Online.)
-                2. opendata:user:designateGroup: grants the ability to designate groups within organization as being available for use in Open Data. (This privilege is only applicable to ArcGIS Online.)
-
+        ===============================     ========================================================================
+        **Privilege**                       **Description**
+        -------------------------------     ------------------------------------------------------------------------
+        opendata:user:openDataAdmin         Grants the ability to manage Open Data Sites for the organization.
+        -------------------------------     ------------------------------------------------------------------------
+        opendata:user:designateGroup        Grants the ability to designate groups within organization as being
+                                            available for use in Open Data.
+        ===============================     ========================================================================
+        
         """
         resp = self._portal.con.post(
             "portals/self/roles/" + self.role_id + "/privileges",
