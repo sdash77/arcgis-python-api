@@ -4814,7 +4814,7 @@ class ImageryLayer(Layer):
         url = self._url + "/queryGPSInfo"
         res = self._con.post(path=url, postdata=params, timeout=None)
 
-        return res["images"]
+        return res
 
     def _compute_multidimensional_info(
         self,
