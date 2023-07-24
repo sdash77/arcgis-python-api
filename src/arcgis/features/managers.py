@@ -1953,7 +1953,7 @@ class FeatureLayerCollectionManager(_GISResource):
                 and "portal:admin:updateItems" not in self._gis.users.me.privileges
             ):
                 raise AssertionError(
-                    "You must own the service data to insert data to it or have the administrative privilege to update items (portal:admin:updateItems)."
+                    "You must own the service data to insert data or have the administrative privilege to update items (portal:admin:updateItems)."
                 )
 
         # Get the name for new service if None passed, ensure data_path has all special characters removed and spaces removed
