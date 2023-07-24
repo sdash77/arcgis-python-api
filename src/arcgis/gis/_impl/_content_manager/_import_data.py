@@ -124,13 +124,13 @@ def _create_file_item(gis, df, file_type, **kwargs):
         }
 
     new_item = file_item.publish(publish_parameters=publish_parameters, item_id=item_id)
-    return file_item, new_item, publish_parameters
+    return file_item, new_item
 
 
-def _perform_overwrite(fl_index, flc_manager, publish_parameters):
+def _perform_overwrite(fl_index, flc_manager, layer_definition):
     # update the name and id to represent correct values
-    publish_parameters["id"] = fl_index
-    publish_parameters["name"] = flc_manager.properties.layers[fl_index]["name"]
+    layer_definition["id"] = fl_index
+    layer_definition["name"] = flc_manager.properties.layers[fl_index]["name"]
 
     # Perform edit on the flc
     # Step 1: Preserve layer ids
@@ -144,18 +144,18 @@ def _perform_overwrite(fl_index, flc_manager, publish_parameters):
     # Step 2: Delete layer from definition
     flc_manager.delete_from_definition({"layers": [{"id": fl_index}]})
     # Step 3: Add new layer to definition
-    flc_manager.add_to_definition({"layers": [dict(publish_parameters)]})
+    flc_manager.add_to_definition({"layers": [dict(layer_definition)]})
     # Step 4: Cleanup
     if revert:
         flc_manager.update_definition({"preserveLayerIds": False})
 
 
-def _perform_insert(flc_manager, publish_parameters):
+def _perform_insert(flc_manager, layer_definition):
     # Add new layer to definition
-    flc_manager.add_to_definition({"layers": [dict(publish_parameters)]})
+    flc_manager.add_to_definition({"layers": [dict(layer_definition)]})
     # Find the index at which the layer was added
     for layer in flc_manager.properties.layers:
-        if layer["name"] == publish_parameters["name"]:
+        if layer["name"] == layer_definition["name"]:
             fl_index = layer["id"]
     return fl_index
 
@@ -163,18 +163,23 @@ def _perform_insert(flc_manager, publish_parameters):
 def _add_item_dependency(
     file_type, fl_index, file_item, fs_item, new_item=None, gis=None
 ):
-    if file_type == "csv":
+    if file_type.lower() == "csv":
         source_info = gis.content.analyze(item=file_item)["publishParameters"]
         ItemDependency(fs_item).add("itemid", file_item.id)
         fs_item.tables[fl_index].append(
             item_id=file_item.id,
-            upload_format=file_type,
+            upload_format=file_type.lower(),
             source_info=source_info,
         )
-    elif (
-        file_type == "shapefile"
-        or "filegdb" in fs_item.layers[fl_index].properties.supportedAppendFormats
+    elif file_type.lower() == "shapefile" or (
+        len(fs_item.layers) > 0
+        and "filegdb" in fs_item.layers[fl_index].properties.supportedAppendFormats
     ):
+        # correct file type for append method
+        if file_type.lower() == "file geodatabase":
+            file_type = "filegdb"
+        else:
+            file_type = "shapefile"
         ItemDependency(fs_item).add("itemid", file_item.id)
         fs_item.layers[fl_index].append(item_id=file_item.id, upload_format=file_type)
     else:
@@ -209,7 +214,7 @@ def import_as_item(gis, df, **kwargs):
         file_type = "CSV"
 
     # Create the file item, new item published from the file item, and the publish parameters
-    file_item, new_item, publish_parameters = _create_file_item(gis, df, file_type, **kwargs)
+    file_item, new_item = _create_file_item(gis, df, file_type, **kwargs)
 
     # If not overwrite or insert, return the new item
     if not (overwrite or insert):
@@ -239,12 +244,17 @@ def import_as_item(gis, df, **kwargs):
         fs_item = gis.content.get(fs_id)
         flc_manager = features.FeatureLayerCollection.fromitem(fs_item).manager
 
+        if len(new_item.layers) > 0:
+            layer_definition = new_item.layers[0].properties
+        elif len(new_item.tables) > 0:
+            layer_definition = new_item.tables[0].properties
+
     if overwrite:
         # overwrite workflow
-        _perform_overwrite(index, flc_manager, publish_parameters)
+        _perform_overwrite(index, flc_manager, layer_definition)
     else:
         # insert workflow
-        index = _perform_insert(flc_manager, publish_parameters)
+        index = _perform_insert(flc_manager, layer_definition)
 
     # This pushes the features and adds new dependencies
     _add_item_dependency(file_type, index, file_item, fs_item, new_item, gis)
@@ -256,7 +266,7 @@ def import_as_fc(gis, df, **kwargs):
     # Get kwargs
     address_fields = kwargs.pop("address_fields", None)
     item_id = kwargs.pop("item_id", None)
-    
+
     # Step 1: Analyze the df as a csv
     if kwargs.get("geocode_url", None):
         geocode_url = kwargs.get("geocode_url")
@@ -285,7 +295,7 @@ def import_as_fc(gis, df, **kwargs):
         },
     }
     if address_fields is not None:
-            postdata["analyzeParameters"]["locationType"] = "address"
+        postdata["analyzeParameters"]["locationType"] = "address"
 
     res = gis._con._session.post(path, postdata)
 
@@ -311,7 +321,7 @@ def import_as_fc(gis, df, **kwargs):
         # Step 2: Generate features
         if address_fields is not None:
             res["publishParameters"].update({"addressFields": address_fields})
-        
+
         update_dict = {}
         update_dict["locationType"] = kwargs.pop("location_type", "")
         update_dict["latitudeFieldName"] = kwargs.pop("latitude_field", "")
@@ -332,6 +342,8 @@ def import_as_fc(gis, df, **kwargs):
 
     # Step 3: Return
     if res_generate:
-        return features.FeatureCollection(res_generate["featureCollection"]["layers"][0])
+        return features.FeatureCollection(
+            res_generate["featureCollection"]["layers"][0]
+        )
     else:
         return None

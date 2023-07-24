@@ -2271,7 +2271,8 @@ class TestSeDFOverwrite(unittest.TestCase):
                 csv_item = gis.content.add({}, data=xlsx_file_path)
                 assert csv_item
                 # publish as a table
-                table_item = csv_item.publish()
+                publish_parameters = gis.content.analyze(item=csv_item, file_type="csv")
+                table_item = csv_item.publish(publish_parameters=publish_parameters)
                 tbl_df = pd.DataFrame.spatial.from_layer(table_item.tables[0])
                 tbl_df["NOTES"][0] = "This is a python api test"
                 tbl_df["NOTES"][1] = "This file will have extra notes"
