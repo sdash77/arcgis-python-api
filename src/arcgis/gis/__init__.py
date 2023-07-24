@@ -7164,8 +7164,9 @@ class ContentManager(object):
                 print("Folder already exists.")
         return None
 
-    def get_folder(self, folder_id: str, username: str = None) -> str:
+    def _get_folder(self, folder_id: str, username: str = None) -> str:
         """
+        Private method for when a folder name needs to be found from a folder id.
         Returns the folder name for the given folder id.
 
         This method will search your folders to find the folder name. If folder is not owned by you,

@@ -18,9 +18,11 @@ from arcgis.auth.tools import LazyLoader
 from dataclasses import dataclass
 import datetime as _dt
 
+
 features = LazyLoader("arcgis.features")
 _version = LazyLoader("arcgis.features._version")
 _common_utils = LazyLoader("arcgis._impl.common._utils")
+re = LazyLoader("re")
 
 _log = logging.getLogger()
 
@@ -1954,9 +1956,12 @@ class FeatureLayerCollectionManager(_GISResource):
                     "You must own the service data to insert data to it or have administrative privileges."
                 )
 
-        # Get the name for new service
+        # Get the name for new service if None passed, ensure data_path has all special characters removed and spaces removed
+        data_path = data_path.replace(" ", "_")
+        data_path = re.sub(r"[^a-zA-Z0-9_]", "", data_path)
         if name is None:
             name = os.path.basename(data_path)
+
         # Get the file type
         file_type = os.path.splitext(data_path)[1]
         file_types = {
@@ -1964,12 +1969,15 @@ class FeatureLayerCollectionManager(_GISResource):
             ".sqlite": "SQLite",
             ".xls": "Excel",
             ".xlsx": "Excel",
-            ".txt": "Text",
             ".xml": "XML",
             ".sd": "Service Definition",
             ".zip": "Zipfile",
         }
-        file_type = file_types.get(file_type)
+        file_type = file_types.get(file_type, None)
+        if file_type is None:
+            raise ValueError(
+                "File type not supported. Supported file types are: zipped shapefiles, zipped file geodatabases, CSV, Excel, XML, SQLite, and Service Definition."
+            )
 
         # Check if the zipfile is a shapefile or file geodatabase
         if file_type == "Zipfile":
