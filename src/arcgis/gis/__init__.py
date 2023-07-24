@@ -75,6 +75,7 @@ _common_deprecated = LazyLoader("arcgis._impl.common._deprecate")
 _portalpy = LazyLoader("arcgis.gis._impl._portalpy")
 _jb = LazyLoader("arcgis.gis._impl._jb")
 _cloner = LazyLoader("arcgis.gis.clone")
+_cm_helper = LazyLoader("arcgis.gis._impl._content_manager._import_data")
 _log = logging.getLogger(__name__)
 
 
@@ -3154,7 +3155,7 @@ class UserManager(object):
     def create(
         self,
         username: str,
-        password: str,
+        password: str | None,
         firstname: str,
         lastname: str,
         email: str,
@@ -3188,6 +3189,12 @@ class UserManager(object):
             automatically. Only users with accounts that have been pre-created can sign in to the portal.
             Alternatively, you can configure the portal to register enterprise accounts the first time
             the user connects to the website.
+
+
+        .. note:
+            To invite users via email on ArcGIS Online, set `password` to `None` and provide an
+            `email_text` value.  Sending invitations via email cannot have passwords set by
+            administrators.
 
         ================  ===============================================================================
         **Parameter**      **Description**
@@ -7163,6 +7170,41 @@ class ContentManager(object):
                 print("Folder already exists.")
         return None
 
+    def _get_folder(self, folder_id: str, username: str = None) -> str:
+        """
+        Private method for when a folder name needs to be found from a folder id.
+        Returns the folder name for the given folder id.
+
+        This method will search your folders to find the folder name. If folder is not owned by you,
+        then you must specify the username of the owner. Specifying the username requires
+        administrator privileges.
+
+        ================  ===============================================================
+        **Parameter**      **Description**
+        ----------------  ---------------------------------------------------------------
+        folder_id         Required string. The id of the folder.
+        ----------------  ---------------------------------------------------------------
+        username          Optional string. The username of the folder owner. Need admin
+                          privileges to specify this parameter.
+        ================  ===============================================================
+
+        :return: String
+        """
+        # If username provided check privileges
+        if username:
+            if "portal:admin:viewUsers" not in self._gis.users.me.privileges:
+                raise Exception(
+                    "You do not have privileges to view other users folders."
+                )
+        else:
+            username = self._gis.users.me.username
+        # Get folder
+        folders = self._gis.users.get(username).folders
+        for folder in folders:
+            if folder["id"] == folder_id:
+                return folder["title"]
+        return None
+
     def rename_folder(
         self, old_folder: str, new_folder: str, owner: Optional[str] = None
     ):
@@ -7710,286 +7752,29 @@ class ContentManager(object):
            that can be used for analysis, visualization, or published to the GIS as an :class:`~arcgis.gis.Item`.
            If geoenabled DataFrame is passed in then an :class:`~arcgis.gis.Item` is directly returned.
         """
-        # Housekeeping steps
-        from arcgis.features import (
-            FeatureCollection,
-            FeatureSet,
-        )
+        # Get parameters right
+        if item_id and self._gis.version <= [7, 1]:
+            kwargs["item_id"] = None
 
-        # If overwrite or append specified, set up necessary params
-        overwrite = kwargs.pop("overwrite", False)
-        append = kwargs.pop("append", False)
-        if overwrite or append:
-            # Get user defined parameters
-            fs_dict = kwargs.pop("service", None)
-            if fs_dict is None:
-                raise ValueError(
-                    "If overwite or append is True, then the feature service id needs to be specified in the `service` parameter."
-                )
-            fs_id = fs_dict["featureServiceId"]
-            if isinstance(fs_id, Item):
-                fs_id = fs_id.itemid
-
-            fl_index = fs_dict["layer"]
-
-            # Create the feature layer manager for the existing feature service
-            if fs_id is None:
-                raise ValueError(
-                    "The provided feature service id cannot be found. Please check it is correct and try again."
-                )
-            fs_item = self._gis.content.get(fs_id)
-
-            flc = features.FeatureLayerCollection.fromitem(fs_item)
-            flc_manager = flc.manager
-
-        if _is_geoenabled(df):
-            # Working with feature layers
-            # set up temporary zip to be used in directory
-            os.makedirs(temp_dir)
-            temp_zip = os.path.join(temp_dir, "%s.zip" % ("a" + uuid4().hex[:5]))
-
-            if has_arcpy:
-                # publish the file item and create publish params
-                fgdb_item, publish_parameters = _create_file_item("File Geodatabase")
-
-                # publish as new layer
-                new_item = fgdb_item.publish(
-                    publish_parameters=publish_parameters, item_id=item_id
-                )
-
-                if overwrite or append:
-                    # Get properties from the newly created feature layer
-                    new_fl = new_item.layers[0]
-                    publish_parameters = new_fl.properties
-
-                    # Overwrite or Append Steps
-                    if overwrite:
-                        _perform_overwrite(
-                            fl_index, flc, flc_manager, publish_parameters
-                        )
-                    elif append:
-                        fl_index = _perform_append(flc_manager, publish_parameters)
-
-                    # Add new item dependency and append the features
-                    _add_item_dependency(
-                        "filegdb", fl_index, fgdb_item, fs_item, new_item
-                    )
-
-                    # Feature layer was added to existing feature service so can delete the item
-                    new_item.delete()
-
-                    # return the updated feature service
-                    return self._gis.content.get(fs_id)
-                else:
-                    return new_item
-            elif has_pyshp:
-                shpfl_item, publish_parameters = _create_file_item("Shapefile")
-                if overwrite or append:
-                    # Analyze the shapefile item to get definition for new feature layer
-                    publish_parameters = self._gis.content.analyze(
-                        item=shpfl_item, file_type="shapefile"
-                    )["publishParameters"]["layers"][0]
-                    if fl_index:
-                        publish_parameters_orig = flc_manager.properties["layers"][
-                            fl_index
-                        ]
-                        publish_parameters.update(publish_parameters_orig)
-                    if overwrite:
-                        _perform_overwrite(
-                            fl_index, flc, flc_manager, publish_parameters
-                        )
-                    elif append:
-                        fl_index = _perform_append(flc_manager, publish_parameters)
-
-                    _add_item_dependency(
-                        "shapefile", fl_index, shpfl_item, fs_item, None
-                    )
-
-                    return self._gis.content.get(fs_id)
-                # Publish as new Feature Layer
-                publish_parameters = {
-                    "hasStaticData": True,
-                    "name": os.path.splitext(shpfl_item["name"])[0],
-                    "maxRecordCount": 2000,
-                    "layerInfo": {"capabilities": capabilities},
-                }
-                if target_sr is not None:
-                    publish_parameters["targetSR"] = {"wkid": target_sr}
-                return shpfl_item.publish(
-                    publish_parameters=publish_parameters, item_id=item_id
-                )
-            return
-        elif (
-            isinstance(df, pd.DataFrame)
-            and "location_type" not in kwargs
-            and (overwrite or append)
-        ):
-            # Table Workflow
-            tags = kwargs.pop("tags", "CSV")
-
-            # Step 1: Add the csv as an item
-            temp_file = tempfile.gettempdir() + "\\%s%s.csv" % (
-                random.choice(string.ascii_lowercase),
-                uuid4().hex[:5],
+            warnings.warn(
+                "`item_id` is not allowed at this version of Portal, please use Enterprise 10.8.1+"
             )
-            with open(temp_file, "w") as my_csv:
-                df.to_csv(my_csv)
-                my_csv.close()
-            csv_item = self.add(
-                item_properties={
-                    "title": title,
-                    "type": "CSV",
-                    "tags": tags,
-                },
-                data=temp_file,
-            )
+        else:
+            kwargs["item_id"] = item_id
+        kwargs["folder"] = folder
+        kwargs["address_fields"] = address_fields
 
-            # # Step 2: Analyze the data
-            res = self._gis.content.analyze(item=csv_item, file_type="csv")
+        # Check which workflow to do
+        overwrite = kwargs.get("overwrite", False)
+        insert = kwargs.get("append", False)
+        if _is_geoenabled(df) or (overwrite or insert):
+            # Item Workflow
+            _cm_helper.import_as_item(self._gis, df, **kwargs)
+        else:
+            # Feature Collection Workflow
+            _cm_helper.import_as_fc(self._gis, df, **kwargs)
 
-            # Step 3: Publish the CSV as a Table
-            # publish the csv using the params from analyze
-            publish_parameters = res["publishParameters"]
-            publish_parameters["name"] = service_name
-            # This makes it a hosted table
-            publish_parameters["locationType"] = None
-
-            # publish as new layer
-            new_item = csv_item.publish(publish_parameters)
-
-            if overwrite or append:
-                # Get properties from the newly created feature layer
-                new_tbl = new_item.tables[0]
-                publish_parameters = new_tbl.properties
-                if overwrite:
-                    _perform_overwrite(fl_index, flc, flc_manager, publish_parameters)
-                elif append:
-                    fl_index = _perform_append(flc_manager, publish_parameters)
-
-                _add_item_dependency(
-                    "csv", fl_index, csv_item, fs_item, new_item, self._gis
-                )
-
-                # Table layer was added to existing feature service so can delete the item
-                new_item.delete()
-                return self._gis.content.get(fs_id)
-
-            return new_item
-        elif isinstance(df, pd.DataFrame) and "location_type" not in kwargs:
-            # To not break backwards compatibility
-            # TODO: At 3.0.0 return an item not a Feature Set anymore: remove this elif block and keep one above
-            # CSV WORKFLOW
-            path = "content/features/analyze"
-            if kwargs.get("geocode_url", None):
-                geocode_url = kwargs.get("geocode_url")
-            else:
-                locators = [
-                    gc["url"]
-                    for gc in self._gis.properties.helperServices.geocode
-                    if gc.get("batch", False)
-                ]
-                if len(locators) == 0:
-                    raise Exception("No batch geocoding service found.")
-                geocode_url = locators[0]
-            postdata = {
-                "f": "pjson",
-                "text": df.to_csv(),
-                "filetype": "csv",
-                "analyzeParameters": {
-                    "enableGlobalGeocoding": "true",
-                    "sourceLocale": "en-us",
-                    "sourceCountry": "",
-                    "sourceCountryHint": "",
-                    "geocodeServiceUrl": geocode_url,
-                },
-            }
-
-            if address_fields is not None:
-                postdata["analyzeParameters"]["locationType"] = "address"
-
-            res = self._portal.con.post(path, postdata)
-            if address_fields is not None:
-                res["publishParameters"].update({"addressFields": address_fields})
-            path = "content/features/generate"
-            postdata = {
-                "f": "pjson",
-                "text": df.to_csv(),
-                "filetype": "csv",
-                "publishParameters": json.dumps(res["publishParameters"]),
-            }
-            if item_id:
-                postdata["itemIdToCreate"] = item_id
-            res = self._portal.con.post_multipart(path, postdata)
-
-            fc = FeatureCollection(res["featureCollection"]["layers"][0])
-            return fc
-        elif (isinstance(df, pd.DataFrame) and "location_type" in kwargs) or (
-            isinstance(df, pd.DataFrame) and address_fields
-        ):
-            if kwargs.get("geocode_url", None):
-                geocode_url = kwargs.get("geocode_url")
-            else:
-                locators = [
-                    gc["url"]
-                    for gc in self._gis.properties.helperServices.geocode
-                    if gc.get("batch", False)
-                ]
-                if len(locators) == 0:
-                    raise Exception("No batch geocoding service found.")
-                geocode_url = locators[0]
-
-            path = "content/features/analyze"
-
-            postdata = {
-                "f": "pjson",
-                "text": df.to_csv(),
-                "filetype": "csv",
-                "analyzeParameters": {
-                    "enableGlobalGeocoding": "true",
-                    "sourceLocale": kwargs.pop("source_locale", "us-en"),
-                    "sourceCountry": kwargs.pop("source_country", ""),
-                    "sourceCountryHint": kwargs.pop("country_hint", ""),
-                    "geocodeServiceUrl": geocode_url,
-                },
-            }
-            update_dict = {}
-            update_dict["locationType"] = kwargs.pop("location_type", "")
-            update_dict["latitudeFieldName"] = kwargs.pop("latitude_field", "")
-            update_dict["longitudeFieldName"] = kwargs.pop("longitude_field", "")
-            update_dict["coordinateFieldName"] = kwargs.pop("coordinate_field_name", "")
-            update_dict["coordinateFieldType"] = kwargs.pop("coordinate_field_type", "")
-            rk = []
-            for k, v in update_dict.items():
-                if v == "":
-                    rk.append(k)
-            for k in rk:
-                del update_dict[k]
-
-            if address_fields is not None:
-                postdata["analyzeParameters"]["locationType"] = "address"
-
-            res = self._portal.con.post(path, postdata)
-            if address_fields is not None:
-                res["publishParameters"].update({"addressFields": address_fields})
-            res["publishParameters"].update(update_dict)
-            path = "content/features/generate"
-            postdata = {
-                "f": "pjson",
-                "text": df.to_csv(),
-                "filetype": "csv",
-                "publishParameters": json.dumps(res["publishParameters"]),
-            }
-            if item_id:
-                postdata["itemIdToCreate"] = item_id
-            res = self._portal.con.post(
-                path, postdata
-            )  # , use_ordered_dict=True) - OrderedDict >36< _mixins.PropertyMap
-
-            fc = features.FeatureCollection(res["featureCollection"]["layers"][0])
-            return fc
-            # return
-        return None
-
+    # ----------------------------------------------------------------------
     def is_service_name_available(self, service_name: str, service_type: str):
         """
             The ``is_service_name_available`` method determines if that service name is

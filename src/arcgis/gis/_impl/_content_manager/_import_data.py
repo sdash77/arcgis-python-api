@@ -2,17 +2,17 @@ import random
 from uuid import uuid4
 import string
 import os
-import warnings
 import pandas as pd
 import tempfile
 import shutil
 
+from arcgis.gis import Item, ItemDependency
 from arcgis.auth.tools import LazyLoader
 
 _tool_utils = LazyLoader("arcgis.features.geo._tools._utils")
 _common_utils = LazyLoader("arcgis._impl.common._utils")
-gis = LazyLoader("arcgis.gis")
 features = LazyLoader("arcgis.features")
+json = LazyLoader("json")
 
 try:
     from arcgis.features.geo import _is_geoenabled
@@ -38,91 +38,9 @@ except ImportError:
     has_pyshp = False
 
 
-"""
-This file is to have methods that can be utilized in the import_data method of the ContentManager as well as in the insert_layer from the Feature Layer Collection Manager.
-
-Steps to achieve to import data that will drive the methods created:
-1. Establish if the df is geoenabled
-2. If geoenabled, Establish if arcpy or shapely is available
-3. Create the necessary file out of the dataframe: fgdb, shp, or csv (csv if not geoenabled)
-4. Get the correct publish parameters for the file type
-5. Publish the file
-6. If insert or overwrite has been indicated in the import_data method then perform correct method. (includes adding dependencies)
-"""
-
-def _import_as_item(gis, df, **kwargs):
-
-    if item_id and gis.version <= [7, 1]:
-        item_id = None
-
-        warnings.warn(
-            "`item_id` is not allowed at this version of Portal, please use Enterprise 10.8.1+"
-        )
-
-    overwrite = kwargs.pop("overwrite", False)
-    insert = kwargs.pop("append", False)
-
-    if isinstance(df, features.FeatureSet):
-        df = df.sdf
-
-    # Check that a layer can be created
-    if _is_geoenabled(df):
-        if has_arcpy == False and has_pyshp == False:
-            raise Exception(
-                "Spatially enabled DataFrame's must have either pyshp or"
-                + " arcpy available to use import_data"
-            )
-        if has_arcpy:
-            file_type = "File Geodatabase"
-        elif has_pyshp:
-            file_type = "Shapefile"
-    else:
-        file_type = "CSV"
-
-    # Create the file item
-    file_item, new_item, publish_parameters = _create_file_item(df, file_type, **kwargs)
-
-    if not(overwrite or insert):
-        return new_item
-    else:
-        # Get user defined parameters
-            fs_dict = kwargs.pop("service", None)
-            if fs_dict is None:
-                raise ValueError(
-                    "If overwite or append is True, then the feature service id needs to be specified in the `service` parameter."
-                )
-            fs_id = fs_dict["featureServiceId"]
-            if isinstance(fs_id, gis.Item):
-                fs_id = fs_id.itemid
-
-            index = fs_dict["layer"]
-
-            # Create the feature layer manager for the existing feature service
-            if fs_id is None:
-                raise ValueError(
-                    "The provided feature service id cannot be found. Please check it is correct and try again."
-                )
-            fs_item = gis.content.get(fs_id)
-
-            flc = features.FeatureLayerCollection.fromitem(fs_item)
-            flc_manager = flc.manager
-    
-    if overwrite:
-        # overwrite workflow
-        _perform_overwrite(index, flc_manager, publish_parameters)
-    else:
-        # insert workflow
-        _perform_insert(index, flc_manager, publish_parameters)
-    
-    _add_item_dependency(file_type, index, file_item, fs_item, new_item, gis)
-
 def _create_file_item(gis, df, file_type, **kwargs):
     # File Type Dictionary
-    ftypes = {
-        "File Geodatabase": "gdb",
-        "Shapefile": "shp",
-        "CSV": "csv"
-    }
+    ftypes = {"File Geodatabase": "gdb", "Shapefile": "shp", "CSV": "csv"}
 
     # Pop out kwargs, establish params to be used throughout
     service_name = kwargs.pop("service_name", None)
@@ -139,7 +57,7 @@ def _create_file_item(gis, df, file_type, **kwargs):
         uuid4().hex[:5],
         ftypes[file_type],
     )
-    
+
     # Create the file to be added as an item
     if file_type in ["File Geodatabase", "Shapefile"]:
         # Working with feature layers
@@ -177,7 +95,7 @@ def _create_file_item(gis, df, file_type, **kwargs):
         with open(file, "w") as my_csv:
             df.to_csv(my_csv)
             my_csv.close()
-    
+
     # add item to portal
     file_item = gis.content.add(
         item_properties={
@@ -202,13 +120,12 @@ def _create_file_item(gis, df, file_type, **kwargs):
             "name": os.path.splitext(file_item["name"])[0],
             "maxRecordCount": 2000,
             "layerInfo": {"capabilities": capabilities},
-            "targetSR": kwargs.pop("target_sr", 102100)
+            "targetSR": kwargs.pop("target_sr", 102100),
         }
-    
-    new_item = file_item.publish(
-                    publish_parameters=publish_parameters, item_id=item_id
-                )
+
+    new_item = file_item.publish(publish_parameters=publish_parameters, item_id=item_id)
     return file_item, new_item, publish_parameters
+
 
 def _perform_overwrite(fl_index, flc_manager, publish_parameters):
     # update the name and id to represent correct values
@@ -232,6 +149,7 @@ def _perform_overwrite(fl_index, flc_manager, publish_parameters):
     if revert:
         flc_manager.update_definition({"preserveLayerIds": False})
 
+
 def _perform_insert(flc_manager, publish_parameters):
     # Add new layer to definition
     flc_manager.add_to_definition({"layers": [dict(publish_parameters)]})
@@ -241,12 +159,13 @@ def _perform_insert(flc_manager, publish_parameters):
             fl_index = layer["id"]
     return fl_index
 
+
 def _add_item_dependency(
     file_type, fl_index, file_item, fs_item, new_item=None, gis=None
 ):
     if file_type == "csv":
         source_info = gis.content.analyze(item=file_item)["publishParameters"]
-        gis.ItemDependency(fs_item).add("itemid", file_item.id)
+        ItemDependency(fs_item).add("itemid", file_item.id)
         fs_item.tables[fl_index].append(
             item_id=file_item.id,
             upload_format=file_type,
@@ -254,15 +173,165 @@ def _add_item_dependency(
         )
     elif (
         file_type == "shapefile"
-        or "filegdb"
-        in fs_item.layers[fl_index].properties.supportedAppendFormats
+        or "filegdb" in fs_item.layers[fl_index].properties.supportedAppendFormats
     ):
-        gis.ItemDependency(fs_item).add("itemid", file_item.id)
-        fs_item.layers[fl_index].append(
-            item_id=file_item.id, upload_format=file_type
-        )
+        ItemDependency(fs_item).add("itemid", file_item.id)
+        fs_item.layers[fl_index].append(item_id=file_item.id, upload_format=file_type)
     else:
         # When filegdb not supported through append, use featureCollection
         features = new_item.layers[0].query().features
         fs_item.layers[fl_index].edit_features(adds=features)
     fs_item.add_relationship(rel_item=file_item, rel_type="Service2Data")
+
+
+def import_as_item(gis, df, **kwargs):
+    # House Keeping
+    overwrite = kwargs.pop("overwrite", False)
+    insert = kwargs.pop("append", False)
+
+    if isinstance(df, features.FeatureSet):
+        df = df.sdf
+
+    # Check whether it will be a layer or a table
+    if _is_geoenabled(df):
+        # layer
+        if has_arcpy == False and has_pyshp == False:
+            raise Exception(
+                "Spatially enabled DataFrame's must have either pyshp or"
+                + " arcpy available to use import_data"
+            )
+        if has_arcpy:
+            file_type = "File Geodatabase"
+        elif has_pyshp:
+            file_type = "Shapefile"
+    else:
+        # table
+        file_type = "CSV"
+
+    # Create the file item, new item published from the file item, and the publish parameters
+    file_item, new_item, publish_parameters = _create_file_item(gis, df, file_type, **kwargs)
+
+    # If not overwrite or insert, return the new item
+    if not (overwrite or insert):
+        return new_item
+    else:
+        # Get user defined parameters to continue the workflow and either overwrite or insert
+        fs_dict = kwargs.pop("service", None)
+        if fs_dict is None:
+            raise ValueError(
+                "If overwite or append is True, then the feature service id needs to be specified in the `service` parameter."
+            )
+
+        # Get the fs_id and make sure correct format
+        fs_id = fs_dict["featureServiceId"]
+        if fs_id is None:
+            raise ValueError(
+                "The provided feature service id cannot be found. Please check it is correct and try again."
+            )
+        elif isinstance(fs_id, Item):
+            fs_id = fs_id.itemid
+
+        # Index passed in for overwrite, None for insert
+        # If None, it will be assigned in the _perform_insert method
+        index = fs_dict["layer"]
+
+        # Create the feature layer manager for the existing feature service
+        fs_item = gis.content.get(fs_id)
+        flc_manager = features.FeatureLayerCollection.fromitem(fs_item).manager
+
+    if overwrite:
+        # overwrite workflow
+        _perform_overwrite(index, flc_manager, publish_parameters)
+    else:
+        # insert workflow
+        index = _perform_insert(flc_manager, publish_parameters)
+
+    # This pushes the features and adds new dependencies
+    _add_item_dependency(file_type, index, file_item, fs_item, new_item, gis)
+
+    return fs_item
+
+
+def import_as_fc(gis, df, **kwargs):
+    # Get kwargs
+    address_fields = kwargs.pop("address_fields", None)
+    item_id = kwargs.pop("item_id", None)
+    
+    # Step 1: Analyze the df as a csv
+    if kwargs.get("geocode_url", None):
+        geocode_url = kwargs.get("geocode_url")
+    else:
+        locators = [
+            gc["url"]
+            for gc in gis.properties.helperServices.geocode
+            if gc.get("batch", False)
+        ]
+        if len(locators) == 0:
+            raise Exception("No batch geocoding service found.")
+        geocode_url = locators[0]
+
+    path = "content/features/analyze"
+
+    postdata = {
+        "f": "pjson",
+        "text": df.to_csv(),
+        "filetype": "csv",
+        "analyzeParameters": {
+            "enableGlobalGeocoding": "true",
+            "sourceLocale": kwargs.pop("source_locale", "us-en"),
+            "sourceCountry": kwargs.pop("source_country", ""),
+            "sourceCountryHint": kwargs.pop("country_hint", ""),
+            "geocodeServiceUrl": geocode_url,
+        },
+    }
+    if address_fields is not None:
+            postdata["analyzeParameters"]["locationType"] = "address"
+
+    res = gis._con._session.post(path, postdata)
+
+    # Step 2: Prep parameters to generate features
+    if address_fields is not None:
+        res["publishParameters"].update({"addressFields": address_fields})
+    path = "content/features/generate"
+    postdata = {
+        "f": "pjson",
+        "text": df.to_csv(),
+        "filetype": "csv",
+        "publishParameters": json.dumps(res["publishParameters"]),
+    }
+    if item_id:
+        postdata["itemIdToCreate"] = item_id
+
+    if isinstance(df, pd.DataFrame) and "location_type" not in kwargs:
+        # Step 2: Generate features
+        res_generate = gis._con._session.post(path, postdata)
+    elif (isinstance(df, pd.DataFrame) and "location_type" in kwargs) or (
+        isinstance(df, pd.DataFrame) and address_fields
+    ):
+        # Step 2: Generate features
+        if address_fields is not None:
+            res["publishParameters"].update({"addressFields": address_fields})
+        
+        update_dict = {}
+        update_dict["locationType"] = kwargs.pop("location_type", "")
+        update_dict["latitudeFieldName"] = kwargs.pop("latitude_field", "")
+        update_dict["longitudeFieldName"] = kwargs.pop("longitude_field", "")
+        update_dict["coordinateFieldName"] = kwargs.pop("coordinate_field_name", "")
+        update_dict["coordinateFieldType"] = kwargs.pop("coordinate_field_type", "")
+        rk = []
+        for k, v in update_dict.items():
+            if v == "":
+                rk.append(k)
+        for k in rk:
+            del update_dict[k]
+        res["publishParameters"].update(update_dict)
+
+        res_generate = gis._con._session.post(
+            path, postdata
+        )  # , use_ordered_dict=True) - OrderedDict >36< _mixins.PropertyMap
+
+    # Step 3: Return
+    if res_generate:
+        return features.FeatureCollection(res_generate["featureCollection"]["layers"][0])
+    else:
+        return None

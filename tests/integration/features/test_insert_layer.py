@@ -1,19 +1,21 @@
-import os
 import sys
-import warnings
 
 sys.path.insert(0, r"C:\ipython_workfolder\geosaurus\src")
 from arcgis.gis import GIS
 import pandas as pd
 from arcgis.features import GeoAccessor, GeoSeriesAccessor
+from arcgis.features import FeatureLayerCollection
 import unittest
 import tempfile
+import os
+import uuid
+import arcgis._impl.common._utils as _common_utils
 
 point_data = [
     {
         "FID": 1,
         "NAME": "MARKET FRESH GRILL CAFE",
-        "ADDR": "221 W ORANGETHORPE AVE",
+        "ADDRESS": "221 W ORANGETHORPE AVE",
         "PHONE": "(714) 528-1977",
         "DAYS": "Mon - Sun",
         "HOURS": "7 AM - 9 PM",
@@ -37,7 +39,7 @@ point_data = [
     {
         "FID": 2,
         "NAME": "301 CAFE",
-        "ADDR": "301 W SANTA FE AVE",
+        "ADDRESS": "301 W SANTA FE AVE",
         "PHONE": "(714) 996-8001",
         "DAYS": "Mon - Sat",
         "HOURS": "10 AM - 9:30 PM",
@@ -61,7 +63,7 @@ point_data = [
     {
         "FID": 3,
         "NAME": "Q TORTAS",
-        "ADDR": "220 S BRADFORD AVE",
+        "ADDRESS": "220 S BRADFORD AVE",
         "PHONE": "(714) 993-3270",
         "DAYS": "Tue - Friday, Sat - Sun",
         "HOURS": "11 AM - 8 PM, 9 AM - 8 PM",
@@ -85,7 +87,7 @@ point_data = [
     {
         "FID": 4,
         "NAME": "THE WHOLE ENCHILADA",
-        "ADDR": "106 E YORBA LINDA BLVD",
+        "ADDRESS": "106 E YORBA LINDA BLVD",
         "PHONE": "(714) 961-9123",
         "DAYS": "Mon - Sun",
         "HOURS": "11 AM - 8 PM",
@@ -109,7 +111,7 @@ point_data = [
     {
         "FID": 5,
         "NAME": "AVALON BAGLES AND BURGERS",
-        "ADDR": "174 E YORBA LINDA BLVD",
+        "ADDRESS": "174 E YORBA LINDA BLVD",
         "PHONE": "(714) 985-1382",
         "DAYS": "Mon - Sun",
         "HOURS": "7AM - 4 PM",
@@ -133,7 +135,7 @@ point_data = [
     {
         "FID": 6,
         "NAME": "ISE JAPANESE RESTAURANT",
-        "ADDR": "1241 E YORBA LINDA BLVD",
+        "ADDRESS": "1241 E YORBA LINDA BLVD",
         "PHONE": "(714) 993-6442",
         "DAYS": "Mon - Thur, Fri, Sat",
         "HOURS": "11 AM - 10 PM, 11 AM - 10:30 PM, 11:30 AM - 10 PM",
@@ -157,7 +159,7 @@ point_data = [
     {
         "FID": 7,
         "NAME": "COFFEE BEAN & TEA LEAF #392",
-        "ADDR": "1188 E YORBA LINDA BLVD",
+        "ADDRESS": "1188 E YORBA LINDA BLVD",
         "PHONE": "(310) 237-2326",
         "DAYS": "Mon - Sun",
         "HOURS": "6 AM - 6 PM",
@@ -181,7 +183,7 @@ point_data = [
     {
         "FID": 8,
         "NAME": "PORKY'S PIZZA",
-        "ADDR": "1152 E IMPERIAL HWY",
+        "ADDRESS": "1152 E IMPERIAL HWY",
         "PHONE": "(714) 572-1777",
         "DAYS": "Sun - Thur, Fri - Sat",
         "HOURS": "11 AM - 9 PM, 11 AM - 10 PM",
@@ -205,7 +207,7 @@ point_data = [
     {
         "FID": 9,
         "NAME": "FISH IN A BOTTLE",
-        "ADDR": "1205 E IMPERIAL HWY",
+        "ADDRESS": "1205 E IMPERIAL HWY",
         "PHONE": "(714) 528-4000",
         "DAYS": "Until this Sunday",
         "HOURS": "11:30 AM - 9:30 PM, Sat 11:30 AM -10:30, Sun 4 PM*",
@@ -229,7 +231,7 @@ point_data = [
     {
         "FID": 10,
         "NAME": "WINGSTOP #1553",
-        "ADDR": "1093 E IMPERIAL HWY",
+        "ADDRESS": "1093 E IMPERIAL HWY",
         "PHONE": "(714) 868-7000",
         "DAYS": "Mon - Sun",
         "HOURS": "10:30 AM - Midnight",
@@ -253,7 +255,7 @@ point_data = [
     {
         "FID": 11,
         "NAME": "WIENERSCHNITZEL #626",
-        "ADDR": "1005 E IMPERIAL HWY",
+        "ADDRESS": "1005 E IMPERIAL HWY",
         "PHONE": "(714) 996-0570",
         "DAYS": "Mon - Sun",
         "HOURS": "10AM - 10PM",
@@ -277,7 +279,7 @@ point_data = [
     {
         "FID": 12,
         "NAME": "SUBWAY # 3443",
-        "ADDR": "1807 E ORANGETHORPE AVE",
+        "ADDRESS": "1807 E ORANGETHORPE AVE",
         "PHONE": "(714) 579-3160",
         "DAYS": "Mon - Fri",
         "HOURS": "8 AM - 4PM",
@@ -301,7 +303,7 @@ point_data = [
     {
         "FID": 13,
         "NAME": "SAKE SUSHI & GRILL/JOO INC",
-        "ADDR": "850 N ROSE DR",
+        "ADDRESS": "850 N ROSE DR",
         "PHONE": "(714) 528-7253",
         "DAYS": "Mon - Sun",
         "HOURS": "11:30 AM - 2:30 PM/5 PM - 9:30 PM (Sunday's 5 - 9*",
@@ -325,7 +327,7 @@ point_data = [
     {
         "FID": 14,
         "NAME": "KFC",
-        "ADDR": "1404 N KRAEMER BLVD",
+        "ADDRESS": "1404 N KRAEMER BLVD",
         "PHONE": "(562) 500-5940",
         "DAYS": "Mon - Sun",
         "HOURS": "10 AM - 10 PM varies",
@@ -349,7 +351,7 @@ point_data = [
     {
         "FID": 15,
         "NAME": "MCDONALD'S",
-        "ADDR": "770 W CHAPMAN AVE",
+        "ADDRESS": "770 W CHAPMAN AVE",
         "PHONE": "(714) 630-9430",
         "DAYS": "Mon - Sun",
         "HOURS": "6 AM - 2 AM",
@@ -373,7 +375,7 @@ point_data = [
     {
         "FID": 16,
         "NAME": "WABA GRILL #204",
-        "ADDR": "720 N ROSE DR",
+        "ADDRESS": "720 N ROSE DR",
         "PHONE": "(714) 577-9222",
         "DAYS": "Mon - Sat, Sun",
         "HOURS": "11AM - 8 PM, 11 AM - 8 PM",
@@ -397,7 +399,7 @@ point_data = [
     {
         "FID": 17,
         "NAME": "MINI GOURMET",
-        "ADDR": "1210 E YORBA LINDA BLVD",
+        "ADDRESS": "1210 E YORBA LINDA BLVD",
         "PHONE": "(714) 524-1611",
         "DAYS": "Thur-Tue",
         "HOURS": "6:30 AM - 2 PM",
@@ -421,7 +423,7 @@ point_data = [
     {
         "FID": 18,
         "NAME": "MCDONALD'S OF PLACENTIA",
-        "ADDR": "164 E YORBA LINDA BLVD",
+        "ADDRESS": "164 E YORBA LINDA BLVD",
         "PHONE": "(714) 993-3121",
         "DAYS": "Mon - Sun",
         "HOURS": "5 AM - Midnight",
@@ -445,7 +447,7 @@ point_data = [
     {
         "FID": 19,
         "NAME": "TACO BELL",
-        "ADDR": "1174 E YORBA LINDA BLVD",
+        "ADDRESS": "1174 E YORBA LINDA BLVD",
         "PHONE": "(714) 528-3122",
         "DAYS": "Mon - Sun",
         "HOURS": "10 AM - 11 PM",
@@ -469,7 +471,7 @@ point_data = [
     {
         "FID": 20,
         "NAME": "DUKE'S CAFE",
-        "ADDR": "2099 E ORANGETHORPE AVE",
+        "ADDRESS": "2099 E ORANGETHORPE AVE",
         "PHONE": "(714) 983-7056",
         "DAYS": "Mon- Sun",
         "HOURS": "7 AM - 9 PM",
@@ -493,7 +495,7 @@ point_data = [
     {
         "FID": 21,
         "NAME": "PIZZA HUT DELIVERY # 24890",
-        "ADDR": "901 E YORBA LINDA BLVD UNIT A",
+        "ADDRESS": "901 E YORBA LINDA BLVD UNIT A",
         "PHONE": "(714) 996-4222",
         "DAYS": "Sun - Thur, Fri- Sat",
         "HOURS": "10 AM - Midnight, 10 AM - 1 AM",
@@ -517,7 +519,7 @@ point_data = [
     {
         "FID": 22,
         "NAME": "JACK IN THE BOX #3253",
-        "ADDR": "1097 E IMPERIAL HWY",
+        "ADDRESS": "1097 E IMPERIAL HWY",
         "PHONE": "(714) 528-2960",
         "DAYS": "Mon - Sun",
         "HOURS": "6 AM - Midnight",
@@ -541,7 +543,7 @@ point_data = [
     {
         "FID": 23,
         "NAME": "DEL TACO, LLC #917",
-        "ADDR": "1171 E IMPERIAL HWY",
+        "ADDRESS": "1171 E IMPERIAL HWY",
         "PHONE": "(714) 985-9095",
         "DAYS": "Mon - Sun",
         "HOURS": "24 HR",
@@ -565,7 +567,7 @@ point_data = [
     {
         "FID": 24,
         "NAME": "FANTASY BURGER",
-        "ADDR": "510 W CHAPMAN AVE",
+        "ADDRESS": "510 W CHAPMAN AVE",
         "PHONE": "(714) 223-1981",
         "DAYS": "Mon - Sun",
         "HOURS": "6 AM - 10 PM, Sun 7 AM - 10 PM",
@@ -589,7 +591,7 @@ point_data = [
     {
         "FID": 25,
         "NAME": "LOS GALLOS RESTAURANT",
-        "ADDR": "1667 E ORANGETHORPE AVE",
+        "ADDRESS": "1667 E ORANGETHORPE AVE",
         "PHONE": "(714) 579-7955",
         "DAYS": "Mon - Sun",
         "HOURS": "11 AM - 6:30 PM",
@@ -613,7 +615,7 @@ point_data = [
     {
         "FID": 26,
         "NAME": "CARL'S JR #663",
-        "ADDR": "750 N ROSE DR",
+        "ADDRESS": "750 N ROSE DR",
         "PHONE": "(805) 672-2889",
         "DAYS": "Mon - Sun",
         "HOURS": "6 AM - 11PM",
@@ -637,7 +639,7 @@ point_data = [
     {
         "FID": 27,
         "NAME": "SUBWAY 29842",
-        "ADDR": "1208 E YORBA LINDA BLVD",
+        "ADDRESS": "1208 E YORBA LINDA BLVD",
         "PHONE": "(714) 579-6555",
         "DAYS": "Mon - Fri, Sat - Sun",
         "HOURS": "10 AM - 7PM, 11 AM - 6:30 PM",
@@ -661,7 +663,7 @@ point_data = [
     {
         "FID": 28,
         "NAME": "COCINA AZTECA GRILL LLC",
-        "ADDR": "111 E CHAPMAN AVE",
+        "ADDRESS": "111 E CHAPMAN AVE",
         "PHONE": "(714) 577-9900",
         "DAYS": "Mon - Sun",
         "HOURS": "8 AM - 8 PM",
@@ -685,7 +687,7 @@ point_data = [
     {
         "FID": 29,
         "NAME": "MOO CAFE, LLC",
-        "ADDR": "118 N BRADFORD AVE",
+        "ADDRESS": "118 N BRADFORD AVE",
         "PHONE": "(714) 646-9311",
         "DAYS": "Sun - Thur, Fri - Sun",
         "HOURS": "11 AM - 8 PM, 11 AM - 9 PM",
@@ -709,7 +711,7 @@ point_data = [
     {
         "FID": 30,
         "NAME": "PHILLY'S BEST",
-        "ADDR": "198 E YORBA LINDA BLVD",
+        "ADDRESS": "198 E YORBA LINDA BLVD",
         "PHONE": "(714) 996-3278",
         "DAYS": "Mon - Sat, Sun",
         "HOURS": "10 AM - 9 AM, 11 AM - 8 PM",
@@ -733,7 +735,7 @@ point_data = [
     {
         "FID": 31,
         "NAME": "CRAFTSMAN WOOD FIRED PIZZA",
-        "ADDR": "148 E YORBA LINDA BLVD",
+        "ADDRESS": "148 E YORBA LINDA BLVD",
         "PHONE": "(714) 579-1777",
         "DAYS": "Mon - Sun",
         "HOURS": "4 PM - 7 PM",
@@ -757,7 +759,7 @@ point_data = [
     {
         "FID": 32,
         "NAME": "DOMINO'S PIZZA #8170",
-        "ADDR": "1913 N PLACENTIA AVE",
+        "ADDRESS": "1913 N PLACENTIA AVE",
         "PHONE": "(562) 522-6925",
         "DAYS": "Sun - Thu, Fri - Sat",
         "HOURS": "10 AM - Midnight, 10 AM - 1 AM",
@@ -781,7 +783,7 @@ point_data = [
     {
         "FID": 33,
         "NAME": "GINA MARIA'S PIZZERIA",
-        "ADDR": "1525 N PLACENTIA AVE",
+        "ADDRESS": "1525 N PLACENTIA AVE",
         "PHONE": "(714) 996-7371",
         "DAYS": "Tues - Thurs, Fri - Sat, Sun",
         "HOURS": "11 AM - 9 PM, 11 AM - 10 PM, 11 AM - 9 PM",
@@ -805,7 +807,7 @@ point_data = [
     {
         "FID": 34,
         "NAME": "LITTLE CAESAR'S",
-        "ADDR": "1212 E YORBA LINDA BLVD",
+        "ADDRESS": "1212 E YORBA LINDA BLVD",
         "PHONE": "(909) 579-1583",
         "DAYS": "Mon - Sun",
         "HOURS": "11 AM - 10 PM",
@@ -829,7 +831,7 @@ point_data = [
     {
         "FID": 35,
         "NAME": "PEPZ PIZZA IN PLACENTIA",
-        "ADDR": "732 N ROSE DR",
+        "ADDRESS": "732 N ROSE DR",
         "PHONE": "(714) 572-2100",
         "DAYS": "Mon - Sun",
         "HOURS": "11 AM - 9 PM",
@@ -853,7 +855,7 @@ point_data = [
     {
         "FID": 36,
         "NAME": "EVEREST CUISINE OF INDIA",
-        "ADDR": "2075 E ORANGETHORPE AVE",
+        "ADDRESS": "2075 E ORANGETHORPE AVE",
         "PHONE": "(714) 993-0111",
         "DAYS": "Mon - Sun",
         "HOURS": "11 AM - 3 PM, 5 Pm 10 PM",
@@ -877,7 +879,7 @@ point_data = [
     {
         "FID": 37,
         "NAME": "DENNY'S #7656",
-        "ADDR": "108 E ORANGETHORPE AVE",
+        "ADDRESS": "108 E ORANGETHORPE AVE",
         "PHONE": "(714) 528-1661",
         "DAYS": "Sun - Thurs, Fri - Sat",
         "HOURS": "7 AM - 10 PM, FRI/SAT 7 AM - 12 AM",
@@ -901,7 +903,7 @@ point_data = [
     {
         "FID": 38,
         "NAME": "BROWN BAG PLUS PIZZA MAN",
-        "ADDR": "350 E ORANGETHORPE AVE",
+        "ADDRESS": "350 E ORANGETHORPE AVE",
         "PHONE": "(714) 996-5670",
         "DAYS": "Mon - Sun",
         "HOURS": "11 AM - 11 PM",
@@ -925,7 +927,7 @@ point_data = [
     {
         "FID": 39,
         "NAME": "EL PUEBLITO RESTAURANT, INC",
-        "ADDR": "1221 E IMPERIAL HWY",
+        "ADDRESS": "1221 E IMPERIAL HWY",
         "PHONE": "(714) 854-7956",
         "DAYS": "Sun - Thur, Fri - Sat",
         "HOURS": "Weekdays & Sun 9 AM -  9 AM, 9 AM - 7 PM",
@@ -949,7 +951,7 @@ point_data = [
     {
         "FID": 40,
         "NAME": "BROOKLYN PIZZA WORKS & ITALIAN RESTAURANT",
-        "ADDR": "1235 E IMPERIAL HWY",
+        "ADDRESS": "1235 E IMPERIAL HWY",
         "PHONE": "(714) 524-1260",
         "DAYS": "Tues - Sun",
         "HOURS": "11 AM - 9 PM",
@@ -973,7 +975,7 @@ point_data = [
     {
         "FID": 41,
         "NAME": "YASAI JAPANESE GRILL",
-        "ADDR": "139 E YORBA LINDA BLVD",
+        "ADDRESS": "139 E YORBA LINDA BLVD",
         "PHONE": "(714) 577-8349",
         "DAYS": "Mon - Sun",
         "HOURS": "11 AM - 9 PM (hours vary)",
@@ -997,7 +999,7 @@ point_data = [
     {
         "FID": 42,
         "NAME": "WASABI SUSHI & ROLL",
-        "ADDR": "1041 E IMPERIAL HWY",
+        "ADDRESS": "1041 E IMPERIAL HWY",
         "PHONE": "(714) 223-7878",
         "DAYS": "Fri - Sun",
         "HOURS": "12 PM - 8 PM",
@@ -1021,7 +1023,7 @@ point_data = [
     {
         "FID": 43,
         "NAME": "B & C BURGERS",
-        "ADDR": "1868 N PLACENTIA AVE",
+        "ADDRESS": "1868 N PLACENTIA AVE",
         "PHONE": "(714) 227-0477",
         "DAYS": "Mon - Sun",
         "HOURS": "8 AM - 8 PM",
@@ -1045,7 +1047,7 @@ point_data = [
     {
         "FID": 44,
         "NAME": "MEAT UP BBQ",
-        "ADDR": "1450 N KRAEMER BLVD",
+        "ADDRESS": "1450 N KRAEMER BLVD",
         "PHONE": "(714) 983-7558",
         "DAYS": "Tue - Sun",
         "HOURS": "11 AM - 9 PM",
@@ -1069,7 +1071,7 @@ point_data = [
     {
         "FID": 45,
         "NAME": "SAIGON NOODLE HOUSE",
-        "ADDR": "1486 N KRAEMER BLVD",
+        "ADDRESS": "1486 N KRAEMER BLVD",
         "PHONE": "(714) 528-4087",
         "DAYS": "Mon - Sun",
         "HOURS": "3 PM - 7 PM (Mar. 18 - March 31)",
@@ -1093,7 +1095,7 @@ point_data = [
     {
         "FID": 46,
         "NAME": "CHIPOTLE MEXICAN GRILL #3373",
-        "ADDR": "1474 N KRAEMER BLVD",
+        "ADDRESS": "1474 N KRAEMER BLVD",
         "PHONE": "(614) 318-2482",
         "DAYS": "Mon - Sun",
         "HOURS": "10:45 AM - 10 PM",
@@ -1117,7 +1119,7 @@ point_data = [
     {
         "FID": 47,
         "NAME": "TAQUERIA DE ANDA",
-        "ADDR": "602 W CHAPMAN AVE",
+        "ADDRESS": "602 W CHAPMAN AVE",
         "PHONE": "(714) 404-6766",
         "DAYS": "Mon - Sun",
         "HOURS": "9 AM - 9 PM",
@@ -1141,7 +1143,7 @@ point_data = [
     {
         "FID": 48,
         "NAME": "LITTLE CAESARS #5714",
-        "ADDR": "630 W CHAPMAN AVE",
+        "ADDRESS": "630 W CHAPMAN AVE",
         "PHONE": "(313) 471-6000",
         "DAYS": "Sun - Thu, Fri - Sat",
         "HOURS": "10:30 AM - 10 PM, 10:30 AM - 11 PM",
@@ -1165,7 +1167,7 @@ point_data = [
     {
         "FID": 49,
         "NAME": "CITY BAGEL COMPANY",
-        "ADDR": "1225 E YORBA LINDA BLVD",
+        "ADDRESS": "1225 E YORBA LINDA BLVD",
         "PHONE": "(714) 572-0220",
         "DAYS": "Mon - Fri | Sat | Sun",
         "HOURS": "6 AM - 3 PM, 6:30 AM - 2PM, 6:30 AM - 1 PM",
@@ -1189,7 +1191,7 @@ point_data = [
     {
         "FID": 50,
         "NAME": "EL CANTARITO RESTAURANT",
-        "ADDR": "120 W SANTA FE AVE",
+        "ADDRESS": "120 W SANTA FE AVE",
         "PHONE": "(714) 528-6090",
         "DAYS": "Mon - Sun",
         "HOURS": "8 AM - 8 PM, May change to 10 AM - 7/8 PM",
@@ -1213,7 +1215,7 @@ point_data = [
     {
         "FID": 51,
         "NAME": "ESTHER'S TACO HOUSE",
-        "ADDR": "2001 E ORANGETHORPE AVE",
+        "ADDRESS": "2001 E ORANGETHORPE AVE",
         "PHONE": "(714) 996-2397",
         "DAYS": "Mon - Sun",
         "HOURS": "11 AM - 8:30 PM",
@@ -1237,7 +1239,7 @@ point_data = [
     {
         "FID": 52,
         "NAME": "INTERNATIONAL HOUSE OF PANCAKES",
-        "ADDR": "131 N KRAEMER BLVD",
+        "ADDRESS": "131 N KRAEMER BLVD",
         "PHONE": "(714) 528-7838",
         "DAYS": "Mon - Sun",
         "HOURS": "8 AM - 4 PM",
@@ -1261,7 +1263,7 @@ point_data = [
     {
         "FID": 53,
         "NAME": "JACK-IN-BOX #3548",
-        "ADDR": "2097 E ORANGETHORPE AVE",
+        "ADDRESS": "2097 E ORANGETHORPE AVE",
         "PHONE": "(949) 606-4256",
         "DAYS": "Mon - Sun",
         "HOURS": "6 AM - Midnight",
@@ -1285,7 +1287,7 @@ point_data = [
     {
         "FID": 54,
         "NAME": "JERSEY MIKE'S SUBS",
-        "ADDR": "850 N ROSE DR",
+        "ADDRESS": "850 N ROSE DR",
         "PHONE": "(714) 996-5553",
         "DAYS": "Mon - Sun",
         "HOURS": "10 AM - 8 PM",
@@ -1309,7 +1311,7 @@ point_data = [
     {
         "FID": 55,
         "NAME": "STARBUCKS COFFEE #541",
-        "ADDR": "1474 N KRAEMER BLVD",
+        "ADDRESS": "1474 N KRAEMER BLVD",
         "PHONE": "(206) 318-8705",
         "DAYS": "Mon - Sun",
         "HOURS": "5 AM - 8 PM",
@@ -1333,7 +1335,7 @@ point_data = [
     {
         "FID": 56,
         "NAME": "THE FLAME BROILER",
-        "ADDR": "2001 E ORANGETHORPE AVE",
+        "ADDRESS": "2001 E ORANGETHORPE AVE",
         "PHONE": "(714) 579-7585",
         "DAYS": "Mon - Sun",
         "HOURS": "10 AM - 8 PM",
@@ -1357,7 +1359,7 @@ point_data = [
     {
         "FID": 57,
         "NAME": "THE PIZZA STORE",
-        "ADDR": "2091 E ORANGETHORPE AVE",
+        "ADDRESS": "2091 E ORANGETHORPE AVE",
         "PHONE": "(714) 528-4700",
         "DAYS": "Mon - Sat, Sun",
         "HOURS": "10 AM - 9 PM, 11 AM - 9 PM",
@@ -1381,7 +1383,7 @@ point_data = [
     {
         "FID": 58,
         "NAME": "TONY'S LITTLE ITALY PIZZA",
-        "ADDR": "1808 N PLACENTIA AVE",
+        "ADDRESS": "1808 N PLACENTIA AVE",
         "PHONE": "(714) 528-2159",
         "DAYS": "Mon - Sun",
         "HOURS": "11 AM - 10 PM",
@@ -1405,7 +1407,7 @@ point_data = [
     {
         "FID": 59,
         "NAME": "SAN SUSHI",
-        "ADDR": "161 W SANTA FE AVE",
+        "ADDRESS": "161 W SANTA FE AVE",
         "PHONE": "(714) 203-1123",
         "DAYS": "Sun - Thurs, Fri - Sat",
         "HOURS": "11 AM - 8:30 PM, 11 AM - 9:30 PM",
@@ -1429,7 +1431,7 @@ point_data = [
     {
         "FID": 60,
         "NAME": "TEAHOLIC",
-        "ADDR": "660 S PLACENTIA AVE",
+        "ADDRESS": "660 S PLACENTIA AVE",
         "PHONE": "(657) 216-0685",
         "DAYS": "Mon- Fri, Sat",
         "HOURS": "10:30 AM- 7:30PM, 11AM-5PM",
@@ -1453,7 +1455,7 @@ point_data = [
     {
         "FID": 61,
         "NAME": "DEL TACO",
-        "ADDR": "1851 E ORANGETHORPE AVE",
+        "ADDRESS": "1851 E ORANGETHORPE AVE",
         "PHONE": "(714) 996-4089",
         "DAYS": "Mon - Sun",
         "HOURS": "24 HR",
@@ -1477,7 +1479,7 @@ point_data = [
     {
         "FID": 62,
         "NAME": 'TORTAS & BIONICOS "NICE"',
-        "ADDR": "616 W CHAPMAN AVE",
+        "ADDRESS": "616 W CHAPMAN AVE",
         "PHONE": "(657) 444-9100",
         "DAYS": "Mon - Sun",
         "HOURS": "9 AM - 8 PM",
@@ -1501,7 +1503,7 @@ point_data = [
     {
         "FID": 63,
         "NAME": "GOLDEN STATE COFFEE ROASTERS",
-        "ADDR": "109 W SANTA FE AVE",
+        "ADDRESS": "109 W SANTA FE AVE",
         "PHONE": "(714)646-9652",
         "DAYS": "Mon - Fri, Sat-Sun",
         "HOURS": " 7AM- 2PM, 7AM-4PM",
@@ -1525,7 +1527,7 @@ point_data = [
     {
         "FID": 64,
         "NAME": "PHO NOODLE HOUSE",
-        "ADDR": "646 N ROSE DR",
+        "ADDRESS": "646 N ROSE DR",
         "PHONE": "(714)572 3907",
         "DAYS": "Mon - Sun",
         "HOURS": "10 AM - 8 PM",
@@ -1549,7 +1551,7 @@ point_data = [
     {
         "FID": 65,
         "NAME": "CLUBHOUSE GRILLE AND SPIRITS",
-        "ADDR": "2053 E ORANGETHORPE AVE",
+        "ADDRESS": "2053 E ORANGETHORPE AVE",
         "PHONE": "(714) 528-7000",
         "DAYS": "Mon - Sun",
         "HOURS": "9 AM - 8 PM",
@@ -1573,7 +1575,7 @@ point_data = [
     {
         "FID": 66,
         "NAME": "THE BRUERY",
-        "ADDR": "717 DUNN WAY",
+        "ADDRESS": "717 DUNN WAY",
         "PHONE": "(714)996-6258",
         "DAYS": "Mon - Sun",
         "HOURS": "12PM - 8PM",
@@ -1597,7 +1599,7 @@ point_data = [
     {
         "FID": 67,
         "NAME": "BASKIN ROBBINS",
-        "ADDR": "104 E YORBA LINDA BLVD",
+        "ADDRESS": "104 E YORBA LINDA BLVD",
         "PHONE": "(714) 528-3443",
         "DAYS": "Mon - Sun",
         "HOURS": "11AM -10PM",
@@ -1621,7 +1623,7 @@ point_data = [
     {
         "FID": 68,
         "NAME": "RICH FARM ICE CREAM",
-        "ADDR": "901 E YORBA LINDA BLVD",
+        "ADDRESS": "901 E YORBA LINDA BLVD",
         "PHONE": "(714) 854-7424",
         "DAYS": "Sun - Thur, Fri - Sun",
         "HOURS": "1PM - 8PM, 1PM - 9PM",
@@ -1645,7 +1647,7 @@ point_data = [
     {
         "FID": 69,
         "NAME": "SUBWAY",
-        "ADDR": "1085 E IMPERIAL HWY",
+        "ADDRESS": "1085 E IMPERIAL HWY",
         "PHONE": "(714)572-6488",
         "DAYS": "Mon - Fri, Sat - Sun",
         "HOURS": "10 AM - 6:30 PM, 11 AM - 6 PM",
@@ -1669,7 +1671,7 @@ point_data = [
     {
         "FID": 70,
         "NAME": "MR. D'S",
-        "ADDR": "126 E. YORBA LINDA BLVD",
+        "ADDRESS": "126 E. YORBA LINDA BLVD",
         "PHONE": "(714) 985-1111",
         "DAYS": "Mon-Thurs, Fri-Sat, Sun",
         "HOURS": "6AM-9PM, 6AM-9:30PM, 7AM-9PM",
@@ -1693,7 +1695,7 @@ point_data = [
     {
         "FID": 71,
         "NAME": "TLAQUEPAQUE",
-        "ADDR": "101 W. SANTA FE AVE",
+        "ADDRESS": "101 W. SANTA FE AVE",
         "PHONE": "(714) 528-0110",
         "DAYS": "Tues-Sat, Sun",
         "HOURS": "11AM-3PM/5-9PM, 10AM-8:30PM",
@@ -1717,7 +1719,7 @@ point_data = [
     {
         "FID": 72,
         "NAME": "THE ORIGINAL PANCAKE HOUSE",
-        "ADDR": "1454 N. KRAEMER BLVD",
+        "ADDRESS": "1454 N. KRAEMER BLVD",
         "PHONE": "(714) 983-7771",
         "DAYS": "Mon-Sun",
         "HOURS": "6AM-1PM",
@@ -1741,7 +1743,7 @@ point_data = [
     {
         "FID": 73,
         "NAME": "EL FAROLITO",
-        "ADDR": "201 S. BRADFORD AVE",
+        "ADDRESS": "201 S. BRADFORD AVE",
         "PHONE": "(714) 993-7880",
         "DAYS": "Mon-Sun",
         "HOURS": "7AM-8PM",
@@ -1765,7 +1767,7 @@ point_data = [
     {
         "FID": 74,
         "NAME": "REMBRANDTS KITCHEN AND BAR",
-        "ADDR": "909 E YORBA LINDA BLVD",
+        "ADDRESS": "909 E YORBA LINDA BLVD",
         "PHONE": "(714)203-1353",
         "DAYS": "Thurs-Sun",
         "HOURS": "5:00PM-10:00PM",
@@ -1788,134 +1790,6 @@ point_data = [
     },
 ]
 
-polygon_features = [
-    {
-        "FID": 1,
-        "NAME": "Polygon 1",
-        "TYPE": "Type A",
-        "AREA": 120.5,
-        "SHAPE": {
-            "type": "Polygon",
-            "coordinates": [
-                [
-                    [-118.456056, 34.074513],
-                    [-118.456056, 34.064513],
-                    [-118.446056, 34.064513],
-                    [-118.446056, 34.074513],
-                    [-118.456056, 34.074513],
-                ]
-            ],
-        },
-    },
-    {
-        "FID": 2,
-        "NAME": "Polygon 2",
-        "TYPE": "Type B",
-        "AREA": 87.3,
-        "SHAPE": {
-            "type": "Polygon",
-            "coordinates": [
-                [
-                    [-118.438902, 34.060288],
-                    [-118.438902, 34.050288],
-                    [-118.428902, 34.050288],
-                    [-118.428902, 34.060288],
-                    [-118.438902, 34.060288],
-                ]
-            ],
-        },
-    },
-    {
-        "FID": 3,
-        "NAME": "Polygon 3",
-        "TYPE": "Type C",
-        "AREA": 65.2,
-        "SHAPE": {
-            "type": "Polygon",
-            "coordinates": [
-                [
-                    [-118.464789, 34.078965],
-                    [-118.464789, 34.068965],
-                    [-118.454789, 34.068965],
-                    [-118.454789, 34.078965],
-                    [-118.464789, 34.078965],
-                ]
-            ],
-        },
-    },
-    {
-        "FID": 4,
-        "NAME": "Polygon 4",
-        "TYPE": "Type D",
-        "AREA": 93.7,
-        "SHAPE": {
-            "type": "Polygon",
-            "coordinates": [
-                [
-                    [-118.446289, 34.064154],
-                    [-118.446289, 34.054154],
-                    [-118.436289, 34.054154],
-                    [-118.436289, 34.064154],
-                    [-118.446289, 34.064154],
-                ]
-            ],
-        },
-    },
-    {
-        "FID": 5,
-        "NAME": "Polygon 5",
-        "TYPE": "Type E",
-        "AREA": 105.8,
-        "SHAPE": {
-            "type": "Polygon",
-            "coordinates": [
-                [
-                    [-118.424752, 34.045629],
-                    [-118.424752, 34.035629],
-                    [-118.414752, 34.035629],
-                    [-118.414752, 34.045629],
-                    [-118.424752, 34.045629],
-                ]
-            ],
-        },
-    },
-    {
-        "FID": 6,
-        "NAME": "Polygon 6",
-        "TYPE": "Type F",
-        "AREA": 78.6,
-        "SHAPE": {
-            "type": "Polygon",
-            "coordinates": [
-                [
-                    [-118.432193, 34.056874],
-                    [-118.432193, 34.046874],
-                    [-118.422193, 34.046874],
-                    [-118.422193, 34.056874],
-                    [-118.432193, 34.056874],
-                ]
-            ],
-        },
-    },
-    {
-        "FID": 7,
-        "NAME": "Polygon 7",
-        "TYPE": "Type G",
-        "AREA": 42.1,
-        "SHAPE": {
-            "type": "Polygon",
-            "coordinates": [
-                [
-                    [-118.474318, 34.087625],
-                    [-118.474318, 34.077625],
-                    [-118.464318, 34.077625],
-                    [-118.464318, 34.087625],
-                    [-118.474318, 34.087625],
-                ]
-            ],
-        },
-    },
-]
 
 tbl_data = [
     {
@@ -2193,25 +2067,36 @@ tbl_data = [
 profiles = ["your_online_profile", "your_enterprise_profile"]
 
 
-class TestSeDFOverwrite(unittest.TestCase):
-    """tests the overwrite on the SeDF when creating a feature layer"""
+class TestFeatureLayerCollectionManagerInsert(unittest.TestCase):
+    """tests the insert_layer on the FeatureLayerCollectionManager when creating a feature layer or table"""
 
-    def test_to_feature_layer(self):
-        """tests creating a feature layer and overwriting it"""
+    def test_insert_layer(self):
+        """tests creating a feature layer and inserting it into an existing feature service"""
         for profile in profiles:
             # establish gis connection
             gis = GIS(profile=profile, verify_cert=False)
             print("User: ", gis.users.me.username)
-            polygon_item = None
             point_item = None
             try:
                 # add point layer to portal
                 sdf = pd.DataFrame(point_data)
                 point_item = gis.content.import_data(sdf)
 
-                # add polygon layer to portal
-                sdf2 = pd.DataFrame(polygon_features)
-                polygon_item = gis.content.import_data(sdf2)
+                # create a new temp file and write point data
+                df = pd.DataFrame(point_data)
+                temp_dir = os.path.join(tempfile.gettempdir(), "test_insert_layer")
+                # set up temporary zip to be used in directory
+                # os.makedirs(temp_dir)
+                temp_zip = os.path.join(temp_dir, "%s.zip" % ("a" + uuid.uuid4().hex[:5]))
+                location = os.path.join(temp_dir, "test_insert_layer.shp")
+                zip_loc = temp_dir
+                # writes the df to file as features
+                df.spatial.to_featureclass(
+                    location=location
+                )
+
+                # zip it
+                zip_file = _common_utils.zipws(path=zip_loc, outfile=temp_zip, keep=True)
 
                 # Basis Assertions
                 assert point_item.layers[0]
@@ -2219,43 +2104,25 @@ class TestSeDFOverwrite(unittest.TestCase):
                     point_item.layers[0].properties.geometryType == "esriGeometryPoint"
                 )
                 num_layers = len(point_item.layers)
-                num_features = point_item.layers[0].query(return_count_only=True)
 
-                # Overwrite
-                sdf = pd.DataFrame.spatial.from_layer(polygon_item.layers[0])
-                updated_item = sdf.spatial.to_featurelayer(
-                    overwrite="True",
-                    service={"featureServiceId": point_item.id, "layer": 0},
-                )
+                # Insert
+                flc_manager = FeatureLayerCollection.fromitem(point_item).manager
+                updated_item = flc_manager.insert_layer(zip_file, "Test Layer")
 
                 # Check to see if different layer but same service
                 assert point_item.id == updated_item.id
-                assert num_layers == len(updated_item.layers)
-                assert (
-                    updated_item.layers[0].query(return_count_only=True) != num_features
-                )
-                assert (
-                    updated_item.layers[0].properties.geometryType
-                    == "esriGeometryPolygon"
-                )
+                assert num_layers + 1 == len(updated_item.layers)
             except:
-                warnings.warn(
-                "This test failed for user: {}. Please check the data and try again.".format(gis.users.me.username)
-            )
+                pass
             finally:
                 # clean up
-                if polygon_item:
-                    poly_rel_items = polygon_item.related_items("Service2Data")
-                    for item in poly_rel_items:
-                        item.delete()
-                    polygon_item.delete()
                 if point_item:
                     pnt_rel_items = point_item.related_items("Service2Data")
                     for item in pnt_rel_items:
                         item.delete()
                     point_item.delete()
 
-    def test_overwrite_table(self):
+    def test_insert_table(self):
         for profile in profiles:
             # establish connection
             gis = GIS(profile=profile, verify_cert=False)
@@ -2267,23 +2134,20 @@ class TestSeDFOverwrite(unittest.TestCase):
             xlsx_file_path = tempfile.mkstemp(suffix=".xlsx")[1]
             df.to_excel(xlsx_file_path, index=False)
             try:
-                # add the csv to the org
-                csv_item = gis.content.add({}, data=xlsx_file_path)
-                assert csv_item
+                # add the excel to the org
+                excel_item = gis.content.add({}, data=xlsx_file_path)
+                assert excel_item
                 # publish as a table
-                table_item = csv_item.publish()
-                tbl_df = pd.DataFrame.spatial.from_layer(table_item.tables[0])
-                tbl_df["NOTES"][0] = "This is a python api test"
-                tbl_df["NOTES"][1] = "This file will have extra notes"
-                updated_item = tbl_df.spatial.to_featurelayer(
-                    overwrite=True,
-                    service={"featureServiceId": table_item.id, "layer": 0},
-                )
-                assert len(table_item.tables) == len(updated_item.tables)
+                table_item = excel_item.publish()
+                assert table_item 
+
+                flc_manager = FeatureLayerCollection.fromitem(table_item).manager                
+                # insert the same table again for sake of testing
+                updated_item = flc_manager.insert_layer(xlsx_file_path, "Test Table")
+                assert updated_item.tables
+                assert len(updated_item.tables) == 2
             except:
-                warnings.warn(
-                "This test failed for user: {}. Please check the data and try again.".format(gis.users.me.username)
-            )
+                pass
             finally:
                 related = table_item.related_items("Service2Data")
                 for item in related:
