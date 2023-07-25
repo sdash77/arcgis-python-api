@@ -3155,7 +3155,7 @@ class UserManager(object):
     def create(
         self,
         username: str,
-        password: str,
+        password: str | None,
         firstname: str,
         lastname: str,
         email: str,
@@ -3189,6 +3189,12 @@ class UserManager(object):
             automatically. Only users with accounts that have been pre-created can sign in to the portal.
             Alternatively, you can configure the portal to register enterprise accounts the first time
             the user connects to the website.
+
+
+        .. note:
+            To invite users via email on ArcGIS Online, set `password` to `None` and provide an
+            `email_text` value.  Sending invitations via email cannot have passwords set by
+            administrators.
 
         ================  ===============================================================================
         **Parameter**      **Description**
@@ -7164,6 +7170,41 @@ class ContentManager(object):
                 print("Folder already exists.")
         return None
 
+    def _get_folder(self, folder_id: str, username: str = None) -> str:
+        """
+        Private method for when a folder name needs to be found from a folder id.
+        Returns the folder name for the given folder id.
+
+        This method will search your folders to find the folder name. If folder is not owned by you,
+        then you must specify the username of the owner. Specifying the username requires
+        administrator privileges.
+
+        ================  ===============================================================
+        **Parameter**      **Description**
+        ----------------  ---------------------------------------------------------------
+        folder_id         Required string. The id of the folder.
+        ----------------  ---------------------------------------------------------------
+        username          Optional string. The username of the folder owner. Need admin
+                          privileges to specify this parameter.
+        ================  ===============================================================
+
+        :return: String
+        """
+        # If username provided check privileges
+        if username:
+            if "portal:admin:viewUsers" not in self._gis.users.me.privileges:
+                raise Exception(
+                    "You do not have privileges to view other users folders."
+                )
+        else:
+            username = self._gis.users.me.username
+        # Get folder
+        folders = self._gis.users.get(username).folders
+        for folder in folders:
+            if folder["id"] == folder_id:
+                return folder["title"]
+        return None
+
     def rename_folder(
         self, old_folder: str, new_folder: str, owner: Optional[str] = None
     ):
@@ -7715,7 +7756,6 @@ class ContentManager(object):
         from arcgis.features import (
             FeatureCollection,
             FeatureSet,
-            FeatureLayerCollection,
         )
 
         if item_id and self._gis.version <= [7, 1]:
@@ -7736,129 +7776,13 @@ class ContentManager(object):
             )
 
         # Pop out kwargs, establish params to be used throughout
-        sanitize_columns = kwargs.pop("sanitize_columns", False)
         service_name = kwargs.pop("service_name", None)
         if service_name is None:
             service_name = "a" + uuid4().hex[:7]
-        temp_dir = os.path.join(tempfile.gettempdir(), service_name)
+
         title = kwargs.pop("title", uuid4().hex)
         target_sr = kwargs.pop("target_sr", 102100)
         capabilities = kwargs.pop("capabilities", "Query")
-
-        def _create_file_item(file_type):
-            ftypes = {
-                "File Geodatabase": "gdb",
-                "Shapefile": "shp",
-            }
-            tags = kwargs.pop("tags", file_type)
-            if tags is None:
-                tags = file_type
-            name = "%s%s.%s" % (
-                random.choice(string.ascii_lowercase),
-                uuid4().hex[:5],
-                ftypes[file_type],
-            )
-            if file_type == "File Geodatabase":
-                # create empty filegdb
-                emtpy_fgdb = _tool_utils.run_and_hide(
-                    fn=arcpy.CreateFileGDB_management,
-                    **{"out_folder_path": temp_dir, "out_name": name},
-                )
-                fgdb = emtpy_fgdb[0]
-                location = os.path.join(fgdb, os.path.basename(temp_dir))
-                zip_loc = os.path.join(temp_dir, name)
-            else:
-                location = os.path.join(temp_dir, name)
-                zip_loc = temp_dir
-
-            # writes the df to file as features
-            df.spatial.to_featureclass(
-                location=location, sanitize_columns=sanitize_columns
-            )
-
-            # zip it
-            zip_file = _common_utils.zipws(path=zip_loc, outfile=temp_zip, keep=True)
-            # add item to portal
-            file_item = self.add(
-                item_properties={
-                    "title": title,
-                    "type": file_type,
-                    "tags": tags,
-                },
-                data=zip_file,
-                folder=folder,
-            )
-            shutil.rmtree(temp_dir, ignore_errors=True)
-
-            # start creating publish params from new file item
-            publish_parameters = {
-                "hasStaticData": True,
-                "name": os.path.splitext(file_item["name"])[0],
-                "maxRecordCount": 2000,
-                "layerInfo": {"capabilities": capabilities},
-            }
-
-            if target_sr is not None:
-                publish_parameters["targetSR"] = {"wkid": target_sr}
-
-            return file_item, publish_parameters
-
-        def _perform_overwrite(fl_index, flc, flc_manager, publish_parameters):
-            # update the name and id to represent correct values
-            publish_parameters["id"] = fl_index
-            publish_parameters["name"] = flc.manager.properties.layers[fl_index]["name"]
-
-            # Perform edit on the flc
-            # Step 1: Preserve layer ids
-            revert = False
-            if (
-                "preserveLayerIds" not in flc_manager.properties
-                or flc_manager.properties["preserveLayerIds"] is not True
-            ):
-                flc_manager.update_definition({"preserveLayerIds": True})
-                revert = True
-            # Step 2: Delete layer from definition
-            flc_manager.delete_from_definition({"layers": [{"id": fl_index}]})
-            # Step 3: Add new layer to definition
-            flc_manager.add_to_definition({"layers": [dict(publish_parameters)]})
-            # Step 4: Cleanup
-            if revert:
-                flc_manager.update_definition({"preserveLayerIds": False})
-
-        def _perform_append(flc_manager, publish_parameters, is_table=False):
-            # Add new layer to definition
-            flc_manager.add_to_definition({"layers": [dict(publish_parameters)]})
-            # Find the index at which the layer was added
-            for layer in flc_manager.properties.layers:
-                if layer["name"] == publish_parameters["name"]:
-                    fl_index = layer["id"]
-            return fl_index
-
-        def _add_item_dependency(
-            file_type, fl_index, file_item, fs_item, new_item=None, gis=None
-        ):
-            if file_type == "csv":
-                source_info = gis.content.analyze(item=file_item)["publishParameters"]
-                ItemDependency(fs_item).add("itemid", file_item.id)
-                fs_item.tables[fl_index].append(
-                    item_id=file_item.id,
-                    upload_format=file_type,
-                    source_info=source_info,
-                )
-            elif (
-                file_type == "shapefile"
-                or "filegdb"
-                in fs_item.layers[fl_index].properties.supportedAppendFormats
-            ):
-                ItemDependency(fs_item).add("itemid", file_item.id)
-                fs_item.layers[fl_index].append(
-                    item_id=file_item.id, upload_format=file_type
-                )
-            else:
-                # When filegdb not supported through append, use featureCollection
-                features = new_item.layers[0].query().features
-                fs_item.layers[fl_index].edit_features(adds=features)
-            fs_item.add_relationship(rel_item=file_item, rel_type="Service2Data")
 
         # If overwrite or append specified, set up necessary params
         overwrite = kwargs.pop("overwrite", False)
@@ -7883,18 +7807,23 @@ class ContentManager(object):
                 )
             fs_item = self._gis.content.get(fs_id)
 
-            flc = features.FeatureLayerCollection.fromitem(fs_item)
-            flc_manager = flc.manager
+            flc_manager = features.FeatureLayerCollection.fromitem(fs_item).manager
 
         if _is_geoenabled(df):
             # Working with feature layers
-            # set up temporary zip to be used in directory
-            os.makedirs(temp_dir)
-            temp_zip = os.path.join(temp_dir, "%s.zip" % ("a" + uuid4().hex[:5]))
 
             if has_arcpy:
                 # publish the file item and create publish params
-                fgdb_item, publish_parameters = _create_file_item("File Geodatabase")
+                fgdb_item, publish_parameters = self._create_file_item(
+                    df,
+                    "File Geodatabase",
+                    title,
+                    folder,
+                    target_sr,
+                    service_name,
+                    capabilities,
+                    **kwargs,
+                )
 
                 # publish as new layer
                 new_item = fgdb_item.publish(
@@ -7908,14 +7837,14 @@ class ContentManager(object):
 
                     # Overwrite or Append Steps
                     if overwrite:
-                        _perform_overwrite(
-                            fl_index, flc, flc_manager, publish_parameters
+                        self._perform_overwrite(
+                            fl_index, flc_manager, publish_parameters
                         )
                     elif append:
-                        fl_index = _perform_append(flc_manager, publish_parameters)
+                        fl_index = self._perform_insert(flc_manager, publish_parameters)
 
                     # Add new item dependency and append the features
-                    _add_item_dependency(
+                    self._add_item_dependency(
                         "filegdb", fl_index, fgdb_item, fs_item, new_item
                     )
 
@@ -7927,7 +7856,16 @@ class ContentManager(object):
                 else:
                     return new_item
             elif has_pyshp:
-                shpfl_item, publish_parameters = _create_file_item("Shapefile")
+                shpfl_item, publish_parameters = self._create_file_item(
+                    df,
+                    "Shapefile",
+                    title,
+                    folder,
+                    target_sr,
+                    service_name,
+                    capabilities,
+                    **kwargs,
+                )
                 if overwrite or append:
                     # Analyze the shapefile item to get definition for new feature layer
                     publish_parameters = self._gis.content.analyze(
@@ -7939,13 +7877,13 @@ class ContentManager(object):
                         ]
                         publish_parameters.update(publish_parameters_orig)
                     if overwrite:
-                        _perform_overwrite(
-                            fl_index, flc, flc_manager, publish_parameters
+                        self._perform_overwrite(
+                            fl_index, flc_manager, publish_parameters
                         )
                     elif append:
-                        fl_index = _perform_append(flc_manager, publish_parameters)
+                        fl_index = self._perform_insert(flc_manager, publish_parameters)
 
-                    _add_item_dependency(
+                    self._add_item_dependency(
                         "shapefile", fl_index, shpfl_item, fs_item, None
                     )
 
@@ -8001,24 +7939,20 @@ class ContentManager(object):
             # publish as new layer
             new_item = csv_item.publish(publish_parameters)
 
-            if overwrite or append:
-                # Get properties from the newly created feature layer
-                new_tbl = new_item.tables[0]
-                publish_parameters = new_tbl.properties
-                if overwrite:
-                    _perform_overwrite(fl_index, flc, flc_manager, publish_parameters)
-                elif append:
-                    fl_index = _perform_append(flc_manager, publish_parameters)
+            # Get properties from the newly created feature layer
+            new_tbl = new_item.tables[0]
+            publish_parameters = new_tbl.properties
+            if overwrite:
+                self._perform_overwrite(fl_index, flc_manager, publish_parameters)
+            elif append:
+                fl_index = self._perform_insert(flc_manager, publish_parameters)
 
-                _add_item_dependency(
-                    "csv", fl_index, csv_item, fs_item, new_item, self._gis
-                )
+            self._add_item_dependency("csv", fl_index, csv_item, fs_item, new_item)
 
-                # Table layer was added to existing feature service so can delete the item
-                new_item.delete()
-                return self._gis.content.get(fs_id)
+            # Table layer was added to existing feature service so can delete the item
+            new_item.delete()
+            return self._gis.content.get(fs_id)
 
-            return new_item
         elif isinstance(df, pd.DataFrame) and "location_type" not in kwargs:
             # To not break backwards compatibility
             # TODO: At 3.0.0 return an item not a Feature Set anymore: remove this elif block and keep one above
@@ -8134,6 +8068,135 @@ class ContentManager(object):
             # return
         return None
 
+    def _create_file_item(
+        self,
+        df,
+        file_type,
+        title,
+        folder,
+        target_sr,
+        service_name,
+        capabilities,
+        **kwargs,
+    ):
+        temp_dir = os.path.join(tempfile.gettempdir(), service_name)
+        # set up temporary zip to be used in directory
+        os.makedirs(temp_dir)
+        temp_zip = os.path.join(temp_dir, "%s.zip" % ("a" + uuid4().hex[:5]))
+        ftypes = {
+            "File Geodatabase": "gdb",
+            "Shapefile": "shp",
+        }
+        tags = kwargs.pop("tags", file_type)
+        if tags is None:
+            tags = file_type
+        name = "%s%s.%s" % (
+            random.choice(string.ascii_lowercase),
+            uuid4().hex[:5],
+            ftypes[file_type],
+        )
+        if file_type == "File Geodatabase":
+            # create empty filegdb
+            emtpy_fgdb = _tool_utils.run_and_hide(
+                fn=arcpy.CreateFileGDB_management,
+                **{"out_folder_path": temp_dir, "out_name": name},
+            )
+            fgdb = emtpy_fgdb[0]
+            location = os.path.join(fgdb, os.path.basename(temp_dir))
+            zip_loc = os.path.join(temp_dir, name)
+        else:
+            location = os.path.join(temp_dir, name)
+            zip_loc = temp_dir
+
+        # writes the df to file as features
+        sanitize_columns = kwargs.pop("sanitize_columns", False)
+        df.spatial.to_featureclass(location=location, sanitize_columns=sanitize_columns)
+
+        # zip it
+        zip_file = _common_utils.zipws(path=zip_loc, outfile=temp_zip, keep=True)
+        # add item to portal
+        file_item = self.add(
+            item_properties={
+                "title": title,
+                "type": file_type,
+                "tags": tags,
+            },
+            data=zip_file,
+            folder=folder,
+        )
+        shutil.rmtree(temp_dir, ignore_errors=True)
+
+        # start creating publish params from new file item
+        publish_parameters = {
+            "hasStaticData": True,
+            "name": os.path.splitext(file_item["name"])[0],
+            "maxRecordCount": 2000,
+            "layerInfo": {"capabilities": capabilities},
+        }
+
+        if target_sr is not None:
+            publish_parameters["targetSR"] = {"wkid": target_sr}
+
+        return file_item, publish_parameters
+
+    def _perform_overwrite(self, fl_index, flc_manager, publish_parameters):
+        # update the name and id to represent correct values
+        publish_parameters["id"] = fl_index
+        publish_parameters["name"] = flc_manager.properties.layers[fl_index]["name"]
+
+        # Perform edit on the flc
+        # Step 1: Preserve layer ids
+        revert = False
+        if (
+            "preserveLayerIds" not in flc_manager.properties
+            or flc_manager.properties["preserveLayerIds"] is not True
+        ):
+            flc_manager.update_definition({"preserveLayerIds": True})
+            revert = True
+        # Step 2: Delete layer from definition
+        flc_manager.delete_from_definition({"layers": [{"id": fl_index}]})
+        # Step 3: Add new layer to definition
+        flc_manager.add_to_definition({"layers": [dict(publish_parameters)]})
+        # Step 4: Cleanup
+        if revert:
+            flc_manager.update_definition({"preserveLayerIds": False})
+
+    def _perform_insert(self, flc_manager, publish_parameters):
+        # Add new layer to definition
+        flc_manager.add_to_definition({"layers": [dict(publish_parameters)]})
+        # Find the index at which the layer was added
+        for layer in flc_manager.properties.layers:
+            if layer["name"] == publish_parameters["name"]:
+                fl_index = layer["id"]
+        return fl_index
+
+    def _add_item_dependency(
+        self, file_type, fl_index, file_item, fs_item, new_item=None
+    ):
+        if file_type == "csv":
+            source_info = self._gis.content.analyze(item=file_item)["publishParameters"]
+            ItemDependency(fs_item).add("itemid", file_item.id)
+            fs_item.tables[fl_index].append(
+                item_id=file_item.id,
+                upload_format=file_type,
+                source_info=source_info,
+            )
+        elif (
+            file_type == "shapefile"
+            or "filegdb" in fs_item.layers[fl_index].properties.supportedAppendFormats
+        ):
+            ItemDependency(fs_item).add("itemid", file_item.id)
+            fs_item.layers[fl_index].append(
+                item_id=file_item.id, upload_format=file_type
+            )
+        else:
+            # When filegdb not supported through append, use featureCollection
+            features = new_item.layers[0].query().features
+            fs_item.layers[fl_index].edit_features(adds=features)
+
+        fs_item.add_relationship(rel_item=file_item, rel_type="Service2Data")
+
+    # ----------------------------------------------------------------------
     def is_service_name_available(self, service_name: str, service_type: str):
         """
             The ``is_service_name_available`` method determines if that service name is

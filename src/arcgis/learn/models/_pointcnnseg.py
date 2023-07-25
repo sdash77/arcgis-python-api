@@ -486,6 +486,7 @@ class PointCNN(ArcGISModel):
     def predict_h5(self, path, output_path=None, **kwargs):
         """
         This method is used for infrencing using HDF file.
+
         =====================   ===========================================
         **Parameter**            **Description**
         ---------------------   -------------------------------------------
