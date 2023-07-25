@@ -20,6 +20,21 @@ def _underscore_to_camelcase(name):
     return "".join(next(c)(x) if x else "_" for x in name.split("_"))
 
 
+def _check_license(gis):
+    user_url = f"{gis._portal.resturl}community/self"
+    raw_user = gis._con.get(user_url, {"returnUserLicenseTypeExtensions": True})
+    if "userLicenseTypeExtensions" in raw_user:
+        licenses = raw_user["userLicenseTypeExtensions"]
+        has_license = "workflow" in licenses
+    else:
+        has_license = False
+
+    if has_license is False:
+        raise ValueError(
+            "No Workflow Manager license is available for the current user"
+        )
+
+
 def _initialize(instance, gis):
     instance._gis = gis
     if instance._gis.users.me is None:
@@ -43,6 +58,7 @@ class WorkflowManagerAdmin:
 
     def __init__(self, gis):
         _initialize(self, gis)
+        _check_license(gis)
 
     @property
     def _wmx_server_url(self):
@@ -899,6 +915,7 @@ class WorkflowManager:
             raise ValueError("Item cannot be None")
         self._item = item
         _initialize(self, item._gis)
+        _check_license(item._gis)
 
         self.job_manager = JobManager(item)
         self.saved_searches_manager = SavedSearchesManager(item)
