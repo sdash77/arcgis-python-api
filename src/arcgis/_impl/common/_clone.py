@@ -341,6 +341,10 @@ class _DeepCloner:
             return None
         from arcgis.gis.clone import clone_registry
 
+        # check if living atlas item, if so don't process it
+        if getattr(item, "groupDesignations") == "livingatlas":
+            return None
+
         # if the item is in the clone_registry then use the item definition.
         if isinstance(item, arcgis.gis.Item) and item["type"] in clone_registry():
             item_definition = self._get_item_definition(item)
