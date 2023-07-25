@@ -77,6 +77,9 @@ class PlacesAPI:
         assert not gis.users.me is None or gis.properties.get(
             "appInfo", None
         ), "You must be signed into the GIS to use the Places API"
+        assert self._check_privileges(
+            gis=gis
+        ), "The current GIS does not have PlaceAPI permissions"
         self._gis = gis
         self._urls = {
             "base_url": "https://places-api.arcgis.com/arcgis/rest/services/places-service/v1",
@@ -86,6 +89,27 @@ class PlacesAPI:
             "places": "/places",
         }
         self.session: EsriSession = gis._con._session
+
+    @lru_cache(maxsize=255)
+    def _check_privileges(self, gis: GIS) -> bool:
+        """
+        Checks to see if the current login has the proper permisions to use
+        the Places API
+
+        :return: bool
+
+        """
+        user: "User" = gis.users.me
+        properties: dict[str, Any] = dict(gis.properties)
+        if user:
+            if "premium:user:places" in user.privileges:
+                return True
+        else:
+            if "premium:user:places" in properties.get("appInfo", {}).get(
+                "privileges", []
+            ):
+                return True
+        return False
 
     # ---------------------------------------------------------------------
     def __repr__(self) -> str:

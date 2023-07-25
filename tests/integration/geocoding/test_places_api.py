@@ -2,7 +2,7 @@ import sys
 
 #
 #  Update the Path to set the test area
-# sys.path.insert(0, r"C:\SVN\geosaurus_issue_10201\src")
+sys.path.insert(0, r"C:\SVN\geosaurus_issue_10201\src")
 import logging
 import unittest
 from arcgis.auth.tools._util import detect_proxy
@@ -37,6 +37,30 @@ class TestPlacesAPI(unittest.TestCase):
             proxy=PROXIES,
         )
         cls.places_api = PlacesAPI(gis=cls.gis)
+
+    def test_check_privileges(self):
+        assert self.places_api._check_privileges(gis=self.gis)
+        assert (
+            self.places_api._check_privileges(
+                gis=GIS(
+                    profile='your_online_profile',
+                    verify_cert=False,
+                    proxy=PROXIES,
+                    set_active=False,
+                )
+            )
+            == True
+        )
+        assert (
+            self.places_api._check_privileges(
+                gis=GIS(
+                    verify_cert=False,
+                    proxy=PROXIES,
+                    set_active=False,
+                )
+            )
+            == False
+        )
 
     def test_categories(self):
         result = self.places_api.find_category(query="dog")
