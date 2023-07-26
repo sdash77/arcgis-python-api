@@ -57,10 +57,11 @@ current_path = ""
 success_flag = False
 if not HAS_DEPS:
     print("**Environment fails**")
+    module_skip = True
     raise Exception(
         f"""{import_exception} \n\nThis module requires fastai, PyTorch, torchvision and scikit-image as its dependencies."""
     )
-    module_skip = True
+   
 else:
     from arcgis.gis import GIS
     from arcgis.features import FeatureLayerCollection
@@ -768,6 +769,8 @@ def commonTestCases(
     )
 
     del model_object
+    gc.collect()
+    torch.cuda.empty_cache()
 
     success_flag = True
 
@@ -907,6 +910,8 @@ def update_parameter_df():
             )
     return parameter_df
 
+# def efficientnet_main():
+#     from integration.arcgis_learn.properties import *
 
 def text_models():
     for key, val in data_inference_only.items():
@@ -1158,10 +1163,6 @@ class TestTraining(unittest.TestCase):
     
     def test_autodl(self):
         autodl_main()
-
-    # def test_efficientnet(self):
-    #     efficientnet_main()
-
 
     @classmethod
     def tearDownClass(cls):

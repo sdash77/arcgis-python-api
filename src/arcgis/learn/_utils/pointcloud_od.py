@@ -176,6 +176,14 @@ class PointCloudOD(Dataset):
                 )
                 * self.scale_factor
             ).tolist()
+            # get the smallest box idx to calulate the voxel size
+            box_idx = np.product(self.average_box_size, axis=1).argmin()
+            box_size = self.average_box_size[box_idx]
+            # taking 60 voxels in x and 20 voxels in z direction for each bbox
+            self.voxel_size = [box_size[0] / 60, box_size[0] / 60, box_size[2] / 20]
+            no_of_points = self.statistics["numberOfStoredRecords"]
+            no_of_tiles = self.statistics["numberOfStoredTiles"]
+            self.no_of_points_per_tile = no_of_points // no_of_tiles
 
             box_zminmax_range = [
                 clas["orientedBoundingBoxZ"]
@@ -240,7 +248,7 @@ class PointCloudOD(Dataset):
                     )
 
         self.folder = folder
-        if folder != "":
+        if folder != "" and kwargs.get("filter_empty_tiles", False):
             self._filter()
 
     def _filter(self):
@@ -349,7 +357,8 @@ def show_batch(self, rows=2, color_mapping=None, **kwargs):
     """
     This can be used to visualize the exported dataset. Colors of the PointCloud
     are only used for better visualization, and it does not depict the
-    actual classcode colors.
+    actual classcode colors. Visualization of data, exported in a geographic
+    coordinate system is not yet supported.
     =====================   ===========================================
     **Parameter**            **Description**
     ---------------------   -------------------------------------------

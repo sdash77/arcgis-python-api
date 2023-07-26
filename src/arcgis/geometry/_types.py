@@ -3106,7 +3106,7 @@ class MultiPoint(Geometry):
         import numpy as np
 
         if "points" in self:
-            return np.array(self["points"])
+            return np.array(self["points"], dtype=object)
         else:
             return np.array([])
 
@@ -3224,9 +3224,9 @@ class Point(Geometry):
         import numpy as np
 
         if "x" in self and "y" in self and "z" in self:
-            return np.array([self["x"], self["y"], self["z"]])
+            return np.array([self["x"], self["y"], self["z"]], dtype=float)
         elif "x" in self and "y" in self:
-            return np.array([self["x"], self["y"]])
+            return np.array([self["x"], self["y"]], dtype=float)
         else:
             return np.array([])
 
@@ -3356,7 +3356,7 @@ class Polygon(Geometry):
         import numpy as np
 
         if "rings" in self:
-            return np.array(self["rings"])
+            return np.array(self["rings"], dtype=object)
         else:
             return np.array([])
 
@@ -3483,7 +3483,7 @@ class Polyline(Geometry):
         import numpy as np
 
         if "paths" in self:
-            return np.array(self["paths"])
+            return np.array(self["paths"], dtype=object)
         else:
             return np.array([])
 
@@ -3609,9 +3609,12 @@ class Envelope(Geometry):
                         self["xmax"],
                         self["ymax"],
                         self["zmax"],
-                    ]
+                    ],
+                    dtype=float,
                 )
-            return np.array([self["xmin"], self["ymin"], self["xmax"], self["ymax"]])
+            return np.array(
+                [self["xmin"], self["ymin"], self["xmax"], self["ymax"]], dtype=float
+            )
         else:
             return np.array([])
 

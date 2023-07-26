@@ -585,7 +585,7 @@ def kmeans(bboxes, num_anchor):
             return centroids
 
         centroid_sums = np.zeros(
-            (num_points, dim), np.float
+            (num_points, dim), float
         )  # num_points needs to be num_anchors
         for i in range(num_points):
             centroid_sums[cur_centroids[i]] += bboxes[i]
