@@ -14351,9 +14351,10 @@ class Item(dict):
         ================  ========================================================
         **Parameter**      **Description**
         ----------------  --------------------------------------------------------
-        target_owner      Required string or User. The new desired owner of the item.
+        target_owner      Required string or :class:`~arcgis.gis.User`. The string
+                          must be a *username* value.
         ----------------  --------------------------------------------------------
-        target_folder     Optional string. The folder to move the item to.
+        target_folder     Optional string. The folder title to move the item to.
         ================  ========================================================
 
         :return:
