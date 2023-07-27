@@ -21,7 +21,9 @@ def _underscore_to_camelcase(name):
 
 
 def _check_license(gis):
-    if gis.properties.get("isPortal", False) and float(gis.properties.get("currentVersion", "0")) <= 11.0:
+    is_portal = gis.properties.get("isPortal", False)
+    portal_version = float(gis.properties.get("currentVersion", "0"))
+    if is_portal and portal_version < 10.3:  # < ArcGIS Enterprise 11.1
         user_url = f"{gis._portal.resturl}community/self"
         raw_user = gis._con.get(user_url, {"returnUserLicenseTypeExtensions": True})
         if "userLicenseTypeExtensions" in raw_user:
