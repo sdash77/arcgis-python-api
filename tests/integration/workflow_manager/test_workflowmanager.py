@@ -3193,7 +3193,7 @@ class TestWorkflowManager(unittest.TestCase):
 
             # Assertions
             self.assertIsInstance(users, list, "Incorrect return type")
-            self.assertEqual(len(users), 1, "Incorrect number of items downloaded")
+            self.assertEqual(len(users), 2, "Incorrect number of items downloaded")
             self.assertIsInstance(users[0], dict, "Incorrect type")
 
         except Exception as testException:
