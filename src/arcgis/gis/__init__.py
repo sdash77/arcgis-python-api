@@ -1973,12 +1973,16 @@ class GroupMigrationManager(object):
                                from the group.  If argument is not provided, the method will attempt
                                to export all group content items.
         ------------------     --------------------------------------------------------------------
-        future                 Optional Boolean.  When True, the operation will return a Job object
-                               and return the results asynchronously.
+        future                 Optional Boolean.  When `True`, the operation runs asynchronously
+                               and returns a :class:`Job <arcgis.gis._impl._jb.StatusJob>` object
+                               that can be queried for results. When `False` the operation
+                               runs synchronously and returns an *export package*
+                               :class:`~arcgis.gis.Item` upon completion.
         ==================     ====================================================================
 
         :return:
-            :class:`~arcgis.gis.Item` --or-- :class:`~arcgis.gis._impl._jb.StatusJob` when `future=True`
+            An *export package* :class:`~arcgis.gis.Item` when `future=False`, or a 
+            :class:`Job <arcgis.gis._impl._jb.StatusJob>` when `future=True`
             
         .. code-block:: python
         
@@ -2082,22 +2086,26 @@ class GroupMigrationManager(object):
                           organization will be overwritten by the corresponding *item* in the package
                           provided by the `epk_item` argument.
         ----------------  -------------------------------------------------------------------------------
-        future            Optional bool. When *True*, the operation will return a `Job` object and not
-                          pause the current thread.  When `False` `load` will occur in a synchronous
-                          fashion pausing the thread.  If you are loading large amounts of data, set
-                          future to `True` to reduce time. The job can be polled through its `status`
-                          attribute. In addition, the `messages` and `result()` attributes will contain
+        future            Optional bool. When *True*, the operation will return a
+                          :class:`Job <arcgis.gis._impl._jb.StatusJob>` object which can be queried, and
+                          the process will not pause so subsequent operations can continue to run.  When
+                          `False`, the operation runs synchronously, pausing the process until the
+                          job completes and returns a dictionary containing output information.
+                          If you are loading large amounts of data, set *future=True* to reduce down time.
+                          The *job* can be queried through its :attr:`~arcgis.gis._impl._jb.StatusJob.status`
+                          attribute. In addition, the :attr:`~arcgis.gis._impl._jb.StatusJob.messages` and
+                          :meth:`~arcgis.gis._impl._jb.StatusJob.result()` attributes will contain
                           information about the output.
         ----------------  -------------------------------------------------------------------------------
-        folder_id         Optional String. In ArcGIS Enterprise 10.9+, a user can specify the destination
-                          folder ID for the items.
+        folder_id         Optional String. In ArcGIS Enterprise 10.9 and later, the folder id of
+                          the destination Enterprise for the package contents.
         ----------------  -------------------------------------------------------------------------------
-        folder_owner      Optional String. In ArcGIS Enterprise 10.9+, a user name of the folder owner
-                          can be provided.
+        folder_owner      Optional String. In ArcGIS Enterprise 10.9 and later, a *username* for the
+                          folder owner.
         ================  ===============================================================================
 
         :return:
-            A dictionary --or-- :class:`~arcgis.gis._impl._jb.StatusJob` when `future=True`
+            A dictionary when *future=False* or a :class:`Job <arcgis.gis._impl._jb.StatusJob>` when `future=True`.
             
         .. code-block:: python
         
@@ -9869,7 +9877,7 @@ class Group(dict):
     def migration(self):
         """
         The ``migration`` property accesses a :class:`~arcgis.gis.GroupMigrationManager`
-        object that methods for moving supported ``group`` content
+        object which has methods for exporting and importing supported ``group`` content
         between ArcGIS Enterprise organizations.
         
         .. note::
@@ -9894,7 +9902,6 @@ class Group(dict):
             self._migrate = GroupMigrationManager(group=self)
         return self._migrate
         
-
     def download_thumbnail(self, save_folder: Optional[str] = None):
         """
         The ``download_thumbnail`` method downloads the item thumbnail for this user and saves it in the folder that
