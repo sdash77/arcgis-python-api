@@ -1837,7 +1837,27 @@ class Datastore(dict):
 ###########################################################################
 class GroupMigrationManager(object):
     """
-    The ``GroupMigrationManager`` class allows groups to export and import data to and from EPK files.
+    The ``GroupMigrationManager`` class provides methods to export all or a
+    subset of all supported :class:`items <arcgis.gis.Item>` from an
+    ArcGIS Enterprise ``group`` into an export package (see
+    `Export Package <https://developers.arcgis.com/rest/users-groups-and-items/items-and-item-types.htm#GUID-57FD13A2-1A35-4F4D-B895-08CB48432E0D>`_)
+    that can subsequently be added to another ArcGIS Enterprise and then
+    loaded into a :class:`~arcgis.gis.Group`.
+    
+    This class is not meant to be initialized directly, but instead an
+    object of this class is accessed through the :attr:`~arcgis.gis.Group.migration`
+    property on a :class:`~arcgis.gis.Group` object initialized from
+    an ArcGIS Enterprise Group
+    
+    .. code-block:: python
+        
+        # Usage Example: Initializing a ``GroupMigrationManager`` object:
+        
+        >>> gis = GIS(profile="your_enterprise_admin_profile")
+        
+        >>> ent_grp = gis.groups.search("<group query>")[0]
+        
+        >>> grp_mig_mgr = ent_grp.migration
     """
 
     _con = None
@@ -1925,23 +1945,33 @@ class GroupMigrationManager(object):
     # ----------------------------------------------------------------------
     def create(self, items: Optional[list[Item]] = None, future: bool = True):
         """
-        The ``create`` method exports a :class:`~arcgis.gis.Group` content to an **EPK Package Item**.
-        `EPK Items` are intended to migrate content from an enterprise deployment to a new
-        enterprise. Once an `EPK Item` is created using this method, you can use the `load`
-        to ingest the package's content into the target enterprise. If your package
-        contains web maps, web-mapping applications, and/or associated web layers, during
-        the import operation, the method will takes care of swizzling the service URLs and
-        item IDs correctly.
+        The ``create`` method exports supported :class:`~arcgis.gis.Group` content to
+        an *Export Package* :class:`~arcgis.gis.Item` (*EPK item*). *EPK Items* can be used to
+        migrate content from one ArcGIS Enterprise deployment to another. Once an
+        `EPK Item` is created, you can download it, :meth:`~arcgis.gis.ContentManager.add`
+        it to a receiving ArcGIS Enterprise and then :meth:`~arcgis.gis.GroupMigrationManager.load`
+        it into a :class:`~arcgis.gis.Group` in that Enterprise deployment. The method will
+        handle updating service URLs and item ID used in any web maps,
+        web-mapping applications, and/or associated web layers in those items during
+        the *load* operation. See full datails in the
+        `Export Group Content <https://developers.arcgis.com/rest/users-groups-and-items/export-group-content.htm>`_ documentation.
+        
+        See the `Supported items <https://developers.arcgis.com/rest/users-groups-and-items/export-group-content.htm#ESRI_SECTION2_0C00F2CEA194453D8E91F9E1138CE7E1>`_
+        documentation for a full list of *items* that can be included in an
+        export package.
+        
         .. note::
             There are some limits to this functionality. Packages should be under 10 GB in size
             and only hosted feature layers, web maps, web-mapping apps, and other text-based
             items are supported. You need to have **administrative** privileges to run this
             operation.
+        
         ==================     ====================================================================
         **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
-        items                  Optional List<Item>. A set of items to export from the group.  If
-                               nothing is given, all items will be attempted to be exported.
+        items                  Optional List<:class:`~arcgis.gis.Item`>. A set of items to export
+                               from the group.  If argument is not provided, the method will attempt
+                               to export all group content items.
         ------------------     --------------------------------------------------------------------
         future                 Optional Boolean.  When True, the operation will return a Job object
                                and return the results asynchronously.
@@ -1949,6 +1979,35 @@ class GroupMigrationManager(object):
 
         :return:
             :class:`~arcgis.gis.Item` --or-- :class:`~arcgis.gis._impl._jb.StatusJob` when `future=True`
+            
+        .. code-block:: python
+        
+            # Usage Example: Asynchronous execution
+            
+            >>> import time
+            >>> from arcgis.gis import GIS
+            >>>
+            >>> gis = GIS(profile="your_enterprise_admin_profile")
+            
+            >>> grp = gis.groups.get("<group_id>")
+            >>> grp_mig_mgr = grp.migration
+            
+            >>> mig_job = grp_mig_mgr.create()
+            
+            >>> while mig_job.status != "completed":
+            >>>     job_status = mig_job.status
+            >>>     if job_status == "failed":
+            >>>         break
+            >>>     else:
+            >>>         print(job_status)
+            >>>         time.sleep(3)
+            >>> print(f"Job Status: {mig_job.status}")
+            
+            processing
+            processing
+            Job Status: completed
+            
+            >>> epk_item = mig_job.result()
         """
         if self._gis.users.me.role == "org_admin":
             url = f"{self._gis._portal.resturl}community/groups/{self._group.groupid}/export"
@@ -1995,34 +2054,86 @@ class GroupMigrationManager(object):
         folder_owner: Optional[str] = None,
     ):
         """
-        The ``load`` method imports the EPK content into the current :class:`~arcgis.gis.Group`.
+        The ``load`` method imports the contents of an *export package*
+        :class:`~arcgis.gis.Item` into a :class:`~arcgis.gis.Group`.
+        
+        See the `Import Group Content <https://developers.arcgis.com/rest/users-groups-and-items/import-group.htm>`_
+        documenation for full system details.
+        
         .. note::
             Administrative privileges are required to run this operation.
             Once imported, items will be owned by the importer, and will have
             to be manually reassigned to the proper owner if needed.
+        
+        .. warning::
+            The receiving ArcGIS Enterprise deployment must be using the same version or later
+            of the ArcGIS Enterprise that generated the export package.
+            
         ================  ===============================================================================
         **Keys**          **Description**
         ----------------  -------------------------------------------------------------------------------
-        epk_item          Required Item. A report on the content of the EPK Item.  This allows administrators
-                          to view the contents inside a EPK.
+        epk_item          Required *export package* :class:`~arcgis.gis.Item`.
         ----------------  -------------------------------------------------------------------------------
-        item_ids          Optional list. A list of item IDs to import to the organization.
+        item_ids          Optional list. A list of item IDs to import from the *export package*. If this
+                          argument is not provided, the operation will import all supported *items*
+                          in the export package to the receiving :class:`~arcgis.gis.Group`.
         ----------------  -------------------------------------------------------------------------------
-        overwrite         Optional bool. If the Items import exist, or the Item ID that is in use
-                          already, it will delete the old item and replace it with this one.
+        overwrite         Optional bool. If *True*, any *items* that already exist in the target
+                          organization will be overwritten by the corresponding *item* in the package
+                          provided by the `epk_item` argument.
         ----------------  -------------------------------------------------------------------------------
-        future            Optional bool. When True, the `load` will return a `Job` object and will not
+        future            Optional bool. When *True*, the operation will return a `Job` object and not
                           pause the current thread.  When `False` `load` will occur in a synchronous
                           fashion pausing the thread.  If you are loading large amounts of data, set
-                          future to `True` to reduce time.
+                          future to `True` to reduce time. The job can be polled through its `status`
+                          attribute. In addition, the `messages` and `result()` attributes will contain
+                          information about the output.
         ----------------  -------------------------------------------------------------------------------
-        folder_id         Optional String. In ArcGIS Online and Enterprise 10.9+, a user can specify the destination folder ID for the items.
+        folder_id         Optional String. In ArcGIS Enterprise 10.9+, a user can specify the destination
+                          folder ID for the items.
         ----------------  -------------------------------------------------------------------------------
-        folder_owner      Optional String. In ArcGIS Online and Enterprise 10.9+, a user name of the folder owner.
+        folder_owner      Optional String. In ArcGIS Enterprise 10.9+, a user name of the folder owner
+                          can be provided.
         ================  ===============================================================================
 
         :return:
             A dictionary --or-- :class:`~arcgis.gis._impl._jb.StatusJob` when `future=True`
+            
+        .. code-block:: python
+        
+            # Usage Example: Loading package results into a group
+            
+            >>> source = GIS(profile="source_enterprise_admin_profile")
+            >>> target = GIS(profile="target_enterprise_admin_profile")
+            
+            >>> source_grp = source.groups.get("<group_id>")
+            >>> source_epk_item = source_grp.migration.create(future=False)
+            
+            >>> download_path = source_epk_item.download(save_path="path_on_system",
+                                                         file_name="file_name.epk")
+            
+            >>> target_epk_item = target.content.add(item_properties={"title": "Group data export item",
+                                                                      "tags": "group_content_migration",
+                                                                      "snippet": "Sample of loading package.",
+                                                                      "type": "Export Package:},
+                                                     date=download_path)
+            
+            >>> target_grp_mig = target.groups.get("<target_group_id>").migration
+            >>> grp_import_job = target_grp_mig.load(epk_item=target_epk_item)
+            
+            >>> grp_import_job.messages
+            
+            ["Starting import of items from EPK item '<item_id>' to group 'Group Title'.",
+             "Starting the import of exported package item '<item_id>' containing 2 items.",
+             "Import option to overwrite items if they exist is set to 'true'."]
+             
+             >>> grp_import_job.result()
+            
+            {'itemsImported': [<Item title:"Item1 title" type:<item1 type> owner:<item_owner>>,
+             <Item title:"Item2 title" type:<item2 type> owner:<item_owner>>],
+             'itemsSkipped': [],
+             'itemsFailedImport': []} 
+                         
         """
 
         assert isinstance(epk_item, Item)
@@ -2062,18 +2173,60 @@ class GroupMigrationManager(object):
     # ----------------------------------------------------------------------
     def inspect(self, epk_item: Item) -> dict:
         """
-        The ``inspect`` method retrieves the contents of the EPK Package.
+        The ``inspect`` method retrieves the contents of an *export package*
+        :class:`~arcgis.gis.Item` resulting from the
+        :meth:`~arcgis.gis.GroupMigrationManager.create` operation. It outputs
+        a report on the contents of the package allowing administrators to
+        see the contents of the package.
 
         ================  ===============================================================================
         **Keys**          **Description**
         ----------------  -------------------------------------------------------------------------------
-        epk_item          Required Item. A report on the content of the EPK Item. This allows
-                          administrators to view the contents inside a EPK.
+        epk_item          Required *export package* :class:`~arcgis.gis.Item`.
         ================  ===============================================================================
 
         :return:
             A dictionary containing the contents of the EPK Package
-
+            
+        .. code-block:: python
+        
+            # Usage Example: Inspecting an export package
+            
+            >>> grp = gis.groups.get("<group_id>")
+            
+            >>> export_epk_item = grp.migration.create(future=False)
+            >>> grp.migration.inspect(epk_item = export_epk_item)
+            
+            {'packageSummary': {'id': '68472b95bdfd4efa86531fd202151eda',
+            'fileName': 'Group_Data_2023714_032552',
+            'packageVersion': '1.0',
+            'packageCreated': 1690496752834,
+            'sourcePortalInfo': {'httpsUrl': 'https://myserver.company.com/web_adaptor',
+             'httpUrl': 'http://myserver.company.com/web_adaptor',
+             'version': '11.1.0',
+             'portalId': 'e35a6e01-0902-4c77-ef9d-1a84816f530a',
+             'isPortal': True}},
+           'total': 2,
+           'start': 1,
+           'num': 2,
+           'nextStart': -1,
+           'results': [{'id': '4a0dfbfa0eeb415195426eee9131edfa',
+             'type': 'Feature Service',
+             'title': 'FService Item Name',
+             'size': 4204037,
+             'exists': True,
+             'canImport': True,
+             'created': 1689255086965,
+             'modified': 1689255155534},
+            {'id': 'c9d0f2b3fbf44be8a531c9a47ff160b0',
+             'type': 'Feature Service',
+             'title': 'FService2 Item name',
+             'size': 1985399,
+             'exists': True,
+             'canImport': True,
+             'created': 1689257010004,
+             'modified': 1689253036102}]}
+            
         """
         if isinstance(epk_item, Item) and epk_item.type == "Export Package":
             try:
@@ -9715,12 +9868,32 @@ class Group(dict):
     @property
     def migration(self):
         """
-        The ``migration`` method allows users and groups to migrate content of a `Group` to a new Organaization or
-        Portal.
+        The ``migration`` property accesses a :class:`~arcgis.gis.GroupMigrationManager`
+        object that methods for moving supported ``group`` content
+        between ArcGIS Enterprise organizations.
+        
+        .. note::
+            Functionality only available for ArcGIS Enterprise.
+        
+        .. code-block:: python
+        
+            #Usage Example: Initializing a ``GroupMigrationManager`` object:
+            
+            >>> from arcgis.gis import GIS
+            
+            >>> gis = GIS(profile="your_enterprise_admin_profile")
+            
+            >>> source_grp = gis.groups.get("<group_id>")
+            
+            >>> grp_mig_mgr = source_grp.migration
+            >>> type(grp_mig_mgr)
+            
+            arcgis.gis.GroupMigrationManager
         """
         if self._gis.version > [7, 3] and self._gis._portal.is_arcgisonline == False:
             self._migrate = GroupMigrationManager(group=self)
         return self._migrate
+        
 
     def download_thumbnail(self, save_folder: Optional[str] = None):
         """
