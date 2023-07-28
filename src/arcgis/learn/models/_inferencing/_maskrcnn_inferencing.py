@@ -60,7 +60,7 @@ def convert_bounding_boxes_to_coord_list(bounding_boxes):
     num_bounding_boxes = bounding_boxes.shape[0]
     bounding_box_coord_list = []
     for i in range(num_bounding_boxes):
-        coord_array = np.empty(shape=(4, 2), dtype=np.float)
+        coord_array = np.empty(shape=(4, 2), dtype=float)
         coord_array[0][0] = bounding_boxes[i][0]
         coord_array[0][1] = bounding_boxes[i][1]
 
@@ -244,6 +244,7 @@ class ChildInstanceDetector:
         self.mask_rcnn = MaskRCNN.from_model(
             emd_path=self.model_emd, chip_size=self.tytx
         )
+        self._learnmodel = self.mask_rcnn
         self.model = self.mask_rcnn.learn.model.to(self.device)
         self.model.eval()
 

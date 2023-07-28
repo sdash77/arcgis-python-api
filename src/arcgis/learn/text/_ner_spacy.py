@@ -598,11 +598,11 @@ class _SpacyEntityRecognizer(ArcGISModel):
                 for j, add in enumerate(adds):
                     curr_index = len(processed_df)
                     processed_df.loc[curr_index] = unprocessed_df.loc[i]
-                    processed_df.loc[curr_index][address_tag] = add
+                    processed_df.loc[curr_index, address_tag] = add
             else:  # adding data for non-address documents
                 curr_index = len(processed_df)
                 processed_df.loc[curr_index] = unprocessed_df.loc[i]
-                processed_df.loc[curr_index][address_tag] = ""
+                processed_df.loc[curr_index, address_tag] = ""
         drop_ids = []
 
         for i, add in processed_df[address_tag].items():

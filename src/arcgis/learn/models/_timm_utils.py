@@ -4,13 +4,19 @@ from ._arcgis_model import _get_backbone_meta
 import logging
 import os
 import sys
+import warnings
 
 _logger = logging.getLogger(__name__)
 
 try:
     from fastai.callbacks.hooks import hook_outputs, model_sizes
     from fastai.torch_core import one_param
-    from fastai.vision import create_body
+    from fastai.vision import create_body, Image
+    from fastai.layers import AdaptiveConcatPool2d
+    from fastai.basic_data import DatasetType
+    from fastai.callbacks import hook_output
+    import torch.nn.functional as F
+    from matplotlib import pyplot as plt
     import timm
     import fnmatch
     from timm.models.hub import (
@@ -26,6 +32,67 @@ try:
     HAS_FASTAI = True
 except Exception as e:
     HAS_FASTAI = False
+
+
+# same function with modification fastai.vision.learner._test_cnn
+def test_cnn_trnsfrmr(m):
+    if not isinstance(m, nn.Sequential) or not len(m) == 2:
+        return False
+    if hasattr(m[1], "_transformer"):
+        return True
+    return isinstance(m[1][0], (AdaptiveConcatPool2d, nn.AdaptiveAvgPool2d))
+
+
+def reshape_tensor(x, h, w, embed_dim):
+    return x[1:, :].reshape(h, w, embed_dim).permute(2, 0, 1)
+
+
+# same function with modification fastai.vision.learner._cl_int_gradcam
+def gradcam_trnsfrmr(
+    self,
+    idx,
+    ds_type=None,
+    heatmap_thresh=16,
+    image=True,
+):
+    if ds_type == None:
+        ds_type = DatasetType.Valid
+    m = self.learn.model.eval()
+    im, cl = self.learn.data.dl(ds_type).dataset[idx]
+    cl = int(cl)
+    xb, _ = self.data.one_item(
+        im, detach=False, denorm=False
+    )  # put into a minibatch of batch size = 1
+    with hook_output(m[0]) as hook_a:
+        with hook_output(m[0], grad=True) as hook_g:
+            preds = m(xb)
+            preds[0, int(cl)].backward()
+    acts = hook_a.stored[0].cpu()  # activation maps
+    grad = hook_g.stored[0][0].cpu()
+    if hasattr(m[1], "_transformer"):
+        h, w = m[0].patch_embed.grid_size
+        embed_dim = m[0].embed_dim
+        acts = reshape_tensor(acts, h, w, embed_dim)
+        grad = reshape_tensor(grad, h, w, embed_dim)
+    if (acts.shape[-1] * acts.shape[-2]) >= heatmap_thresh:
+        grad_chan = grad.mean(1).mean(1)
+        mult = F.relu(((acts * grad_chan[..., None, None])).sum(0))
+        if image:
+            xb_im = Image(xb[0])
+            _, ax = plt.subplots()
+            sz = list(xb_im.shape[-2:])
+            xb_im.show(
+                ax,
+                title=f"pred. class: {self.pred_class[idx]}, actual class: {self.learn.data.classes[cl]}",
+            )
+            ax.imshow(
+                mult,
+                alpha=0.4,
+                extent=(0, *sz[::-1], 0),
+                interpolation="bilinear",
+                cmap="magma",
+            )
+        return mult
 
 
 hosted_weights = {
@@ -303,3 +370,76 @@ def get_backbone(backbone_fn, pretrained):
         backbone_cut = None
 
     return create_body(backbone_fn, pretrained, backbone_cut)
+
+
+def forward_VisionTransformer(self, x):
+    x = self.patch_embed(x)
+    cls_token = self.cls_token.expand(x.shape[0], -1, -1)
+    if self.dist_token is None:
+        x = torch.cat((cls_token, x), dim=1)
+    else:
+        x = torch.cat((cls_token, self.dist_token.expand(x.shape[0], -1, -1), x), dim=1)
+    x = self.pos_drop(x + self.pos_embed)
+
+    x = self.blocks[:-1](x)
+
+    return x
+
+
+class VisionTransformerHead(nn.Module):
+    def __init__(self, block, head, norm, dist_token, pre_logits, head_dist):
+        super().__init__()
+        self.block = block
+        self.head = head
+        self.norm = norm
+        self.dist_token = dist_token
+        self.pre_logits = pre_logits
+        self.head_dist = head_dist
+        self._transformer = True
+
+    def forward(self, x):
+        x = self.block(x)
+        x = self.norm(x)
+        if self.dist_token is None:
+            x = self.pre_logits(x[:, 0])
+
+        if self.head_dist is not None:
+            x, x_dist = self.head(x[:, 0]), self.head_dist(x[:, 1])
+            if self.training and not torch.jit.is_scripting():
+                # during inference, return the average of both classifier predictions
+                return x, x_dist
+            else:
+                return (x + x_dist) / 2
+        else:
+            x = self.head(x)
+        return x
+
+
+def create_trnsfrmr_model(bckbn_name, num_classes, img_size, pretrained):
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore")
+        logging.disable(logging.WARNING)
+        trnsfrmr_bckbn = timm.create_model(
+            bckbn_name,
+            num_classes=num_classes,
+            img_size=img_size,
+            pretrained=pretrained,
+        )
+        logging.disable(logging.NOTSET)
+
+    if trnsfrmr_bckbn.__class__.__name__ == "VisionTransformer":
+        trnsfrmr_bckbn.forward = types.MethodType(
+            forward_VisionTransformer, trnsfrmr_bckbn
+        )
+
+        trnsfrmr_head = VisionTransformerHead(
+            trnsfrmr_bckbn.blocks[-1],
+            trnsfrmr_bckbn.head,
+            trnsfrmr_bckbn.norm,
+            trnsfrmr_bckbn.dist_token,
+            trnsfrmr_bckbn.pre_logits,
+            trnsfrmr_bckbn.head_dist,
+        )
+
+    trnsfrmr_model = nn.Sequential(trnsfrmr_bckbn, trnsfrmr_head)
+    return trnsfrmr_model

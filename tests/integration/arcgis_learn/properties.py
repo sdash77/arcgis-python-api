@@ -1,43 +1,4 @@
 import os
-from platform import python_version
-import subprocess
-from subprocess import PIPE, run
-
-version = python_version().split(".")[:-1]
-python_ver = ".".join(version)
-
-
-hosted_ip = "http://10.44.9.88:8002"
-if os.environ.get("run_nightly") == "1":
-    workspace_path = "/var/lib/jenkins/workspace/learn_nightly"
-else:
-    workspace_path = "/var/lib/jenkins/workspace/learn_pullrequests"
-all_required_dlls = {
-    "_track_processor.so": {
-        "url": os.path.join(hosted_ip, "build_files", "tracking-engine"),
-        "destination": os.path.join(workspace_path, "src", "arcgis", "learn", "_tracking", "_track_processor.so")
-    },
-    "libTrackingEngine.so": {
-        "url": os.path.join(hosted_ip, "build_files", "tracking-engine"),
-        "destination": os.path.join(workspace_path, "src", "arcgis", "learn", "_tracking", "libTrackingEngine.so")
-    },
-    "nearest_neighbors.cpython-39-x86_64-linux-gnu.so": {
-        "url": os.path.join(hosted_ip, "build_files", "knn"),
-        "destination": os.path.join(workspace_path, "src", "arcgis", "learn", "_utils", "nearest_neighbors.cpython-39-x86_64-linux-gnu.so")
-    },
-    "nearest_neighbors.py": {
-        "url": os.path.join(hosted_ip, "build_files", "knn"),
-        "destination": os.path.join(workspace_path, "src", "arcgis", "learn", "_utils", "nearest_neighbors.py")
-    },
-}
-
-for key, val in all_required_dlls.items():
-    url = str(os.path.join(val["url"], "py"+python_ver+"_linux", key))
-    command = "curl "+ url + " --output " + val["destination"]
-    subprocess.call(command, shell=True )
-
-import arcgis
-
 from fastai.vision.transform import rotate, brightness, contrast
 os.environ["CUDA_VISIBLE_DEVICES"] = "0"
 from arcgis.learn import (
@@ -54,7 +15,6 @@ from arcgis.learn import (
     DeepLab,
     YOLOv3,
     FullyConnectedNetwork,
-    prepare_tabulardata,
     Pix2Pix,
     CycleGAN,
     BDCNEdgeDetector,
@@ -72,24 +32,25 @@ from arcgis.learn import (
     MaXDeepLab,
     DETReg,
     PSETAE,
-    EfficientDet,
     RandLANet,
-    SQNSeg
+    SQNSeg,
+    MMDetection3D
 )
 import json
 from arcgis.learn.text import EntityRecognizer, SequenceToSequence, TextClassifier
 
 if os.environ.get("run_nightly") == "1":
-    data_folder = r"/mnt/sda1/data_for_jenkins_tests/train_model_regression"
+    data_folder = r"/root/data_for_testing/test_automation/data/train_model_regression"
 else:
-    data_folder = r"/mnt/sda1/data_for_jenkins_tests/train_model"
+    data_folder = r"/root/data_for_testing/test_automation/data/train_model"
 data_folder_inference = (
-    r"/mnt/sda1/data_for_jenkins_tests/train_inference"
+    r"/root/data_for_testing/test_automation/data/train_inference"
 )
 data_folder_ms = (
-    r"/mnt/sda1/data_for_jenkins_tests/train_model_ms"
+    r"/root/data_for_testing/test_automation/data/train_model_ms"
 )
-authorization_path = r"/mnt/sda1/data_for_jenkins_tests/properties/properties.json"
+authorization_path = r"/root/data_for_testing/test_automation/data/properties/properties.json"
+
 
 colormap = {
     "0": [0, 0, 0],
@@ -844,8 +805,7 @@ data = {
         "model_test": "pix2pix_test",
         "prepare_data": {
             "path": os.path.join(data_folder, "pix2pix_data"),
-            "batch_size": None,
-            "dataset_type": "Pix2Pix",
+            "batch_size": None
         },
         "prepare_data_ms": False,
         "should_test": True,
@@ -1458,6 +1418,28 @@ data = {
         "test_feature_layer": False,
         "regression_parameter": "compute_precision_recall",
         "regression_test_score": 0.20,
+        "regression_epochs": 10,
+        "inferencing_parameter": {
+            "model_type": "pass",
+            "sample_input": "pass",
+        },
+        "inferencing_image_server": {"input_raster": "pass", "model_package": "pass"},
+    },
+    "mm3d": {
+        "model_name": "mm3d",
+        "datapath": "mm3d_data",
+        "model": MMDetection3D,
+        "model_test": "mm3d_test",
+        "prepare_data": {
+            "path": os.path.join(data_folder, "mm3d_data", "Chairs001.pctd"),
+            "batch_size": None,
+            "dataset_type": "PointCloudOD"
+        },
+        "prepare_data_ms": False,
+        "should_test": True,
+        "test_feature_layer": False,
+        "regression_parameter": "average_precision_score",
+        "regression_test_score": 0.10,
         "regression_epochs": 10,
         "inferencing_parameter": {
             "model_type": "pass",

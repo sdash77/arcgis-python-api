@@ -2,15 +2,13 @@ import os
 import sys
 
 sys.path.insert(0, r"C:\ipython_workfolder\geosaurus\src")
-from arcgis.features.layer import FeatureLayer
 from arcgis.gis import GIS
 import pandas as pd
 from arcgis.features import GeoAccessor, GeoSeriesAccessor
 import unittest
 import tempfile
-from arcgis._impl.common._isd import InsensitiveDict
 
-data = [
+point_data = [
     {
         "FID": 1,
         "NAME": "MARKET FRESH GRILL CAFE",
@@ -1789,6 +1787,408 @@ data = [
     },
 ]
 
+polygon_features = [
+    {
+        "FID": 1,
+        "NAME": "Polygon 1",
+        "TYPE": "Type A",
+        "AREA": 120.5,
+        "SHAPE": {
+            "type": "Polygon",
+            "coordinates": [
+                [
+                    [-118.456056, 34.074513],
+                    [-118.456056, 34.064513],
+                    [-118.446056, 34.064513],
+                    [-118.446056, 34.074513],
+                    [-118.456056, 34.074513],
+                ]
+            ],
+        },
+    },
+    {
+        "FID": 2,
+        "NAME": "Polygon 2",
+        "TYPE": "Type B",
+        "AREA": 87.3,
+        "SHAPE": {
+            "type": "Polygon",
+            "coordinates": [
+                [
+                    [-118.438902, 34.060288],
+                    [-118.438902, 34.050288],
+                    [-118.428902, 34.050288],
+                    [-118.428902, 34.060288],
+                    [-118.438902, 34.060288],
+                ]
+            ],
+        },
+    },
+    {
+        "FID": 3,
+        "NAME": "Polygon 3",
+        "TYPE": "Type C",
+        "AREA": 65.2,
+        "SHAPE": {
+            "type": "Polygon",
+            "coordinates": [
+                [
+                    [-118.464789, 34.078965],
+                    [-118.464789, 34.068965],
+                    [-118.454789, 34.068965],
+                    [-118.454789, 34.078965],
+                    [-118.464789, 34.078965],
+                ]
+            ],
+        },
+    },
+    {
+        "FID": 4,
+        "NAME": "Polygon 4",
+        "TYPE": "Type D",
+        "AREA": 93.7,
+        "SHAPE": {
+            "type": "Polygon",
+            "coordinates": [
+                [
+                    [-118.446289, 34.064154],
+                    [-118.446289, 34.054154],
+                    [-118.436289, 34.054154],
+                    [-118.436289, 34.064154],
+                    [-118.446289, 34.064154],
+                ]
+            ],
+        },
+    },
+    {
+        "FID": 5,
+        "NAME": "Polygon 5",
+        "TYPE": "Type E",
+        "AREA": 105.8,
+        "SHAPE": {
+            "type": "Polygon",
+            "coordinates": [
+                [
+                    [-118.424752, 34.045629],
+                    [-118.424752, 34.035629],
+                    [-118.414752, 34.035629],
+                    [-118.414752, 34.045629],
+                    [-118.424752, 34.045629],
+                ]
+            ],
+        },
+    },
+    {
+        "FID": 6,
+        "NAME": "Polygon 6",
+        "TYPE": "Type F",
+        "AREA": 78.6,
+        "SHAPE": {
+            "type": "Polygon",
+            "coordinates": [
+                [
+                    [-118.432193, 34.056874],
+                    [-118.432193, 34.046874],
+                    [-118.422193, 34.046874],
+                    [-118.422193, 34.056874],
+                    [-118.432193, 34.056874],
+                ]
+            ],
+        },
+    },
+    {
+        "FID": 7,
+        "NAME": "Polygon 7",
+        "TYPE": "Type G",
+        "AREA": 42.1,
+        "SHAPE": {
+            "type": "Polygon",
+            "coordinates": [
+                [
+                    [-118.474318, 34.087625],
+                    [-118.474318, 34.077625],
+                    [-118.464318, 34.077625],
+                    [-118.464318, 34.087625],
+                    [-118.474318, 34.087625],
+                ]
+            ],
+        },
+    },
+]
+
+tbl_data = [
+    {
+        "FID": 1,
+        "NAME": "MARKET FRESH GRILL CAFE",
+        "PHONE": "(714) 528-1977",
+        "DAYS": "Mon - Sun",
+        "HOURS": "7 AM - 9 PM",
+        "OPTIONS": "Takeout, Delivery, Drive-Thru",
+        "DISCOUNTS": "(School, Fire/Police, Senior Discounts)",
+        "NOTES": "*Grubhub, Postmates, Doordash",
+        "DEL_OPTS": "Grubhub, Postmates, Doordash",
+        "TYPE": "American",
+        "WEBSITE": "https://marketfreshgrillcafe.com",
+        "Doordash": " ",
+        "Grubhub": "https://www.grubhub.com/restaurant/market-fresh-grill-cafe-221-w-orangethorpe-ave-placentia/1290830",
+        "Postmates": "https://postmates.com/merchant/toms-place-placentia",
+        "Other": " ",
+        "OUTDINE": "Open",
+    },
+    {
+        "FID": 2,
+        "NAME": "301 CAFE",
+        "PHONE": "(714) 996-8001",
+        "DAYS": "Mon - Sat",
+        "HOURS": "10 AM - 9:30 PM",
+        "OPTIONS": "Takeout, 3rd party Delivery",
+        "DISCOUNTS": "None",
+        "NOTES": " ",
+        "DEL_OPTS": "Doordash",
+        "TYPE": "Mexican",
+        "WEBSITE": " ",
+        "Doordash": "https://www.doordash.com/store/301-cafe-placentia-723324/en-US",
+        "Grubhub": " ",
+        "Postmates": " ",
+        "Other": " ",
+        "OUTDINE": "Open",
+    },
+    {
+        "FID": 3,
+        "NAME": "Q TORTAS",
+        "PHONE": "(714) 993-3270",
+        "DAYS": "Tue - Friday, Sat - Sun",
+        "HOURS": "11 AM - 8 PM, 9 AM - 8 PM",
+        "OPTIONS": "Takeout",
+        "DISCOUNTS": "None",
+        "NOTES": " ",
+        "DEL_OPTS": " ",
+        "TYPE": "Mexican",
+        "WEBSITE": " ",
+        "Doordash": " ",
+        "Grubhub": " ",
+        "Postmates": " ",
+        "Other": " ",
+        "OUTDINE": "Open",
+    },
+    {
+        "FID": 4,
+        "NAME": "THE WHOLE ENCHILADA",
+        "PHONE": "(714) 961-9123",
+        "DAYS": "Mon - Sun",
+        "HOURS": "11 AM - 8 PM",
+        "OPTIONS": "Takeout, Delivery",
+        "DISCOUNTS": "None",
+        "NOTES": "*Doordash",
+        "DEL_OPTS": "Doordash",
+        "TYPE": "Mexican",
+        "WEBSITE": "https://wholeenchilada.com",
+        "Doordash": "https://www.doordash.com/store/the-whole-enchilada-placentia-56007/en-US",
+        "Grubhub": " ",
+        "Postmates": " ",
+        "Other": " ",
+        "OUTDINE": "Open",
+    },
+    {
+        "FID": 5,
+        "NAME": "AVALON BAGLES AND BURGERS",
+        "PHONE": "(714) 985-1382",
+        "DAYS": "Mon - Sun",
+        "HOURS": "7AM - 4 PM",
+        "OPTIONS": "Takeout, 3rd party Delivery",
+        "DISCOUNTS": "None",
+        "NOTES": " ",
+        "DEL_OPTS": "Grubhub, Doordash, Seamless",
+        "TYPE": "Bagels, Burgers, Sandwiches",
+        "WEBSITE": "https://avalonbagelstoburgers.com/",
+        "Doordash": "https://www.doordash.com/store/avalon-bagels-to-burgers-placentia-320809/en-US",
+        "Grubhub": "https://www.grubhub.com/restaurant/avalon-bagels-to-burgers---placentia-174-e-yorba-linda-blvd-placentia/553124",
+        "Postmates": " ",
+        "Other": " ",
+        "OUTDINE": "Open",
+    },
+    {
+        "FID": 6,
+        "NAME": "ISE JAPANESE RESTAURANT",
+        "PHONE": "(714) 993-6442",
+        "DAYS": "Mon - Thur, Fri, Sat",
+        "HOURS": "11 AM - 10 PM, 11 AM - 10:30 PM, 11:30 AM - 10 PM",
+        "OPTIONS": "Takeout",
+        "DISCOUNTS": "None",
+        "NOTES": " ",
+        "DEL_OPTS": " ",
+        "TYPE": "Japanese",
+        "WEBSITE": "https://isesushi.wordpress.com",
+        "Doordash": " ",
+        "Grubhub": " ",
+        "Postmates": " ",
+        "Other": " ",
+        "OUTDINE": "Open",
+    },
+    {
+        "FID": 7,
+        "NAME": "COFFEE BEAN & TEA LEAF #392",
+        "PHONE": "(310) 237-2326",
+        "DAYS": "Mon - Sun",
+        "HOURS": "6 AM - 6 PM",
+        "OPTIONS": "Drive-Thru",
+        "DISCOUNTS": "None",
+        "NOTES": "657-216-5920",
+        "DEL_OPTS": "Postmates",
+        "TYPE": "Coffee",
+        "WEBSITE": "https://coffeebean.com",
+        "Doordash": " ",
+        "Grubhub": " ",
+        "Postmates": "https://postmates.com/merchant/the-coffee-bean-placentia",
+        "Other": " ",
+        "OUTDINE": "Open",
+    },
+    {
+        "FID": 8,
+        "NAME": "PORKY'S PIZZA",
+        "PHONE": "(714) 572-1777",
+        "DAYS": "Sun - Thur, Fri - Sat",
+        "HOURS": "11 AM - 9 PM, 11 AM - 10 PM",
+        "OPTIONS": "Takeout, Delivery",
+        "DISCOUNTS": "None",
+        "NOTES": "*Ubereats, Postmates, Doordash",
+        "DEL_OPTS": "Ubereats, Postmates, Doordash",
+        "TYPE": "Pizza",
+        "WEBSITE": "https://porkyspizza.com",
+        "Doordash": "https://www.doordash.com/store/porky-s-pizza-placentia-16731/en-US",
+        "Grubhub": " ",
+        "Postmates": " ",
+        "Other": " ",
+        "OUTDINE": "Open",
+    },
+    {
+        "FID": 9,
+        "NAME": "FISH IN A BOTTLE",
+        "PHONE": "(714) 528-4000",
+        "DAYS": "Until this Sunday",
+        "HOURS": "11:30 AM - 9:30 PM, Sat 11:30 AM -10:30, Sun 4 PM*",
+        "OPTIONS": "Take-out",
+        "DISCOUNTS": "None",
+        "NOTES": "*Doordash, Postmates, call in orders only, Will n*",
+        "DEL_OPTS": "Doordash, Postmates",
+        "TYPE": "Sushi",
+        "WEBSITE": "http://fish-in-a-bottle-sushi-grill.cafes-usa.com/",
+        "Doordash": " ",
+        "Grubhub": " ",
+        "Postmates": "https://postmates.com/merchant/fish-in-a-bottle-placentia",
+        "Other": " ",
+        "OUTDINE": "Open",
+    },
+    {
+        "FID": 10,
+        "NAME": "WINGSTOP #1553",
+        "PHONE": "(714) 868-7000",
+        "DAYS": "Mon - Sun",
+        "HOURS": "10:30 AM - Midnight",
+        "OPTIONS": "Delivery, Takeout",
+        "DISCOUNTS": "Mondays & Tuesdays 60 cent boneless wings.",
+        "NOTES": "*Doordash",
+        "DEL_OPTS": "Doordash",
+        "TYPE": "Chicken Wings",
+        "WEBSITE": "https://wingstop.com",
+        "Doordash": "https://www.doordash.com/store/wingstop-placentia-647491/en-US",
+        "Grubhub": " ",
+        "Postmates": " ",
+        "Other": " ",
+        "OUTDINE": "Open",
+    },
+    {
+        "FID": 11,
+        "NAME": "WIENERSCHNITZEL #626",
+        "PHONE": "(714) 996-0570",
+        "DAYS": "Mon - Sun",
+        "HOURS": "10AM - 10PM",
+        "OPTIONS": "Drive-Thru, 3rd party Delivery",
+        "DISCOUNTS": "None",
+        "NOTES": "*Ubereats. 714-996-0570",
+        "DEL_OPTS": "Ubereats",
+        "TYPE": "Hot dogs",
+        "WEBSITE": "https://wienerschnitzel.com",
+        "Doordash": " ",
+        "Grubhub": " ",
+        "Postmates": "https://postmates.com/merchant/weinerschnitzel-placentia",
+        "Other": " ",
+        "OUTDINE": "Open",
+    },
+    {
+        "FID": 12,
+        "NAME": "SUBWAY # 3443",
+        "PHONE": "(714) 579-3160",
+        "DAYS": "Mon - Fri",
+        "HOURS": "8 AM - 4PM",
+        "OPTIONS": "Takeout, 3rd party Delivery",
+        "DISCOUNTS": "Website only",
+        "NOTES": "*Postmates, Doordash",
+        "DEL_OPTS": "Postmates, Doordash",
+        "TYPE": "Sandwich",
+        "WEBSITE": "https://subway.com",
+        "Doordash": "https://www.doordash.com/store/subway-orange-county-placentia-57327/en-US",
+        "Grubhub": " ",
+        "Postmates": "https://postmates.com/merchant/subway-placentia-5",
+        "Other": " ",
+        "OUTDINE": "Open",
+    },
+    {
+        "FID": 13,
+        "NAME": "SAKE SUSHI & GRILL/JOO INC",
+        "PHONE": "(714) 528-7253",
+        "DAYS": "Mon - Sun",
+        "HOURS": "11:30 AM - 2:30 PM/5 PM - 9:30 PM (Sunday's 5 - 9*",
+        "OPTIONS": "Takeout, Delivery",
+        "DISCOUNTS": "Free Delivery Dinner only",
+        "NOTES": " ",
+        "DEL_OPTS": " ",
+        "TYPE": "Sushi",
+        "WEBSITE": "https://sake-sushi-grill.cafes-usa.com",
+        "Doordash": " ",
+        "Grubhub": " ",
+        "Postmates": "https://postmates.com/merchant/sake-sushi-grill-placentia-59451",
+        "Other": " ",
+        "OUTDINE": "Open",
+    },
+    {
+        "FID": 14,
+        "NAME": "KFC",
+        "PHONE": "(562) 500-5940",
+        "DAYS": "Mon - Sun",
+        "HOURS": "10 AM - 10 PM varies",
+        "OPTIONS": "Takeout",
+        "DISCOUNTS": "None",
+        "NOTES": "*Free Delivery thru KFC.com",
+        "DEL_OPTS": " ",
+        "TYPE": "Chicken",
+        "WEBSITE": "https://kfc.com",
+        "Doordash": " ",
+        "Grubhub": "https://www.grubhub.com/restaurant/kfc-1404-n-kraemer-blvd-placentia/936214",
+        "Postmates": " ",
+        "Other": " ",
+        "OUTDINE": "Open",
+    },
+    {
+        "FID": 15,
+        "NAME": "MCDONALD'S",
+        "PHONE": "(714) 630-9430",
+        "DAYS": "Mon - Sun",
+        "HOURS": "6 AM - 2 AM",
+        "OPTIONS": "Drive-Thru",
+        "DISCOUNTS": "None",
+        "NOTES": "*714-577-8171. Ubereats, Doordash",
+        "DEL_OPTS": "Ubereats, Doordash",
+        "TYPE": "Burgers, Fast Food",
+        "WEBSITE": "https://mcdonalds.com",
+        "Doordash": "https://www.doordash.com/store/mcdonald-s-placentia-653621/en-US",
+        "Grubhub": " ",
+        "Postmates": " ",
+        "Other": " ",
+        "OUTDINE": "Open",
+    },
+]
+
 profiles = ["your_online_profile", "your_enterprise_profile"]
 
 
@@ -1801,42 +2201,89 @@ class TestSeDFOverwrite(unittest.TestCase):
             # establish gis connection
             gis = GIS(profile=profile, verify_cert=False)
             print("User: ", gis.users.me.username)
-            # add point layer to portal
-            sdf = pd.DataFrame(data)
-            point_item = gis.content.import_data(sdf)
-            if gis._is_agol:
-                polygon_item = gis.content.get(
-                    "1ac6896bcafc4dccb29c70f45c442b00"
-                )  # layer with polygon geom
-            else:
-                polygon_item = gis.content.get(
-                    "66872ac18e1046ca9cdd785816f1817d"
-                )  # layer with polygon geom
+            polygon_item = None
+            point_item = None
+            try:
+                # add point layer to portal
+                sdf = pd.DataFrame(point_data)
+                point_item = gis.content.import_data(sdf)
 
-            # Basis Assertions
-            assert point_item.layers[0]
-            assert point_item.layers[0].properties.geometryType == "esriGeometryPoint"
-            num_layers = len(point_item.layers)
-            num_features = point_item.layers[0].query(return_count_only=True)
+                # add polygon layer to portal
+                sdf2 = pd.DataFrame(polygon_features)
+                polygon_item = gis.content.import_data(sdf2)
 
-            # Overwrite
-            sdf = pd.DataFrame.spatial.from_layer(polygon_item.layers[0])
-            updated_item = sdf.spatial.to_featurelayer(
-                overwrite="True",
-                service={"featureServiceId": point_item.id, "layer": 0},
-            )
+                # Basis Assertions
+                assert point_item.layers[0]
+                assert (
+                    point_item.layers[0].properties.geometryType == "esriGeometryPoint"
+                )
+                num_layers = len(point_item.layers)
+                num_features = point_item.layers[0].query(return_count_only=True)
 
-            # Check to see if different layer but same service
-            assert point_item.id == updated_item.id
-            assert num_layers == len(updated_item.layers)
-            assert updated_item.layers[0].query(return_count_only=True) != num_features
-            assert (
-                updated_item.layers[0].properties.geometryType == "esriGeometryPolygon"
-            )
-            related_items = updated_item.related_items("Service2Data")
-            for related_item in related_items:
-                related_item.delete()
-            updated_item.delete()
+                # Overwrite
+                sdf = pd.DataFrame.spatial.from_layer(polygon_item.layers[0])
+                updated_item = sdf.spatial.to_featurelayer(
+                    overwrite="True",
+                    service={"featureServiceId": point_item.id, "layer": 0},
+                )
+
+                # Check to see if different layer but same service
+                assert point_item.id == updated_item.id
+                assert num_layers == len(updated_item.layers)
+                assert (
+                    updated_item.layers[0].query(return_count_only=True) != num_features
+                )
+                assert (
+                    updated_item.layers[0].properties.geometryType
+                    == "esriGeometryPolygon"
+                )
+            except:
+                pass
+            finally:
+                # clean up
+                if polygon_item:
+                    poly_rel_items = polygon_item.related_items("Service2Data")
+                    for item in poly_rel_items:
+                        item.delete()
+                    polygon_item.delete()
+                if point_item:
+                    pnt_rel_items = point_item.related_items("Service2Data")
+                    for item in pnt_rel_items:
+                        item.delete()
+                    point_item.delete()
+
+    def test_insert_table(self):
+        for profile in profiles:
+            # establish connection
+            gis = GIS(profile=profile, verify_cert=False)
+            if gis._is_agol is False:
+                return
+            print("User: ", gis.users.me.username)
+            # add point tbl to portal
+            df = pd.DataFrame(tbl_data)
+            xlsx_file_path = tempfile.mkstemp(suffix=".xlsx")[1]
+            df.to_excel(xlsx_file_path, index=False)
+            try:
+                # add the csv to the org
+                csv_item = gis.content.add({}, data=xlsx_file_path)
+                assert csv_item
+                # publish as a table
+                table_item = csv_item.publish()
+                tbl_df = pd.DataFrame.spatial.from_layer(table_item.tables[0])
+                tbl_df["NOTES"][0] = "This is a python api test"
+                tbl_df["NOTES"][1] = "This file will have extra notes"
+                updated_item = tbl_df.spatial.to_featurelayer(
+                    overwrite=True,
+                    service={"featureServiceId": table_item.id, "layer": 0},
+                )
+                assert len(table_item.tables) == len(updated_item.tables)
+            except:
+                pass
+            finally:
+                related = table_item.related_items("Service2Data")
+                for item in related:
+                    item.delete()
+                table_item.delete()
 
 
 if __name__ == "__main__":

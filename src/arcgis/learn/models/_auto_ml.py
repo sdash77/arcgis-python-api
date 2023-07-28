@@ -285,7 +285,7 @@ class AutoML(object):
             if isinstance(self._all_labels[0], int):
                 self._all_labels = self._all_labels.astype(np.int32)
             elif isinstance(self._all_labels[0], float):
-                self._all_labels = self._all_labels.astype(np.float)
+                self._all_labels = self._all_labels.astype(float)
             try:
                 self._model.fit(
                     self._all_data_df, self._all_labels, sample_weight=sample_weight

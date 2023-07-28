@@ -14,7 +14,7 @@ from pandas.core.dtypes.dtypes import ExtensionDtype
 from pandas.api.extensions import ExtensionArray
 
 from collections.abc import Iterable
-from arcgis.geometry import Geometry
+from arcgis.geometry import Geometry, Point, Polygon, Polyline
 
 # -----------------------------------------------------------------------------
 # pandas version checker
@@ -263,6 +263,24 @@ class GeoArray(ExtensionArray):
             if isinstance(data[vindx], Geometry) == False:
                 self.data[:] = [Geometry(d) if d else None for d in data]
 
+                # Extra step for shapely, need to transform to correct Geometry type instance if not already
+                geom = self.data[0]
+                if (
+                    not isinstance(geom, Point)
+                    or not isinstance(geom, Polyline)
+                    or not isinstance(geom, Polygon)
+                ):
+                    if "type" in geom and (
+                        geom["type"] == "Point" or geom["type"] == "MultiPoint"
+                    ):
+                        self.data[:] = [Point(d) if d else None for d in data]
+                    elif "type" in geom and geom["type"] == "Polyline":
+                        self.data[:] = [Polyline(d) if d else None for d in data]
+                    elif "type" in geom and (
+                        geom["type"] == "Polygon" or geom["type"] == "MultiPolygon"
+                    ):
+                        self.data[:] = [Polygon(d) if d else None for d in data]
+
     def __arrow_array__(self, type=None):
         """converts the data to a pyarrow array"""
         import pyarrow
@@ -273,8 +291,12 @@ class GeoArray(ExtensionArray):
         """Checks if the Geometries are Equal"""
         if isinstance(other, Geometry):
             return self.equals(other)
+        elif isinstance(other, GeoArray):
+            return np.array_equal(self, other)
         else:
-            raise ValueError("Input must be a arcgis.geometry.Geometry")
+            raise ValueError(
+                "Input must be a arcgis.geometry.Geometry or arcgis.features.geo.GeoArray"
+            )
 
     def __ne__(self, other: Geometry):
         """Checks if the Geometries are Equal"""

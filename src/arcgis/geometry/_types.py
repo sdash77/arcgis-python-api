@@ -845,7 +845,7 @@ class Geometry(BaseGeometry, metaclass=GeometryFactory):
         :return:
            A boolean indicating empty (True), or filled (False)
         """
-        if isinstance(self, Point):
+        if isinstance(self, Point) and self.get("x", "NaN") != "NaN":
             return False
         elif isinstance(self, Polygon):
             if "rings" in self:
@@ -2404,20 +2404,29 @@ class Geometry(BaseGeometry, metaclass=GeometryFactory):
                 dimension = 4
             if isinstance(second_geometry, Geometry):
                 second_geometry = second_geometry.as_arcpy
-            return Geometry(
+            r = Geometry(
                 self.as_arcpy.intersect(other=second_geometry, dimension=dimension)
             )
+            if r.is_empty == True:
+                return None
+            else:
+                return r
+
         elif HASARCPY and isinstance(self, Envelope):
             if isinstance(second_geometry, Envelope):
                 second_geometry = second_geometry.polygon
                 dimension = 4
             if isinstance(second_geometry, Geometry):
                 second_geometry = second_geometry.as_arcpy
-            return Geometry(
+            r = Geometry(
                 self.polygon.as_arcpy.intersect(
                     other=second_geometry, dimension=dimension
                 )
             )
+            if r.is_empty == True:
+                return None
+            else:
+                return r
         elif HASSHAPELY:
             if isinstance(second_geometry, Geometry):
                 second_geometry = second_geometry.as_shapely
@@ -3097,7 +3106,7 @@ class MultiPoint(Geometry):
         import numpy as np
 
         if "points" in self:
-            return np.array(self["points"])
+            return np.array(self["points"], dtype=object)
         else:
             return np.array([])
 
@@ -3215,9 +3224,9 @@ class Point(Geometry):
         import numpy as np
 
         if "x" in self and "y" in self and "z" in self:
-            return np.array([self["x"], self["y"], self["z"]])
+            return np.array([self["x"], self["y"], self["z"]], dtype=float)
         elif "x" in self and "y" in self:
-            return np.array([self["x"], self["y"]])
+            return np.array([self["x"], self["y"]], dtype=float)
         else:
             return np.array([])
 
@@ -3283,7 +3292,7 @@ class Polygon(Geometry):
         ----------------  -------------------------------------------------------------------------------
         scale_factor      An optional float. Multiplication factor for the SVG stroke-width.  Default is 1.
         ----------------  -------------------------------------------------------------------------------
-        fill_color      An optional string. Hex string for fill color. Default is to use "#66cc99" if geometry is
+        fill_color        An optional string. Hex string for fill color. Default is to use "#66cc99" if geometry is
                           valid, and "#ff3333" if invalid.
         ================  ===============================================================================
 
@@ -3347,7 +3356,7 @@ class Polygon(Geometry):
         import numpy as np
 
         if "rings" in self:
-            return np.array(self["rings"])
+            return np.array(self["rings"], dtype=object)
         else:
             return np.array([])
 
@@ -3474,7 +3483,7 @@ class Polyline(Geometry):
         import numpy as np
 
         if "paths" in self:
-            return np.array(self["paths"])
+            return np.array(self["paths"], dtype=object)
         else:
             return np.array([])
 
@@ -3600,9 +3609,12 @@ class Envelope(Geometry):
                         self["xmax"],
                         self["ymax"],
                         self["zmax"],
-                    ]
+                    ],
+                    dtype=float,
                 )
-            return np.array([self["xmin"], self["ymin"], self["xmax"], self["ymax"]])
+            return np.array(
+                [self["xmin"], self["ymin"], self["xmax"], self["ymax"]], dtype=float
+            )
         else:
             return np.array([])
 

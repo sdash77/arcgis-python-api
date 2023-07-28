@@ -176,6 +176,14 @@ class PointCloudOD(Dataset):
                 )
                 * self.scale_factor
             ).tolist()
+            # get the smallest box idx to calulate the voxel size
+            box_idx = np.product(self.average_box_size, axis=1).argmin()
+            box_size = self.average_box_size[box_idx]
+            # taking 60 voxels in x and 20 voxels in z direction for each bbox
+            self.voxel_size = [box_size[0] / 60, box_size[0] / 60, box_size[2] / 20]
+            no_of_points = self.statistics["numberOfStoredRecords"]
+            no_of_tiles = self.statistics["numberOfStoredTiles"]
+            self.no_of_points_per_tile = no_of_points // no_of_tiles
 
             box_zminmax_range = [
                 clas["orientedBoundingBoxZ"]
@@ -240,7 +248,7 @@ class PointCloudOD(Dataset):
                     )
 
         self.folder = folder
-        if folder != "":
+        if folder != "" and kwargs.get("filter_empty_tiles", False):
             self._filter()
 
     def _filter(self):
@@ -349,7 +357,8 @@ def show_batch(self, rows=2, color_mapping=None, **kwargs):
     """
     This can be used to visualize the exported dataset. Colors of the PointCloud
     are only used for better visualization, and it does not depict the
-    actual classcode colors.
+    actual classcode colors. Visualization of data, exported in a geographic
+    coordinate system is not yet supported.
     =====================   ===========================================
     **Parameter**            **Description**
     ---------------------   -------------------------------------------
@@ -685,7 +694,7 @@ def predict_batch_h5(self, dl, output_path, progressor):
                 labels_pred = []
                 confidence_pred = []
                 boxes_tile_no = []
-                point_box_ids = np.full(batch_num, 0, dtype=np.uint32)
+                point_box_ids = np.full(batch_num, 0, dtype=np.uint64)
                 low = high = 0
                 start_box_id = [1]
 
@@ -708,9 +717,9 @@ def predict_batch_h5(self, dl, output_path, progressor):
                 save_h5(
                     output_path / dl.dataset.filenames[int(tile[unique_index[i]][0])],
                     np.array(boxes_pred),
-                    np.array(labels_pred),
+                    np.array(labels_pred, dtype=np.uint8),
                     np.array(confidence_pred),
-                    np.array(boxes_tile_no),
+                    np.array(boxes_tile_no, dtype=np.uint64),
                     point_box_ids,
                 )
             low = high
@@ -747,7 +756,7 @@ def split_prediction(model, preds, points, start_box_id, tile_index):
         labels = pred["labels_3d"]
         scores = pred["scores_3d"]
 
-        tile_box_ids = np.array(start_box_id * points[idx].shape[0], dtype=np.uint32)
+        tile_box_ids = np.array(start_box_id * points[idx].shape[0], dtype=np.uint64)
         point_box_ids = boxes.points_in_boxes_part(points[idx][:, :3]).detach().cpu()
         tile_box_ids = np.add(tile_box_ids, point_box_ids)
         no_of_detbox = labels.shape[0]
@@ -767,7 +776,7 @@ def split_prediction(model, preds, points, start_box_id, tile_index):
         batch_labels,
         batch_confidance,
         batch_box_tiles,
-        np.array(batch_point_box_ids),
+        np.array(batch_point_box_ids, dtype=np.uint64),
     )
 
 

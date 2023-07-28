@@ -670,11 +670,15 @@ class GeoSeriesAccessor:
 
 
         """
-        return pd.Series(
-            self._data.equals(**{"second_geometry": second_geometry}),
-            name="equals",
-            index=self._index,
-        )
+        if isinstance(second_geometry, _geometry.Geometry):
+            return pd.Series(
+                self._data.equals(**{"second_geometry": second_geometry}),
+                name="equals",
+                index=self._index,
+            )
+        elif isinstance(second_geometry, GeoSeriesAccessor):
+            # Do a GeoArray eq
+            return self._data == second_geometry._data
 
     # ----------------------------------------------------------------------
     def generalize(self, max_offset):
@@ -709,7 +713,7 @@ class GeoSeriesAccessor:
         method              Required String. `PLANAR` measurements reflect the projection of
                             geographic data onto the 2D surface (in other words, they will not
                             take into account the curvature of the earth). `GEODESIC`,
-                           ` GREAT_ELLIPTIC`, `LOXODROME`, and `PRESERVE_SHAPE` measurement types
+                            `GREAT_ELLIPTIC`, `LOXODROME`, and `PRESERVE_SHAPE` measurement types
                             may be chosen as an alternative, if desired.
         ---------------     --------------------------------------------------------------------
         units               Optional String. Areal unit of measure keywords:` ACRES | ARES | HECTARES
@@ -2473,6 +2477,9 @@ class GeoAccessor(object):
         This method creates a feature layer from the spatially enabled dataframe and adds (inserts)
         it to an existing feature service.
 
+        .. note::
+            Inserting table data in Enterprise is not currently supported.
+
         ============================    ====================================================================
         **Parameter**                   **Description**
         ----------------------------    --------------------------------------------------------------------
@@ -2489,6 +2496,8 @@ class GeoAccessor(object):
                                         :class:`~arcgis.gis.Item` The name cannot be used already or contain
                                         special characters, spaces, or a number as the first character.
         ============================    ====================================================================
+
+        :return: The feature service item that was appended to.
         """
         from arcgis import env
         import copy
@@ -2498,12 +2507,36 @@ class GeoAccessor(object):
             if gis is None:
                 raise ValueError("GIS object must be provided")
         content = gis.content
+
+        # Check that the user is the owner of both the source and the published item
+        user = gis._username
+        if isinstance(feature_service, str):
+            service = content.get(feature_service)
+            fs_id = feature_service
+        else:
+            service = feature_service
+            fs_id = feature_service.id
+
+        if (
+            gis.users.me.username != service.owner
+            and "portal:admin:updateItems" not in self._gis.users.me.privileges
+        ):
+            raise AssertionError(
+                "You must own the service to insert data to it or have administrative privileges."
+            )
+        # Get the data related
+        related_items = service.related_items(rel_type="Service2Data")
+        for item in related_items:
+            if (
+                item.owner != user
+                and "portal:admin:updateItems" not in self._gis.users.me.privileges
+            ):
+                raise AssertionError(
+                    "You must own the service data to insert data to it or have administrative privileges."
+                )
+
         origin_columns = self._data.columns.tolist()
         origin_index = copy.deepcopy(self._data.index)
-        if isinstance(feature_service, _gis.Item):
-            fs_id = feature_service.id
-        else:
-            fs_id = feature_service
 
         if service_name:
             # sanitize name
@@ -2798,6 +2831,8 @@ class GeoAccessor(object):
         ---------------------------     --------------------------------------------------------------------
         overwrite                       Optional boolean. If True, the specified layer in the `service` parameter
                                         will be overwritten.
+                                        .. note::
+                                            Overwriting table data in Enterprise is not currently supported.
         ---------------------------     --------------------------------------------------------------------
         service                         Dictionary that is required if `overwrite = True`. Dictionary with two
                                         keys: "FeatureServiceId" and "layers".
@@ -3319,7 +3354,7 @@ class GeoAccessor(object):
             np.NAN: None,
             pd.NaT: None,
         }
-        df = self._data.replace(replace_mappings).convert_dtypes()
+        df = self._data.copy()
         date_fields = [
             col for col in df.columns if df[col].dtype.name.find("datetime") > -1
         ]
@@ -3398,7 +3433,7 @@ class GeoAccessor(object):
             _dtype(np.int32): "esriFieldTypeInteger",
             np.int64: "esriFieldTypeDouble",
             _dtype(np.int64): "esriFieldTypeOID",
-            pd.Int64Dtype(): "esriFieldTypeInteger",
+            pd.Int64Dtype(): "esriFieldTypeBigInteger",
             pd.Int32Dtype(): "esriFieldTypeInteger",
             int: "esriFieldTypeInteger",
             float: "esriFieldTypeDouble",
@@ -3498,17 +3533,22 @@ class GeoAccessor(object):
                 fields.append(column)
 
         fs["fields"] = fields
-        df = df.copy()
-        string_column = df.select_dtypes(pd.StringDtype()).columns.tolist()
         number_columns = df.select_dtypes(np.number).columns.tolist()
-        df[string_column] = df[string_column].replace(pd.NA, "")
         df[number_columns] = df[number_columns].replace(pd.NA, 0)
+        string_column = df.select_dtypes(pd.StringDtype()).columns.tolist()
+        df[string_column] = df[string_column].replace(pd.NA, "")
+        df = df.replace(replace_mappings).convert_dtypes().copy()  #
+
         for td in time_delta_fields:
             df[td] = df[td].dt.total_seconds() * 1000
         for f in date_fields:
-            df[f] = pd.Series(df[f].dt.to_pydatetime()).apply(
+            fn = (
                 lambda x: int(x.timestamp() * 1000)
+                if isinstance(x, pd.Timestamp)
+                else 0
             )
+
+            df[f] = pd.to_datetime(df[date_fields[-1]]).apply(fn)
         for row in df.to_dict("records"):
             geom = {}
             if self.name in row:
@@ -3901,6 +3941,159 @@ class GeoAccessor(object):
         geo_df.spatial.sr = spatial_reference
 
         return geo_df
+
+    # ----------------------------------------------------------------------
+    def eq(self, other: GeoAccessor | pd.DataFrame):
+        """
+        Check if two DataFrames are equal to each other. Equal means
+        same shape and corresponding elements
+        """
+        return self.__eq__(other)
+
+    # ----------------------------------------------------------------------
+    def __eq__(self, other: GeoAccessor):
+        """
+        Check if two DataFrames are equal to each other. Equal means
+        same shape and corresponding elements
+        """
+        # Convert DataFrame
+        if isinstance(other, pd.DataFrame):
+            if _is_geoenabled(other):
+                other = other.spatial
+            else:
+                raise ValueError(
+                    "The comparative item must be a DataFrame with spatial capabilities or be an instance of GeoAccessor."
+                )
+
+        if not isinstance(other, GeoAccessor):
+            raise ValueError("Input must be features.geo.GeoAccessor")
+
+        # Check the shape
+        if self._data.shape != other._data.shape:
+            return False
+
+        # Check columns are the same
+        if set(self._data.columns) != set(other._data.columns):
+            return False
+
+        # Check rows are the same
+        compared = self.compare(other)
+        if (
+            compared["added_rows"].empty
+            and compared["deleted_rows"].empty
+            and compared["modified_rows"].empty
+        ):
+            return True
+        else:
+            return False
+
+    # ----------------------------------------------------------------------
+    def compare(self, other: GeoAccessor | pd.DataFrame, match_field: str = None):
+        """
+        Compare the current spatially enabled DataFrame with another spatially enabled DataFrame and identify the differences
+        in terms of added, deleted, and modified rows based on a specified match field.
+
+        ===============     ===========================================================
+        **Parameter**       **Description**
+        ---------------     -----------------------------------------------------------
+        other               Required spatially enabled DataFrame (GeoAccessor object).
+        ---------------     -----------------------------------------------------------
+        match_field         Optional string. The field to use for matching rows between
+                            the DataFrames. The default will be the spatial column's name.
+        ===============     ===========================================================
+
+        :return: A dictionary containing the differences between the two DataFrames:
+            - 'added_rows': DataFrame representing the rows added in the other DataFrame.
+            - 'deleted_rows': DataFrame representing the rows deleted from the current DataFrame.
+            - 'modified_rows': DataFrame representing the rows modified between the DataFrames.
+
+        """
+        if isinstance(other, pd.DataFrame):
+            if _is_geoenabled(other):
+                other = other.spatial
+            else:
+                raise ValueError(
+                    "The comparative item must be a DataFrame with spatial capabilities or be an instance of GeoAccessor."
+                )
+        if match_field is None:
+            match_field = self.name
+        old_df = self._data
+        new_df = other._data
+        diff = {
+            "added_rows": {},
+            "deleted_rows": {},
+            "modified_rows": {},
+        }
+
+        if old_df.empty and new_df.empty:
+            _LOGGER.error(
+                "Both dataframes are empty, cannot compate two empty dataframes"
+            )
+            return diff
+
+        if old_df.empty and not new_df.empty:
+            old_df = pd.DataFrame(data=None, columns=new_df.columns, index=new_df.index)
+
+        if new_df.empty and not old_df.empty:
+            new_df = pd.DataFrame(data=None, columns=old_df.columns, index=old_df.index)
+
+        # Finding changes in rows
+        merged_rows = new_df.merge(
+            old_df,
+            on=match_field,
+            how="outer",
+            indicator=True,
+            suffixes=("_new", "_old"),
+        )
+
+        # Finding added rows
+        added_rows = merged_rows[merged_rows["_merge"] == "left_only"].drop(
+            columns=["_merge"]
+        )
+        # Removing the old
+        for column in added_rows.columns:
+            if column.endswith("_old"):
+                added_rows = added_rows.drop(columns=[column])
+            # Renaming the new
+            if column.endswith("_new"):
+                added_rows = added_rows.rename(columns={column: column.rstrip("_new")})
+        diff["added_rows"] = added_rows
+
+        # Finding deleted rows
+        deleted_rows = merged_rows[merged_rows["_merge"] == "right_only"].drop(
+            columns=["_merge"]
+        )
+        # Removing the new
+        for column in deleted_rows.columns:
+            if column.endswith("_new"):
+                deleted_rows = deleted_rows.drop(columns=[column])
+            # Renaming the old
+            deleted_rows = deleted_rows.rename(columns={column: column.rstrip("_old")})
+        diff["deleted_rows"] = deleted_rows
+
+        # Finding modified rows
+        common_rows_match_field_list = merged_rows[merged_rows["_merge"] == "both"][
+            match_field
+        ].to_list()
+
+        # Looking at the rows that are existing in both the old and new layers so that we can compare them
+        common_rows_new = new_df[new_df[match_field].isin(common_rows_match_field_list)]
+        common_rows_old = old_df[old_df[match_field].isin(common_rows_match_field_list)]
+
+        # Compare common columns attributes
+        merged_common_rows = common_rows_new.merge(
+            common_rows_old,
+            on=None,
+            how="outer",
+            indicator=True,
+        )
+
+        modified_rows = merged_common_rows[
+            merged_common_rows["_merge"] == "left_only"
+        ].drop(columns=["_merge"])
+        diff["modified_rows"] = modified_rows
+
+        return diff
 
     # ---------------------------------------------------------------------
 

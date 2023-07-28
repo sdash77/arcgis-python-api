@@ -67,11 +67,8 @@ try:
 except:
     HAS_NUMPY = False
 
-HAS_SHAP = True
-try:
-    import shap
-except:
-    HAS_SHAP = False
+
+warnings.filterwarnings("ignore", message=".*The 'nopython' keyword.*")
 
 
 class TextClassifier(ArcGISModel):
@@ -674,12 +671,15 @@ class TextClassifier(ArcGISModel):
 
                  * In case of multi label classification problem, a tuple containing the text, its predicted class labels, a list containing 1's for the predicted labels, 0's otherwise and list containing a score for each label
         """
-        if explain and (not HAS_SHAP):
-            warnings.warn(
-                "SHAP is not installed. Model explainablity will not be available"
-            )
-            explain = False
-            explain_index = None
+        if explain:
+            try:
+                import shap
+            except:
+                warnings.warn(
+                    "SHAP is not installed. Model explainablity will not be available"
+                )
+                explain = False
+                explain_index = None
 
         if self.is_multilabel_problem is False and thresh is not None:
             self.logger.error(
@@ -953,21 +953,31 @@ samples. Metrics are only being calculated for classes present in the validation
         # :return: None
         #
         # """
-        if isinstance(text_or_list, str):
-            text_or_list = [text_or_list]
-        elif not isinstance(text_or_list, list):
-            raise Exception(f" This module takes string or list as an input")
-        # Build custom masker
-        masker = None
-        if custom_tok:
-            masker = shap.maskers.Text(custom_tokenizer)
-        # create labels
-        labels = sorted(
-            self.learn.model._config.label2id, key=self.learn.model._config.label2id.get
-        )
-        explainer = shap.Explainer(self._logit_wrapper, masker, output_names=labels)
-        self.shap_values = explainer(text_or_list)
-        shap.plots.text(self.shap_values)
+        has_shap = True
+        try:
+            import shap
+        except:
+            has_shap = False
+            warnings.warn(
+                "SHAP is not installed. Model explainablity will not be available"
+            )
+        if has_shap:
+            if isinstance(text_or_list, str):
+                text_or_list = [text_or_list]
+            elif not isinstance(text_or_list, list):
+                raise Exception(f" This module takes string or list as an input")
+            # Build custom masker
+            masker = None
+            if custom_tok:
+                masker = shap.maskers.Text(custom_tokenizer)
+            # create labels
+            labels = sorted(
+                self.learn.model._config.label2id,
+                key=self.learn.model._config.label2id.get,
+            )
+            explainer = shap.Explainer(self._logit_wrapper, masker, output_names=labels)
+            self.shap_values = explainer(text_or_list)
+            shap.plots.text(self.shap_values)
 
     def _wrapped_model_for_explnation(self):
         # """

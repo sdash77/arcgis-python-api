@@ -49,6 +49,23 @@ def parse_url(url: str) -> object:
     return urllib_parse.urlparse(url)
 
 
+@lru_cache(maxsize=255)
+def assemble_url(parsed: object) -> str:
+    """
+    creates the URL from a parsed URL
+    """
+    if parsed.port:
+        netloc: str = parsed.netloc.split(":")[0]
+        server_url = (
+            f'{parsed.scheme}://{netloc}:{parsed.port}/{parsed.path[1:].split("/")[0]}'
+        )
+    else:
+        server_url = (
+            f'{parsed.scheme}://{parsed.netloc}/{parsed.path[1:].split("/")[0]}'
+        )
+    return server_url
+
+
 def detect_proxy(replace_https: bool = True) -> typing.Optional[typing.Dict]:
     """
     Using `urllib.request.getproxies` create the dictionary for the proxy if they exist.

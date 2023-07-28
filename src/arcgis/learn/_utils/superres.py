@@ -157,7 +157,6 @@ def show_batch(self, rows=4, **kwargs):
         y.show(ax=axs[i, 1], **kwargs)
     axs[0, 0].title.set_text("Low Resolution")
     axs[0, 1].title.set_text("High Resolution")
-    plt.tight_layout()
 
 
 def show_results(self, rows, **kwargs):

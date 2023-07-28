@@ -107,6 +107,7 @@ class PasswordPolicy(BasePortalAdmin):
         url = "%s/reset" % self._url
         params = {"f": "json"}
         res = self._con.post(url, params)
+        self._properties = None
         if "success" in res:
             return res["success"]
         return res

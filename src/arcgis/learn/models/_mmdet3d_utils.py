@@ -15,7 +15,7 @@ def get_backbone_channel(model_cfg, data):
 
     # x_batch, _ = data.one_batch(detach=False)
     x_batch = torch.rand(
-        (data.max_point, data.num_features), dtype=torch.float32, device=data.device
+        (10000, data.num_features), dtype=torch.float32, device=data.device
     )
     x_batch[:, :3] = (x_batch[:, :3] - 0.5) / 0.5
     x_batch[:, :3] *= data.scale_factor
@@ -29,25 +29,37 @@ def get_backbone_channel(model_cfg, data):
 
 
 def set_voxel_info(voxel_parms, data):
-    voxel_parms["voxel_size"] = voxel_parms.get("voxel_size", [0.05, 0.05, 0.1])
-    data.range = np.array(data.range)
-    grid_size = torch.tensor(
-        (data.range[3:] - data.range[:3]) / voxel_parms["voxel_size"]
-    )
-    data.range = data.range.tolist()
-    voxel_parms["sparse_shape"] = torch.round(grid_size).long().tolist()[::-1]
+    pc_range = np.array(data.range)
+    pc_lwh = pc_range[3:] - pc_range[:3]
+    # keep the minimum resolution of point cloud grid to (200, 200) in x, y direction
+    tile_voxel_size = ([0.005, 0.005, 0.02] * pc_lwh).tolist()
+    default_voxel_size = list(map(min, zip(tile_voxel_size, data.voxel_size)))
+    voxel_size = voxel_parms.get("voxel_size", default_voxel_size)
 
-    if not voxel_parms.get("max_voxels", False):
-        no_of_voxels = np.prod(voxel_parms["sparse_shape"], dtype=np.uint64).tolist()
-        voxel_parms["max_voxels"] = (no_of_voxels // 3000, no_of_voxels // 2000)
-        voxel_parms["voxel_points"] = int(
-            data.max_point // (voxel_parms["max_voxels"][0] * 0.3)
-        )
+    grid_size = torch.tensor(pc_lwh / voxel_size).round().long().tolist()[::-1]
+    no_of_voxels = np.prod(grid_size, dtype=np.uint64).tolist()
+    max_voxels = max(
+        [20000, 40000],
+        voxel_parms.get("max_voxels", [no_of_voxels // 3000, no_of_voxels // 2000]),
+    )
+    voxel_points = max(
+        10,
+        voxel_parms.get(
+            "voxel_points", int(data.no_of_points_per_tile // (max_voxels[0] * 0.3))
+        ),
+    )
+
+    voxel_parms["voxel_size"] = voxel_size
+    voxel_parms["sparse_shape"] = grid_size
+    voxel_parms["max_voxels"] = max_voxels
+    voxel_parms["voxel_points"] = voxel_points
+
+    return voxel_parms
 
 
 def model_config(model_cfg, data, **kwargs):
     voxel_parms = kwargs.get("voxel_parms", {})
-    set_voxel_info(voxel_parms, data)
+    voxel_parms = set_voxel_info(voxel_parms, data)
 
     model_cfg.voxel_layer.voxel_size = voxel_parms["voxel_size"]
     model_cfg.voxel_layer.max_voxels = voxel_parms["max_voxels"]

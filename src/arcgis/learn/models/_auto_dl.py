@@ -16,6 +16,7 @@ try:
         _train_exhaust_mode,
         _get_emd_path,
     )
+    from .._utils.evaluate_batchsize import estimate_batch_size
     from ._arcgis_model import ArcGISModel
     from .._data import prepare_data
     import numpy as np
@@ -661,15 +662,31 @@ class AutoDL:
         if "MaskRCNN" in algorithms and mode == "basic":
             raise Exception("MaskRCNN is only supported with advanced mode.")
 
+        finetune_supported = [
+            "SingleShotDetector",
+            "MaskRCNN",
+            "RetinaNet",
+            "DETReg",
+            "FasterRCNN",
+            "PSPNetClassifier",
+            "UnetClassifier",
+            "DeepLab",
+        ]
+        all_mm_models = True
         for algo in self._algos:
             if algo in self._all_algorithms:
                 self._total_training_time += int(model_stats[algo]["time"])
+            if algo in finetune_supported:
+                all_mm_models = False
+
+        if all_mm_models and self._training_mode == "advanced":
+            self._time_in_sec = self._time_in_sec * 2
 
         self._total_training_time //= 60
         if self._total_training_time == 0:
             self._total_training_time = 1
 
-        self._algos = self._sort_algos(self._algos)
+        # self._algos = self._sort_algos(self._algos)
 
         if total_time_limit is None:
             total_time_limit = self._total_training_time
@@ -761,16 +778,13 @@ class AutoDL:
             print(log_msg)
             self._logger_dict.append(log_msg)
 
-        if self.verbose:
-            log_msg = "{date}: finding desired batch size for the data object.".format(
-                date=dt.now().strftime("%d-%m-%Y %H:%M:%S"),
-            )
-            print(log_msg)
-            self._logger_dict.append(log_msg)
-
         if backbone is None:
             if not self._model_stats()[model]["is_mm"]:
                 setattr(self, model, getattr(ag.learn, model)(self._data))
+                try:
+                    estimated_batch_size = estimate_batch_size(getattr(self, model))
+                except:
+                    estimated_batch_size = (2, 2)
                 callbacks = [
                     self._train_callback(
                         getattr(self, model).learn,
@@ -818,6 +832,10 @@ class AutoDL:
                         model,
                         getattr(ag.learn, mm_model)(self._data, model=model.lower()),
                     )
+                try:
+                    estimated_batch_size = estimate_batch_size(getattr(self, model))
+                except:
+                    estimated_batch_size = (2, 2)
                 callbacks = [
                     self._train_callback(
                         getattr(self, model).learn,
@@ -830,6 +848,10 @@ class AutoDL:
                 setattr(
                     self, model, getattr(ag.learn, model)(self._data, backbone=backbone)
                 )
+                try:
+                    estimated_batch_size = estimate_batch_size(getattr(self, model))
+                except:
+                    estimated_batch_size = (2, 2)
                 callbacks = [
                     self._train_callback(
                         getattr(self, model).learn,
@@ -877,6 +899,10 @@ class AutoDL:
                         model,
                         getattr(ag.learn, mm_model)(self._data, model=model.lower()),
                     )
+                try:
+                    estimated_batch_size = estimate_batch_size(getattr(self, model))
+                except:
+                    estimated_batch_size = (2, 2)
                 callbacks = [
                     self._train_callback(
                         getattr(self, model).learn,
@@ -891,18 +917,34 @@ class AutoDL:
             print(log_msg)
             self._logger_dict.append(log_msg)
 
-        lr_val = getattr(self, model).lr_find(allow_plot=False)
         if self.verbose:
-            log_msg = "{date}: Best learning rate for {network} with the selected data is {lr}".format(
-                date=dt.now().strftime("%d-%m-%Y %H:%M:%S"), network=model, lr=lr_val
+            log_msg = "{date}: finding desired batch size for the data object.".format(
+                date=dt.now().strftime("%d-%m-%Y %H:%M:%S"),
+            )
+            print(log_msg)
+            self._logger_dict.append(log_msg)
+        if estimated_batch_size[0] > 2:
+            getattr(self, model)._data.batch_size = estimated_batch_size[0] // 2
+        else:
+            getattr(self, model)._data.batch_size = 2
+        if estimated_batch_size[0] > self._tiles_required:
+            getattr(self, model)._data.batch_size = (
+                2 ** (int(self._tiles_required) - 1).bit_length() // 2
+            )
+
+        if self.verbose:
+            log_msg = "{date}: Optimized batch size for {network} with the selected backbone is {lr}".format(
+                date=dt.now().strftime("%d-%m-%Y %H:%M:%S"),
+                network=model,
+                lr=estimated_batch_size[0],
             )
             print(log_msg)
             self._logger_dict.append(log_msg)
 
-            log_msg = "{date}: Optimized batch size for {network} with the selected backbone is {lr}".format(
-                date=dt.now().strftime("%d-%m-%Y %H:%M:%S"),
-                network=model,
-                lr=getattr(self, model)._data.batch_size,
+        lr_val = getattr(self, model).lr_find(allow_plot=False)
+        if self.verbose:
+            log_msg = "{date}: Best learning rate for {network} with the selected data is {lr}".format(
+                date=dt.now().strftime("%d-%m-%Y %H:%M:%S"), network=model, lr=lr_val
             )
             print(log_msg)
             self._logger_dict.append(log_msg)
@@ -923,8 +965,8 @@ class AutoDL:
                         int(epochs),
                         lr=lr_val,
                         early_stopping=True,
-                        callbacks=callbacks,
                         checkpoint=False,
+                        callbacks=callbacks,
                     )
                     init_log = str(out)
                 if "early stopping" in init_log:
@@ -1119,12 +1161,14 @@ class AutoDL:
             self.best_model = model
             self._best_backbone = backbone
             setattr(self, "BestPerformingModel", getattr(self, model))
-            self.name_time = name_time
 
         if not self._model_stats()[model]["is_mm"]:
             setattr(
                 self, model + "_backbones", getattr(self, model).supported_backbones
             )
+            delattr(self, model)
+            gc.collect()
+            torch.cuda.empty_cache()
 
         else:
             delattr(self, model)
@@ -1244,9 +1288,19 @@ class AutoDL:
                     self._logger_dict.append(log_msg)
                 break
 
-            tot_sec = self._train_model(
+            # tot_sec = self._train_model(
+            #     model, epochs=epochs, model_type=m_type, model_time=model_time
+            # )
+
+            self.train_basic_model = self._train_model
+            tot_sec = self.train_basic_model(
                 model, epochs=epochs, model_type=m_type, model_time=model_time
             )
+            self.train_basic_model = None
+            del self.train_basic_model
+            gc.collect()
+            torch.cuda.empty_cache()
+
             compare_time -= tot_sec
         self._dataset_type = m_type
         if m_type == "classification":
@@ -1301,13 +1355,15 @@ class AutoDL:
                 all_train_losses = []
                 dice = []
                 if self._model_stats()[model]["is_mm"] or model == "YOLOv3":
-                    log_msg = """{date}: {model} does not have additional parameters to tune, skipping.""".format(
-                        date=dt.now().strftime("%d-%m-%Y %H:%M:%S"),
-                        model=model,
-                    )
-                    print(log_msg)
-                    self._logger_dict.append(log_msg)
+                    if self.verbose:
+                        log_msg = """{date}: {model} does not have additional parameters to tune, skipping.""".format(
+                            date=dt.now().strftime("%d-%m-%Y %H:%M:%S"),
+                            model=model,
+                        )
+                        print(log_msg)
+                        self._logger_dict.append(log_msg)
                     continue
+                self._execute_optuna_study = _train_exhaust_mode
                 (
                     current_study,
                     self,
@@ -1315,7 +1371,7 @@ class AutoDL:
                     all_train_losses,
                     dice,
                     timing,
-                ) = _train_exhaust_mode(
+                ) = self._execute_optuna_study(
                     self,
                     time_for_each_model,
                     model,
@@ -1323,6 +1379,10 @@ class AutoDL:
                     all_train_losses,
                     dice,
                 )
+                self._execute_optuna_study = None
+                del self._execute_optuna_study
+                gc.collect()
+                torch.cuda.empty_cache()
                 df = current_study.trials_dataframe()
 
                 current_study._timing = timing
@@ -1532,6 +1592,7 @@ class AutoDL:
                 self._exhaustive_mode_studies,
                 self._training_mode,
                 self._save_to_folder,
+                self._save_evaluated_models,
             )
             # clear_output(wait=True)
             rel_report_path = os.path.join(self._output_path, "README.html")

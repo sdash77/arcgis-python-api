@@ -23,7 +23,6 @@ dependencies:
 - requests
 - requests-kerberos>=0.12.0
 - requests-oauthlib>=1.2.0
-- python-gssapi
 - requests-gssapi
 - pyspnego >=0.8.0
 - jupyterlab
