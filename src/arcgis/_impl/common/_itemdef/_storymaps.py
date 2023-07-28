@@ -341,7 +341,9 @@ class _StoryMapDefinition(CloneNode):
                 new_item, self.sharing, self._clone_mapping["Group IDs"]
             )
         else:
-            logging.info(self.portal_item.title + " not cloned; already existent in target org.")
+            logging.info(
+                self.portal_item.title + " not cloned; already existent in target org."
+            )
         self.resolved = True
         self._clone_mapping["Item IDs"][original_item["id"]] = new_item["id"]
         return new_item
