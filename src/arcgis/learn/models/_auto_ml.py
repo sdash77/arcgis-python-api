@@ -21,7 +21,11 @@ import_exception = None
 
 try:
     from ._arcgis_model import ArcGISModel, _raise_fastai_import_error
-    from arcgis.learn._utils.tabular_data import TabularDataObject, add_h3
+    from arcgis.learn._utils.tabular_data import (
+        TabularDataObject,
+        add_h3,
+        _extract_embeddings,
+    )
     from arcgis.learn._utils.common import _get_emd_path
     from arcgis.learn._utils.utils import arcpy_localization_helper
     import pickle
@@ -568,7 +572,8 @@ class AutoML(object):
 
         emd_params["continuous_variables"] = self._data._continuous_variables
         emd_params["text_variables"] = self._data._text_variables
-        emd_params["image_variables"] = self._data._image_variables
+        if self._data._image_variables:
+            emd_params["image_variables"] = self._data._image_variables
         emd_params["embedding_variables"] = self._data._embedding_variables
         if self._data._feature_field_variables:
             emd_params["_feature_field_variables"] = self._data._feature_field_variables
@@ -735,6 +740,7 @@ class AutoML(object):
         cell_sizes=[3, 4, 5, 6, 7],
         confidence=True,
         get_local_explanations=False,
+        **kwargs,
     ):
         """
 
@@ -823,6 +829,7 @@ class AutoML(object):
                 prediction_type,
                 confidence,
                 get_local_explanations,
+                **kwargs,
             )
         else:
             if not rasters:
@@ -866,8 +873,10 @@ class AutoML(object):
         prediction_type="features",
         confidence=False,
         get_local_explanations=False,
+        **kwargs,
     ):
         dataframe_complete = False
+        attachment_list = kwargs.get("image_attach_list", None)
         if isinstance(input_features, FeatureLayer):
             try:
                 import arcpy
@@ -898,6 +907,9 @@ class AutoML(object):
                 dataframe = add_h3(dataframe, cell_sizes)
             else:
                 dataframe = input_features.query().sdf
+
+            if attachment_list:
+                dataframe['Images'] = attachment_list
         elif (
             hasattr(input_features, "dataSource")
             or str(input_features).endswith(".shp")
@@ -912,7 +924,15 @@ class AutoML(object):
             )
             if cell_sizes and not rasters:
                 dataframe = add_h3(dataframe, cell_sizes)
+            if attachment_list:
+                dataframe['Images'] = attachment_list
             dataframe_complete = True
+            self._data._text_variables = self._data._text_variables or []
+            self._data._image_variables = self._data._image_variables or []
+            if len(self._data._text_variables + self._data._image_variables) > 0:
+                dataframe, new_embd_cols = _extract_embeddings(
+                    self._data._text_variables, self._data._image_variables, dataframe
+                )
         elif hasattr(input_features, "value"):
             dataframe, index_data = TabularDataObject._sdf_gptool_workflow(
                 input_features,
@@ -1113,6 +1133,7 @@ class AutoML(object):
                 except:
                     pass
         dataframe_merged = pd.concat([dataframe, shap_df.abs()], axis=1)
+        dataframe_merged = dataframe_merged.filter(regex='^(?!emb_)')
 
         if prediction_type == "dataframe":
             return dataframe_merged

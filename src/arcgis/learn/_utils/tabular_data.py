@@ -92,6 +92,7 @@ class TabularDataObject(object):
         index_field=None,
         column_transforms_mapping=None,
         random_split=True,
+        **kwargs,
     ):
         if not HAS_FASTAI:
             return
@@ -112,6 +113,7 @@ class TabularDataObject(object):
             cell_sizes,
             distance_feature_layers,
             index_field,
+            **kwargs,
         )
 
         if input_features is None:
@@ -1360,6 +1362,7 @@ class TabularDataObject(object):
         cell_sizes=[3, 4, 5, 6, 7],
         distance_feature_layers=None,
         index_field=None,
+        **kwargs,
     ):
         feature_variables = feature_variables if feature_variables else []
         raster_variables = raster_variables if raster_variables else []
@@ -1496,7 +1499,30 @@ class TabularDataObject(object):
             distance_feature_layers,
             raster_variables,
             index_field,
+            **kwargs,
         )
+        measurer = np.vectorize(len)
+        col_length = dict(
+            zip(dataframe, measurer(dataframe.values.astype(str)).max(axis=0))
+        )
+        unique_values = {}
+        for i in dataframe.columns:
+            if i != 'SHAPE':
+                unique_values[i] = len(dataframe[i].unique())
+        total_rows = dataframe.count().max()
+        for col in categorical_variables:
+            if unique_values[col] / total_rows > 0.5 and col_length[col] > 200:
+                categorical_variables.remove(col)
+                text_variables.append(col)
+            elif (
+                unique_values[col] / total_rows > 0.5
+                and col_length[col] > 5
+                and len(dataframe[col][0].split('\\')[0]) < 3
+            ):
+                categorical_variables.remove(col)
+                image_variables.append(col)
+            else:
+                pass
         new_embd_cols = []
         if len(text_variables + image_variables) > 0:
             dataframe, new_embd_cols = _extract_embeddings(
@@ -1768,9 +1794,16 @@ class TabularDataObject(object):
 
     @staticmethod
     def _process_layer(
-        input_features, date_field, cell_sizes, distance_layers, rasters, index_field
+        input_features,
+        date_field,
+        cell_sizes,
+        distance_layers,
+        rasters,
+        index_field,
+        **kwargs,
     ):
         index_data = None
+        attachment_list = kwargs.get("image_attach_list", None)
         if input_features is not None:
             if isinstance(input_features, FeatureLayer):
                 import pandas as pd
@@ -1781,6 +1814,8 @@ class TabularDataObject(object):
                     out_sr = 4326
                 # sdf = input_features.query(out_sr=out_sr).sdf
                 sdf = pd.DataFrame.spatial.from_layer(input_features)
+                if attachment_list:
+                    sdf['Images'] = attachment_list
 
             elif (
                 hasattr(input_features, "dataSource")
@@ -1794,6 +1829,8 @@ class TabularDataObject(object):
                     index_field,
                     is_table_obj=False,
                 )
+                if attachment_list:
+                    sdf['Images'] = attachment_list
                 if cell_sizes and not rasters:
                     sdf = add_h3(sdf, cell_sizes)
                 return sdf, index_data
@@ -1808,6 +1845,8 @@ class TabularDataObject(object):
                 return sdf, index_data
             else:
                 sdf = input_features.copy()
+                if attachment_list:
+                    sdf['Images'] = attachment_list
                 input_layer = None
                 try:
                     input_layer = sdf.spatial.to_feature_collection()
