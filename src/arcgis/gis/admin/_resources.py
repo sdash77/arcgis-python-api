@@ -34,7 +34,7 @@ class PortalResourceManager(object):
         key: Optional[str] = None,
         path: Optional[str] = None,
         text: Optional[str] = None,
-        **kwargs
+        **kwargs,
     ):
         """
         The add resource operation allows the administrator to add a file
@@ -92,7 +92,8 @@ class PortalResourceManager(object):
                 postdata["access"] = access
             else:
                 postdata["access"] = "public"
-
+        if access:
+            postdata["access"] = access
         resp = self._portal.con.post(url, postdata, files=files)
         if "success" in resp:
             return resp["success"]
@@ -136,16 +137,29 @@ class PortalResourceManager(object):
         ----------------  ---------------------------------------------------------------
         num               optional int, the number of search results to return at one
                           time. The value ranges between 1-100 (max).
-                          Default: 100
+                          Default: 100 and -1 means all resources
         ================  ===============================================================
 
         :return:
            boolean
         """
-        postdata = {"f": "json", "start": start, "num": num}
+        if num == -1:
+            postdata = {"f": "json", "start": start, "num": 100}
+        else:
+            postdata = {"f": "json", "start": start, "num": num}
         resp = self._portal.con.post("portals/self/resources", postdata)
-        if "resources" in resp:
-            return resp["resources"]
+        resources = resp.get("resources", [])
+        while resp["nextStart"] != -1:
+            if len(resources) >= num and num != -1:
+                return resources[:num]
+            postdata["start"] = resp["nextStart"]
+            resp = self._portal.con.post("portals/self/resources", postdata)
+            items = resp.get("resources", [])
+            if len(items) == 0:
+                break
+            resources.extend(items)
+        if "resources" in resp and len(resources) >= 0:
+            return resources
         return resp
 
     def get(self, resource_name: str, download_path: Optional[str] = None):

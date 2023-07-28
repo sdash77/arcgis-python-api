@@ -64,8 +64,7 @@ if conda_install_mode:
 else:
     dependencies = [
         "pillow",
-        "urllib3",
-        "gssapi",
+        "urllib3>=1.21.1,<2",
         "cachetools",
         "lxml",
         "notebook",
@@ -73,26 +72,26 @@ else:
         "ipywidgets >=7,<8",
         "widgetsnbextension >=3",
         "jupyter-client <=6.1.12",
-        "pandas >=1.3.5",
-        "numpy >=1.16.2",
+        "pandas >=2.0.0",
+        "numpy >=1.21.6",
         "matplotlib",
         "keyring >=23.3.0",
         "lerc",
         "ujson >=3",
         "jupyterlab",
-        "python-certifi-win32",
+        "python-certifi-win32;python_version<'3.10'",
+        "truststore>=0.7.0;python_version>'3.9'",
         'pywin32 >=223;platform_system=="Windows"',
         "pyshp >=2",
         "geomet",
         "requests >=2.27.1",
         "requests-oauthlib",
         "requests_toolbelt",
-        'requests-negotiate-sspi;platform_system=="Windows"',
-        'requests-kerberos;platform_system=="Windows"',
-        'winkerberos;platform_system=="Windows"',
+        "pyspnego >=0.8.0",
+        "requests-kerberos",
         "requests-gssapi",
-        "gssapi>=1.8.1,<2",
-        "dask",
+        "dask >=2023.3.2",
+        "matplotlib-inline",
     ]
 
 
@@ -275,9 +274,9 @@ kwargs = {
         # Specify the Python versions you support here. In particular, ensure
         # that you indicate whether you support Python 2, Python 3 or both.
         "Programming Language :: Python :: 3 :: Only",
-        "Programming Language :: Python :: 3.7",
-        "Programming Language :: Python :: 3.8",
         "Programming Language :: Python :: 3.9",
+        "Programming Language :: Python :: 3.10",
+        "Programming Language :: Python :: 3.11",
     ],
     # What does your project relate to?
     "keywords": "gis arcgis geographic spatial spatial-data "
@@ -289,7 +288,7 @@ kwargs = {
     # Alternatively, if you want to distribute just a my_module.py, uncomment
     # this:
     "packages": find_packages(),
-    "python_requires": ">=3.7, <3.10",
+    "python_requires": ">=3.9, <3.12",
     "include_package_data": True,
     "data_files": data_files,
     # List run-time dependencies here.  These will be installed by pip when

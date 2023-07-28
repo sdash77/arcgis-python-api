@@ -186,7 +186,12 @@ class Feature(object):
         :return:
             The feature as a dictionary
         """
-        return self._dict
+        d = dict(self._dict)
+        if "geometry" in d and d["geometry"] in [None, {}]:
+            d.pop("geometry")
+        if "attributes" in d and d["attributes"] in [None, {}]:
+            d.pop("attributes")
+        return d
 
     # ----------------------------------------------------------------------
     @property

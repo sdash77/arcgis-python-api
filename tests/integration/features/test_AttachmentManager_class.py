@@ -2,9 +2,6 @@
 # Name:        AttachmentManager class tests
 # Purpose:     Tests for reading, editing FeatureLayer definitions
 # -------------------------------------------------------------------------------
-import sys
-sys.path.insert(0, r"c:\SVN\geosaurus_master\src")
-sys.path.insert(1, r"c:\SVN\geosaurus_master\tests")
 import unittest
 from integration.dino_utils.dino_precondition_checks import PreconditionChecks
 from integration.dino_utils.dino_precondition_checks import PortalUtils

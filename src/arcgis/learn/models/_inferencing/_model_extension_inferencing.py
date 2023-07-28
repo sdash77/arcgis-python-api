@@ -77,7 +77,7 @@ def convert_bounding_boxes_to_coord_list(bounding_boxes):
     num_bounding_boxes = bounding_boxes.shape[0]
     bounding_box_coord_list = []
     for i in range(num_bounding_boxes):
-        coord_array = np.empty(shape=(4, 2), dtype=np.float)
+        coord_array = np.empty(shape=(4, 2), dtype=float)
         coord_array[0][0] = bounding_boxes[i][0]
         coord_array[0][1] = bounding_boxes[i][1]
 
@@ -243,6 +243,7 @@ class ChildObjectDetector:
 
         self.json_emd_file = Path(model).parent
         self.model_extension = ModelExtension.from_model(emd_path=model)
+        self._learnmodel = self.model_extension
         self.model = self.model_extension.learn.model.to(self.device)
         self.model.eval()
 
@@ -411,8 +412,8 @@ def detect_object(
     for batch_idx in range(batch_size):
         num_boxes = num_boxes + preds[batch_idx][0].size(0)
 
-    bounding_boxes = np.empty(shape=(num_boxes, 4), dtype=np.float)
-    scores = np.empty(shape=(num_boxes), dtype=np.float)
+    bounding_boxes = np.empty(shape=(num_boxes, 4), dtype=float)
+    scores = np.empty(shape=(num_boxes), dtype=float)
     classes = np.empty(shape=(num_boxes), dtype=np.uint8)
 
     idx = 0

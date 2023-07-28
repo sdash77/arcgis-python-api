@@ -1629,7 +1629,7 @@ var ArcGISMapIPyWidgetView = widgets.DOMWidgetView.extend({
 
     _httpGetAsync : function(theUrl){
         return new Promise((resolve, reject) => {
-            fetch(theUrl, {mode: 'cors'}).then((response) => {
+            fetch(theUrl, { mode: 'cors'}).then((response) => {
                 if (response.status >= 200 && response.status < 300){
                     response.text().then((data) => {
                         resolve(data);

@@ -8167,7 +8167,11 @@ def vector_field(
     return _clone_layer(layer, template_dict, raster_ra1, raster_ra2)
 
 
-def complex(raster: Union[Raster, ImageryLayer]):
+def complex(
+    raster: Union[Raster, ImageryLayer],
+    imaginary_raster: Optional[Raster, ImageryLayer] = None,
+    value_type: str = "AMPLITUDE",
+):
     """
     Complex function computes magnitude from complex values. It is used when
     input raster has complex pixel type. It computes magnitude from complex
@@ -8181,21 +8185,48 @@ def complex(raster: Union[Raster, ImageryLayer]):
     **Parameter**                         **Description**
     --------------------------------     --------------------------------------------------------------------
     raster                                   Required input :class:`Raster <arcgis.raster.Raster>` /  :class:`ImageryLayer <arcgis.raster.ImageryLayer>` object.
+    --------------------------------     --------------------------------------------------------------------
+    imaginary_raster                         Optional input :class:`Raster <arcgis.raster.Raster>` /  :class:`ImageryLayer <arcgis.raster.ImageryLayer>` object.
+                                             The imaginary raster input
+    --------------------------------     --------------------------------------------------------------------
+    value_type                               Optional string. Specifies which value type to calculate:
+
+                                                 - AMPLITUDE - Produces an output containing the amplitude values. This is the default.
+                                                 - PHASE - Produces an output containing the phase values.
+                                                 - COMPLEX - Produces an output containing the complex values.
     ================================     ====================================================================
 
     :return: The output raster.
 
     """
-    layer, raster, raster_ra = _raster_input(raster)
+    layer1, raster1, raster_ra1 = _raster_input(raster)
 
     template_dict = {
         "rasterFunction": "Complex",
         "rasterFunctionArguments": {
-            "Raster": raster,
+            "Raster": raster1,
         },
     }
 
-    return _clone_layer(layer, template_dict, raster_ra)
+    layer2 = None
+    if imaginary_raster is not None:
+        layer2, raster2, raster_ra2 = _raster_input(raster, imaginary_raster)
+        template_dict["rasterFunctionArguments"]["ImaginaryRaster"] = raster2
+
+    if layer1 is not None or (layer2 is not None and layer2._datastore_raster is False):
+        layer = layer1
+    else:
+        layer = layer2
+
+    value_types = ["AMPLITUDE", "PHASE", "COMPLEX"]
+    if value_type is not None:
+        if value_type.upper() not in value_types:
+            raise RuntimeError(
+                "value_type should be one of the following " + str(value_types)
+            )
+        template_dict["rasterFunctionArguments"]["ValueType"] = value_type.upper()
+
+    return _clone_layer(layer, template_dict, raster_ra1)
 
 
 def colormap_to_rgb(raster: Union[Raster, ImageryLayer]):
@@ -13021,6 +13052,272 @@ def interpolate_raster_by_dimension(
     return _clone_layer(layer1, template_dict, raster_ra1)
 
 
+def surface_parameters(
+    raster: Union[Raster, ImageryLayer],
+    parameter_type: Optional[str] = "SLOPE",
+    local_surface_type: Optional[str] = "QUADRATIC",
+    neighborhood_distance_with_units: Optional[str] = None,
+    use_adaptive_neighborhood: Optional[bool] = False,
+    z_unit: Optional[str] = None,
+    slope_type: Optional[str] = "DEGREE",
+    project_geodesic_azimuths: Optional[str] = "GEODESIC_AZIMUTHS",
+    use_equatorial_aspect: Optional[str] = "NORTH_POLE_ASPECT",
+):
+    """
+    Determines parameters of a surface raster such as aspect, slope, and several types of curvatures using geodesic methods. 
+    
+    The arguments for this function are as follows:
+    
+    ================================     ====================================================================
+    **Argument**                         **Description**
+    --------------------------------     --------------------------------------------------------------------
+    raster                               Required :class:`Raster <arcgis.raster.Raster>`/ :class:`ImageryLayer <arcgis.raster.ImageryLayer>` object. The input surface raster. This can be an integer or a floating-point raster.
+    --------------------------------     --------------------------------------------------------------------
+    parameter_type                       Optional string. Specifies the output surface parameter type that will be computed.
+
+                                            - SLOPE - The rate of change in elevation will be computed. This is the default.
+                                            
+                                            - ASPECT - The downslope direction of the maximum rate of change for\
+                                            each cell will be computed.
+                                            
+                                            - MEAN_CURVATURE - The overall curvature of the surface will be measured.\
+                                            It is computed as the average of the minimum and maximum curvature.\
+                                            This curvature describes the intrinsic convexity or concavity of\
+                                            the surface, independent of direction or gravity influence.
+                                            
+                                            - TANGENTIAL_CURVATURE - The geometric normal curvature perpendicular\
+                                            to the slope line, tangent to the contour line will be measured. This\
+                                            curvature is typically applied to characterize the convergence or divergence\
+                                            of flow across the surface.
+                                            
+                                            - PROFILE_CURVATURE - The geometric normal curvature along the slope\
+                                            line will be measured. This curvature is typically applied to characterize\
+                                            the acceleration and deceleration of flow down the surface.
+                                            
+                                            - CONTOUR_CURVATURE - The curvature along contour lines will be measured.
+                                            
+                                            - CONTOUR_GEODESIC_TORSION - The rate of change in slope angle along\
+                                            contour lines will be measured.
+                                            
+                                            - GAUSSIAN_CURVATURE - The overall curvature of the surface will be\
+                                            measured. It is computed as the product of the minimum and maximum curvature.
+                                            
+                                            - CASORATI_CURVATURE - The general curvature of the surface will be measured.\
+                                            It can be zero or any other positive number.
+    --------------------------------     --------------------------------------------------------------------
+    local_surface_type                   Optional string. Specifies the type of surface function that will be fitted\
+                                         around the target cell. 
+    
+                                            - QUADRATIC - A quadratic surface function will be fitted to the\
+                                            neighborhood cells. This is the default. 
+                                            
+                                            - BIQUADRATIC - A biquadratic surface function will be fitted to\
+                                            the neighborhood cells.
+    --------------------------------     --------------------------------------------------------------------
+    neighborhood_distance_with_units     Optional string. The output will be calculated over this distance from the target cell center. 
+    
+                                         If this parameter is not specified, the neighborhood distance is the\
+                                         input raster cell size, resulting in a 3 by 3 neighborhood size.
+    --------------------------------     --------------------------------------------------------------------
+    use_adaptive_neighborhood            Optional boolean. Specifies whether neighborhood distance will vary with landscape\
+                                         changes (adaptive). The maximum distance is determined by the neighborhood\
+                                         scale. The minimum distance is the input raster cell size. 
+                                        
+                                            - False - A single (fixed) neighborhood distance will be used at all locations.\
+                                            This is the default. 
+                                            
+                                            - True - An adaptive neighborhood distance will be used at all locations.
+    --------------------------------     --------------------------------------------------------------------
+    z_unit                               Optional string. The linear unit of vertical z-values. It is defined by a vertical\
+                                         coordinate system if it exists. 
+                                         
+                                         If a vertical coordinate system does not exist, the z-unit should be defined\
+                                         from the unit list to ensure correct geodesic computation. 
+                                         
+                                         If the input raster has a defined VCS its unit will be the default.
+                                        
+                                            - INCH - The linear unit will be inches. 
+                                            
+                                            - FOOT - The linear unit will be feet.
+                                            
+                                            - YARD - The linear unit will be yards.
+                                            
+                                            - MILE_US - The linear unit will be miles.
+                                            
+                                            - NAUTICAL_MILE - The linear unit will be nautical miles.
+                                            
+                                            - MILLIMETER - The linear unit will be millimeters.
+                                            
+                                            - CENTIMETER - The linear unit will be centimeters.
+                                            
+                                            - METER - The linear unit will be meters.
+                                            
+                                            - KILOMETER - The linear unit will be kilometers.
+                                            
+                                            - DECIMETER - The linear unit will be decimeters.
+    --------------------------------     --------------------------------------------------------------------
+    slope_type                           Optional string. The measurement units (degrees or percentages) that will be\
+                                         used for the output slope raster.
+                                         
+                                         This parameter is only applicable when ``parameter_type`` = "SLOPE". 
+                                        
+                                            - DEGREE - The inclination of slope will be calculated in degrees. This is the default.
+                                             
+                                            - PERCENT_RISE - The inclination of slope will be calculated as percent\
+                                            rise, also referred to as the percent slope.
+    --------------------------------     --------------------------------------------------------------------
+    project_geogeodesic_azimuths         Optional string. Specifies whether geodesic azimuths will be projected to correct\
+                                         the angle distortion caused by the output spatial reference.
+                                         
+                                         This parameter is only applicable when ``parameter_type`` = "ASPECT". 
+                                         
+                                            - GEODESIC_AZIMUTHS - Geodesic azimuths will not be projected. This is the default.
+                                            
+                                            - PROJECT_GEODESIC_AZIMUTHS - Geodesic azimuths will be projected.
+    --------------------------------     --------------------------------------------------------------------
+    use_equatorial_aspect                Optional string. Specifies whether aspect will be measured from a point on the\
+                                         equator or from the north pole. 
+                                         
+                                         This parameter is only applicable when ``parameter_type`` = "ASPECT"
+                                         
+                                            - NORTH_POLE_ASPECT - Aspect will be measured from the north pole. This is the default. 
+                                            
+                                            - EQUATORIAL_ASPECT - Aspect will be measured from a point on the equator.
+    ================================     ====================================================================     
+
+    :return: The output raster with the function applied.
+
+    .. code-block:: python
+
+        # Usage Example: 
+
+        surface_parameters_output = surface_parameters(raster, parameter_type="SLOPE", slope_type="PERCENT_RISE")
+    """
+
+    layer, raster, raster_ra = _raster_input(raster)
+
+    template_dict = {
+        "rasterFunction": "SurfaceParam",
+        "rasterFunctionArguments": {"Raster": raster},
+    }
+
+    parameter_types = {
+        "SLOPE": 4,
+        "ASPECT": 5,
+        "MEAN_CURVATURE": 1,
+        "PROFILE_CURVATURE": 2,
+        "TANGENTIAL_CURVATURE": 3,
+        "CONTOUR_CURVATURE": 6,
+        "CONTOUR_GEODESIC_TORSION": 7,
+        "GAUSSIAN_CURVATURE": 8,
+        "CASORATI_CURVATURE": 9,
+    }
+
+    if parameter_type is not None:
+        if parameter_type.upper() not in parameter_types.keys():
+            raise RuntimeError(
+                "parameter_type should be one of the following "
+                + str(parameter_types.keys())
+            )
+        template_dict["rasterFunctionArguments"][
+            "SurfaceCalculation"
+        ] = parameter_types[parameter_type.upper()]
+
+    surface_types = {
+        "QUADRATIC": 1,
+        "BIQUADRATIC": 2,
+    }
+
+    if local_surface_type is not None:
+        if local_surface_type.upper() not in surface_types.keys():
+            raise RuntimeError(
+                "local_surface_type should be one of the following "
+                + str(surface_types.keys())
+            )
+        template_dict["rasterFunctionArguments"]["LocalSurface"] = surface_types[
+            local_surface_type.upper()
+        ]
+
+    if neighborhood_distance_with_units is not None:
+        template_dict["rasterFunctionArguments"][
+            "AnalysisScaleWithUnits"
+        ] = neighborhood_distance_with_units
+
+    if use_adaptive_neighborhood is not None:
+        if isinstance(use_adaptive_neighborhood, bool):
+            template_dict["rasterFunctionArguments"][
+                "UseAdaptiveScale"
+            ] = use_adaptive_neighborhood
+        else:
+            raise RuntimeError("use_adaptive_neighborhood should be of type: boolean")
+
+    z_unit_types = [
+        "METER",
+        "INCH",
+        "FOOT",
+        "YARD",
+        "MILE_US",
+        "NAUTICAL_MILE",
+        "MILLIMETER",
+        "CENTIMETER",
+        "KILOMETER",
+        "DECIMETER",
+    ]
+
+    if z_unit is not None:
+        if z_unit.upper() not in z_unit_types:
+            raise RuntimeError(
+                "z_unit should be one of the following " + str(z_unit_types)
+            )
+        template_dict["rasterFunctionArguments"]["ZUnit"] = z_unit.upper()
+
+    slope_types = {
+        "DEGREE": 1,
+        "PERCENT_RISE": 2,
+    }
+
+    if slope_type is not None:
+        if slope_type.upper() not in slope_types.keys():
+            raise RuntimeError(
+                "slope_type should be one of the following " + str(slope_types.keys())
+            )
+        template_dict["rasterFunctionArguments"]["SlopeType"] = slope_types[
+            slope_type.upper()
+        ]
+
+    azimuth_types = {
+        "GEODESIC_AZIMUTHS": False,
+        "PROJECT_GEODESIC_AZIMUTHS": True,
+    }
+
+    if project_geodesic_azimuths is not None:
+        if project_geodesic_azimuths.upper() not in azimuth_types.keys():
+            raise RuntimeError(
+                "project_geodesic_azimuths should be one of the following "
+                + str(azimuth_types.keys())
+            )
+        template_dict["rasterFunctionArguments"]["ProjectAzimuths"] = azimuth_types[
+            project_geodesic_azimuths.upper()
+        ]
+
+    eq_aspect_types = {
+        "NORTH_POLE_ASPECT": False,
+        "EQUATORIAL_ASPECT": True,
+    }
+
+    if use_equatorial_aspect is not None:
+        if use_equatorial_aspect.upper() not in eq_aspect_types.keys():
+            raise RuntimeError(
+                "use_equatorial_aspect should be one of the following "
+                + str(eq_aspect_types.keys())
+            )
+        template_dict["rasterFunctionArguments"][
+            "UseEquatorialAspect"
+        ] = eq_aspect_types[use_equatorial_aspect.upper()]
+
+    return _clone_layer(layer, template_dict, raster_ra)
+
+
 def geometric_median(
     rasters,
     epsilon=0.001,
@@ -13104,6 +13401,70 @@ def geometric_median(
         template_dict["rasterFunctionArguments"]["ExtentType"] = in_extent_type
     if cellsize_type is not None:
         template_dict["rasterFunctionArguments"]["CellsizeType"] = in_cellsize_type
+
+    return _clone_layer(layer, template_dict, raster_ra, variable_name="Rasters")
+
+
+def merge_rasters(
+    rasters: Union[Raster, ImageryLayer], resolve_overlap_method: str = "FIRST"
+):
+    """
+    The merge_rasters function groups or merges a collection of rasters.
+
+    The arguments for the function are as follows:
+
+    ================================     ====================================================================
+    **Parameter**                         **Description**
+    --------------------------------     --------------------------------------------------------------------
+    rasters                              Required list of :class:`Raster <arcgis.raster.Raster>` /  :class:`ImageryLayer <arcgis.raster.ImageryLayer>` objects.
+    --------------------------------     --------------------------------------------------------------------
+    resolve_overlap_method               Optional string. Specifies the method that will be used to resolve overlapping pixels in the
+                                         combined datasets. The options include the following:
+
+                                         - "FIRST" - The pixel value in the overlapping areas is the value from the first raster in the list of input rasters. This is the default.
+
+                                         - "LAST" - The pixel value in the overlapping areas is the value from the last raster in the list of input rasters.
+
+                                         - "MIN" - The pixel value in the overlapping areas is the minimum value of the overlapping pixels.
+
+                                         - "MAX" - The pixel value in the overlapping areas is the maximum value of the overlapping pixels.
+
+                                         - "MEAN" - The pixel value in the overlapping areas is the average of the overlapping pixels.
+
+                                         - "SUM" - The pixel value in the overlapping areas is the total sum of the overlapping pixels.
+    ================================     ====================================================================
+
+    :return: The output raster with the function applied.
+
+    .. code-block:: python
+
+        # Usage Example 1: merges two rasters and display the pixels from the first raster in the list of rasters overlapping a given area.
+
+        merged_op = merge_rasters([ras1, ras2], resolve_overlap_method="FIRST")
+    """
+    raster = rasters
+
+    layer, raster, raster_ra = _raster_input(raster)
+
+    mosaic_types = {
+        "FIRST": "MT_FIRST",
+        "LAST": "MT_LAST",
+        "MIN": "MT_MIN",
+        "MAX": "MT_MAX",
+        "MEAN": "MT_MEAN",
+        "SUM": "MT_SUM",
+    }
+
+    in_mosaic_type = mosaic_types[resolve_overlap_method.upper()]
+
+    template_dict = {
+        "rasterFunction": "MergeRasters",
+        "rasterFunctionArguments": {"Rasters": raster},
+        "variableName": "Rasters",
+    }
+
+    if resolve_overlap_method is not None:
+        template_dict["rasterFunctionArguments"]["MosaicOperator"] = in_mosaic_type
 
     return _clone_layer(layer, template_dict, raster_ra, variable_name="Rasters")
 

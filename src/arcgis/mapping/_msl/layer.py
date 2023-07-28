@@ -1147,13 +1147,12 @@ class MapFeatureLayer(Layer):
                         if fld in df.columns:
                             df[fld] = pd.to_datetime(
                                 df[fld] / 1000,
-                                infer_datetime_format=True,
                                 unit="s",
                             )
                     except:
                         if fld in df.columns:
                             df[fld] = pd.to_datetime(
-                                df[fld], infer_datetime_format=True
+                                df[fld],
                             )
                 return df
 
@@ -1233,13 +1232,11 @@ class MapFeatureLayer(Layer):
                     try:
                         df[fld] = pd.to_datetime(
                             df[fld] / 1000,
-                            infer_datetime_format=True,
                             unit="s",
                         )
                     except:
                         df[fld] = pd.to_datetime(
                             df[fld],
-                            infer_datetime_format=True,
                             errors="coerce",
                         )
             return df
@@ -2214,14 +2211,11 @@ class MapTable(MapFeatureLayer):
                         if fld in df.columns:
                             df[fld] = pd.to_datetime(
                                 df[fld] / 1000,
-                                infer_datetime_format=True,
                                 unit="s",
                             )
                     except:
                         if fld in df.columns:
-                            df[fld] = pd.to_datetime(
-                                df[fld], infer_datetime_format=True
-                            )
+                            df[fld] = pd.to_datetime(df[fld])
                 return df
 
             return self._query(url, params, raw=as_raw)
@@ -2297,11 +2291,9 @@ class MapTable(MapFeatureLayer):
                 df.spatial._meta.source = self
             for fld in dt_fields:
                 try:
-                    df[fld] = pd.to_datetime(
-                        df[fld] / 1000, infer_datetime_format=True, unit="s"
-                    )
+                    df[fld] = pd.to_datetime(df[fld] / 1000, unit="s")
                 except:
-                    df[fld] = pd.to_datetime(df[fld], infer_datetime_format=True)
+                    df[fld] = pd.to_datetime(df[fld])
             return df
         return result
 
@@ -2395,5 +2387,8 @@ class MapServiceLayer(Layer, metaclass=_MSILayerFactory):
         Constructs a Map Services Layer given a URL and GIS
         """
         super(MapServiceLayer, self).__init__(
-            url=url, gis=gis, container=container, dynamic_layer=dynamic_layer
+            url=url,
+            gis=gis,
+            container=container,
+            dynamic_layer=dynamic_layer,
         )

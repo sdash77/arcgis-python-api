@@ -15,6 +15,7 @@ from arcgis.features import FeatureLayerCollection
 from arcgis.features import FeatureLayer
 from arcgis.mapping import MapImageLayer
 from arcgis.geometry import *
+from arcgis.apps.survey123 import SurveyManager
 import copy
 import urllib
 import time
@@ -43,6 +44,7 @@ _TEXT_BASED_ITEM_TYPES = [
     "Network Analysis Service",
     "Workflow Manager Service",
     "StoryMap",
+    "Web Scene",
 ]
 
 # Regular expressions for finding fields in json
@@ -108,18 +110,25 @@ class _DeepCloner:
 
         self._cloned_items = []
         for index, item in enumerate(self._items):
-            if item["type"] == "Dashboard" and not from_dash:
-                if len(self._items) > 1:
-                    self._items.pop(index)
+            if (
+                item["type"] == "Dashboard"
+                and "desktopView" in item.get_data()
+                and not from_dash
+            ):
+                self._items.pop(index)
                 dash_list = self._clone_dashboard(item)
-                for cloned_item in dash_list:
-                    self._cloned_items.append(cloned_item)
+                if len(dash_list) > 0:
+                    for cloned_item in dash_list:
+                        self._cloned_items.append(cloned_item)
 
         # parse the config and get values
         self._create_graph()
 
     def _clone_dashboard(self, dashboard_item):
-        widgets = dashboard_item.get_data()["desktopView"]["widgets"]
+        if "desktopView" in dashboard_item.get_data():
+            widgets = dashboard_item.get_data()["desktopView"]["widgets"]
+        else:
+            widgets = dashboard_item.get_data()["widgets"]
         item_list = []
         cloned_item_list = []
         map_dict = {}
@@ -134,30 +143,53 @@ class _DeepCloner:
 
         for item_id in item_list:
             item = dashboard_item._gis.content.get(item_id)
-            clone_result = self.target.content.clone_items([item])
-            if len(clone_result) > 0:
+            clone_result = self.target.content.clone_items(
+                [item],
+                search_existing_items=self._search_existing_items,
+                folder=self.folder,
+                owner=self.owner,
+                use_org_basemap=self._use_org_basemap,
+                copy_data=self._copy_data,
+                copy_global_ids=self._copy_global_ids,
+                item_extent=self._item_extent,
+                preserve_item_id=self._preserve_item_id,
+            )
+            if clone_result:
                 for cloned_item in clone_result:
                     cloned_item_list.append(cloned_item)
-            new_item = self.target.content.search(item.title)[0]
+                    if cloned_item.title == item.title:
+                        new_item = cloned_item
+            else:
+                new_item = _search_org_for_existing_item(self.target, item)
+
             map_dict[item_id] = new_item.itemid
 
-        cloned_db = self.target.content.clone_items([dashboard_item], from_dash=True)[0]
-        cloned_item_list.append(cloned_db)
-        cloned_widgets = cloned_db.get_data()["desktopView"]["widgets"]
+        cloned_db_list = self.target.content.clone_items(
+            [dashboard_item],
+            folder=self.folder,
+            owner=self.owner,
+            search_existing_items=self._search_existing_items,
+            preserve_item_id=self._preserve_item_id,
+            from_dash=True,
+        )
+        if cloned_db_list:
+            cloned_db = cloned_db_list[0]
+            cloned_item_list.append(cloned_db)
+            cloned_widgets = cloned_db.get_data()["desktopView"]["widgets"]
 
-        for widget in cloned_widgets:
-            for k, v in widget.items():
-                if k == "itemId":
-                    widget["itemId"] = map_dict[v]
-                if k == "datasets":
-                    for dataset in v:
-                        dataset["dataSource"]["itemId"] = map_dict[
-                            dataset["dataSource"]["itemId"]
-                        ]
+            for widget in cloned_widgets:
+                for k, v in widget.items():
+                    if k == "itemId":
+                        widget["itemId"] = map_dict[v]
+                    if k == "datasets":
+                        for dataset in v:
+                            dataset["dataSource"]["itemId"] = map_dict[
+                                dataset["dataSource"]["itemId"]
+                            ]
 
-        new_data = cloned_db.get_data()
-        new_data["desktopView"]["widgets"] = cloned_widgets
-        cloned_db.update(item_properties={}, data=new_data)
+            new_data = cloned_db.get_data()
+            new_data["desktopView"]["widgets"] = cloned_widgets
+            cloned_db.update(item_properties={}, data=new_data)
 
         return cloned_item_list
 
@@ -394,7 +426,7 @@ class _DeepCloner:
                 item_definition.add_child(self._get_item_definitions(item))
 
         # If the item is a web map find all the feature service layers and tables that make up the map
-        elif item["type"] == "Web Map":
+        elif item["type"] in ["Web Map", "Web Scene"]:
             item_definition = self._get_item_definition(item)
             self._graph[item.id] = item_definition
 
@@ -463,11 +495,11 @@ class _DeepCloner:
 
             for layer in featurelayer_services:
                 try:
-                    item = arcgis.gis.Item(item._gis, layer["itemId"])
+                    lay_item = arcgis.gis.Item(item._gis, layer["itemId"])
                 except:
-                    item = {}
+                    lay_item = {}
                 if (
-                    getattr(item, "groupDesignations", "notlivingatlas")
+                    getattr(lay_item, "groupDesignations", "notlivingatlas")
                     != "livingatlas"
                 ):
                     service_url = os.path.dirname(layer["url"])
@@ -519,7 +551,6 @@ class _DeepCloner:
                             )
                             if vector_tile_item is None:
                                 continue
-
                             if vector_tile_item["owner"] == item["owner"]:
                                 item_definition.add_child(
                                     self._get_item_definitions(vector_tile_item)
@@ -1440,7 +1471,7 @@ class _DeepCloner:
             )
 
         # If the item is a web map get the WebMapDefintion
-        elif item["type"] == "Web Map":
+        elif item["type"] in ["Web Map", "Web Scene"]:
             webmap_json = item.get_data()
             return _WebMapDefinition(
                 self.target,
@@ -1664,15 +1695,16 @@ class _DeepCloner:
             )
 
             return _WebExperience(
-                self.target,
-                self._clone_mapping,
-                dict(item),
+                target=self.target,
+                clone_mapping=self._clone_mapping,
+                info=dict(item),
                 data=None,
                 thumbnail=None,
-                portal_item=item,
                 folder=self.folder,
                 search_existing=self._search_existing_items,
                 owner=self.owner,
+                resources=item.resources.export(),
+                portal_item=item,
                 preserve_item_id=self._preserve_item_id,
             )
 
@@ -2497,7 +2529,8 @@ class _FeatureServiceDefinition(_TextItemDefinition):
         """Get the features for the given feature layer of a feature service. Returns a list of json features.
         Keyword arguments:
         feature_layer - The feature layer to return the features for
-        spatial_reference -  The spatial reference to return the features in"""
+        spatial_reference -  The spatial reference to return the features in
+        """
         if spatial_reference is None:
             spatial_reference = {"wkid": 102100}
 
@@ -2533,7 +2566,8 @@ class _FeatureServiceDefinition(_TextItemDefinition):
         layers - Dictionary containing the id of the layer and its corresponding arcgis.lyr.FeatureLayer
         relationships - Dictionary containing the id of the layer and its relationship definitions
         layer_field_mapping - field mapping if the case or name of field changed from the original service
-        spatial_reference -  The spatial reference to create the features in"""
+        spatial_reference -  The spatial reference to create the features in
+        """
 
         # Get the features if they haven't already been queried
         features = self.features
@@ -3966,7 +4000,6 @@ class _WebMapDefinition(_TextItemDefinition):
 
     def clone(self):
         """Clone the web map in the target organization."""
-
         try:
             new_item = None
             original_item = self.info
@@ -5015,9 +5048,11 @@ class _FormDefinition(_ItemDefinition):
                 )
 
         # Replace the "field names"
-        for instance in xml.find("h:head/model/instance/", namespace):
-            for child in instance.iter():
-                child.tag = lookup.get(child.tag, child.tag)
+        instances = xml.find("h:head/model/instance/", namespace)
+        if instances:
+            for instance in instances:
+                for child in instance.iter():
+                    child.tag = lookup.get(child.tag, child.tag)
 
         # Add all original namespaces back
         with open(xml_file_path, "w") as xml_file:
@@ -5164,41 +5199,9 @@ class _FormDefinition(_ItemDefinition):
                                             field_mapping,
                                         )
 
-                elif os.path.splitext(path)[1].lower() == ".webform":
-                    try:
-                        with open(os.path.join(zip_dir, path)) as file:
-                            payload = json.loads(file.read())
-                    except UnicodeDecodeError:
-                        with open(os.path.join(zip_dir, path), "rb") as file:
-                            payload = json.load(file)
-
-                    file_changed = False
-
-                    # Find related service mapping and replace in webform
-                    for related_item in self.related_items:
-                        for key, value in clone_mapping["Services"].items():
-                            if _compare_url(related_item["url"], key):
-                                for layer_id in value["layer_field_mapping"]:
-                                    field_mapping = value["layer_field_mapping"][
-                                        layer_id
-                                    ]
-                                    model = payload["model"]
-                                    form = payload["form"]
-                                    _find_and_replace_fields_json(
-                                        payload, field_mapping, [XML_SURVEY]
-                                    )
-
-                                    payload["model"] = self._replace_model(
-                                        model, field_mapping
-                                    )
-                                    payload["form"] = self._replace_form(
-                                        form, field_mapping
-                                    )
-                                    file_changed = True
-
-                    if file_changed:
-                        with open(os.path.join(zip_dir, path), "w") as writer:
-                            json.dump(payload, writer, indent="  ")
+                        SurveyManager._xform2webform(
+                            os.path.join(zip_dir, path), self.target.url
+                        )
 
                 elif os.path.splitext(path)[1].lower() == ".iteminfo":
                     with open(os.path.join(zip_dir, path), "w") as file:
@@ -6836,7 +6839,8 @@ def _zip_dir(path, zip_file, include_root=True):
     Keyword arguments:
     path - The folder containing the files and subfolders to zip
     zip_file - The zip file that will store the compressed files
-    include_root -  Indicates if the root folder should be included in the zip"""
+    include_root -  Indicates if the root folder should be included in the zip
+    """
 
     rel_path = ""
     if include_root:

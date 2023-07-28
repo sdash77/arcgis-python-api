@@ -2,11 +2,6 @@
 # Name:        Feature class tests
 # Purpose:     Tests for checking the save function of the feature class works properly.
 # -------------------------------------------------------------------------------
-
-# Needed to find the integration module when running locally
-#import sys
-#sys.path.insert(0, r"<path on your system"\geosaurus\tests")
-
 import unittest
 from integration.dino_utils.dino_precondition_checks import PreconditionChecks
 from integration.dino_utils.dino_precondition_checks import PortalUtils
@@ -41,6 +36,7 @@ except ImportError:
     raise (exit())
 # endregion PreCondition Check
 
+
 # TestModule
 @unittest.skipIf(
     module_skip, "Precondition check failed. Skipping tests in Features module"
@@ -71,29 +67,22 @@ class Test_Feature_class(unittest.TestCase):
 
         # region Read config data
         _conf_reader = ConfigParser()
-        _conf_reader.read(DinoConfigs.portal_list_file, "UTF-8")
+        _conf_reader.read(DinoConfigs.root_init_file, "UTF-8")
 
-        cls.portal_url = _conf_reader["datascienceqa"]["url"]
-        cls.portal_username = _conf_reader["datascienceqa"]["admin_user"]
-        cls.portal_password = _conf_reader["datascienceqa"]["admin_password"]
-
-        _conf_reader2 = ConfigParser()
-        _conf_reader2.read(DinoConfigs.root_init_file, "UTF-8")
-
-        cls.qalab_base_path = _conf_reader2["test_data"]["qalab_base_path"]
+        cls.qalab_base_path = _conf_reader["test_data"]["qalab_base_path"]
         cls.qalab_cls_path = (
-            cls.qalab_base_path + _conf_reader2["test_data"]["qalab_FeatureSet_cls"]
+            cls.qalab_base_path + _conf_reader["test_data"]["qalab_FeatureSet_cls"]
         )
         # endregion
 
         # region precondition checks and sign in
-        r1 = PreconditionChecks.can_ping_portal(cls.portal_url)
+        r1 = PreconditionChecks.can_ping_portal(
+            GIS(profile="your_ent_admin_profile").url
+        )
         if not r1:
             cls.class_skip = True
 
-        cls.gis = GIS(
-            cls.portal_url, cls.portal_username, cls.portal_password, verify_cert=False
-        )
+        cls.gis = GIS(profile="your_ent_admin_profile", verify_cert=False)
         if cls.gis is None:
             cls.class_skip = True
 
@@ -124,11 +113,12 @@ class Test_Feature_class(unittest.TestCase):
         :return:
         """
         try:
-
             temp = None
             gis = GIS()
             # calling a feature layer corresponding to the USA Freeway System in arcgis online
-            content = gis.content.get("c6b6cebc24ea4c619fbf4f5ed124fefa") # original item: 91c6a5f6410b4991ab0db1d7c26daacb"
+            content = gis.content.get(
+                "c6b6cebc24ea4c619fbf4f5ed124fefa"
+            )  # original item: 91c6a5f6410b4991ab0db1d7c26daacb"
 
             layer = content.layers[0]
             features_req = layer.query(where="OBJECTID = 1")
@@ -157,7 +147,6 @@ class Test_Feature_class(unittest.TestCase):
         :return:
         """
         try:
-
             temp = None
 
             gis = GIS()
@@ -382,6 +371,7 @@ class Test_Feature_class(unittest.TestCase):
 
     def tearDown(self):
         print("------------------------------------------------------------------\n")
+
 
 if __name__ == "__main__":
     unittest.main()

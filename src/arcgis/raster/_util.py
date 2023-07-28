@@ -27,6 +27,116 @@ except:
     pass
 
 
+def _get_layer_info(input_layer):
+    input_param = input_layer
+
+    url = ""
+    from arcgis.raster import Raster as _Raster
+    from arcgis.gis import Item as _Item
+    from arcgis.gis import Layer as _Layer
+
+    if isinstance(input_layer, _Raster):
+        if hasattr(input_layer, "_engine_obj"):
+            input_layer = input_layer._engine_obj
+    if isinstance(input_layer, _Item):
+        if input_layer.type == "Image Collection":
+            input_param = {"itemId": input_layer.itemid}
+        else:
+            if "layers" in input_layer:
+                input_param = input_layer.layers[0]._lyr_dict
+                try:
+                    if isinstance(input_param, dict) and "url" in input_param.keys():
+                        url = input_param["url"]
+                        if "token" not in url:
+                            from arcgis.raster.functions.utility import (
+                                _generate_layer_token,
+                            )
+
+                            token = _generate_layer_token(input_layer, url)
+                            if token is not None:
+                                if input_layer.type == "Feature Service":
+                                    input_param.update({"serviceToken": token})
+                                else:
+                                    url = input_param["url"] + "?token=" + token
+                            input_param.update({"url": url})
+                except:
+                    pass
+            else:
+                raise TypeError("No layers in input layer Item")
+
+    elif isinstance(input_layer, _Layer):
+        input_param = input_layer._lyr_dict
+        from arcgis.raster import ImageryLayer
+        import json
+
+        if isinstance(input_layer, _ImageryLayer) or isinstance(input_layer, _Raster):
+            if "options" in input_layer._lyr_json:
+                if isinstance(
+                    input_layer._lyr_json["options"], str
+                ):  # sometimes the rendering info is a string
+                    # load json
+                    layer_options = json.loads(input_layer._lyr_json["options"])
+                else:
+                    layer_options = input_layer._lyr_json["options"]
+
+                if "imageServiceParameters" in layer_options:
+                    # get renderingRule and mosaicRule
+                    input_param.update(layer_options["imageServiceParameters"])
+
+            try:
+                if isinstance(input_param, dict) and "url" in input_param.keys():
+                    url = input_param["url"]
+                    if "token" not in url:
+                        from arcgis.raster.functions.utility import (
+                            _generate_layer_token,
+                        )
+
+                        token = _generate_layer_token(input_layer, url)
+                        if token is not None:
+                            url = input_param["url"] + "?token=" + token
+                        input_param.update({"url": url})
+                        if "serviceToken" in input_param.keys():
+                            del input_param["serviceToken"]
+            except:
+                pass
+
+        elif isinstance(input_layer, _FeatureLayer):
+            input_param = input_layer._lyr_dict
+            try:
+                if isinstance(input_param, dict) and "url" in input_param.keys():
+                    url = input_param["url"]
+                    if "serviceToken" not in input_param:
+                        from arcgis.raster.functions.utility import (
+                            _generate_layer_token,
+                        )
+
+                        token = _generate_layer_token(input_layer, url)
+                        if token is not None:
+                            input_param.update({"serviceToken": token})
+                        input_param.update({"url": url})
+            except:
+                pass
+
+    elif isinstance(input_layer, dict):
+        input_param = input_layer
+
+    elif isinstance(input_layer, str):
+        if "http:" in input_layer or "https:" in input_layer:
+            input_param = {"url": input_layer}
+        else:
+            input_param = {"uri": input_layer}
+
+    else:
+        raise Exception("Invalid format for env parameter")
+
+    if "ImageServer" in url or "MapServer" in url:
+        if "serviceToken" in input_param:
+            url = url + "?token=" + input_param["serviceToken"]
+            input_param.update({"url": url})
+
+    return input_param
+
+
 def _set_context(params, function_context=None):
     out_sr = _arcgis.env.out_spatial_reference
     process_sr = _arcgis.env.process_spatial_reference
@@ -48,10 +158,7 @@ def _set_context(params, function_context=None):
         context["processSR"] = {"wkid": int(process_sr)}
 
     if mask is not None:
-        if isinstance(mask, _ImageryLayer):
-            context["mask"] = {"url": mask._url}
-        elif isinstance(mask, str):
-            context["mask"] = {"url": mask}
+        context["mask"] = _get_layer_info(mask)
 
     if cell_size is not None:
         if isinstance(cell_size, _ImageryLayer):
@@ -65,10 +172,7 @@ def _set_context(params, function_context=None):
             context["cellSize"] = cell_size
 
     if snap_raster is not None:
-        if isinstance(snap_raster, _ImageryLayer):
-            context["snapRaster"] = {"url": snap_raster._url}
-        elif isinstance(mask, str):
-            context["snapRaster"] = {"url": snap_raster}
+        context["snapRaster"] = _get_layer_info(snap_raster)
 
     if parallel_processing_factor is not None:
         context["parallelProcessingFactor"] = parallel_processing_factor
@@ -120,7 +224,9 @@ def _to_datetime(dt):
                 seconds=(dt / 1000)
             )
         else:
-            return datetime.datetime.utcfromtimestamp(dt / 1000)
+            return datetime.datetime.fromtimestamp(
+                dt / 1000, tz=datetime.timezone.utc
+            ).replace(tzinfo=None)
     except:
         return dt
 
@@ -141,7 +247,9 @@ def _ole2datetime(oledt):
     try:
         return OLE_TIME_ZERO + datetime.timedelta(days=float(oledt))
     except:
-        return datetime.datetime.utcfromtimestamp(oledt / 1000)
+        return datetime.datetime.fromtimestamp(
+            oledt / 1000, tz=datetime.timezone.utc
+        ).replace(tzinfo=None)
 
 
 def _iso_to_datetime(timestamp):
@@ -303,7 +411,9 @@ def _ole2datetime(oledt):
     try:
         return OLE_TIME_ZERO + datetime.timedelta(days=float(oledt))
     except:
-        return datetime.datetime.utcfromtimestamp(oledt / 1000)
+        return datetime.datetime.fromtimestamp(
+            oledt / 1000, tz=datetime.timezone.utc
+        ).replace(tzinfo=None)
 
 
 def _iso_to_datetime(timestamp):
@@ -348,7 +458,9 @@ def _check_if_iso_format(timestamp):
 
 
 def _local_function_template(
-    operation_number=None, percentile_value=None, percentile_interpolation_type=None
+    operation_number=None,
+    percentile_value=None,
+    percentile_interpolation_type=None,
 ):
     template_dict = {
         "name": "max_rft",
@@ -363,7 +475,11 @@ def _local_function_template(
         "arguments": {
             "Rasters": {
                 "name": "Rasters",
-                "value": {"elements": [], "type": "ArgumentArray", "_object_id": 2},
+                "value": {
+                    "elements": [],
+                    "type": "ArgumentArray",
+                    "_object_id": 2,
+                },
                 "aliases": ["__IsRasterArray__"],
                 "isDataset": False,
                 "isPublic": False,
@@ -825,7 +941,11 @@ class _ImageryUploaderAGOL:
             self.ClientAuthenticationError,
             self.ServiceResponseError,
             self.ServiceRequestError,
-        ) = (ClientAuthenticationError, ServiceResponseError, ServiceRequestError)
+        ) = (
+            ClientAuthenticationError,
+            ServiceResponseError,
+            ServiceRequestError,
+        )
 
         self.file_list = file_list
         self.container = container
@@ -952,7 +1072,10 @@ class _ImageryUploaderAGOL:
                                         )
                                     )
 
-                                data_path = {"source": source, "target": target}
+                                data_path = {
+                                    "source": source,
+                                    "target": target,
+                                }
                                 if data_path not in self.mosaic_data_info:
                                     self.mosaic_data_info.append(data_path)
 
@@ -1147,7 +1270,13 @@ def _upload_imagery_agol(
             file["prefix"] = file_list[0]["prefix"]
 
     uploader = _ImageryUploaderAGOL(
-        file_list, container, auto_renew, upload_properties, task, raster_type, gis
+        file_list,
+        container,
+        auto_renew,
+        upload_properties,
+        task,
+        raster_type,
+        gis,
     )
     mosaic_data_info = []
     url_list, mosaic_data_info = uploader.upload_all_files()
@@ -1199,7 +1328,10 @@ def _upload_imagery_enterprise(files, raster_type_name=None, gis=None):
 
                         if item_id is not None:
                             if append_path:
-                                item_id_dict = {"itemId": item_id, "path": path}
+                                item_id_dict = {
+                                    "itemId": item_id,
+                                    "path": path,
+                                }
                                 item_ids_list.append(item_id_dict)
                                 item_id_dict = {}
                             else:
@@ -1241,7 +1373,11 @@ def _upload(path, description=None, gis=None):
     ra_url = gis.properties.helperServices["rasterAnalytics"]["url"]
     if (os.path.getsize(path)) < 1000000000:
         url = ra_url + "/uploads/upload"
-        params = {"f": "json", "filename": os.path.basename(path), "overwrite": True}
+        params = {
+            "f": "json",
+            "filename": os.path.basename(path),
+            "overwrite": True,
+        }
         files = {}
         files["file"] = path
         if description:
@@ -1400,9 +1536,34 @@ def _get_stac_metadata_file(item):
     :return string (URL of the STAC Item metadata file)
     """
 
+    pc_sign_url = "https://planetarycomputer.microsoft.com/api/sas/v1/sign?href="
     href = None
-    if item["collection"] == "sentinel-s2-l2a-cogs":
-        href = rf"{item['links'][1]['href']}\Multiband"
+    if "planetarycomputer" in item["links"][0]["href"]:
+        if item["type"] == "Collection" and item["id"].startswith("daymet"):
+            href = item["assets"]["zarr-https"]["href"]
+        elif item["collection"] == "naip":
+            href = item["assets"]["image"]["href"]
+        elif item["collection"] in ["landsat-c2-l1", "landsat-c2-l2"]:
+            mtl_file = item["assets"]["mtl.txt"]["href"]
+            href = _requests.get(pc_sign_url + mtl_file).json()["href"]
+
+    elif "earth-search.aws.element84" in item["links"][0]["href"]:
+        if item["collection"] in ["sentinel-s2-l2a-cogs", "sentinel-2-l2a"]:
+            if "sentinel-s2-l2a-cogs" in item["links"][1]["href"]:
+                href = rf"{item['links'][1]['href']}\Multiband"
+        elif item["collection"] in ["cop-dem-glo-30", "cop-dem-glo-90"]:
+            href = item["assets"]["data"]["href"]
+        elif item["collection"] == "naip":
+            href = item["assets"]["image"]["href"]
+        elif item["collection"] == "landsat-c2-l2":
+            href = item["assets"]["mtl.txt"]["href"]
+        elif item["collection"] == "sentinel-1-grd":
+            href = item["assets"]["safe-manifest"]["href"]
+
+        href = (
+            rf"/vsis3{href[4:]}" if href is not None and href.startswith("s3") else href
+        )
+
     else:
         if "metadata" in item["assets"]:
             href = item["assets"]["metadata"]["href"]
@@ -1417,6 +1578,11 @@ def _get_stac_metadata_file(item):
             for i in range(len(links)):
                 if links[i]["rel"] == "metadata":
                     href = links[i]["href"]
+                elif links[i]["rel"] == "canonical":
+                    s3_path = links[i]["href"]
+                    if "sentinel-s2-l2a-cogs" in s3_path and s3_path.endswith(".json"):
+                        href = rf"/vsi{s3_path}\Multiband"
+
     return href
 
 

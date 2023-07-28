@@ -320,7 +320,7 @@ class ArcGISObjectDetector:
         num_bounding_boxes = bounding_boxes.shape[0]
         bounding_box_coord_list = []
         for i in range(num_bounding_boxes):
-            coord_array = np.empty(shape=(4, 2), dtype=np.float)
+            coord_array = np.empty(shape=(4, 2), dtype=float)
             coord_array[0][0] = bounding_boxes[i][0]
             coord_array[0][1] = bounding_boxes[i][1]
 
@@ -1413,7 +1413,7 @@ class ArcGISSuperResolution:
         return configuration
 
     def updateRasterInfo(self, **kwargs):
-        kwargs['output_info']['bandCount'] = 3
+        kwargs['output_info']['bandCount'] = self.json_info.get("n_channel", 3)
         kwargs['output_info']['pixelType'] = 'f4'
         return kwargs
 

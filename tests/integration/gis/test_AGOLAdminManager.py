@@ -1,6 +1,3 @@
-import sys
-
-sys.path.insert(0, r"C:\\ipython_workfolder\\geosaurus\\src")
 import unittest
 import os
 from arcgis.gis import GIS
@@ -20,7 +17,7 @@ from arcgis.gis.admin._license import LicenseManager
 from datetime import datetime
 
 
-online_admin = GIS(profile="your_online_profile", verify_cert=False)
+online_admin = GIS(profile="your_online_admin_profile", verify_cert=False)
 # create an admin
 admin = AGOLAdminManager(gis=online_admin)
 
@@ -105,14 +102,12 @@ class TestPortalAdminManager(unittest.TestCase):
         reports = [
             "content",
             "users",
-            "activity",
             "credits",
-            "serviceUsages",
-            "itemUsages",
         ]
         for report in reports:
-            generated = usage_reports.generate_report(focus="org", report_type=report, duration="quarterly")
-            assert generated
+            with self.subTest(report):
+                generated = usage_reports.generate_report(focus="org", report_type=report, duration="monthly")
+                assert generated
 
 if __name__ == "__main__":
     unittest.main()

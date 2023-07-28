@@ -94,6 +94,7 @@ class UtilityNetworkManager(object):
         result_types: list[dict] | None = None,
         trace_config_global_id: str | None = None,
         out_sr: int | None = None,
+        pbf: bool = False,
     ) -> dict:
         """
         A trace refers to a pre-configured algorithm that systematically
@@ -130,6 +131,7 @@ class UtilityNetworkManager(object):
 
 
                                    .. code-block:: python
+
                                        [{
                                            "traceLocationType" : "startingPoint" | "barrier",
                                            "globalId" : <guid>,
@@ -181,6 +183,9 @@ class UtilityNetworkManager(object):
                                    trace type parameter is ignored.
         -----------------------    --------------------------------------------------
         out_sr                     Optional Integer. The output spatial reference.
+        -----------------------    --------------------------------------------------
+        pbf                        Optional Boolean. If True, the results are returned in
+                                   the PBF format. The default is False.
         =======================    ==================================================
 
         :return:
@@ -203,7 +208,7 @@ class UtilityNetworkManager(object):
         if isinstance(configuration, TraceConfiguration):
             configuration = configuration.to_dict()
         params = {
-            "f": "json",
+            "f": "pbf" if pbf is True else "json",
             "gdbVersion": self._version_name,
             "sessionId": self._version_guid,
             "traceType": trace_type,
@@ -219,7 +224,10 @@ class UtilityNetworkManager(object):
             params["resultTypes"] = result_types
         if out_sr:
             params["outSR"] = out_sr
-        return self._con.post(url, params)
+        if pbf is True:
+            return self._con.post(url, params, force_bytes=True)
+        else:
+            return self._con.post(url, params)
 
     # ----------------------------------------------------------------------
     def disable_topology(self) -> dict:
@@ -443,6 +451,7 @@ class UtilityNetworkManager(object):
         result_types                                Optional list of dictionaries. Specifies the type of results to return.
 
                                                     .. code-block:: python
+
                                                         [
                                                             {
                                                                 "type" : "features" | "geometries" | "network" | "connectivity" | "controllers" | "associations" | "aggregatedGeometry" |
@@ -611,6 +620,7 @@ class UtilityNetworkManager(object):
                                                     synthesize association geometries.
 
                                                     .. code-block:: python
+
                                                         {
                                                             "xmin": <minimum x-coordinate>,
                                                             "ymin": <minimum y-coordinate>,
@@ -746,6 +756,7 @@ class UtilityNetworkManager(object):
         envelope                                    Required Dictionary. The envelope of the area to validate.
 
                                                     .. code-block:: python
+
                                                         {
                                                             "xmin": <minimum x-coordinate>,
                                                             "ymin": <minimum y-coordinate>,
@@ -783,6 +794,7 @@ class UtilityNetworkManager(object):
                                                     the set of features and objects to validate.
 
                                                     .. code-block:: python
+
                                                         [
                                                             {
                                                                 "sourceId": <int>,
@@ -875,6 +887,7 @@ class UtilityNetworkManager(object):
                                                     the association is querried.
 
                                                     .. code-block:: python
+
                                                         [{
                                                             "networkSourceId": <int>,
                                                             "globalId" : <guid>,
@@ -955,6 +968,7 @@ class UtilityNetworkManager(object):
                                                     the association is queried.
 
                                                     .. code-block:: python
+
                                                         [{
                                                             "networkSourceId": <int>,
                                                             "globalId" : <guid>,
@@ -1313,6 +1327,7 @@ class TraceConfigurationsManager(object):
                                     types of results to return.
 
                                     .. code-block:: python
+
                                         [{
                                             "type" : "elements" | "aggregatedGeometry",
                                             "includeGeometry" : true | false,
@@ -1396,6 +1411,7 @@ class TraceConfigurationsManager(object):
                                     types of results to return.
 
                                     .. code-block:: python
+
                                         [{
                                             "type" : "elements" | "aggregatedGeometry",
                                             "includeGeometry" : true | false,
