@@ -491,14 +491,27 @@ class ModelExtension(ArcGISModel):
             return np.mean(miou)
         return dict(zip(["0"] + self._data.classes[1:], miou))
 
-    def _per_class_metrics(self):
+    def _per_class_metrics(self, ignore_classes=[]):
         """
-        Computes per class precision, recall and f1-score on validation set.
+        Computer per class precision, recall and f1-score on validation set.
+
+        =====================   ===========================================
+        **Parameter**            **Description**
+        ---------------------   -------------------------------------------
+        self                    segmentation model object -> [PSPNetClassifier | UnetClassifier | DeepLab]
+        ---------------------   -------------------------------------------
+        ignore_classes          Optional list. It will contain the list of class
+                            values on which model will not incur loss.
+                            Default: []
+        =====================   ===========================================
+
+        Returns per class precision, recall and f1 scores
         """
+        ignore_classes = np.unique(self._ignore_classes + ignore_classes).tolist()
         try:
             self._check_requisites()
             ## Calling imported function `per_class_metrics`
-            return per_class_metrics(self)
+            return per_class_metrics(self, ignore_classes)
         except:
             import pandas as pd
 
