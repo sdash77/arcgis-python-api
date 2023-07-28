@@ -3328,122 +3328,238 @@ class UserManager(object):
         email_text: Optional[str] = None,
     ):
         """
-        The ``create`` operation is used to pre-create built-in or enterprise accounts within the Enterprise portal,
-        or built-in users in an ArcGIS Online organization account.
+        The ``create`` operation is used to create built-in or pre-create organization-specific identity
+        store accounts for use in a Web GIS. See the respective documentation for complete details
+        about configurating identity stores and managing access to your deployment:
+        
+        * ``ArcGIS Enterprise`` - `Manage access to your portal <https://enterprise.arcgis.com/en/portal/latest/administer/windows/managing-access-to-your-portal.htm>`_
+        * ``ArcGIS Online`` - `Invite and add members <https://doc.arcgis.com/en/arcgis-online/administer/invite-users.htm>`_
 
         .. note::
             Only an administrator can call this method.
-
-            A member's `user_type` determines the default `role` that can be assigned to the member. User types
-            compatible with each role are noted in the table below (within the `user_type` section).
-
-        **To create a viewer account, choose role='viewer' and user_type='viewer'**
-
-        .. note:
-            When Portal for ArcGIS is connected to an enterprise identity store, enterprise users sign
-            into portal using their enterprise credentials. By default, new installations of Portal for
-            ArcGIS do not allow accounts from an enterprise identity store to be registered to the portal
+            
+        .. note::
+            When Portal for ArcGIS is connected to an
+            `organization specific identity store <https://enterprise.arcgis.com/en/portal/latest/administer/windows/managing-access-to-your-portal.htm#ESRI_SECTION2_4E6A70E10A9444DD92662208198B8876>`_,
+            users can sign into portal using their organization specific credentials, also known as
+            their enterprise credentials. By default, new installations of Portal for ArcGIS do not
+            allow accounts from an enterprise identity store to be registered to the portal
             automatically. Only users with accounts that have been pre-created can sign in to the portal.
             Alternatively, you can configure the portal to register enterprise accounts the first time
             the user connects to the website.
 
+        The `user_type` argument determines which `role` can be assigned to the member. A
+        full explanation of `user types` and their compatibility with a particular `role`
+        can be found in the
+        `User types, roles, and privileges <https://enterprise.arcgis.com/en/portal/latest/administer/windows/roles.htm>`_
+        documentation.
 
-        .. note:
-            To invite users via email on ArcGIS Online, set `password` to `None` and provide an
-            `email_text` value.  Sending invitations via email cannot have passwords set by
-            administrators.
-
+        An organization administrator may configure `New Member Defaults`. When a Web GIS is configured
+        with these values, any new user will receive these default values unless overridden by the
+        corresponding arguments in this method. See the following documentation for additional details:
+            
+        * `ArcGIS Online <https://doc.arcgis.com/en/arcgis-online/administer/configure-new-member-defaults.htm>`_
+        * `ArcGIS Enterprise <https://enterprise.arcgis.com/en/portal/latest/administer/windows/configure-new-member-defaults.htm>`_
+            
+        To query the organization for `New Member Defaults`, run the following code:
+            
+        .. code-block:: python
+            
+            >>> gis = GIS(profile="your_admin_profile")
+                
+            >>> gis.users.user_settings
+            
         ================  ===============================================================================
         **Parameter**      **Description**
         ----------------  -------------------------------------------------------------------------------
-        username          Required string. The user name, which must be unique in the Portal, and
-                          6-24 characters long.
+        username          Required string. The user name, which must be unique in the Enterprise or
+                          in all of ArcGIS Online. Must be between 6 to 24 characters long.
         ----------------  -------------------------------------------------------------------------------
-        password          Required string. The password for the user.  It must be at least 8 characters.
-                          This is a required parameter only if
-                          the provider is arcgis; otherwise, the password parameter is ignored.
-                          If creating an account in an ArcGIS Online org, it can be set as None to let
-                          the user set their password by clicking on a link that is emailed to him/her.
-                          When the `provider` is **enterprise**, password is optional.
+        password          Required string if the `provider` argument is `arcgis`. If the argument is
+                          `enterprise`, meaning an 
+                          `organization-specific identity provider
+                          <https://enterprise.arcgis.com/en/portal/latest/administer/windows/managing-access-to-your-portal.htm#ESRI_SECTION2_4E6A70E10A9444DD92662208198B8876>`_
+                          is configured, the password parameter is optional (or ignored if present).
+                          
+                          .. note::
+                             If creating an ArcGIS Online organization user, the argument can be `None`
+                             and users can subsequently set their password by clicking on a link that
+                             is emailed to them.  
+                            
+                          .. note::
+                             This argument **must** be None if iniviting the user to an ArcGIS Online
+                             organization and you want to send an email. Sending email invitations cannot
+                             have passwords set by an administrator.                     
         ----------------  -------------------------------------------------------------------------------
-        firstname         Required string. The first name for the user
+        firstname         Required string. The first name for the user.
         ----------------  -------------------------------------------------------------------------------
-        lastname          Required string. The last name for the user
+        lastname          Required string. The last name for the user.
         ----------------  -------------------------------------------------------------------------------
-        email             Required string. The email address for the user. This is important to have correct.
+        email             Required string. The email address for the user. This is important!
         ----------------  -------------------------------------------------------------------------------
         description       Optional string. The description of the user account.
         ----------------  -------------------------------------------------------------------------------
-        thumbnail         Optional string. The URL to user's image.
+        thumbnail         Optional string. The URL to an image to represent the user.
         ----------------  -------------------------------------------------------------------------------
-        role              Optional string. The :class:`role <arcgis.gis.Role>` for the user account. The
-                          default value is ``org_user``. Other possible values are ``org_publisher``,
-                          ``org_admin``, ``viewer``, ``viewplusedit`` or a custom :class:`role_id <arcgis.gis.Role>`
-                          value obtained from the :func:`~RoleManager.all` method of the :class:`RoleManager` class.
-
+        role              Optional string. The :class:`role <arcgis.gis.Role>` name or `role_id` value to
+                          assign the new member. To assign one of the `default Administrator, Publisher,
+                          or User roles <https://enterprise.arcgis.com/en/portal/latest/administer/windows/member-roles.htm#ESRI_SECTION1_C30D73392D964D51A8B606128A8A6E8F>`_
+                          enter ``org_admin``, ``org_publisher``, or ``org_user``, respectively.
+                          For any other default role, or a custom role within the organization, enter
+                          the `role_id` value returned from the :meth:`~arcgis.gis.RoleManager.all` method
+                          on the :class:`~arcgis.gis.RoleManager` class.
+                          
+                          .. code-block:: python
+                          
+                              >>> from arcgis.gis import GIS
+                              
+                              >>> gis = GIS(profile="your_org_admin_profile")
+                              
+                              >>> for org_role in gis.users.roles.all():
+                                      print(f"{org_role.name:25}{org_role.role_id}")
         ----------------  -------------------------------------------------------------------------------
-        provider          Optional string. The provider for the account. The default value is arcgis.
-                          The other possible value is enterprise.
+        provider          Optional string. The identity provider for the account. The default value is
+                          `arcgis`. Possible values:
+                          
+                          * `arcgis` - built-in identity provider
+                          * `enterprise` - organization-specific identity provider
+                          
+                          See documentation for managing organizational access for explanation of different
+                          identity provider options:
+                          
+                          * `ArcGIS Enterprise <https://enterprise.arcgis.com/en/portal/latest/administer/windows/managing-access-to-your-portal.htm>`_
+                          * `ArcGIS Online <https://doc.arcgis.com/en/arcgis-online/administer/invite-users.htm>`_
         ----------------  -------------------------------------------------------------------------------
-        idp_username      Optional string. The name of the user as stored by the enterprise user store.
-                          This parameter is only required if the provider parameter is enterprise.
+        idp_username      Required if `provider` argument is `enterprise`, otherwise not used. The name
+                          of the user as stored by the organization-specific identity store. 
         ----------------  -------------------------------------------------------------------------------
-        level             Optional integer. The account level. (ArcGIS Enterprise prior to version 10.7.
-                          See `User types, roles, and privileges <https://enterprise.arcgis.com/en/portal/latest/administer/windows/roles.htm>`_
-                          for full details.) The GIS Professional `user_type` can be assigned at the following three levels, which correspond to the three license levels of ArcGIS Pro:
-                           - GIS Professional Basic
-                           - GIS Professional Standard
-                           - GIS Professional Advanced
+        level             **Deprecated** Optional integer. The Web GIS system automatically sets this
+                          argument based upon the `user_type` and `role` arguments. See
+                          `Levels <https://enterprise.arcgis.com/en/portal/10.6/administer/windows/roles.htm#ESRI_SECTION1_08925CEF37334C619D52BC027C3C8DE1>`_
+                          for detailed description.
+                          
+                          .. note::
+                              This parameter was deprecated with the 10.7 release.
         ----------------  -------------------------------------------------------------------------------
-        user_type         Required string. The account user type. This can be creator, viewer, etc.  The
-                          type effects what applications a user can use and what actions they can do in
-                          the organization. (ArcGIS Enterprise 10.7+ and ArcGIS Online.
-                          See `User types, roles, and privileges <https://enterprise.arcgis.com/en/portal/latest/administer/windows/roles.htm>`_
-                          for full details.)
-                           - Members assigned the ``viewer`` role cannot create or share content, or perform analysis, and the ``viewer`` role is compatible with all user types.
-                           - The Data Editor role ``viewplusedit`` is compatible with all user types except ``viewer``.
-                           - The ``org_user``, ``org_publisher``, and ``org_admin`` roles are compatible with the Creator, GIS Professional, Storyteller, and Insights Analyst user types.
-                           - A complete list of `user_type` values can be obtained from the `license_types` property on the `UserManager`.
+        user_type         Required string, unless specified in the `New Member Defaults`. The user type
+                          license for an organization member. See
+                          `user types <https://enterprise.arcgis.com/en/portal/latest/administer/windows/user-types-orgs.htm>`_
+                          for detailed descriptions of each `user type`. Each `user_type` is 
+                          compatible with specific `roles` in the organization. Compatibility is
+                          determined by the `privileges` assigned to each `role`. Only certain `role`
+                          arguments will work with specific `user types`. The potential values 
+                          for this argument depend upon the organizational subscription and 
+                          licensing. Run the following query as an administrator to determine the
+                          possible values:
+                          
+                          .. code-block:: python
+                          
+                              >>> for utype in gis.users.license_types:
+                                      print(f"{utype['id]}")
+                          
+                          .. note::
+                              See the :attr:`~arcgis.gis.UserManager.license_types` property on the
+                              :class:`~arcgis.gis.UserManager` class.
         ----------------  -------------------------------------------------------------------------------
         credits           Optional Float. The number of credits to assign a user.  The default is None,
-                          which means unlimited. (10.7+)
+                          unless specified in the `New Member Defaults`.
+                          
+                          The following code will return the default value if it has been set:
+                          
+                          .. code-block:: python
+                          
+                              >>> gis = GIS(profile="your_admin_profile")
+                              
+                              >>> gis.properties.defaultUserCreditAssignment
+                              
+                          .. note::
+                              Only applies to ArcGIS Online organizations.
         ----------------  -------------------------------------------------------------------------------
-        groups            Optional List. An array of Group objects to provide access to for a given
-                          user. (10.7+)
+        groups            Optional List of :class:`~arcgis.gis.Group` objects to which the new user will
+                          be added. If `None`, user will be assigned to any groups specified in the
+                          `New Member Defaults`.
         ----------------  -------------------------------------------------------------------------------
         email_text        Optional string. Custom text to include in the invitation email. This text will
-                          be appended to the top of the default email text. ArcGIS Online only.
+                          be appended to the top of the default email text. `ArcGIS Online` only.
         ================  ===============================================================================
 
         :return:
             The :class:`user <arcgis.gis.User>` if successfully created, None if unsuccessful.
 
         .. code-block:: python
-            :emphasize-lines: 10,18
+            
+            #Usage Example 1: New ArcGIS Online user using `New Member Defaults`
+            
+            >>> ago = GIS(profile='your_online_admin_profile')
+            
+            >>> for k,v in ago.users.user_settings.items():
+            >>>     print(f'{k:20}{v}')
+            
+            role                org_publisher
+            userLicenseType     advancedUT
+            groups              ['96c9a826e654481ba2cf8f6d04137b32']
+            userType            arcgisonly
+            apps                []
+            appBundles          []
+            categories          []
+            
+            >>> new_user = ago.users.create(username= 'new_unique_username',
+                                            password= '<strong_password>',
+                                            firstname= 'user_firstname',
+                                            lastname= 'user_lastname',
+                                            email= 'user_email@company.com',
+                                            description= 'new user using member defaults'))
 
-            # Usage Example: Assign custom role to a new user
+            # Usage Example 2: New ArcGIS Online user with custom role and non-default `user_type`
 
+            # Get RoleManager and print `role_id` values for `role` argument
             >>> role_mgr = gis.users.roles
 
             >>> for role in role_mgr.all():
-            >>>     print(f"{role.name}  {role.role_id}")
+            >>>     print(f'{role.name}  {role.role_id}')
 
             Viewer              iAAAAAAAAAAAAAAA
             Data Editor         iBBBBBBBBBBBBBBB
             CustomRole          bKrTCjFF9tKbaFk8
 
-            >>> user1 = gis.users.create(username='new_user_1',
+            # Print valid values for `user_type` argument
+            >>> [ut['id'] for ut in ago.users.license_types]
+            
+            ['advancedUT',
+            'basicUT',
+            'creatorUT',
+            'editorUT',
+            'fieldWorkerUT',
+            'GISProfessionalAdvUT',
+            'GISProfessionalBasicUT',
+            'GISProfessionalStdUT',
+            'IndoorsUserUT',
+            'insightsAnalystUT',
+            'liteUT',
+            'standardUT',
+            'storytellerUT',
+            'viewerUT']
+            
+            >>> user1 = ago.users.create(username='new_unique_username',
                                          password='<strong_password>',
-                                         firstname='New',
-                                         lastname='User',
-                                         email='namee@organization.com',
-                                         description='User with custom role assigned',
+                                         firstname="user_firstname",
+                                         lastname="user_lastname",
+                                         email="user_email@company.com",
+                                         description="Test user with custom role and non-default user type.",
                                          role='bKrTCjFF9tKbaFk8',
-                                         user_type='Creator')
-
-            >>> if user1: # setting the start_page of the newly created user
-            >>>     user1.landing_page = "organization"
-
+                                         user_type='creatorUT')
+                                         
+            # Usage Example 3: New User invited with an email:
+            
+            >>> user_e = ago.users.create(username="new_invited_uk_Q42eklm",
+                                          password="S8V3*t4L8tr!&",
+                                          firstname="user_firstname",
+                                          lastname="user_lastname",
+                                          email="user_email@company.com",
+                                          description="Test for an invited user to Online.",
+                                          user_type="creatorUT",
+                                          role="XBH3xJArWxYuK2qX",
+                                          email_text="Welcome aboard the Web GIS organization!")
         """
         if any(
             [
@@ -3797,7 +3913,7 @@ class UserManager(object):
 
         if groups is None:
             groups = []
-
+        
         if user_type.lower() in levels:
             user_type = levels[user_type.lower()]
 
@@ -5069,91 +5185,309 @@ class Role(object):
         """
         The ``privileges`` method retrieves and sets the privileges for the custom role as a list of strings.
 
-        Supported **Administrator Privileges** with predefined permissions for:
+        **Administrator Privileges**:
 
         *Members*
 
-                1. portal:admin:viewUsers: grants the ability to view full member account information within organization.
-                2. portal:admin:updateUsers: grants the ability to update member account information within organization.
-                3. portal:admin:deleteUsers: grants the ability to delete member accounts within organization.
-                4. portal:admin:inviteUsers: grants the ability to invite members to organization. (This privilege is only applicable to ArcGIS Online.)
-                5. portal:admin:disableUsers: grants the ability to enable and disable member accounts within organization.
-                6. portal:admin:changeUserRoles: grants the ability to change the role a member is assigned within organization; however, it does not grant the ability to promote a member to, or demote a member from, the Administrator role. That privilege is reserved for the Administrator role alone.
-                7. portal:admin:manageLicenses: grants the ability to assign licenses to members of organization.
-                8. portal:admin:reassignUsers: grants the ability to assign all groups and content of a member to another within organization.
+        =======================================      ========================================================================
+        **Privilege**                                **Description**
+        ---------------------------------------      ------------------------------------------------------------------------
+        portal:admin:viewUsers                       Grants the ability to view full member account information within
+                                                     organization.
+        ---------------------------------------      ------------------------------------------------------------------------
+        portal:admin:updateUsers                     Grants the ability to update member account information within organization.
+        ---------------------------------------      ------------------------------------------------------------------------
+        portal:admin:deleteUsers                     Grants the ability to delete member accounts within organization.
+        ---------------------------------------      ------------------------------------------------------------------------
+        portal:admin:inviteUsers                     Grants the ability to invite members to organization.
+        ---------------------------------------      ------------------------------------------------------------------------
+        portal:admin:disableUsers                    Grants the ability to enable and disable member accounts within organization.
+        ---------------------------------------      ------------------------------------------------------------------------
+        portal:admin:changeUserRoles                 Grants the ability to change the role a member is assigned within
+                                                     the organization. However, it does not grant the ability to promote 
+                                                     or demote a member from the Administrator role. That privilege is reserved
+                                                     for the Administrator role alone.
+        ---------------------------------------      ------------------------------------------------------------------------
+        portal:admin:manageLicenses                  Grants the ability to assign licenses to members of organization.
+        ---------------------------------------      ------------------------------------------------------------------------
+        portal:admin:updateMemberCategorySchema      Grants the ability to configure categories for members.
+        =======================================      ========================================================================
+        
+        *Groups*
 
-            *Groups*
+        =====================================       ========================================================================
+        **Privilege**                               **Description**
+        -------------------------------------       ------------------------------------------------------------------------
+        portal:admin:viewGroups                     Grants the ability to view all groups within organization.
+        -------------------------------------       ------------------------------------------------------------------------
+        portal:admin:updateGroups                   Grants the ability to update groups within organization.
+        -------------------------------------       ------------------------------------------------------------------------
+        portal:admin:deleteGroups                   Grants the ability to delete groups within organization.
+        -------------------------------------       ------------------------------------------------------------------------
+        portal:admin:reassignGroups                 Grants the ability to reassign groups to other members within organization.
+        -------------------------------------       ------------------------------------------------------------------------
+        portal:admin:assignToGroups                 Grants the ability to assign members to, and remove members from
+                                                    groups within organization.
+        -------------------------------------       ------------------------------------------------------------------------
+        portal:admin:manageEnterpriseGroups         Grants the ability to link group membership to an enterprise group.
+        -------------------------------------       ------------------------------------------------------------------------
+        portal:admin:createUpdateCapableGroup       Grants the ability to create a group with update capabilities.
+        =====================================       ========================================================================
+        
 
-                1. portal:admin:viewGroups: grants the ability to view all groups within organization.
-                2. portal:admin:updateGroups: grants the ability to update groups within organization.
-                3. portal:admin:deleteGroups: grants the ability to delete groups within organization.
-                4. portal:admin:reassignGroups: grants the ability to reassign groups to other members within organization.
-                5. portal:admin:assignToGroups: grants the ability to assign members to, and remove members from, groups within organization.
-                6. portal:admin:manageEnterpriseGroups: grants the ability to link group membership to an enterprise group. (This privilege is only applicable to ArcGIS Enterprise.)
+        *Content*
+ 
+        =====================================     ========================================================================
+        **Privilege**                             **Description**
+        -------------------------------------     ------------------------------------------------------------------------
+        portal:admin:viewItems                    Grants the ability to view all content within organization.
+        -------------------------------------     ------------------------------------------------------------------------
+        portal:admin:updateItems                  Grants the ability to update content within organization.
+        -------------------------------------     ------------------------------------------------------------------------
+        portal:admin:deleteItems                  Grants the ability to delete content within organization.
+        -------------------------------------     ------------------------------------------------------------------------
+        portal:admin:reassignItems                Grants the ability to reassign content to other members within organization.
+        -------------------------------------     ------------------------------------------------------------------------
+        portal:admin:shareToGroup                 Grants the ability to share other member's content to groups the user belongs to.
+        -------------------------------------     ------------------------------------------------------------------------
+        portal:admin:shareToOrg                   Grants the ability to share other member's content to organization.
+        -------------------------------------     ------------------------------------------------------------------------
+        portal:admin:shareToPublic                Grants the ability to share other member's content to all users of the portal.
+        -------------------------------------     ------------------------------------------------------------------------
+        portal:admin:updateItemCategorySchema     Grants the ability to create and update content categories in the organization.
+        =====================================     ========================================================================
+        
+        *Webhooks* (*ArcGIS Enterprise* only)
+        
+        ===============================     ========================================================================
+        **Privilege**                       **Description**
+        -------------------------------     ------------------------------------------------------------------------
+        portal:admin:manageWebhooks         Grant the ability to create, edit, delete and manage all webhooks within
+                                            the organization.
+        ===============================     ========================================================================                                   
+        
+        *ArcGIS Marketplace Subscriptions* (*ArcGIS Online* only)
 
-            *Content*
-
-                1. portal:admin:viewItems: grants the ability to view all content within organization.
-                2. portal:admin:updateItems: grants the ability to update content within organization.
-                3. portal:admin:deleteItems: grants the ability to delete content within organization.
-                4. portal:admin:reassignItems: grants the ability to reassign content to other members within organization.
-                5. portal:admin:shareToGroup: grants the ability to share other member's content to groups the user belongs to.
-                6. portal:admin:shareToOrg: grants the ability to share other member's content to organization.
-                7. portal:admin:shareToPublic: grants the ability to share other member's content to all users of the portal.
-
-            *ArcGIS Marketplace Subscriptions*
-
-                1. marketplace:admin:purchase: grants the ability to request purchase information about apps and data in ArcGIS Marketplace. (This privilege is only applicable to ArcGIS Online.)
-                2. marketplace:admin:startTrial: grants the ability to start trial subscriptions in ArcGIS Marketplace. (This privilege is only applicable to ArcGIS Online.)
-                3. marketplace:admin:manage: grants the ability to create listings, list items and manage subscriptions in ArcGIS Marketplace. (This privilege is only applicable to ArcGIS Online.)
-
+        ===============================     ========================================================================
+        **Privilege**                       **Description**
+        -------------------------------     ------------------------------------------------------------------------
+        marketplace:admin:purchase          Grants the ability to request purchase information about apps and data
+                                            in ArcGIS Marketplace.
+        -------------------------------     ------------------------------------------------------------------------
+        marketplace:admin:startTrial        Grants the ability to start trial subscriptions in ArcGIS Marketplace.
+        -------------------------------     ------------------------------------------------------------------------
+        marketplace:admin:manage            Grants the ability to create listings, list items and manage
+                                            subscriptions in ArcGIS Marketplace.
+        ===============================     ========================================================================
+        
+        *Organization Settings*
+        
+        ===================================     ========================================================================
+        **Privilege**                           **Description**
+        -----------------------------------     ------------------------------------------------------------------------
+        portal:admin:manageSecurity             Grants ability to manage security and infrastructure settings
+        -----------------------------------     ------------------------------------------------------------------------
+        portal:admin:manageWebsite              Grants the ability to manage the website settings.
+        -----------------------------------     ------------------------------------------------------------------------
+        portal:admin:manageCollaborations       Grants the ability to administer the organization's collaborations.
+        -----------------------------------     ------------------------------------------------------------------------
+        portal:admin:manageCredits              Grants the ability to manage the organization's credit budget settings.
+                                                (*ArcGIS Online* only)
+        -----------------------------------     ------------------------------------------------------------------------
+        portal:admin:manageServers              Grants the ability to manage the servers federated with the
+                                                organization. (*ArcGIS Enterprise* only)
+        -----------------------------------     ------------------------------------------------------------------------
+        portal:admin:manageUtilityServices      Grants the ability to manage the utility services configured with the
+                                                organization.
+        -----------------------------------     ------------------------------------------------------------------------
+        portal:admin:manageRoles                Grants the ability to manage the organization's roles.
+        -----------------------------------     ------------------------------------------------------------------------
+        portal:admin:createGPWebhook            Grants the ability to create, edit and delete their own
+                                                geoprocessing webhook. (*ArcGIS Enterprise* only)
+        ===================================     ========================================================================
+        
+        
         **Publisher Privileges:**
-
-            *Content*
-
-                1. portal:publisher:publishFeatures: grants the ability to publish hosted feature layers from shapefiles, CSVs, etc.
-                2. portal:publisher:publishTiles: grants the ability to publish hosted tile layers from tile packages, features, etc.
-                3. portal:publisher:publishScenes: grants the ability to publish hosted scene layers.
-
+        
+        *Content*
+ 
+        ==========================================    =========================================================================
+        **Privilege**                                 **Description**
+        ------------------------------------------    -------------------------------------------------------------------------
+        portal:publisher:publishFeatures              Grants the ability to publish hosted feature layers.
+        ------------------------------------------    -------------------------------------------------------------------------
+        portal:publisher:publishTiles                 Grants the ability to publish hosted tile layers.
+        ------------------------------------------    -------------------------------------------------------------------------
+        portal:publisher:publishScenes                Grants the ability to publish hosted scene layers.
+        ------------------------------------------    -------------------------------------------------------------------------
+        portal:publisher:publishServerServices        Grants the ability to publish non-hosted server services.
+                                                      (*ArcGIS Enterprise* only)
+        ------------------------------------------    -------------------------------------------------------------------------
+        portal:publisher:publishServerGPServices      Grants the ability to publish non-hosted geoprocessing services
+                                                      (*ArcGIS Enterprise* only)
+        ------------------------------------------    -------------------------------------------------------------------------
+        portal:publisher:publishKnowledgeGraph        Grants the ability to create and publish knowledge graphs.
+                                                      (*ArcGIS Enterprise* only)
+        ------------------------------------------    -------------------------------------------------------------------------
+        portal:publisher:bulkPublishFromDataStores    Grants the ability to publish web layers from a registered data store.
+                                                      (*ArcGIS Enterprise* only)
+        ------------------------------------------    -------------------------------------------------------------------------
+        portal:publisher:enumerateDataStores          Grants the ability to get list of datasets from a registered data store.
+                                                      (*ArcGIS Enterprise* only)
+        ------------------------------------------    -------------------------------------------------------------------------
+        portal:pulisher:registerDataStores            Grants the ability to register data stores to the Enterprise. (*ArcGIS
+                                                      Enterprise* only)
+        ------------------------------------------    -------------------------------------------------------------------------
+        portal:publisher:publishTiledImagery          Grants the ability to publish hosted tiled imagery layers from a single
+                                                      image or collection of images.
+        ------------------------------------------    -------------------------------------------------------------------------
+        portal:publisher:publishDynamicImagery        Grants the ability to publish hosted dynamic imagery layers from a single
+                                                      image or collection of images.
+        ------------------------------------------    -------------------------------------------------------------------------
+        premium:publisher:createNotebooks             Grants the ability to create and edit interactive notebooks items.
+        ------------------------------------------    -------------------------------------------------------------------------
+        premium:publisher:scheduleNotebooks           Grants the ability to schedule future automated runs of a notebook.
+        ------------------------------------------    -------------------------------------------------------------------------
+        portal:publisher:createDataPipelines          Grants the ability to create, edit and run data pipelines.
+        ==========================================    =========================================================================
+        
+        *Premium Content*
+        
+        =========================================    =================================================================================
+        **Privilege**                                **Description**
+        -----------------------------------------    ---------------------------------------------------------------------------------
+        premium:publisher:geoanalytics               Grants the ability to use big data analytics. ()
+        -----------------------------------------    ---------------------------------------------------------------------------------
+        premium:publisher:rasteranalysis             Grants the ability to use raster analystics.
+        -----------------------------------------    ---------------------------------------------------------------------------------
+        premium:publisher:createAdvancedNotebooks    Grants the ability to publish a notebook as a geoprocessing service.
+                                                     (*ArcGIS Enterprise* only)
+        =========================================    =================================================================================
+        
+        
         **User Privileges:**
+        
+        *Members*
+        
+        ===============================     ========================================================================
+        **Privilege**                       **Description**
+        -------------------------------     ------------------------------------------------------------------------
+        portal:user:viewOrgUsers            Grants members to view other organization members.
+        ===============================     ========================================================================
 
-            *Groups*
+        *Groups*
+        
+        ===========================================    ========================================================================
+        **Privilege**                                  **Description**
+        -------------------------------------------    ------------------------------------------------------------------------
+        portal:user:createGroup                        Grants the ability for a member to create, edit, and delete their own groups.
+        -------------------------------------------    ------------------------------------------------------------------------
+        portal:user:joinGroup                          Grants the ability to join groups within organization.
+        -------------------------------------------    ------------------------------------------------------------------------
+        portal:user:joinNonOrgGroup                    Grants the ability to join groups external to the organization.
+                                                       (*ArcGIS Online* only)
+        -------------------------------------------    ------------------------------------------------------------------------
+        portal:user:viewOrgGroups                      Grants members the ability to view groups shared to the organization.
+        -------------------------------------------    ------------------------------------------------------------------------
+        portal:user:addExternalMembersToGroup          Grants the abitlity to create groups that allow external members,
+                                                       as well as invite external members to groups (*ArcGIS Online* only)
+        -------------------------------------------    ------------------------------------------------------------------------                                          
+        portal:user:manageCollaborationGroupMembers    Grants the ability to manage members in partnered collaboration groups.
+                                                       (*ArcGIS Online* only)
+        ===========================================    ========================================================================
+        
+        *Content*
+        
+        ===============================     ========================================================================
+        **Privilege**                       **Description**
+        -------------------------------     ------------------------------------------------------------------------
+        portal:user:createItem              Grants the ability for a member to create, edit, and delete their own
+                                            content.
+        -------------------------------     ------------------------------------------------------------------------
+        portal:user:viewTracks              Grants the ability to to view members' location tracks via shared track
+                                            views when location sharing is enabled. (*ArcGIS Enterprise* only)
+        -------------------------------     ------------------------------------------------------------------------
+        portal:user:reassignItems           Grants users the ability to reassign their own content to other
+                                            organization members with the receive items privilege.
+        -------------------------------     ------------------------------------------------------------------------
+        portal:user:receiveItems            Grants users the ability to receive items reassigned to them by other
+                                            organization members with the reassign items privilege.
+        -------------------------------     ------------------------------------------------------------------------
+        portal:user:viewOrgItems            Grants members the ability to view content shared with the organization.
+        ===============================     ========================================================================
+        
+        *Sharing*
 
-                1. portal:user:createGroup: grants the ability for a member to create, edit, and delete their own groups.
-                2. portal:user:joinGroup: grants the ability to join groups within organization.
-                3. portal:user:joinNonOrgGroup: grants the ability to join groups external to the organization. (This privilege is only applicable to ArcGIS Online.)
+        =================================     ========================================================================
+        **Privilege**                         **Description**
+        ---------------------------------     ------------------------------------------------------------------------
+        portal:user:shareToGroup              Grants the ability to share content to groups.
+        ---------------------------------     ------------------------------------------------------------------------
+        portal:user:shareToOrg                Grants the ability to share content to organization.
+        ---------------------------------     ------------------------------------------------------------------------
+        portal:user:shareToPublic             Grants the ability to share content to all users of portal.
+        ---------------------------------     ------------------------------------------------------------------------
+        portal:user:shareGroupToOrg           Grants the ability to make groups discoverable by the organization.
+        ---------------------------------     ------------------------------------------------------------------------
+        portal:user:shareGroupToPublic        Grants the ability to make groups discoverable by all users of portal.
+        =================================     ========================================================================
+        
+        *Premium Content*
 
-            *Content*
+        ===============================     ========================================================================
+        **Privilege**                       **Description**
+        -------------------------------     ------------------------------------------------------------------------
+        premium:user:geocode                Grants the ability to perform large-volume geocoding tasks with the
+                                            Esri World Geocoder such as publishing a CSV of addresses as hosted
+                                            feature layer.
+        -------------------------------     ------------------------------------------------------------------------
+        premium:user:networkanalysis        Grants the ability to perform network analysis tasks such as routing
+                                            and drive-time areas.
+        -------------------------------     ------------------------------------------------------------------------
+        premium:user:geoenrichment          Grants the ability to geoenrich features.
+        -------------------------------     ------------------------------------------------------------------------
+        premium:user:demographics           Grants the ability to make use of premium demographic data.
+        -------------------------------     ------------------------------------------------------------------------
+        premium:user:spatialanalysis        Grants the ability to perform spatial analysis tasks.
+        -------------------------------     ------------------------------------------------------------------------
+        premium:user:elevation              Grants the ability to perform analytical tasks on elevation data.
+        -------------------------------     ------------------------------------------------------------------------
+        premium:user:featurereport          Grants the ability to create feature reports. (*ArcGIS Online* only)
+        ===============================     ========================================================================
+        
+        *Features*
 
-                1. portal:user:createItem: grants the ability for a member to create, edit, and delete their own content.
+        ===============================     ========================================================================
+        **Privilege**                       **Description**
+        -------------------------------     ------------------------------------------------------------------------
+        features:user:edit                  Grants the ability to edit features in editable layers, according to the
+                                            edit options enabled on the layer.
+        -------------------------------     ------------------------------------------------------------------------
+        features:user:fullEdit              Grants the ability to add, delete, and update features in a hosted
+                                            feature layer regardless of the editing options enabled on the layer.
+        ===============================     ========================================================================
+        
+        *Version Management* (*ArcGIS Enterprise* only)
+        
+        ===============================     ========================================================================
+        **Privilege**                       **Description**
+        -------------------------------     ------------------------------------------------------------------------
+        features:user:manageVersions        Grant the ability to manage version locks and view, alter, delete, edit,
+                                            reconcile, and post to all branch versions accessed through
+                                            ArcGIS Server feature layers. 
+        ===============================     ========================================================================
+        
+        *Open Data* (*ArcGIS Online* only)
 
-            *Sharing*
-
-                1. portal:user:shareToGroup: grants the ability to share content to groups.
-                2. portal:user:shareToOrg: grants the ability to share content to organization.
-                3. portal:user:shareToPublic: grants the ability to share content to all users of portal.
-                4. portal:user:shareGroupToOrg: grants the ability to make groups discoverable by the organization.
-                5. portal:user:shareGroupToPublic: grants the ability to make groups discoverable by all users of portal.
-
-            *Premium Content*
-
-                1. premium:user:geocode: grants the ability to perform large-volume geocoding tasks with the Esri World Geocoder such as publishing a CSV of addresses as hosted feature layer.
-                2. premium:user:networkanalysis: grants the ability to perform network analysis tasks such as routing and drive-time areas.
-                3. premium:user:geoenrichment: grants the ability to geoenrich features.
-                4. premium:user:demographics: grants the ability to make use of premium demographic data.
-                5. premium:user:spatialanalysis: grants the ability to perform spatial analysis tasks.
-                6. premium:user:elevation: grants the ability to perform analytical tasks on elevation data.
-
-            *Features*
-
-                1. features:user:edit: grants the ability to edit features in editable layers, according to the edit options enabled on the layer.
-                2. features:user:fullEdit: grants the ability to add, delete, and update features in a hosted feature layer regardless of the editing options enabled on the layer.
-
-            *Open Data*
-
-                1. opendata:user:openDataAdmin: grants the ability to manage Open Data Sites for the organization. (This privilege is only applicable to ArcGIS Online.)
-                2. opendata:user:designateGroup: grants the ability to designate groups within organization as being available for use in Open Data. (This privilege is only applicable to ArcGIS Online.)
-
+        ===============================     ========================================================================
+        **Privilege**                       **Description**
+        -------------------------------     ------------------------------------------------------------------------
+        opendata:user:openDataAdmin         Grants the ability to manage Open Data Sites for the organization.
+        -------------------------------     ------------------------------------------------------------------------
+        opendata:user:designateGroup        Grants the ability to designate groups within organization as being
+                                            available for use in Open Data.
+        ===============================     ========================================================================
+        
         """
         resp = self._portal.con.post(
             "portals/self/roles/" + self.role_id + "/privileges",
@@ -10038,12 +10372,12 @@ class Group(dict):
         ================  ========================================================
         **Parameter**      **Description**
         ----------------  --------------------------------------------------------
-        usernames         Required list of strings.
-                          A comma-separated list of users to be removed.
+        usernames         Required list of strings. A comman-separated list of
+                          users to be removed.
         ================  ========================================================
 
         :return:
-            A dictionary with a key notRemoved that is a list of users not removed.
+            A dictionary with a key notRemoved that is a list of users not removed.      
         """
         users = []
         if isinstance(usernames, (list, tuple)) == False:
@@ -14193,9 +14527,10 @@ class Item(dict):
         ================  ========================================================
         **Parameter**      **Description**
         ----------------  --------------------------------------------------------
-        target_owner      Required string or User. The new desired owner of the item.
+        target_owner      Required string or :class:`~arcgis.gis.User`. The string
+                          must be a *username* value.
         ----------------  --------------------------------------------------------
-        target_folder     Optional string. The folder to move the item to.
+        target_folder     Optional string. The folder title to move the item to.
         ================  ========================================================
 
         :return:
