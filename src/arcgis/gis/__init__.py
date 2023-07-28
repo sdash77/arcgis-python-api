@@ -1951,19 +1951,15 @@ class GroupMigrationManager(object):
         `EPK Item` is created, you can download it, :meth:`~arcgis.gis.ContentManager.add`
         it to a receiving ArcGIS Enterprise and then :meth:`~arcgis.gis.GroupMigrationManager.load`
         it into a :class:`~arcgis.gis.Group` in that Enterprise deployment. The method will
-        handle updating service URLs and item ID used in any web maps,
+        handle updating service URLs and item IDs used in any web maps,
         web-mapping applications, and/or associated web layers in those items during
         the *load* operation. See full datails in the
         `Export Group Content <https://developers.arcgis.com/rest/users-groups-and-items/export-group-content.htm>`_ documentation.
         
-        See the `Supported items <https://developers.arcgis.com/rest/users-groups-and-items/export-group-content.htm#ESRI_SECTION2_0C00F2CEA194453D8E91F9E1138CE7E1>`_
-        documentation for a full list of *items* that can be included in an
-        export package.
-        
         .. note::
             There are some limits to this functionality. Packages should be under 10 GB in size
-            and only hosted feature layers, web maps, web-mapping apps, and other text-based
-            items are supported. You need to have **administrative** privileges to run this
+            and only `supported items <https://developers.arcgis.com/rest/users-groups-and-items/export-group-content.htm#ESRI_SECTION2_0C00F2CEA194453D8E91F9E1138CE7E1>`_
+            can be exported. You also must have **administrative** privileges to run this
             operation.
         
         ==================     ====================================================================
