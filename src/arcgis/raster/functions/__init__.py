@@ -13472,6 +13472,7 @@ def merge_rasters(
 def region_pixel_count(raster, max_region_size=100, pixel_neighborhood=4):
     """
     The region_pixel_count function returns an image where each pixel contains the number of pixels within a connected region.
+    This function is available from 11.2 onwards.
 
     The arguments for this function are as follows:
 
@@ -13527,7 +13528,8 @@ def region_pixel_count(raster, max_region_size=100, pixel_neighborhood=4):
 
 def gradient(raster, gradient_dimension="X", denominator_unit="DEFAULT"):
     """
-    Compute gradient along a specified dimension
+    Compute gradient along a specified dimension.
+    This function is available from 11.2 onwards.
 
     The arguments for this function are as follows:
 
