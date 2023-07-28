@@ -1151,6 +1151,16 @@ def prepare_tabulardata(
 
                             .. note::
                                 Applies to classification problems.
+    ---------------------   -------------------------------------------
+    random_split            Optional boolean. sets the behaviour of train and validation
+                            split to random or last n steps. If set to True then random
+                            sampling will be performed. Otherwise, last n steps will be
+                            used as validation. val_split_pct will determine the number
+                            the records for validation.
+                            Default value is True
+
+                            .. note::
+                                Applies to timeseries
     =====================   ===========================================
 
     :return: `TabularData` object
@@ -1172,6 +1182,10 @@ def prepare_tabulardata(
     stratify = False
     if kwargs.get("stratify") == True:
         stratify = True
+
+    random_split = True
+    if kwargs.get("random_split") == False:
+        random_split = False
 
     HAS_COLUMN_TRANSFORMS = False
 
@@ -1222,6 +1236,7 @@ def prepare_tabulardata(
         batch_size=batch_size,
         index_field=index_field,
         column_transforms_mapping=column_transforms_mapping,
+        random_split=random_split,
     )
 
     if working_dir is None:

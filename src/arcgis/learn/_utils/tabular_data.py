@@ -20,6 +20,7 @@ try:
     from fastai.data_block import DatasetType
     import torch
     import pandas as pd
+    from functools import reduce
     from .utils import arcpy_localization_helper
 
     HAS_FASTAI = True
@@ -90,6 +91,7 @@ class TabularDataObject(object):
         batch_size=64,
         index_field=None,
         column_transforms_mapping=None,
+        random_split=True,
     ):
         if not HAS_FASTAI:
             return
@@ -164,6 +166,7 @@ class TabularDataObject(object):
         tabular_data._bs = batch_size
         tabular_data._seed = seed
         tabular_data._cell_sizes = cell_sizes
+        tabular_data._random_split = random_split
 
         tabular_data._is_empty = False
 
@@ -183,11 +186,14 @@ class TabularDataObject(object):
                             imabalanced_class_list[row] = count
                 except Exception as e:
                     warnings.warn(f"Unable to check for class imbalance [reason : {e}]")
+
                 if stratify:
                     if len(imabalanced_class_list) > 0:
                         try:
                             warnings.warn(
-                                f'We see a class imbalance in the dataset. The class(es) {",".join([str(key) for key in imabalanced_class_list.keys()])} does not have enough data points in your dataset.'
+                                f"We see a class imbalance in the dataset. "
+                                f'The class(es) {",".join([str(key) for key in imabalanced_class_list.keys()])} does '
+                                f"not have enough data points in your dataset."
                             )
                         except:
                             warnings.warn("We see a class imbalance in the dataset")
@@ -211,7 +217,10 @@ class TabularDataObject(object):
                                 ].index
                             )
                             warnings.warn(
-                                f'For valid statification all classes should have at least {str(req_instances_per_class)} data points, class(es) {",".join(str(classes_below_req_intances))} in your data does not meet the condition. Unable to perform stratified splitting, falling back to random split'
+                                f"For valid statification all classes should have at least"
+                                f" {str(req_instances_per_class)} data points, class(es)"
+                                f' {",".join(str(classes_below_req_intances))} in your data does not meet the'
+                                f" condition. Unable to perform stratified splitting, falling back to random split"
                             )
                             validation_indexes = tabular_data._dataframe.sample(
                                 n=round(val_split_pct * len(tabular_data._dataframe)),
@@ -239,7 +248,11 @@ class TabularDataObject(object):
                     if len(imabalanced_class_list) > 0:
                         try:
                             warnings.warn(
-                                f'We see a class imbalance in the dataset. The class(es) {",".join([str(key) for key in imabalanced_class_list.keys()])} does not have enough data points in your dataset. Although, class imbalance cannot be overcome easily, adding the parameter stratify = True will to a certain extent help get over this problem.'
+                                f"We see a class imbalance in the dataset. The class(es) "
+                                f'{",".join([str(key) for key in imabalanced_class_list.keys()])} '
+                                f"does not have enough data points in your dataset. Although, "
+                                f"class imbalance cannot be overcome easily, adding the parameter stratify = True "
+                                f"will to a certain extent help get over this problem."
                             )
                         except:
                             warnings.warn("We see a class imbalance in the dataset")
@@ -249,10 +262,23 @@ class TabularDataObject(object):
                         random_state=seed,
                     ).index.to_list()
             else:
-                validation_indexes = random.sample(
-                    range(len(tabular_data._dataframe)),
-                    round(val_split_pct * len(tabular_data._dataframe)),
-                )
+                if val_split_pct > 1:
+                    val_split_pct = val_split_pct/len(tabular_data._dataframe)
+                if tabular_data._random_split:
+                    validation_indexes = random.sample(
+                        range(len(tabular_data._dataframe)),
+                        round(val_split_pct * len(tabular_data._dataframe)),
+                    )
+                else:
+                    number_of_rec = math.ceil(
+                        val_split_pct * len(tabular_data._dataframe)
+                    )
+                    validation_indexes = list(
+                        range(
+                            len(tabular_data._dataframe) - number_of_rec,
+                            len(tabular_data._dataframe),
+                        )
+                    )
 
             tabular_data._validation_indexes = validation_indexes
         if tabular_data._dependent_variable:
@@ -769,6 +795,8 @@ class TabularDataObject(object):
         )
         processed_dataframe = processed_dataframe.loc[:, order_columns]
 
+        base_index = 0
+        all_index = []
         for k in range(len(unq_locations)):
             if unq_locations[0] is not None:
                 loc_processed_dataframe = processed_dataframe[
@@ -778,7 +806,7 @@ class TabularDataObject(object):
             else:
                 loc_processed_dataframe = processed_dataframe
 
-            for i in range(len(loc_processed_dataframe) - seq_len - step):
+            for i in range(len(loc_processed_dataframe) - seq_len - step + 1):
                 bunch = []
                 tb = []
                 for col in list(loc_processed_dataframe.columns.values):
@@ -795,20 +823,27 @@ class TabularDataObject(object):
                     np.stack(tb, axis=1).ravel()
                 )  # relying on the fastai loss calculation where they
                 # flatten the output then calculate the loss
-
+            total_slices = len(loc_processed_dataframe) - seq_len - step + 1
+            base_index = self._sample_slice(
+                len(loc_processed_dataframe),
+                all_index,
+                base_index,
+                total_slices,
+                multistep=multistep,
+                step=step,
+            )
+        # generate the validatio index in slices
         big_bunch = np.array(big_bunch)
         target_bunch = np.array(target_bunch)
         random.seed(self._seed)
-        validation_indexes = random.sample(
-            range(big_bunch.shape[0]), round(self._val_split_pct * big_bunch.shape[0])
+        validation_indexes = reduce(
+            lambda x, y: x + y, map(lambda i: list(i[0] + np.array(i[1])), all_index)
         )
-
         self._validation_indexes_ts = validation_indexes
 
         self._training_indexes_ts = list(
             set([i for i in range(big_bunch.shape[0])]) - set(validation_indexes)
         )
-
         X_train = big_bunch.take(self._training_indexes_ts, axis=0)
         X_valid = big_bunch.take(self._validation_indexes_ts, axis=0)
         y_train = target_bunch.take(self._training_indexes_ts, axis=0)
@@ -900,6 +935,8 @@ class TabularDataObject(object):
         else:
             unq_locations = [None]
 
+        base_index = 0
+        all_index = []
         for k in range(len(unq_locations)):
             if unq_locations[0] is not None:
                 loc_processed_dataframe = processed_dataframe[
@@ -923,15 +960,22 @@ class TabularDataObject(object):
                 df_columns["target"].append(
                     loc_processed_dataframe[_dependent_variable][i + seq_len]
                 )
-
+            total_slices = len(loc_processed_dataframe) - seq_len
+            base_index = self._sample_slice(
+                len(loc_processed_dataframe),
+                all_index,
+                base_index,
+                total_slices,
+                multistep=False,
+            )
         df = pd.DataFrame(df_columns)
 
         columns = list(df.columns.values)
         columns.remove("target")
 
         random.seed(self._seed)
-        validation_indexes = random.sample(
-            range(len(df)), round(self._val_split_pct * len(df))
+        validation_indexes = reduce(
+            lambda x, y: x + y, map(lambda i: list(i[0] + np.array(i[1])), all_index)
         )
         self._validation_indexes_ts = validation_indexes
 
@@ -964,6 +1008,39 @@ class TabularDataObject(object):
         )
 
         return data
+
+    def _sample_slice(
+        self, total_length, all_index, base_index, total_slices, multistep=False, step=1
+    ):
+        if self._val_split_pct < 1:
+            validation_no_rec = round(self._val_split_pct * total_length)
+        else:
+            validation_no_rec = self._val_split_pct
+        if multistep:
+            # First separate last n steps and then sample rest of the records from the bunchs
+            number_of_extra_records = validation_no_rec - step
+            extra_records = list(range(total_slices - step, total_slices))
+            if number_of_extra_records >0:
+                extra_records += random.sample(
+                    range(total_slices - step), number_of_extra_records
+                )
+            all_index.append((base_index, extra_records))
+        else:
+            if self._random_split:
+                # validation_no_rec = round(self._val_split_pct * len(loc_processed_dataframe))
+                all_index.append(
+                    (base_index, random.sample(range(total_slices), validation_no_rec))
+                )
+            else:
+                # number_of_rec = math.ceil(self._val_split_pct * len(loc_processed_dataframe))
+                all_index.append(
+                    (
+                        base_index,
+                        list(range(total_slices - validation_no_rec, total_slices)),
+                    )
+                )
+        base_index += total_slices
+        return base_index
 
     def _col_transform(self, normalize):
         self._encoder_mapping = None
