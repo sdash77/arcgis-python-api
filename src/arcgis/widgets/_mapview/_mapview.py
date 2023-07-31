@@ -871,102 +871,119 @@ class MapView(widgets.DOMWidget):
         return [self._hashed_layers[key] for key in self._hashed_layers]
 
     # end how we store layers
+    @property
+    def basemaps(self):
+        """
+        The ``basemaps`` layers are a list of possible basemaps to set :attr:`~arcgis.widgets.MapView.basemap` with:
 
-    basemaps = [
-        "dark-gray-vector",
-        "gray-vector",
-        "hybrid",
-        "oceans",
-        "osm",
-        "satellite",
-        "streets-navigation-vector",
-        "streets-night-vector",
-        "streets-relief-vector",
-        "streets-vector",
-        "terrain",
-        "topo-vector",
-        "arcgis-imagery",
-        "arcgis-imagery-standard",
-        "arcgis-imagery-labels",
-        "arcgis-light-gray",
-        "arcgis-dark-gray",
-        "arcgis-navigation",
-        "arcgis-navigation-night",
-        "arcgis-streets",
-        "arcgis-streets-night",
-        "arcgis-streets-relief",
-        "arcgis-topographic",
-        "arcgis-oceans",
-        "osm-standard",
-        "osm-standard-relief",
-        "osm-streets",
-        "osm-streets-relief",
-        "osm-light-gray",
-        "osm-dark-gray",
-        "arcgis-terrain",
-        "arcgis-community",
-        "arcgis-charted-territory",
-        "arcgis-colored-pencil",
-        "arcgis-nova",
-        "arcgis-modern-antique",
-        "arcgis-midcentury",
-        "arcgis-newspaper",
-        "arcgis-hillshade-light",
-        "arcgis-hillshade-dark",
-        "arcgis-human-geography",
-        "arcgis-human-geography-dark",
-    ]
+        1. Dark Grey Vector
+        2. Gray Vector
+        3. Hybrid
+        4. Oceans
+        5. OSM
+        6. Satellite
+        7. Streets Navigation Vector
+        8. Streets Night Vector
+        9. Streets Relief Vector
+        10. Streets Vector
+        11. Terrain
+        12. Topographic Vector
 
-    """
-    The ``basemaps`` layers are a list of possible basemaps to set :attr:`~arcgis.widgets.MapView.basemap` with:
-    
-    1. Dark Grey Vector
-    2. Gray Vector
-    3. Hybrid
-    4. Oceans
-    5. OSM
-    6. Satellite
-    7. Streets Navigation Vector
-    8. Streets Night Vector
-    9. Streets Relief Vector
-    10. Streets Vector
-    11. Terrain
-    12. Topographic Vector
+        There are basemap layers available if you are authenticated or provide an api key.
 
-    There are basemap layers available if you are authenticated or provide an api key.
+        1. ArcGIS Imagery
+        2. ArcGIS Imagery Standard
+        3. ArcGIS Imagery Labels
+        4. ArcGIS Light Gray
+        5. ArcGIS Dark Gray
+        6. ArcGIS Navigation
+        7. ArcGIS Navigation Night
+        8. ArcGIS Streets
+        9. ArcGIS Streets Night
+        10. ArcGIS Streets Relief
+        11. ArcGIS Topographic
+        12. ArcGIS Oceans
+        13. ArcGIS Standard
+        14. ArcGIS Standard Relief
+        15. ArcGIS Streets
+        16. ArcGIS Streets Relief
+        17. ArcGIS Open Street Map Light Gray
+        18. ArcGIS Open Street Map Dark Gray
+        19. ArcGIS Terrain
+        20. ArcGIS Community
+        21. ArcGIS Charted Territory
+        22. ArcGIS Colored Pencil
+        23. ArcGIS Nova
+        24. ArcGIS Modern Antique
+        25. ArcGIS Midcentury
+        26. ArcGIS Newspaper
+        27. ArcGIS Hillshade Light
+        28. ArcGIS Hillshade Dark
+        29. ArcGIS Human Geography
+        30. ArcGIS Human Geography Dark
 
-    1. ArcGIS Imagery
-    2. ArcGIS Imagery Standard
-    3. ArcGIS Imagery Labels
-    4. ArcGIS Light Gray
-    5. ArcGIS Dark Gray
-    6. ArcGIS Navigation
-    7. ArcGIS Navigation Night
-    8. ArcGIS Streets
-    9. ArcGIS Streets Night
-    10. ArcGIS Streets Relief
-    11. ArcGIS Topographic
-    12. ArcGIS Oceans
-    13. ArcGIS Standard
-    14. ArcGIS Standard Relief
-    15. ArcGIS Streets
-    16. ArcGIS Streets Relief
-    17. ArcGIS Open Street Map Light Gray
-    18. ArcGIS Open Street Map Dark Gray
-    19. ArcGIS Terrain
-    20. ArcGIS Community
-    21. ArcGIS Charted Territory
-    22. ArcGIS Colored Pencil
-    23. ArcGIS Nova
-    24. ArcGIS Modern Antique
-    25. ArcGIS Midcentury
-    26. ArcGIS Newspaper
-    27. ArcGIS Hillshade Light
-    28. ArcGIS Hillshade Dark
-    29. ArcGIS Human Geography
-    30. ArcGIS Human Geography Dark
+        """
+        if self._gis._is_authenticated:
+            return [
+                "dark-gray-vector",
+                "gray-vector",
+                "hybrid",
+                "oceans",
+                "osm",
+                "satellite",
+                "streets-navigation-vector",
+                "streets-night-vector",
+                "streets-relief-vector",
+                "streets-vector",
+                "terrain",
+                "topo-vector",
+                "arcgis-imagery",
+                "arcgis-imagery-standard",
+                "arcgis-imagery-labels",
+                "arcgis-light-gray",
+                "arcgis-dark-gray",
+                "arcgis-navigation",
+                "arcgis-navigation-night",
+                "arcgis-streets",
+                "arcgis-streets-night",
+                "arcgis-streets-relief",
+                "arcgis-topographic",
+                "arcgis-oceans",
+                "osm-standard",
+                "osm-standard-relief",
+                "osm-streets",
+                "osm-streets-relief",
+                "osm-light-gray",
+                "osm-dark-gray",
+                "arcgis-terrain",
+                "arcgis-community",
+                "arcgis-charted-territory",
+                "arcgis-colored-pencil",
+                "arcgis-nova",
+                "arcgis-modern-antique",
+                "arcgis-midcentury",
+                "arcgis-newspaper",
+                "arcgis-hillshade-light",
+                "arcgis-hillshade-dark",
+                "arcgis-human-geography",
+                "arcgis-human-geography-dark",
+            ]
+        else:
+            return [
+                "dark-gray-vector",
+                "gray-vector",
+                "hybrid",
+                "oceans",
+                "osm",
+                "satellite",
+                "streets-navigation-vector",
+                "streets-night-vector",
+                "streets-relief-vector",
+                "streets-vector",
+                "terrain",
+                "topo-vector",
+            ]
 
-    """
     # End other properties that don't interact with the model
 
     def __init__(self, gis=None, item=None, mode="2D", **kwargs):
@@ -1014,6 +1031,12 @@ class MapView(widgets.DOMWidget):
         self._synced_mapviews = []
         self._mapview_uuid_to_dlinks = {}
         self._dlinks = []
+        if gis:
+            self._gis = gis
+        else:
+            from arcgis import env
+
+            self._gis = env.active_gis
 
     # Start screenshot specific section
 

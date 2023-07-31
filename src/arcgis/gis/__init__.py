@@ -64,6 +64,7 @@ import concurrent.futures
 from cachetools import cached, TTLCache
 
 from arcgis.auth.tools import LazyLoader
+from arcgis.auth import EsriSession
 
 arcgis_env = LazyLoader("arcgis.env")
 arcgis = LazyLoader("arcgis")
@@ -362,6 +363,7 @@ class GIS(object):
     _pds = None
     _validate_item_url = None
     _properties = None
+    session: EsriSession
     """If 'True', the GIS instance is a GIS('home') from hosted nbs"""
 
     # admin = None
@@ -826,6 +828,7 @@ class GIS(object):
             self._product_version = [
                 int(i) for i in self._portal.get_version().split(".")
             ]
+        self.session: EsriSession = self._con._session
 
     # ----------------------------------------------------------------------
     @property
@@ -835,6 +838,29 @@ class GIS(object):
 
             self._toolgp = _Tools(self)
         return self._toolgp
+
+    # ----------------------------------------------------------------------
+    @property
+    @functools.lru_cache(maxsize=100)
+    def _is_authenticated(self) -> bool:
+        """Checks if the GIS is signed in"""
+        from ..auth._auth import check_response_for_error
+
+        url: str = self._portal.resturl + "community/self"
+        params: dict[str, Any] = {
+            "f": "json",
+        }
+        resp: requests.Response = self.session.get(url=url, params=params)
+        resp.raise_for_status()
+        try:
+            msg = check_response_for_error(resp)
+            if msg is None:
+                return True
+            else:
+                _log.info(msg)
+                return False
+        except:
+            return False
 
     # ----------------------------------------------------------------------
     @_lazy_property
@@ -1843,20 +1869,20 @@ class GroupMigrationManager(object):
     `Export Package <https://developers.arcgis.com/rest/users-groups-and-items/items-and-item-types.htm#GUID-57FD13A2-1A35-4F4D-B895-08CB48432E0D>`_)
     that can subsequently be added to another ArcGIS Enterprise and then
     loaded into a :class:`~arcgis.gis.Group`.
-    
+
     This class is not meant to be initialized directly, but instead an
     object of this class is accessed through the :attr:`~arcgis.gis.Group.migration`
     property on a :class:`~arcgis.gis.Group` object initialized from
     an ArcGIS Enterprise Group
-    
+
     .. code-block:: python
-        
+
         # Usage Example: Initializing a ``GroupMigrationManager`` object:
-        
+
         >>> gis = GIS(profile="your_enterprise_admin_profile")
-        
+
         >>> ent_grp = gis.groups.search("<group query>")[0]
-        
+
         >>> grp_mig_mgr = ent_grp.migration
     """
 
@@ -1955,13 +1981,13 @@ class GroupMigrationManager(object):
         web-mapping applications, and/or associated web layers in those items during
         the *load* operation. See full datails in the
         `Export Group Content <https://developers.arcgis.com/rest/users-groups-and-items/export-group-content.htm>`_ documentation.
-        
+
         .. note::
             There are some limits to this functionality. Packages should be under 10 GB in size
             and only `supported items <https://developers.arcgis.com/rest/users-groups-and-items/export-group-content.htm#ESRI_SECTION2_0C00F2CEA194453D8E91F9E1138CE7E1>`_
             can be exported. You also must have **administrative** privileges to run this
             operation.
-        
+
         ==================     ====================================================================
         **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
@@ -1977,23 +2003,23 @@ class GroupMigrationManager(object):
         ==================     ====================================================================
 
         :return:
-            An *export package* :class:`~arcgis.gis.Item` when `future=False`, or a 
+            An *export package* :class:`~arcgis.gis.Item` when `future=False`, or a
             :class:`Job <arcgis.gis._impl._jb.StatusJob>` when `future=True`
-            
+
         .. code-block:: python
-        
+
             # Usage Example: Asynchronous execution
-            
+
             >>> import time
             >>> from arcgis.gis import GIS
             >>>
             >>> gis = GIS(profile="your_enterprise_admin_profile")
-            
+
             >>> grp = gis.groups.get("<group_id>")
             >>> grp_mig_mgr = grp.migration
-            
+
             >>> mig_job = grp_mig_mgr.create()
-            
+
             >>> while mig_job.status != "completed":
             >>>     job_status = mig_job.status
             >>>     if job_status == "failed":
@@ -2002,11 +2028,11 @@ class GroupMigrationManager(object):
             >>>         print(job_status)
             >>>         time.sleep(3)
             >>> print(f"Job Status: {mig_job.status}")
-            
+
             processing
             processing
             Job Status: completed
-            
+
             >>> epk_item = mig_job.result()
         """
         if self._gis.users.me.role == "org_admin":
@@ -2056,19 +2082,19 @@ class GroupMigrationManager(object):
         """
         The ``load`` method imports the contents of an *export package*
         :class:`~arcgis.gis.Item` into a :class:`~arcgis.gis.Group`.
-        
+
         See the `Import Group Content <https://developers.arcgis.com/rest/users-groups-and-items/import-group.htm>`_
         documenation for full system details.
-        
+
         .. note::
             Administrative privileges are required to run this operation.
             Once imported, items will be owned by the importer, and will have
             to be manually reassigned to the proper owner if needed.
-        
+
         .. warning::
             The receiving ArcGIS Enterprise deployment must be using the same version or later
             of the ArcGIS Enterprise that generated the export package.
-            
+
         ================  ===============================================================================
         **Keys**          **Description**
         ----------------  -------------------------------------------------------------------------------
@@ -2102,42 +2128,42 @@ class GroupMigrationManager(object):
 
         :return:
             A dictionary when *future=False* or a :class:`Job <arcgis.gis._impl._jb.StatusJob>` when `future=True`.
-            
+
         .. code-block:: python
-        
+
             # Usage Example: Loading package results into a group
-            
+
             >>> source = GIS(profile="source_enterprise_admin_profile")
             >>> target = GIS(profile="target_enterprise_admin_profile")
-            
+
             >>> source_grp = source.groups.get("<group_id>")
             >>> source_epk_item = source_grp.migration.create(future=False)
-            
+
             >>> download_path = source_epk_item.download(save_path="path_on_system",
                                                          file_name="file_name.epk")
-            
+
             >>> target_epk_item = target.content.add(item_properties={"title": "Group data export item",
                                                                       "tags": "group_content_migration",
                                                                       "snippet": "Sample of loading package.",
                                                                       "type": "Export Package:},
                                                      date=download_path)
-            
+
             >>> target_grp_mig = target.groups.get("<target_group_id>").migration
             >>> grp_import_job = target_grp_mig.load(epk_item=target_epk_item)
-            
+
             >>> grp_import_job.messages
-            
+
             ["Starting import of items from EPK item '<item_id>' to group 'Group Title'.",
              "Starting the import of exported package item '<item_id>' containing 2 items.",
              "Import option to overwrite items if they exist is set to 'true'."]
-             
+
              >>> grp_import_job.result()
-            
+
             {'itemsImported': [<Item title:"Item1 title" type:<item1 type> owner:<item_owner>>,
              <Item title:"Item2 title" type:<item2 type> owner:<item_owner>>],
              'itemsSkipped': [],
-             'itemsFailedImport': []} 
-                         
+             'itemsFailedImport': []}
+
         """
 
         assert isinstance(epk_item, Item)
@@ -2191,16 +2217,16 @@ class GroupMigrationManager(object):
 
         :return:
             A dictionary containing the contents of the EPK Package
-            
+
         .. code-block:: python
-        
+
             # Usage Example: Inspecting an export package
-            
+
             >>> grp = gis.groups.get("<group_id>")
-            
+
             >>> export_epk_item = grp.migration.create(future=False)
             >>> grp.migration.inspect(epk_item = export_epk_item)
-            
+
             {'packageSummary': {'id': '68472b95bdfd4efa86531fd202151eda',
             'fileName': 'Group_Data_2023714_032552',
             'packageVersion': '1.0',
@@ -2230,7 +2256,7 @@ class GroupMigrationManager(object):
              'canImport': True,
              'created': 1689257010004,
              'modified': 1689253036102}]}
-            
+
         """
         if isinstance(epk_item, Item) and epk_item.type == "Export Package":
             try:
@@ -3331,13 +3357,13 @@ class UserManager(object):
         The ``create`` operation is used to create built-in or pre-create organization-specific identity
         store accounts for use in a Web GIS. See the respective documentation for complete details
         about configurating identity stores and managing access to your deployment:
-        
+
         * ``ArcGIS Enterprise`` - `Manage access to your portal <https://enterprise.arcgis.com/en/portal/latest/administer/windows/managing-access-to-your-portal.htm>`_
         * ``ArcGIS Online`` - `Invite and add members <https://doc.arcgis.com/en/arcgis-online/administer/invite-users.htm>`_
 
         .. note::
             Only an administrator can call this method.
-            
+
         .. note::
             When Portal for ArcGIS is connected to an
             `organization specific identity store <https://enterprise.arcgis.com/en/portal/latest/administer/windows/managing-access-to-your-portal.htm#ESRI_SECTION2_4E6A70E10A9444DD92662208198B8876>`_,
@@ -3357,18 +3383,18 @@ class UserManager(object):
         An organization administrator may configure `New Member Defaults`. When a Web GIS is configured
         with these values, any new user will receive these default values unless overridden by the
         corresponding arguments in this method. See the following documentation for additional details:
-            
+
         * `ArcGIS Online <https://doc.arcgis.com/en/arcgis-online/administer/configure-new-member-defaults.htm>`_
         * `ArcGIS Enterprise <https://enterprise.arcgis.com/en/portal/latest/administer/windows/configure-new-member-defaults.htm>`_
-            
+
         To query the organization for `New Member Defaults`, run the following code:
-            
+
         .. code-block:: python
-            
+
             >>> gis = GIS(profile="your_admin_profile")
-                
+
             >>> gis.users.user_settings
-            
+
         ================  ===============================================================================
         **Parameter**      **Description**
         ----------------  -------------------------------------------------------------------------------
@@ -3376,20 +3402,20 @@ class UserManager(object):
                           in all of ArcGIS Online. Must be between 6 to 24 characters long.
         ----------------  -------------------------------------------------------------------------------
         password          Required string if the `provider` argument is `arcgis`. If the argument is
-                          `enterprise`, meaning an 
+                          `enterprise`, meaning an
                           `organization-specific identity provider
                           <https://enterprise.arcgis.com/en/portal/latest/administer/windows/managing-access-to-your-portal.htm#ESRI_SECTION2_4E6A70E10A9444DD92662208198B8876>`_
                           is configured, the password parameter is optional (or ignored if present).
-                          
+
                           .. note::
                              If creating an ArcGIS Online organization user, the argument can be `None`
                              and users can subsequently set their password by clicking on a link that
-                             is emailed to them.  
-                            
+                             is emailed to them.
+
                           .. note::
                              This argument **must** be None if iniviting the user to an ArcGIS Online
                              organization and you want to send an email. Sending email invitations cannot
-                             have passwords set by an administrator.                     
+                             have passwords set by an administrator.
         ----------------  -------------------------------------------------------------------------------
         firstname         Required string. The first name for the user.
         ----------------  -------------------------------------------------------------------------------
@@ -3408,70 +3434,70 @@ class UserManager(object):
                           For any other default role, or a custom role within the organization, enter
                           the `role_id` value returned from the :meth:`~arcgis.gis.RoleManager.all` method
                           on the :class:`~arcgis.gis.RoleManager` class.
-                          
+
                           .. code-block:: python
-                          
+
                               >>> from arcgis.gis import GIS
-                              
+
                               >>> gis = GIS(profile="your_org_admin_profile")
-                              
+
                               >>> for org_role in gis.users.roles.all():
                                       print(f"{org_role.name:25}{org_role.role_id}")
         ----------------  -------------------------------------------------------------------------------
         provider          Optional string. The identity provider for the account. The default value is
                           `arcgis`. Possible values:
-                          
+
                           * `arcgis` - built-in identity provider
                           * `enterprise` - organization-specific identity provider
-                          
+
                           See documentation for managing organizational access for explanation of different
                           identity provider options:
-                          
+
                           * `ArcGIS Enterprise <https://enterprise.arcgis.com/en/portal/latest/administer/windows/managing-access-to-your-portal.htm>`_
                           * `ArcGIS Online <https://doc.arcgis.com/en/arcgis-online/administer/invite-users.htm>`_
         ----------------  -------------------------------------------------------------------------------
         idp_username      Required if `provider` argument is `enterprise`, otherwise not used. The name
-                          of the user as stored by the organization-specific identity store. 
+                          of the user as stored by the organization-specific identity store.
         ----------------  -------------------------------------------------------------------------------
         level             **Deprecated** Optional integer. The Web GIS system automatically sets this
                           argument based upon the `user_type` and `role` arguments. See
                           `Levels <https://enterprise.arcgis.com/en/portal/10.6/administer/windows/roles.htm#ESRI_SECTION1_08925CEF37334C619D52BC027C3C8DE1>`_
                           for detailed description.
-                          
+
                           .. note::
                               This parameter was deprecated with the 10.7 release.
         ----------------  -------------------------------------------------------------------------------
         user_type         Required string, unless specified in the `New Member Defaults`. The user type
                           license for an organization member. See
                           `user types <https://enterprise.arcgis.com/en/portal/latest/administer/windows/user-types-orgs.htm>`_
-                          for detailed descriptions of each `user type`. Each `user_type` is 
+                          for detailed descriptions of each `user type`. Each `user_type` is
                           compatible with specific `roles` in the organization. Compatibility is
                           determined by the `privileges` assigned to each `role`. Only certain `role`
-                          arguments will work with specific `user types`. The potential values 
-                          for this argument depend upon the organizational subscription and 
+                          arguments will work with specific `user types`. The potential values
+                          for this argument depend upon the organizational subscription and
                           licensing. Run the following query as an administrator to determine the
                           possible values:
-                          
+
                           .. code-block:: python
-                          
+
                               >>> for utype in gis.users.license_types:
                                       print(f"{utype['id]}")
-                          
+
                           .. note::
                               See the :attr:`~arcgis.gis.UserManager.license_types` property on the
                               :class:`~arcgis.gis.UserManager` class.
         ----------------  -------------------------------------------------------------------------------
         credits           Optional Float. The number of credits to assign a user.  The default is None,
                           unless specified in the `New Member Defaults`.
-                          
+
                           The following code will return the default value if it has been set:
-                          
+
                           .. code-block:: python
-                          
+
                               >>> gis = GIS(profile="your_admin_profile")
-                              
+
                               >>> gis.properties.defaultUserCreditAssignment
-                              
+
                           .. note::
                               Only applies to ArcGIS Online organizations.
         ----------------  -------------------------------------------------------------------------------
@@ -3487,14 +3513,14 @@ class UserManager(object):
             The :class:`user <arcgis.gis.User>` if successfully created, None if unsuccessful.
 
         .. code-block:: python
-            
+
             #Usage Example 1: New ArcGIS Online user using `New Member Defaults`
-            
+
             >>> ago = GIS(profile='your_online_admin_profile')
-            
+
             >>> for k,v in ago.users.user_settings.items():
             >>>     print(f'{k:20}{v}')
-            
+
             role                org_publisher
             userLicenseType     advancedUT
             groups              ['96c9a826e654481ba2cf8f6d04137b32']
@@ -3502,7 +3528,7 @@ class UserManager(object):
             apps                []
             appBundles          []
             categories          []
-            
+
             >>> new_user = ago.users.create(username= 'new_unique_username',
                                             password= '<strong_password>',
                                             firstname= 'user_firstname',
@@ -3524,7 +3550,7 @@ class UserManager(object):
 
             # Print valid values for `user_type` argument
             >>> [ut['id'] for ut in ago.users.license_types]
-            
+
             ['advancedUT',
             'basicUT',
             'creatorUT',
@@ -3539,7 +3565,7 @@ class UserManager(object):
             'standardUT',
             'storytellerUT',
             'viewerUT']
-            
+
             >>> user1 = ago.users.create(username='new_unique_username',
                                          password='<strong_password>',
                                          firstname="user_firstname",
@@ -3548,9 +3574,9 @@ class UserManager(object):
                                          description="Test user with custom role and non-default user type.",
                                          role='bKrTCjFF9tKbaFk8',
                                          user_type='creatorUT')
-                                         
+
             # Usage Example 3: New User invited with an email:
-            
+
             >>> user_e = ago.users.create(username="new_invited_uk_Q42eklm",
                                           password="S8V3*t4L8tr!&",
                                           firstname="user_firstname",
@@ -3913,7 +3939,7 @@ class UserManager(object):
 
         if groups is None:
             groups = []
-        
+
         if user_type.lower() in levels:
             user_type = levels[user_type.lower()]
 
@@ -5204,7 +5230,7 @@ class Role(object):
         portal:admin:disableUsers                    Grants the ability to enable and disable member accounts within organization.
         ---------------------------------------      ------------------------------------------------------------------------
         portal:admin:changeUserRoles                 Grants the ability to change the role a member is assigned within
-                                                     the organization. However, it does not grant the ability to promote 
+                                                     the organization. However, it does not grant the ability to promote
                                                      or demote a member from the Administrator role. That privilege is reserved
                                                      for the Administrator role alone.
         ---------------------------------------      ------------------------------------------------------------------------
@@ -5212,7 +5238,7 @@ class Role(object):
         ---------------------------------------      ------------------------------------------------------------------------
         portal:admin:updateMemberCategorySchema      Grants the ability to configure categories for members.
         =======================================      ========================================================================
-        
+
         *Groups*
 
         =====================================       ========================================================================
@@ -5233,10 +5259,10 @@ class Role(object):
         -------------------------------------       ------------------------------------------------------------------------
         portal:admin:createUpdateCapableGroup       Grants the ability to create a group with update capabilities.
         =====================================       ========================================================================
-        
+
 
         *Content*
- 
+
         =====================================     ========================================================================
         **Privilege**                             **Description**
         -------------------------------------     ------------------------------------------------------------------------
@@ -5256,16 +5282,16 @@ class Role(object):
         -------------------------------------     ------------------------------------------------------------------------
         portal:admin:updateItemCategorySchema     Grants the ability to create and update content categories in the organization.
         =====================================     ========================================================================
-        
+
         *Webhooks* (*ArcGIS Enterprise* only)
-        
+
         ===============================     ========================================================================
         **Privilege**                       **Description**
         -------------------------------     ------------------------------------------------------------------------
         portal:admin:manageWebhooks         Grant the ability to create, edit, delete and manage all webhooks within
                                             the organization.
-        ===============================     ========================================================================                                   
-        
+        ===============================     ========================================================================
+
         *ArcGIS Marketplace Subscriptions* (*ArcGIS Online* only)
 
         ===============================     ========================================================================
@@ -5279,9 +5305,9 @@ class Role(object):
         marketplace:admin:manage            Grants the ability to create listings, list items and manage
                                             subscriptions in ArcGIS Marketplace.
         ===============================     ========================================================================
-        
+
         *Organization Settings*
-        
+
         ===================================     ========================================================================
         **Privilege**                           **Description**
         -----------------------------------     ------------------------------------------------------------------------
@@ -5305,12 +5331,12 @@ class Role(object):
         portal:admin:createGPWebhook            Grants the ability to create, edit and delete their own
                                                 geoprocessing webhook. (*ArcGIS Enterprise* only)
         ===================================     ========================================================================
-        
-        
+
+
         **Publisher Privileges:**
-        
+
         *Content*
- 
+
         ==========================================    =========================================================================
         **Privilege**                                 **Description**
         ------------------------------------------    -------------------------------------------------------------------------
@@ -5350,9 +5376,9 @@ class Role(object):
         ------------------------------------------    -------------------------------------------------------------------------
         portal:publisher:createDataPipelines          Grants the ability to create, edit and run data pipelines.
         ==========================================    =========================================================================
-        
+
         *Premium Content*
-        
+
         =========================================    =================================================================================
         **Privilege**                                **Description**
         -----------------------------------------    ---------------------------------------------------------------------------------
@@ -5363,12 +5389,12 @@ class Role(object):
         premium:publisher:createAdvancedNotebooks    Grants the ability to publish a notebook as a geoprocessing service.
                                                      (*ArcGIS Enterprise* only)
         =========================================    =================================================================================
-        
-        
+
+
         **User Privileges:**
-        
+
         *Members*
-        
+
         ===============================     ========================================================================
         **Privilege**                       **Description**
         -------------------------------     ------------------------------------------------------------------------
@@ -5376,7 +5402,7 @@ class Role(object):
         ===============================     ========================================================================
 
         *Groups*
-        
+
         ===========================================    ========================================================================
         **Privilege**                                  **Description**
         -------------------------------------------    ------------------------------------------------------------------------
@@ -5391,13 +5417,13 @@ class Role(object):
         -------------------------------------------    ------------------------------------------------------------------------
         portal:user:addExternalMembersToGroup          Grants the abitlity to create groups that allow external members,
                                                        as well as invite external members to groups (*ArcGIS Online* only)
-        -------------------------------------------    ------------------------------------------------------------------------                                          
+        -------------------------------------------    ------------------------------------------------------------------------
         portal:user:manageCollaborationGroupMembers    Grants the ability to manage members in partnered collaboration groups.
                                                        (*ArcGIS Online* only)
         ===========================================    ========================================================================
-        
+
         *Content*
-        
+
         ===============================     ========================================================================
         **Privilege**                       **Description**
         -------------------------------     ------------------------------------------------------------------------
@@ -5415,7 +5441,7 @@ class Role(object):
         -------------------------------     ------------------------------------------------------------------------
         portal:user:viewOrgItems            Grants members the ability to view content shared with the organization.
         ===============================     ========================================================================
-        
+
         *Sharing*
 
         =================================     ========================================================================
@@ -5431,7 +5457,7 @@ class Role(object):
         ---------------------------------     ------------------------------------------------------------------------
         portal:user:shareGroupToPublic        Grants the ability to make groups discoverable by all users of portal.
         =================================     ========================================================================
-        
+
         *Premium Content*
 
         ===============================     ========================================================================
@@ -5454,7 +5480,7 @@ class Role(object):
         -------------------------------     ------------------------------------------------------------------------
         premium:user:featurereport          Grants the ability to create feature reports. (*ArcGIS Online* only)
         ===============================     ========================================================================
-        
+
         *Features*
 
         ===============================     ========================================================================
@@ -5466,17 +5492,17 @@ class Role(object):
         features:user:fullEdit              Grants the ability to add, delete, and update features in a hosted
                                             feature layer regardless of the editing options enabled on the layer.
         ===============================     ========================================================================
-        
+
         *Version Management* (*ArcGIS Enterprise* only)
-        
+
         ===============================     ========================================================================
         **Privilege**                       **Description**
         -------------------------------     ------------------------------------------------------------------------
         features:user:manageVersions        Grant the ability to manage version locks and view, alter, delete, edit,
                                             reconcile, and post to all branch versions accessed through
-                                            ArcGIS Server feature layers. 
+                                            ArcGIS Server feature layers.
         ===============================     ========================================================================
-        
+
         *Open Data* (*ArcGIS Online* only)
 
         ===============================     ========================================================================
@@ -5487,7 +5513,7 @@ class Role(object):
         opendata:user:designateGroup        Grants the ability to designate groups within organization as being
                                             available for use in Open Data.
         ===============================     ========================================================================
-        
+
         """
         resp = self._portal.con.post(
             "portals/self/roles/" + self.role_id + "/privileges",
@@ -10209,29 +10235,29 @@ class Group(dict):
         The ``migration`` property accesses a :class:`~arcgis.gis.GroupMigrationManager`
         object which has methods for exporting and importing supported ``group`` content
         between ArcGIS Enterprise organizations.
-        
+
         .. note::
             Functionality only available for ArcGIS Enterprise.
-        
+
         .. code-block:: python
-        
+
             #Usage Example: Initializing a ``GroupMigrationManager`` object:
-            
+
             >>> from arcgis.gis import GIS
-            
+
             >>> gis = GIS(profile="your_enterprise_admin_profile")
-            
+
             >>> source_grp = gis.groups.get("<group_id>")
-            
+
             >>> grp_mig_mgr = source_grp.migration
             >>> type(grp_mig_mgr)
-            
+
             arcgis.gis.GroupMigrationManager
         """
         if self._gis.version > [7, 3] and self._gis._portal.is_arcgisonline == False:
             self._migrate = GroupMigrationManager(group=self)
         return self._migrate
-        
+
     def download_thumbnail(self, save_folder: Optional[str] = None):
         """
         The ``download_thumbnail`` method downloads the item thumbnail for this user and saves it in the folder that
@@ -10377,7 +10403,7 @@ class Group(dict):
         ================  ========================================================
 
         :return:
-            A dictionary with a key notRemoved that is a list of users not removed.      
+            A dictionary with a key notRemoved that is a list of users not removed.
         """
         users = []
         if isinstance(usernames, (list, tuple)) == False:
