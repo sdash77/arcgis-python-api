@@ -148,6 +148,7 @@ def _clone_layer(
     newlyr._filtered = layer._filtered
     newlyr._uses_gbl_function = layer._uses_gbl_function
     newlyr._raster_info = layer._raster_info
+    newlyr._tiles_only = False  # layer with raster function applied is not tiles only
 
     if hasattr(layer, "_lazy_token"):
         newlyr._lazy_token = layer._lazy_token
@@ -210,6 +211,7 @@ def _clone_layer_without_copy(layer, function_chain, function_chain_ra):
     newlyr._filtered = layer._filtered
     newlyr._uses_gbl_function = layer._uses_gbl_function
     newlyr._raster_info = layer._raster_info
+    newlyr._tiles_only = False  # layer with raster function applied is not tiles only
 
     if hasattr(layer, "_lazy_token"):
         newlyr._lazy_token = layer._lazy_token
@@ -318,6 +320,9 @@ def _clone_layer_raster(
     newlyr._engine_obj._filtered = layer._filtered
     newlyr._engine_obj._uses_gbl_function = layer._uses_gbl_function
     newlyr._engine_obj._do_not_hydrate = layer._do_not_hydrate
+    newlyr._engine_obj._tiles_only = (
+        False  # layer with raster function applied is not tiles only
+    )
     # newlyr._engine_obj.extent = layer.extent
     if hasattr(layer, "_lazy_token"):
         newlyr._engine_obj._lazy_token = layer._lazy_token
@@ -445,7 +450,10 @@ def _clone_layer_raster_without_copy(layer, function_chain, function_chain_ra):
     newlyr._engine_obj._filtered = layer._filtered
     newlyr._engine_obj._uses_gbl_function = layer._uses_gbl_function
     newlyr._engine_obj._do_not_hydrate = layer._do_not_hydrate
-    newlyr._engine_obj.extent = layer.extent
+    newlyr._engine_obj._tiles_only = (
+        False  # layer with raster function applied is not tiles only
+    )
+    # newlyr._engine_obj.extent = layer.extent
     if hasattr(layer, "_lazy_token"):
         newlyr._engine_obj._lazy_token = layer._lazy_token
     else:
@@ -1969,21 +1977,18 @@ def clip(
     template_dict = {
         "rasterFunction": "Clip",
         "rasterFunctionArguments": {
-            "ClippingGeometry": geometry,
             "ClipType": 1 if clip_outside else 2,
             "Raster": raster,
         },
     }
 
+    if geometry is not None:
+        template_dict["rasterFunctionArguments"]["ClippingGeometry"] = geometry
+
     if astype is not None:
         template_dict["outputPixelType"] = astype.upper()
 
     extent_envelope = None
-
-    if clipping_raster is not None and isinstance(
-        clipping_raster, (Raster, ImageryLayer)
-    ):
-        extent_envelope = dict(clipping_raster.extent)
 
     try:
         from arcgis.geometry import Envelope, Geometry
