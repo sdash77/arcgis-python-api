@@ -156,9 +156,7 @@ class TabularDataObject(object):
                     260145,
                     "WARNING",
                 )
-                tabular_data._dataframe = tabular_data._dataframe[
-                    ~tabular_data._dataframe[tabular_data._dependent_variable].isna()
-                ]
+                tabular_data._dataframe = tabular_data._dataframe.dropna(subset=tabular_data._dependent_variable)
         tabular_data._index_data = tabular_data._field_mapping["index_data"]
         tabular_data._index_field = index_field
 
@@ -1659,27 +1657,21 @@ class TabularDataObject(object):
                 fields = [["NEAR_DIST", field_2]]
                 arcpy.Near_analysis(data_source, distance_layer, field_names=fields)
                 count = count + 1
-
-            data_source_desc = arcpy.Describe(data_source)
-            transformation = spatial_reference_helper.get_datum_transformation(
-                data_source_desc.spatialReference,
-                arcpy.SpatialReference(4326),
-                data_source_desc.extent,
-            )
-            sdf = pd.DataFrame.spatial.from_featureclass(
-                data_source, sr="4326", datum_transformation=transformation
-            )
-        else:
-            sdf = pd.DataFrame()
-            data_type = arcpy.Describe(input_features).dataType
-            if data_type in ["TableView", "TextFile"]:
-                sdf = pd.DataFrame.spatial.from_table(str(input_features))
-            if len(sdf) == 0:
-                msg = arcpy_localization_helper(
-                    "Could not process the data. Your csv or table might contain columns with all null values. ",
-                    260200,
-                    "ERROR",
+            try:
+                data_source_desc = arcpy.Describe(data_source)
+                transformation = spatial_reference_helper.get_datum_transformation(
+                    data_source_desc.spatialReference,
+                    arcpy.SpatialReference(4326),
+                    data_source_desc.extent,
                 )
+                sdf = pd.DataFrame.spatial.from_featureclass(
+                    data_source, sr="4326", datum_transformation=transformation
+                )
+            except:
+                sdf = sdf_from_table(input_features)
+        else:
+            sdf = sdf_from_table(input_features)
+
         rasters_data = {}
         if data_source:
             for cnt, raster in enumerate(raster_list):
@@ -2330,6 +2322,8 @@ def explain_prediction(
 
 
 def add_h3(sdf, cell_sizes):
+    if "SHAPE" not in sdf.columns:
+        return sdf
     if sdf["SHAPE"].iloc[0]["spatialReference"]["wkid"] == 4326:
         if (
             "polygon" in sdf.spatial.geometry_type
@@ -2541,6 +2535,25 @@ def _adjust_origin_coordinate(coordinate, raster, cell_size):
     ymax_new = ymax - y * dy
     return xmin_new, ymax_new
 
+def sdf_from_table(
+        input_features
+):
+    try:
+        import arcpy
+    except:
+        raise Exception("This method needs arcpy to be installed. Unable to continue")
+
+    sdf = pd.DataFrame()
+    data_type = arcpy.Describe(input_features).dataType
+    if data_type in ["TableView", "TextFile"]:
+        sdf = pd.DataFrame.spatial.from_table(str(input_features))
+    if len(sdf) == 0:
+        msg = arcpy_localization_helper(
+            "Could not process the data. Your csv or table might contain columns with all null values. ",
+            260200,
+            "ERROR",
+        )
+    return sdf
 
 def global_interpretation(model, plot_type="bar", method="KernelRegressor"):
     try:
