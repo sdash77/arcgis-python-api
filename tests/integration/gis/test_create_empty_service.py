@@ -5,7 +5,8 @@ from arcgis.auth.tools._util import detect_proxy
 from arcgis.auth import ArcGISProAuth, EsriWindowsAuth
 from arcgis.features import FeatureLayerCollection
 from arcgis.gis import GIS, Item
-from arcgis.gis import CreateServiceParameter, ServiceTypeEnum
+from arcgis.gis import CreateServiceParameter
+from arcgis.gis._impl import ServiceTypeEnum
 
 __logger__ = logging.getLogger()
 
