@@ -4837,7 +4837,7 @@ class ImageryLayer(Layer):
         from the view point to the center of each image..
 
         .. note::
-            The ``query_gps_info`` operation is supported at 11.2 and later.
+            The ``find_images`` operation is supported at 11.2 and later.
 
         =================     ====================================================================
         **Parameter**         **Description**
@@ -4905,6 +4905,280 @@ class ImageryLayer(Layer):
 
         if max_count:
             params["maxCount"] = max_count
+
+        return self._con.post(path=url, postdata=params, timeout=None)
+
+    def image_to_map(
+        self,
+        raster_id: int,
+        geometry: Union[dict[str, Any], Polygon, Point, MultiPoint, Envelope],
+        out_sr: Optional[dict] = None,
+    ):
+        """
+
+        The ``image_to_map`` method converts a point on an image location to a map location.
+
+        .. note::
+            The ``find_images`` operation is supported at 11.2 and later.
+
+        ============================    ====================================================================
+        **Parameter**                   **Description**
+        ----------------------------    --------------------------------------------------------------------
+        raster_id                       Required integer. Specifies the objectId of the image service’s raster catalog.
+                                        The raster_id value identifies which raster of the mosaic dataset
+                                        will be used as part of the calculation.
+        ----------------------------    --------------------------------------------------------------------
+        geometry                        Required dictionary/Point/Polygon/MultiPoint/Envelope. A :class:`~arcgis.geometry.Geometry` that
+                                        defines the location to be identified.
+        ----------------------------    --------------------------------------------------------------------
+        out_sr                          Required string, dictionary, :class:`~arcgis.geometry.SpatialReference`. The ``out_sr``
+                                        can accept a multitudes of values.  These can be a WKID, image coordinate system
+                                        (ICSID), or image coordinate system in json/dict format.
+                                        Additionally the arcgis.geometry.SpatialReference object is also a
+                                        valid entry.
+
+                                        .. note::
+
+                                        An image coordinate system ID can be specified
+                                        using 0:icsid; for example, 0:64. The extra 0: is used to avoid
+                                        conflicts with wkid
+        ============================    ====================================================================
+
+        :return: A dictionary
+
+        .. code-block:: python
+
+            # Example Usage
+            img_layer = gis.content.search("my_image_service", item_type="Imagery Layer")[0].layers[0]
+            output_info = img_layer.image_to_map(raster_id=1,
+                                                 geometry={"x": 852039.3825317159, "y": 5776166.453139959, "z": 4107.771753068082},
+                                                 out_sr = 3857
+                                                 )
+        """
+        if self.tiles_only:
+            raise RuntimeError(
+                "This operation cannot be performed on a TilesOnly Service"
+            )
+
+        url = "%s/imageToMap" % self._url
+        params = {"f": "json", "geometry": dict(geometry)}
+        from arcgis.geometry._types import (
+            Point,
+            Polygon,
+            Envelope,
+            MultiPoint,
+        )
+        from arcgis._impl.common._mixins import PropertyMap
+
+        if isinstance(geometry, Point):
+            params["geometryType"] = "esriGeometryPoint"
+        elif isinstance(geometry, Polygon):
+            params["geometryType"] = "esriGeometryPolygon"
+        elif isinstance(geometry, (Envelope, PropertyMap)):
+            params["geometryType"] = "esriGeometryEnvelope"
+        elif isinstance(geometry, MultiPoint):
+            params["geometryType"] = "esriGeometryMultipoint"
+        elif isinstance(geometry, dict):
+            if "x" in geometry:
+                params["geometryType"] = "esriGeometryPoint"
+            elif "points" in geometry:
+                params["geometryType"] = "esriGeometryMultipoint"
+            elif "xmin" in geometry:
+                params["geometryType"] = "esriGeometryEnvelope"
+            else:
+                params["geometryType"] = "esriGeometryPolygon"
+
+        if raster_id:
+            params["rasterId"] = raster_id
+
+        if out_sr:
+            params["outSR"] = out_sr
+
+        return self._con.post(path=url, postdata=params, timeout=None)
+
+    def map_to_image(
+        self,
+        raster_id: int,
+        geometry: Union[dict[str, Any], Polygon, Point, MultiPoint, Envelope],
+        in_sr: Optional[dict] = None,
+    ):
+        """
+
+        The ``map_to_image`` method converts a point on a map location to an image location.
+
+        .. note::
+            The ``find_images`` operation is supported at 11.2 and later.
+
+        ============================    ====================================================================
+        **Parameter**                   **Description**
+        ----------------------------    --------------------------------------------------------------------
+        raster_id                       Required integer. Specifies the objectId of the image service’s raster catalog.
+                                        The raster_id value identifies which raster of the mosaic dataset
+                                        will be used as part of the calculation.
+        ----------------------------    --------------------------------------------------------------------
+        geometry                        Required dictionary/Point/Polygon/MultiPoint/Envelope. A :class:`~arcgis.geometry.Geometry` that
+                                        defines the location to be identified.
+        ----------------------------    --------------------------------------------------------------------
+        in_sr                           Required string, dictionary, :class:`~arcgis.geometry.SpatialReference`. The ``in_sr``
+                                        can accept a multitudes of values.  These can be a WKID, image coordinate system
+                                        (ICSID), or image coordinate system in json/dict format.
+                                        Additionally the arcgis.geometry.SpatialReference object is also a
+                                        valid entry.
+
+                                        .. note::
+
+                                        An image coordinate system ID can be specified
+                                        using 0:icsid; for example, 0:64. The extra 0: is used to avoid
+                                        conflicts with wkid
+        ============================    ====================================================================
+
+        :return: A dictionary
+
+        .. code-block:: python
+
+            # Example Usage
+            img_layer = gis.content.search("my_image_service", item_type="Imagery Layer")[0].layers[0]
+            op = img_layer.map_to_image(raster_id=1,
+                                        geometry={"x": -116.95577740063976, "y": 34.8830387385285, "z": 635.8976440429688},
+                                        in_sr = 4326
+                                        )
+        """
+        if self.tiles_only:
+            raise RuntimeError(
+                "This operation cannot be performed on a TilesOnly Service"
+            )
+
+        url = "%s/imageToMap" % self._url
+        params = {"f": "json", "geometry": dict(geometry)}
+        from arcgis.geometry._types import (
+            Point,
+            Polygon,
+            Envelope,
+            MultiPoint,
+        )
+        from arcgis._impl.common._mixins import PropertyMap
+
+        if isinstance(geometry, Point):
+            params["geometryType"] = "esriGeometryPoint"
+        elif isinstance(geometry, Polygon):
+            params["geometryType"] = "esriGeometryPolygon"
+        elif isinstance(geometry, (Envelope, PropertyMap)):
+            params["geometryType"] = "esriGeometryEnvelope"
+        elif isinstance(geometry, MultiPoint):
+            params["geometryType"] = "esriGeometryMultipoint"
+        elif isinstance(geometry, dict):
+            if "x" in geometry:
+                params["geometryType"] = "esriGeometryPoint"
+            elif "points" in geometry:
+                params["geometryType"] = "esriGeometryMultipoint"
+            elif "xmin" in geometry:
+                params["geometryType"] = "esriGeometryEnvelope"
+            else:
+                params["geometryType"] = "esriGeometryPolygon"
+
+        if raster_id:
+            params["rasterId"] = raster_id
+
+        if in_sr:
+            params["inSR"] = in_sr
+
+        return self._con.post(path=url, postdata=params, timeout=None)
+
+    def get_image_url(self, image_uri: Optional[str]):
+        """
+
+        Returns an accessible url to the image.
+
+        .. note::
+            The ``get_image_url`` operation is supported at 11.2 and later.
+
+        =================     ====================================================================
+        **Parameter**         **Description**
+        -----------------     --------------------------------------------------------------------
+        image_uri             Required string. URI of the image to be accessed. The find_images operation returns the image_uri.
+        =================     ====================================================================
+
+        :return: A dictionary containing the accessible url to the image.
+
+        .. code-block:: python
+
+            # Example Usage
+            img_layer = gis.content.search("my_image_service", item_type="Imagery Layer")[0].layers[0]
+            op = img_layer.get_image_url(image_uri="/vsis3/t-agu/Hosted_om20230601105400/data/YUN_0040.JPG")
+
+        """
+        if self.tiles_only:
+            raise RuntimeError(
+                "This operation cannot be performed on a TilesOnly Service"
+            )
+
+        url = "%s/find" % self._url
+        params = {"f": "json"}
+
+        if image_uri:
+            params["uri"] = image_uri
+
+        return self._con.post(path=url, postdata=params, timeout=None)
+
+    def image_to_map_multiray(
+        self,
+        geometries: list,
+        raster_ids: list,
+        out_sr: Optional[dict] = None,
+    ):
+        """
+
+        The ``image_to_map_multiray`` computes a geometry in map space from multiple views of the geometry in image space on multiple images.
+
+        .. note::
+            The ``image_to_map_multiray`` operation is supported at 11.2 and later.
+
+        ============================    ====================================================================
+        **Parameter**                   **Description**
+        ----------------------------    --------------------------------------------------------------------
+        geometries                      Required dictionary with the value being the list of geometries and key being "geometries".
+                                        All geometries in this list should be of the type defined by ``geometryType``
+        ----------------------------    --------------------------------------------------------------------
+        raster_ids                      Required string. The object IDs of a raster catalog items.
+        ----------------------------    --------------------------------------------------------------------
+        out_sr                          Required string, dictionary, :class:`~arcgis.geometry.SpatialReference`. The ``out_sr``
+                                        can accept a multitudes of values.  These can be a WKID, image coordinate system
+                                        (ICSID), or image coordinate system in json/dict format.
+                                        Additionally the arcgis.geometry.SpatialReference object is also a
+                                        valid entry.
+
+                                        .. note::
+
+                                        An image coordinate system ID can be specified
+                                        using 0:icsid; for example, 0:64. The extra 0: is used to avoid
+                                        conflicts with wkid
+        ============================    ====================================================================
+
+        :return: A dictionary
+
+        .. code-block:: python
+
+            # Example Usage
+            img_layer = gis.content.search("my_image_service", item_type="Imagery Layer")[0].layers[0]
+            op = img_layer.image_to_map(raster_ids="1,2",
+                                                geometries={"geometries":[{"x": -45.56, "y": -31.75, "z": 634.18},{"x": -55.56, "y": 31.75, "z": 234.18}]], "geometryType":"esriGeometryPoint"}
+                                                out_sr = 3857
+                                                )
+        """
+        if self.tiles_only:
+            raise RuntimeError(
+                "This operation cannot be performed on a TilesOnly Service"
+            )
+
+        url = "%s/imageToMapMultiray" % self._url
+        params = {"f": "json", "geometries": geometries}
+
+        if isinstance(raster_ids, list):
+            raster_ids = ",".join(map(str, raster_ids))
+        params["raster_ids"] = raster_ids
+
+        if out_sr:
+            params["outSR"] = out_sr
 
         return self._con.post(path=url, postdata=params, timeout=None)
 
