@@ -1495,6 +1495,7 @@ class ImageryLayer(Layer):
         linear_unit: Optional[str] = None,
         angular_unit: Optional[str] = None,
         area_unit: Optional[str] = None,
+        raster_id: Optional[int] = None,
     ):
         """
         The ``measure`` method lets a user measure distance, direction, area,
@@ -1601,6 +1602,9 @@ class ImageryLayer(Layer):
                               SquareMiles,SquareMillimeters,SquareCentimeters,
                               SquareDecimeters,SquareMeters,Ares,Hectares,
                               SquareKilometers`
+        -----------------     --------------------------------------------------------------------
+        raster_id             Optional integer. Specifies the objectId of the image service’s raster catalog.
+                              The raster_id value identifies which raster to use in a mosaic dataset
         =================     ====================================================================
 
         :return: A dictionary
@@ -1665,6 +1669,8 @@ class ImageryLayer(Layer):
             params["areaUnit"] = area_unit
         if angular_unit:
             params["angularUnit"] = angular_unit
+        if raster_id:
+            params["rasterId"] = raster_id
         return self._con.post(path=url, postdata=params, timeout=None)
 
     def set_filter(
@@ -4815,6 +4821,92 @@ class ImageryLayer(Layer):
         res = self._con.post(path=url, postdata=params, timeout=None)
 
         return res
+
+    def find_images(
+        self,
+        view_point: Union[dict[str, Any], Point],
+        in_sr: Optional[dict],
+        object_ids: Optional[str],
+        where: Optional[str],
+        max_count: Optional[int] = None,
+    ):
+        """
+
+        The function basically takes three parameters, a view point, a generic attribute query, and max count.
+        The function will find all images that can see the view point, and are ordered based on the distance
+        from the view point to the center of each image..
+
+        .. note::
+            The ``query_gps_info`` operation is supported at 11.2 and later.
+
+        =================     ====================================================================
+        **Parameter**         **Description**
+        -----------------     --------------------------------------------------------------------
+        view_point            Required dictionary or :class:`~arcgis.geometry.Point` object.
+                              A 3D view point for finding visible images.
+        -----------------     --------------------------------------------------------------------
+        in_sr                 Required string, dictionary, :class:`~arcgis.geometry.SpatialReference`. The ``in_sr``
+                              can accept a
+                              multitudes of values.  These can be a WKID, image coordinate system
+                              (ICSID), or image coordinate system in json/dict format.
+
+                              .. note::
+
+                                    An image coordinate system ID can be specified
+                                    using 0:icsid; for example, 0:64. The extra 0: is used to avoid
+                                    conflicts with wkid
+        -----------------     --------------------------------------------------------------------
+        object_ids            Optional string. The object IDs of this raster catalog to be
+                              queried. When this parameter is specified, any other filter
+                              parameters (including where) are ignored.
+                              When this parameter is specified, setting return_ids_only=true is
+                              invalid.
+
+                              Syntax: objectIds=<objectId1>, <objectId2>
+                              Example: objectIds="37, 462"
+        -----------------     --------------------------------------------------------------------
+        where                 Optional string. A where clause on this layer to filter the imagery
+                              layer by the selection sql statement.
+                              Any legal SQL where clause operating on the fields in the
+                              raster catalog is allowed.
+
+                              Example: where="OBJECTID>2"
+        -----------------     --------------------------------------------------------------------
+        max_count             Optional integer. The maximum number of results to be returned by
+                              this operation.
+
+                              Example: max_count=10
+        =================     ====================================================================
+
+        :return: A dictionary containing the information of all images that can see the view point and
+                 are ordered based on the distance from the view point to the center of each image.
+
+        """
+        if self.tiles_only:
+            raise RuntimeError(
+                "This operation cannot be performed on a TilesOnly Service"
+            )
+
+        url = "%s/find" % self._url
+        params = {"f": "json", "viewPoint": view_point}
+
+        if object_ids:
+            params["objectIds"] = object_ids
+
+        if where is not None:
+            params["where"] = where
+        elif self._where_clause is not None:
+            params["where"] = self._where_clause
+        else:
+            params["where"] = "1=1"
+
+        if in_sr:
+            params["inSR"] = in_sr
+
+        if max_count:
+            params["maxCount"] = max_count
+
+        return self._con.post(path=url, postdata=params, timeout=None)
 
     def _compute_multidimensional_info(
         self,
