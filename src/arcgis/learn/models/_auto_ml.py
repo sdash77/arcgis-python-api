@@ -909,7 +909,7 @@ class AutoML(object):
                 dataframe = input_features.query().sdf
 
             if attachment_list:
-                dataframe['Images'] = attachment_list
+                dataframe["Images"] = attachment_list
         elif (
             hasattr(input_features, "dataSource")
             or str(input_features).endswith(".shp")
@@ -925,7 +925,7 @@ class AutoML(object):
             if cell_sizes and not rasters:
                 dataframe = add_h3(dataframe, cell_sizes)
             if attachment_list:
-                dataframe['Images'] = attachment_list
+                dataframe["Images"] = attachment_list
             dataframe_complete = True
             self._data._text_variables = self._data._text_variables or []
             self._data._image_variables = self._data._image_variables or []
@@ -1133,7 +1133,7 @@ class AutoML(object):
                 except:
                     pass
         dataframe_merged = pd.concat([dataframe, shap_df.abs()], axis=1)
-        dataframe_merged = dataframe_merged.filter(regex='^(?!emb_)')
+        dataframe_merged = dataframe_merged.filter(regex="^(?!emb_)")
 
         if prediction_type == "dataframe":
             return dataframe_merged
