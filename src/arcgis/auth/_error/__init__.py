@@ -1,1 +1,2 @@
-from .error import ArcGISLoginError
+__all__ = ["ArcGISLoginError", "EsriHttpResponseError"]
+from .error import ArcGISLoginError, EsriHttpResponseError
