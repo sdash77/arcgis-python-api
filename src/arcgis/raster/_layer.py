@@ -4710,7 +4710,7 @@ class ImageryLayer(Layer):
 
         return self._con.post(path=url, postdata=params, timeout=None)
 
-    def _query_gps_info(
+    def query_gps_info(
         self,
         where: Optional[str] = None,
         object_ids: Optional[list[int]] = None,
@@ -4723,6 +4723,9 @@ class ImageryLayer(Layer):
         The ``query_gps_info`` method queries an :class:`~arcgis.raster.ImageryLayer` by applying the filter specified by
         the user. The result of this operation is the gps and orientation information for image collections created by
         OrthoMapping REST/Python API or Ortho Maker.
+
+        .. note::
+            The ``query_gps_info`` operation is supported at 11.2 and later.
 
         ==============================  ====================================================================
         **Parameter**                   **Description**
@@ -4751,9 +4754,7 @@ class ImageryLayer(Layer):
                                         relationship with another geometry.
         ==============================  ====================================================================
 
-        :return: A :class:`~arcgis.features.FeatureSet` containing the footprints (features) matching the query when
-                  return_geometry is ``True``, else a dictionary containing the expected return
-                  type.
+        :return: A dict containing the gps and camera information for the image collection.
 
         .. code-block:: python
 
