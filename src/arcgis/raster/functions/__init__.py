@@ -13479,7 +13479,7 @@ def region_pixel_count(raster, max_region_size=100, pixel_neighborhood=4):
     ================================     ====================================================================
     **Parameter**                         **Description**
     --------------------------------     --------------------------------------------------------------------
-    rasters                              Required :class:`Raster <arcgis.raster.Raster>` /  :class:`ImageryLayer <arcgis.raster.ImageryLayer>` object.
+    raster                               Required :class:`Raster <arcgis.raster.Raster>` /  :class:`ImageryLayer <arcgis.raster.ImageryLayer>` object.
     --------------------------------     --------------------------------------------------------------------
     max_region_size                      Optional integer. The maximum number of pixels a region can contain. The default is 100.
     --------------------------------     --------------------------------------------------------------------
