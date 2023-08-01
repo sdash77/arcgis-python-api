@@ -15,6 +15,7 @@ from arcgis.features import FeatureLayerCollection
 from arcgis.features import FeatureLayer
 from arcgis.mapping import MapImageLayer
 from arcgis.geometry import *
+from arcgis.apps.survey123 import SurveyManager
 import copy
 import urllib
 import time
@@ -116,8 +117,9 @@ class _DeepCloner:
             ):
                 self._items.pop(index)
                 dash_list = self._clone_dashboard(item)
-                for cloned_item in dash_list:
-                    self._cloned_items.append(cloned_item)
+                if len(dash_list) > 0:
+                    for cloned_item in dash_list:
+                        self._cloned_items.append(cloned_item)
 
         # parse the config and get values
         self._create_graph()
@@ -141,33 +143,53 @@ class _DeepCloner:
 
         for item_id in item_list:
             item = dashboard_item._gis.content.get(item_id)
-            clone_result = self.target.content.clone_items([item])
-            if len(clone_result) > 0:
+            clone_result = self.target.content.clone_items(
+                [item],
+                search_existing_items=self._search_existing_items,
+                folder=self.folder,
+                owner=self.owner,
+                use_org_basemap=self._use_org_basemap,
+                copy_data=self._copy_data,
+                copy_global_ids=self._copy_global_ids,
+                item_extent=self._item_extent,
+                preserve_item_id=self._preserve_item_id,
+            )
+            if clone_result:
                 for cloned_item in clone_result:
                     cloned_item_list.append(cloned_item)
                     if cloned_item.title == item.title:
                         new_item = cloned_item
             else:
-                new_item = item
+                new_item = _search_org_for_existing_item(self.target, item)
+
             map_dict[item_id] = new_item.itemid
 
-        cloned_db = self.target.content.clone_items([dashboard_item], from_dash=True)[0]
-        cloned_item_list.append(cloned_db)
-        cloned_widgets = cloned_db.get_data()["desktopView"]["widgets"]
+        cloned_db_list = self.target.content.clone_items(
+            [dashboard_item],
+            folder=self.folder,
+            owner=self.owner,
+            search_existing_items=self._search_existing_items,
+            preserve_item_id=self._preserve_item_id,
+            from_dash=True,
+        )
+        if cloned_db_list:
+            cloned_db = cloned_db_list[0]
+            cloned_item_list.append(cloned_db)
+            cloned_widgets = cloned_db.get_data()["desktopView"]["widgets"]
 
-        for widget in cloned_widgets:
-            for k, v in widget.items():
-                if k == "itemId":
-                    widget["itemId"] = map_dict[v]
-                if k == "datasets":
-                    for dataset in v:
-                        dataset["dataSource"]["itemId"] = map_dict[
-                            dataset["dataSource"]["itemId"]
-                        ]
+            for widget in cloned_widgets:
+                for k, v in widget.items():
+                    if k == "itemId":
+                        widget["itemId"] = map_dict[v]
+                    if k == "datasets":
+                        for dataset in v:
+                            dataset["dataSource"]["itemId"] = map_dict[
+                                dataset["dataSource"]["itemId"]
+                            ]
 
-        new_data = cloned_db.get_data()
-        new_data["desktopView"]["widgets"] = cloned_widgets
-        cloned_db.update(item_properties={}, data=new_data)
+            new_data = cloned_db.get_data()
+            new_data["desktopView"]["widgets"] = cloned_widgets
+            cloned_db.update(item_properties={}, data=new_data)
 
         return cloned_item_list
 
@@ -5026,9 +5048,11 @@ class _FormDefinition(_ItemDefinition):
                 )
 
         # Replace the "field names"
-        for instance in xml.find("h:head/model/instance/", namespace):
-            for child in instance.iter():
-                child.tag = lookup.get(child.tag, child.tag)
+        instances = xml.find("h:head/model/instance/", namespace)
+        if instances:
+            for instance in instances:
+                for child in instance.iter():
+                    child.tag = lookup.get(child.tag, child.tag)
 
         # Add all original namespaces back
         with open(xml_file_path, "w") as xml_file:
@@ -5175,41 +5199,9 @@ class _FormDefinition(_ItemDefinition):
                                             field_mapping,
                                         )
 
-                elif os.path.splitext(path)[1].lower() == ".webform":
-                    try:
-                        with open(os.path.join(zip_dir, path)) as file:
-                            payload = json.loads(file.read())
-                    except UnicodeDecodeError:
-                        with open(os.path.join(zip_dir, path), "rb") as file:
-                            payload = json.load(file)
-
-                    file_changed = False
-
-                    # Find related service mapping and replace in webform
-                    for related_item in self.related_items:
-                        for key, value in clone_mapping["Services"].items():
-                            if _compare_url(related_item["url"], key):
-                                for layer_id in value["layer_field_mapping"]:
-                                    field_mapping = value["layer_field_mapping"][
-                                        layer_id
-                                    ]
-                                    model = payload["model"]
-                                    form = payload["form"]
-                                    _find_and_replace_fields_json(
-                                        payload, field_mapping, [XML_SURVEY]
-                                    )
-
-                                    payload["model"] = self._replace_model(
-                                        model, field_mapping
-                                    )
-                                    payload["form"] = self._replace_form(
-                                        form, field_mapping
-                                    )
-                                    file_changed = True
-
-                    if file_changed:
-                        with open(os.path.join(zip_dir, path), "w") as writer:
-                            json.dump(payload, writer, indent="  ")
+                        SurveyManager._xform2webform(
+                            os.path.join(zip_dir, path), self.target.url
+                        )
 
                 elif os.path.splitext(path)[1].lower() == ".iteminfo":
                     with open(os.path.join(zip_dir, path), "w") as file:

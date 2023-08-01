@@ -21,7 +21,12 @@ import_exception = None
 
 try:
     from ._arcgis_model import ArcGISModel, _raise_fastai_import_error
-    from arcgis.learn._utils.tabular_data import TabularDataObject, add_h3
+    from arcgis.learn._fairlearn._fairlearn import calculate_metrics
+    from arcgis.learn._utils.tabular_data import (
+        TabularDataObject,
+        add_h3,
+        _extract_embeddings,
+    )
     from arcgis.learn._utils.common import _get_emd_path
     from arcgis.learn._utils.utils import arcpy_localization_helper
     import pickle
@@ -106,6 +111,40 @@ class AutoML(object):
                             to -1 to use all the cores.
     =====================   ===========================================
 
+    **kwargs**
+
+    =====================   ===========================================
+    sensitive_variables     Optional. List of strings.
+                            Variables in the feature class/dataframe which are sensitive and prone to model bias.
+                            Ex - ['sex','race'] or ['nationality']
+    ---------------------   -------------------------------------------
+    fairness_metric         Optional. String.
+                            Name of fairness metric based on which fairness optimization should be done on the evaluated models.
+                            Available metrics for binary classification are 'demographic_parity_difference' , 'demographic_parity_ratio',
+                            'equalized_odds_difference', 'equalized_odds_ratio'.
+                            'demographic_parity_ratio' is the default.
+                            Available metrics for regression are 'group_loss_ratio' (Default) and 'group_loss_difference'.
+    ---------------------   -------------------------------------------
+    fairness_threshold      Optional. Float.
+                            Required when the chosen metric is group_loss_difference
+                            The treshold value for fairness metric. Default values are as follows:
+                            - for `demographic_parity_difference` the metric value should be below 0.1,
+                            - for `demographic_parity_ratio` the metric value should be above 0.8,
+                            - for `equalized_odds_difference` the metric value should be below 0.1,
+                            - for `equalized_odds_ratio` the metric value shoule be aboce 0.8.
+    ---------------------   -------------------------------------------
+    privileged_groups       Optional. List.
+                            List of previliged groups in the sensitive attribute.
+                            For example, in binary classification task, a privileged group is the one with the highest selection rate.
+                            Example value: [{"sex": "Male"}]
+    ---------------------   -------------------------------------------
+    unprivileged_groups     Optional. List.
+                            List of unpreviliged groups in the sensitive attribute.
+                            For example, in binary classification task, an unprivileged group is the one with the lowest selection rate.
+                            Example value: [{"sex": "Female"}]
+
+    =====================   ===========================================
+
     :return: :class:`~arcgis.learn.AutoML` Object
     """
 
@@ -118,6 +157,7 @@ class AutoML(object):
         eval_metric="auto",
         n_jobs=1,
         ml_task="auto",
+        **kwargs,
     ):
         try:
             import platform
@@ -183,20 +223,17 @@ class AutoML(object):
                 self._validation_data,
                 self._validation_labels,
             ) = self._data._ml_data
-            self._all_data = np.concatenate(
-                (self._training_data, self._validation_data), axis=0
-            )
-            self._all_labels = np.concatenate(
-                (self._training_labels, self._validation_labels), axis=0
-            )
+
+            self._all_data_df = self._data._dataframe[
+                self._data._continuous_variables
+                + self._data._categorical_variables
+                + self._data._embedding_variables
+            ]
+            self._all_labels = self._data._dataframe[
+                self._data._dependent_variable
+            ].values
             self._validation_data_df = pd.DataFrame(
                 self._validation_data,
-                columns=self._data._continuous_variables
-                + self._data._categorical_variables
-                + self._data._embedding_variables,
-            )
-            self._all_data_df = pd.DataFrame(
-                self._all_data,
                 columns=self._data._continuous_variables
                 + self._data._categorical_variables
                 + self._data._embedding_variables,
@@ -245,6 +282,21 @@ class AutoML(object):
             except:
                 result_path = tempfile.mkdtemp(dir=tempfile.gettempdir())
 
+            self._sensitive_variables = kwargs.get("sensitive_variables", None)
+            self._fairness_metric = kwargs.get("fairness_metric", "auto")
+            self._fairness_threshold = kwargs.get("fairness_threshold", "auto")
+            self._privileged_groups = kwargs.get("privileged_groups", [])
+            self._underprivileged_groups = kwargs.get("unprivileged_groups", [])
+
+            if (
+                self._fairness_metric == "group_loss_difference"
+                and self._fairness_threshold == "auto"
+            ):
+                warnings.warn(
+                    "Fairness Threshold value is required to be passed when the chosen fairness metric is group_loss_difference."
+                )
+                # exit()
+
             self._model = base_AutoML(
                 results_path=result_path,
                 mode=mode,
@@ -256,6 +308,10 @@ class AutoML(object):
                 eval_metric=eval_metric,
                 n_jobs=n_jobs,
                 kmeans_features=False,
+                fairness_metric=self._fairness_metric,
+                fairness_threshold=self._fairness_threshold,
+                privileged_groups=self._privileged_groups,
+                underprivileged_groups=self._underprivileged_groups,
             )
         else:
             result_path = self._data.path
@@ -286,9 +342,18 @@ class AutoML(object):
                 self._all_labels = self._all_labels.astype(np.int32)
             elif isinstance(self._all_labels[0], float):
                 self._all_labels = self._all_labels.astype(np.float)
+            if self._sensitive_variables:
+                sensitive_features = self._all_data_df[
+                    self._sensitive_variables
+                ].astype("category")
+            else:
+                sensitive_features = None
             try:
                 self._model.fit(
-                    self._all_data_df, self._all_labels, sample_weight=sample_weight
+                    self._all_data_df,
+                    self._all_labels,
+                    sample_weight=sample_weight,
+                    sensitive_features=sensitive_features,
                 )
             except:
                 msg = arcpy_localization_helper(
@@ -363,11 +428,87 @@ class AutoML(object):
             output from AutoML's model.score(), R2 score in case of regression and Accuracy in case of classification.
         """
         if getattr(self._data, "_is_not_empty", True):
-            return self._model.score(self._validation_data_df, self._validation_labels)
+            with warnings.catch_warnings():
+                warnings.simplefilter("ignore", UserWarning)
+                return self._model.score(
+                    self._validation_data_df, self._validation_labels
+                )
         else:
             raise Exception(
                 "This method is not available when the model is initiated for prediction"
             )
+
+    def fairness_score(
+        self,
+        sensitive_feature,
+        fairness_metrics=None,
+        visualize=False,
+    ):
+        """
+        Shows sample results for the model.
+
+        =====================   ===========================================
+        **Parameter**            **Description**
+        ---------------------   -------------------------------------------
+        sensitive_feature       Column name of the protected class.
+        ---------------------   -------------------------------------------
+        fairness_metrics        Allowed list of fairness metrics. List can
+                                have any of the metrics from the list below.
+                                Multiple metrics can be passed in the list.
+                                 1. For classification
+                                    [
+                                     "equalized_odds_difference",
+                                     "demographic_parity_difference",
+                                     "equalized_odds_ratio",
+                                     "demographic_parity_ratio"
+                                    ]
+                                 2. for Regression
+                                    [
+                                    "mean_absolute_error",
+                                    "mean_squared_error",
+                                    ]
+        ---------------------   -------------------------------------------
+        visualize               A boolean value to visualize plot of metrics
+        =====================   ===========================================
+        :return: tuple/dataframe
+        """
+        if self._data._is_classification:
+            validation_indexes = self._data._validation_indexes
+        else:
+            validation_indexes = self._data._dataframe.sample(
+                n=round(0.1 * len(self._data._dataframe)),
+                replace=False,
+                random_state=42,
+            ).index.to_list()
+        self.sensitive_feature_series = self._validation_data_df.loc[
+            :, sensitive_feature
+        ]
+        if self._sensitive_variables:
+            return "Since AutoML was trained with fairness mitigation, the fairness score can be obtained by running the report() method."
+
+        if not getattr(self._data, "_is_not_empty", True):
+            raise Exception(
+                "This method is not available when the model is initiated for prediction"
+            )
+
+        y_true = self._data._dataframe.loc[validation_indexes][
+            self._data._dependent_variable
+        ]
+        y_pred = self.predict(
+            self._data._dataframe.loc[validation_indexes], prediction_type="dataframe"
+        )
+        y_pred = y_pred["prediction_results"].to_numpy()
+
+        return calculate_metrics(
+            self._data._is_classification,
+            self._data,
+            y_true,
+            y_pred,
+            self.sensitive_feature_series,
+            sensitive_feature,
+            fairness_metrics,
+            visualize,
+        )
 
     def report(self):
         """
@@ -568,7 +709,8 @@ class AutoML(object):
 
         emd_params["continuous_variables"] = self._data._continuous_variables
         emd_params["text_variables"] = self._data._text_variables
-        emd_params["image_variables"] = self._data._image_variables
+        if self._data._image_variables:
+            emd_params["image_variables"] = self._data._image_variables
         emd_params["embedding_variables"] = self._data._embedding_variables
         if self._data._feature_field_variables:
             emd_params["_feature_field_variables"] = self._data._feature_field_variables
@@ -735,6 +877,7 @@ class AutoML(object):
         cell_sizes=[3, 4, 5, 6, 7],
         confidence=True,
         get_local_explanations=False,
+        **kwargs,
     ):
         """
 
@@ -823,6 +966,7 @@ class AutoML(object):
                 prediction_type,
                 confidence,
                 get_local_explanations,
+                **kwargs,
             )
         else:
             if not rasters:
@@ -866,8 +1010,10 @@ class AutoML(object):
         prediction_type="features",
         confidence=False,
         get_local_explanations=False,
+        **kwargs,
     ):
         dataframe_complete = False
+        attachment_list = kwargs.get("image_attach_list", None)
         if isinstance(input_features, FeatureLayer):
             try:
                 import arcpy
@@ -898,6 +1044,9 @@ class AutoML(object):
                 dataframe = add_h3(dataframe, cell_sizes)
             else:
                 dataframe = input_features.query().sdf
+
+            if attachment_list:
+                dataframe["Images"] = attachment_list
         elif (
             hasattr(input_features, "dataSource")
             or str(input_features).endswith(".shp")
@@ -912,7 +1061,15 @@ class AutoML(object):
             )
             if cell_sizes and not rasters:
                 dataframe = add_h3(dataframe, cell_sizes)
+            if attachment_list:
+                dataframe["Images"] = attachment_list
             dataframe_complete = True
+            self._data._text_variables = self._data._text_variables or []
+            self._data._image_variables = self._data._image_variables or []
+            if len(self._data._text_variables + self._data._image_variables) > 0:
+                dataframe, new_embd_cols = _extract_embeddings(
+                    self._data._text_variables, self._data._image_variables, dataframe
+                )
         elif hasattr(input_features, "value"):
             dataframe, index_data = TabularDataObject._sdf_gptool_workflow(
                 input_features,
@@ -1043,10 +1200,11 @@ class AutoML(object):
                 if "emb_" not in column:
                     processed_dataframe = processed_dataframe.drop(column, axis=1)
 
-        processed_numpy = self._data._process_data(
-            processed_dataframe.reindex(sorted(processed_dataframe.columns), axis=1),
-            fit=False,
-        )
+        processed_numpy = processed_dataframe[
+            self._data._continuous_variables
+            + self._data._categorical_variables
+            + self._data._embedding_variables
+        ]
         with warnings.catch_warnings():
             warnings.simplefilter("ignore")
             predictions = self._predict(processed_numpy)
@@ -1113,6 +1271,7 @@ class AutoML(object):
                 except:
                     pass
         dataframe_merged = pd.concat([dataframe, shap_df.abs()], axis=1)
+        dataframe_merged = dataframe_merged.filter(regex="^(?!emb_)")
 
         if prediction_type == "dataframe":
             return dataframe_merged

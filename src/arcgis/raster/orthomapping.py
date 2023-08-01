@@ -497,7 +497,21 @@ def _add_mission(
             }
             return cam_dict
 
-        cam_props = get_camera_props(raster_type_params["cameraProperties"])
+        cam_props = {}
+        try:
+            if "cameraProperties" in raster_type_params:
+                cam_props = get_camera_props(raster_type_params["cameraProperties"])
+            else:
+                try:
+                    lyr = output_collection.layers[0]
+                    cam_info = lyr._query_gps_info()
+                    cam_props = cam_info["cameras"][0]
+                except:
+                    # older servers may not have query gps info rest end point
+                    pass
+        except:
+            pass
+
         mission_json.update({"cameraInfo": cam_props})
 
         gps_data = []
@@ -510,7 +524,7 @@ def _add_mission(
         if not gps_data:
             try:
                 lyr = output_collection.layers[0]
-                gps_info = lyr._query_gps_info()
+                gps_info = lyr._query_gps_info()["images"]
                 for img_info in gps_info:
                     from arcgis.raster._util import _to_datetime
 

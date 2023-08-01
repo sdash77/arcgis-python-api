@@ -1151,6 +1151,16 @@ def prepare_tabulardata(
 
                             .. note::
                                 Applies to classification problems.
+    ---------------------   -------------------------------------------
+    random_split            Optional boolean. sets the behaviour of train and validation
+                            split to random or last n steps. If set to True then random
+                            sampling will be performed. Otherwise, last n steps will be
+                            used as validation. val_split_pct will determine the number
+                            the records for validation.
+                            Default value is True
+
+                            .. note::
+                                Applies to timeseries
     =====================   ===========================================
 
     :return: `TabularData` object
@@ -1172,6 +1182,10 @@ def prepare_tabulardata(
     stratify = False
     if kwargs.get("stratify") == True:
         stratify = True
+
+    random_split = True
+    if kwargs.get("random_split") == False:
+        random_split = False
 
     HAS_COLUMN_TRANSFORMS = False
 
@@ -1222,6 +1236,7 @@ def prepare_tabulardata(
         batch_size=batch_size,
         index_field=index_field,
         column_transforms_mapping=column_transforms_mapping,
+        random_split=random_split,
     )
 
     if working_dir is None:
@@ -1356,13 +1371,15 @@ def prepare_data(
                             it will create label images of size 128x128.
                             Default is 4
     ---------------------   -------------------------------------------
-    min_points              Optional int. Filtering based on minimum number
+    min_points              For dataset_type='PointCloud' and 'PointCloudOD':
+                            Optional int. Filtering based on minimum number
                             of points in a block. Set `min_points=1000` to
                             filter out blocks with less than 1000 points.
+
+                            For dataset_type='PSETAE':
                             Optional int. Number of pixels equal to or multiples
                             of 64 to sample from the each masked region of training
-                            data i.e. 64, 128 etc. Applicable only for
-                            dataset_type='PointCloud', 'PointCloudOD', and 'PSETAE'.
+                            data i.e. 64, 128 etc.
     ---------------------   -------------------------------------------
     extra_features          Optional List. Contains a list of strings
                             which mentions extra features to be used for
@@ -1373,17 +1390,23 @@ def prepare_data(
                             For example: ['intensity', 'numberOfReturns', 'returnNumber',
                             'red', 'green', 'blue', 'nearInfrared'].
     ---------------------   -------------------------------------------
-    remap_classes           Optional dictionary {int:int}. Mapping from
-                            class values to user defined values.
-                            Applicable with dataset_type='PointCloud'
-                            for remapping LAS classcode structure.
-                            And with dataset_type='PointCloudOD' for
-                            remapping object class structure.
-                            When this parameter is set as `remap_classes={5:3}`,
-                            then '5' class value will be considered as '3',
-                            in both training and validation blocks.
+    remap_classes           Optional dictionary {int:int}.
+                            Mapping from class values to user defined values,
+                            in both training and validation data.
+
+                            For dataset_type='PointCloud':
+                            It will remap LAS classcode structure.
+                            For example: {1:3, 2:4} will remap LAS classcode 1 to 3
+                            and classcode 2 to 4.
+
+                            For dataset_type='PointCloudOD':
+                            It will remap  object class ids. When this
+                            parameter is set as `remap_classes={5:3, 2:4}`,
+                            then '5' and 2 class values will be considered as '3', and
+                            '4', respectively.
     ---------------------   -------------------------------------------
     classes_of_interest     Optional list of int.
+
                             For dataset_type='PointCloud':
                             This will filter training blocks based on
                             `classes_of_interest`. If we have "1, 3, 5, 7"
@@ -1432,9 +1455,9 @@ def prepare_data(
                             Default value feature classification is True.
                             Default value pixel classification is False.
 
-                            .. note::
-                                Applies to single label feature classification,
-                                object detection and pixel classification.
+                            Note:
+                            Applies to single label feature classification,
+                            object detection and pixel classification.
     ---------------------   -------------------------------------------
     bands_of_interest       Optional list. List of spectral bands of interest.
                             This will filter bands based on `bands_of_interest`.

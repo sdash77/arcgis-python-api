@@ -121,12 +121,11 @@ def setup_profiles(
         print(f"Created profile {ent_admin_name}")
 
     if not kube_name in updated_list:
-        kube_credentials = get_kube_credentials()
         pm.create(
             kube_name,
-            url=get_kube_server(),
-            username=kube_credentials[0],
-            password=kube_credentials[1],
+            url="https://11-1-k8s.python.geocloud.com/arcgis/home",
+            username="geosaurusaccnt",
+            password="geosaurus_automation123",
         )
         print(f"Created profile {kube_name}")
 

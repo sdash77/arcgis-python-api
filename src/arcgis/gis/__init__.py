@@ -13,6 +13,7 @@ import locale
 import io
 import os
 import re
+import uuid
 import time
 import shutil
 import tempfile
@@ -63,6 +64,7 @@ import concurrent.futures
 from cachetools import cached, TTLCache
 
 from arcgis.auth.tools import LazyLoader
+from arcgis.auth import EsriSession
 
 arcgis_env = LazyLoader("arcgis.env")
 arcgis = LazyLoader("arcgis")
@@ -361,6 +363,7 @@ class GIS(object):
     _pds = None
     _validate_item_url = None
     _properties = None
+    session: EsriSession
     """If 'True', the GIS instance is a GIS('home') from hosted nbs"""
 
     # admin = None
@@ -825,6 +828,7 @@ class GIS(object):
             self._product_version = [
                 int(i) for i in self._portal.get_version().split(".")
             ]
+        self.session: EsriSession = self._con._session
 
     # ----------------------------------------------------------------------
     @property
@@ -834,6 +838,29 @@ class GIS(object):
 
             self._toolgp = _Tools(self)
         return self._toolgp
+
+    # ----------------------------------------------------------------------
+    @property
+    @functools.lru_cache(maxsize=100)
+    def _is_authenticated(self) -> bool:
+        """Checks if the GIS is signed in"""
+        from ..auth._auth import check_response_for_error
+
+        url: str = self._portal.resturl + "community/self"
+        params: dict[str, Any] = {
+            "f": "json",
+        }
+        resp: requests.Response = self.session.get(url=url, params=params)
+        resp.raise_for_status()
+        try:
+            msg = check_response_for_error(resp)
+            if msg is None:
+                return True
+            else:
+                _log.info(msg)
+                return False
+        except:
+            return False
 
     # ----------------------------------------------------------------------
     @_lazy_property
@@ -1113,6 +1140,16 @@ class GIS(object):
             return arcgis.apps.hub.SiteManager(self)
         else:
             raise Exception("Please access your ArcGIS Online sites through your Hub.")
+
+    @_lazy_property
+    def pages(self):
+        """
+        The ``pages`` property is the resource manager for a Page of an Enterprise Site. See :class:`~arcgis.apps.hub.pages` for more information.
+        """
+        if not self._portal.is_arcgisonline:
+            return arcgis.apps.hub.PageManager(self)
+        else:
+            raise Exception("Please access your ArcGIS Online pages through your Hub.")
 
     @_lazy_property
     def notebook_server(
@@ -1826,7 +1863,27 @@ class Datastore(dict):
 ###########################################################################
 class GroupMigrationManager(object):
     """
-    The ``GroupMigrationManager`` class allows groups to export and import data to and from EPK files.
+    The ``GroupMigrationManager`` class provides methods to export all or a
+    subset of all supported :class:`items <arcgis.gis.Item>` from an
+    ArcGIS Enterprise ``group`` into an export package (see
+    `Export Package <https://developers.arcgis.com/rest/users-groups-and-items/items-and-item-types.htm#GUID-57FD13A2-1A35-4F4D-B895-08CB48432E0D>`_)
+    that can subsequently be added to another ArcGIS Enterprise and then
+    loaded into a :class:`~arcgis.gis.Group`.
+
+    This class is not meant to be initialized directly, but instead an
+    object of this class is accessed through the :attr:`~arcgis.gis.Group.migration`
+    property on a :class:`~arcgis.gis.Group` object initialized from
+    an ArcGIS Enterprise Group
+
+    .. code-block:: python
+
+        # Usage Example: Initializing a ``GroupMigrationManager`` object:
+
+        >>> gis = GIS(profile="your_enterprise_admin_profile")
+
+        >>> ent_grp = gis.groups.search("<group query>")[0]
+
+        >>> grp_mig_mgr = ent_grp.migration
     """
 
     _con = None
@@ -1914,30 +1971,69 @@ class GroupMigrationManager(object):
     # ----------------------------------------------------------------------
     def create(self, items: Optional[list[Item]] = None, future: bool = True):
         """
-        The ``create`` method exports a :class:`~arcgis.gis.Group` content to an **EPK Package Item**.
-        `EPK Items` are intended to migrate content from an enterprise deployment to a new
-        enterprise. Once an `EPK Item` is created using this method, you can use the `load`
-        to ingest the package's content into the target enterprise. If your package
-        contains web maps, web-mapping applications, and/or associated web layers, during
-        the import operation, the method will takes care of swizzling the service URLs and
-        item IDs correctly.
+        The ``create`` method exports supported :class:`~arcgis.gis.Group` content to
+        an *Export Package* :class:`~arcgis.gis.Item` (*EPK item*). *EPK Items* can be used to
+        migrate content from one ArcGIS Enterprise deployment to another. Once an
+        `EPK Item` is created, you can download it, :meth:`~arcgis.gis.ContentManager.add`
+        it to a receiving ArcGIS Enterprise and then :meth:`~arcgis.gis.GroupMigrationManager.load`
+        it into a :class:`~arcgis.gis.Group` in that Enterprise deployment. The method will
+        handle updating service URLs and item IDs used in any web maps,
+        web-mapping applications, and/or associated web layers in those items during
+        the *load* operation. See full datails in the
+        `Export Group Content <https://developers.arcgis.com/rest/users-groups-and-items/export-group-content.htm>`_ documentation.
+
         .. note::
             There are some limits to this functionality. Packages should be under 10 GB in size
-            and only hosted feature layers, web maps, web-mapping apps, and other text-based
-            items are supported. You need to have **administrative** privileges to run this
+            and only `supported items <https://developers.arcgis.com/rest/users-groups-and-items/export-group-content.htm#ESRI_SECTION2_0C00F2CEA194453D8E91F9E1138CE7E1>`_
+            can be exported. You also must have **administrative** privileges to run this
             operation.
+
         ==================     ====================================================================
         **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
-        items                  Optional List<Item>. A set of items to export from the group.  If
-                               nothing is given, all items will be attempted to be exported.
+        items                  Optional List<:class:`~arcgis.gis.Item`>. A set of items to export
+                               from the group.  If argument is not provided, the method will attempt
+                               to export all group content items.
         ------------------     --------------------------------------------------------------------
-        future                 Optional Boolean.  When True, the operation will return a Job object
-                               and return the results asynchronously.
+        future                 Optional Boolean.  When `True`, the operation runs asynchronously
+                               and returns a :class:`Job <arcgis.gis._impl._jb.StatusJob>` object
+                               that can be queried for results. When `False` the operation
+                               runs synchronously and returns an *export package*
+                               :class:`~arcgis.gis.Item` upon completion.
         ==================     ====================================================================
 
         :return:
-            :class:`~arcgis.gis.Item` --or-- :class:`~arcgis.gis._impl._jb.StatusJob` when `future=True`
+            An *export package* :class:`~arcgis.gis.Item` when `future=False`, or a
+            :class:`Job <arcgis.gis._impl._jb.StatusJob>` when `future=True`
+
+        .. code-block:: python
+
+            # Usage Example: Asynchronous execution
+
+            >>> import time
+            >>> from arcgis.gis import GIS
+            >>>
+            >>> gis = GIS(profile="your_enterprise_admin_profile")
+
+            >>> grp = gis.groups.get("<group_id>")
+            >>> grp_mig_mgr = grp.migration
+
+            >>> mig_job = grp_mig_mgr.create()
+
+            >>> while mig_job.status != "completed":
+            >>>     job_status = mig_job.status
+            >>>     if job_status == "failed":
+            >>>         break
+            >>>     else:
+            >>>         print(job_status)
+            >>>         time.sleep(3)
+            >>> print(f"Job Status: {mig_job.status}")
+
+            processing
+            processing
+            Job Status: completed
+
+            >>> epk_item = mig_job.result()
         """
         if self._gis.users.me.role == "org_admin":
             url = f"{self._gis._portal.resturl}community/groups/{self._group.groupid}/export"
@@ -1984,34 +2080,90 @@ class GroupMigrationManager(object):
         folder_owner: Optional[str] = None,
     ):
         """
-        The ``load`` method imports the EPK content into the current :class:`~arcgis.gis.Group`.
+        The ``load`` method imports the contents of an *export package*
+        :class:`~arcgis.gis.Item` into a :class:`~arcgis.gis.Group`.
+
+        See the `Import Group Content <https://developers.arcgis.com/rest/users-groups-and-items/import-group.htm>`_
+        documenation for full system details.
+
         .. note::
             Administrative privileges are required to run this operation.
             Once imported, items will be owned by the importer, and will have
             to be manually reassigned to the proper owner if needed.
+
+        .. warning::
+            The receiving ArcGIS Enterprise deployment must be using the same version or later
+            of the ArcGIS Enterprise that generated the export package.
+
         ================  ===============================================================================
         **Keys**          **Description**
         ----------------  -------------------------------------------------------------------------------
-        epk_item          Required Item. A report on the content of the EPK Item.  This allows administrators
-                          to view the contents inside a EPK.
+        epk_item          Required *export package* :class:`~arcgis.gis.Item`.
         ----------------  -------------------------------------------------------------------------------
-        item_ids          Optional list. A list of item IDs to import to the organization.
+        item_ids          Optional list. A list of item IDs to import from the *export package*. If this
+                          argument is not provided, the operation will import all supported *items*
+                          in the export package to the receiving :class:`~arcgis.gis.Group`.
         ----------------  -------------------------------------------------------------------------------
-        overwrite         Optional bool. If the Items import exist, or the Item ID that is in use
-                          already, it will delete the old item and replace it with this one.
+        overwrite         Optional bool. If *True*, any *items* that already exist in the target
+                          organization will be overwritten by the corresponding *item* in the package
+                          provided by the `epk_item` argument.
         ----------------  -------------------------------------------------------------------------------
-        future            Optional bool. When True, the `load` will return a `Job` object and will not
-                          pause the current thread.  When `False` `load` will occur in a synchronous
-                          fashion pausing the thread.  If you are loading large amounts of data, set
-                          future to `True` to reduce time.
+        future            Optional bool. When *True*, the operation will return a
+                          :class:`Job <arcgis.gis._impl._jb.StatusJob>` object which can be queried, and
+                          the process will not pause so subsequent operations can continue to run.  When
+                          `False`, the operation runs synchronously, pausing the process until the
+                          job completes and returns a dictionary containing output information.
+                          If you are loading large amounts of data, set *future=True* to reduce down time.
+                          The *job* can be queried through its :attr:`~arcgis.gis._impl._jb.StatusJob.status`
+                          attribute. In addition, the :attr:`~arcgis.gis._impl._jb.StatusJob.messages` and
+                          :meth:`~arcgis.gis._impl._jb.StatusJob.result()` attributes will contain
+                          information about the output.
         ----------------  -------------------------------------------------------------------------------
-        folder_id         Optional String. In ArcGIS Online and Enterprise 10.9+, a user can specify the destination folder ID for the items.
+        folder_id         Optional String. In ArcGIS Enterprise 10.9 and later, the folder id of
+                          the destination Enterprise for the package contents.
         ----------------  -------------------------------------------------------------------------------
-        folder_owner      Optional String. In ArcGIS Online and Enterprise 10.9+, a user name of the folder owner.
+        folder_owner      Optional String. In ArcGIS Enterprise 10.9 and later, a *username* for the
+                          folder owner.
         ================  ===============================================================================
 
         :return:
-            A dictionary --or-- :class:`~arcgis.gis._impl._jb.StatusJob` when `future=True`
+            A dictionary when *future=False* or a :class:`Job <arcgis.gis._impl._jb.StatusJob>` when `future=True`.
+
+        .. code-block:: python
+
+            # Usage Example: Loading package results into a group
+
+            >>> source = GIS(profile="source_enterprise_admin_profile")
+            >>> target = GIS(profile="target_enterprise_admin_profile")
+
+            >>> source_grp = source.groups.get("<group_id>")
+            >>> source_epk_item = source_grp.migration.create(future=False)
+
+            >>> download_path = source_epk_item.download(save_path="path_on_system",
+                                                         file_name="file_name.epk")
+
+            >>> target_epk_item = target.content.add(item_properties={"title": "Group data export item",
+                                                                      "tags": "group_content_migration",
+                                                                      "snippet": "Sample of loading package.",
+                                                                      "type": "Export Package:},
+                                                     date=download_path)
+
+            >>> target_grp_mig = target.groups.get("<target_group_id>").migration
+            >>> grp_import_job = target_grp_mig.load(epk_item=target_epk_item)
+
+            >>> grp_import_job.messages
+
+            ["Starting import of items from EPK item '<item_id>' to group 'Group Title'.",
+             "Starting the import of exported package item '<item_id>' containing 2 items.",
+             "Import option to overwrite items if they exist is set to 'true'."]
+
+             >>> grp_import_job.result()
+
+            {'itemsImported': [<Item title:"Item1 title" type:<item1 type> owner:<item_owner>>,
+             <Item title:"Item2 title" type:<item2 type> owner:<item_owner>>],
+             'itemsSkipped': [],
+             'itemsFailedImport': []}
+
         """
 
         assert isinstance(epk_item, Item)
@@ -2051,17 +2203,59 @@ class GroupMigrationManager(object):
     # ----------------------------------------------------------------------
     def inspect(self, epk_item: Item) -> dict:
         """
-        The ``inspect`` method retrieves the contents of the EPK Package.
+        The ``inspect`` method retrieves the contents of an *export package*
+        :class:`~arcgis.gis.Item` resulting from the
+        :meth:`~arcgis.gis.GroupMigrationManager.create` operation. It outputs
+        a report on the contents of the package allowing administrators to
+        see the contents of the package.
 
         ================  ===============================================================================
         **Keys**          **Description**
         ----------------  -------------------------------------------------------------------------------
-        epk_item          Required Item. A report on the content of the EPK Item. This allows
-                          administrators to view the contents inside a EPK.
+        epk_item          Required *export package* :class:`~arcgis.gis.Item`.
         ================  ===============================================================================
 
         :return:
             A dictionary containing the contents of the EPK Package
+
+        .. code-block:: python
+
+            # Usage Example: Inspecting an export package
+
+            >>> grp = gis.groups.get("<group_id>")
+
+            >>> export_epk_item = grp.migration.create(future=False)
+            >>> grp.migration.inspect(epk_item = export_epk_item)
+
+            {'packageSummary': {'id': '68472b95bdfd4efa86531fd202151eda',
+            'fileName': 'Group_Data_2023714_032552',
+            'packageVersion': '1.0',
+            'packageCreated': 1690496752834,
+            'sourcePortalInfo': {'httpsUrl': 'https://myserver.company.com/web_adaptor',
+             'httpUrl': 'http://myserver.company.com/web_adaptor',
+             'version': '11.1.0',
+             'portalId': 'e35a6e01-0902-4c77-ef9d-1a84816f530a',
+             'isPortal': True}},
+           'total': 2,
+           'start': 1,
+           'num': 2,
+           'nextStart': -1,
+           'results': [{'id': '4a0dfbfa0eeb415195426eee9131edfa',
+             'type': 'Feature Service',
+             'title': 'FService Item Name',
+             'size': 4204037,
+             'exists': True,
+             'canImport': True,
+             'created': 1689255086965,
+             'modified': 1689255155534},
+            {'id': 'c9d0f2b3fbf44be8a531c9a47ff160b0',
+             'type': 'Feature Service',
+             'title': 'FService2 Item name',
+             'size': 1985399,
+             'exists': True,
+             'canImport': True,
+             'created': 1689257010004,
+             'modified': 1689253036102}]}
 
         """
         if isinstance(epk_item, Item) and epk_item.type == "Export Package":
@@ -2825,7 +3019,7 @@ class UserManager(object):
         ================  ===============================================================================
         **Keys**          **Description**
         ----------------  -------------------------------------------------------------------------------
-        role	          String/Role. The role ID. To assign a custom role as the new member default,
+        role            String/Role. The role ID. To assign a custom role as the new member default,
                           provide a Role object.
 
                           Values: `administrator`, `publisher`, `editor`, `viewer` or custom `Role` object
@@ -3144,7 +3338,7 @@ class UserManager(object):
     def create(
         self,
         username: str,
-        password: str,
+        password: str | None,
         firstname: str,
         lastname: str,
         email: str,
@@ -3160,116 +3354,238 @@ class UserManager(object):
         email_text: Optional[str] = None,
     ):
         """
-        The ``create`` operation is used to pre-create built-in or enterprise accounts within the Enterprise portal,
-        or built-in users in an ArcGIS Online organization account.
+        The ``create`` operation is used to create built-in or pre-create organization-specific identity
+        store accounts for use in a Web GIS. See the respective documentation for complete details
+        about configurating identity stores and managing access to your deployment:
+
+        * ``ArcGIS Enterprise`` - `Manage access to your portal <https://enterprise.arcgis.com/en/portal/latest/administer/windows/managing-access-to-your-portal.htm>`_
+        * ``ArcGIS Online`` - `Invite and add members <https://doc.arcgis.com/en/arcgis-online/administer/invite-users.htm>`_
 
         .. note::
             Only an administrator can call this method.
 
-            A member's `user_type` determines the default `role` that can be assigned to the member. User types
-            compatible with each role are noted in the table below (within the `user_type` section).
-
-        **To create a viewer account, choose role='viewer' and user_type='viewer'**
-
-        .. note:
-            When Portal for ArcGIS is connected to an enterprise identity store, enterprise users sign
-            into portal using their enterprise credentials. By default, new installations of Portal for
-            ArcGIS do not allow accounts from an enterprise identity store to be registered to the portal
+        .. note::
+            When Portal for ArcGIS is connected to an
+            `organization specific identity store <https://enterprise.arcgis.com/en/portal/latest/administer/windows/managing-access-to-your-portal.htm#ESRI_SECTION2_4E6A70E10A9444DD92662208198B8876>`_,
+            users can sign into portal using their organization specific credentials, also known as
+            their enterprise credentials. By default, new installations of Portal for ArcGIS do not
+            allow accounts from an enterprise identity store to be registered to the portal
             automatically. Only users with accounts that have been pre-created can sign in to the portal.
             Alternatively, you can configure the portal to register enterprise accounts the first time
             the user connects to the website.
 
+        The `user_type` argument determines which `role` can be assigned to the member. A
+        full explanation of `user types` and their compatibility with a particular `role`
+        can be found in the
+        `User types, roles, and privileges <https://enterprise.arcgis.com/en/portal/latest/administer/windows/roles.htm>`_
+        documentation.
+
+        An organization administrator may configure `New Member Defaults`. When a Web GIS is configured
+        with these values, any new user will receive these default values unless overridden by the
+        corresponding arguments in this method. See the following documentation for additional details:
+
+        * `ArcGIS Online <https://doc.arcgis.com/en/arcgis-online/administer/configure-new-member-defaults.htm>`_
+        * `ArcGIS Enterprise <https://enterprise.arcgis.com/en/portal/latest/administer/windows/configure-new-member-defaults.htm>`_
+
+        To query the organization for `New Member Defaults`, run the following code:
+
+        .. code-block:: python
+
+            >>> gis = GIS(profile="your_admin_profile")
+
+            >>> gis.users.user_settings
+
         ================  ===============================================================================
         **Parameter**      **Description**
         ----------------  -------------------------------------------------------------------------------
-        username          Required string. The user name, which must be unique in the Portal, and
-                          6-24 characters long.
+        username          Required string. The user name, which must be unique in the Enterprise or
+                          in all of ArcGIS Online. Must be between 6 to 24 characters long.
         ----------------  -------------------------------------------------------------------------------
-        password          Required string. The password for the user.  It must be at least 8 characters.
-                          This is a required parameter only if
-                          the provider is arcgis; otherwise, the password parameter is ignored.
-                          If creating an account in an ArcGIS Online org, it can be set as None to let
-                          the user set their password by clicking on a link that is emailed to him/her.
-                          When the `provider` is **enterprise**, password is optional.
+        password          Required string if the `provider` argument is `arcgis`. If the argument is
+                          `enterprise`, meaning an
+                          `organization-specific identity provider
+                          <https://enterprise.arcgis.com/en/portal/latest/administer/windows/managing-access-to-your-portal.htm#ESRI_SECTION2_4E6A70E10A9444DD92662208198B8876>`_
+                          is configured, the password parameter is optional (or ignored if present).
+
+                          .. note::
+                             If creating an ArcGIS Online organization user, the argument can be `None`
+                             and users can subsequently set their password by clicking on a link that
+                             is emailed to them.
+
+                          .. note::
+                             This argument **must** be None if iniviting the user to an ArcGIS Online
+                             organization and you want to send an email. Sending email invitations cannot
+                             have passwords set by an administrator.
         ----------------  -------------------------------------------------------------------------------
-        firstname         Required string. The first name for the user
+        firstname         Required string. The first name for the user.
         ----------------  -------------------------------------------------------------------------------
-        lastname          Required string. The last name for the user
+        lastname          Required string. The last name for the user.
         ----------------  -------------------------------------------------------------------------------
-        email             Required string. The email address for the user. This is important to have correct.
+        email             Required string. The email address for the user. This is important!
         ----------------  -------------------------------------------------------------------------------
         description       Optional string. The description of the user account.
         ----------------  -------------------------------------------------------------------------------
-        thumbnail         Optional string. The URL to user's image.
+        thumbnail         Optional string. The URL to an image to represent the user.
         ----------------  -------------------------------------------------------------------------------
-        role              Optional string. The :class:`role <arcgis.gis.Role>` for the user account. The
-                          default value is ``org_user``. Other possible values are ``org_publisher``,
-                          ``org_admin``, ``viewer``, ``viewplusedit`` or a custom :class:`role_id <arcgis.gis.Role>`
-                          value obtained from the :func:`~RoleManager.all` method of the :class:`RoleManager` class.
+        role              Optional string. The :class:`role <arcgis.gis.Role>` name or `role_id` value to
+                          assign the new member. To assign one of the `default Administrator, Publisher,
+                          or User roles <https://enterprise.arcgis.com/en/portal/latest/administer/windows/member-roles.htm#ESRI_SECTION1_C30D73392D964D51A8B606128A8A6E8F>`_
+                          enter ``org_admin``, ``org_publisher``, or ``org_user``, respectively.
+                          For any other default role, or a custom role within the organization, enter
+                          the `role_id` value returned from the :meth:`~arcgis.gis.RoleManager.all` method
+                          on the :class:`~arcgis.gis.RoleManager` class.
 
+                          .. code-block:: python
+
+                              >>> from arcgis.gis import GIS
+
+                              >>> gis = GIS(profile="your_org_admin_profile")
+
+                              >>> for org_role in gis.users.roles.all():
+                                      print(f"{org_role.name:25}{org_role.role_id}")
         ----------------  -------------------------------------------------------------------------------
-        provider          Optional string. The provider for the account. The default value is arcgis.
-                          The other possible value is enterprise.
+        provider          Optional string. The identity provider for the account. The default value is
+                          `arcgis`. Possible values:
+
+                          * `arcgis` - built-in identity provider
+                          * `enterprise` - organization-specific identity provider
+
+                          See documentation for managing organizational access for explanation of different
+                          identity provider options:
+
+                          * `ArcGIS Enterprise <https://enterprise.arcgis.com/en/portal/latest/administer/windows/managing-access-to-your-portal.htm>`_
+                          * `ArcGIS Online <https://doc.arcgis.com/en/arcgis-online/administer/invite-users.htm>`_
         ----------------  -------------------------------------------------------------------------------
-        idp_username      Optional string. The name of the user as stored by the enterprise user store.
-                          This parameter is only required if the provider parameter is enterprise.
+        idp_username      Required if `provider` argument is `enterprise`, otherwise not used. The name
+                          of the user as stored by the organization-specific identity store.
         ----------------  -------------------------------------------------------------------------------
-        level             Optional integer. The account level. (ArcGIS Enterprise prior to version 10.7.
-                          See `User types, roles, and privileges <https://enterprise.arcgis.com/en/portal/latest/administer/windows/roles.htm>`_
-                          for full details.) The GIS Professional `user_type` can be assigned at the following three levels, which correspond to the three license levels of ArcGIS Pro:
-                           - GIS Professional Basic
-                           - GIS Professional Standard
-                           - GIS Professional Advanced
+        level             **Deprecated** Optional integer. The Web GIS system automatically sets this
+                          argument based upon the `user_type` and `role` arguments. See
+                          `Levels <https://enterprise.arcgis.com/en/portal/10.6/administer/windows/roles.htm#ESRI_SECTION1_08925CEF37334C619D52BC027C3C8DE1>`_
+                          for detailed description.
+
+                          .. note::
+                              This parameter was deprecated with the 10.7 release.
         ----------------  -------------------------------------------------------------------------------
-        user_type         Required string. The account user type. This can be creator, viewer, etc.  The
-                          type effects what applications a user can use and what actions they can do in
-                          the organization. (ArcGIS Enterprise 10.7+ and ArcGIS Online.
-                          See `User types, roles, and privileges <https://enterprise.arcgis.com/en/portal/latest/administer/windows/roles.htm>`_
-                          for full details.)
-                           - Members assigned the ``viewer`` role cannot create or share content, or perform analysis, and the ``viewer`` role is compatible with all user types.
-                           - The Data Editor role ``viewplusedit`` is compatible with all user types except ``viewer``.
-                           - The ``org_user``, ``org_publisher``, and ``org_admin`` roles are compatible with the Creator, GIS Professional, Storyteller, and Insights Analyst user types.
-                           - A complete list of `user_type` values can be obtained from the `license_types` property on the `UserManager`.
+        user_type         Required string, unless specified in the `New Member Defaults`. The user type
+                          license for an organization member. See
+                          `user types <https://enterprise.arcgis.com/en/portal/latest/administer/windows/user-types-orgs.htm>`_
+                          for detailed descriptions of each `user type`. Each `user_type` is
+                          compatible with specific `roles` in the organization. Compatibility is
+                          determined by the `privileges` assigned to each `role`. Only certain `role`
+                          arguments will work with specific `user types`. The potential values
+                          for this argument depend upon the organizational subscription and
+                          licensing. Run the following query as an administrator to determine the
+                          possible values:
+
+                          .. code-block:: python
+
+                              >>> for utype in gis.users.license_types:
+                                      print(f"{utype['id]}")
+
+                          .. note::
+                              See the :attr:`~arcgis.gis.UserManager.license_types` property on the
+                              :class:`~arcgis.gis.UserManager` class.
         ----------------  -------------------------------------------------------------------------------
         credits           Optional Float. The number of credits to assign a user.  The default is None,
-                          which means unlimited. (10.7+)
+                          unless specified in the `New Member Defaults`.
+
+                          The following code will return the default value if it has been set:
+
+                          .. code-block:: python
+
+                              >>> gis = GIS(profile="your_admin_profile")
+
+                              >>> gis.properties.defaultUserCreditAssignment
+
+                          .. note::
+                              Only applies to ArcGIS Online organizations.
         ----------------  -------------------------------------------------------------------------------
-        groups            Optional List. An array of Group objects to provide access to for a given
-                          user. (10.7+)
+        groups            Optional List of :class:`~arcgis.gis.Group` objects to which the new user will
+                          be added. If `None`, user will be assigned to any groups specified in the
+                          `New Member Defaults`.
         ----------------  -------------------------------------------------------------------------------
         email_text        Optional string. Custom text to include in the invitation email. This text will
-                          be appended to the top of the default email text. ArcGIS Online only.
+                          be appended to the top of the default email text. `ArcGIS Online` only.
         ================  ===============================================================================
 
         :return:
             The :class:`user <arcgis.gis.User>` if successfully created, None if unsuccessful.
 
         .. code-block:: python
-            :emphasize-lines: 10,18
 
-            # Usage Example: Assign custom role to a new user
+            #Usage Example 1: New ArcGIS Online user using `New Member Defaults`
 
+            >>> ago = GIS(profile='your_online_admin_profile')
+
+            >>> for k,v in ago.users.user_settings.items():
+            >>>     print(f'{k:20}{v}')
+
+            role                org_publisher
+            userLicenseType     advancedUT
+            groups              ['96c9a826e654481ba2cf8f6d04137b32']
+            userType            arcgisonly
+            apps                []
+            appBundles          []
+            categories          []
+
+            >>> new_user = ago.users.create(username= 'new_unique_username',
+                                            password= '<strong_password>',
+                                            firstname= 'user_firstname',
+                                            lastname= 'user_lastname',
+                                            email= 'user_email@company.com',
+                                            description= 'new user using member defaults'))
+
+            # Usage Example 2: New ArcGIS Online user with custom role and non-default `user_type`
+
+            # Get RoleManager and print `role_id` values for `role` argument
             >>> role_mgr = gis.users.roles
 
             >>> for role in role_mgr.all():
-            >>>     print(f"{role.name}  {role.role_id}")
+            >>>     print(f'{role.name}  {role.role_id}')
 
             Viewer              iAAAAAAAAAAAAAAA
             Data Editor         iBBBBBBBBBBBBBBB
             CustomRole          bKrTCjFF9tKbaFk8
 
-            >>> user1 = gis.users.create(username='new_user_1',
+            # Print valid values for `user_type` argument
+            >>> [ut['id'] for ut in ago.users.license_types]
+
+            ['advancedUT',
+            'basicUT',
+            'creatorUT',
+            'editorUT',
+            'fieldWorkerUT',
+            'GISProfessionalAdvUT',
+            'GISProfessionalBasicUT',
+            'GISProfessionalStdUT',
+            'IndoorsUserUT',
+            'insightsAnalystUT',
+            'liteUT',
+            'standardUT',
+            'storytellerUT',
+            'viewerUT']
+
+            >>> user1 = ago.users.create(username='new_unique_username',
                                          password='<strong_password>',
-                                         firstname='New',
-                                         lastname='User',
-                                         email='namee@organization.com',
-                                         description='User with custom role assigned',
+                                         firstname="user_firstname",
+                                         lastname="user_lastname",
+                                         email="user_email@company.com",
+                                         description="Test user with custom role and non-default user type.",
                                          role='bKrTCjFF9tKbaFk8',
-                                         user_type='Creator')
+                                         user_type='creatorUT')
 
-            >>> if user1: # setting the start_page of the newly created user
-            >>>     user1.landing_page = "organization"
+            # Usage Example 3: New User invited with an email:
 
+            >>> user_e = ago.users.create(username="new_invited_uk_Q42eklm",
+                                          password="S8V3*t4L8tr!&",
+                                          firstname="user_firstname",
+                                          lastname="user_lastname",
+                                          email="user_email@company.com",
+                                          description="Test for an invited user to Online.",
+                                          user_type="creatorUT",
+                                          role="XBH3xJArWxYuK2qX",
+                                          email_text="Welcome aboard the Web GIS organization!")
         """
         if any(
             [
@@ -4895,90 +5211,308 @@ class Role(object):
         """
         The ``privileges`` method retrieves and sets the privileges for the custom role as a list of strings.
 
-        Supported **Administrator Privileges** with predefined permissions for:
+        **Administrator Privileges**:
 
         *Members*
 
-                1. portal:admin:viewUsers: grants the ability to view full member account information within organization.
-                2. portal:admin:updateUsers: grants the ability to update member account information within organization.
-                3. portal:admin:deleteUsers: grants the ability to delete member accounts within organization.
-                4. portal:admin:inviteUsers: grants the ability to invite members to organization. (This privilege is only applicable to ArcGIS Online.)
-                5. portal:admin:disableUsers: grants the ability to enable and disable member accounts within organization.
-                6. portal:admin:changeUserRoles: grants the ability to change the role a member is assigned within organization; however, it does not grant the ability to promote a member to, or demote a member from, the Administrator role. That privilege is reserved for the Administrator role alone.
-                7. portal:admin:manageLicenses: grants the ability to assign licenses to members of organization.
-                8. portal:admin:reassignUsers: grants the ability to assign all groups and content of a member to another within organization.
+        =======================================      ========================================================================
+        **Privilege**                                **Description**
+        ---------------------------------------      ------------------------------------------------------------------------
+        portal:admin:viewUsers                       Grants the ability to view full member account information within
+                                                     organization.
+        ---------------------------------------      ------------------------------------------------------------------------
+        portal:admin:updateUsers                     Grants the ability to update member account information within organization.
+        ---------------------------------------      ------------------------------------------------------------------------
+        portal:admin:deleteUsers                     Grants the ability to delete member accounts within organization.
+        ---------------------------------------      ------------------------------------------------------------------------
+        portal:admin:inviteUsers                     Grants the ability to invite members to organization.
+        ---------------------------------------      ------------------------------------------------------------------------
+        portal:admin:disableUsers                    Grants the ability to enable and disable member accounts within organization.
+        ---------------------------------------      ------------------------------------------------------------------------
+        portal:admin:changeUserRoles                 Grants the ability to change the role a member is assigned within
+                                                     the organization. However, it does not grant the ability to promote
+                                                     or demote a member from the Administrator role. That privilege is reserved
+                                                     for the Administrator role alone.
+        ---------------------------------------      ------------------------------------------------------------------------
+        portal:admin:manageLicenses                  Grants the ability to assign licenses to members of organization.
+        ---------------------------------------      ------------------------------------------------------------------------
+        portal:admin:updateMemberCategorySchema      Grants the ability to configure categories for members.
+        =======================================      ========================================================================
 
-            *Groups*
+        *Groups*
 
-                1. portal:admin:viewGroups: grants the ability to view all groups within organization.
-                2. portal:admin:updateGroups: grants the ability to update groups within organization.
-                3. portal:admin:deleteGroups: grants the ability to delete groups within organization.
-                4. portal:admin:reassignGroups: grants the ability to reassign groups to other members within organization.
-                5. portal:admin:assignToGroups: grants the ability to assign members to, and remove members from, groups within organization.
-                6. portal:admin:manageEnterpriseGroups: grants the ability to link group membership to an enterprise group. (This privilege is only applicable to ArcGIS Enterprise.)
+        =====================================       ========================================================================
+        **Privilege**                               **Description**
+        -------------------------------------       ------------------------------------------------------------------------
+        portal:admin:viewGroups                     Grants the ability to view all groups within organization.
+        -------------------------------------       ------------------------------------------------------------------------
+        portal:admin:updateGroups                   Grants the ability to update groups within organization.
+        -------------------------------------       ------------------------------------------------------------------------
+        portal:admin:deleteGroups                   Grants the ability to delete groups within organization.
+        -------------------------------------       ------------------------------------------------------------------------
+        portal:admin:reassignGroups                 Grants the ability to reassign groups to other members within organization.
+        -------------------------------------       ------------------------------------------------------------------------
+        portal:admin:assignToGroups                 Grants the ability to assign members to, and remove members from
+                                                    groups within organization.
+        -------------------------------------       ------------------------------------------------------------------------
+        portal:admin:manageEnterpriseGroups         Grants the ability to link group membership to an enterprise group.
+        -------------------------------------       ------------------------------------------------------------------------
+        portal:admin:createUpdateCapableGroup       Grants the ability to create a group with update capabilities.
+        =====================================       ========================================================================
 
-            *Content*
 
-                1. portal:admin:viewItems: grants the ability to view all content within organization.
-                2. portal:admin:updateItems: grants the ability to update content within organization.
-                3. portal:admin:deleteItems: grants the ability to delete content within organization.
-                4. portal:admin:reassignItems: grants the ability to reassign content to other members within organization.
-                5. portal:admin:shareToGroup: grants the ability to share other member's content to groups the user belongs to.
-                6. portal:admin:shareToOrg: grants the ability to share other member's content to organization.
-                7. portal:admin:shareToPublic: grants the ability to share other member's content to all users of the portal.
+        *Content*
 
-            *ArcGIS Marketplace Subscriptions*
+        =====================================     ========================================================================
+        **Privilege**                             **Description**
+        -------------------------------------     ------------------------------------------------------------------------
+        portal:admin:viewItems                    Grants the ability to view all content within organization.
+        -------------------------------------     ------------------------------------------------------------------------
+        portal:admin:updateItems                  Grants the ability to update content within organization.
+        -------------------------------------     ------------------------------------------------------------------------
+        portal:admin:deleteItems                  Grants the ability to delete content within organization.
+        -------------------------------------     ------------------------------------------------------------------------
+        portal:admin:reassignItems                Grants the ability to reassign content to other members within organization.
+        -------------------------------------     ------------------------------------------------------------------------
+        portal:admin:shareToGroup                 Grants the ability to share other member's content to groups the user belongs to.
+        -------------------------------------     ------------------------------------------------------------------------
+        portal:admin:shareToOrg                   Grants the ability to share other member's content to organization.
+        -------------------------------------     ------------------------------------------------------------------------
+        portal:admin:shareToPublic                Grants the ability to share other member's content to all users of the portal.
+        -------------------------------------     ------------------------------------------------------------------------
+        portal:admin:updateItemCategorySchema     Grants the ability to create and update content categories in the organization.
+        =====================================     ========================================================================
 
-                1. marketplace:admin:purchase: grants the ability to request purchase information about apps and data in ArcGIS Marketplace. (This privilege is only applicable to ArcGIS Online.)
-                2. marketplace:admin:startTrial: grants the ability to start trial subscriptions in ArcGIS Marketplace. (This privilege is only applicable to ArcGIS Online.)
-                3. marketplace:admin:manage: grants the ability to create listings, list items and manage subscriptions in ArcGIS Marketplace. (This privilege is only applicable to ArcGIS Online.)
+        *Webhooks* (*ArcGIS Enterprise* only)
+
+        ===============================     ========================================================================
+        **Privilege**                       **Description**
+        -------------------------------     ------------------------------------------------------------------------
+        portal:admin:manageWebhooks         Grant the ability to create, edit, delete and manage all webhooks within
+                                            the organization.
+        ===============================     ========================================================================
+
+        *ArcGIS Marketplace Subscriptions* (*ArcGIS Online* only)
+
+        ===============================     ========================================================================
+        **Privilege**                       **Description**
+        -------------------------------     ------------------------------------------------------------------------
+        marketplace:admin:purchase          Grants the ability to request purchase information about apps and data
+                                            in ArcGIS Marketplace.
+        -------------------------------     ------------------------------------------------------------------------
+        marketplace:admin:startTrial        Grants the ability to start trial subscriptions in ArcGIS Marketplace.
+        -------------------------------     ------------------------------------------------------------------------
+        marketplace:admin:manage            Grants the ability to create listings, list items and manage
+                                            subscriptions in ArcGIS Marketplace.
+        ===============================     ========================================================================
+
+        *Organization Settings*
+
+        ===================================     ========================================================================
+        **Privilege**                           **Description**
+        -----------------------------------     ------------------------------------------------------------------------
+        portal:admin:manageSecurity             Grants ability to manage security and infrastructure settings
+        -----------------------------------     ------------------------------------------------------------------------
+        portal:admin:manageWebsite              Grants the ability to manage the website settings.
+        -----------------------------------     ------------------------------------------------------------------------
+        portal:admin:manageCollaborations       Grants the ability to administer the organization's collaborations.
+        -----------------------------------     ------------------------------------------------------------------------
+        portal:admin:manageCredits              Grants the ability to manage the organization's credit budget settings.
+                                                (*ArcGIS Online* only)
+        -----------------------------------     ------------------------------------------------------------------------
+        portal:admin:manageServers              Grants the ability to manage the servers federated with the
+                                                organization. (*ArcGIS Enterprise* only)
+        -----------------------------------     ------------------------------------------------------------------------
+        portal:admin:manageUtilityServices      Grants the ability to manage the utility services configured with the
+                                                organization.
+        -----------------------------------     ------------------------------------------------------------------------
+        portal:admin:manageRoles                Grants the ability to manage the organization's roles.
+        -----------------------------------     ------------------------------------------------------------------------
+        portal:admin:createGPWebhook            Grants the ability to create, edit and delete their own
+                                                geoprocessing webhook. (*ArcGIS Enterprise* only)
+        ===================================     ========================================================================
+
 
         **Publisher Privileges:**
 
-            *Content*
+        *Content*
 
-                1. portal:publisher:publishFeatures: grants the ability to publish hosted feature layers from shapefiles, CSVs, etc.
-                2. portal:publisher:publishTiles: grants the ability to publish hosted tile layers from tile packages, features, etc.
-                3. portal:publisher:publishScenes: grants the ability to publish hosted scene layers.
+        ==========================================    =========================================================================
+        **Privilege**                                 **Description**
+        ------------------------------------------    -------------------------------------------------------------------------
+        portal:publisher:publishFeatures              Grants the ability to publish hosted feature layers.
+        ------------------------------------------    -------------------------------------------------------------------------
+        portal:publisher:publishTiles                 Grants the ability to publish hosted tile layers.
+        ------------------------------------------    -------------------------------------------------------------------------
+        portal:publisher:publishScenes                Grants the ability to publish hosted scene layers.
+        ------------------------------------------    -------------------------------------------------------------------------
+        portal:publisher:publishServerServices        Grants the ability to publish non-hosted server services.
+                                                      (*ArcGIS Enterprise* only)
+        ------------------------------------------    -------------------------------------------------------------------------
+        portal:publisher:publishServerGPServices      Grants the ability to publish non-hosted geoprocessing services
+                                                      (*ArcGIS Enterprise* only)
+        ------------------------------------------    -------------------------------------------------------------------------
+        portal:publisher:publishKnowledgeGraph        Grants the ability to create and publish knowledge graphs.
+                                                      (*ArcGIS Enterprise* only)
+        ------------------------------------------    -------------------------------------------------------------------------
+        portal:publisher:bulkPublishFromDataStores    Grants the ability to publish web layers from a registered data store.
+                                                      (*ArcGIS Enterprise* only)
+        ------------------------------------------    -------------------------------------------------------------------------
+        portal:publisher:enumerateDataStores          Grants the ability to get list of datasets from a registered data store.
+                                                      (*ArcGIS Enterprise* only)
+        ------------------------------------------    -------------------------------------------------------------------------
+        portal:pulisher:registerDataStores            Grants the ability to register data stores to the Enterprise. (*ArcGIS
+                                                      Enterprise* only)
+        ------------------------------------------    -------------------------------------------------------------------------
+        portal:publisher:publishTiledImagery          Grants the ability to publish hosted tiled imagery layers from a single
+                                                      image or collection of images.
+        ------------------------------------------    -------------------------------------------------------------------------
+        portal:publisher:publishDynamicImagery        Grants the ability to publish hosted dynamic imagery layers from a single
+                                                      image or collection of images.
+        ------------------------------------------    -------------------------------------------------------------------------
+        premium:publisher:createNotebooks             Grants the ability to create and edit interactive notebooks items.
+        ------------------------------------------    -------------------------------------------------------------------------
+        premium:publisher:scheduleNotebooks           Grants the ability to schedule future automated runs of a notebook.
+        ------------------------------------------    -------------------------------------------------------------------------
+        portal:publisher:createDataPipelines          Grants the ability to create, edit and run data pipelines.
+        ==========================================    =========================================================================
+
+        *Premium Content*
+
+        =========================================    =================================================================================
+        **Privilege**                                **Description**
+        -----------------------------------------    ---------------------------------------------------------------------------------
+        premium:publisher:geoanalytics               Grants the ability to use big data analytics. ()
+        -----------------------------------------    ---------------------------------------------------------------------------------
+        premium:publisher:rasteranalysis             Grants the ability to use raster analystics.
+        -----------------------------------------    ---------------------------------------------------------------------------------
+        premium:publisher:createAdvancedNotebooks    Grants the ability to publish a notebook as a geoprocessing service.
+                                                     (*ArcGIS Enterprise* only)
+        =========================================    =================================================================================
+
 
         **User Privileges:**
 
-            *Groups*
+        *Members*
 
-                1. portal:user:createGroup: grants the ability for a member to create, edit, and delete their own groups.
-                2. portal:user:joinGroup: grants the ability to join groups within organization.
-                3. portal:user:joinNonOrgGroup: grants the ability to join groups external to the organization. (This privilege is only applicable to ArcGIS Online.)
+        ===============================     ========================================================================
+        **Privilege**                       **Description**
+        -------------------------------     ------------------------------------------------------------------------
+        portal:user:viewOrgUsers            Grants members to view other organization members.
+        ===============================     ========================================================================
 
-            *Content*
+        *Groups*
 
-                1. portal:user:createItem: grants the ability for a member to create, edit, and delete their own content.
+        ===========================================    ========================================================================
+        **Privilege**                                  **Description**
+        -------------------------------------------    ------------------------------------------------------------------------
+        portal:user:createGroup                        Grants the ability for a member to create, edit, and delete their own groups.
+        -------------------------------------------    ------------------------------------------------------------------------
+        portal:user:joinGroup                          Grants the ability to join groups within organization.
+        -------------------------------------------    ------------------------------------------------------------------------
+        portal:user:joinNonOrgGroup                    Grants the ability to join groups external to the organization.
+                                                       (*ArcGIS Online* only)
+        -------------------------------------------    ------------------------------------------------------------------------
+        portal:user:viewOrgGroups                      Grants members the ability to view groups shared to the organization.
+        -------------------------------------------    ------------------------------------------------------------------------
+        portal:user:addExternalMembersToGroup          Grants the abitlity to create groups that allow external members,
+                                                       as well as invite external members to groups (*ArcGIS Online* only)
+        -------------------------------------------    ------------------------------------------------------------------------
+        portal:user:manageCollaborationGroupMembers    Grants the ability to manage members in partnered collaboration groups.
+                                                       (*ArcGIS Online* only)
+        ===========================================    ========================================================================
 
-            *Sharing*
+        *Content*
 
-                1. portal:user:shareToGroup: grants the ability to share content to groups.
-                2. portal:user:shareToOrg: grants the ability to share content to organization.
-                3. portal:user:shareToPublic: grants the ability to share content to all users of portal.
-                4. portal:user:shareGroupToOrg: grants the ability to make groups discoverable by the organization.
-                5. portal:user:shareGroupToPublic: grants the ability to make groups discoverable by all users of portal.
+        ===============================     ========================================================================
+        **Privilege**                       **Description**
+        -------------------------------     ------------------------------------------------------------------------
+        portal:user:createItem              Grants the ability for a member to create, edit, and delete their own
+                                            content.
+        -------------------------------     ------------------------------------------------------------------------
+        portal:user:viewTracks              Grants the ability to to view members' location tracks via shared track
+                                            views when location sharing is enabled. (*ArcGIS Enterprise* only)
+        -------------------------------     ------------------------------------------------------------------------
+        portal:user:reassignItems           Grants users the ability to reassign their own content to other
+                                            organization members with the receive items privilege.
+        -------------------------------     ------------------------------------------------------------------------
+        portal:user:receiveItems            Grants users the ability to receive items reassigned to them by other
+                                            organization members with the reassign items privilege.
+        -------------------------------     ------------------------------------------------------------------------
+        portal:user:viewOrgItems            Grants members the ability to view content shared with the organization.
+        ===============================     ========================================================================
 
-            *Premium Content*
+        *Sharing*
 
-                1. premium:user:geocode: grants the ability to perform large-volume geocoding tasks with the Esri World Geocoder such as publishing a CSV of addresses as hosted feature layer.
-                2. premium:user:networkanalysis: grants the ability to perform network analysis tasks such as routing and drive-time areas.
-                3. premium:user:geoenrichment: grants the ability to geoenrich features.
-                4. premium:user:demographics: grants the ability to make use of premium demographic data.
-                5. premium:user:spatialanalysis: grants the ability to perform spatial analysis tasks.
-                6. premium:user:elevation: grants the ability to perform analytical tasks on elevation data.
+        =================================     ========================================================================
+        **Privilege**                         **Description**
+        ---------------------------------     ------------------------------------------------------------------------
+        portal:user:shareToGroup              Grants the ability to share content to groups.
+        ---------------------------------     ------------------------------------------------------------------------
+        portal:user:shareToOrg                Grants the ability to share content to organization.
+        ---------------------------------     ------------------------------------------------------------------------
+        portal:user:shareToPublic             Grants the ability to share content to all users of portal.
+        ---------------------------------     ------------------------------------------------------------------------
+        portal:user:shareGroupToOrg           Grants the ability to make groups discoverable by the organization.
+        ---------------------------------     ------------------------------------------------------------------------
+        portal:user:shareGroupToPublic        Grants the ability to make groups discoverable by all users of portal.
+        =================================     ========================================================================
 
-            *Features*
+        *Premium Content*
 
-                1. features:user:edit: grants the ability to edit features in editable layers, according to the edit options enabled on the layer.
-                2. features:user:fullEdit: grants the ability to add, delete, and update features in a hosted feature layer regardless of the editing options enabled on the layer.
+        ===============================     ========================================================================
+        **Privilege**                       **Description**
+        -------------------------------     ------------------------------------------------------------------------
+        premium:user:geocode                Grants the ability to perform large-volume geocoding tasks with the
+                                            Esri World Geocoder such as publishing a CSV of addresses as hosted
+                                            feature layer.
+        -------------------------------     ------------------------------------------------------------------------
+        premium:user:networkanalysis        Grants the ability to perform network analysis tasks such as routing
+                                            and drive-time areas.
+        -------------------------------     ------------------------------------------------------------------------
+        premium:user:geoenrichment          Grants the ability to geoenrich features.
+        -------------------------------     ------------------------------------------------------------------------
+        premium:user:demographics           Grants the ability to make use of premium demographic data.
+        -------------------------------     ------------------------------------------------------------------------
+        premium:user:spatialanalysis        Grants the ability to perform spatial analysis tasks.
+        -------------------------------     ------------------------------------------------------------------------
+        premium:user:elevation              Grants the ability to perform analytical tasks on elevation data.
+        -------------------------------     ------------------------------------------------------------------------
+        premium:user:featurereport          Grants the ability to create feature reports. (*ArcGIS Online* only)
+        ===============================     ========================================================================
 
-            *Open Data*
+        *Features*
 
-                1. opendata:user:openDataAdmin: grants the ability to manage Open Data Sites for the organization. (This privilege is only applicable to ArcGIS Online.)
-                2. opendata:user:designateGroup: grants the ability to designate groups within organization as being available for use in Open Data. (This privilege is only applicable to ArcGIS Online.)
+        ===============================     ========================================================================
+        **Privilege**                       **Description**
+        -------------------------------     ------------------------------------------------------------------------
+        features:user:edit                  Grants the ability to edit features in editable layers, according to the
+                                            edit options enabled on the layer.
+        -------------------------------     ------------------------------------------------------------------------
+        features:user:fullEdit              Grants the ability to add, delete, and update features in a hosted
+                                            feature layer regardless of the editing options enabled on the layer.
+        ===============================     ========================================================================
+
+        *Version Management* (*ArcGIS Enterprise* only)
+
+        ===============================     ========================================================================
+        **Privilege**                       **Description**
+        -------------------------------     ------------------------------------------------------------------------
+        features:user:manageVersions        Grant the ability to manage version locks and view, alter, delete, edit,
+                                            reconcile, and post to all branch versions accessed through
+                                            ArcGIS Server feature layers.
+        ===============================     ========================================================================
+
+        *Open Data* (*ArcGIS Online* only)
+
+        ===============================     ========================================================================
+        **Privilege**                       **Description**
+        -------------------------------     ------------------------------------------------------------------------
+        opendata:user:openDataAdmin         Grants the ability to manage Open Data Sites for the organization.
+        -------------------------------     ------------------------------------------------------------------------
+        opendata:user:designateGroup        Grants the ability to designate groups within organization as being
+                                            available for use in Open Data.
+        ===============================     ========================================================================
 
         """
         resp = self._portal.con.post(
@@ -7050,7 +7584,9 @@ class ContentManager(object):
         """
         if max_items > 10000:
             raise Exception(
-                ("Use `advanced_search` fo" "r item queries over 10,000 Items.")
+                (
+                    "There is a limitation of 10,000 items that can be returned. Please use a smaller value for max_items. This is a limitation documented here: https://developers.arcgis.com/rest/users-groups-and-items/considerations-and-limitations.htm"
+                )
             )
         itemlist = []
         if query is not None and query != "" and item_type is not None:
@@ -7149,6 +7685,41 @@ class ContentManager(object):
                 return self._portal.create_folder(owner_name, folder)
             else:
                 print("Folder already exists.")
+        return None
+
+    def _get_folder(self, folder_id: str, username: str = None) -> str:
+        """
+        Private method for when a folder name needs to be found from a folder id.
+        Returns the folder name for the given folder id.
+
+        This method will search your folders to find the folder name. If folder is not owned by you,
+        then you must specify the username of the owner. Specifying the username requires
+        administrator privileges.
+
+        ================  ===============================================================
+        **Parameter**      **Description**
+        ----------------  ---------------------------------------------------------------
+        folder_id         Required string. The id of the folder.
+        ----------------  ---------------------------------------------------------------
+        username          Optional string. The username of the folder owner. Need admin
+                          privileges to specify this parameter.
+        ================  ===============================================================
+
+        :return: String
+        """
+        # If username provided check privileges
+        if username:
+            if "portal:admin:viewUsers" not in self._gis.users.me.privileges:
+                raise Exception(
+                    "You do not have privileges to view other users folders."
+                )
+        else:
+            username = self._gis.users.me.username
+        # Get folder
+        folders = self._gis.users.get(username).folders
+        for folder in folders:
+            if folder["id"] == folder_id:
+                return folder["title"]
         return None
 
     def rename_folder(
@@ -7489,6 +8060,64 @@ class ContentManager(object):
             return res
 
     # ----------------------------------------------------------------------
+    def import_table(
+        self,
+        df: pd.DataFrame,
+        *,
+        service_name: str | None = None,
+        title: str | None = None,
+        publish_parameters: dict[str, Any] = None,
+    ) -> Item:
+        """
+        The `import_table` function takes a Pandas' DataFrame and publishes it
+        as a Hosted Table on a WebGIS.
+
+        ===================  ==========================================================================
+        **Parameter**         **Description**
+        -------------------  --------------------------------------------------------------------------
+        df                   Required DataFrame. A Pandas dataframe containing the tabular information.
+        -------------------  --------------------------------------------------------------------------
+        service_name         Optional String. The name of the service.
+        -------------------  --------------------------------------------------------------------------
+        title                Optional String. The name of the title of the created Item.
+        -------------------  --------------------------------------------------------------------------
+        publish_parameters   Optional dict[str,Any]. The publish parameters.  If given, the user is
+                             responsible for passing all the publish parameters defined
+                             `here <https://developers.arcgis.com/rest/users-groups-and-items/publish-item.htm>`_.
+        ===================  ==========================================================================
+
+        returns: Published Hosted Table Item
+
+        """
+        assert isinstance(
+            df, pd.DataFrame
+        ), f"The df parameter must be a Pandas' DataFrame, not {type(df).__name__}"
+        fname: str = tempfile.mkstemp(suffix=".csv")[1]
+
+        df.to_csv(fname)
+        if title is None:
+            now: datetime = datetime.now()
+            title: str = f"Import Table created on: {now.strftime('%m/%d/%Y')}"
+        if service_name is None:
+            service_name = f"import_table_{uuid.uuid4().hex[:3]}"
+        pp: dict[str, Any] = {
+            "type": "CSV",
+            "title": title,
+        }
+        csv_item: Item = self.add(item_properties=pp, data=fname)
+        try:
+            os.remove(fname)
+        except:
+            pass
+        if publish_parameters is None:
+            publish_parameters: dict[str, Any] = self.analyze(
+                item=csv_item, file_type="csv"
+            )["publishParameters"]
+            publish_parameters["name"] = service_name
+            publish_parameters["locationType"] = "none"
+        return csv_item.publish(publish_parameters)
+
+    # ----------------------------------------------------------------------
     def import_data(
         self,
         df,
@@ -7644,7 +8273,6 @@ class ContentManager(object):
         from arcgis.features import (
             FeatureCollection,
             FeatureSet,
-            FeatureLayerCollection,
         )
 
         if item_id and self._gis.version <= [7, 1]:
@@ -7665,129 +8293,13 @@ class ContentManager(object):
             )
 
         # Pop out kwargs, establish params to be used throughout
-        sanitize_columns = kwargs.pop("sanitize_columns", False)
         service_name = kwargs.pop("service_name", None)
         if service_name is None:
             service_name = "a" + uuid4().hex[:7]
-        temp_dir = os.path.join(tempfile.gettempdir(), service_name)
+
         title = kwargs.pop("title", uuid4().hex)
         target_sr = kwargs.pop("target_sr", 102100)
         capabilities = kwargs.pop("capabilities", "Query")
-
-        def _create_file_item(file_type):
-            ftypes = {
-                "File Geodatabase": "gdb",
-                "Shapefile": "shp",
-            }
-            tags = kwargs.pop("tags", file_type)
-            if tags is None:
-                tags = file_type
-            name = "%s%s.%s" % (
-                random.choice(string.ascii_lowercase),
-                uuid4().hex[:5],
-                ftypes[file_type],
-            )
-            if file_type == "File Geodatabase":
-                # create empty filegdb
-                emtpy_fgdb = _tool_utils.run_and_hide(
-                    fn=arcpy.CreateFileGDB_management,
-                    **{"out_folder_path": temp_dir, "out_name": name},
-                )
-                fgdb = emtpy_fgdb[0]
-                location = os.path.join(fgdb, os.path.basename(temp_dir))
-                zip_loc = os.path.join(temp_dir, name)
-            else:
-                location = os.path.join(temp_dir, name)
-                zip_loc = temp_dir
-
-            # writes the df to file as features
-            df.spatial.to_featureclass(
-                location=location, sanitize_columns=sanitize_columns
-            )
-
-            # zip it
-            zip_file = _common_utils.zipws(path=zip_loc, outfile=temp_zip, keep=True)
-            # add item to portal
-            file_item = self.add(
-                item_properties={
-                    "title": title,
-                    "type": file_type,
-                    "tags": tags,
-                },
-                data=zip_file,
-                folder=folder,
-            )
-            shutil.rmtree(temp_dir, ignore_errors=True)
-
-            # start creating publish params from new file item
-            publish_parameters = {
-                "hasStaticData": True,
-                "name": os.path.splitext(file_item["name"])[0],
-                "maxRecordCount": 2000,
-                "layerInfo": {"capabilities": capabilities},
-            }
-
-            if target_sr is not None:
-                publish_parameters["targetSR"] = {"wkid": target_sr}
-
-            return file_item, publish_parameters
-
-        def _perform_overwrite(fl_index, flc, flc_manager, publish_parameters):
-            # update the name and id to represent correct values
-            publish_parameters["id"] = fl_index
-            publish_parameters["name"] = flc.manager.properties.layers[fl_index]["name"]
-
-            # Perform edit on the flc
-            # Step 1: Preserve layer ids
-            revert = False
-            if (
-                "preserveLayerIds" not in flc_manager.properties
-                or flc_manager.properties["preserveLayerIds"] is not True
-            ):
-                flc_manager.update_definition({"preserveLayerIds": True})
-                revert = True
-            # Step 2: Delete layer from definition
-            flc_manager.delete_from_definition({"layers": [{"id": fl_index}]})
-            # Step 3: Add new layer to definition
-            flc_manager.add_to_definition({"layers": [dict(publish_parameters)]})
-            # Step 4: Cleanup
-            if revert:
-                flc_manager.update_definition({"preserveLayerIds": False})
-
-        def _perform_append(flc_manager, publish_parameters, is_table=False):
-            # Add new layer to definition
-            flc_manager.add_to_definition({"layers": [dict(publish_parameters)]})
-            # Find the index at which the layer was added
-            for layer in flc_manager.properties.layers:
-                if layer["name"] == publish_parameters["name"]:
-                    fl_index = layer["id"]
-            return fl_index
-
-        def _add_item_dependency(
-            file_type, fl_index, file_item, fs_item, new_item=None, gis=None
-        ):
-            if file_type == "csv":
-                source_info = gis.content.analyze(item=file_item)["publishParameters"]
-                ItemDependency(fs_item).add("itemid", file_item.id)
-                fs_item.tables[fl_index].append(
-                    item_id=file_item.id,
-                    upload_format=file_type,
-                    source_info=source_info,
-                )
-            elif (
-                file_type == "shapefile"
-                or "filegdb"
-                in fs_item.layers[fl_index].properties.supportedAppendFormats
-            ):
-                ItemDependency(fs_item).add("itemid", file_item.id)
-                fs_item.layers[fl_index].append(
-                    item_id=file_item.id, upload_format=file_type
-                )
-            else:
-                # When filegdb not supported through append, use featureCollection
-                features = new_item.layers[0].query().features
-                fs_item.layers[fl_index].edit_features(adds=features)
-            fs_item.add_relationship(rel_item=file_item, rel_type="Service2Data")
 
         # If overwrite or append specified, set up necessary params
         overwrite = kwargs.pop("overwrite", False)
@@ -7812,18 +8324,23 @@ class ContentManager(object):
                 )
             fs_item = self._gis.content.get(fs_id)
 
-            flc = features.FeatureLayerCollection.fromitem(fs_item)
-            flc_manager = flc.manager
+            flc_manager = features.FeatureLayerCollection.fromitem(fs_item).manager
 
         if _is_geoenabled(df):
             # Working with feature layers
-            # set up temporary zip to be used in directory
-            os.makedirs(temp_dir)
-            temp_zip = os.path.join(temp_dir, "%s.zip" % ("a" + uuid4().hex[:5]))
 
             if has_arcpy:
                 # publish the file item and create publish params
-                fgdb_item, publish_parameters = _create_file_item("File Geodatabase")
+                fgdb_item, publish_parameters = self._create_file_item(
+                    df,
+                    "File Geodatabase",
+                    title,
+                    folder,
+                    target_sr,
+                    service_name,
+                    capabilities,
+                    **kwargs,
+                )
 
                 # publish as new layer
                 new_item = fgdb_item.publish(
@@ -7837,14 +8354,14 @@ class ContentManager(object):
 
                     # Overwrite or Append Steps
                     if overwrite:
-                        _perform_overwrite(
-                            fl_index, flc, flc_manager, publish_parameters
+                        self._perform_overwrite(
+                            fl_index, flc_manager, publish_parameters
                         )
                     elif append:
-                        fl_index = _perform_append(flc_manager, publish_parameters)
+                        fl_index = self._perform_insert(flc_manager, publish_parameters)
 
                     # Add new item dependency and append the features
-                    _add_item_dependency(
+                    self._add_item_dependency(
                         "filegdb", fl_index, fgdb_item, fs_item, new_item
                     )
 
@@ -7856,7 +8373,16 @@ class ContentManager(object):
                 else:
                     return new_item
             elif has_pyshp:
-                shpfl_item, publish_parameters = _create_file_item("Shapefile")
+                shpfl_item, publish_parameters = self._create_file_item(
+                    df,
+                    "Shapefile",
+                    title,
+                    folder,
+                    target_sr,
+                    service_name,
+                    capabilities,
+                    **kwargs,
+                )
                 if overwrite or append:
                     # Analyze the shapefile item to get definition for new feature layer
                     publish_parameters = self._gis.content.analyze(
@@ -7868,13 +8394,13 @@ class ContentManager(object):
                         ]
                         publish_parameters.update(publish_parameters_orig)
                     if overwrite:
-                        _perform_overwrite(
-                            fl_index, flc, flc_manager, publish_parameters
+                        self._perform_overwrite(
+                            fl_index, flc_manager, publish_parameters
                         )
                     elif append:
-                        fl_index = _perform_append(flc_manager, publish_parameters)
+                        fl_index = self._perform_insert(flc_manager, publish_parameters)
 
-                    _add_item_dependency(
+                    self._add_item_dependency(
                         "shapefile", fl_index, shpfl_item, fs_item, None
                     )
 
@@ -7930,24 +8456,20 @@ class ContentManager(object):
             # publish as new layer
             new_item = csv_item.publish(publish_parameters)
 
-            if overwrite or append:
-                # Get properties from the newly created feature layer
-                new_tbl = new_item.tables[0]
-                publish_parameters = new_tbl.properties
-                if overwrite:
-                    _perform_overwrite(fl_index, flc, flc_manager, publish_parameters)
-                elif append:
-                    fl_index = _perform_append(flc_manager, publish_parameters)
+            # Get properties from the newly created feature layer
+            new_tbl = new_item.tables[0]
+            publish_parameters = new_tbl.properties
+            if overwrite:
+                self._perform_overwrite(fl_index, flc_manager, publish_parameters)
+            elif append:
+                fl_index = self._perform_insert(flc_manager, publish_parameters)
 
-                _add_item_dependency(
-                    "csv", fl_index, csv_item, fs_item, new_item, self._gis
-                )
+            self._add_item_dependency("csv", fl_index, csv_item, fs_item, new_item)
 
-                # Table layer was added to existing feature service so can delete the item
-                new_item.delete()
-                return self._gis.content.get(fs_id)
+            # Table layer was added to existing feature service so can delete the item
+            new_item.delete()
+            return self._gis.content.get(fs_id)
 
-            return new_item
         elif isinstance(df, pd.DataFrame) and "location_type" not in kwargs:
             # To not break backwards compatibility
             # TODO: At 3.0.0 return an item not a Feature Set anymore: remove this elif block and keep one above
@@ -8063,6 +8585,135 @@ class ContentManager(object):
             # return
         return None
 
+    def _create_file_item(
+        self,
+        df,
+        file_type,
+        title,
+        folder,
+        target_sr,
+        service_name,
+        capabilities,
+        **kwargs,
+    ):
+        temp_dir = os.path.join(tempfile.gettempdir(), service_name)
+        # set up temporary zip to be used in directory
+        os.makedirs(temp_dir)
+        temp_zip = os.path.join(temp_dir, "%s.zip" % ("a" + uuid4().hex[:5]))
+        ftypes = {
+            "File Geodatabase": "gdb",
+            "Shapefile": "shp",
+        }
+        tags = kwargs.pop("tags", file_type)
+        if tags is None:
+            tags = file_type
+        name = "%s%s.%s" % (
+            random.choice(string.ascii_lowercase),
+            uuid4().hex[:5],
+            ftypes[file_type],
+        )
+        if file_type == "File Geodatabase":
+            # create empty filegdb
+            emtpy_fgdb = _tool_utils.run_and_hide(
+                fn=arcpy.CreateFileGDB_management,
+                **{"out_folder_path": temp_dir, "out_name": name},
+            )
+            fgdb = emtpy_fgdb[0]
+            location = os.path.join(fgdb, os.path.basename(temp_dir))
+            zip_loc = os.path.join(temp_dir, name)
+        else:
+            location = os.path.join(temp_dir, name)
+            zip_loc = temp_dir
+
+        # writes the df to file as features
+        sanitize_columns = kwargs.pop("sanitize_columns", False)
+        df.spatial.to_featureclass(location=location, sanitize_columns=sanitize_columns)
+
+        # zip it
+        zip_file = _common_utils.zipws(path=zip_loc, outfile=temp_zip, keep=True)
+        # add item to portal
+        file_item = self.add(
+            item_properties={
+                "title": title,
+                "type": file_type,
+                "tags": tags,
+            },
+            data=zip_file,
+            folder=folder,
+        )
+        shutil.rmtree(temp_dir, ignore_errors=True)
+
+        # start creating publish params from new file item
+        publish_parameters = {
+            "hasStaticData": True,
+            "name": os.path.splitext(file_item["name"])[0],
+            "maxRecordCount": 2000,
+            "layerInfo": {"capabilities": capabilities},
+        }
+
+        if target_sr is not None:
+            publish_parameters["targetSR"] = {"wkid": target_sr}
+
+        return file_item, publish_parameters
+
+    def _perform_overwrite(self, fl_index, flc_manager, publish_parameters):
+        # update the name and id to represent correct values
+        publish_parameters["id"] = fl_index
+        publish_parameters["name"] = flc_manager.properties.layers[fl_index]["name"]
+
+        # Perform edit on the flc
+        # Step 1: Preserve layer ids
+        revert = False
+        if (
+            "preserveLayerIds" not in flc_manager.properties
+            or flc_manager.properties["preserveLayerIds"] is not True
+        ):
+            flc_manager.update_definition({"preserveLayerIds": True})
+            revert = True
+        # Step 2: Delete layer from definition
+        flc_manager.delete_from_definition({"layers": [{"id": fl_index}]})
+        # Step 3: Add new layer to definition
+        flc_manager.add_to_definition({"layers": [dict(publish_parameters)]})
+        # Step 4: Cleanup
+        if revert:
+            flc_manager.update_definition({"preserveLayerIds": False})
+
+    def _perform_insert(self, flc_manager, publish_parameters):
+        # Add new layer to definition
+        flc_manager.add_to_definition({"layers": [dict(publish_parameters)]})
+        # Find the index at which the layer was added
+        for layer in flc_manager.properties.layers:
+            if layer["name"] == publish_parameters["name"]:
+                fl_index = layer["id"]
+        return fl_index
+
+    def _add_item_dependency(
+        self, file_type, fl_index, file_item, fs_item, new_item=None
+    ):
+        if file_type == "csv":
+            source_info = self._gis.content.analyze(item=file_item)["publishParameters"]
+            ItemDependency(fs_item).add("itemid", file_item.id)
+            fs_item.tables[fl_index].append(
+                item_id=file_item.id,
+                upload_format=file_type,
+                source_info=source_info,
+            )
+        elif (
+            file_type == "shapefile"
+            or "filegdb" in fs_item.layers[fl_index].properties.supportedAppendFormats
+        ):
+            ItemDependency(fs_item).add("itemid", file_item.id)
+            fs_item.layers[fl_index].append(
+                item_id=file_item.id, upload_format=file_type
+            )
+        else:
+            # When filegdb not supported through append, use featureCollection
+            features = new_item.layers[0].query().features
+            fs_item.layers[fl_index].edit_features(adds=features)
+
+        fs_item.add_relationship(rel_item=file_item, rel_type="Service2Data")
+
+    # ----------------------------------------------------------------------
     def is_service_name_available(self, service_name: str, service_type: str):
         """
             The ``is_service_name_available`` method determines if that service name is
@@ -9581,8 +10232,27 @@ class Group(dict):
     @property
     def migration(self):
         """
-        The ``migration`` method allows users and groups to migrate content of a `Group` to a new Organaization or
-        Portal.
+        The ``migration`` property accesses a :class:`~arcgis.gis.GroupMigrationManager`
+        object which has methods for exporting and importing supported ``group`` content
+        between ArcGIS Enterprise organizations.
+
+        .. note::
+            Functionality only available for ArcGIS Enterprise.
+
+        .. code-block:: python
+
+            #Usage Example: Initializing a ``GroupMigrationManager`` object:
+
+            >>> from arcgis.gis import GIS
+
+            >>> gis = GIS(profile="your_enterprise_admin_profile")
+
+            >>> source_grp = gis.groups.get("<group_id>")
+
+            >>> grp_mig_mgr = source_grp.migration
+            >>> type(grp_mig_mgr)
+
+            arcgis.gis.GroupMigrationManager
         """
         if self._gis.version > [7, 3] and self._gis._portal.is_arcgisonline == False:
             self._migrate = GroupMigrationManager(group=self)
@@ -9728,8 +10398,8 @@ class Group(dict):
         ================  ========================================================
         **Parameter**      **Description**
         ----------------  --------------------------------------------------------
-        usernames         Required list of strings.
-                          A comma-separated list of users to be removed.
+        usernames         Required list of strings. A comman-separated list of
+                          users to be removed.
         ================  ========================================================
 
         :return:
@@ -13883,9 +14553,10 @@ class Item(dict):
         ================  ========================================================
         **Parameter**      **Description**
         ----------------  --------------------------------------------------------
-        target_owner      Required string or User. The new desired owner of the item.
+        target_owner      Required string or :class:`~arcgis.gis.User`. The string
+                          must be a *username* value.
         ----------------  --------------------------------------------------------
-        target_folder     Optional string. The folder to move the item to.
+        target_folder     Optional string. The folder title to move the item to.
         ================  ========================================================
 
         :return:
@@ -16020,10 +16691,18 @@ class Item(dict):
             self._portal.url,
             self.id,
         )
-        res = self._portal.con.post(url, params)
-        if "commentId" in res:
-            return res["commentId"]
-        return None
+        try:
+            res = self._portal.con.post(url, params)
+            if "commentId" in res:
+                return res["commentId"]
+            return None
+        except Exception as e:
+            if e.args[0].find("Too many failures") > -1:
+                raise RuntimeError(
+                    "The number of comments allowed has been exceeded, please wait to post more comments"
+                )
+            else:
+                raise e
 
     # ----------------------------------------------------------------------
     @property
@@ -16226,11 +16905,11 @@ class Item(dict):
         -----------------------    -------------------------------------------------------------
         tags                       Optional String. New set of tags (comma separated) of the destination item.
         -----------------------    -------------------------------------------------------------
-        folder	                   Optional String. Folder Id of the destination item. If the folder Id is not specified, then the item remains in the same folder.
+        folder                     Optional String. Folder Id of the destination item. If the folder Id is not specified, then the item remains in the same folder.
 
                                    If the administrator invokes a copy of an item belonging to another user, and does not specify the folder Id, the item gets created in the root folder of the administrator.
         -----------------------    -------------------------------------------------------------
-        include_resources	   Optional boolean. If true, the file resources of the original
+        include_resources    Optional boolean. If true, the file resources of the original
                                    item will be copied over to the new item. Private file resources
                                    will not be copied over. If false, the file resources of the
                                    original item will not be copied over to the new item. The

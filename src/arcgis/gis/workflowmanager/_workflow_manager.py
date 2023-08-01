@@ -21,18 +21,21 @@ def _underscore_to_camelcase(name):
 
 
 def _check_license(gis):
-    user_url = f"{gis._portal.resturl}community/self"
-    raw_user = gis._con.get(user_url, {"returnUserLicenseTypeExtensions": True})
-    if "userLicenseTypeExtensions" in raw_user:
-        licenses = raw_user["userLicenseTypeExtensions"]
-        has_license = "workflow" in licenses
-    else:
-        has_license = False
+    is_portal = gis.properties.get("isPortal", False)
+    portal_version = float(gis.properties.get("currentVersion", "0"))
+    if is_portal and portal_version < 10.3:  # < ArcGIS Enterprise 11.1
+        user_url = f"{gis._portal.resturl}community/self"
+        raw_user = gis._con.get(user_url, {"returnUserLicenseTypeExtensions": True})
+        if "userLicenseTypeExtensions" in raw_user:
+            licenses = raw_user["userLicenseTypeExtensions"]
+            has_license = "workflow" in licenses
+        else:
+            has_license = False
 
-    if has_license is False:
-        raise ValueError(
-            "No Workflow Manager license is available for the current user"
-        )
+        if has_license is False:
+            raise ValueError(
+                "No Workflow Manager license is available for the current user"
+            )
 
 
 def _initialize(instance, gis):

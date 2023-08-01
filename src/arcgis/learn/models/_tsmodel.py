@@ -953,6 +953,7 @@ class TimeSeriesModel(ArcGISModel):
         #
         from pandas.api.types import is_datetime64_any_dtype as is_datetime
 
+        datetime_dict = {}
         delta = None
         index_field_name = None
         end_value = None
@@ -972,6 +973,16 @@ class TimeSeriesModel(ArcGISModel):
                     end_value = orig_dataframe[index_field_name].iloc[
                         len(orig_dataframe) - 1
                     ]
+        for i in orig_dataframe.columns:
+            if i != index_field_name:
+                if is_datetime(orig_dataframe[i]):
+                    new_delta = orig_dataframe[i].iloc[1] - orig_dataframe[i].iloc[0]
+                    end_value_temp = None
+                    if new_delta is not None:
+                        end_value_temp = orig_dataframe[i].iloc[len(orig_dataframe) - 1]
+                    if new_delta is not None:
+                        datetime_dict[i] = tuple([new_delta, end_value_temp])
+
         pred_temp_df = pd.DataFrame(
             np.full([number_of_predictions, orig_dataframe.shape[1]], np.NAN)
         )
@@ -986,6 +997,15 @@ class TimeSeriesModel(ArcGISModel):
             orig_dataframe.loc[
                 orig_dataframe.tail(number_of_predictions).index, index_field_name
             ] = tindex[1:]
+        if len(datetime_dict):
+            for key, value in datetime_dict.items():
+                new_delta, end_value_temp = value
+                tindex = pd.period_range(
+                    end_value_temp, freq=new_delta, periods=number_of_predictions + 1
+                )
+                orig_dataframe.loc[
+                    orig_dataframe.tail(number_of_predictions).index, key
+                ] = tindex[1:]
 
         return orig_dataframe
 

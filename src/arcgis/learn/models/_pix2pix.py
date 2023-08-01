@@ -69,8 +69,12 @@ class Pix2Pix(ArcGISModel):
         super().__init__(data, backbone, **kwargs)
         self._check_dataset_support(data)
         if self._data.chip_size % 256 == 0:
-            if not self._data._bands:
-                self._data._bands = ["o" for i in range(self._data.n_channel)]
+            bnds = ["o" for i in range(self._data.n_channel)]
+            if not hasattr(self._data, "_bands"):
+                self._data._bands = bnds
+            else:
+                if not self._data._bands:
+                    self._data._bands = bnds
             self._data._extract_bands = list(range(self._data.n_channel))
             pix2pix_gan = pix2pix_model(
                 self._data,

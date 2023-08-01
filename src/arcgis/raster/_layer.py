@@ -4814,7 +4814,7 @@ class ImageryLayer(Layer):
         url = self._url + "/queryGPSInfo"
         res = self._con.post(path=url, postdata=params, timeout=None)
 
-        return res["images"]
+        return res
 
     def _compute_multidimensional_info(
         self,
@@ -15895,11 +15895,12 @@ class _ImageServerRasterCollection(ImageryLayer, RasterCollection):
             for i in range(0, len(df.index)):
                 # self._do_not_hydrate=True
                 rft = self._generate_raster_item_rft(int(df[oid_name].loc[i]))
-                df.loc[i, "Raster"] = Raster(rft)
+                df.loc[i, "Raster"] = Raster(rft, gis=self._gis)
                 df.loc[i, "Raster"]._engine_obj._fn = rft
                 df.loc[i, "Raster"]._engine_obj._fnra = rft
                 df.loc[i, "Raster"]._engine_obj._do_not_hydrate = True
                 df.loc[i, "Raster"]._engine_obj._tiles_only = False
+                df.loc[i, "Raster"]._engine_obj._lazy_token = self._lazy_token
 
         return df
 

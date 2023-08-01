@@ -17,6 +17,7 @@ from ._token import (
 from ._oauth import EsriOAuth2Auth
 from ._notebook import EsriNotebookAuth
 from ._pkce import EsriPKCEAuth
+from ._utils import check_response_for_error
 
 __all__ = [
     "EsriAPIKeyAuth",
@@ -35,4 +36,5 @@ __all__ = [
     "ArcGISServerAuth",
     "EsriHttpNtlmAuth",
     "EsriHttpNegotiateAuth",
+    "check_response_for_error",
 ]
