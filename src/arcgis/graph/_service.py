@@ -1,6 +1,7 @@
 from __future__ import annotations
 from arcgis.auth.tools import LazyLoader
 from typing import Generator
+from arcgis.geometry import Geometry
 
 try:
     import arcgis.graph._arcgisknowledge as _kgparser
@@ -151,6 +152,78 @@ class KnowledgeGraph:
             while query_dec.next_row():
                 rows.append(query_dec.get_current_row())
         return rows
+    
+    def update_search_index(self, adds: dict = None, deletes: dict = None) -> dict:
+
+        """
+        Allows users to add or delete search index properties for different entities from the 
+        graph's data model. Can only be existent properties for a given entity. Note thqt an
+        empty dictionary result indicates success.
+
+        =========================   ===============================================================
+        **Parameter**                **Description**
+        -------------------------   ---------------------------------------------------------------
+        adds                        Optional dict. See below for structure. The properties to add
+                                    to the search index, specified by entity.
+        -------------------------   ---------------------------------------------------------------
+        updates                     Optional dict. See below for structure. The properties to
+                                    delete from the search index, specified by entity.
+        =========================   ===============================================================
+
+        .. code-block:: python
+
+            # graph has "Person" and "Plant" entity types
+            # example of an adds dictionary
+            {
+                "Person" : { "property_names": ["Height", "Eye_Color"]},
+                "Plant" : {"property_names": ["Leaf_Number"]},
+            }
+
+            # example of a deletes dictionary
+            {
+                "Person" : { "property_names": ["Favorite_Cartoon"]},
+                "Plant" : {"property_names": ["Color", "Genus"]},
+            }
+
+        :return: A `dict`. Empty dict indicates success, errors will be returned in the dict.
+
+        """
+
+        self._validate_import()
+        url = self._url + "/dataModel/searchIndex/update"
+        params = {
+            "f": "pbf",
+            "token": self._gis._con.token,
+        }
+        headers = {'Content-Type': 'application/octet-stream'}
+
+        enc = _kgparser.GraphUpdateSearchIndexRequestEncoder()
+        if adds:
+            enc.insert_add_search_property(adds)
+        if deletes:
+            enc.insert_delete_search_property(deletes)
+
+        enc.encode()
+        enc_result = enc.get_encoding_result()
+        error = enc_result.error
+        if error.error_code != 0:
+            raise Exception(error.error_message)
+
+        session = self._gis._con._session
+        response = session.post(
+            url=url,
+            params=params,
+            data=enc_result.byte_buffer,
+            stream=True,
+            headers=headers,
+        )
+
+        content = response.content
+        dec = _kgparser.GraphUpdateSearchIndexResponseDecoder()
+        dec.decode(content)
+
+        results = dec.get_results()
+        return results
 
     def query(self, query: str) -> List[dict]:
         """
@@ -265,7 +338,12 @@ class KnowledgeGraph:
         # set bind parameters
         if bind_param:
             for k, v in bind_param.items():
-                r_enc.set_param_key_value(k, v)
+                if isinstance(v, Geometry):
+                    v['_objectType'] = 'geometry'
+                    converted = _kgparser.from_value_object(v)
+                    r_enc.set_param_key_value(k, converted)
+                else:
+                    r_enc.set_param_key_value(k, v)
 
         # set provenance behavior
         # include_provenance = kwargs.pop("include_provenance", False)
@@ -887,3 +965,5 @@ class KnowledgeGraph:
         results_dict = r_dec.get_results()
 
         return results_dict
+    
+    
