@@ -250,10 +250,9 @@ class WorkflowManagerAdmin:
         """
         Exports a new Workflow Manager configuration (.wmc) file based on the indicated item. This configuration file
         includes the version, job templates, diagrams, roles, role-group associations, lookup tables, charts and
-        queries, templates, and user settings of the indicated item. Encrypted settings for the item will only have
-        their key but not the value exported. This file can be used with the import endpoint to update other item
-        configurations. Configurations from Workflow items with a server that is on a more recent version will not
-        import due to incompatability.
+        queries, templates, and user settings of the indicated item. This file can be used with the import endpoint
+        to update other item configurations. Configurations from Workflow items with a server that is on a more
+        recent version will not import due to incompatability.
 
         =====================  =========================================================
         **Argument**           **Description**
