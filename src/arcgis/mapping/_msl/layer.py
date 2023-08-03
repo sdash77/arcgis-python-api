@@ -1128,9 +1128,7 @@ class MapFeatureLayer(Layer):
             return df
         elif record_count <= max_records:
             if supports_pagination and record_count > 0:
-                params["resultRecordCount"] = (
-                    record_count + 1
-                )  # otherwise doesn't include last one
+                params["resultRecordCount"] = max_records
             if as_df:
                 import pandas as pd
 
@@ -2194,7 +2192,7 @@ class MapTable(MapFeatureLayer):
             return df
         elif record_count <= max_records:
             if supports_pagination and record_count > 0:
-                params["resultRecordCount"] = record_count + 1
+                params["resultRecordCount"] = max_records
             if as_df:
                 import pandas as pd
 

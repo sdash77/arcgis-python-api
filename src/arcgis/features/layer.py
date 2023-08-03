@@ -2321,7 +2321,7 @@ class FeatureLayer(Layer):
                 and record_count > 0
                 and return_distinct_values == False
             ):
-                params["resultRecordCount"] = record_count + 1
+                params["resultRecordCount"] = max_records
             if as_df:
                 import pandas as pd
 
@@ -4235,7 +4235,7 @@ class Table(FeatureLayer):
                 and record_count > 0
                 and return_distinct_values == False
             ):
-                params["resultRecordCount"] = record_count + 1
+                params["resultRecordCount"] = max_records
             if as_df:
                 import pandas as pd
 
