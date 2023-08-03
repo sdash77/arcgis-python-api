@@ -12756,6 +12756,51 @@ class Item(dict):
 
     # ----------------------------------------------------------------------
     @property
+    def favorite(self) -> bool:
+        """
+        Gets/Sets if the Item is in the user's favorites
+        """
+        try:
+            user: User = self._gis.users.get(self.owner)
+            query = f'(group:"{user.favGroupId}" AND id:"{self.itemid}")'
+            if len(self._gis.content.search(query)) > 0:
+                return True
+            return False
+        except Exception as ex:
+            raise Exception(f"Could not get the user's favorites. {str(ex)}")
+
+    # ----------------------------------------------------------------------
+    @favorite.setter
+    def favorite(self, value: bool):
+        """
+        Gets/Sets if the Item is in the user's favorites
+        """
+        user: User = self._gis.users.get(self.owner)
+        if value == True:
+            url: str = f"{self._gis._portal.resturl}content/items/{self.itemid}/share"
+        elif value == False:
+            url: str = f"{self._gis._portal.resturl}content/items/{self.itemid}/unshare"
+        else:
+            raise ValueError("'value' must be a boolean.")
+
+        params = {
+            "f": "json",
+            "everyone": self.shared_with["everyone"],
+            "org": self.shared_with["org"],
+            "items": self.itemid,
+            "groups": user.favGroupId,
+        }
+
+        res = self._gis._con.post(url, params=params)
+        assert self.shared_with
+        if "error" in res:
+            raise Exception(f"An error has occurred: {str(res)}")
+        else:
+            self._hydrated = False
+            self._hydrate()
+
+    # ----------------------------------------------------------------------
+    @property
     def snapshots(self) -> list:
         """
         The ``snapshots`` property provides access to the Notebook Item's Snapshots. If the user is not
