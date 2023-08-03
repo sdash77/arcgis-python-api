@@ -1608,26 +1608,26 @@ class FeatureLayer(Layer):
                                             The definitions for one or more field-based or expression analytics
                                             to be computed. This parameter is supported only on layers/tables that
                                             return `true` for *supportsAnalytics* property.
-                                            
+
                                             .. note::
                                                 If `outAnalyticFieldName` is empty or missing, the server assigns
                                                 a field name to the returned analytic field.
 
                                             The argument should be a list of dictionaries that define analystics.
                                             An analytic definition specifies:
-                                            
+
                                             * the type of analytic - key: `analyticType`
                                             * the field or expression on which it is to be computed - key: `onAnalyticField`
                                             * the resulting output field name -key: `outAnalyticFieldName`
                                             * the analytic specifications - `analysticParameters`
-                                            
+
                                             See `Overview <https://developers.arcgis.com/rest/services-reference/enterprise/query-analytic.htm#GUID-1713C237-B155-4CFE-8470-FEB3255B7C60>`_
                                             for details.
-                                            
+
                                             .. code-block:: python
-                                            
+
                                                 # Dictionary structure and options for this parameter
-                                         
+
                                                 [
                                                   {
                                                     "analyticType": "<COUNT | SUM | MIN | MAX | AVG | STDDEV | VAR | FIRST_VALUE, LAST_VALUE, LAG, LEAD, PERCENTILE_CONT, PERCENTILE_DISC, PERCENT_RANK, RANK, NTILE, DENSE_RANK, EXPRESSION>",
