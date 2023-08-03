@@ -4825,9 +4825,9 @@ class ImageryLayer(Layer):
     def find_images(
         self,
         view_point: Union[dict[str, Any], Point],
-        in_sr: Optional[dict],
-        object_ids: Optional[str],
-        where: Optional[str],
+        in_sr: Optional[dict] = None,
+        object_ids: Optional[str] = None,
+        where: Optional[str] = None,
         max_count: Optional[int] = None,
     ):
         """
@@ -4845,7 +4845,7 @@ class ImageryLayer(Layer):
         view_point            Required dictionary or :class:`~arcgis.geometry.Point` object.
                               A 3D view point for finding visible images.
         -----------------     --------------------------------------------------------------------
-        in_sr                 Required string, dictionary, :class:`~arcgis.geometry.SpatialReference`. The ``in_sr``
+        in_sr                 Optional string, dictionary, :class:`~arcgis.geometry.SpatialReference`. The ``in_sr``
                               can accept a
                               multitudes of values.  These can be a WKID, image coordinate system
                               (ICSID), or image coordinate system in json/dict format.
@@ -4890,6 +4890,9 @@ class ImageryLayer(Layer):
         url = "%s/find" % self._url
         params = {"f": "json", "viewPoint": view_point}
 
+        if isinstance(object_ids, list):
+            object_ids = ",".join(map(str, object_ids))
+
         if object_ids:
             params["objectIds"] = object_ids
 
@@ -4903,7 +4906,7 @@ class ImageryLayer(Layer):
         if in_sr:
             params["inSR"] = in_sr
 
-        if max_count:
+        if max_count is not None:
             params["maxCount"] = max_count
 
         return self._con.post(path=url, postdata=params, timeout=None)
@@ -4931,7 +4934,7 @@ class ImageryLayer(Layer):
         geometry                        Required dictionary/Point/Polygon/MultiPoint/Envelope. A :class:`~arcgis.geometry.Geometry` that
                                         defines the location to be identified.
         ----------------------------    --------------------------------------------------------------------
-        out_sr                          Required string, dictionary, :class:`~arcgis.geometry.SpatialReference`. The ``out_sr``
+        out_sr                          Optional string, dictionary, :class:`~arcgis.geometry.SpatialReference`. The ``out_sr``
                                         can accept a multitudes of values.  These can be a WKID, image coordinate system
                                         (ICSID), or image coordinate system in json/dict format.
                                         Additionally the arcgis.geometry.SpatialReference object is also a
@@ -5019,7 +5022,7 @@ class ImageryLayer(Layer):
         geometry                        Required dictionary/Point/Polygon/MultiPoint/Envelope. A :class:`~arcgis.geometry.Geometry` that
                                         defines the location to be identified.
         ----------------------------    --------------------------------------------------------------------
-        in_sr                           Required string, dictionary, :class:`~arcgis.geometry.SpatialReference`. The ``in_sr``
+        in_sr                           Optional string, dictionary, :class:`~arcgis.geometry.SpatialReference`. The ``in_sr``
                                         can accept a multitudes of values.  These can be a WKID, image coordinate system
                                         (ICSID), or image coordinate system in json/dict format.
                                         Additionally the arcgis.geometry.SpatialReference object is also a
@@ -5084,7 +5087,7 @@ class ImageryLayer(Layer):
 
         return self._con.post(path=url, postdata=params, timeout=None)
 
-    def get_image_url(self, image_uri: Optional[str]):
+    def get_image_url(self, image_uri: str):
         """
 
         Returns an accessible url to the image.
@@ -5112,13 +5115,16 @@ class ImageryLayer(Layer):
                 "This operation cannot be performed on a TilesOnly Service"
             )
 
-        url = "%s/find" % self._url
+        url = "%s/getImageUrl" % self._url
         params = {"f": "json"}
 
         if image_uri:
             params["uri"] = image_uri
 
-        return self._con.post(path=url, postdata=params, timeout=None)
+        resp = self._con.post(path=url, postdata=params, timeout=None)
+
+        if isinstance(resp, dict) and "imageURL" in resp.keys():
+            return resp["imageURL"]
 
     def image_to_map_multiray(
         self,
@@ -5175,7 +5181,7 @@ class ImageryLayer(Layer):
 
         if isinstance(raster_ids, list):
             raster_ids = ",".join(map(str, raster_ids))
-        params["raster_ids"] = raster_ids
+        params["rasterIds"] = raster_ids
 
         if out_sr:
             params["outSR"] = out_sr
