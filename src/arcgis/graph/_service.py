@@ -25,7 +25,7 @@ class KnowledgeGraph:
     ------------------     --------------------------------------------------------------------
     url                    Knowledge Graph service URL
     ------------------     --------------------------------------------------------------------
-    gis                    an authenticated :class:`arcigs.gis.GIS` object.
+    gis                    an authenticated :class:`arcgis.gis.GIS` object.
     ==================     ====================================================================
 
     .. code-block:: python
@@ -51,7 +51,7 @@ class KnowledgeGraph:
         if HAS_KG == False:
             raise ImportError(
                 "An error occured with importing the Knowledge Graph libraries. Please ensure you "
-                "are using Python 3.7, 3.8, 3.9, or 3.10 on Windows or Linux platforms."
+                "are using Python 3.9, 3.10 or 3.11 on Windows or Linux platforms."
             )
 
     @classmethod

@@ -1,5 +1,6 @@
 import os
 import sys
+import warnings
 
 sys.path.insert(0, r"C:\ipython_workfolder\geosaurus\src")
 from arcgis.gis import GIS
@@ -2238,7 +2239,9 @@ class TestSeDFOverwrite(unittest.TestCase):
                     == "esriGeometryPolygon"
                 )
             except:
-                pass
+                warnings.warn(
+                "This test failed for user: {}. Please check the data and try again.".format(gis.users.me.username)
+            )
             finally:
                 # clean up
                 if polygon_item:
@@ -2252,7 +2255,7 @@ class TestSeDFOverwrite(unittest.TestCase):
                         item.delete()
                     point_item.delete()
 
-    def test_insert_table(self):
+    def test_overwrite_table(self):
         for profile in profiles:
             # establish connection
             gis = GIS(profile=profile, verify_cert=False)
@@ -2268,7 +2271,8 @@ class TestSeDFOverwrite(unittest.TestCase):
                 csv_item = gis.content.add({}, data=xlsx_file_path)
                 assert csv_item
                 # publish as a table
-                table_item = csv_item.publish()
+                publish_parameters = gis.content.analyze(item=csv_item, file_type="csv")
+                table_item = csv_item.publish(publish_parameters=publish_parameters)
                 tbl_df = pd.DataFrame.spatial.from_layer(table_item.tables[0])
                 tbl_df["NOTES"][0] = "This is a python api test"
                 tbl_df["NOTES"][1] = "This file will have extra notes"
@@ -2278,7 +2282,9 @@ class TestSeDFOverwrite(unittest.TestCase):
                 )
                 assert len(table_item.tables) == len(updated_item.tables)
             except:
-                pass
+                warnings.warn(
+                "This test failed for user: {}. Please check the data and try again.".format(gis.users.me.username)
+            )
             finally:
                 related = table_item.related_items("Service2Data")
                 for item in related:
