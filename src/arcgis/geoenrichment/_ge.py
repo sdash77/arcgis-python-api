@@ -1,4 +1,5 @@
 import json
+import os
 from typing import Optional, Union
 import pandas as pd
 import arcgis
@@ -946,13 +947,23 @@ class _GeoEnrichment(object):
             params["inSR"] = in_sr
         if use_data is not None:
             params["useData"] = use_data
-        return self._gis._con.post(
+        # result is always a file path because error response will be parsed inside the method
+        # due to try_json=True and file_name=None parameters
+        report_file_path =  self._gis._con.post(
             path=url,
             out_folder=out_folder,
-            file_name=out_name,
             postdata=params,
-            try_json=False,
+            try_json=True,
         )
+        if out_name:
+            # rename created file
+            updated_report_file_path = os.path.join(out_folder, out_name)
+            if os.path.isfile(updated_report_file_path):
+                os.remove(updated_report_file_path)
+            os.rename(report_file_path, updated_report_file_path)
+            return updated_report_file_path
+
+        return report_file_path
 
     # ----------------------------------------------------------------------
     def standard_geography_levels(self, country: str):
