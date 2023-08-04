@@ -6930,7 +6930,11 @@ class ContentManager(object):
 
         :returns: Item
         """
-
+        regex = r"^[-a-zA-Z0-9_]*$"
+        if len(re.findall(regex, parameters.name)) == 0:
+            raise ValueError(
+                "The service `name` cannot contain any spaces or special characters except underscores."
+            )
         if owner:
             username = owner.username
         else:
@@ -7080,6 +7084,11 @@ class ContentManager(object):
             # Usage Example
             >>> gis.content.create_service("Hurricane Collection")
         """
+        regex = r"^[-a-zA-Z0-9_]*$"
+        if len(re.findall(regex, name)) == 0:
+            raise ValueError(
+                "The service `name` cannot contain any spaces or special characters except underscores."
+            )
         if capabilities is None:
             if service_type == "imageService":
                 capabilities = "Image,Catalog,Metadata,Download,Pixels"
