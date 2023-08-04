@@ -949,7 +949,7 @@ class _GeoEnrichment(object):
             params["useData"] = use_data
         # result is always a file path because error response will be parsed inside the method
         # due to try_json=True and file_name=None parameters
-        report_file_path =  self._gis._con.post(
+        report_file_path = self._gis._con.post(
             path=url,
             out_folder=out_folder,
             postdata=params,

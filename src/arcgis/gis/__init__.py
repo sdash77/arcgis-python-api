@@ -13946,25 +13946,26 @@ class Item(dict):
         """
         See main ``metadata`` property docstring
         """
-        xml_file = os.path.join(tempfile.gettempdir(), "metadata.xml")
-        if os.path.isfile(xml_file) == True:
-            os.remove(xml_file)
-        if (
-            str(value).lower().endswith(".xml")
-            and len(value) <= 32767
-            and os.path.isfile(value) == True
-        ):
-            if os.path.basename(value).lower() != "metadata.xml":
-                shutil.copy(value, xml_file)
+        with tempfile.TemporaryDirectory(suffix="metadata") as tempdir:
+            xml_file = os.path.join(tempdir, "metadata.xml")
+            if os.path.isfile(xml_file) == True:
+                os.remove(xml_file)
+            if (
+                str(value).lower().endswith(".xml")
+                and len(value) <= 32767
+                and os.path.isfile(value) == True
+            ):
+                if os.path.basename(value).lower() != "metadata.xml":
+                    shutil.copy(value, xml_file)
+                else:
+                    xml_file = value
+            elif isinstance(value, str):
+                with open(xml_file, mode="w") as writer:
+                    writer.write(value)
+                    writer.close()
             else:
-                xml_file = value
-        elif isinstance(value, str):
-            with open(xml_file, mode="w") as writer:
-                writer.write(value)
-                writer.close()
-        else:
-            raise ValueError("Input must be XML path file or XML Text")
-        return self.update(metadata=xml_file)
+                raise ValueError("Input must be XML path file or XML Text")
+            self.update(metadata=xml_file)
 
     # ----------------------------------------------------------------------
     def download_metadata(self, save_folder: Optional[str] = None):
@@ -13985,7 +13986,19 @@ class Item(dict):
         """
         metadataurlpath = "content/items/" + self.itemid + "/info/metadata/metadata.xml"
         if not save_folder:
-            save_folder = self._workdir
+            with tempfile.TemporaryDirectory(
+                suffix=f"meta{uuid.uuid4().hex[:2]}",
+                dir=tempfile.gettempdir(),
+            ) as save_folder:
+                file_name = "metadata.xml"
+                file_path = os.path.join(save_folder, file_name)
+                self._portal.con.get(
+                    path=metadataurlpath,
+                    out_folder=save_folder,
+                    file_name=file_name,
+                    try_json=False,
+                )
+                return file_path
         try:
             file_name = "metadata.xml"
             file_path = os.path.join(save_folder, file_name)
