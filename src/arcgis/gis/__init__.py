@@ -8453,6 +8453,7 @@ class ContentManager(object):
             owner_name,
             preserve_item_id=preserve_item_id,
             from_dash=kwargs.pop("from_dash", False),
+            wab_code_attach=kwargs.pop("copy_code_attachment", True),
         )
         return deep_cloner.clone()
 

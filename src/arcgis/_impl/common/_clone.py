@@ -81,6 +81,7 @@ class _DeepCloner:
         owner=None,
         preserve_item_id=False,
         from_dash=False,
+        wab_code_attach=True,
     ):
         self._preserve_item_id = preserve_item_id
         self._graph = {}
@@ -96,6 +97,7 @@ class _DeepCloner:
         self._copy_global_ids = copy_global_ids
         self._search_existing_items = search_existing_items
         self._print_warning = False
+        self._wab_code_attach = wab_code_attach
         self._clone_mapping = {
             "Item IDs": {},
             "Group IDs": {},
@@ -1456,6 +1458,7 @@ class _DeepCloner:
                 search_existing=self._search_existing_items,
                 owner=self.owner,
                 preserve_item_id=self._preserve_item_id,
+                code_attach=self._wab_code_attach,
             )
 
         elif item["type"] == "Operation View":
@@ -4661,6 +4664,7 @@ class _ApplicationDefinition(_TextItemDefinition):
         folder=None,
         search_existing=True,
         owner=None,
+        code_attach=True,
         **kwargs,
     ):
         super().__init__(
@@ -4680,6 +4684,7 @@ class _ApplicationDefinition(_TextItemDefinition):
         self._preserve_item_id = kwargs.pop("preserve_item_id", False)
         self._source_app_title = source_app_title
         self._update_url = update_url
+        self._code_attach = code_attach
 
     @property
     def source_app_title(self):
@@ -4946,7 +4951,7 @@ class _ApplicationDefinition(_TextItemDefinition):
                     new_item.update(item_properties)
 
                 # Add a code attachment if the application is Web AppBuilder so that it can be downloaded
-                if is_web_appbuilder:
+                if is_web_appbuilder and self._code_attach:
                     url = "{0}sharing/rest/content/items/{1}/package".format(
                         org_url[org_url.find("://") + 1 :], new_item["id"]
                     )
