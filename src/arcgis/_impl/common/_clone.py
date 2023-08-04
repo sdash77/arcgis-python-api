@@ -350,7 +350,7 @@ class _DeepCloner:
         from arcgis.gis.clone import clone_registry
 
         # check if living atlas item, if so don't process it
-        if getattr(item, "groupDesignations") == "livingatlas":
+        if getattr(item, "groupDesignations", None) == "livingatlas":
             logging.info(item.title + " not cloned; part of Living Atlas.")
             if not self._print_warning:
                 self._print_warning = True
