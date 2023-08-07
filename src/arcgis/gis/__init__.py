@@ -363,7 +363,7 @@ class GIS(object):
     _pds = None
     _validate_item_url = None
     _properties = None
-    session: EsriSession
+    _session: EsriSession
     """If 'True', the GIS instance is a GIS('home') from hosted nbs"""
 
     # admin = None
@@ -828,7 +828,7 @@ class GIS(object):
             self._product_version = [
                 int(i) for i in self._portal.get_version().split(".")
             ]
-        self.session: EsriSession = self._con._session
+        self._session: EsriSession = self._con._session
 
     # ----------------------------------------------------------------------
     @property
@@ -838,6 +838,44 @@ class GIS(object):
 
             self._toolgp = _Tools(self)
         return self._toolgp
+
+    # ----------------------------------------------------------------------
+    @property
+    @functools.lru_cache(maxsize=100)
+    def _is_arcgisonline(self):
+        """Returns true if this portal is ArcGIS Online."""
+        return self.properties["portalName"] == "ArcGIS Online" and self._is_multitenant
+
+    # ----------------------------------------------------------------------
+    @property
+    def session(self) -> EsriSession:
+        """
+        Provides the raw Esri Session object
+
+        :returns: EsriSession
+
+        """
+        if self._session is None:
+            self._session = self._con._session
+        return self._session
+
+    # ----------------------------------------------------------------------
+    @property
+    @functools.lru_cache(maxsize=100)
+    def _is_multitenant(self) -> bool:
+        """Returns true if this portal is multitenant."""
+        return self.properties["portalMode"] == "multitenant"
+
+    # ----------------------------------------------------------------------
+    @property
+    @functools.lru_cache(maxsize=100)
+    def _is_kubernetes(self) -> bool:
+        """Returns true if this portal is kubernetes."""
+        return (
+            "portalDeploymentType" in self.properties
+            and self._properties["portalDeploymentType"]
+            == "ArcGISEnterpriseOnKubernetes"
+        )
 
     # ----------------------------------------------------------------------
     @property
