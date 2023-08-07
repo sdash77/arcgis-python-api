@@ -1544,6 +1544,11 @@ class MapView(widgets.DOMWidget):
         ):
             item = item.spatial.to_feature_collection()
         self._add_layer_to_widget(item, options)
+        if "opacity" in options:
+            # Extra steps because the layer opacity will only update after renderering on
+            # the widget. Weird behavior with no other solution found.
+            wm_layer = dict(self.webmap.layers[-1])  # last layer added
+            self.update_layer(wm_layer)
 
     def _add_layer_to_webmap(self, item, options):
         webmap_options = dict(options)
@@ -1579,7 +1584,9 @@ class MapView(widgets.DOMWidget):
                 log.warning("No 'layers' in Item: will not be added to map")
         elif isinstance(item, Layer):
             self._add_layer_to_webmap(item, options)
-            _lyr = _make_jsonable_dict(item._lyr_json)
+            _lyr = dict(self.webmap.layers[-1])
+            _lyr_from_item = _make_jsonable_dict(item._lyr_json)
+            _lyr.update(_lyr_from_item)
             if ("type" in _lyr and _lyr["type"] == "MapImageLayer") and (
                 "TilesOnly" in item.properties.capabilities
             ):
