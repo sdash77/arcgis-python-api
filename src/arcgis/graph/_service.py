@@ -152,11 +152,10 @@ class KnowledgeGraph:
             while query_dec.next_row():
                 rows.append(query_dec.get_current_row())
         return rows
-    
-    def update_search_index(self, adds: dict = None, deletes: dict = None) -> dict:
 
+    def update_search_index(self, adds: dict = None, deletes: dict = None) -> dict:
         """
-        Allows users to add or delete search index properties for different entities from the 
+        Allows users to add or delete search index properties for different entities from the
         graph's data model. Can only be existent properties for a given entity. Note thqt an
         empty dictionary result indicates success.
 
@@ -195,7 +194,7 @@ class KnowledgeGraph:
             "f": "pbf",
             "token": self._gis._con.token,
         }
-        headers = {'Content-Type': 'application/octet-stream'}
+        headers = {"Content-Type": "application/octet-stream"}
 
         enc = _kgparser.GraphUpdateSearchIndexRequestEncoder()
         if adds:
@@ -272,6 +271,7 @@ class KnowledgeGraph:
         query: str,
         input_transform: dict[str, Any] = None,
         bind_param: dict[str, Any] = None,
+        include_provenance: bool = False,
     ):
         """
         Query the graph using an openCypher query. Allows for more customization than the base
@@ -300,6 +300,9 @@ class KnowledgeGraph:
 
                                Note: Including bind parameters not used in the query will
                                cause queries to yield nothing.
+        -------------------    ---------------------------------------------------------------
+        include_provenance     Optional boolean. When `True`, provenance entities (metadata)
+                               will be included in the query results. Defaults to `False`.
         ===================    ===============================================================
 
         .. code-block:: python
@@ -339,18 +342,17 @@ class KnowledgeGraph:
         if bind_param:
             for k, v in bind_param.items():
                 if isinstance(v, Geometry):
-                    v['_objectType'] = 'geometry'
+                    v["_objectType"] = "geometry"
                     converted = _kgparser.from_value_object(v)
                     r_enc.set_param_key_value(k, converted)
                 else:
                     r_enc.set_param_key_value(k, v)
 
         # set provenance behavior
-        # include_provenance = kwargs.pop("include_provenance", False)
-        # if include_provenance == True:
-        #     r_enc.provenance_behavior = _kgparser.ProvenanceBehavior.include
-        # else:
-        #     r_enc.provenance_behavior = _kgparser.ProvenanceBehavior.exclude
+        if include_provenance == True:
+            r_enc.provenance_behavior = _kgparser.ProvenanceBehavior.include
+        else:
+            r_enc.provenance_behavior = _kgparser.ProvenanceBehavior.exclude
 
         r_enc.encode()
         error = r_enc.get_encoding_result().error
@@ -366,7 +368,7 @@ class KnowledgeGraph:
             stream=True,
             headers=headers,
         )
-        rows = []
+
         for chunk in response.iter_content(8192):
             did_push = query_dec.push_buffer(chunk)
             while query_dec.next_row():
@@ -413,6 +415,7 @@ class KnowledgeGraph:
         deletes: list[dict[str, Any]] = [],
         input_transform: dict[str, Any] = None,
         cascade_delete: bool = False,
+        cascade_delete_provenance: bool = False,
     ) -> dict:
         """
         Allows users to add new graph entities/relationships, update existing
@@ -441,6 +444,10 @@ class KnowledgeGraph:
                                     entities that are being deleted will automatically be deleted
                                     as well. When `False`, these relationships must be deleted
                                     manually first. Defaults to `False`.
+        -------------------------   ---------------------------------------------------------------
+        cascade_delete_provenance   Optional boolean. When `True`, provenance entities connected to
+                                    entities that are being deleted will automatically be deleted
+                                    as well. Defaults to `False`.
         =========================   ===============================================================
 
         .. code-block:: python
@@ -497,7 +504,7 @@ class KnowledgeGraph:
         for edit in deletes:
             enc.delete_from_ids(edit)
         enc.cascade_delete = cascade_delete
-        # enc.cascade_delete_provenance = cascade_delete_provenance
+        enc.cascade_delete_provenance = cascade_delete_provenance
 
         # encode and prepare for the post request
         enc.encode()
@@ -965,5 +972,3 @@ class KnowledgeGraph:
         results_dict = r_dec.get_results()
 
         return results_dict
-    
-    
