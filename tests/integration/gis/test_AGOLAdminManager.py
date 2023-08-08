@@ -1,6 +1,6 @@
 import sys
 
-sys.path.insert(0, r"C:\SVN\geosaurus_master\src")
+# sys.path.insert(0, r"C:\SVN\geosaurus_master\src")
 import unittest
 import os
 from arcgis.gis import GIS
@@ -20,7 +20,7 @@ from arcgis.gis.admin._license import LicenseManager
 from datetime import datetime
 
 
-online_admin = GIS(profile="your_online_profile", verify_cert=False)
+online_admin = GIS(profile="your_online_admin_profile", verify_cert=False)
 # create an admin
 admin = AGOLAdminManager(gis=online_admin)
 
