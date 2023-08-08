@@ -10931,6 +10931,15 @@ class User(dict):
     def __repr__(self):
         return "<%s username:%s>" % (type(self).__name__, self.username)
 
+    # ----------------------------------------------------------------------
+    @property
+    def recyclebin(self) -> "RecycleBin":
+        """returns access to the user's recyclebin"""
+        from ._impl._content_manager._recyclebin import RecycleBin
+
+        return RecycleBin(gis=self._gis, user=self.username)
+
+    # ----------------------------------------------------------------------
     def user_types(self):
         """
         The ``user_types`` method is used to retrieve the user type and any assigned applications of the user.
