@@ -1,6 +1,6 @@
 import sys
 
-sys.path.insert(0, "YOUR PATH HERE")
+sys.path.insert(0, r"YOUR PATH HERE")
 from arcgis.gis import GIS
 import unittest
 
@@ -60,7 +60,7 @@ class TestItemAccess(unittest.TestCase):
             result = test_item.share(everyone=False, org=True, groups="test_group")
             assert test_item.shared_with["everyone"] == False
             assert test_item.shared_with["org"] == True
-            assert result["results"][0]["notSharedWith"][0] == "test_group" #expected to fail
+            assert result["notSharedWith"][0] == "test_group" #expected to fail
 
             test_item.share(everyone=True)
             assert test_item.shared_with["everyone"] == True
