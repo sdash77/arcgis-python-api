@@ -242,7 +242,7 @@ class AutoML(object):
             self._all_data_df = self._impute_missing_values(data=self._all_data_df)
             self._all_labels = self._data._dataframe[
                 self._data._dependent_variable
-            ]#.values
+            ]  # .values
             self._validation_data_df = pd.DataFrame(
                 self._validation_data,
                 columns=self._data._continuous_variables
@@ -302,7 +302,7 @@ class AutoML(object):
             for grp in self._underprivileged_groups:
                 for key in grp:
                     val = grp[key]
-                    if val == '':
+                    if val == "":
                         self._underprivileged_groups = []
 
             if (
@@ -313,11 +313,11 @@ class AutoML(object):
                     "Fairness Threshold value is required to be passed when the chosen fairness metric is group_loss_difference."
                 )
                 # exit()
-                
-            if self._fairness_metric == 'equalised_odds_ratio':
-                self._fairness_metric = 'equalized_odds_ratio'
-            if self._fairness_metric == 'equalised_odds_difference':
-                self._fairness_metric = 'equalized_odds_difference'
+
+            if self._fairness_metric == "equalised_odds_ratio":
+                self._fairness_metric = "equalized_odds_ratio"
+            if self._fairness_metric == "equalised_odds_difference":
+                self._fairness_metric = "equalized_odds_difference"
 
             self._model = base_AutoML(
                 results_path=result_path,
@@ -356,10 +356,7 @@ class AutoML(object):
             return "auto"
 
     def _impute_missing_values(self, data=None):
-
-        numerical_transformer = make_pipeline(
-            SimpleImputer(strategy="median")
-        )
+        numerical_transformer = make_pipeline(SimpleImputer(strategy="median"))
 
         categorical_transformer = make_pipeline(SimpleImputer(strategy="constant"))
 
@@ -372,7 +369,9 @@ class AutoML(object):
             data = self._all_data_df
         try:
             processed_data = _procs.fit_transform(data)
-            processed_data_df = pd.DataFrame(processed_data, columns=data.columns.values.tolist())
+            processed_data_df = pd.DataFrame(
+                processed_data, columns=data.columns.values.tolist()
+            )
         except:
             processed_data_df = data
         return processed_data_df
