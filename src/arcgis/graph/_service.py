@@ -2,6 +2,8 @@ from __future__ import annotations
 from arcgis.auth.tools import LazyLoader
 from typing import Generator
 from arcgis.geometry import Geometry
+import copy
+import datetime
 
 try:
     import arcgis.graph._arcgisknowledge as _kgparser
@@ -97,8 +99,8 @@ class KnowledgeGraph:
                             the `relationships`.  The default is to look in `both`.
 
                             The allowed values are: both, entities, relationships,
-                            and both_entity_relationship. Both and both_entity_relationship
-                            are functionally the same.
+                            both_entity_relationship, and meta_entity_provenance. Both and
+                            both_entity_relationship are functionally the same.
         ================    ===============================================================
 
         .. note::
@@ -342,11 +344,26 @@ class KnowledgeGraph:
         if bind_param:
             for k, v in bind_param.items():
                 if isinstance(v, Geometry):
-                    v["_objectType"] = "geometry"
+                    if "_objectType" not in v.keys():
+                        copy_geom = copy.deepcopy(v)
+                        copy_geom["_objectType"] = "geometry"
+                        converted = _kgparser.from_value_object(copy_geom)
+                    else:
+                        converted = _kgparser.from_value_object(v)
+                    r_enc.set_param_key_value(k, converted)
+                elif isinstance(
+                    v,
+                    (
+                        datetime.date,
+                        datetime.time,
+                        datetime.datetime,
+                        datetime.timedelta,
+                    ),
+                ):
+                    r_enc.set_param_key_value(k, v)
+                else:
                     converted = _kgparser.from_value_object(v)
                     r_enc.set_param_key_value(k, converted)
-                else:
-                    r_enc.set_param_key_value(k, v)
 
         # set provenance behavior
         if include_provenance == True:
