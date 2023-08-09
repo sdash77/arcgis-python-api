@@ -43,6 +43,16 @@ try:
     from sklearn import preprocessing
     import numpy as np
     import pandas as pd
+    from sklearn.pipeline import make_pipeline
+    from sklearn.compose import make_column_transformer
+    from sklearn.impute import SimpleImputer
+    from sklearn.preprocessing import (
+        Normalizer,
+        LabelEncoder,
+        MinMaxScaler,
+        StandardScaler,
+        OrdinalEncoder,
+    )
 except Exception as e:
     import_exception = "\n".join(
         traceback.format_exception(type(e), e, e.__traceback__)
@@ -229,9 +239,10 @@ class AutoML(object):
                 + self._data._categorical_variables
                 + self._data._embedding_variables
             ]
+            self._all_data_df = self._impute_missing_values(data=self._all_data_df)
             self._all_labels = self._data._dataframe[
                 self._data._dependent_variable
-            ].values
+            ]#.values
             self._validation_data_df = pd.DataFrame(
                 self._validation_data,
                 columns=self._data._continuous_variables
@@ -288,6 +299,12 @@ class AutoML(object):
             self._privileged_groups = kwargs.get("privileged_groups", [])
             self._underprivileged_groups = kwargs.get("unprivileged_groups", [])
 
+            for grp in self._underprivileged_groups:
+                for key in grp:
+                    val = grp[key]
+                    if val == '':
+                        self._underprivileged_groups = []
+
             if (
                 self._fairness_metric == "group_loss_difference"
                 and self._fairness_threshold == "auto"
@@ -296,6 +313,11 @@ class AutoML(object):
                     "Fairness Threshold value is required to be passed when the chosen fairness metric is group_loss_difference."
                 )
                 # exit()
+                
+            if self._fairness_metric == 'equalised_odds_ratio':
+                self._fairness_metric = 'equalized_odds_ratio'
+            if self._fairness_metric == 'equalised_odds_difference':
+                self._fairness_metric = 'equalized_odds_difference'
 
             self._model = base_AutoML(
                 results_path=result_path,
@@ -332,6 +354,28 @@ class AutoML(object):
                 return "auto"
         except:
             return "auto"
+
+    def _impute_missing_values(self, data=None):
+
+        numerical_transformer = make_pipeline(
+            SimpleImputer(strategy="median")
+        )
+
+        categorical_transformer = make_pipeline(SimpleImputer(strategy="constant"))
+
+        _procs = make_column_transformer(
+            (numerical_transformer, self._data._continuous_variables),
+            (categorical_transformer, self._data._categorical_variables),
+            (numerical_transformer, self._data._embedding_variables),
+        )
+        if data is None:
+            data = self._all_data_df
+        try:
+            processed_data = _procs.fit_transform(data)
+            processed_data_df = pd.DataFrame(processed_data, columns=data.columns.values.tolist())
+        except:
+            processed_data_df = data
+        return processed_data_df
 
     def fit(self, sample_weight=None):
         """
@@ -672,12 +716,12 @@ class AutoML(object):
 
         if self._model._get_ml_task() == "regression":
             explainer = shap.KernelExplainer(
-                self._shap_predict, shap.sample(self._data._ml_data[0], 500)
+                self._shap_predict, shap.sample(self._all_data_df.values, 500)
             )
         else:
             explainer = shap.KernelExplainer(
                 self._shap_predict,
-                shap.sample(self._data._ml_data[0], 500),
+                shap.sample(self._all_data_df.values, 500),
                 link="logit",
             )
         filename = os.path.join(path, "model_explainer.sav")
@@ -834,6 +878,7 @@ class AutoML(object):
             + self._data._categorical_variables
             + self._data._embedding_variables,
         )
+        data_df = self._impute_missing_values(data=data_df)
         return self._model.predict(data_df)
 
     def _shap_predict(self, data):
@@ -842,6 +887,7 @@ class AutoML(object):
             columns=self._data._continuous_variables
             + self._data._categorical_variables,
         )
+        data_df = self._impute_missing_values(data=data_df)
         if self._model._get_ml_task() == "regression":
             return self._model.predict(data_df)
         else:
@@ -853,6 +899,7 @@ class AutoML(object):
             columns=self._data._continuous_variables
             + self._data._categorical_variables,
         )
+        data_df = self._impute_missing_values(data=data_df)
         return self._model.predict_all(data_df)
 
     def _predict_proba(self, data):
@@ -861,6 +908,7 @@ class AutoML(object):
             columns=self._data._continuous_variables
             + self._data._categorical_variables,
         )
+        data_df = self._impute_missing_values(data=data_df)
         return self._model.predict_proba(data_df)
 
     def predict(
