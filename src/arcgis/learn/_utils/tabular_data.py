@@ -265,7 +265,7 @@ class TabularDataObject(object):
                     ).index.to_list()
             else:
                 if val_split_pct > 1:
-                    val_split_pct = val_split_pct / len(tabular_data._dataframe)
+                    val_split_pct = val_split_pct/len(tabular_data._dataframe)
                 if tabular_data._random_split:
                     validation_indexes = random.sample(
                         range(len(tabular_data._dataframe)),
@@ -1022,7 +1022,7 @@ class TabularDataObject(object):
             # First separate last n steps and then sample rest of the records from the bunchs
             number_of_extra_records = validation_no_rec - step
             extra_records = list(range(total_slices - step, total_slices))
-            if number_of_extra_records > 0:
+            if number_of_extra_records >0:
                 extra_records += random.sample(
                     range(total_slices - step), number_of_extra_records
                 )
@@ -1507,7 +1507,7 @@ class TabularDataObject(object):
         )
         unique_values = {}
         for i in dataframe.columns:
-            if i != "SHAPE":
+            if i != 'SHAPE':
                 unique_values[i] = len(dataframe[i].unique())
         total_rows = dataframe.count().max()
         for col in categorical_variables:
@@ -1517,7 +1517,7 @@ class TabularDataObject(object):
             elif (
                 unique_values[col] / total_rows > 0.5
                 and col_length[col] > 5
-                and len(dataframe[col][0].split("\\")[0]) < 3
+                and len(dataframe[col][0].split('\\')[0]) < 3
             ):
                 categorical_variables.remove(col)
                 image_variables.append(col)
@@ -1815,7 +1815,7 @@ class TabularDataObject(object):
                 # sdf = input_features.query(out_sr=out_sr).sdf
                 sdf = pd.DataFrame.spatial.from_layer(input_features)
                 if attachment_list:
-                    sdf["Images"] = attachment_list
+                    sdf['Images'] = attachment_list
 
             elif (
                 hasattr(input_features, "dataSource")
@@ -1830,7 +1830,7 @@ class TabularDataObject(object):
                     is_table_obj=False,
                 )
                 if attachment_list:
-                    sdf["Images"] = attachment_list
+                    sdf['Images'] = attachment_list
                 if cell_sizes and not rasters:
                     sdf = add_h3(sdf, cell_sizes)
                 return sdf, index_data
@@ -1846,7 +1846,7 @@ class TabularDataObject(object):
             else:
                 sdf = input_features.copy()
                 if attachment_list:
-                    sdf["Images"] = attachment_list
+                    sdf['Images'] = attachment_list
                 input_layer = None
                 try:
                     input_layer = sdf.spatial.to_feature_collection()

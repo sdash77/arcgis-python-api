@@ -952,7 +952,6 @@ class TimeSeriesModel(ArcGISModel):
         # pandas series will be deprecated.
         #
         from pandas.api.types import is_datetime64_any_dtype as is_datetime
-
         datetime_dict = {}
         delta = None
         index_field_name = None
@@ -976,10 +975,15 @@ class TimeSeriesModel(ArcGISModel):
         for i in orig_dataframe.columns:
             if i != index_field_name:
                 if is_datetime(orig_dataframe[i]):
-                    new_delta = orig_dataframe[i].iloc[1] - orig_dataframe[i].iloc[0]
+                    new_delta = (
+                        orig_dataframe[i].iloc[1]
+                        - orig_dataframe[i].iloc[0]
+                    )
                     end_value_temp = None
                     if new_delta is not None:
-                        end_value_temp = orig_dataframe[i].iloc[len(orig_dataframe) - 1]
+                        end_value_temp = orig_dataframe[i].iloc[
+                            len(orig_dataframe) - 1
+                        ]
                     if new_delta is not None:
                         datetime_dict[i] = tuple([new_delta, end_value_temp])
 
