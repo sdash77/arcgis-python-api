@@ -5,10 +5,12 @@ from enum import Enum
 from arcgis.auth.tools import LazyLoader
 import copy
 from ._ref import templates
-from arcgis.gis import GIS
+
+# from arcgis.gis import GIS
 import re
 from dataclasses import dataclass
 
+_arcgis_gis = LazyLoader("arcgis.gis")
 arcgis = LazyLoader("arcgis")
 json = LazyLoader("json")
 time = LazyLoader("time")
@@ -111,19 +113,19 @@ class WebExperience(object):
 
     def __init__(
         self,
-        item: Optional[Union[arcgis.gis.Item, str]] = None,
+        item: Optional[Union[_arcgis_gis.Item, str]] = None,
         path: Optional[str] = None,
-        gis: Optional[arcgis.gis.GIS] = None,
+        gis: Optional[_arcgis_gis.GIS] = None,
         template: Optional[Union[Templates, str]] = None,
         name: Optional[str] = None,
     ):
         if gis is None:
-            if item and isinstance(item, arcgis.gis.Item):
+            if item and isinstance(item, _arcgis_gis.Item):
                 self._gis = item._gis
             else:
                 self._gis = arcgis.env.active_gis
         else:
-            if item and isinstance(item, arcgis.gis.Item):
+            if item and isinstance(item, _arcgis_gis.Item):
                 if item._gis != gis:
                     raise ValueError("Provided GIS must match item GIS")
             self._gis = gis
@@ -138,7 +140,11 @@ class WebExperience(object):
             item = self._gis.content.get(item)
             if item is None:
                 raise ValueError("Item is not accessible with provided GIS")
-        if item and isinstance(item, arcgis.gis.Item) and item.type == "Web Experience":
+        if (
+            item
+            and isinstance(item, _arcgis_gis.Item)
+            and item.type == "Web Experience"
+        ):
             # set item properties
             self._item = item
             self._itemid = self._item.itemid
@@ -155,7 +161,9 @@ class WebExperience(object):
                 self._draft = config
                 self._expdict = config
         elif (
-            item and isinstance(item, arcgis.gis.Item) and item.type != "Web Experience"
+            item
+            and isinstance(item, _arcgis_gis.Item)
+            and item.type != "Web Experience"
         ):
             # Throw error if item is not of type Experience
             raise ValueError("Item is not a Web Experience or is inaccesible")
@@ -477,7 +485,7 @@ class WebExperience(object):
         """
         See :class:`~arcgis.gis.ResourceManager`
         """
-        resource_manager = arcgis.gis.ResourceManager(self._item, self._gis)
+        resource_manager = _arcgis_gis.ResourceManager(self._item, self._gis)
         is_present = False
         if file:
             for resource in self._resources:
