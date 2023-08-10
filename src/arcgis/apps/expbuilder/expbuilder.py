@@ -4,7 +4,8 @@ import uuid
 from enum import Enum
 from arcgis.auth.tools import LazyLoader
 import copy
-from ._ref import templates
+import importlib
+from ._ref import template_list
 
 # from arcgis.gis import GIS
 import re
@@ -17,8 +18,8 @@ time = LazyLoader("time")
 
 
 class Templates(Enum):
-    BLANKFULLSCREEN = "blank fullscreen"
-    BLANKSCROLLING = "blank scrolling"
+    BLANKFULLSCREEN = "blank_fullscreen"
+    BLANKSCROLLING = "blank_scrolling"
     FOLDABLE = "foldable"
     LAUNCHPAD = "launchpad"
     JEWELERYBOX = "jewelrybox"
@@ -36,7 +37,7 @@ class Templates(Enum):
     EXHIBITION = "exhibition"
     DART = "dart"
     POCKET = "pocket"
-    QUICKNAVIGATION = "quick navigation"
+    QUICKNAVIGATION = "quick_navigation"
     PARALLAX = "parallax"
     DASH = "dash"
     INDICATOR = "indicator"
@@ -205,7 +206,7 @@ class WebExperience(object):
     def _create_new_experience(
         self,
         config=None,
-        template="blank fullscreen",
+        template="blank_fullscreen",
         name=None,
         gis=None,
         item_properties={},
@@ -223,17 +224,24 @@ class WebExperience(object):
 
             # retrieve template for experience
             if template is None:
-                template = "blank fullscreen"
+                template = "blank_fullscreen"
 
             temp_low = template.lower()
-            if temp_low in arcgis.apps.expbuilder._ref.templates:
+            temp_low.replace(" ", "_")
+            if temp_low in template_list:
+                dict_name = "arcgis.apps.expbuilder._ref." + temp_low
+            else:
+                dict_name = "arcgis.apps.expbuilder._ref.blank_fullscreen"
+            temp_dict = copy.deepcopy(importlib.import_module(dict_name))
+
+            """if temp_low in arcgis.apps.expbuilder._ref.template_list:
                 temp_dict = copy.deepcopy(
                     arcgis.apps.expbuilder._ref.templates[temp_low]
                 )
             else:
                 temp_dict = copy.deepcopy(
                     arcgis.apps.expbuilder._ref.templates["blank fullscreen"]
-                )
+                )"""
 
             temp_dict["attributes"]["portalUrl"] = self._gis.url
             # temp_dict["timestamp"]
