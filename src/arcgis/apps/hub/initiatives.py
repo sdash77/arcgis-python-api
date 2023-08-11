@@ -425,8 +425,8 @@ class Initiative(OrderedDict):
         =====================     ====================================================================
 
 
-        To find the list of applicable options for argument initiative_properties -
-        https://developers.arcgis.com/python/api-reference/arcgis.gis.toc.html#arcgis.gis.Item.update
+        To find the list of applicable options for argument initiative_properties, please see the *Item* 
+        :meth:`~arcgis.gis.Item.update` documentation.
 
         :return:
            A boolean indicating success (True) or failure (False).

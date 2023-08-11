@@ -885,8 +885,8 @@ class MapFeatureLayer(Layer):
                                             an array.
 
                                             .. note::
-                                                Check `parameterInfos` at the `layer resources <`Query (Feature Service/Layer) https://developers.arcgis.com/rest/services-reference/enterprise/query-feature-service-layer-.htm>`_ for the available parameterized filters, their default values and
-                                                expected data type.
+                                                Check `parameterValues` at the `Query (Map Service/Layer) <https://developers.arcgis.com/rest/services-reference/enterprise/query-map-service-layer-.htm#GUID-403AC0F3-4B48-45BD-B473-E52E790FD296>`_
+                                                for details on parameterized filters.
         -------------------------------     --------------------------------------------------------------------
         kwargs                              Optional dict. Optional parameters that can be passed to the Query
                                             function.  This will allow users to pass additional parameters not
