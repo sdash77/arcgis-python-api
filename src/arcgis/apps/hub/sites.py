@@ -454,7 +454,7 @@ class Site(OrderedDict):
         subdomain                 Optional string. New subdomain for the site.
         =====================     ====================================================================
 
-        To find the list of applicable options for the _site_properties_ argument, please see the
+        To find the list of applicable options for the *site_properties* argument, please see the
         `Item` :meth:`~arcgis.gis.Item.update` method documentation.
 
         :return:

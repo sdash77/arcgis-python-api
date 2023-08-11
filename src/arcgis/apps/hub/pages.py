@@ -107,7 +107,7 @@ class Page(OrderedDict):
         slug                      Optional string. The slug or subdomain for the page.
         =====================     ====================================================================
 
-        To find the list of applicable options for the _page_properties_ argument, please see the `Item`
+        To find the list of applicable options for the `page_properties` argument, please see the `Item`
         :meth:`~arcgis.gis.Item.update` method documentation.
 
         :return:
