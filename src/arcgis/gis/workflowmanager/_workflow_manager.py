@@ -746,22 +746,20 @@ class JobManager:
             # create a WorkflowManager object from the workflow item
             >>> workflow_manager = WorkflowManager(wf_item)
 
-            >>> job = workflow_manager.jobs.get(job_id)
-            >>> job.priority = 'Updated'
+            >>> updates = { 'priority': 'High' }
 
-            >>> table_name = job.extended_properties[0]["tableName"]
-            >>> job.extended_properties = [
+            >>> updates['extended_properties']: [
                     {
-                        "identifier": table_name + ".prop1",
+                        "identifier": "table_name.prop1",
                         "value": "updated_123"
                     },
                     {
-                        "identifier": table_name + ".prop2",
+                        "identifier": "table_name.prop2",
                         "value": "updated_456"
                     },
                 ]
 
-            >>> workflow_manager.jobs.update(job_id, vars(job))
+            >>> workflow_manager.jobs.update(job_id, updates)
 
         """
         try:
