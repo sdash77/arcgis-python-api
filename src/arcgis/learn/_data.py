@@ -1760,6 +1760,8 @@ def prepare_data(
             chip_size = img_size
         if dataset_type != "Imagenet":
             right = line.split()[1].split(".")[-1].lower()
+        if dataset_type == "RCNN_Masks":
+            right = line.split()[-1].split(".")[-1].lower()
 
         json_file = path / "esri_model_definition.emd"
         if data_folders is None:
