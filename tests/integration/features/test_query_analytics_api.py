@@ -82,14 +82,14 @@ class TestQueryAnalytics(unittest.TestCase):
         ]
 
         result = fl.query_analytics(
-            where=f"{fl.properties.objectIdField} <= 50",
+            where=f"{fl.properties.objectIdField} <= 100",
             out_analytics=analytics,
             future=True,
         )
         assert isinstance(result, concurrent.futures.Future)
         result = result.result()
         assert isinstance(result, pd.DataFrame)
-        assert len(result) <= 50
+        assert len(result) <= 100
         assert "Cumulative_Distrib" in result.columns
 
 
