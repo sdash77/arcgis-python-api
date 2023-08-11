@@ -4,10 +4,9 @@ import concurrent.futures
 from arcgis.features import FeatureLayer
 from arcgis.gis import GIS, ProfileManager
 
-import sys
-sys.path.insert(0, r"/Users/john3092/Job/repos/geosaurus/src")
-
 PROFILES = ["your_online_profile"]
+
+# Use World Countries Feature Layer item: 2ef6f1c2b2e04e68b30c54899d82d123
 ###########################################################################
 
 
@@ -20,7 +19,7 @@ class TestQueryAnalytics(unittest.TestCase):
     # ----------------------------------------------------------------------
     def test_query(self):
         """Tests the simple query analytics call"""
-        url = "https://services7.arcgis.com/JEwYeAy2cc8qOe3o/arcgis/rest/services/World_Countries/FeatureServer/0" # item id 2ef6f1c2b2e04e68b30c54899d82d123
+        url = "https://services7.arcgis.com/JEwYeAy2cc8qOe3o/arcgis/rest/services/World_Countries/FeatureServer/0"
         gis = GIS(profile=PROFILES[0], verify_cert=False)
         fl = FeatureLayer(url, gis=gis)
         analytics = [
