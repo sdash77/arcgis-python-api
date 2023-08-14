@@ -4935,23 +4935,24 @@ class ImageryLayer(Layer):
         raster_id: int,
         geometry: Union[dict[str, Any], Polygon, Point, MultiPoint, Envelope],
         out_sr: Optional[dict] = None,
+        options=None,
     ):
         """
 
         The ``image_to_map`` method converts a point on an image location to a map location.
 
         .. note::
-            The ``find_images`` operation is supported at 11.2 and later.
+            The ``image_to_map`` operation is supported at 11.2 and later.
 
         ============================    ====================================================================
         **Parameter**                   **Description**
         ----------------------------    --------------------------------------------------------------------
         raster_id                       Required integer. Specifies the objectId of the image service’s raster catalog.
                                         The raster_id value identifies which raster of the mosaic dataset
-                                        will be used as part of the calculation.
+                                        will be used.
         ----------------------------    --------------------------------------------------------------------
         geometry                        Required dictionary/Point/Polygon/MultiPoint/Envelope. A :class:`~arcgis.geometry.Geometry` that
-                                        defines the location to be identified.
+                                        needs to be converted from image space to map space.
         ----------------------------    --------------------------------------------------------------------
         out_sr                          Optional string, dictionary, :class:`~arcgis.geometry.SpatialReference`. The ``out_sr``
                                         can accept a multitudes of values.  These can be a WKID, image coordinate system
@@ -4964,6 +4965,12 @@ class ImageryLayer(Layer):
                                         An image coordinate system ID can be specified
                                         using 0:icsid; for example, 0:64. The extra 0: is used to avoid
                                         conflicts with wkid
+        ----------------------------    --------------------------------------------------------------------
+        options                         Optional dict. It has DOff and Adjust keys.
+                                         - DOff is the depth offset value.
+                                         - Adjust is a boolean value. If Adjust is set to True, the "background" vertices will be adjusted to the foreground.
+
+                                         Syntax: {"DOff":<depth offset value>, "Adjust": True/False}
         ============================    ====================================================================
 
         :return: A dictionary
@@ -5015,6 +5022,11 @@ class ImageryLayer(Layer):
 
         if out_sr:
             params["outSR"] = out_sr
+
+        if options:
+            if not isinstance(options, dict):
+                raise RuntimeError("options must be a dictionary")
+            params["options"] = options
 
         return self._con.post(path=url, postdata=params, timeout=None)
 
