@@ -4824,15 +4824,14 @@ class ImageryLayer(Layer):
 
     def find_images(
         self,
-        view_point: Union[dict[str, Any], Point],
+        from_geometry: Union[dict[str, Any], Point] = None,
+        to_geometry: Union[dict[str, Any], Point] = None,
         in_sr: Optional[dict] = None,
         object_ids: Optional[str] = None,
         where: Optional[str] = None,
         max_count: Optional[int] = None,
     ):
         """
-
-        The function basically takes three parameters, a view point, a generic attribute query, and max count.
         The function will find all images that can see the view point, and are ordered based on the distance
         from the view point to the center of each image..
 
@@ -4842,8 +4841,10 @@ class ImageryLayer(Layer):
         =================     ====================================================================
         **Parameter**         **Description**
         -----------------     --------------------------------------------------------------------
-        view_point            Required dictionary or :class:`~arcgis.geometry.Point` object.
-                              A 3D view point for finding visible images.
+        from_geometry         Required dictionary or :class:`~arcgis.geometry.Point` object.
+                              It is the scene camera position in the air.
+        -----------------     --------------------------------------------------------------------
+        to_geometry           Required dictionary or :class:`~arcgis.geometry.Point` object.
         -----------------     --------------------------------------------------------------------
         in_sr                 Optional string, dictionary, :class:`~arcgis.geometry.SpatialReference`. The ``in_sr``
                               can accept a
@@ -4859,8 +4860,6 @@ class ImageryLayer(Layer):
         object_ids            Optional string. The object IDs of this raster catalog to be
                               queried. When this parameter is specified, any other filter
                               parameters (including where) are ignored.
-                              When this parameter is specified, setting return_ids_only=true is
-                              invalid.
 
                               Syntax: objectIds=<objectId1>, <objectId2>
                               Example: objectIds="37, 462"
@@ -4888,7 +4887,27 @@ class ImageryLayer(Layer):
             )
 
         url = "%s/find" % self._url
-        params = {"f": "json", "viewPoint": view_point}
+        params = {"f": "json"}
+
+        from arcgis.geometry._types import Point
+
+        if from_geometry is not None:
+            if isinstance(from_geometry, dict):
+                if "x" not in from_geometry:
+                    raise RuntimeError("from_geometry dict is invalid")
+            elif not isinstance(from_geometry, Point):
+                raise RuntimeError("from_geometry must be a Point object")
+            params["fromGeometry"] = from_geometry
+
+        from arcgis.geometry._types import Point
+
+        if to_geometry is not None:
+            if isinstance(to_geometry, dict):
+                if "x" not in to_geometry:
+                    raise RuntimeError("to_geometry dict is invalid")
+            elif not isinstance(to_geometry, Point):
+                raise RuntimeError("to_geometry must be a Point object")
+            params["toGeometry"] = to_geometry
 
         if isinstance(object_ids, list):
             object_ids = ",".join(map(str, object_ids))
