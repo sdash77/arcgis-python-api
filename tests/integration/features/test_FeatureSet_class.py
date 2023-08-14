@@ -9,6 +9,7 @@ from integration.dino_utils.dino_configs import DinoConfigs
 from configparser import ConfigParser
 import datetime
 import os
+import tempfile
 
 # region PreCondition check
 test_skip = False
@@ -124,12 +125,12 @@ class Test_Feature_class(unittest.TestCase):
             features_req = layer.query(where="OBJECTID = 1")
 
             csv_file = r"generatedCSVfile.csv"
-            path = os.path.join(self.qalab_cls_path, csv_file)
-            temp = features_req.save(self.qalab_cls_path, csv_file)
+            path = tempfile.gettempdir()
+            temp = features_req.save(path, csv_file)
 
             print(temp)
 
-            self.assertEqual(temp, path, "CSV file not created successfully")
+            self.assertEqual(temp, os.path.join(path, csv_file), "CSV file not created successfully")
 
         except AssertionError as assertErrorException:
             test_skip = True
@@ -157,12 +158,12 @@ class Test_Feature_class(unittest.TestCase):
             features_req = layer.query(where="OBJECTID = -1")
 
             csv_file = r"generatedCSVfile_nofeat.csv"
-            path = os.path.join(self.qalab_cls_path, csv_file)
-            temp = features_req.save(self.qalab_cls_path, csv_file)
+            path = tempfile.gettempdir()
+            temp = features_req.save(path, csv_file)
 
             print(temp)
 
-            self.assertEqual(temp, path, "CSV file not created successfully")
+            self.assertEqual(temp, os.path.join(path, csv_file), "CSV file not created successfully")
 
         except AssertionError as assertErrorException:
             test_skip = True
