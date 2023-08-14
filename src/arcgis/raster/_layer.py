@@ -5035,6 +5035,7 @@ class ImageryLayer(Layer):
         raster_id: int,
         geometry: Union[dict[str, Any], Polygon, Point, MultiPoint, Envelope],
         in_sr: Optional[dict] = None,
+        options=None,
     ):
         """
 
@@ -5064,6 +5065,11 @@ class ImageryLayer(Layer):
                                         An image coordinate system ID can be specified
                                         using 0:icsid; for example, 0:64. The extra 0: is used to avoid
                                         conflicts with wkid
+        ----------------------------    --------------------------------------------------------------------
+        options                         Optional dict. It has VisibleOnly key.
+                                         - VisibleOnly is a boolean value. If it's true, method will return an empty geometry if vertices are behind the depths
+
+                                         Syntax: {"VisibleOnly": True/False}
         ============================    ====================================================================
 
         :return: A dictionary
@@ -5115,6 +5121,11 @@ class ImageryLayer(Layer):
 
         if in_sr:
             params["inSR"] = in_sr
+
+        if options:
+            if not isinstance(options, dict):
+                raise RuntimeError("options must be a dictionary")
+            params["options"] = options
 
         return self._con.post(path=url, postdata=params, timeout=None)
 
