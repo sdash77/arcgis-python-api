@@ -1594,6 +1594,23 @@ def _get_stac_metadata_file(item):
             ],
             "safe-manifest",
         ),
+        **dict.fromkeys(
+            [
+                "esa-cci-lc-netcdf",
+                "noaa-climate-normals-netcdf",
+                "noaa-cdr-sea-surface-temperature-whoi-netcdf",
+                "noaa-cdr-ocean-heat-content-netcdf",
+            ],
+            "netcdf",
+        ),
+        **dict.fromkeys(
+            [
+                "noaa-mrms-qpe-24h-pass2",
+                "noaa-mrms-qpe-1h-pass1",
+                "noaa-mrms-qpe-1h-pass2",
+            ],
+            "cog",
+        ),
         **dict.fromkeys(["landsat-c2-l2", "landsat-c2-l1"], "mtl.txt"),
         **dict.fromkeys(["sentinel-2-l2a"], "product-metadata"),
         **dict.fromkeys(["mtbs"], "burn-severity"),
@@ -1627,15 +1644,14 @@ def _get_stac_metadata_file(item):
         "services.sentinel-hub.com/api": sentinel_hub_map,
     }
 
-    stacs = [
-        "planetarycomputer.microsoft.com/api/stac",
-        "earth-search.aws.element84.com",
-        "services.sentinel-hub.com/api",
-    ]
+    stacs = list(product_file_map.keys())
 
     self_link = next(
         (link["href"] for link in item["links"] if link["rel"] == "self"), None
     )
+
+    if self_link is None:
+        return
 
     item_stac = next((stac for stac in stacs if stac in self_link), None)
 
