@@ -13,7 +13,7 @@ from arcgis.geoenrichment import Country
 from arcgis.geoenrichment._business_analyst._utils import pep8ify
 import pandas as pd
 
-from integration.geoenrichment.configtest import (
+from configtest import (
     does_not_raise,
     skip_if_no_local,
     skip_if_no_agol,
@@ -633,6 +633,38 @@ class TestEnrichOnline(unittest.TestCase):
                         "text": "380 New York St Redlands CA 92373",
                         "sourceCountry": "US",
                     }
+                },
+                {
+                    "geometry": {
+                        "rings": [
+                            [
+                                [-117.185412, 34.063170],
+                                [-122.81, 37.81],
+                                [-117.200570, 34.057196],
+                                [-117.185412, 34.063170],
+                            ]
+                        ],
+                        "spatialReference": {"wkid": 4326},
+                    },
+                    "attributes": {
+                        "id": "3",
+                        "name": "optional polygon area name",
+                    },
+                },
+            ]
+            enrich_res = enrich(raw_json, gis=self.usa_agol_inst._gis)
+            assert isinstance(enrich_res, pd.DataFrame)
+
+    @skip_if_no_agol
+    def test_enrich_mix_point_poly(self):
+
+        from arcgis.geoenrichment import enrich
+
+        with does_not_raise():
+            raw_json = [
+                {
+                    "geometry": {"x": -122.435, "y": 37.785},
+                    "attributes": {"id": "1"},
                 },
                 {
                     "geometry": {
