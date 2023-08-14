@@ -2,7 +2,7 @@ import sys
 
 #
 #  Update the Path to set the test area
-sys.path.insert(0, r"c:\SVN\geosaurus_master\src")
+sys.path.insert(0, r"C:\Users\tar12555\Documents\repos\geosaurus-fork\src")
 import json
 import os, uuid
 import tempfile
@@ -24,7 +24,7 @@ def enable_verbose_logging(root):
     root.addHandler(handler)
 
 
-profiles = ['your_online_profile']  # , 'your_enterprise_profile'
+profiles = ['your_online_admin_profile']  # , 'your_enterprise_profile'
 PROXIES = detect_proxy(True)  # Handles Fiddler when True
 enable_verbose_logging(__logger__)
 
@@ -117,7 +117,7 @@ class TestAGOLNotebookManager(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         cls._gis = GIS(
-            profile='your_online_profile', verify_cert=False, proxy=PROXIES
+            profile='your_online_admin_profile', verify_cert=False, proxy=PROXIES
         )
 
         d = tempfile.gettempdir()
@@ -181,6 +181,7 @@ class TestAGOLNotebookManager(unittest.TestCase):
         from arcgis._impl._async.jobs import Job
 
         gis = self._gis
+        print('gis.notebook_server --------', gis.notebook_server)
         mgr = gis.notebook_server[0]
         print(mgr)
         nbm = mgr.notebooksmanager
@@ -228,7 +229,7 @@ class Test_ExecuteNotebookMethod(unittest.TestCase):
         url = "https://rqawinbi01pt.ags.esri.com/gis"
         username = "NBAdvanced"
         password = "NBAdvanced.1"
-        ent_json_data = '{"nbformat_minor":2,"metadata":{"language_info":{"pygments_lexer":"ipython3","nbconvert_exporter":"python","codemirror_mode":{"name":"ipython","version":3},"name":"python","mimetype":"text/x-python","file_extension":".py","version":"3.7.11"},"esriNotebookRuntime":{"notebookRuntimeName":"ArcGIS Notebook Python 3 Standard","notebookRuntimeVersion":"6.0"},"kernelspec":{"name":"python3","language":"python","display_name":"Python 3 (ipykernel)"}},"cells":[{"metadata":{},"source":"## Welcome to your notebook.\\n","cell_type":"markdown"},{"metadata":{},"source":"#### Run this cell to connect to your GIS and get started:","cell_type":"markdown"},{"outputs":[{"output_type":"stream","name":"stderr","text":"/opt/conda/lib/python3.7/site-packages/arcgis/gis/__init__.py:575: UserWarning:\\n\\nYou are logged on as andrew with an administrator role, proceed with caution.\\n\\n"}],"metadata":{"trusted":false},"execution_count":1,"source":"from arcgis.gis import GIS\\ngis = GIS(\\"home\\")","cell_type":"code"},{"metadata":{},"source":"#### Now you are ready to start!","cell_type":"markdown"},{"outputs":[{"output_type":"stream","name":"stdout","text":"<User username:andrew>\\n"}],"metadata":{"trusted":false},"execution_count":2,"source":"print(gis.users.me)","cell_type":"code"},{"outputs":[{"output_type":"stream","name":"stdout","text":"I\'m finished\\n"}],"metadata":{"trusted":true},"execution_count":1,"source":"output = \\"I\'m finished\\"\\nprint(output)","cell_type":"code"},{"outputs":[],"metadata":{"trusted":true},"execution_count":null,"source":"","cell_type":"code"}],"nbformat":4}'
+        ent_json_data = '{"nbformat_minor":2,"metadata":{"language_info":{"pygments_lexer":"ipython3","nbconvert_exporter":"python","codemirror_mode":{"name":"ipython","version":3},"name":"python","mimetype":"text/x-python","file_extension":".py","version":"3.7.11"},"esriNotebookRuntime":{"notebookRuntimeName":"ArcGIS Notebook Python 3 Standard","notebookRuntimeVersion":"9.0"},"kernelspec":{"name":"python3","language":"python","display_name":"Python 3 (ipykernel)"}},"cells":[{"metadata":{},"source":"## Welcome to your notebook.\\n","cell_type":"markdown"},{"metadata":{},"source":"#### Run this cell to connect to your GIS and get started:","cell_type":"markdown"},{"outputs":[{"output_type":"stream","name":"stderr","text":"/opt/conda/lib/python3.7/site-packages/arcgis/gis/__init__.py:575: UserWarning:\\n\\nYou are logged on as andrew with an administrator role, proceed with caution.\\n\\n"}],"metadata":{"trusted":false},"execution_count":1,"source":"from arcgis.gis import GIS\\ngis = GIS(\\"home\\")","cell_type":"code"},{"metadata":{},"source":"#### Now you are ready to start!","cell_type":"markdown"},{"outputs":[{"output_type":"stream","name":"stdout","text":"<User username:andrew>\\n"}],"metadata":{"trusted":false},"execution_count":2,"source":"print(gis.users.me)","cell_type":"code"},{"outputs":[{"output_type":"stream","name":"stdout","text":"I\'m finished\\n"}],"metadata":{"trusted":true},"execution_count":1,"source":"output = \\"I\'m finished\\"\\nprint(output)","cell_type":"code"},{"outputs":[],"metadata":{"trusted":true},"execution_count":null,"source":"","cell_type":"code"}],"nbformat":4}'
 
         cls._gis = GIS(
             url=url,
@@ -250,7 +251,7 @@ class Test_ExecuteNotebookMethod(unittest.TestCase):
                 "title": f"item_{uuid.uuid4().hex[:6]}",
                 "properties": {
                     "notebookRuntimeName": "ArcGIS Notebook Python 3 Advanced",
-                    "notebookRuntimeVersion": "8.0",
+                    "notebookRuntimeVersion": "9.0",
                 },
             },
             data=fp,
@@ -258,7 +259,7 @@ class Test_ExecuteNotebookMethod(unittest.TestCase):
         cls._item.update(
             {
                 "notebookRuntimeName": "ArcGIS Notebook Python 3 Advanced",
-                "notebookRuntimeVersion": "8.0",
+                "notebookRuntimeVersion": "9.0",
             }
         )
         # print('stop')
