@@ -2,7 +2,6 @@ import sys
 
 #
 #  Update the Path to set the test area
-sys.path.insert(0, r"C:\Users\tar12555\Documents\repos\geosaurus-fork\src")
 import json
 import os, uuid
 import tempfile
@@ -181,7 +180,6 @@ class TestAGOLNotebookManager(unittest.TestCase):
         from arcgis._impl._async.jobs import Job
 
         gis = self._gis
-        print('gis.notebook_server --------', gis.notebook_server)
         mgr = gis.notebook_server[0]
         print(mgr)
         nbm = mgr.notebooksmanager
@@ -234,7 +232,7 @@ class Test_ExecuteNotebookMethod(unittest.TestCase):
         cls._gis = GIS(
             url=url,
             username=username,
-            password=password,
+            password=password, 
             verify_cert=False,
             proxy=PROXIES,
         )
