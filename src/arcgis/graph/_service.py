@@ -348,24 +348,55 @@ class KnowledgeGraph:
 
         # set bind parameters
         if bind_param:
+
+            def convert_to_properties(dictionary, last_key):
+                if not isinstance(dictionary, dict):
+                    return dictionary
+
+                properties_dict = {}
+                for key, value in dictionary.items():
+                    if isinstance(value, dict):
+                        if key != "_properties" and last_key == False:
+                            properties_dict[key] = {
+                                "_objectType": "object",
+                                "_properties": convert_to_properties(value, False),
+                            }
+                        elif key != "properties" and last_key == True:
+                            properties_dict[key] = convert_to_properties(value, False)
+                        else:
+                            properties_dict[key] = convert_to_properties(value, True)
+                    else:
+                        properties_dict[key] = value
+
+                return properties_dict
+
             for k, v in bind_param.items():
-                if isinstance(v, dict):
+                if isinstance(v, Geometry):
                     if "_objectType" not in v.keys():
                         copy_dict = copy.deepcopy(v)
-                        if isinstance(v, Geometry):
-                            copy_dict["_objectType"] = "geometry"
-                        elif "_properties" not in copy_dict.keys():
-                            new_dict = {
-                                "_objectType": "object",
-                                "_properties": copy_dict,
-                            }
-                            copy_dict = new_dict
-                        else:
-                            copy_dict["_objectType"] = "object"
+                        copy_dict["_objectType"] = "geometry"
                         converted = _kgparser.from_value_object(copy_dict)
                     else:
                         converted = _kgparser.from_value_object(v)
                     r_enc.set_param_key_value(k, converted)
+
+                elif isinstance(v, dict):
+                    copy_dict = copy.deepcopy(v)
+                    if "_properties" not in copy_dict.keys():
+                        changed = {
+                            "_objectType": "object",
+                            "_properties": convert_to_properties(copy_dict, False),
+                        }
+                        converted = _kgparser.from_value_object(changed)
+                    else:
+                        if "_objectType" not in copy_dict.keys():
+                            copy_dict["_objectType"] = "object"
+                        copy_dict["_properties"] = convert_to_properties(
+                            copy_dict["_properties"], True
+                        )
+                        converted = _kgparser.from_value_object(copy_dict)
+                    r_enc.set_param_key_value(k, converted)
+
                 elif isinstance(
                     v,
                     (
