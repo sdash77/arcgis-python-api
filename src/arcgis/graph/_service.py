@@ -299,11 +299,11 @@ class KnowledgeGraph:
                                value can be any "primitive" type value that may be found as
                                an attribute of an entity or relationship (e.g., string,
                                double, boolean, etc.), a list, an anonymous object (a dict),
-                               or a geometry. 
-                               
+                               or a geometry.
+
                                Anonymous objects and geometries can be passed
                                in as either their normal Python forms, or following the
-                               format found in Knowledge Graph entries (containing an 
+                               format found in Knowledge Graph entries (containing an
                                "_objectType" key, and "_properties" for anonymous objects).
 
                                Note: Including bind parameters not used in the query will
