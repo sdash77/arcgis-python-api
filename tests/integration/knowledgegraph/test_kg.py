@@ -198,6 +198,20 @@ class TestKGMethods(unittest.TestCase):
             assert isinstance(gen2, Generator)
             assert len(list(gen2)) > 0
 
+        with self.subTest(msg="Simple object bind test"):
+            bind = {"simple" : {"name" : "Snorlax"}}
+            query = """MATCH (n) WHERE n.name = $simple.name RETURN n"""
+            gen = kg.query_streaming(query=query, bind_param=bind)
+            assert isinstance(gen, Generator)
+            assert len(list(gen)) > 0
+
+        with self.subTest(msg="List bind test"):
+            bind = {"list" : ['Snorlax', 'Articuno']}
+            query = """MATCH (n) where n.name IN $list RETURN n"""
+            gen = kg.query_streaming(query=query, bind_param=bind)
+            assert isinstance(gen, Generator)
+            assert len(list(gen)) > 0
+
         # test provenance in search
         with self.subTest(msg="Provenance inclusion test"):
             prov_entity = {

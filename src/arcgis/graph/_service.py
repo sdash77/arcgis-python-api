@@ -298,7 +298,13 @@ class KnowledgeGraph:
                                which is how the parameter can be referenced in the query. The
                                value can be any "primitive" type value that may be found as
                                an attribute of an entity or relationship (e.g., string,
-                               double, boolean, etc.), or a geometry.
+                               double, boolean, etc.), a list, an anonymous object (a dict),
+                               or a geometry. 
+                               
+                               Anonymous objects and geometries can be passed
+                               in as either their normal Python forms, or following the
+                               format found in Knowledge Graph entries (containing an 
+                               "_objectType" key, and "_properties" for anonymous objects).
 
                                Note: Including bind parameters not used in the query will
                                cause queries to yield nothing.
@@ -343,11 +349,20 @@ class KnowledgeGraph:
         # set bind parameters
         if bind_param:
             for k, v in bind_param.items():
-                if isinstance(v, Geometry):
+                if isinstance(v, dict):
                     if "_objectType" not in v.keys():
-                        copy_geom = copy.deepcopy(v)
-                        copy_geom["_objectType"] = "geometry"
-                        converted = _kgparser.from_value_object(copy_geom)
+                        copy_dict = copy.deepcopy(v)
+                        if isinstance(v, Geometry):
+                            copy_dict["_objectType"] = "geometry"
+                        elif "_properties" not in copy_dict.keys():
+                            new_dict = {
+                                "_objectType": "object",
+                                "_properties": copy_dict,
+                            }
+                            copy_dict = new_dict
+                        else:
+                            copy_dict["_objectType"] = "object"
+                        converted = _kgparser.from_value_object(copy_dict)
                     else:
                         converted = _kgparser.from_value_object(v)
                     r_enc.set_param_key_value(k, converted)
