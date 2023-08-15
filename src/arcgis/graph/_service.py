@@ -167,7 +167,7 @@ class KnowledgeGraph:
         adds                        Optional dict. See below for structure. The properties to add
                                     to the search index, specified by entity.
         -------------------------   ---------------------------------------------------------------
-        updates                     Optional dict. See below for structure. The properties to
+        deletes                     Optional dict. See below for structure. The properties to
                                     delete from the search index, specified by entity.
         =========================   ===============================================================
 
@@ -307,7 +307,8 @@ class KnowledgeGraph:
                                "_objectType" key, and "_properties" for anonymous objects).
 
                                Note: Including bind parameters not used in the query will
-                               cause queries to yield nothing.
+                               cause queries to yield nothing on ArangoDB based services,
+                               while Neo4j based services will still produce results.
         -------------------    ---------------------------------------------------------------
         include_provenance     Optional boolean. When `True`, provenance entities (metadata)
                                will be included in the query results. Defaults to `False`.
