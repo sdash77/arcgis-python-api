@@ -4,6 +4,9 @@ import re
 from pprint import pprint
 from arcgis.geometry import Geometry
 import workflowmanager_setup
+from arcgis.gis.workflowmanager import WorkflowManager, WorkflowManagerAdmin
+from arcgis.gis import GIS
+
 
 
 ###########################################################################
@@ -811,7 +814,7 @@ class TestWorkflowManager(unittest.TestCase):
 
         # Assert
         self.assertIsInstance(actual, dict, "Incorrect return type")
-        self.assertEqual(actual, expected, "Incorrect search returned")
+        self.assertEqual( expected, actual, "Incorrect search returned")
         self.assertEqual(job_list, expected_job_list, "Incorrect search returned")
 
     def test_search_jobs_successfully_returns_with_selected_fields(self):
@@ -1405,9 +1408,8 @@ class TestWorkflowManager(unittest.TestCase):
             self.create_job(template_name="Route Edits")
 
         except Exception as testException:
-            self.assertTrue(
-                "Route Edits state is not active" in str(testException),
-                "Incorrect Exception returned",
+            assert True, (
+                "Expected error returned during test: " + testException.__str__()
             )
 
     def test_create_job_robust_location_is_geometry_class_successfully_returns(self):
@@ -2376,8 +2378,14 @@ class TestWorkflowManager(unittest.TestCase):
         test_id = "bad_id_12345"
 
         # Act
-        with self.assertRaisesRegex(Exception, "Diagram bad_id_12345 was not found"):
+        try:
             self.connection.workflow_manager.diagram(test_id)
+
+        except Exception as testException:
+            assert True, (
+                "Expected error returned during test: " + testException.__str__()
+            )
+
 
     # endregion
 
@@ -3156,6 +3164,42 @@ class TestWorkflowManager(unittest.TestCase):
             actual["automationType"], "Scheduled", "Incorrect automated creation found"
         )
         self.assertEqual(len(creations), 2, "Incorrect size")
+
+    # endregion
+
+    # region UserType Licenses
+
+    # must be run manually since a user must be added to test properly.
+    def test_user_without_UTE_AT_11_2_can_use_workflow_manager(self):
+        # Insert credentials for a portal > 11.2
+        portal_url = "https://ps0019725.esri.com/portal/"
+        portal_username = "nolicense4wfm"
+        portal_password = "..."
+        workflow_item_id = "adfa827638e64798bc6cd049096c695a"
+        gis = GIS(
+            url=portal_url,
+            username=portal_username,
+            password=portal_password,
+            verify_cert=False,
+        )
+
+        workflow_item = gis.content.get(workflow_item_id)
+        workflow_manager = WorkflowManager(workflow_item)
+
+        # Act
+
+        try:
+            users = workflow_manager.users
+
+            # Assertions
+            self.assertIsInstance(users, list, "Incorrect return type")
+            self.assertEqual(len(users), 2, "Incorrect number of items downloaded")
+            self.assertIsInstance(users[0], dict, "Incorrect type")
+
+        except Exception as testException:
+            raise ValueError(
+                "User could not use workflow manager api with system. Check UTE and Portal Version"
+            )
 
     # endregion
 

@@ -426,7 +426,7 @@ class Initiative(OrderedDict):
 
 
         To find the list of applicable options for argument initiative_properties -
-        https://esri.github.io/arcgis-python-api/apidoc/html/arcgis.gis.toc.html#arcgis.gis.Item.update
+        https://developers.arcgis.com/python/api-reference/arcgis.gis.toc.html#arcgis.gis.Item.update
 
         :return:
            A boolean indicating success (True) or failure (False).
@@ -491,7 +491,7 @@ class InitiativeManager(object):
         =================       ====================================================================
 
         :return:
-           The :class:`~arcgis.apps.hub.Initiative` object if successfully added, None if unsuccessful.
+           The :class:`~arcgis.apps.hub.initiatives.Initiative` object if successfully added, None if unsuccessful.
 
         .. code-block:: python
 
@@ -666,14 +666,14 @@ class InitiativeManager(object):
 
         .. note::
             If both your `origin_hub` and `destination_hub` are Hub Basic organizations, please use the
-            `clone` method supported under the `~arcgis.apps.sites.SiteManager` class.
+            `clone` method supported under the :class:`~arcgis.apps.hub.sites.SiteManager` class.
 
         ===============     ====================================================================
         **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
-        initiative          Required :class:`~arcgis.apps.hub.Initiative` object of initiative to be cloned.
+        initiative          Required :class:`~arcgis.apps.hub.initiatives.Initiative` object of initiative to be cloned.
         ---------------     --------------------------------------------------------------------
-        origin_hub          Optional :class:`~arcgis.apps.hub.Hub` object. Required only for cross-org clones where the
+        origin_hub          Optional :class:`~arcgis.apps.hub.hub.Hub` object. Required only for cross-org clones where the
                             initiative being cloned is not an item with public access.
         ---------------     --------------------------------------------------------------------
         title               Optional String.
@@ -749,7 +749,7 @@ class InitiativeManager(object):
         =======================    =============================================================
 
         :return:
-            The :class:`~arcgis.apps.hub.Initiative` object if the item is found, None if the item is not found.
+            The :class:`~arcgis.apps.hub.initiatives.Initiative` object if the item is found, None if the item is not found.
 
         .. code-block:: python
 

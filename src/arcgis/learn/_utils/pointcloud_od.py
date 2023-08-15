@@ -18,7 +18,9 @@ try:
     import torch
     import numpy as np
     import types
-    from mmdet3d.core import LiDARInstance3DBoxes
+    from mmdet3d.core import LiDARInstance3DBoxes, Box3DMode
+    from mmdet3d.core.points.lidar_points import LiDARPoints
+    from mmdet3d.datasets.pipelines import Compose
     import plotly
     import plotly.graph_objects as go
     from plotly.subplots import make_subplots
@@ -31,8 +33,43 @@ except Exception as e:
     HAS_FASTAI = False
 
 
+class ODTransform3D(object):
+    def __init__(
+        self,
+        rotation_range=[-0.78539816, 0.78539816],
+        scaling_range=[0.95, 1.05],
+        flip_x_prob=0.5,
+        flip_y_prob=0.5,
+    ):
+        # In LIDAR coordinates, y (horizontal) and x (vertical) axis.
+        self.tfms = [
+            dict(
+                type="RandomFlip3D",
+                sync_2d=False,
+                flip_ratio_bev_vertical=flip_x_prob,
+                flip_ratio_bev_horizontal=flip_y_prob,
+            ),
+            dict(
+                type="GlobalRotScaleTrans",
+                rot_range=rotation_range,
+                scale_ratio_range=scaling_range,
+            ),
+        ]
+
+    def _create_transforms(self, point_cloud_range):
+        self.tfms.append(
+            dict(type="PointsRangeFilter", point_cloud_range=point_cloud_range)
+        )
+        self.tfms.append(
+            dict(type="ObjectRangeFilter", point_cloud_range=point_cloud_range)
+        )
+        return Compose(self.tfms)
+
+
 class PointCloudOD(Dataset):
-    def __init__(self, path, folder="", class_mapping=None, **kwargs):
+    def __init__(
+        self, path, folder="", class_mapping=None, transform_fn=False, **kwargs
+    ):
         self.path = Path(path)
         with open(self.path / folder / "Statistics.json", "r") as f:
             self.statistics = json.load(f)
@@ -108,17 +145,17 @@ class PointCloudOD(Dataset):
                     k: class_mapping.get(k, v) for k, v in train_class_mapping.items()
                 }
 
-            bg_code = kwargs.get("background_classcode", None)
-            if self.classes_of_interest == [] and bg_code is not None:
+            self.bg_code = kwargs.get("background_classcode", None)
+            if self.classes_of_interest == [] and self.bg_code is not None:
                 raise Exception(
                     "background_classcode can only be used when `classes_of_interest` is passed."
                 )
-            if bg_code is not None and type(bg_code) is not bool:
+            if self.bg_code is not None and type(self.bg_code) is not bool:
                 raise Exception(
                     "Please enter a boolean value (True or False) for background_classcode."
                 )
 
-            if self.classes_of_interest != [] and bg_code:
+            if self.classes_of_interest != [] and self.bg_code:
                 class_mapping = {
                     k: v
                     for k, v in class_mapping.items()
@@ -139,7 +176,7 @@ class PointCloudOD(Dataset):
                 if v in self.classes_of_interest:
                     self.classes_of_interest.append(k)
                     self.class2idx[k] = self.class2idx[v]
-                if self.classes_of_interest == [] or not bg_code:
+                if self.classes_of_interest == [] or not self.bg_code:
                     self.class2idx[k] = self.class2idx[v]
 
             self.classes_of_interest = sorted(list(set(self.classes_of_interest)))
@@ -176,6 +213,14 @@ class PointCloudOD(Dataset):
                 )
                 * self.scale_factor
             ).tolist()
+            # get the smallest box idx to calulate the voxel size
+            box_idx = np.product(self.average_box_size, axis=1).argmin()
+            box_size = self.average_box_size[box_idx]
+            # taking 60 voxels in x and 20 voxels in z direction for each bbox
+            self.voxel_size = [box_size[0] / 60, box_size[0] / 60, box_size[2] / 20]
+            no_of_points = self.statistics["numberOfStoredRecords"]
+            no_of_tiles = self.statistics["numberOfStoredTiles"]
+            self.no_of_points_per_tile = no_of_points // no_of_tiles
 
             box_zminmax_range = [
                 clas["orientedBoundingBoxZ"]
@@ -199,6 +244,19 @@ class PointCloudOD(Dataset):
                 classes_of_interest = self.classes_of_interest
             else:
                 classes_of_interest = None
+
+            self._filter_box_point_percentage = kwargs.get(
+                "filter_box_point_percentage", 0.2
+            )
+            self.transform = transform_fn
+            if folder == "val":
+                self._filter_box_point_percentage = 0.3
+            if self.transform:
+                point_cloud_range = (
+                    np.array([-1, -1, self.z_range["min"], 1, 1, self.z_range["max"]])
+                    * self.scale_factor
+                ).tolist()
+                self.transform = self.transform._create_transforms(point_cloud_range)
 
         with h5py.File(self.path / folder / "ListTable.h5", "r") as f:
             self.tiles = f["Tiles"][:]
@@ -240,7 +298,7 @@ class PointCloudOD(Dataset):
                     )
 
         self.folder = folder
-        if folder != "":
+        if folder != "" and kwargs.get("filter_empty_tiles", False):
             self._filter()
 
     def _filter(self):
@@ -265,48 +323,89 @@ class PointCloudOD(Dataset):
             data["points"][:, :3] *= self.scale_factor
 
             if "orientedBoundingBox" in read_file.keys():
-                bboxs = read_file["orientedBoundingBox"][
-                    tile[-2] : tile[-2] + tile[-1]
-                ].astype(np.float32)
-
-                center = bboxs[:, [0, 1, 6]]
-                length_width = 2 * bboxs[:, [4, 5]]
-                height = (bboxs[:, 7] - bboxs[:, 6])[:, None]
-                drx_dry = bboxs[:, [2, 3]]
-                yaw = np.arctan2(drx_dry[:, 1], drx_dry[:, 0])[:, None]
-                bboxs = np.concatenate(
-                    (
-                        center,
-                        length_width,
-                        height,
-                        yaw,
-                    ),
-                    axis=1,
-                )
-
-                bboxs[:, :6] *= self.scale_factor
-                data["gt_bboxes_3d"] = LiDARInstance3DBoxes(
-                    bboxs, box_dim=7, with_yaw=True
-                )
-
-                bbox_labels = read_file.get("objectCode", None)
-                if bbox_labels is not None:
-                    bbox_labels = torch.tensor(
-                        bbox_labels[tile[-2] : tile[-2] + tile[-1]]
-                    ).long()
-                else:
-                    bbox_labels = torch.tensor(np.zeros(center.shape[0])).long()
-
-                if self.remap:
-                    bbox_labels = remap_labels(bbox_labels, self.class2idx).long()
-
-                data["gt_labels_3d"] = bbox_labels
+                data = self._get_bbox(data, read_file, tile)
+                if self.transform:
+                    data["points"] = LiDARPoints(
+                        data["points"], points_dim=data["points"].shape[-1]
+                    )
+                    data["bbox3d_fields"] = ["gt_bboxes_3d"]
+                    data["flip"] = False
+                    data["flip_direction"] = None
+                    data = self.transform(data)
+                    data = self._post_process(data)
             else:
                 data["tile_index"] = tile_index
 
-        data["img_metas"] = dict(box_type_3d=LiDARInstance3DBoxes)
-
+        data["img_metas"] = dict(
+            box_type_3d=LiDARInstance3DBoxes, box_mode_3d=Box3DMode.LIDAR
+        )
         return data
+
+    def _post_process(self, results):
+        data = {}
+        data["points"] = results["points"].tensor
+        data["gt_bboxes_3d"] = results["gt_bboxes_3d"]
+        data["gt_labels_3d"] = results["gt_labels_3d"]
+        return data
+
+    def _get_bbox(self, data, read_file, tile):
+        bboxs = read_file["orientedBoundingBox"][tile[-2] : tile[-2] + tile[-1]].astype(
+            np.float32
+        )
+
+        # filter boxes with less than 20% points in it of all the points in the box
+        bbox_filter = self._get_valid_boxes(read_file, tile)
+        bboxs = bboxs[bbox_filter]
+
+        center = bboxs[:, [0, 1, 6]]
+        length_width = 2 * bboxs[:, [4, 5]]
+        height = (bboxs[:, 7] - bboxs[:, 6])[:, None]
+        drx_dry = bboxs[:, [2, 3]]
+        yaw = np.arctan2(drx_dry[:, 1], drx_dry[:, 0])[:, None]
+        bboxs = np.concatenate(
+            (
+                center,
+                length_width,
+                height,
+                yaw,
+            ),
+            axis=1,
+        )
+
+        bboxs[:, :6] *= self.scale_factor
+        data["gt_bboxes_3d"] = LiDARInstance3DBoxes(bboxs, box_dim=7, with_yaw=True)
+
+        bbox_labels = read_file.get("objectCode", None)
+        if bbox_labels is not None:
+            bbox_labels = torch.tensor(
+                bbox_labels[tile[-2] : tile[-2] + tile[-1]]
+            ).long()
+            bbox_labels = bbox_labels[bbox_filter]
+        else:
+            bbox_labels = torch.tensor(np.zeros(center.shape[0])).long()
+
+        # if train on only classes of interest
+        if self.bg_code:
+            filter_classes = self._get_class_of_interest_mask(bbox_labels)
+            bbox_labels = bbox_labels[filter_classes]
+            data["gt_bboxes_3d"] = data["gt_bboxes_3d"][filter_classes]
+
+        if self.remap:
+            bbox_labels = remap_labels(bbox_labels, self.class2idx).long()
+
+        data["gt_labels_3d"] = bbox_labels
+        return data
+
+    def _get_class_of_interest_mask(self, bbox_labels):
+        return torch.tensor([label in self.classes for label in bbox_labels]).bool()
+
+    def _get_valid_boxes(self, read_file, tile):
+        bbox_point_counts = read_file["orientedBoundingBoxCount"][
+            tile[-2] : tile[-2] + tile[-1]
+        ].astype(np.uint64)
+        bbox_point_perecentage = bbox_point_counts[:, 0] / bbox_point_counts[:, 1]
+        bbox_mask = bbox_point_perecentage > self._filter_box_point_percentage
+        return bbox_mask
 
     def get_batch(self, batch_size, device=None):
         idxs = np.random.randint(0, len(self), batch_size)
@@ -349,7 +448,8 @@ def show_batch(self, rows=2, color_mapping=None, **kwargs):
     """
     This can be used to visualize the exported dataset. Colors of the PointCloud
     are only used for better visualization, and it does not depict the
-    actual classcode colors.
+    actual classcode colors. Visualization of data, exported in a geographic
+    coordinate system is not yet supported.
     =====================   ===========================================
     **Parameter**            **Description**
     ---------------------   -------------------------------------------
@@ -460,13 +560,18 @@ def pointcloud_od(
     path,
     class_mapping,
     batch_size,
+    transform_fn,
     databunch_kwargs,
     **kwargs,
 ):
     del databunch_kwargs["bs"]
 
     train_dataset = PointCloudOD(
-        path, folder="train", class_mapping=class_mapping, **kwargs
+        path,
+        folder="train",
+        class_mapping=class_mapping,
+        transform_fn=transform_fn,
+        **kwargs,
     )
     val_dataset = PointCloudOD(
         path, folder="val", class_mapping=class_mapping, **kwargs

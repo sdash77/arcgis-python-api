@@ -220,18 +220,24 @@ class Survey:
         if len(related) > 0:
             self._ssi = related[0]
             self._ssi_layers = self._ssi.layers + self._ssi.tables
-            _idx = 0
+
+            ssi_layer = None
             if self.layer_name:
                 for layer in self._ssi_layers:
                     if layer.properties["name"] == self.layer_name:
                         _idx = layer.properties["id"]
-            self._ssi_url = self._ssi_layers[_idx]._url
+                        ssi_layer = layer
+                        break
+            if not ssi_layer:
+                ssi_layer = self._ssi_layers[0]
+                _idx = ssi_layer.properties["id"]
+            self._ssi_url = ssi_layer._url
             try:
                 if self._ssi_layers[0].properties["isView"] == True:
-                    view_url = self._ssi_layers[_idx]._url[:-1]
+                    view_url = ssi_layer._url[:-1]
                     self.parent_fl_url = self._find_parent(view_url) + f"/{str(_idx)}"
             except KeyError:
-                self.parent_fl_url = self._ssi_layers[_idx]._url
+                self.parent_fl_url = ssi_layer._url
 
     # ----------------------------------------------------------------------
     @property

@@ -2517,14 +2517,22 @@ class GeoAccessor(object):
             service = feature_service
             fs_id = feature_service.id
 
-        if service.owner != user:
-            raise AssertionError("You must own the service to insert data to it.")
+        if (
+            gis.users.me.username != service.owner
+            and "portal:admin:updateItems" not in self._gis.users.me.privileges
+        ):
+            raise AssertionError(
+                "You must own the service to insert data to it or have administrative privileges."
+            )
         # Get the data related
         related_items = service.related_items(rel_type="Service2Data")
         for item in related_items:
-            if item.owner != user:
+            if (
+                item.owner != user
+                and "portal:admin:updateItems" not in self._gis.users.me.privileges
+            ):
                 raise AssertionError(
-                    "You must own the service data to insert data to it."
+                    "You must own the service data to insert data to it or have administrative privileges."
                 )
 
         origin_columns = self._data.columns.tolist()

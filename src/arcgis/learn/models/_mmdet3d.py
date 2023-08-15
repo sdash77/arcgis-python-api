@@ -1,6 +1,7 @@
 import traceback
 from ._arcgis_model import ArcGISModel, _EmptyData
 from .._data import _raise_fastai_import_error
+import warnings
 
 import_exception = None
 
@@ -57,11 +58,11 @@ class MMDetection3D(ArcGISModel):
     **Parameter**                   **Description**
     -----------------------------   ---------------------------------------------
     voxel_parms                     Optional dictionary. The keys of the dictionary are
-                                    `voxel_size`, `max_num_points`, and `max_voxels`.
-                                    The default value of `voxel_size` is [0.05, 0.05, 0.1],
-                                    `voxel_points` and `max_voxels` are calculated based
-                                    on the 'block size' and 'block point limit' of the
-                                    exported data.
+                                    `voxel_size`, `voxel_points`, and `max_voxels`. The
+                                    default value of `voxel_size`,`voxel_points`, and
+                                    `max_voxels` are automatically calculated based on
+                                    the 'block size', 'object size' and
+                                    'average no. of points per block' of the exported data.
 
                                     Example:
                                         |    {'voxel_size': [0.05, 0.05, 0.1],
@@ -70,6 +71,7 @@ class MMDetection3D(ArcGISModel):
                                         |    }
 
                                     Parameter Explanation:
+
                                     - 'voxel_size': The size of voxel in meter [x,y,z],
                                     - 'voxel_points': Maximum number of points per voxel,
                                     - 'max_voxels': Maximum number of voxels in (training, validation).
@@ -82,21 +84,14 @@ class MMDetection3D(ArcGISModel):
         if not HAS_FASTAI:
             _raise_fastai_import_error(import_exception=import_exception)
 
-        voxel_parms = ["voxel_size", "voxel_points", "max_voxels"]
-        if kwargs.get("voxel_parms", False) and not all(
-            [p in kwargs["voxel_parms"].keys() for p in voxel_parms]
-        ):
-            voxel_parms = [
-                p for p in voxel_parms if p not in kwargs["voxel_parms"].keys()
-            ]
-            raise Exception(f"Please enter {voxel_parms} in voxel_parms")
-
         self._kwargs = kwargs
         self._kwargs["model"] = model
         self._check_dataset_support(data)
         super().__init__(data, None, **kwargs)
         self._backbone = None
-        model, self._config = mmdet3d_model(data, **kwargs)
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            model, self._config = mmdet3d_model(data, **kwargs)
         self.learn = Learner(data, model, loss_func=mmdet3d_loss)
         self.learn.metrics = [AveragePrecision(self, data.c, mode_3d=True)]
         self._reset_thresh()
@@ -138,7 +133,8 @@ class MMDetection3D(ArcGISModel):
         """
         Displays the results of the trained model on a part of validation/train set.
         Colors of the PointCloud are only used for better visualization, and it does
-        not depict the actual classcode colors.
+        not depict the actual classcode colors. Visualization of data, exported in a
+        geographic coordinate system is not yet supported.
 
         =====================   ===========================================
         **Parameter**            **Description**
@@ -351,6 +347,10 @@ class MMDetection3D(ArcGISModel):
         emd_template["DataAttributes"]["anchor_range"] = self._data.anchor_range
         emd_template["DataAttributes"]["num_features"] = self._data.num_features
         emd_template["DataAttributes"]["features_to_keep"] = self._data.features_to_keep
+        emd_template["DataAttributes"]["voxel_size"] = self._data.voxel_size
+        emd_template["DataAttributes"][
+            "no_of_points_per_tile"
+        ] = self._data.no_of_points_per_tile
 
         emd_template["Classes"] = []
         class_data = {}
