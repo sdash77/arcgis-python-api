@@ -2,7 +2,6 @@ import sys
 
 #
 #  Update the Path to set the test area
-sys.path.insert(0, r"C:\Users\tar12555\Documents\repos\geosaurus-fork\src")
 import logging
 import uuid
 import unittest
