@@ -8331,12 +8331,19 @@ class Raster:
         item = json_data
 
         from ._util import _get_stac_metadata_file
+        from arcgis.raster.functions import composite_band
 
         metadata_file = _get_stac_metadata_file(item)
         if not metadata_file:
             raise RuntimeError("STAC Item not supported")
 
-        ras = Raster(metadata_file, engine=engine, gis=gis)
+        ras = (
+            composite_band(
+                rasters=[Raster(file, engine=engine, gis=gis) for file in metadata_file]
+            )
+            if isinstance(metadata_file, list)
+            else Raster(metadata_file, engine=engine, gis=gis)
+        )
         return ras
 
     def get_raster_bands(self, band_ids_or_names: Optional[list[str]] = None):
@@ -12772,14 +12779,22 @@ class RasterCollection:
                 ]
 
         from ._util import _get_stac_metadata_file
+        from arcgis.raster.functions import composite_band
 
         raster_list = []
         for item in items:
             metadata_file = _get_stac_metadata_file(item)
             if not metadata_file:
                 raise RuntimeError(f"STAC Item not supported-\n{item}")
-
-            ras = Raster(metadata_file, engine=engine, gis=gis)
+            ras = (
+                composite_band(
+                    rasters=[
+                        Raster(file, engine=engine, gis=gis) for file in metadata_file
+                    ]
+                )
+                if isinstance(metadata_file, list)
+                else Raster(metadata_file, engine=engine, gis=gis)
+            )
             raster_list.append(ras)
 
         if "Geometry" not in rc_attribute_dict:

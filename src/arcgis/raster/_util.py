@@ -1566,6 +1566,25 @@ def _get_stac_metadata_file(item):
         ),
         **dict.fromkeys(
             [
+                "sentinel-1-rtc",
+                "hgb",
+                "gnatsgo-rasters",
+                "mobi",
+                "chloris-biomass",
+                "jrc-gsw",
+                "hrea",
+                "noaa-nclimgrid-monthly",
+                "usda-cdl",
+                "esa-cci-lc",
+                "noaa-climate-normals-gridded",
+                "noaa-cdr-sea-surface-temperature-whoi",
+                "noaa-cdr-ocean-heat-content",
+                "esa-worldcover",
+            ],
+            "All COGs",
+        ),
+        **dict.fromkeys(
+            [
                 "daymet-annual-pr",
                 "daymet-daily-hi",
                 "gridmet",
@@ -1670,14 +1689,26 @@ def _get_stac_metadata_file(item):
 
     href = None
     if isinstance(target, str):
-        href = item["assets"][target]["href"]
+        href = (
+            [
+                cog["href"]
+                for cog in item["assets"].values()
+                if cog["href"].endswith(".tif")
+            ]
+            if target == "All COGs"
+            else item["assets"][target]["href"]
+        )
     elif isinstance(target, int):
         href = item["links"][target]["href"]
     elif isinstance(target, tuple):
         directory = os.path.dirname(item["assets"][target[0]]["href"])
         href = f"{directory}/{target[1]}"
 
-    href = rf"/vsis3{href[4:]}" if href is not None and href.startswith("s3") else href
+    href = (
+        rf"/vsis3{href[4:]}"
+        if href is not None and isinstance(href, str) and href.startswith("s3")
+        else href
+    )
 
     return href
 
