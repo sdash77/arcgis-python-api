@@ -5088,7 +5088,7 @@ class ImageryLayer(Layer):
                 "This operation cannot be performed on a TilesOnly Service"
             )
 
-        url = "%s/imageToMap" % self._url
+        url = "%s/mapToImage" % self._url
         params = {"f": "json", "geometry": dict(geometry)}
         from arcgis.geometry._types import (
             Point,
