@@ -5193,7 +5193,7 @@ class VectorTileLayer(arcgis.gis.Layer):
         =====================       =======================================================
         **Parameter**                **Description**
         ---------------------       -------------------------------------------------------
-        levels                      Required string.Specifies the tiled service levels to export.
+        levels                      Optional string.Specifies the tiled service levels to export.
                                     The values should correspond to Level IDs. The values
                                     can be comma-separated values or a range of values.
                                     Ensure that the tiles are present at each specified level.
@@ -5248,21 +5248,22 @@ class VectorTileLayer(arcgis.gis.Layer):
         =====================       =======================================================
 
         :returns:
-            A path to downloaded file
+            A list of exported item dictionaries or a single path
         """
         if not self.properties.exportTilesAllowed:
             raise arcgis.gis.Error(
                 "Export Tiles operation is not allowed for this service. Enable offline mode."
             )
-        if not levels:
-            raise ValueError("Parameter levels is mandatory for this operation.")
+
         params = {
             "f": "json",
             "exportBy": "levelId",
-            "levels": levels,
+            "storageFormatType": "Compact",
+            "tilePackage": False,
+            "optimizeTilesForSize": False,
         }
-        if export_extent:
-            params["exportExtent"] = export_extent
+        params["levels"] = levels if levels else None
+        params["exportExtent"] = export_extent if export_extent else "DEFAULT"
         # parameter introduced at 10.7
         if polygon and self.gis.version >= [7, 1]:
             params["polygon"] = polygon
@@ -5274,7 +5275,7 @@ class VectorTileLayer(arcgis.gis.Layer):
         exportJob = self._con.get(path=url, params=params)
 
         # get the job information
-        path = "%s/jobs/%s" % (url, exportJob["jobId"])
+        path = "%s/jobs/%s" % (self._url, exportJob["jobId"])
 
         resp_params = {"f": "json"}
         job_response = self._con.post(path, resp_params)
@@ -5283,10 +5284,11 @@ class VectorTileLayer(arcgis.gis.Layer):
             status = job_response.get("status") or job_response.get("jobStatus")
             i = 0
             while not status == "esriJobSucceeded":
-                i = i + 1
+                if i < 10:
+                    i = i + 1
                 time.sleep(i)
 
-                job_response = self._con.post(path, params)
+                job_response = self._con.post(path, resp_params)
                 status = job_response.get("status") or job_response.get("jobStatus")
                 if status in [
                     "esriJobFailed",
@@ -5300,16 +5302,18 @@ class VectorTileLayer(arcgis.gis.Layer):
             raise Exception("No job results.")
 
         if "results" in job_response:
-            allResults = job_response["results"]
+            value = job_response["results"]["out_service_url"]["paramUrl"]
+            result_path = path + "/" + value
+            params = {"f": "json"}
+            allResults = self._con.get(path=result_path, params=params)
 
-            for k, v in allResults.items():
-                if k == "out_service_url":
-                    value = v.value
-                    params = {"f": "json"}
-                    gpRes = self._con.get(path=value, params=params)
-                    return gpRes["folders"]
-                else:
-                    return None
+            if "value" in allResults:
+                value = allResults["value"]
+                params = {"f": "json"}
+                gpRes = self._con.get(path=value, params=params)
+                return gpRes["files"]
+            else:
+                return None
         elif "output" in job_response:
             allResults = job_response["output"]
             if allResults["itemId"]:
