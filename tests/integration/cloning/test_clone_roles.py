@@ -2,7 +2,7 @@ import sys
 
 #
 #  Update the Path to set the test area
-#  sys.path.insert(0, r"C:\SVN\geosaurus_master\src")
+sys.path.insert(0, r"C:\Users\tar12555\Documents\repos\geosaurus-fork\src")
 import logging
 import uuid
 import unittest
@@ -22,7 +22,7 @@ def enable_verbose_logging(root):
     root.addHandler(handler)
 
 
-profiles = ['your_online_profile', 'your_enterprise_profile']
+profiles = ['your_online_admin_profile', 'your_ent_admin_profile']
 PROXIES = detect_proxy(True)  # Handles Fiddler when True
 enable_verbose_logging(__logger__)
 
@@ -30,7 +30,7 @@ enable_verbose_logging(__logger__)
 class Test_CloneRoles(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
-        cls.gis_source = GIS(profile='your_online_profile', set_active=False)
+        cls.gis_source = GIS(profile=profiles[0], set_active=False)
         rm: RoleManager = cls.gis_source.users.roles
         role1 = rm.create(
             name=f"role_{uuid.uuid4().hex[:5]}",
@@ -51,14 +51,14 @@ class Test_CloneRoles(unittest.TestCase):
 
     def test_role_clone_AGO_to_Ent(self):
         """AGO to Enterprise"""
-        gis = GIS(profile='your_enterprise_profile')
+        gis = GIS(profile=profiles[1])
         roles = gis.users.roles.clone(self.roles)
         assert len(roles) == len(self.roles)
         [g.result().delete() for g in roles]
 
     def test_role_clone_Ent_to_AGO(self):
         """Enterprise to AGO"""
-        gis_source = GIS(profile='your_enterprise_profile', set_active=False)
+        gis_source = GIS(profile=profiles[1], set_active=False)
         rm: RoleManager = gis_source.users.roles
         role1 = rm.create(
             name=f"role_{uuid.uuid4().hex[:5]}",
@@ -77,7 +77,7 @@ class Test_CloneRoles(unittest.TestCase):
             role1,
         ]
         self.roles.extend(roles)
-        gis = GIS(profile='your_online_profile')
+        gis = GIS(profile=profiles[0])
         cloned_roles = gis.users.roles.clone(roles)
         assert len(cloned_roles) == len(roles)
 
