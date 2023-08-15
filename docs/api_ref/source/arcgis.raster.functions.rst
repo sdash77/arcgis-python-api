@@ -299,6 +299,10 @@ gndvi
 ____
 .. autofunction:: arcgis.raster.functions.gndvi
 
+gradient
+________
+.. autofunction:: arcgis.raster.functions.gradient
+
 grayscale
 _________
 .. autofunction:: arcgis.raster.functions.grayscale
@@ -534,6 +538,10 @@ _________________
 rasterize_features
 _________________
 .. autofunction:: arcgis.raster.functions.rasterize_features
+
+region_pixel_count
+__________________
+.. autofunction:: arcgis.raster.functions.region_pixel_count
 
 remap
 _____

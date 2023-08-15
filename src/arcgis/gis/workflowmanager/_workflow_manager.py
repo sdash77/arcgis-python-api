@@ -245,14 +245,14 @@ class WorkflowManagerAdmin:
         job_template_ids: Optional[str] = None,
         diagram_ids: Optional[str] = None,
         include_other_configs: bool = True,
+        passphrase: Optional[str] = None,
     ):
         """
         Exports a new Workflow Manager configuration (.wmc) file based on the indicated item. This configuration file
         includes the version, job templates, diagrams, roles, role-group associations, lookup tables, charts and
-        queries, templates, and user settings of the indicated item. Encrypted settings for the item will only have
-        their key but not the value exported. This file can be used with the import endpoint to update other item
-        configurations. Configurations from Workflow items with a server that is on a more recent version will not
-        import due to incompatability.
+        queries, templates, and user settings of the indicated item. This file can be used with the import endpoint
+        to update other item configurations. Configurations from Workflow items with a server that is on a more
+        recent version will not import due to incompatability.
 
         =====================  =========================================================
         **Argument**           **Description**
@@ -267,6 +267,10 @@ class WorkflowManagerAdmin:
         ---------------------  ---------------------------------------------------------
         include_other_configs  Optional. If false other configurations are not exported including templates,
                                User defined settings, shared searches, shared queries, email settings etc.
+        ---------------------  ---------------------------------------------------------
+        passphrase             Optional. If exporting encrypted user defined settings, define a passphrase.
+                               If no passphrase is specified, the keys for encrypted user defined settings will be
+                               exported without their values.
         =====================  =========================================================
 
         :return:
@@ -278,6 +282,8 @@ class WorkflowManagerAdmin:
             params["jobTemplateIds"] = job_template_ids
         if diagram_ids is not None:
             params["diagramIds"] = diagram_ids
+        if passphrase is not None:
+            params["passphrase"] = passphrase
 
         url = "{base}/admin/{id}/export".format(base=self._url, id=item.id)
         return_obj = self._gis._con.post(
@@ -289,7 +295,7 @@ class WorkflowManagerAdmin:
             self._gis._con._handle_json_error(return_obj["error"], 0)
         return return_obj
 
-    def import_item(self, item: Item, config_file):
+    def import_item(self, item: Item, config_file, passphrase: Optional[str] = None):
         """
         Imports a new Workflow Manager configuration from the selected .wmc file. Configurations from Workflow
         items with a server that is on a more recent version will not import due to incompatability. This will
@@ -305,6 +311,10 @@ class WorkflowManagerAdmin:
         item                Required Item. The Workflow Manager Item that to import the configuration to.
         ------------------  ---------------------------------------------------------
         config_file         Required. The file path to the workflow manager configuration file.
+        ------------------  ---------------------------------------------------------
+        passphrase          Optional. If importing encrypted user defined settings, specify the same passphrase
+                            used when exporting the configuration file. If no passphrase is specified, the keys for
+                            encrypted user defined settings will be imported without their values.
         ==================  =========================================================
 
         :return:
@@ -313,13 +323,17 @@ class WorkflowManagerAdmin:
         """
 
         url = "{base}/admin/{id}/import".format(base=self._url, id=item.id)
+        data = {}
+        if passphrase is not None:
+            data["passphrase"] = passphrase
 
         return_obj = self._gis._con.post(
             url,
             files={"file": config_file},
+            params=data,
             try_json=False,
             json_encode=False,
-            post_json=True,
+            post_json=False,
         )
         return_obj = json.loads(return_obj)
 

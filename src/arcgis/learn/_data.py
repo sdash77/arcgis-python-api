@@ -1760,6 +1760,8 @@ def prepare_data(
             chip_size = img_size
         if dataset_type != "Imagenet":
             right = line.split()[1].split(".")[-1].lower()
+        if dataset_type == "RCNN_Masks":
+            right = line.split()[-1].split(".")[-1].lower()
 
         json_file = path / "esri_model_definition.emd"
         if data_folders is None:
@@ -2815,10 +2817,15 @@ def prepare_data(
         return data
 
     elif dataset_type == "PointCloudOD":
-        from ._utils.pointcloud_od import pointcloud_od
+        from ._utils.pointcloud_od import pointcloud_od, ODTransform3D
+
+        if transforms is None:
+            transform_fn = ODTransform3D()
+        else:
+            transform_fn = transforms
 
         data = pointcloud_od(
-            path, class_mapping, batch_size, databunch_kwargs, **kwargs
+            path, class_mapping, batch_size, transform_fn, databunch_kwargs, **kwargs
         )
         data._data_path = data.path
         if working_dir is not None:

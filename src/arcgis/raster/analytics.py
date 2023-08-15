@@ -2026,7 +2026,7 @@ def convert_raster_to_feature(
     ====================================     ====================================================================
 
     :return:
-    output_raster : Imagery layer item
+    output_feature: Feature layer item
 
     .. code-block:: python
 
