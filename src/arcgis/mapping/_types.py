@@ -4501,9 +4501,9 @@ class EnterpriseVectorTileLayerManager(arcgis.gis._GISResource):
     # ----------------------------------------------------------------------
     def rebuild_cache(self, min_scale=None, max_scale=None):
         """
-        The rebuild_cache operation update the scene layer cache to reflect
-        any changes made to the feature layer used to publish this scene layer.
-        The results of the operation is the url to the scene service once it is
+        The rebuild_cache operation updates the vector tile layer cache to reflect
+        any changes made.
+        The results of the operation is the url to the vector tile service once it is
         done rebuilding.
 
         ======================      =======================================================
