@@ -28,6 +28,7 @@ from arcgis.gis import (
     GroupMigrationManager,
 )
 from arcgis.gis._impl._jb import StatusJob
+from integration.config import QALAB_ROOT_PATH
 
 profiles = ["your_kubernetes_profile"]
 # ['your_online_profile', 'your_enterprise_profile', 'your_kubernetes_profile']  # profile names go here
@@ -61,9 +62,9 @@ try:
 
     fp = os.path.join(NOTEBOOK_TESTS_DIR, "parkinglots.zip")
     if not os.path.isfile(fp):
-        fp = r"\\qalab_server\pydata\v109\geosaurus\group_manager_data\parkinglots.zip"
+        fp = QALAB_ROOT_PATH + r"\group_manager_data\parkinglots.zip"
 except:
-    fp = r"\\qalab_server\pydata\v109\geosaurus\group_manager_data\parkinglots.zip"
+    fp = QALAB_ROOT_PATH + r"\group_manager_data\parkinglots.zip"
 
 
 ###########################################################################
