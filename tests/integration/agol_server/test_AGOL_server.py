@@ -1,6 +1,3 @@
-import sys
-
-sys.path.insert(0, r"C:\SVN\geosaurus_master_issue_7557\src")
 from arcgis.auth.tools import LazyLoader
 
 logging = LazyLoader("logging")
@@ -10,7 +7,6 @@ from arcgis.gis import GIS, agoserver, server
 import unittest
 
 PROFILES = ["your_online_admin_profile"]  # "your_dev_online_profile",
-
 
 class TestAgolServer(unittest.TestCase):
     def test_get_hosting_servers(self):
@@ -131,32 +127,31 @@ class TestAGOLAdminServerFeatureManager(unittest.TestCase):
                 assert sm.status(name["adminServiceInfo"]["name"])
 
 
-#class TestHostingServerProperty(unittest.TestCase):
-    #def setUp(self):
-        #from arcgis.gis import ProfileManager
+class TestHostingServerProperty(unittest.TestCase):
+    def setUp(self):
+        from arcgis.gis import ProfileManager
 
-        #if not "gpportal" in ProfileManager().list():
-            #GIS(
-                #profile="gpportal",
-                #username="admin",
-                #password="esri.agp",
-                #url="https://gpportal.esri.com/portal",
-            #)
+        if not "gpportal" in ProfileManager().list():
+            GIS(
+                profile="gpportal",
+                username="admin",
+                password="esri.agp",
+                url="https://gpportal.esri.com/portal",
+            )
 
-    #def test_enterprise_hosting_servers(self):
-        #"""tests if a list of hosting servers is returns"""
-        #gis = GIS(profile="gpportal", verify_cert=False)
-        #assert isinstance(gis.hosting_servers, list)
-        #if len(gis.hosting_servers) > 0:
-            #assert isinstance(gis.hosting_servers[0], server.ServicesDirectory)
+    def test_enterprise_hosting_servers(self):
+        """tests if a list of hosting servers is returns"""
+        gis = GIS(profile="gpportal", verify_cert=False)
+        assert isinstance(gis.hosting_servers, list)
+        if len(gis.hosting_servers) > 0:
+            assert isinstance(gis.hosting_servers[0], server.ServicesDirectory)
 
-    #def test_AGOL_hosting_servers(self):
-        #"""tests if a list of hosting servers is returns"""
-        #gis = GIS(profile="your_online_profile", verify_cert=False)
-        #assert isinstance(gis.hosting_servers, list)
-        #if len(gis.hosting_servers) > 0:
-            #assert isinstance(gis.hosting_servers[0], agoserver.AGOLServicesDirectory)
-
+    def test_AGOL_hosting_servers(self):
+        """tests if a list of hosting servers is returns"""
+        gis = GIS(profile="your_online_profile", verify_cert=False)
+        assert isinstance(gis.hosting_servers, list)
+        if len(gis.hosting_servers) > 0:
+            assert isinstance(gis.hosting_servers[0], agoserver.AGOLServicesDirectory)
 
 if __name__ == "__main__":
     unittest.main()
