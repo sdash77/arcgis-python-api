@@ -293,19 +293,21 @@ class Pix2PixHD(ArcGISModel):
         """
         Computes Peak Signal-to-Noise Ratio (PSNR) and
         Structural Similarity Index Measure (SSIM) on validation set.
+        Additionally, computes Frechet Inception Distance (FID) for
+        RGB imagery only.
 
         """
         psnr, ssim = compute_metrics(self, self._data.valid_dl, show_progress)
-        if self._data._is_multispectral:
-            fid = None
-            return {"PSNR": "{0:1.4e}".format(psnr), "SSIM": "{0:1.4e}".format(ssim)}
-        else:
+        if self._data._imagery_type_b == "RGB" and self._data.n_channel == 3:
             fid = compute_fid_metric(self, self._data)
             return {
                 "PSNR": "{0:1.4e}".format(psnr),
                 "SSIM": "{0:1.4e}".format(ssim),
                 "FID": "{0:1.4e}".format(fid),
             }
+        else:
+            fid = None
+            return {"PSNR": "{0:1.4e}".format(psnr), "SSIM": "{0:1.4e}".format(ssim)}
 
     @property
     def supported_datasets(self):
