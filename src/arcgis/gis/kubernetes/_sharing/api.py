@@ -2549,7 +2549,7 @@ class KbertnetesPy(object):
         item = self.con.post("content/items/" + itemid, self._postdata())
         # item is a dictionary and we need to fix the private url
         # private url has "//rest" when it should be "/rest" in it
-        if item:
+        if item and "privateUrl" in item:
             item["privateUrl"] = item["privateUrl"].replace("//rest", "/rest")
         return item
 
