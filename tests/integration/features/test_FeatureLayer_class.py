@@ -503,8 +503,7 @@ class Test_FeatureLayer_kubernetes(unittest.TestCase):
             if "Editing" not in flc.properties.capabilities:
                 result = flc.manager.update_definition(
                     {
-                        "capabilities": "Create,Delete,Query,Update,Editing,Extract",
-                        "syncEnabled": True,
+                        "capabilities": "Create,Delete,Query,Update,Editing,Extract,Sync"
                     }
                 )
                 if result.get("success"):
@@ -552,8 +551,7 @@ class Test_FeatureLayer_kubernetes(unittest.TestCase):
             if "Editing" not in flc.properties.capabilities:
                 result = flc.manager.update_definition(
                     {
-                        "capabilities": "Create,Delete,Query,Update,Editing,Extract",
-                        "syncEnabled": True,
+                        "capabilities": "Create,Delete,Query,Update,Editing,Extract,Sync"
                     }
                 )
                 if result.get("success"):
@@ -1355,3 +1353,5 @@ def tearDownModule():
     #
     #     except Exception as testException:
     #         self.fail("Error during test: " + testException.__str__())
+if __name__ == "__main__":
+    unittest.main()
