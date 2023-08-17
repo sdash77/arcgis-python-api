@@ -1128,7 +1128,7 @@ class MapFeatureLayer(Layer):
             return df
         elif record_count <= max_records:
             if supports_pagination and record_count > 0:
-                params["resultRecordCount"] = max_records
+                params["resultRecordCount"] = record_count
             if as_df:
                 import pandas as pd
 
@@ -1439,6 +1439,16 @@ class MapFeatureLayer(Layer):
         """returns results of query"""
         try:
             result = self._con.post(path=url, postdata=params, token=self._token)
+            if "exceededTransferLimit" in result:
+                while (
+                    "exceededTransferLimit" in result
+                    and result["exceededTransferLimit"] == True
+                ):
+                    params["resultRecordCount"] = params["resultRecordCount"] * 2
+                    result = self._con.post(
+                        path=url, postdata=params, token=self._token
+                    )
+
         except Exception as queryException:
             error_list = [
                 "Error performing query operation",
@@ -2192,7 +2202,7 @@ class MapTable(MapFeatureLayer):
             return df
         elif record_count <= max_records:
             if supports_pagination and record_count > 0:
-                params["resultRecordCount"] = max_records
+                params["resultRecordCount"] = record_count
             if as_df:
                 import pandas as pd
 
