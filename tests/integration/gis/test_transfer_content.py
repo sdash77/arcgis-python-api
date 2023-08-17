@@ -8,6 +8,7 @@ import unittest
 import concurrent.futures
 from arcgis.auth.tools._util import detect_proxy
 from arcgis.gis import GIS, UserManager, ContentManager, Item
+from integration.config import QALAB_ROOT_PATH
 
 __logger__ = logging.getLogger()
 
@@ -46,7 +47,7 @@ class TestTransferContentAGOL(unittest.TestCase):
             email='testsadf@esri.com',
         )
 
-        cls.fp = r"\\qalab_server\pydata\v109\geosaurus\transfer_content\transfer_content.csv"
+        cls.fp = QALAB_ROOT_PATH + r"\transfer_content\transfer_content.csv"
         cls.item = cls.gis.content.add(
             item_properties={
                 "type": "CSV",
@@ -121,7 +122,7 @@ class TestTransferContentENT(unittest.TestCase):
             email='testsadf@esri.com',
         )
 
-        cls.fp = r"\\qalab_server\pydata\v109\geosaurus\transfer_content\transfer_content.csv"
+        cls.fp = QALAB_ROOT_PATH + r"\transfer_content\transfer_content.csv"
         cls.item = cls.gis.content.add(
             item_properties={
                 "type": "CSV",

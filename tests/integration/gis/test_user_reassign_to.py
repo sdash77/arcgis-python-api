@@ -15,6 +15,7 @@ from arcgis.gis import (
     Item,
     ItemProperties,
 )
+from integration.config import QALAB_ROOT_PATH
 
 __logger__ = logging.getLogger()
 
@@ -50,7 +51,7 @@ class TestContentManagerReassignTo(unittest.TestCase):
             lastname=f"a{uuid.uuid4().hex[:3]}z",
             email="testaccount@esri.com",
         )
-        fp = r"\\qalab_server\pydata\v109\geosaurus\esri_requests\raster_data\Clip_090160.tif"
+        fp = QALAB_ROOT_PATH + r"\esri_requests\raster_data\Clip_090160.tif"
         try:
             ip: ItemProperties = ItemProperties(
                 **{
@@ -86,7 +87,7 @@ class TestContentManagerReassignTo(unittest.TestCase):
             lastname=f"a{uuid.uuid4().hex[:3]}z",
             email="testaccount@esri.com",
         )
-        fp = r"\\qalab_server\pydata\v109\geosaurus\esri_requests\raster_data\Clip_090160.tif"
+        fp = QALAB_ROOT_PATH + r"\esri_requests\raster_data\Clip_090160.tif"
         try:
             ip: ItemProperties = ItemProperties(
                 **{

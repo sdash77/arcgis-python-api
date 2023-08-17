@@ -12,6 +12,7 @@ from arcgis.raster import Raster, ImageryLayer
 import arcgis
 
 from arcgis.raster.analytics import copy_raster
+from integration.config import QALAB_ROOT_PATH
 
 __logger__ = logging.getLogger()
 
@@ -37,7 +38,7 @@ class TestImageRasterService(unittest.TestCase):
         cls.gis = GIS(profile=profiles[0], verify_cert=False, proxy=PROXIES)
         uuid.uuid4().hex[:5]
         cls.item = copy_raster(
-            input_raster=r"\\qalab_server\pydata\v109\geosaurus\esri_requests\raster_data\Clip_090160.tif",
+            input_raster=QALAB_ROOT_PATH + r"\esri_requests\raster_data\Clip_090160.tif",
             output_name=f"output_{uuid.uuid4().hex[:5]}_layer",
             gis=cls.gis,
         )
