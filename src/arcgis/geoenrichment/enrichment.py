@@ -1718,6 +1718,11 @@ def enrich(
                         value = value.true_centroid
                     elif "geometry" in value:
                         value = value["geometry"]
+                    
+                    # if it's a dictionary representing a polygon...
+                    if "rings" in value:
+                        polygon = Polygon(value)
+                        value = polygon.true_centroid
                     # geocode the geom and extract the country
                     geocoded_area = reverse_geocode(value)
                     cntry = Country(geocoded_area["address"]["CountryCode"])
