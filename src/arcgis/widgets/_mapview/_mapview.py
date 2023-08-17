@@ -1584,9 +1584,7 @@ class MapView(widgets.DOMWidget):
                 log.warning("No 'layers' in Item: will not be added to map")
         elif isinstance(item, Layer):
             self._add_layer_to_webmap(item, options)
-            _lyr = dict(self.webmap.layers[-1])
-            _lyr_from_item = _make_jsonable_dict(item._lyr_json)
-            _lyr.update(_lyr_from_item)
+            _lyr = _make_jsonable_dict(item._lyr_json)
             if ("type" in _lyr and _lyr["type"] == "MapImageLayer") and (
                 "TilesOnly" in item.properties.capabilities
             ):
