@@ -4,18 +4,16 @@ sys.path.insert(0, r"C:\ipython_workfolder\geosaurus\src")
 import unittest
 from arcgis.features._topographic import TopographicProductionManager
 from arcgis.gis.server.catalog import ServicesDirectory
+import arcpy
 
+# Prepare the service definition
 sd = ServicesDirectory(
-    url="https://rextapilnxsvr01.esri.com/server",
-    username="siteadmin",
-    password="esri.agp2",
+    url="https://rpubs22202.ags.esri.com/server",
+    username="naubry",
+    password="97Jenniferst",
     verify_cert=False,
 )
-# Create Topographic Service
-topo = TopographicProductionManager(
-    "https://defmapdb.esri.com/arcgis/rest/services/MPS/MTM/TopographicProductionServer",
-    sd,
-)
+topo = TopographicProductionManager("", sd)
 
 
 class TestTopographicProductionManager(unittest.TestCase):

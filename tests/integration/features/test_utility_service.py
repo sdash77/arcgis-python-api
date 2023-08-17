@@ -4,7 +4,7 @@ from arcgis.features._utility import UtilityNetworkManager
 from arcgis.features._trace_configuration import TraceConfiguration
 
 gis = GIS("https://utilitynetwork.esri.com/portal", "python_api_team", "python_api_team.109")
-# Create Topographic Service
+# Get Utility Service
 try:
     # Server gets updated at 2:30PM PST Everyday. Do not test around then.
     utility_nm = UtilityNetworkManager(

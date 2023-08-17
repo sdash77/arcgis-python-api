@@ -3,7 +3,7 @@ from arcgis.gis import GIS
 from arcgis.features._trace import TraceNetworkManager
 
 gis = GIS("https://utilitynetwork.esri.com/portal", "python_api_team", "python_api_team.109")
-# Create Topographic Service
+# Get Trace Network Service
 try:
     # Server gets updated at 2:30PM PST Everyday. Do not test around then.
     trace_nm = TraceNetworkManager(
