@@ -1926,17 +1926,20 @@ class FeatureLayerCollectionManager(_GISResource):
         If your data path will publish more than one layer or table, only the first will be added.
 
         ==================     ====================================================================
-        **Argument**            **Description**
+        **Argument**           **Description**
         ------------------     --------------------------------------------------------------------
-        data_path               Required string. The path to the data to be inserted.
+        data_path              Required string. The path to the data to be inserted.
 
-                                .. note::
-                                    Shapefiles and file geodatabases must be in a .zip file.
+                               .. note::
+                                   Shapefiles and file geodatabases must be in a .zip file.
         ------------------     --------------------------------------------------------------------
-        name                    Optional string. The name of the layer or table to be created.
+        name                   Optional string. The name of the layer or table to be created.
         ==================     ====================================================================
         """
         # Check that the user is the owner of both the source and the published item or has administrative privileges
+        
+        from ..gis._impl._content_manager._import_data import _perform_insert
+        
         orig_item = self._gis.content.get(self.properties.serviceItemId)
         if (
             self._gis.users.me.username != orig_item.owner
@@ -1958,7 +1961,7 @@ class FeatureLayerCollectionManager(_GISResource):
 
         # Get the name for new service if None passed, ensure data_path has all special characters removed and spaces removed
         data_path = data_path.replace(" ", "_")
-        data_path = re.sub(r"[^a-zA-Z0-9_]", "", data_path)
+        data_path = re.sub(r"[^a-zA-Z0-9_/\.\\:]", "", data_path)
         if name is None:
             name = os.path.basename(data_path)
 
@@ -2028,7 +2031,7 @@ class FeatureLayerCollectionManager(_GISResource):
         source_info = self._gis.content.analyze(item=file_item)["publishParameters"]
         if len(new_item.layers) > 0:
             publish_parameters = new_item.layers[0].properties
-            index = self._gis.content._perform_insert(self, publish_parameters)
+            index = _perform_insert(self, publish_parameters)
             if (
                 file_type == "File Geodatabase"
                 and "filegdb"
@@ -2051,7 +2054,7 @@ class FeatureLayerCollectionManager(_GISResource):
                 orig_item.layers[index].edit_features(adds=features)
         elif len(new_item.tables) > 0:
             publish_parameters = new_item.tables[0].properties
-            index = self._gis.content._perform_insert(self, publish_parameters)
+            index = _perform_insert(self, publish_parameters)
             ItemDependency(orig_item).add("itemid", file_item.id)
             orig_item.tables[index].append(
                 item_id=file_item.id,
