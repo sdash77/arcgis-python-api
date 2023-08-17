@@ -1700,7 +1700,10 @@ class Service(BaseServer):
     # ----------------------------------------------------------------------
     @property
     def webhook_manager(self) -> ServiceWebHookManager:
-        """Returns the Service Based Webhook Manager (ArcGIS Server 11.1+)"""
+        """Returns an instance of :class:`~arcgis.gis.server.ServiceWebHookManager`,
+        the feature service-based webhook manager available at
+        *ArcGIS Server 11.1* and later.
+        """
         if self._server_version() >= [11, 0]:
             url: str = f"{self._url}/webhooks"
             if self._whm is None:
