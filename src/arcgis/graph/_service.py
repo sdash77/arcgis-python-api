@@ -105,7 +105,7 @@ class KnowledgeGraph:
 
         .. note::
             Check the `service definition for the Knowledge Graph service <https://developers.arcgis.com/rest/services-reference/enterprise/kgs-hosted-server.htm>`_
-            for valid values of category. Not all services support both.
+            for valid values of category. Not all services support both and both_entity_relationship.
 
         .. code-block:: python
 
