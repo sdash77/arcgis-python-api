@@ -157,33 +157,28 @@ class KnowledgeGraph:
 
     def update_search_index(self, adds: dict = None, deletes: dict = None) -> dict:
         """
-        Allows users to add or delete search index properties for different entities from the
-        graph's data model. Can only be existent properties for a given entity. Note thqt an
-        empty dictionary result indicates success.
+        Allows users to add or delete search index properties for different entities and
+        relationships from the graph's data model. Can only be existent properties for a given
+        entity/relationship. Note that an empty dictionary result indicates success.
 
         =========================   ===============================================================
         **Parameter**                **Description**
         -------------------------   ---------------------------------------------------------------
         adds                        Optional dict. See below for structure. The properties to add
-                                    to the search index, specified by entity.
+                                    to the search index, specified by entity/relationship.
         -------------------------   ---------------------------------------------------------------
         deletes                     Optional dict. See below for structure. The properties to
-                                    delete from the search index, specified by entity.
+                                    delete from the search index, specified by entity/relationship.
         =========================   ===============================================================
 
         .. code-block:: python
 
-            # graph has "Person" and "Plant" entity types
-            # example of an adds dictionary
+            # example of an adds or deletes dictionary
             {
-                "Person" : { "property_names": ["Height", "Eye_Color"]},
-                "Plant" : {"property_names": ["Leaf_Number"]},
-            }
-
-            # example of a deletes dictionary
-            {
-                "Person" : { "property_names": ["Favorite_Cartoon"]},
-                "Plant" : {"property_names": ["Color", "Genus"]},
+                "Entity1" : { "property_names": ["prop1", "prop2"]},
+                "Entity2" : {"property_names": ["prop1"]},
+                "RelationshipType1" : { "property_names": ["prop1", "prop2"]},
+                "RelationshipType2" : {"property_names": ["prop1"]},
             }
 
         :return: A `dict`. Empty dict indicates success, errors will be returned in the dict.
@@ -509,9 +504,12 @@ class KnowledgeGraph:
                                     as well. When `False`, these relationships must be deleted
                                     manually first. Defaults to `False`.
         -------------------------   ---------------------------------------------------------------
-        cascade_delete_provenance   Optional boolean. When `True`, provenance entities connected to
-                                    entities that are being deleted will automatically be deleted
-                                    as well. Defaults to `False`.
+        cascade_delete_provenance   Optional boolean. When `True`, deleting entities/relationships
+                                    or setting their property values to null will result in
+                                    automatic deletion of associated provenance records. When
+                                    `False`, `apply_edits()` will fail if there are provenance
+                                    records connected to entities/relationships intended for
+                                    deletion or having their properties set to null.
         =========================   ===============================================================
 
         .. code-block:: python
