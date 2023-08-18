@@ -12,6 +12,10 @@ import arcgis as _arcgis
 from arcgis.raster._layer import ImageryLayer as _ImageryLayer
 from arcgis.raster._util import _set_context, _id_generator
 from ._scannedmapdigitizer import ScannedMapDigitizer
+from .models._timm_utils import load_timm_bckbn_pretrained
+from timm.models import helpers
+
+helpers.load_pretrained = load_timm_bckbn_pretrained
 
 if not _LAMBDA_TEXT_CLASSIFICATION:
     from .models import (
@@ -52,6 +56,10 @@ if not _LAMBDA_TEXT_CLASSIFICATION:
         WNet_cGAN,
         DETReg,
         RandLANet,
+        EfficientDet,
+        SQNSeg,
+        PSETAE,
+        MMDetection3D,
     )
 
     from ._object_tracker import ObjectTracker
@@ -59,6 +67,13 @@ if not _LAMBDA_TEXT_CLASSIFICATION:
     from ._utils.pointcloud_data import Transform3d
 from ._data import prepare_data, prepare_tabulardata, prepare_textdata
 from ._process_df import process_df, add_datepart
+from ._utils.evaluate_batchsize import estimate_batch_size
+
+
+_point_cloud_classification_model_list = ["PointCNN", "RandLANet", "SQNSeg"]
+
+
+_point_cloud_detection_model_list = ["MMDetection3D"]
 
 
 def _set_param(gis, params, param_name, input_param):
@@ -244,7 +259,6 @@ def detect_objects(
     future=False,
     **kwargs
 ):
-
     """
     Function can be used to generate feature service that contains polygons on detected objects
     found in the imagery data using the designated deep learning model. Note that the deep learning
@@ -254,7 +268,7 @@ def detect_objects(
             This function is supported with ArcGIS Enterprise (Image Server) and ArcGIS Image for ArcGIS Online.
 
     ====================================     ====================================================================
-    **Argument**                             **Description**
+    **Parameter**                             **Description**
     ------------------------------------     --------------------------------------------------------------------
     input_raster                             Required. raster layer that contains objects that needs to be detected.
     ------------------------------------     --------------------------------------------------------------------
@@ -436,7 +450,6 @@ def classify_pixels(
     future=False,
     **kwargs
 ):
-
     """
     Function to classify input imagery data using a deep learning model.
     Note that the deep learning library needs to be installed separately,
@@ -446,7 +459,7 @@ def classify_pixels(
             This function is supported with ArcGIS Enterprise (Image Server) and ArcGIS Image for ArcGIS Online.
 
     ====================================     ====================================================================
-    **Argument**                             **Description**
+    **Parameter**                             **Description**
     ------------------------------------     --------------------------------------------------------------------
     input_raster                             Required. raster layer that needs to be classified.
     ------------------------------------     --------------------------------------------------------------------
@@ -588,7 +601,6 @@ def export_training_data(
     future=False,
     **kwargs
 ):
-
     """
     Function is designed to generate training sample image chips from the input imagery data with
     labeled vector data or classified images. The output of this service tool is the data store string
@@ -598,7 +610,7 @@ def export_training_data(
             This function is supported with ArcGIS Enterprise (Image Server)
 
     ====================================     ====================================================================
-    **Argument**                             **Description**
+    **Parameter**                             **Description**
     ------------------------------------     --------------------------------------------------------------------
     input_raster                             Required :class:`~arcgis.raster.ImageryLayer`/:class:`~arcgis.raster.Raster`/:class:`~arcgis.gis.Item`/String (URL).
                                              Raster layer that needs to be exported for training.
@@ -918,7 +930,7 @@ def list_models(*, gis=None, future=False, **kwargs):
             This function is supported with ArcGIS Enterprise (Image Server)
 
     ==================     ====================================================================
-    **Argument**           **Description**
+    **Parameter**           **Description**
     ------------------     --------------------------------------------------------------------
     gis                    Optional :class:`~arcgis.gis.GIS` . The GIS on which this tool runs. If not specified, the active GIS is used.
     ------------------     --------------------------------------------------------------------
@@ -978,7 +990,6 @@ def classify_objects(
     future=False,
     **kwargs
 ):
-
     """
     Function can be used to output feature service with assigned class label for each feature based on
     information from overlapped imagery data using the designated deep learning model.
@@ -987,7 +998,7 @@ def classify_objects(
             This function is supported with ArcGIS Enterprise (Image Server) and ArcGIS Image for ArcGIS Online.
 
     ====================================     ====================================================================
-    **Argument**                             **Description**
+    **Parameter**                             **Description**
     ------------------------------------     --------------------------------------------------------------------
     input_raster                             Required. raster layer that contains objects that needs to be classified.
     ------------------------------------     --------------------------------------------------------------------
@@ -1080,14 +1091,13 @@ def compute_accuracy_for_object_detection(
     future=False,
     **kwargs
 ):
-
     """
     Function can be used to calculate the accuracy of a deep learning model by comparing the detected objects from
     the detect_objects function to ground truth data.
     Function available in ArcGIS Image Server 10.9 and higher (not available in ArcGIS Online).
 
     ====================================     ====================================================================
-    **Argument**                             **Description**
+    **Parameter**                             **Description**
     ------------------------------------     --------------------------------------------------------------------
     detected_features                        Required. The input polygon feature layer containing the objects
                                              detected from the detect_objects function.
@@ -1229,7 +1239,6 @@ def train_model(
     future=False,
     **kwargs
 ):
-
     """
     Function can be used to train a deep learning model using the output from the
     export_training_data function.
@@ -1240,7 +1249,7 @@ def train_model(
             This function is supported with ArcGIS Enterprise (Image Server)
 
     ====================================     ====================================================================
-    **Argument**                             **Description**
+    **Parameter**                             **Description**
     ------------------------------------     --------------------------------------------------------------------
     input_folder                             Required string or list. This is the input location for the training sample data.
                                              It can be the path of output location on the file share raster data store or a
@@ -1486,27 +1495,27 @@ class Model:
 
     def from_json(self, model):
         """
-        Function is used to initialise Model object from model definition JSON
+        Function is used to initialize Model object from model definition JSON
 
         .. code-block:: python
 
-            # usage example
+            # Usage example
 
-            model = Model()
+            >>> model = Model()
 
-            model.from_json({"Framework" :"TensorFlow",
-                            "ModelConfiguration":"DeepLab",
-                            "InferenceFunction":"``[functions]System\\DeepLearning\\ImageClassifier.py``",
-                            "ModelFile":"``\\\\folder_path_of_pb_file\\frozen_inference_graph.pb``",
-                            "ExtractBands":[0,1,2],
-                            "ImageWidth":513,
-                            "ImageHeight":513,
-                            "Classes": [ { "Value":0, "Name":"Evergreen Forest", "Color":[0, 51, 0] },
-                                         { "Value":1, "Name":"Grassland/Herbaceous", "Color":[241, 185, 137] },
-                                         { "Value":2, "Name":"Bare Land", "Color":[236, 236, 0] },
-                                         { "Value":3, "Name":"Open Water", "Color":[0, 0, 117] },
-                                         { "Value":4, "Name":"Scrub/Shrub", "Color":[102, 102, 0] },
-                                         { "Value":5, "Name":"Impervious Surface", "Color":[236, 236, 236] } ] })
+            >>> model.from_json({"Framework" :"TensorFlow",
+                                 "ModelConfiguration":"DeepLab",
+                                 "InferenceFunction":"``[functions]System\\DeepLearning\\ImageClassifier.py``",
+                                 "ModelFile":"``\\\\folder_path_of_pb_file\\frozen_inference_graph.pb``",
+                                 "ExtractBands":[0,1,2],
+                                 "ImageWidth":513,
+                                 "ImageHeight":513,
+                                 "Classes": [ { "Value":0, "Name":"Evergreen Forest", "Color":[0, 51, 0] },
+                                              { "Value":1, "Name":"Grassland/Herbaceous", "Color":[241, 185, 137] },
+                                              { "Value":2, "Name":"Bare Land", "Color":[236, 236, 0] },
+                                              { "Value":3, "Name":"Open Water", "Color":[0, 0, 117] },
+                                              { "Value":4, "Name":"Scrub/Shrub", "Color":[102, 102, 0] },
+                                              { "Value":5, "Name":"Impervious Surface", "Color":[236, 236, 236] } ] })
 
         """
         if isinstance(model, dict):
@@ -1515,22 +1524,19 @@ class Model:
 
     def from_model_path(self, model):
         """
-        Function is used to initialise Model object from url of model package or path of model definition file
+        Function is used to initialize Model object from url of model package or path of model definition file
 
         .. code-block:: python
 
-                # usage example
+            # Usage Example #1:
 
-                model = Model()
+            >>> model = Model()
+            >>> model.from_model_path("https://xxxportal.esri.com/sharing/rest/content/items/<itemId>")
 
-                model.from_model_path("https://xxxportal.esri.com/sharing/rest/content/items/<itemId>")
+            # Usage Example #2:
 
-                or
-
-                model = Model()
-
-                model.from_model_path("\\\\sharedstorage\\sharefolder\\findtrees.emd")
-
+            >>> model = Model()
+            >>> model.from_model_path("\\\\sharedstorage\\sharefolder\\findtrees.emd")
         """
         if "http:" in model or "https:" in model:
             self._model = _json.dumps({"url": model})
@@ -1540,14 +1546,13 @@ class Model:
             self._model_package = False
 
     def install(self, *, gis=None, future=False, **kwargs):
-
         """
         Function is used to install the uploaded model package (*.dlpk). Optionally after inferencing
         the necessary information using the model, the model can be uninstalled by uninstall_model()
 
 
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
         gis                    Optional :class:`~arcgis.gis.GIS` . The GIS on which this tool runs. If not specified, the active GIS is used.
         ------------------     --------------------------------------------------------------------
@@ -1612,7 +1617,7 @@ class Model:
         Function is used to extract the deep learning model specific settings from the model package item or model definition file.
 
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
         gis                    Optional :class:`~arcgis.gis.GIS` . The GIS on which this tool runs. If not specified, the active GIS is used.
         ------------------     --------------------------------------------------------------------
@@ -1666,13 +1671,12 @@ class Model:
         """
 
     def uninstall(self, *, gis=None, future=False, **kwargs):
-
         """
         Function is used to uninstall the uploaded model package that was installed using the install_model()
         This function will delete the named deep learning model from the server but not the portal item.
 
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
         gis                    Optional :class:`~arcgis.gis.GIS` . The GIS on which this tool runs. If not specified, the active GIS is used.
         ------------------     --------------------------------------------------------------------
@@ -1739,55 +1743,11 @@ def export_point_dataset(
     extra_features=[],
     **kwargs
 ):
-
     """
-    Exports the las files into h5 blocks.
-
-    .. note::
-      This function has been deprecated starting from `ArcGIS API for
-      Python` version 1.9.0. Export data using `Prepare Point Cloud Training Data` tool available
-      in 3D Analyst Extension from ArcGIS Pro 2.8 onwards.
-
-
-    ==================     =======================================================================================================
-    **Argument**           **Description**
-    ------------------     -------------------------------------------------------------------------------------------------------
-    data_path              Required string. Folder containing two folders with
-                           las files.
-
-                           Folder structure:
-                            ``train/``
-                             ``*.las``
-                            ``val/``
-                             ``*.las``
-    ------------------     -------------------------------------------------------------------------------------------------------
-    output_path            Required string. Path where exported files will be
-                           dumped. This directory either should be empty or
-                           be a totally new directory.
-    ------------------     -------------------------------------------------------------------------------------------------------
-    block_size             Optional float. Size of the h5 block file.
-                           The unit of this parameter is the same as that of the
-                           dataset's coordinate system. Default: 50.0 Units.
-                           The default value is based on the assumption that
-                           dataset's coordinate system is in metric units.
-    ------------------     -------------------------------------------------------------------------------------------------------
-    max_points             Optional integer. Maximum number of points to be
-                           included in each h5 block file.
-                           Default: 8192 points.
-    ------------------     -------------------------------------------------------------------------------------------------------
-    extra_features         Optional list of tuple. Extra features to read
-                           from las files. The length of tuple is 3, which
-                           contain feature name, max, and min values
-                           respectively. For example:
-                           If you want extra features like `intensity` or
-                           `number of returns` to be considered while
-                           training, set this parameter like:
-                           `extra_features=[('intensity', 5000, 0),
-                           ('num_returns', 5, 0)]`.
-                           The default behavior has changed from v1.8.0.
-                           Default: [].
-    ==================     =======================================================================================================
-
+    Note:
+    This function has been deprecated starting from `ArcGIS API for
+    Python` version 1.9.0. Export data using `Prepare Point Cloud Training Data` tool available
+    in 3D Analyst Extension from ArcGIS Pro 2.8 onwards.
 
     """
 

@@ -49,7 +49,7 @@ class PointCNN(ArcGISModel):
     Creates a Point Cloud classification model.
 
     =====================   ===========================================
-    **Argument**            **Description**
+    **Parameter**            **Description**
     ---------------------   -------------------------------------------
     data                    Required fastai Databunch. Returned data object from
                             :meth:`~arcgis.learn.prepare_data` function.
@@ -61,7 +61,7 @@ class PointCNN(ArcGISModel):
     **kwargs**
 
     =====================   ===========================================
-    **Argument**            **Description**
+    **Parameter**            **Description**
     ---------------------   -------------------------------------------
     encoder_params          Optional dictionary. The keys of the dictionary are
                             `out_channels`, `P`, `K`, `D` and `m`.
@@ -142,13 +142,12 @@ class PointCNN(ArcGISModel):
 
     @classmethod
     def from_model(cls, emd_path, data=None):
-
         """
         Creates an PointCNN model object from a Deep Learning Package(DLPK)
         or Esri Model Definition (EMD) file.
 
         =====================   ===========================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ---------------------   -------------------------------------------
         emd_path                Required string. Path to Deep Learning Package
                                 (DLPK) or Esri Model Definition(EMD) file.
@@ -186,6 +185,7 @@ class PointCNN(ArcGISModel):
                 c=len(class_mapping),
                 chip_size=emd["ImageHeight"],
             )
+            data._is_empty = True
             data.emd_path = emd_path
             data.emd = emd
             for key, value in emd["DataAttributes"].items():
@@ -232,14 +232,13 @@ class PointCNN(ArcGISModel):
         tensorboard=False,
         **kwargs,
     ):
-
         """
         Train the model for the specified number of epochs and using the
         specified learning rates. The precision, recall and f1 scores
         shown in the training table are macro averaged over all classes.
 
         =====================   ===========================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ---------------------   -------------------------------------------
         epochs                  Required integer. Number of cycles of training
                                 on the data. Increase it if underfitting.
@@ -289,7 +288,7 @@ class PointCNN(ArcGISModel):
         **kwargs**
 
         =====================   ===========================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ---------------------   -------------------------------------------
         iters_per_epoch         Optional integer. The number of iterations
                                 to run during the training phase.
@@ -341,11 +340,9 @@ class PointCNN(ArcGISModel):
 
     def unfreeze(self):
         """
-        Unfreezes the earlier layers of the model for
-        fine-tuning. Not implemented for PointCNN as
+        Not implemented for this model as
         none of the layers are frozen by default.
         """
-        self.learn.unfreeze()
 
     def _get_emd_params(self, save_inference_file):
         import random
@@ -415,7 +412,6 @@ class PointCNN(ArcGISModel):
         return _emd_template
 
     def show_results(self, rows=2, **kwargs):
-
         """
         Displays the results from your model on the validation set
         with ground truth on the left and predictions on the right.
@@ -423,7 +419,7 @@ class PointCNN(ArcGISModel):
         is not yet supported.
 
         =====================   ===========================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ---------------------   -------------------------------------------
         rows                    Optional rows. Number of rows to show. Default
                                 value is 2 and maximum value is the `batch_size`
@@ -433,7 +429,7 @@ class PointCNN(ArcGISModel):
         **kwargs**
 
         =====================   ===========================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ---------------------   -------------------------------------------
         color_mapping           Optional dictionary. Mapping from class value
                                 to RGB values. Default value example:
@@ -471,79 +467,16 @@ class PointCNN(ArcGISModel):
             return show_results_tool(self, rows, **kwargs)
 
     def predict_las(self, path, output_path=None, print_metrics=False, **kwargs):
-
         """
-        Predicts and writes the resulting las file on the disk.
-        The block size which was used for training will be used for prediction.
-        Coordinate system for the inferencing data & trained model's training
-        data should be the same.
-
         Note: This method has been deprecated starting from `ArcGIS API for
         Python` version 1.9.0.
         Use `Classify Points Using Trained Model` tool  available in 3D Analyst
         extension from ArcGIS Pro 2.8 onwards.
-
-        Models trained on exported data from ArcGIS Pro 2.8 onwards are not
-        supported.
-
-
-        =====================   ===========================================
-        **Argument**            **Description**
-        ---------------------   -------------------------------------------
-        path                    Required string. The path to folder where the las
-                                files which needs to be predicted are present.
-        ---------------------   -------------------------------------------
-        output_path             Optional string. The path to folder where to dump
-                                the resulting las files. Defaults to `results` folder
-                                in input path.
-        ---------------------   -------------------------------------------
-        print_metrics           Optional boolean. If True, precision, recall and
-                                f1_score are also calculated and reported.
-                                Defaults to False.
-        =====================   ===========================================
-
-        **kwargs**
-
-        =====================   ===========================================
-        **Argument**            **Description**
-        ---------------------   -------------------------------------------
-        remap_classes           Optional dictionary {int:int}. Mapping from
-                                class values to user defined values. Please query
-                                `pointcnn._data.classes` to get the class values
-                                on which the model is trained on.
-                                Default is {}.
-        ---------------------   -------------------------------------------
-        selective_classify      Optional list of integers. If passed, predict_las
-                                will selectively classify only those points
-                                belonging to the specified class-codes. Other
-                                points in the input point clouds will retain
-                                their class-codes.
-                                Please query `pointcnn._data.classes` to get
-                                the class values on which the model is trained
-                                on. If `remap_classes` is specified, the new
-                                mapped values will be used for classification.
-                                Default value is [].
-        ---------------------   -------------------------------------------
-        preserve_classes        Optional list of integers. A list of classes
-                                from the input data, that should be preserved
-                                in the predicted output.
-                                If a point in the input data belongs to any
-                                of the classes mentioned in this list, its
-                                class-code won't be updated with the model's
-                                predicted class.
-                                Example: If preserve_classes=[2,6]. The
-                                class-code of a point won't be updated with
-                                the predicted class, if it's 2 or 6.
-                                Default: [].
-        =====================   ===========================================
-
-        :return: Path where files are dumped.
         """
 
         return inference_las(path, self, output_path, print_metrics, **kwargs)
 
     def compute_precision_recall(self):
-
         """
         Computes precision, recall and f1-score on the validation sets.
         """
@@ -552,26 +485,23 @@ class PointCNN(ArcGISModel):
 
     def predict_h5(self, path, output_path=None, **kwargs):
         """
-        Predicts and writes the resulting las file on the disk.
-        The block size which was used for training will be used for prediction.
-        Coordinate system for the inferencing data & trained model's training
-        data should be the same.
+        This method is used for infrencing using HDF file.
 
         =====================   ===========================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ---------------------   -------------------------------------------
-        path                    Required string. The path to folder where the h5
+        path                    Required string. The path to folder where the HDF
                                 files which needs to be predicted are present.
         ---------------------   -------------------------------------------
         output_path             Optional string. The path to folder where to dump
-                                the resulting h5 block files. Defaults to `results`
+                                the resulting HDF files. Defaults to `results`
                                 folder in input path.
         =====================   ===========================================
 
         **kwargs**
 
         =====================   ===========================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ---------------------   -------------------------------------------
         batch_size              Optional integer. The number of blocks to process
                                 in one batch. Default is set to 1.
@@ -601,7 +531,7 @@ class PointCNN(ArcGISModel):
         Loads a compatible saved model for inferencing or fine tuning from the disk.
 
         =====================   ===========================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ---------------------   -------------------------------------------
         name_or_path            Required string. Name or Path to
                                 Deep Learning Package (DLPK) or

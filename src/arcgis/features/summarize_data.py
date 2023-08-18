@@ -19,6 +19,7 @@ from .._impl.common._utils import _date_handler
 from .._impl.common._utils import inspect_function_inputs
 import arcgis.network as network
 
+
 # --------------------------------------------------------------------------
 def aggregate_points(
     point_layer: Union[
@@ -52,7 +53,7 @@ def aggregate_points(
     bin_size_unit: Optional[str] = None,
 ):
     """
-    .. image:: _static/images/agg_points_standard/aggregate_points.png
+    .. image:: _static/images/agg_points_standard/aggregate_points_standard.png
 
     The Aggregate Points task works with a layer of point features and a layer of polygon features. It first figures out which points fall within each polygon's area.
     After determining this point-in-polygon spatial relationship, statistics about all points in the polygon are calculated and assigned to the area. The most basic statistic is the count of the number of points within the polygon, but you can get other statistics as well.
@@ -60,7 +61,7 @@ def aggregate_points(
     For example, if your points represented coffee shops and each point has a TOTAL_SALES attribute, you can get statistics like the sum of all TOTAL_SALES within the polygon, or the minimum or maximum TOTAL_SALES value, or the standard deviation of all sales within the polygon.
 
     ====================================    ====================================================================
-    **Argument**                            **Description**
+    **Parameter**                            **Description**
     ------------------------------------    --------------------------------------------------------------------
     point_layer                             Required point layer. The point features that will be aggregated
                                             into the polygons in the polygon_layer. See :ref:`Feature Input<FeatureInput>`.
@@ -96,7 +97,7 @@ def aggregate_points(
                                             group_by_field is specified. If true, the minority (least dominant) or
                                             the majority (most dominant) attribute values for each group field
                                             within each boundary are calculated. Two new fields are added to the
-                                            aggregated_layer prefixed with Majority_ and Minority_.
+                                            aggregated_layer prefixed with `Majority_` and `Minority_`.
                                             The default is false.
     ------------------------------------    --------------------------------------------------------------------
     percent_points                          Optional boolean. This boolean parameter is applicable only when a
@@ -253,7 +254,7 @@ def summarize_nearby(
       store accessibility.
 
     =========================   ====================================================================================================================
-    **Argument**                **Description**
+    **Parameter**                **Description**
     -------------------------   --------------------------------------------------------------------------------------------------------------------
     sum_nearby_layer            Required :class:`~arcgis.features.FeatureLayer` . Point, line, or polygon features from which distances will be measured to features in the ``summary_layer``. See :ref:`Feature Input<FeatureInput>`.
     -------------------------   --------------------------------------------------------------------------------------------------------------------
@@ -328,7 +329,7 @@ def summarize_nearby(
 
                                 To use live traffic when and where it is available, choose a time and date and convert to datetime.
 
-                                Esri saves live traffic data for 12 hours and references predictive data extending 12 hours into the future. If the time and date you
+                                Esri saves live traffic data for 4 hours and references predictive data extending 4 hours into the future. If the time and date you
                                 specify for this parameter is outside the 24-hour time window, or the travel time in the analysis continues past the predictive data window,
                                 the task falls back to typical traffic speeds.
 
@@ -392,7 +393,7 @@ def summarize_nearby(
     -------------------------   --------------------------------------------------------------------------------------------------------------------
     minority_majority           Optional boolean. This boolean parameter is applicable only when a ``group_by_field`` is specified. If true, the minority (least dominant) or the
                                 majority (most dominant) attribute values for each group field within each nearby area are calculated. Two new fields are added to
-                                the ``result_layer`` prefixed with Majority_ and Minority_.
+                                the ``result_layer`` prefixed with `Majority_` and `Minority_`.
 
                                 The default is False.
     -------------------------   --------------------------------------------------------------------------------------------------------------------
@@ -467,10 +468,7 @@ def summarize_nearby(
         "shape_units": shape_units,
         "summary_fields": summary_fields,
         "group_by_field": group_by_field,
-        "minority_majority": minority_majority,
         "percent_shape": percent_shape,
-        "summary_fields": summary_fields,
-        "group_by_field": group_by_field,
         "minority_majority": minority_majority,
         "output_name": output_name,
         "context": context,
@@ -515,7 +513,6 @@ def summarize_center_and_dispersion(
     estimate: bool = False,
     future: bool = False,
 ):
-
     """
     .. image:: _static/images/summarize_center_and_dispersion/summarize_center_and_dispersion.png
 
@@ -527,7 +524,7 @@ def summarize_center_and_dispersion(
     * Are there directional trends?
 
     ====================    ============================================================================================
-    **Argument**            **Description**
+    **Parameter**            **Description**
     --------------------    --------------------------------------------------------------------------------------------
     analysis_layer          Required :class:`~arcgis.features.FeatureLayer` . The point, line, or polygon features to be analyzed. See :ref:`Feature Input<FeatureInput>`.
     --------------------    --------------------------------------------------------------------------------------------
@@ -668,7 +665,7 @@ def summarize_within(
     simple statistics about the attributes of the features in the ``summary_layer``, such as sum, mean, minimum, maximum, and so on.
 
     =====================================   =========================================================
-    **Argument**                            **Description**
+    **Parameter**                            **Description**
     -------------------------------------   ---------------------------------------------------------
     sum_within_layer                        Required :class:`~arcgis.features.FeatureLayer` . The polygon features. Features, or
                                             portions of features, in the ``summary_layer`` (below) that fall within
@@ -703,7 +700,7 @@ def summarize_within(
     -------------------------------------   ---------------------------------------------------------
     minority_majority                       Optional boolean. This boolean parameter is applicable only when a ``group_by_field`` is specified.
                                             If true, the minority (least dominant) or the majority (most dominant) attribute values for each group
-                                            field are calculated. Two new fields are added to the ``result_layer`` prefixed with Majority_ and Minority_.
+                                            field are calculated. Two new fields are added to the ``result_layer`` prefixed with `Majority_` and `Minority_`.
 
                                             The default is False.
     -------------------------------------   ---------------------------------------------------------
@@ -843,7 +840,7 @@ def join_features(
     from one feature to another based on spatial and attribute relationships.
 
     ============================================================================================    =================================================================================================================================
-    **Argument**                                                                                    **Description**
+    **Parameter**                                                                                    **Description**
     --------------------------------------------------------------------------------------------    ---------------------------------------------------------------------------------------------------------------------------------
     target_layer                                                                                    Required layer. The point, line, polygon or table layer that will have attributes from
                                                                                                     the ``join_layer`` appended to its table. See :ref:`Feature Input<FeatureInput>`.

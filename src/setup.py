@@ -64,35 +64,34 @@ if conda_install_mode:
 else:
     dependencies = [
         "pillow",
-        "urllib3",
+        "urllib3>=1.21.1,<2",
         "cachetools",
-        "six",
         "lxml",
         "notebook",
         "cryptography",
-        "ipywidgets >=7",
+        "ipywidgets >=7,<8",
         "widgetsnbextension >=3",
         "jupyter-client <=6.1.12",
-        "pandas >=1.3.5",
-        "numpy >=1.16.2",
+        "pandas >=2.0.0",
+        "numpy >=1.21.6",
         "matplotlib",
-        "keyring >=23.3.*",
+        "keyring >=23.3.0",
         "lerc",
         "ujson >=3",
         "jupyterlab",
-        "python-certifi-win32",
+        "python-certifi-win32;python_version<'3.10'",
+        "truststore>=0.7.0;python_version>'3.9'",
         'pywin32 >=223;platform_system=="Windows"',
         "pyshp >=2",
         "geomet",
         "requests >=2.27.1",
         "requests-oauthlib",
         "requests_toolbelt",
-        "requests-ntlm2",
-        'requests-negotiate-sspi;platform_system=="Windows"',
-        'requests-kerberos;platform_system=="Windows"',
-        'winkerberos;platform_system=="Windows"',
+        "pyspnego >=0.8.0",
+        "requests-kerberos",
         "requests-gssapi",
-        "dask",
+        "dask >=2023.3.2",
+        "matplotlib-inline",
     ]
 
 
@@ -117,7 +116,6 @@ def _post_install():
 
         activate_map_widget = True
     except Exception as e:
-
         log.exception(
             "arcgis/notebook packages don't appear to be installed: "
             "map widget not activated, may not work. The rest of "
@@ -130,7 +128,6 @@ def _post_install():
         log.warning("Attempting to activate map widget...")
         print("Attempting to activate map widget...")
         try:
-
             log.warning(
                 nbext.install_nbextension_python("arcgis", sys_prefix=True, logger=log)
             )
@@ -199,7 +196,6 @@ class egg_info(_egg_info):
 
 # Read the description.md file
 try:
-
     description_md_file = open("pypi_long_description.md", "r")
     long_description = description_md_file.read()
     description_md_file.close()
@@ -223,7 +219,7 @@ data_files = [
 def get_version():
     """gets the version from environment variable or sets via manually setting"""
     MAJOR = "2"
-    MINOR = "1"
+    MINOR = "2"
     try:
         import os
 
@@ -278,9 +274,9 @@ kwargs = {
         # Specify the Python versions you support here. In particular, ensure
         # that you indicate whether you support Python 2, Python 3 or both.
         "Programming Language :: Python :: 3 :: Only",
-        "Programming Language :: Python :: 3.7",
-        "Programming Language :: Python :: 3.8",
         "Programming Language :: Python :: 3.9",
+        "Programming Language :: Python :: 3.10",
+        "Programming Language :: Python :: 3.11",
     ],
     # What does your project relate to?
     "keywords": "gis arcgis geographic spatial spatial-data "
@@ -292,7 +288,7 @@ kwargs = {
     # Alternatively, if you want to distribute just a my_module.py, uncomment
     # this:
     "packages": find_packages(),
-    "python_requires": ">=3.7, <3.10",
+    "python_requires": ">=3.9, <3.12",
     "include_package_data": True,
     "data_files": data_files,
     # List run-time dependencies here.  These will be installed by pip when
@@ -311,7 +307,11 @@ kwargs = {
     # These classes will execute code after 'pip install' finishes
     # In this case, it will activate the 'arcgis' ipywidget
     # See the top of this setup.py file
-    "cmdclass": {"develop": develop, "install": install, "egg_info": egg_info},
+    "cmdclass": {
+        "develop": develop,
+        "install": install,
+        "egg_info": egg_info,
+    },
     # List additional groups of dependencies here (e.g. development
     # dependencies). You can install these using the following syntax,
     # for example:

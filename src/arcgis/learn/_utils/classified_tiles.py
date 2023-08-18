@@ -10,7 +10,7 @@ def calculate_intersection(preds, targs, mode):
     """
     Calculates intersection between preds and targs.
     =====================   ===========================================
-    **Argument**            **Description**
+    **Parameter**            **Description**
     ---------------------   -------------------------------------------
     preds                   Required torch.tensor.
                             Predictions form a segmentation model.
@@ -41,7 +41,7 @@ def calculate_union(preds, targs, intersection, mode):
     """
     Calculates union between preds and targs.
     =====================   ===========================================
-    **Argument**            **Description**
+    **Parameter**            **Description**
     ---------------------   -------------------------------------------
     preds                   Required torch.tensor.
                             Predictions form a segmentation model.
@@ -75,7 +75,7 @@ def confusion_matrix(preds, targs, intersection, mode):
     """
     Calculates true positive, false positive and false negetive
     =====================   ===========================================
-    **Argument**            **Description**
+    **Parameter**            **Description**
     ---------------------   -------------------------------------------
     preds                   Required torch.tensor.
                             Predictions form a segmentation model.
@@ -123,7 +123,7 @@ def prepare_output_for_metrics(preds, targs, ignore_classes, mode):
     This function modifies the shape of targs(ground truth segmentation mask)
     to match with preds(predicted output)
     =====================   ===========================================
-    **Argument**            **Description**
+    **Parameter**            **Description**
     ---------------------   -------------------------------------------
     preds                   Required torch.tensor.
                             Predictions form a segmentation model.
@@ -264,7 +264,7 @@ def show_batch_classified_tiles(self, rows=3, alpha=0.7, **kwargs):
     """
     This function randomly picks a few training chips and visualized them.
     =====================   ===========================================
-    **Argument**            **Description**
+    **Parameter**            **Description**
     ---------------------   -------------------------------------------
     rows                    Optional Integer.
                             Number of rows to display.

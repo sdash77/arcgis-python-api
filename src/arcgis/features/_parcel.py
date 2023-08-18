@@ -1,9 +1,9 @@
 from __future__ import annotations
 import time
-from typing import Any, Optional
+from typing import Any
+from arcgis.geometry import Polygon, Envelope
 from arcgis._impl.common._mixins import PropertyMap
-from arcgis.features import FeatureLayer, FeatureLayerCollection
-from arcgis.features._version import Version, VersionManager
+from arcgis.features import FeatureLayer
 
 ########################################################################
 
@@ -15,7 +15,7 @@ class ParcelFabricManager(object):
     and systems.
 
     ====================     ====================================================================
-    **Argument**             **Description**
+    **Parameter**             **Description**
     --------------------     --------------------------------------------------------------------
     url                      Required String. The URI to the service endpoint.
     --------------------     --------------------------------------------------------------------
@@ -88,7 +88,6 @@ class ParcelFabricManager(object):
     def properties(self):
         """returns the properties of the service"""
         if self._properties is None:
-
             res = self._con.get(self._url, {"f": "json"})
             self._properties = PropertyMap(res)
         return self._properties
@@ -100,7 +99,8 @@ class ParcelFabricManager(object):
         features: list[dict[str, Any]],
         record: str,
         write_attribute: str,
-        moment: Optional[int] = None,
+        moment: int | str | None = None,
+        future: bool = False,
     ):
         """
         Assigns the specified parcel features to the specified record. If
@@ -111,7 +111,7 @@ class ParcelFabricManager(object):
         record.
 
         ====================     ====================================================================
-        **Argument**             **Description**
+        **Parameter**             **Description**
         --------------------     --------------------------------------------------------------------
         features                 Required List. The parcel features to assign to the specified record.
                                  Can be parcels, parcel polygons, parcel points, and parcel lines.
@@ -137,6 +137,13 @@ class ParcelFabricManager(object):
         --------------------     --------------------------------------------------------------------
         moment                   Optional Integer. This should only be specified by the client when
                                  they do not want to use the current moment
+
+        --------------------     --------------------------------------------------------------------
+        future                   Optional boolean. If `True`, the request is processed as an asynchronous
+                                 job and a URL is returned that points a location displaying the status
+                                 of the job.
+
+                                 The default is `False`.
         ====================     ====================================================================
 
         :return: Boolean. `True` if successful otherwise `False`
@@ -152,21 +159,30 @@ class ParcelFabricManager(object):
             "parcelFeatures": features,
             "record": record,
             "writeAttribute": write_attribute,
+            "async": future,
             "f": "json",
         }
-        res = self._con.post(url, params)
-        if "success" in res:
-            return res["success"]
-        return res
+        if future:
+            res = self._con.post(path=url, postdata=params)
+            f = self._run_async(
+                self._status_via_url,
+                con=self._con,
+                url=res["statusUrl"],
+                params={"f": "json"},
+            )
+            return f
+        else:
+            return self._con.post(url, params)
 
     # ----------------------------------------------------------------------
 
     def build(
         self,
-        extent: Optional[Union[dict, Envelope]] = None,
-        moment: Optional[str] = None,
+        extent: dict | Envelope | None = None,
+        moment: int | str | None = None,
         return_errors: bool = False,
-        record: Optional[str] = None,
+        record: str | None = None,
+        future: bool = False,
     ):
         """
         A `build` will fix known parcel fabric errors.
@@ -183,7 +199,7 @@ class ParcelFabricManager(object):
         movement in the case of an adjustment.
 
         ====================     ====================================================================
-        **Argument**             **Description**
+        **Parameter**             **Description**
         --------------------     --------------------------------------------------------------------
         extent                   Optional :class:`~arcgis.geometry.Envelope` . The extent to build.
 
@@ -210,12 +226,22 @@ class ParcelFabricManager(object):
         record                   Optional String. Represents the record identifier (guid).  If a
                                  record guid is provided, only parcels associated to the record are
                                  built, regardless of the build extent.
+
+        --------------------     --------------------------------------------------------------------
+        future                   Optional boolean. If `True`, the request is processed as an asynchronous
+                                 job and a URL is returned that points a location displaying the status
+                                 of the job.
+
+                                 The default is `False`.
         ====================     ====================================================================
 
 
         :return: Boolean. `True` if successful else `False`
 
         """
+        if extent:
+            extent = self._validate_extent(extent)
+
         url = "{base}/build".format(base=self._url)
         if moment is None:
             moment = int(time.time())
@@ -225,26 +251,34 @@ class ParcelFabricManager(object):
             "moment": moment,
             "buildExtent": extent,
             "record": record,
-            "async": False,
+            "async": future,
             # "returnErrors" : return_errors,
             "f": "json",
         }
-        res = self._con.post(url, params)
-        if "success" in res:
-            return res["success"]
-        return res
+        if future:
+            res = self._con.post(path=url, postdata=params)
+            f = self._run_async(
+                self._status_via_url,
+                con=self._con,
+                url=res["statusUrl"],
+                params={"f": "json"},
+            )
+            return f
+        else:
+            return self._con.post(url, params)
 
     # ----------------------------------------------------------------------
 
     def clip(
         self,
-        parent_parcels,
-        clip_record=None,
-        clipping_parcels=None,
-        geometry=None,
-        moment=None,
-        option=None,
-        area_unit=None,
+        parent_parcels: list[dict[str, Any]],
+        clip_record: str | None = None,
+        clipping_parcels: list[dict[str, Any]] | None = None,
+        geometry: Polygon | None = None,
+        moment: int | str | None = None,
+        option: str | None = None,
+        area_unit: str | None = None,
+        future: bool = False,
     ):
         """
 
@@ -254,7 +288,7 @@ class ParcelFabricManager(object):
         metes and bounds` record driven workflow.
 
         =======================     ====================================================================
-        **Argument**                **Description**
+        **Parameter**                **Description**
         -----------------------     --------------------------------------------------------------------
         parent_parcels              parent parcels that will be clipped into.
 
@@ -305,6 +339,13 @@ class ParcelFabricManager(object):
                                     areas of the clipped parcels. The stated area of the clipped parcels
                                     will be calculated if the stated areas exist on the parent parcels
                                     being clipped.
+
+        -----------------------     --------------------------------------------------------------------
+        future                      Optional boolean. If `True`, the request is processed as an asynchronous
+                                    job and a URL is returned that points a location displaying the status
+                                    of the job.
+
+                                    The default is `False`.
         =======================     ====================================================================
 
         :return: Dictionary indicating 'success' or 'error'
@@ -326,22 +367,34 @@ class ParcelFabricManager(object):
             "clippingGeometry": geometry,
             "clipOption": option,
             "defaultAreaUnit": area_unit,
+            "async": future,
             "f": "json",
         }
-        return self._con.post(url, params)
+        if future:
+            res = self._con.post(path=url, postdata=params)
+            f = self._run_async(
+                self._status_via_url,
+                con=self._con,
+                url=res["statusUrl"],
+                params={"f": "json"},
+            )
+            return f
+        else:
+            return self._con.post(url, params)
 
     # ----------------------------------------------------------------------
 
     def merge(
         self,
-        parent_parcels,
-        target_parcel_type,
-        attribute_overrides=None,
-        child_name=None,
-        default_area_unit=None,
-        merge_record=None,
-        merge_into=None,
-        moment=None,
+        parent_parcels: list[dict[str, Any]],
+        target_parcel_type: str,
+        attribute_overrides: dict[str, Any] | None = None,
+        child_name: str | None = None,
+        default_area_unit: int | None = None,
+        merge_record: str | None = None,
+        merge_into: str | None = None,
+        moment: int | str | None = None,
+        future: bool = False,
     ):
         """
         Merge combines 2 or more parent parcels into onenew child parcel. Merge
@@ -353,7 +406,7 @@ class ParcelFabricManager(object):
         child parcel.
 
         ====================     ====================================================================
-        **Argument**             **Description**
+        **Parameter**             **Description**
         --------------------     --------------------------------------------------------------------
         parent_parcels           Required String. It is the parcel(guid)+layer(name) identifiers to
                                  merge.
@@ -402,6 +455,13 @@ class ParcelFabricManager(object):
                                  calculating the stated area of the merged parcel. The stated area of
                                  the merged parcel will be calculated if the stated areas exist on
                                  the parcels being merged.
+
+        --------------------     --------------------------------------------------------------------
+        future                   Optional boolean. If `True`, the request is processed as an asynchronous
+                                 job and a URL is returned that points a location displaying the status
+                                 of the job.
+
+                                 The default is `False`.
         ====================     ====================================================================
 
 
@@ -424,23 +484,35 @@ class ParcelFabricManager(object):
             # "childName" : child_name,
             "defaultAreaUnit": default_area_unit,
             "attributeOverrides": attribute_overrides,
+            "async": future,
             "f": "json",
         }
-        return self._con.post(url, params)
+        if future:
+            res = self._con.post(path=url, postdata=params)
+            f = self._run_async(
+                self._status_via_url,
+                con=self._con,
+                url=res["statusUrl"],
+                params={"f": "json"},
+            )
+            return f
+        else:
+            return self._con.post(url, params)
 
     # ----------------------------------------------------------------------
 
     def copy_lines_to_parcel_type(
         self,
-        parent_parcels,
-        record,
-        target_type,
-        moment=None,
-        mark_historic=False,
-        use_source_attributes=False,
-        attribute_overrides=None,
-        use_polygon_attributes=False,
-        parcel_subtype=None,
+        parent_parcels: list[dict[str, Any]],
+        record: str,
+        target_type: int | str,
+        moment: int | str | None = None,
+        mark_historic: bool = False,
+        use_source_attributes: bool = False,
+        attribute_overrides: dict[str, Any] | None = None,
+        use_polygon_attributes: bool = False,
+        parcel_subtype: int | None = None,
+        future: bool = False,
     ):
         """
 
@@ -452,7 +524,7 @@ class ParcelFabricManager(object):
         parcel lineage is created.
 
         =======================     ====================================================================
-        **Argument**                **Description**
+        **Parameter**                **Description**
         -----------------------     --------------------------------------------------------------------
         parent_parcels              Required String. Parcel parcels from which lines are copied.
         -----------------------     --------------------------------------------------------------------
@@ -493,6 +565,13 @@ class ParcelFabricManager(object):
 
         -----------------------     --------------------------------------------------------------------
         parcel_subtype              Optional Integer. Represents the target parcel subtype.
+
+        -----------------------     --------------------------------------------------------------------
+        future                      Optional boolean. If `True`, the request is processed as an asynchronous
+                                    job and a URL is returned that points a location displaying the status
+                                    of the job.
+
+                                    The default is `False`.
         =======================     ====================================================================
 
         :return: Dictionary indicating 'success' or 'error'
@@ -516,13 +595,31 @@ class ParcelFabricManager(object):
             "targetParcelSubtype": parcel_subtype,
             "attributeOverrides": attribute_overrides,
             "moment": moment,
+            "async": future,
             "f": "json",
         }
-        return self._con.post(url, params)
+        if future:
+            res = self._con.post(path=url, postdata=params)
+            f = self._run_async(
+                self._status_via_url,
+                con=self._con,
+                url=res["statusUrl"],
+                params={"f": "json"},
+            )
+            return f
+        else:
+            return self._con.post(url, params)
 
     # ----------------------------------------------------------------------
 
-    def change_type(self, parcels, target_type, parcel_subtype=0, moment=None):
+    def change_type(
+        self,
+        parcels: list[dict[str, Any]],
+        target_type: str,
+        parcel_subtype: int | str = 0,
+        moment: int | str | None = None,
+        future: bool = False,
+    ):
         """
 
         Changes a set of parcels to a new parcel type. It creates new
@@ -533,7 +630,7 @@ class ParcelFabricManager(object):
         road parcel is moved to the encumbrance (easement) parcel type.
 
         =======================     ====================================================================
-        **Argument**                **Description**
+        **Parameter**                **Description**
         -----------------------     --------------------------------------------------------------------
         parcels                     Required List. Parcels list that will change type
         -----------------------     --------------------------------------------------------------------
@@ -546,6 +643,13 @@ class ParcelFabricManager(object):
                                     default is the version current moment). This should only be
                                     specified by the client when they do not want to use the current
                                     moment.
+
+        -----------------------     --------------------------------------------------------------------
+        future                      Optional boolean. If `True`, the request is processed as an asynchronous
+                                    job and a URL is returned that points a location displaying the status
+                                    of the job.
+
+                                    The default is `False`.
         =======================     ====================================================================
 
         :return: Boolean. `True` if successful else `False`
@@ -564,23 +668,36 @@ class ParcelFabricManager(object):
             "targetParcelType": target_type,
             "targetParcelSubtype": parcel_subtype,
             "moment": moment,
+            "async": future,
             "f": "json",
         }
-        res = self._con.post(url, params)
-        if "success" in res:
-            return res["success"]
-        return res
+        if future:
+            res = self._con.post(path=url, postdata=params)
+            f = self._run_async(
+                self._status_via_url,
+                con=self._con,
+                url=res["statusUrl"],
+                params={"f": "json"},
+            )
+            return f
+        else:
+            return self._con.post(url, params)
 
     # ----------------------------------------------------------------------
 
-    def delete(self, parcels, moment=None):
+    def delete(
+        self,
+        parcels: list[dict[str, Any]],
+        moment: int | str | None = None,
+        future: bool = False,
+    ):
         """
 
         Delete a set of parcels, removing associated or unused lines, and
         connected points.
 
         =======================     ====================================================================
-        **Argument**                **Description**
+        **Parameter**                **Description**
         -----------------------     --------------------------------------------------------------------
         parcels                     Required List. The parcels to erase.
         -----------------------     --------------------------------------------------------------------
@@ -588,6 +705,13 @@ class ParcelFabricManager(object):
                                     default is the version current moment). This should only be
                                     specified by the client when they do not want to use the current
                                     moment.
+
+        -----------------------     --------------------------------------------------------------------
+        future                      Optional boolean. If `True`, the request is processed as an asynchronous
+                                    job and a URL is returned that points a location displaying the status
+                                    of the job.
+
+                                    The default is `False`.
         =======================     ====================================================================
 
         :return: Dictionary indicating 'success' or 'error'
@@ -604,13 +728,31 @@ class ParcelFabricManager(object):
             "sessionId": session_id,
             "parcels": parcels,
             "moment": moment,
+            "async": future,
             "f": "json",
         }
-        return self._con.post(url, params)
+        if future:
+            res = self._con.post(path=url, postdata=params)
+            f = self._run_async(
+                self._status_via_url,
+                con=self._con,
+                url=res["statusUrl"],
+                params={"f": "json"},
+            )
+            return f
+        else:
+            return self._con.post(url, params)
 
     # ----------------------------------------------------------------------
 
-    def update_history(self, features, record, moment=None, set_as_historic=False):
+    def update_history(
+        self,
+        features: list[dict[str, Any]],
+        record: str,
+        moment: int | str | None = None,
+        set_as_historic: bool = False,
+        future: bool = False,
+    ):
         """
         Sets the specified parcel features to current or historic using the
         specified record. If setting current parcels as historic, the
@@ -620,7 +762,7 @@ class ParcelFabricManager(object):
         Global ID of the specified record.
 
         =======================     ====================================================================
-        **Argument**                **Description**
+        **Parameter**                **Description**
         -----------------------     --------------------------------------------------------------------
         features                    Required List. The parcel features to be set as historic or current.
                                     Can be parcels, parcel polygons, parcel points, and parcel lines.
@@ -648,6 +790,13 @@ class ParcelFabricManager(object):
         set_as_historic             Optional Boolean.  Boolean parameter representing whether to set the
                                     features as historic (`True`). If `False`, features will be set as
                                     current.
+
+        -----------------------     --------------------------------------------------------------------
+        future                      Optional boolean. If `True`, the request is processed as an asynchronous
+                                    job and a URL is returned that points a location displaying the status
+                                    of the job.
+
+                                    The default is `False`.
         =======================     ====================================================================
 
         :return: Dictionary indicating 'success' or 'error'
@@ -665,13 +814,30 @@ class ParcelFabricManager(object):
             "record": record,
             "setAsHistoric": set_as_historic,
             "parcelFeatures": features,
+            "async": future,
             "f": "json",
         }
-        return self._con.post(url, params)
+        if future:
+            res = self._con.post(path=url, postdata=params)
+            f = self._run_async(
+                self._status_via_url,
+                con=self._con,
+                url=res["statusUrl"],
+                params={"f": "json"},
+            )
+            return f
+        else:
+            return self._con.post(url, params)
 
     # ----------------------------------------------------------------------
 
-    def create_seeds(self, record, moment=None, extent=None):
+    def create_seeds(
+        self,
+        record: str,
+        moment: int | str | None = None,
+        extent: dict | Envelope | None = None,
+        future: bool = False,
+    ):
         """
 
         Create seeds creates parcel seeds for closed loops of lines that
@@ -686,7 +852,7 @@ class ParcelFabricManager(object):
         parcel type polygon feature class.
 
         =======================     ====================================================================
-        **Argument**                **Description**
+        **Parameter**                **Description**
         -----------------------     --------------------------------------------------------------------
         record                      Required String. A **GUID** representing the record that will be
                                     assigned to the features set as current or historic.
@@ -698,19 +864,21 @@ class ParcelFabricManager(object):
         -----------------------     --------------------------------------------------------------------
         extent                      Optional Dict/ :class:`~arcgis.geometry.Envelope` . The envelope of the extent
                                     in which to create seeds.
+
+        -----------------------     --------------------------------------------------------------------
+        future                      Optional boolean. If `True`, the request is processed as an asynchronous
+                                    job and a URL is returned that points a location displaying the status
+                                    of the job.
+
+                                    The default is `False`.
         =======================     ====================================================================
 
         :return: Dictionary indicating 'success' or 'error'
 
         """
-        from arcgis.geometry import Envelope
+        if extent:
+            extent = self._validate_extent(extent)
 
-        if isinstance(extent, (dict, Envelope)):
-            extent = dict(extent)
-        elif extent is None:
-            pass
-        elif not extent is None:
-            raise ValueError("Parameter `extent` must be None, Envelope or dict.")
         if moment is None:
             moment = int(time.time())
         gdb_version = self._version.properties.versionName
@@ -722,13 +890,36 @@ class ParcelFabricManager(object):
             "moment": moment,
             "record": record,
             "extent": extent,
+            "async": future,
             "f": "json",
         }
-        return self._con.post(url, params)
+        if future:
+            res = self._con.post(path=url, postdata=params)
+            f = self._run_async(
+                self._status_via_url,
+                con=self._con,
+                url=res["statusUrl"],
+                params={"f": "json"},
+            )
+            return f
+        else:
+            return self._con.post(url, params)
 
     # ----------------------------------------------------------------------
 
-    def duplicate(self, parcels, parcel_type, record, parcel_subtype=None, moment=None):
+    def duplicate(
+        self,
+        parcels: list[dict[str, Any]],
+        parcel_type: int | str,
+        record: str,
+        parcel_subtype: int | str | None = None,
+        repeat_count: int | str | None = None,
+        update_field: str = None,
+        start_value: int | str | None = None,
+        increment_value: int | str | None = None,
+        moment: int | str | None = None,
+        future: bool = False,
+    ):
         """
         `duplicate` allows for the cloning of parcels from a specific record.
 
@@ -741,7 +932,7 @@ class ParcelFabricManager(object):
         Similarly, parcel seeds can be duplicated to subtypes and different parcel types.
 
         =======================     ====================================================================
-        **Argument**                **Description**
+        **Parameter**                **Description**
         -----------------------     --------------------------------------------------------------------
         parcels                     Required List. A list of parcels to duplicate.
 
@@ -765,10 +956,25 @@ class ParcelFabricManager(object):
         -----------------------     --------------------------------------------------------------------
         parcel_subtype              Optional Integer. The target parcel subtype.  The default is 0.
         -----------------------     --------------------------------------------------------------------
+        repeat_count                Optional Integer. How many times to duplicate the target parcels
+        -----------------------     --------------------------------------------------------------------
+        update_field                Optional String. Which incrementable field to update on the target
+        -----------------------     --------------------------------------------------------------------
+        start_value                 Optional Integer. What value to start on when incrementing
+        -----------------------     --------------------------------------------------------------------
+        increment_value             Optional Integer. How many steps to increment
+        -----------------------     --------------------------------------------------------------------
         moment                      Optional String. This parameter represents the session moment (the
                                     default is the version current moment). This should only be
                                     specified by the client when they do not want to use the current
                                     moment.
+
+        -----------------------     --------------------------------------------------------------------
+        future                      Optional boolean. If `True`, the request is processed as an asynchronous
+                                    job and a URL is returned that points a location displaying the status
+                                    of the job.
+
+                                    The default is `False`.
         =======================     ====================================================================
 
         :return: Dictionary indicating 'success' or 'error'
@@ -789,18 +995,33 @@ class ParcelFabricManager(object):
             "parcels": parcels,
             "targetParcelType": parcel_type,
             "targetParcelSubtype": parcel_subtype,
+            "repeatCount": repeat_count,
+            "updateField": update_field,
+            "startValue": start_value,
+            "incrementValue": increment_value,
+            "async": future,
             "f": "json",
         }
-        return self._con.post(url, params)
+        if future:
+            res = self._con.post(path=url, postdata=params)
+            f = self._run_async(
+                self._status_via_url,
+                con=self._con,
+                url=res["statusUrl"],
+                params={"f": "json"},
+            )
+            return f
+        else:
+            return self._con.post(url, params)
 
     # ----------------------------------------------------------------------
 
     def analyze_least_squares_adjustment(
         self,
-        analysis_type="CONSISTENCY_CHECK",
-        convergence_tolerance=0.05,
-        parcel_features=None,
-        future=False,
+        analysis_type: str = "CONSISTENCY_CHECK",
+        convergence_tolerance: float = 0.05,
+        parcel_features: dict[str, Any] | None = None,
+        future: bool = False,
     ):
         """
         .. note::
@@ -814,7 +1035,7 @@ class ParcelFabricManager(object):
         to apply the results of a least squares adjustment to parcel fabric feature classes.
 
         ============================    ====================================================================
-        **Argument**                    **Description**
+        **Parameter**                    **Description**
         ----------------------------    --------------------------------------------------------------------
         analysis_type                   Optional string. Represents the type of least squares analysis that will be run on the input parcels.
 
@@ -876,15 +1097,15 @@ class ParcelFabricManager(object):
             )
             return f
         else:
-            res = self._con.post(url, params)
-            if "success" in res:
-                return res
-            return res
+            return self._con.post(url, params)
 
     # ----------------------------------------------------------------------
 
     def apply_least_squares_adjustment(
-        self, movement_tolerance=0.05, update_attributes=True, future=False
+        self,
+        movement_tolerance: float = 0.05,
+        update_attributes: bool = True,
+        future: bool = False,
     ):
         """
         .. note::
@@ -898,7 +1119,7 @@ class ParcelFabricManager(object):
         to run a least-squares analysis on parcels and store the results in adjustment feature classes.
 
         ====================     ====================================================================
-        **Argument**             **Description**
+        **Parameter**             **Description**
         --------------------     --------------------------------------------------------------------
         movement_tolerance        Optional float. Represents the minimum allowable coordinate shift when updating parcel fabric points. If the distance between
                                   the adjustment point and the parcel fabric point is greater than the specified tolerance, the parcel fabric
@@ -942,26 +1163,24 @@ class ParcelFabricManager(object):
             )
             return future
         else:
-            res = self._con.post(url, params)
-            if "success" in res:
-                return res
-            return res
+            return self._con.post(url, params)
 
     # ----------------------------------------------------------------------
 
     def divide(
         self,
-        divide_parcel_guid,
-        divide_parcel_type,
-        divide_record,
-        divide_option,
-        divide_number_of_parts,
-        divide_part_area,
-        divide_line_bearing,
-        divide_left_side,
-        divide_distribute_remainder,
-        default_area_unit,
-        divide_cogo_line_bearing=None,
+        divide_parcel_guid: str,
+        divide_parcel_type: int | str | None,
+        divide_record: str,
+        divide_option: str,
+        divide_number_of_parts: int | str,
+        divide_part_area: float | int,
+        divide_line_bearing: float,
+        divide_left_side: bool,
+        divide_distribute_remainder: bool,
+        default_area_unit: int | str | None = None,
+        divide_cogo_line_bearing: float = None,
+        future: bool = False,
     ):
         """
         .. note::
@@ -970,7 +1189,7 @@ class ParcelFabricManager(object):
         Divide a polygon feature into multiple features that have proportional or equal areas, or equal widths.
 
         =========================== ====================================================================
-        **Argument**                **Description**
+        **Parameter**                **Description**
         --------------------------- --------------------------------------------------------------------
         divide_parcel_guid          Required String. Parameter for the unique identifier `guid` of the
                                     parcel being divided.
@@ -1038,6 +1257,12 @@ class ParcelFabricManager(object):
         divide_cogo_line_bearing    Optional Float. Parameter representing the COGO direction
                                     (in decimal degrees) that will be stored in the COGO Direction field
                                     of the dividing lines.
+        --------------------------- --------------------------------------------------------------------
+        future                      Optional boolean. If `True`, the request is processed as an asynchronous
+                                    job and a URL is returned that points a location displaying the status
+                                    of the job.
+
+                                    The default is `False`.
         =========================== ====================================================================
 
         :return: Dictionary indicating 'success' or 'error'
@@ -1069,14 +1294,29 @@ class ParcelFabricManager(object):
             "divideDistributeRemainder": divide_distribute_remainder,
             "defaultAreaUnit": default_area_unit,
             "divideCogoLineBearing": divide_cogo_line_bearing,
+            "async": future,
             "f": "json",
         }
-        return self._con.post(url, params)
+        if future:
+            res = self._con.post(path=url, postdata=params)
+            f = self._run_async(
+                self._status_via_url,
+                con=self._con,
+                url=res["statusUrl"],
+                params={"f": "json"},
+            )
+            return f
+        else:
+            return self._con.post(url, params)
 
     # ----------------------------------------------------------------------
 
     def reassign_features_to_record(
-        self, source_record, target_record, delete_source_record
+        self,
+        source_record: str,
+        target_record: str,
+        delete_source_record: bool,
+        future: bool = False,
     ):
         """
         Reassigns all parcel features in the specified source record to the specified target record.
@@ -1089,7 +1329,7 @@ class ParcelFabricManager(object):
         record.
 
         ====================     ====================================================================
-        **Argument**             **Description**
+        **Parameter**             **Description**
         --------------------     --------------------------------------------------------------------
         source_record            Required String. GlobalID representing the record containing the
                                  parcel features to be reassigned.
@@ -1111,6 +1351,13 @@ class ParcelFabricManager(object):
         --------------------     --------------------------------------------------------------------
         delete_source_record     Required Bool. Parameter indicating whether to delete the original
                                  source record.
+
+        --------------------     --------------------------------------------------------------------
+        future                      Optional boolean. If `True`, the request is processed as an asynchronous
+                                    job and a URL is returned that points a location displaying the status
+                                    of the job.
+
+                                    The default is `False`.
         ====================     ====================================================================
 
         :returns: Boolean
@@ -1123,24 +1370,33 @@ class ParcelFabricManager(object):
             "sourceRecord": source_record,
             "targetRecord": target_record,
             "deleteSourceRecord": delete_source_record,
+            "async": future,
             "f": "json",
         }
-        res = self._con.post(url, params)
-        if "success" in res:
-            return res["success"]
-        return res
+        if future:
+            res = self._con.post(path=url, postdata=params)
+            f = self._run_async(
+                self._status_via_url,
+                con=self._con,
+                url=res["statusUrl"],
+                params={"f": "json"},
+            )
+            return f
+        else:
+            return self._con.post(url, params)
 
     # ----------------------------------------------------------------------
     def reconstruct_from_seeds(
         self,
-        extent: Union[dict, Envelope],
+        extent: dict | Envelope,
+        future: bool = False,
     ):
         """
         This operation constructs parcels from seeds enclosed by parcel lines in the specified extent. The tool reconstructs parcels regardless of the parcel
         lines associations with records.
 
         ====================     ====================================================================
-        **Argument**             **Description**
+        **Parameter**             **Description**
         --------------------     --------------------------------------------------------------------
         extent                   Parameter representing the envelope of the extent to reconstruct seeds.
                                  Seeds that lie within the specified extent will be reconstructed into
@@ -1159,21 +1415,39 @@ class ParcelFabricManager(object):
                                                  "spatialReference": {"wkid": <wkid_value>}
                                                 }
 
+        --------------------     --------------------------------------------------------------------
+        future                      Optional boolean. If `True`, the request is processed as an asynchronous
+                                    job and a URL is returned that points a location displaying the status
+                                    of the job.
+
+                                    The default is `False`.
         ====================     ====================================================================
 
         :return: Dictionary indicating 'success' or 'error'
 
         """
+        if extent:
+            extent = self._validate_extent(extent)
+
         url = "{base}/reconstructFromSeeds".format(base=self._url)
         params = {
             "gdbVersion": self._version.properties.versionName,
             "sessionId": self._version._guid,
             "extent": extent,
+            "async": future,
             "f": "json",
         }
-        return self._con.post(url, params)
-
-    # ----------------------------------------------------------------------
+        if future:
+            res = self._con.post(path=url, postdata=params)
+            f = self._run_async(
+                self._status_via_url,
+                con=self._con,
+                url=res["statusUrl"],
+                params={"f": "json"},
+            )
+            return f
+        else:
+            return self._con.post(url, params)
 
     # ----------------------------------------------------------------------
     def transfer_parcel(
@@ -1182,20 +1456,22 @@ class ParcelFabricManager(object):
         target_parcel_features: list[dict[str, Any]],
         record: str,
         default_area_unit: int,
-        source_parcel_features: Optional[list[dict[str, Any]]] = None,
+        source_parcel_features: list[dict[str, Any]] | None = None,
+        future: bool = False,
     ):
         """
-        The :meth:`~transfer_parcel` supports workflows for transferring a piece of land between parcels.
+        The :meth:`~transfer_parcel` method supports workflows for transferring
+        a piece of land between parcels.
 
         =======================     =======================================================================
-        **Argument**                **Description**
+        **Parameter**                **Description**
         -----------------------     -----------------------------------------------------------------------
         transfer_parcel_feature     Required Dict. Parameter representing the parcel to be transferred.
                                     Only one parcel can be specified as the transfer parcel.
 
-                                    :Syntax:
-
                                     .. code-block:: python
+
+                                        # Example Usage:
 
                                         >>> transfer_parcel_feature={"id":"<guid>","layerId":"<layerID>"}
         -----------------------     -----------------------------------------------------------------------
@@ -1203,9 +1479,9 @@ class ParcelFabricManager(object):
                                     will be transferred. These parcels will be merged with the transfer
                                     parcel and will become larger.
 
-                                    :Syntax:
-
                                     .. code-block:: python
+
+                                        # Example Usage:
 
                                         >>> target_parcel_features=[{"id":"<guid>","layerId":"<layerID>"},{...}]
 
@@ -1231,11 +1507,18 @@ class ParcelFabricManager(object):
                                     land will be transferred. These parcels will be clipped and will
                                     become smaller.
 
-                                    :Syntax:
-
                                     .. code-block:: python
 
+                                        # Example Usage:
+
                                         >>> source_parcel_features=[{"id":"<guid>","layerId":"<layerID>"},{...}]
+
+        -----------------------     -----------------------------------------------------------------------
+        future                      Optional boolean. If `True`, the request is processed as an asynchronous
+                                    job and a URL is returned that points a location displaying the status
+                                    of the job.
+
+                                    The default is `False`.
         =======================     =======================================================================
 
         :return: Dictionary indicating 'success' or 'error' with a list of edited features
@@ -1250,9 +1533,87 @@ class ParcelFabricManager(object):
             "targetParcelFeatures": target_parcel_features,
             "record": record,
             "defaultAreaUnit": default_area_unit,
+            "async": future,
             "f": "json",
         }
-        return self._con.post(url, params)
+        if future:
+            res = self._con.post(path=url, postdata=params)
+            f = self._run_async(
+                self._status_via_url,
+                con=self._con,
+                url=res["statusUrl"],
+                params={"f": "json"},
+            )
+            return f
+        else:
+            return self._con.post(url, params)
+
+    # ----------------------------------------------------------------------
+    def set_line_label_position(
+        self,
+        parcel_line_features: list[dict[str, Any]],
+        future: bool = False,
+    ):
+        """
+        The :meth:`~set_line_label_position` sets the label position of the line's COGO dimension to the
+        left of the parcel line, to the right of the parcel line, or centered over the parcel line.
+
+        =======================     =======================================================================
+        **Parameter**                **Description**
+        -----------------------     -----------------------------------------------------------------------
+        parcel_line_features        Required List. Parameter representing the input parcel line layers with
+                                    label positions that will be updated.
+
+                                    .. code-block:: python
+
+                                        >>> parcel_line_features=[{"id":"<guid>",
+                                                                   "layerId":"<layerID>"},
+                                                                   {...}]
+
+        -----------------------     -----------------------------------------------------------------------
+        future                      Optional boolean. If `True`, the request is processed as an asynchronous
+                                    job and a URL is returned that points a location displaying the status
+                                    of the job.
+
+                                    The default is `False`.
+        =======================     =======================================================================
+
+        :return: Dictionary indicating 'success' or 'error' with a list of edited features
+
+        """
+        url = "{base}/setParcelLineLabelPosition".format(base=self._url)
+        params = {
+            "gdbVersion": self._version.properties.versionName,
+            "sessionId": self._version._guid,
+            "parcelFeatures": parcel_line_features,
+            "async": future,
+            "f": "json",
+        }
+
+        if future:
+            res = self._con.post(path=url, postdata=params)
+            f = self._run_async(
+                self._status_via_url,
+                con=self._con,
+                url=res["statusUrl"],
+                params={"f": "json"},
+            )
+            return f
+        else:
+            return self._con.post(url, params)
+
+    # ----------------------------------------------------------------------
+
+    def _validate_extent(self, extent: dict | Envelope):
+        """Check for valid Extent object or None"""
+        from arcgis.geometry import Envelope
+
+        if isinstance(extent, (dict, Envelope)):
+            return dict(extent)
+        elif extent is None:
+            return None
+        elif not extent is None:
+            raise ValueError("Parameter `extent` must be None, Envelope or dict.")
 
     # ----------------------------------------------------------------------
 

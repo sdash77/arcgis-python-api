@@ -131,7 +131,7 @@ class Embeddings:
     currently supported for RGB images only
 
     =====================   ===========================================
-    **Argument**            **Description**
+    **Parameter**            **Description**
     ---------------------   -------------------------------------------
     dataset_type            Required string. The type of data for which
                             we would like to get the embedding vectors.
@@ -155,7 +155,7 @@ class Embeddings:
     **kwargs**
 
     =====================   ===========================================
-    **Argument**            **Description**
+    **Parameter**            **Description**
     ---------------------   -------------------------------------------
     working_dir             Option str. Path to a directory on local filesystem.
                             If directory is not present, it will be created.
@@ -183,7 +183,7 @@ class Embeddings:
         else:
             self.working_dir = Path.cwd()
 
-        _make_folder(os.path.join(os.path.abspath(self.working_dir), "embeddings"))
+        # _make_folder(os.path.join(os.path.abspath(self.working_dir), "embeddings"))
 
         self._file_path = None
         self.backbone = None
@@ -207,7 +207,7 @@ class Embeddings:
         Get available backbones/model-name for the given `dataset-type`
 
         =====================   ===========================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ---------------------   -------------------------------------------
         dataset_type            Required string. The type of data for which
                                 we would like to get the embedding vectors.
@@ -294,6 +294,7 @@ class Embeddings:
         return model.eval()
 
     def _load_text_model(self, backbone=None):
+        HAS_TRANSFORMER = True
         try:
             from transformers import AutoTokenizer, AutoModel
         except Exception as e:
@@ -313,12 +314,19 @@ class Embeddings:
 
         return model.eval()
 
-    def get(self, text_or_list, batch_size=32, show_progress=True, **kwargs):
+    def get(
+        self,
+        text_or_list,
+        batch_size=32,
+        show_progress=True,
+        return_embeddings=False,
+        **kwargs,
+    ):
         """
         Method to get the embedding vectors for the image/text items.
 
         =====================   ===========================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ---------------------   -------------------------------------------
         text_or_list            Required string or List. String containing
                                 directory path or list of directory paths where
@@ -331,12 +339,17 @@ class Embeddings:
         show_progress           Optional boolean. If set to True, will display a
                                 progress bar depicting the items processed so far.
                                 Default is set to `True`.
+        ---------------------   -------------------------------------------
+        return_embeddings       Optional boolean. If set to True, a dataframe
+                                containing the embeddings will be returned. If set
+                                to False, they will be saved in a h5 file.
+                                Default is set to `False`.
         =====================   ===========================================
 
         **kwargs**
 
         =====================   ===========================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ---------------------   -------------------------------------------
         normalize               Optional boolean. If set to `true`, will normalize
                                 the image with `imagenet-stats` (mean and
@@ -397,14 +410,22 @@ class Embeddings:
                 f"File to save the embeddings already present at - {self._file_path}. Kindly rename the file "
                 f"or move the file to another location to proceed."
             )
-
-        item_list = self._get_items(text_or_list, **kwargs)
-        if self._dataset_type == "image":
-            self._get_image(item_list, batch_size, show_progress, **kwargs)
+        text_img_df = kwargs.get("dataframe", False)
+        if isinstance(text_img_df, pd.DataFrame):
+            col = kwargs.get("text_column", "text")
+            item_list = text_img_df[col].values.tolist()
         else:
-            self._get_text(item_list, batch_size, show_progress, **kwargs)
+            item_list = self._get_items(text_or_list, **kwargs)
+        if self._dataset_type == "image":
+            ret = self._get_image(
+                item_list, batch_size, show_progress, return_embeddings, **kwargs
+            )
+        else:
+            ret = self._get_text(
+                item_list, batch_size, show_progress, return_embeddings, **kwargs
+            )
 
-        return self._file_path
+        return ret
 
     @staticmethod
     def _do_h5file_sanity(file_path):
@@ -438,7 +459,7 @@ class Embeddings:
         Load the extracted embeddings from the H5 file
 
         =====================   ===========================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ---------------------   -------------------------------------------
         file_path               Required string. The path to the H5 file which
                                 gets auto generated after the call to the `get`
@@ -600,69 +621,123 @@ class Embeddings:
             )
             file_handler["embeddings"][-embeddings.shape[0] :] = embeddings
 
-    def _get_image(self, item_list, batch_size=32, show_progress=True, **kwargs):
+    def _get_image(
+        self,
+        item_list,
+        batch_size=32,
+        show_progress=True,
+        return_embeddings=False,
+        **kwargs,
+    ):
+        if not return_embeddings:
+            with h5py.File(self._file_path, "a") as hf:
+                batch_embeddings = self._extract_img_embeddings(
+                    item_list, batch_size=32, show_progress=True, **kwargs
+                )
+                self._insert_to_h5_file(hf, item_list, batch_embeddings)
+            return self._file_path
+        else:
+            batch_embeddings = self._extract_img_embeddings(
+                item_list, batch_size=32, show_progress=True, **kwargs
+            )
+            return batch_embeddings
+
+    def _extract_img_embeddings(
+        self, item_list, batch_size=32, show_progress=True, **kwargs
+    ):
         normalize = kwargs.get("normalize", True)
         resize_to = kwargs.get("chip_size", 224)
+        all_batch_embedding = np.empty([0, 512])
         mean, std = None, None
         if normalize:
             mean, std = imagenet_stats
             mean = torch.tensor(mean).float().to(self._device)
             std = torch.tensor(std).float().to(self._device)
 
-        with h5py.File(self._file_path, "a") as hf:
-            for i in progress_bar(
-                range(0, len(item_list), batch_size), display=show_progress
-            ):
-                try:
-                    img_list = item_list[i : i + batch_size]
-                    img_batch = np.array(
-                        [
-                            np.array(
-                                PIL_Image.open(img_path).resize((resize_to, resize_to))
-                            ).astype(float)
-                            / 255.0
-                            for img_path in img_list
-                        ]
-                    )
+        for i in progress_bar(
+            range(0, len(item_list), batch_size), display=show_progress
+        ):
+            try:
+                img_list = item_list[i : i + batch_size]
+                img_batch = np.array(
+                    [
+                        np.array(
+                            PIL_Image.open(img_path)
+                            .convert("RGB")
+                            .resize((resize_to, resize_to))
+                        ).astype(float)
+                        / 255.0
+                        for img_path in img_list
+                    ]
+                )
 
-                    img_batch = (
-                        torch.tensor(img_batch.transpose(0, 3, 1, 2))
-                        .float()
-                        .to(self._device)
-                    )
-                    if normalize:
-                        img_batch = self._normalize(img_batch, mean, std)
+                img_batch = (
+                    torch.tensor(img_batch.transpose(0, 3, 1, 2))
+                    .float()
+                    .to(self._device)
+                )
+                if normalize:
+                    img_batch = self._normalize(img_batch, mean, std)
 
-                    with torch.no_grad():
-                        out = self.model(img_batch)
-                        if "densenet" in self.backbone or "mobilenet" in self.backbone:
-                            out = torch.nn.AdaptiveAvgPool2d(output_size=(1, 1))(out)
-                        if (
-                            "densenet" in self.backbone
-                            or "mobilenet" in self.backbone
-                            or "resnet" in self.backbone
-                        ):
-                            out = out.view(out.size(0), -1)
+                with torch.no_grad():
+                    out = self.model(img_batch)
+                    if "densenet" in self.backbone or "mobilenet" in self.backbone:
+                        out = torch.nn.AdaptiveAvgPool2d(output_size=(1, 1))(out)
+                    if (
+                        "densenet" in self.backbone
+                        or "mobilenet" in self.backbone
+                        or "resnet" in self.backbone
+                    ):
+                        out = out.view(out.size(0), -1)
 
-                    img_list = np.array([x.encode() for x in img_list])
-                    batch_embeddings = (
-                        torch.nn.functional.normalize(out.data).cpu().detach().numpy()
-                    )
-                    self._insert_to_h5_file(hf, img_list, batch_embeddings)
-                except Exception as e:
-                    raise Exception(e)
+                img_list = np.array([x.encode() for x in img_list])
+                batch_embeddings = (
+                    torch.nn.functional.normalize(out.data).cpu().detach().numpy()
+                )
+                all_batch_embedding = np.append(
+                    all_batch_embedding, batch_embeddings, axis=0
+                )
 
-    def _get_text(self, item_list, batch_size=32, show_progress=True, **kwargs):
+                # self._insert_to_h5_file(hf, img_list, batch_embeddings)
+            except Exception as e:
+                raise Exception(e)
+        return all_batch_embedding
+
+    def _get_text(
+        self,
+        item_list,
+        batch_size=32,
+        show_progress=True,
+        return_embeddings=False,
+        **kwargs,
+    ):
+        if not return_embeddings:
+            with h5py.File(self._file_path, "a") as hf:
+                batch_embeddings = self._extract_text_embeddings(
+                    item_list, batch_size=32, show_progress=True, **kwargs
+                )
+                self._insert_to_h5_file(hf, img_list, batch_embeddings)
+            return self._file_path
+        else:
+            batch_embeddings = self._extract_text_embeddings(
+                item_list, batch_size=32, show_progress=True, **kwargs
+            )
+            return batch_embeddings
+
+    def _extract_text_embeddings(
+        self, item_list, batch_size=32, show_progress=True, **kwargs
+    ):
         remove_urls = kwargs.get("remove_urls", False)
         remove_html_tags = kwargs.get("remove_html_tags", False)
         pooling_strategy = kwargs.get("pooling_strategy", "mean")
 
+        all_batch_embedding = np.empty([0, 768])
         if any([remove_urls, remove_html_tags]):
             item_list = TextModule.preprocess_text_list(
                 item_list, remove_urls, remove_html_tags
             )
-
-        with h5py.File(self._file_path, "a") as hf:
+        # batch_embedding_list = []
+        try:
             for i in progress_bar(
                 range(0, len(item_list), batch_size), display=show_progress
             ):
@@ -707,7 +782,13 @@ class Embeddings:
                     .detach()
                     .numpy()
                 )
-                self._insert_to_h5_file(hf, text_batch, batch_embeddings)
+                all_batch_embedding = np.append(
+                    all_batch_embedding, batch_embeddings, axis=0
+                )
+
+        except Exception as e:
+            raise Exception(e)
+        return all_batch_embedding
 
     @staticmethod
     def _do_clustering(embeddings, item_list=None, n_clusters=5, dimensions=3):
@@ -789,7 +870,6 @@ class Embeddings:
             )
 
         def hover_fn(trace, points, state):
-
             ind = points.point_inds[0]
             item = cluster_dataframe["item"][ind]
             widget.value = image_data[item] if self._dataset_type == "image" else item
@@ -809,7 +889,7 @@ class Embeddings:
         caution for large H5 files.
 
         =====================   ===========================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ---------------------   -------------------------------------------
         file_path               Required string. The path to the H5 file which
                                 gets auto generated after the call to the `get`

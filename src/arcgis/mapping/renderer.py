@@ -5,7 +5,11 @@ from __future__ import annotations
 from typing import Optional, Union
 
 from arcgis._impl.common._utils import chunks
-from arcgis.mapping._utils import _get_list_value, _format_colors, create_colormap
+from arcgis.mapping._utils import (
+    _get_list_value,
+    _format_colors,
+    create_colormap,
+)
 from arcgis.mapping.symbol import create_symbol, _cmap2rgb
 from arcgis.auth.tools import LazyLoader
 import itertools
@@ -46,6 +50,7 @@ class _DotDensity(object):
     _seed = 1
     _outline = None
     _type = "dotDensity"
+
     # ----------------------------------------------------------------------
     def __init__(
         self,
@@ -95,7 +100,7 @@ class _DotDensity(object):
         Get/Set the background color
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         value               Required string. Color to set the background to.
         ===============     ====================================================================
@@ -112,7 +117,7 @@ class _DotDensity(object):
         Get/Set the shape of the dots
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         value               Required string.
                             Values: "o" | "+" | "d" | "s" | "x"
@@ -171,7 +176,7 @@ class _DotDensity(object):
         Get/Set the reference scale
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         value               Required int or float.
         ===============     ====================================================================
@@ -261,7 +266,7 @@ class _DotDensity(object):
         Assigns an attribute to the dot density renderer
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         field               Required String.  Name of the dataset field
         ---------------     --------------------------------------------------------------------
@@ -295,7 +300,7 @@ class _DotDensity(object):
         Removes the attribute to the dot density renderer.
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         field               Required String.  Name of the dataset field
         ===============     ====================================================================
@@ -312,7 +317,11 @@ class _DotDensity(object):
 
     # ----------------------------------------------------------------------
     def add_expression(
-        self, expression: str, title: str, label: str, color: Union[list, str]
+        self,
+        expression: str,
+        title: str,
+        label: str,
+        color: Union[list, str],
     ):
         """
         Adds an arcade expression to the attributes
@@ -432,7 +441,6 @@ def _trans_info(data, **kwargs):
             stops = []
             transp = 100 / len(data)
             for d in data:
-
                 stops.append({"stop": {"value": d, "transparency": transp}})
                 transp += transp
                 del d
@@ -575,7 +583,7 @@ def visual_variables(geometry_type, sdf_or_list, **kwargs):
     proportionally between the provided min and max sizes.
 
     ======================  =========================================================
-    **Arguments**           **Description**
+    **Parameter**           **Description**
     ----------------------  ---------------------------------------------------------
     si_field                Attribute field used for size rendering if no
                             si_expression is provided.
@@ -615,7 +623,7 @@ def visual_variables(geometry_type, sdf_or_list, **kwargs):
     typically used to rotate symbols that indicate directionality.
 
     ======================  =========================================================
-    **Arguments**          **Description**
+    **Parameter**          **Description**
     ----------------------  ---------------------------------------------------------
     ri_field                Attribute field used for setting the rotation of a symbol
                             if no ``ri_expression`` is provided.
@@ -680,7 +688,7 @@ def generate_heatmap(
     Generates a heatmap renderer. Used in ``spatial.plot()`` and ``generate_renderer()``.
 
     ======================  =========================================================
-    **Argument**            **Description**
+    **Parameter**            **Description**
     ----------------------  ---------------------------------------------------------
     sdf_or_series           Optional Pandas Series. The spatial dataset to render.
     ----------------------  ---------------------------------------------------------
@@ -773,9 +781,7 @@ def generate_heatmap(
         if stops < 3:
             stops = 3
         ratios = np.linspace(0, 1, num=stops)
-        for idx, cstep in enumerate(
-            np.linspace(0, 255, num=stops, dtype=np.int).tolist()
-        ):
+        for idx, cstep in enumerate(np.linspace(0, 255, num=stops, dtype=int).tolist()):
             if r == 0 and show_none == True:
                 calpha = alpha
             elif r == 0 and show_none == False:
@@ -816,7 +822,7 @@ def generate_unique(
     Used in ``spatial.plot()`` and ``generate_renderer()``.
 
     ======================  =========================================================
-    **Argument**            **Description**
+    **Parameter**            **Description**
     ----------------------  ---------------------------------------------------------
     geometry_type           Required string. The allowed values are: ``Point``, ``Polyline``,
                             ``Polygon``, or ``Raster``. This required parameter is used to
@@ -928,7 +934,9 @@ def generate_unique(
         vv = _assemble_visual(sdf_or_series, **symbol_args)
     else:
         vv = visual_variables(
-            geometry_type=geometry_type, sdf_or_list=sdf_or_series, **symbol_args
+            geometry_type=geometry_type,
+            sdf_or_list=sdf_or_series,
+            **symbol_args,
         )
 
     if "arcade_expression" not in symbol_args:
@@ -1015,7 +1023,7 @@ def generate_unique(
                     uvals = uvals[:255]
             unique_values = []
 
-            steps = np.linspace(0, 255, len(uvals), dtype=np.int)
+            steps = np.linspace(0, 255, len(uvals), dtype=int)
 
             for idx, uval in enumerate(uvals):
                 if hasattr(colors, "mpl_colormap"):
@@ -1099,7 +1107,7 @@ def generate_classbreaks(
     Used in ``spatial.plot()`` and ``generate_renderer()``.
 
     ======================  =========================================================
-    **Argument**            **Description**
+    **Parameter**            **Description**
     ----------------------  ---------------------------------------------------------
     geometry_type           Required string. The allowed values are: ``Point``, ``Polyline``,
                             ``Polygon``, or ``Raster``. This required parameter is used to
@@ -1225,7 +1233,9 @@ def generate_classbreaks(
         vv = _assemble_visual(sdf_or_series, **symbol_args)
     else:
         vv = visual_variables(
-            geometry_type=geometry_type, sdf_or_list=sdf_or_series, **symbol_args
+            geometry_type=geometry_type,
+            sdf_or_list=sdf_or_series,
+            **symbol_args,
         )
 
     if sdf_or_series is None:
@@ -1293,7 +1303,7 @@ def generate_classbreaks(
     # calculate the class breaks from column data
     cbs = []
     breaks = np.linspace(float(minValue), float(maxValue), num=class_count + 1).tolist()
-    steps = np.linspace(0, 255, len(breaks), dtype=np.int)
+    steps = np.linspace(0, 255, len(breaks), dtype=int)
     ss = symbol_args.pop("symbol_style", None)
     st = symbol_args.pop("symbol_type", None)
     import sys
@@ -1351,7 +1361,7 @@ def generate_simple(
     Used in ``spatial.plot()`` and ``generate_renderer()``.
 
     ======================  =========================================================
-    **Argument**            **Description**
+    **Parameter**            **Description**
     ----------------------  ---------------------------------------------------------
     geometry_type           Required string. The allowed values are: ``Point``, ``Polyline``,
                             ``Polygon``, or ``Raster``. This required parameter is used to
@@ -1474,7 +1484,9 @@ def generate_simple(
         vv = _assemble_visual(sdf_or_series, **symbol_args)
     else:
         vv = visual_variables(
-            geometry_type=geometry_type, sdf_or_list=sdf_or_series, **symbol_args
+            geometry_type=geometry_type,
+            sdf_or_list=sdf_or_series,
+            **symbol_args,
         )
     cstep = symbol_args.pop("cstep", None)
     """if "cstep" in symbol_args:
@@ -1829,7 +1841,7 @@ def generate_renderer(
                             following keys:
 
                             ===============     ====================================================================
-                            **Argument**        **Description**
+                            **Parameter**        **Description**
                             ---------------     --------------------------------------------------------------------
                             field               Required String.  Name of the dataset field
                             ---------------     --------------------------------------------------------------------

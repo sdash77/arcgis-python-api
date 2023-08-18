@@ -135,7 +135,7 @@ class DiscreteAffine:
     """
     Custom PyTorch Rotation transform.
     =====================   ===========================================
-    **Argument**            **Description**
+    **Parameter**            **Description**
     ---------------------   -------------------------------------------
     angles                   Required List of int ranging from 0..360
     ---------------------   -------------------------------------------
@@ -483,7 +483,7 @@ class RoadOrientDataset(Dataset):
         from skimage import filters
 
         if self.is_gaussian_mask:
-            new_label = (np.array(label).astype(np.float)) / 255.0
+            new_label = (np.array(label).astype(float)) / 255.0
         else:
             try:
                 new_label = self._createGaussianMask(label)

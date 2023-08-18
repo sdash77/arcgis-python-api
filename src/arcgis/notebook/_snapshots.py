@@ -1,8 +1,6 @@
 from __future__ import annotations
 import sys
 
-sys.path.insert(0, r"C:\SVN\geosaurus_master_issue_8882\src")
-
 import concurrent.futures
 from arcgis.gis import GIS, Item
 from arcgis.gis.nb import NotebookManager
@@ -23,7 +21,7 @@ def create_snapshot(
     Creates a Snapshot of a Given Item.
 
     ==================     ====================================================================
-    **Argument**           **Description**
+    **Parameter**           **Description**
     ------------------     --------------------------------------------------------------------
     item                   Required Item. The 'Notebook' typed item to create a snapshot for.
     ------------------     --------------------------------------------------------------------
@@ -46,6 +44,10 @@ def create_snapshot(
     gis = item._gis
 
     mgrs = gis.notebook_server
+    if len(mgrs) == 0:
+        raise Exception(
+            "The user or organization does not have a notebook server configured."
+        )
     if gis._portal.is_arcgisonline:
         mgr = mgrs[0]
         sm = mgr.snaphots

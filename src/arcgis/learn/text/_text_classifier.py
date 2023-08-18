@@ -1,3 +1,4 @@
+import copy
 from functools import partial
 from pathlib import Path
 import sys
@@ -5,6 +6,7 @@ import json
 import warnings
 import traceback
 from ..models._arcgis_model import ArcGISModel, model_characteristics_folder
+from .._utils._shap_masker import custom_tokenizer
 
 HAS_NUMPY = True
 HAS_FASTAI = True
@@ -58,7 +60,6 @@ except Exception as e:
 else:
     warnings.filterwarnings("ignore", category=UserWarning, module="fastai")
 
-
 try:
     import numpy as np
 
@@ -67,13 +68,16 @@ except:
     HAS_NUMPY = False
 
 
+warnings.filterwarnings("ignore", message=".*The 'nopython' keyword.*")
+
+
 class TextClassifier(ArcGISModel):
     """
     Creates a :class:`~arcgis.learn.text.TextClassifier` Object.
     Based on the Hugging Face transformers library
 
     =====================   ===========================================
-    **Argument**            **Description**
+    **Parameter**            **Description**
     ---------------------   -------------------------------------------
     data                    Optional data object returned from :class:`~arcgis.learn.prepare_textdata` function.
                             data object can be `None`, in case where someone wants to use a
@@ -96,7 +100,7 @@ class TextClassifier(ArcGISModel):
     **kwargs**
 
     =====================   ===========================================
-    **Argument**            **Description**
+    **Parameter**            **Description**
     ---------------------   -------------------------------------------
     verbose                 Optional string. Default set to `error`. The
                             log level you want to set. It means the amount
@@ -144,6 +148,9 @@ class TextClassifier(ArcGISModel):
 
         model_backbone = ModelBackbone(backbone)
         super().__init__(data, model_backbone)
+        self._emodel = None
+        self._emask = None
+        self.shap_values = None
         self.is_multilabel_problem = False
         self.thresh = kwargs.get("thresh", 0.25)
         self._mixed_precision = kwargs.get("mixed_precision", False)
@@ -276,7 +283,7 @@ class TextClassifier(ArcGISModel):
         Get available models for the given transformer backbone
 
         =====================   ===========================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ---------------------   -------------------------------------------
         architecture            Required string. name of the transformer
                                 backbone one wish to use. To learn more about
@@ -306,7 +313,7 @@ class TextClassifier(ArcGISModel):
         Hugging Face Transformer backbone.
 
         =====================   ===========================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ---------------------   -------------------------------------------
         backbone                Required string. Specify the Hugging Face Transformer
                                 backbone name fine-tuned on Text Classification task.
@@ -342,7 +349,7 @@ class TextClassifier(ArcGISModel):
         Package(DLPK) or Esri Model Definition (EMD) file.
 
         =====================   ===========================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ---------------------   -------------------------------------------
         emd_path                Required string. Path to Deep Learning Package
                                 (DLPK) or Esri Model Definition(EMD) file.
@@ -398,7 +405,7 @@ class TextClassifier(ArcGISModel):
         Loads a saved TextClassifier model from disk.
 
         =====================   ===========================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ---------------------   -------------------------------------------
         name_or_path            Required string. Path to Deep Learning Package
                                 (DLPK) or Esri Model Definition(EMD) file.
@@ -426,7 +433,7 @@ class TextClassifier(ArcGISModel):
         Learning Package zip for deployment.
 
         =====================   ===========================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ---------------------   -------------------------------------------
         name_or_path            Required string. Folder path to save the model.
         ---------------------   -------------------------------------------
@@ -519,7 +526,7 @@ class TextClassifier(ArcGISModel):
         Prints the rows of the dataframe with target and prediction columns.
 
         =====================   ===========================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ---------------------   -------------------------------------------
         rows                    Optional Integer.
                                 Number of rows to print.
@@ -609,12 +616,28 @@ class TextClassifier(ArcGISModel):
         )
         return result
 
-    def predict(self, text_or_list, show_progress=True, thresh=None):
+    def _predict_batch(self, text, thresh=None):
+        if thresh is None:
+            thresh = self.thresh
+        result = self.learn.model.predict_class_batch(
+            text, self._device, self.is_multilabel_problem, thresh
+        )
+        return result
+
+    def predict(
+        self,
+        text_or_list,
+        show_progress=True,
+        thresh=None,
+        explain=False,
+        explain_index=None,
+        batch_size=64,
+    ):
         """
         Predicts the class label(s) for the input text
 
         =====================   ===========================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ---------------------   -------------------------------------------
         text_or_list            Required String or List. text or a list of
                                 texts for which we wish to find the class label(s).
@@ -628,33 +651,104 @@ class TextClassifier(ArcGISModel):
                                 classification task. Default is the value set
                                 during the model creation time, otherwise the value
                                 of 0.25 is set.
+        ---------------------   -------------------------------------------
+        explain                 Optional Bool. If set to True it shall generate SHAP
+                                based explanation. Kindly visit:-
+                                https://shap.readthedocs.io/en/latest/
+        ---------------------   -------------------------------------------
+        explain_index           Optional List. Index of the rows for which explanation
+                                is required.  If the value is None, it will generate
+                                an explanation for every row.
+        ---------------------   -------------------------------------------
+        batch_size              Optional integer.
+                                Number of inputs to be processed at once.
+                                Try reducing the batch size in case of out of
+                                memory errors.
+                                Default value : 64
         =====================   ===========================================
 
         :return: * In case of single label classification problem, a tuple containing the text, its predicted class label and the confidence score.
 
                  * In case of multi label classification problem, a tuple containing the text, its predicted class labels, a list containing 1's for the predicted labels, 0's otherwise and list containing a score for each label
         """
+        if explain:
+            try:
+                import shap
+            except:
+                warnings.warn(
+                    "SHAP is not installed. Model explainablity will not be available"
+                )
+                explain = False
+                explain_index = None
+
         if self.is_multilabel_problem is False and thresh is not None:
             self.logger.error(
                 "Passing a threshold value for non multi-label classification task "
                 "will not have any affect on the predicting the class label"
             )
 
+        sliced_text_list = []
+
         if isinstance(text_or_list, (list, tuple, np.ndarray)):
-            if show_progress:
-                preds = []
+            preds = []
+            if len(text_or_list) < batch_size:
+                batch_size = len(text_or_list)
 
-                for i in progress_bar(range(len(text_or_list))):
-                    prediction = self._predict(text_or_list[i], thresh)
-                    preds.append(prediction)
+            remaining_len = len(text_or_list)
+            if len(text_or_list) % batch_size == 0:
+                iter_val = len(text_or_list) // batch_size
             else:
-                preds = [self._predict(x, thresh) for x in text_or_list]
-
+                iter_val = (len(text_or_list) // batch_size) + 1
+            lower_range = 0
+            upper_range = batch_size
+            if show_progress:
+                for ind in progress_bar(range(iter_val)):
+                    prediction = self._predict_batch(
+                        text_or_list[lower_range:upper_range], thresh
+                    )
+                    preds.extend(prediction)
+                    remaining_len -= batch_size
+                    lower_range = upper_range
+                    if remaining_len >= batch_size:
+                        upper_range = lower_range + batch_size
+                    else:
+                        upper_range = upper_range + remaining_len
+            else:
+                for ind in range(iter_val):
+                    prediction = self._predict_batch(
+                        text_or_list[lower_range:upper_range], thresh
+                    )
+                    preds.extend(prediction)
+                    remaining_len -= batch_size
+                    lower_range = upper_range
+                    if remaining_len >= batch_size:
+                        upper_range = lower_range + batch_size
+                    else:
+                        upper_range = upper_range + remaining_len
             result = [(text, *pred) for text, pred in zip(text_or_list, preds)]
-            return result
+            if explain:
+                if isinstance(explain_index, int):
+                    sliced_text_list = text_or_list[explain_index : explain_index + 1]
+                elif isinstance(explain_index, (list, tuple, np.ndarray)):
+                    for i in explain_index:
+                        if i < len(text_or_list):
+                            sliced_text_list.append(text_or_list[i])
+                else:
+                    sliced_text_list = copy.deepcopy(text_or_list)
+                    warnings.warn(
+                        "No Index is supplied. Going ahead with all the inputs"
+                    )
         else:
             preds = self._predict(text_or_list, thresh)
-            return (text_or_list, *preds)
+            result = (text_or_list, *preds)
+            if explain:
+                sliced_text_list = [text_or_list]
+
+        if explain:
+            self._emodel, self._emask = self._wrapped_model_for_explnation()
+            self._explain(sliced_text_list)
+
+        return result
 
     def _save_df_to_html(self, path):
         if getattr(self._data, "_is_empty", False):
@@ -836,3 +930,74 @@ samples. Metrics are only being calculated for classes present in the validation
         return pd.DataFrame(
             misclassified_records, columns=[text_col, "Target", "Prediction"]
         )
+
+    def _explain(self, text_or_list, custom_tok=True):
+        # """
+        # To Generate explanation for a single or a batch of input strings.
+        #
+        # This function is a wrapper around SHAP explainer function for the Language model.
+        # It relies on two underlying methods.
+        # 1. It will wrap the logits of the model
+        # 2. It will produce single class as an output.
+        # EntityRecognizer
+        #
+        # =====================   ===========================================
+        # **Parameter**            **Description**
+        # ---------------------   -------------------------------------------
+        # text_or_list            Required String or List. text or a list of
+        #                         texts for which we wish to find the class label(s).
+        #
+        # custom_tok              Setting this argument to True will return the explanation
+        #                         based on the word boundary token.
+        # =====================   ===========================================
+        # :return: None
+        #
+        # """
+        has_shap = True
+        try:
+            import shap
+        except:
+            has_shap = False
+            warnings.warn(
+                "SHAP is not installed. Model explainablity will not be available"
+            )
+        if has_shap:
+            if isinstance(text_or_list, str):
+                text_or_list = [text_or_list]
+            elif not isinstance(text_or_list, list):
+                raise Exception(f" This module takes string or list as an input")
+            # Build custom masker
+            masker = None
+            if custom_tok:
+                masker = shap.maskers.Text(custom_tokenizer)
+            # create labels
+            labels = sorted(
+                self.learn.model._config.label2id,
+                key=self.learn.model._config.label2id.get,
+            )
+            explainer = shap.Explainer(self._logit_wrapper, masker, output_names=labels)
+            self.shap_values = explainer(text_or_list)
+            shap.plots.text(self.shap_values)
+
+    def _wrapped_model_for_explnation(self):
+        # """
+        # It will return the wrapped transformer for the classification task. It will return the
+        # transformer from learner as well as the tokenizer.
+        # """
+        return self.learn.model._transformer, self.learn.model._tokenizer
+
+    def _logit_wrapper(self, input_sent):
+        input_sent = list(input_sent)
+        # This code is modified to accomodate the masking structure and making the implementation verbose.
+        encoded_dict = self._emask(
+            input_sent,
+            max_length=self._seq_len,
+            pad_to_max_length=True,
+            return_attention_mask=True,
+            return_tensors="pt",
+        )
+        logits = self._emodel(
+            encoded_dict["input_ids"].cuda(), encoded_dict["attention_mask"].cuda()
+        )[0]
+        results = torch.softmax(logits, dim=1).detach().cpu().numpy()
+        return results

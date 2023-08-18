@@ -3,6 +3,7 @@ from arcgis.gis import GIS
 from arcgis._impl.common._mixins import PropertyMap
 from typing import List, Dict, Any, Optional
 
+
 ########################################################################
 class ContainerNotebook(object):
     """
@@ -58,6 +59,7 @@ class DirectoryManager(object):
     _con = None
     _gis = None
     _properties = None
+
     # ----------------------------------------------------------------------
     def __init__(self, url: str, gis: GIS):
         """Constructor"""
@@ -190,6 +192,7 @@ class WebAdaptor(object):
     _con = None
     _gis = None
     _properties = None
+
     # ----------------------------------------------------------------------
     def __init__(self, url, gis):
         """Constructor"""
@@ -243,6 +246,7 @@ class WebAdaptorManager(object):
     _con = None
     _gis = None
     _properties = None
+
     # ----------------------------------------------------------------------
     def __init__(self, url: str, gis: GIS):
         """Constructor"""
@@ -293,7 +297,7 @@ class WebAdaptorManager(object):
         Registers a new :class:`web adapter <arcgis.gis.nb.WebAdaptor>`.
 
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
         name                   Required String. The name of the web adapter
         ------------------     --------------------------------------------------------------------
@@ -337,7 +341,7 @@ class WebAdaptorManager(object):
         in the request.
 
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
         config                 Required dict. The configuration items to be updated for this web
                                adaptor. Always include the web adaptor's sharedkey attribute.
@@ -391,6 +395,7 @@ class Container(object):
     _con = None
     _gis = None
     _properties = None
+
     # ----------------------------------------------------------------------
     def __init__(self, url, gis):
         """Constructor"""
@@ -543,6 +548,7 @@ class SystemManager(object):
     _dir = None
     _wam = None
     _properties = None
+
     # ----------------------------------------------------------------------
     def __init__(self, url: str, gis: GIS):
         """Constructor"""
@@ -581,25 +587,20 @@ class SystemManager(object):
         these properties. The properties are available to all server
         objects and extensions through the server environment interface.
 
-        Sets the ArcGIS Notebook Server has configuration properties that govern
-        some of its intricate behavior. This resource is a container for
-        these properties. The properties are available to all server
-        objects and extensions through the server environment interface.
+        You can use this property to get and/or set the available properties.
 
-        ===============     ====================================================================
-        **Argument**        **Description**
-        ---------------     --------------------------------------------------------------------
-        value               Required property.
-        ===============     ====================================================================
-        The available properties are as follows:
+        .. code-block:: python
 
-            + WebContextURL - Defines the web front-end as seen by your users. Example: ``https://mydomain.com/gis``
-            + maxContainersPerNode - The default maximum number of containers that can be opened on a notebook server machine assuming the machine has the necessary CPU/Memory resources to support the containers.
-            + idleNotebookThreshold - Specifies the time (in minutes) after which idle notebooks are closed automatically.
-            + containerCreatedThreshold - Specifies the time (in minutes) after which an empty container is closed automatically.
-            + webSocketSize - Specifies the amount of memory (in MB) available to ArcGIS Notebooks for WebSocket communication
+            #Usage Example to set property:
+            >>> nbserver = gis.notebook_server[0]
 
-        :return: PropertyMap
+            >>> nbserver.system.properties = {"webSocketSize" : 32}
+
+
+        See the REST API documention for `Notebook Server System properties <https://developers.arcgis.com/rest/enterprise-administration/notebook/server-properties.htm>`_
+        for current complete list of available properties.
+
+        :return: dictionary-like PropertyMap
         """
         if self._properties is None:
             self._init()
@@ -746,7 +747,7 @@ class SystemManager(object):
         and messages. This is used for Notebook Server 10.9+
 
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
         details                Optional Bool.  For 10.9+ Notebook Servers, to get the expanded
                                details of a Job, set the details to `True`. `False` will provide
@@ -786,7 +787,7 @@ class SystemManager(object):
         periodically querying the job.
 
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
         job_id                 Required String. The unique identifier of the job.
         ==================     ====================================================================

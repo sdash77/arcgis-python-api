@@ -10,12 +10,7 @@ from typing import Any, Optional, Union
 
 from arcgis.geometry import SpatialReference
 from arcgis.features.layer import FeatureLayer
-from arcgis.geoprocessing._support import (
-    _analysis_job,
-    _analysis_job_results,
-    _analysis_job_status,
-    _layer_input,
-)
+
 import json as _json
 import arcgis as _arcgis
 import string as _string
@@ -23,6 +18,7 @@ import random as _random
 import collections
 from arcgis.gis import GIS, Item
 from arcgis.raster._util import _set_context, _id_generator
+from arcgis.raster import ImageryLayer
 from .._impl.common._deprecate import deprecated
 
 
@@ -46,10 +42,19 @@ def is_supported(gis: Optional[GIS] = None):
     checks if :attr:`~arcgis.env.active_gis` supports raster analytics
     """
     gis = _arcgis.env.active_gis if gis is None else gis
-    if "rasterAnalytics" in gis.properties.helperServices:
-        return True
-    else:
-        return False
+    if (
+        gis is not None
+        and hasattr(gis.properties, "helperServices")
+        and "rasterAnalytics" in gis.properties.helperServices
+    ):
+        user = gis.users.me
+        if user is not None and "premium:publisher:rasteranalysis" in user.privileges:
+            if (
+                "portal:publisher:publishDynamicImagery" in user.privileges
+                or "portal:publisher:publishTiledImagery" in user.privileges
+            ):
+                return True
+    return False
 
 
 def _id_generator(size=6, chars=_string.ascii_uppercase + _string.digits):
@@ -486,7 +491,6 @@ def _distance_accumulation_analytics_converter(
 def _distance_allocation_analytics_converter(
     raster_function, output_name=None, other_outputs=None, gis=None, **kwargs
 ):
-
     in_source_data = None
     in_barrier_data = None
     in_surface_raster = None
@@ -771,7 +775,6 @@ def _build_param_dictionary(
     image_collection_properties=None,
     use_input_rasters_by_ref=False,
 ):
-
     inputRasterSpecified = False
     # input rasters
     if isinstance(input_rasters, list):
@@ -996,14 +999,13 @@ def generate_raster(
     future: bool = False,
     **kwargs,
 ):
-
     """
     .. image:: _static/images/ra_generate_raster/ra_generate_raster.png
 
     Function allows you to execute raster analysis on a distributed server deployment.
 
     ====================================     ==================================================================================================================
-    **Argument**                             **Description**
+    **Parameter**                             **Description**
     ------------------------------------     ------------------------------------------------------------------------------------------------------------------
     raster_function                          Required, Raster function to perform analysis on the input raster dataset.
                                              The value can be a string keyword for predefined raster functions such as
@@ -1181,7 +1183,6 @@ def convert_feature_to_raster(
     future: bool = False,
     **kwargs,
 ):
-
     """
     .. image:: _static/images/ra_convert_feature_to_raster/ra_convert_feature_to_raster.png
 
@@ -1193,7 +1194,7 @@ def convert_feature_to_raster(
     if it is floating point, the output will be floating point.
 
     ====================================     ====================================================================
-    **Argument**                             **Description**
+    **Parameter**                             **Description**
     ------------------------------------     --------------------------------------------------------------------
     input_feature                            Required feature layer. The input feature layer to convert to a raster dataset.
     ------------------------------------     --------------------------------------------------------------------
@@ -1336,7 +1337,6 @@ def copy_raster(
     future: bool = False,
     **kwargs,
 ):
-
     """
     .. image:: _static/images/ra_copy_raster/ra_copy_raster.png 
 
@@ -1350,7 +1350,7 @@ def copy_raster(
     needs to be pre-installed. Refer https://docs.microsoft.com/en-us/azure/storage/blobs/storage-quickstart-blobs-python#install-the-package
 
     ================================     ====================================================================
-    **Argument**                         **Description**
+    **Parameter**                         **Description**
     --------------------------------     --------------------------------------------------------------------
     input_raster                         Required raster layer or string or list. The input raster layer to be copied to.
                                          Path to a local raster dataset(s) can also be given to create hosted imagery 
@@ -1444,13 +1444,15 @@ def copy_raster(
 
                                          Choice list:
 
-                                             | ["ASTER", "DMCII", "DubaiSat-2", "GeoEye-1", "GF-1 PMS", "GF-1 WFV"
-                                             | "GF-2 PMS", "GRIB", "HDF","IKONOS", "KOMPSAT-2", "KOMPSAT-3",
-                                             | "Landsat 1-5 MSS","Landsat 4-5 TM", "Landsat 7 ETM+", "Landsat 8",
-                                             | "NetCDF", "Pleiades-1", "QuickBird", "RapidEye", "Raster Dataset",
-                                             | "Sentinel-2"," SkySat", "SPOT 5", "SPOT 6", "SPOT 7", "Tiled Imagery Layer",
-                                             | "UAV/UAS", "WordView-1", "WordView-2", "WordView-3", "WordView-4", "ZY3-SASMAC",
-                                             | "Aerial", "ScannedAerial","ZY3-CRESDA"]
+                                             | [
+                                             | "Aerial", "ASTER", "DMCII", "DubaiSat-2", "GeoEye-1", "GF-1 PMS", "GF-1 WFV",
+                                             | "GF-2 PMS", "GRIB", "HDF", "IKONOS", "Jilin-1", "KOMPSAT-2", "KOMPSAT-3",
+                                             | "Landsat 1-5 MSS", "Landsat 4-5 TM", "Landsat 7 ETM+", "Landsat 8", "Landsat 9"
+                                             | "NetCDF", "PlanetScope", "Pleiades-1", "Pleiades NEO", "QuickBird", "RapidEye",
+                                             | "Raster Dataset", "ScannedAerial", "Sentinel-2", "SkySat", "SPOT 5", "SPOT 6",
+                                             | "SPOT 7", "Superview-1", "Tiled Imagery Layer", "UAV/UAS", "WordView-1",
+                                             | "WordView-2", "WordView-3", "WordView-4", "ZY3-SASMAC", "ZY3-CRESDA"
+                                             | ]
 
                                          If an existing mosaic dataset is being published as an 
                                          imagery layer using the ``source_mosaic_dataset`` parameter, the
@@ -1674,14 +1676,13 @@ def summarize_raster_within(
     future: bool = False,
     **kwargs,
 ):
-
     """
     .. image:: _static/images/ra_summarize_raster_within/ra_summarize_raster_within.png 
 
     Summarizes a raster based on areas (zones) defined by the first input layer (input_zone_layer).
 
     ====================================     ====================================================================
-    **Argument**                             **Description**
+    **Parameter**                             **Description**
     ------------------------------------     --------------------------------------------------------------------
     input_zone_layer                         Required layer - area layer to summarize a raster layer within defined boundaries.
 
@@ -1938,14 +1939,13 @@ def convert_raster_to_feature(
     future: bool = False,
     **kwargs,
 ):
-
     """
     .. image:: _static/images/ra_convert_raster_to_feature/ra_convert_raster_to_feature.png
 
     Function converts imagery data to feature class vector data.
 
     ====================================     ====================================================================
-    **Argument**                             **Description**
+    **Parameter**                             **Description**
     ------------------------------------     --------------------------------------------------------------------
     input_raster                             Required Imagery Layer. The input raster that will be converted to a feature dataset.
     ------------------------------------     --------------------------------------------------------------------
@@ -2026,7 +2026,7 @@ def convert_raster_to_feature(
     ====================================     ====================================================================
 
     :return:
-    output_raster : Imagery layer item
+    output_feature: Feature layer item
 
     .. code-block:: python
 
@@ -2069,7 +2069,6 @@ def calculate_density(
     future: bool = False,
     **kwargs,
 ):
-
     """
     .. image:: _static/images/ra_calculate_density/ra_calculate_density.png
 
@@ -2107,7 +2106,7 @@ def calculate_density(
         be constructed.
 
     ====================================     ====================================================================
-    **Argument**                             **Description**
+    **Parameter**                             **Description**
     ------------------------------------     --------------------------------------------------------------------
     input_point_or_line_features             Required feature layer - The input point or line layer that will be used to calculate
                                              the density layer.
@@ -2295,14 +2294,13 @@ def create_viewshed(
     future: bool = False,
     **kwargs,
 ):
-
     """
     .. image:: _static/images/ra_create_viewshed/ra_create_viewshed.png
 
     Function  allows you to execute raster analysis on a distributed server deployment.
 
     ====================================     =============================================================================================================================================
-    **Argument**                             **Description**
+    **Parameter**                             **Description**
     ------------------------------------     ---------------------------------------------------------------------------------------------------------------------------------------------
     input_elevation_surface                  Required Imagery Layer.
                                              The input elevation surface for calculating the viewshed.
@@ -2574,7 +2572,6 @@ def interpolate_points(
     future: bool = False,
     **kwargs,
 ):
-
     """
     .. image:: _static/images/ra_interpolate_points/ra_interpolate_points.png
 
@@ -2592,7 +2589,7 @@ def interpolate_points(
       rain).
 
     ====================================     ====================================================================
-    **Argument**                             **Description**
+    **Parameter**                             **Description**
     ------------------------------------     --------------------------------------------------------------------
     input_point_features                     Required point layer containing locations with known values
                                              The point layer that contains the points where the values have been measured.
@@ -2810,7 +2807,6 @@ def classify(
     future: bool = False,
     **kwargs,
 ):
-
     """
     .. image:: _static/images/ra_classify/ra_classify.png
 
@@ -2818,7 +2814,7 @@ def classify(
     the classifier definition dictionary that was generated from the train_classifier function.
 
     ================================     ====================================================================
-    **Argument**                         **Description**
+    **Parameter**                         **Description**
     --------------------------------     --------------------------------------------------------------------
     input_raster                         Required :class:`~arcgis.raster.ImageryLayer` object.
     --------------------------------     --------------------------------------------------------------------
@@ -2993,7 +2989,6 @@ def segment(
     future: bool = False,
     **kwargs,
 ):
-
     """
     .. image:: _static/images/ra_segment/ra_segment.png
 
@@ -3001,7 +2996,7 @@ def segment(
     segments, known as objects.
 
     ================================     ====================================================================
-    **Argument**                         **Description**
+    **Parameter**                         **Description**
     --------------------------------     --------------------------------------------------------------------
     input_raster                         Required :class:`~arcgis.raster.ImageryLayer` object
     --------------------------------     --------------------------------------------------------------------
@@ -3180,7 +3175,7 @@ def train_classifier(
     The .ecs file is used in the classify function.
 
     ================================     ====================================================================
-    **Argument**                         **Description**
+    **Parameter**                         **Description**
     --------------------------------     --------------------------------------------------------------------
     input_raster                         Required :class:`~arcgis.raster.ImageryLayer` object
     --------------------------------     --------------------------------------------------------------------
@@ -3314,7 +3309,7 @@ def create_image_collection(
     needs to be pre-installed. Refer https://docs.microsoft.com/en-us/azure/storage/blobs/storage-quickstart-blobs-python#install-the-package
 
     ======================               ====================================================================
-    **Argument**                         **Description**
+    **Parameter**                         **Description**
     ----------------------               --------------------------------------------------------------------
     image_collection                     Required, the name of the image collection to create.
                   
@@ -3348,13 +3343,14 @@ def create_image_collection(
                                          Choice list:
 
                                              | [
-                                             | "ASTER", "DMCII", "DubaiSat-2", "GeoEye-1", "GF-1 PMS", "GF-1 WFV"
-                                             | "GF-2 PMS", "GRIB", "HDF","IKONOS", "KOMPSAT-2", "KOMPSAT-3", "Landsat 1-5 MSS"
-                                             | "Landsat 4-5 TM", "Landsat 7 ETM+", "Landsat 8", "NetCDF", "Pleiades-1"
-                                             | "QuickBird", "RapidEye", "Raster Dataset", "Sentinel-2"," SkySat"
-                                             | "SPOT 5", "SPOT 6", "SPOT 7", "Tiled Imagery Layer", "UAV/UAS", "WordView-1"
-                                             | "WordView-2", "WordView-3", "WordView-4", "ZY3-SASMAC", "Aerial", "ScannedAerial",
-                                             | "ZY3-CRESDA"]
+                                             | "Aerial", "ASTER", "DMCII", "DubaiSat-2", "GeoEye-1", "GF-1 PMS", "GF-1 WFV",
+                                             | "GF-2 PMS", "GRIB", "HDF", "IKONOS", "Jilin-1", "KOMPSAT-2", "KOMPSAT-3",
+                                             | "Landsat 1-5 MSS", "Landsat 4-5 TM", "Landsat 7 ETM+", "Landsat 8", "Landsat 9",
+                                             | "NetCDF", "PlanetScope", "Pleiades-1", "Pleiades NEO", "QuickBird", "RapidEye",
+                                             | "Raster Dataset", "ScannedAerial", "Sentinel-2", "SkySat", "SPOT 5", "SPOT 6",
+                                             | "SPOT 7", "Superview-1", "Tiled Imagery Layer", "UAV/UAS", "WordView-1",
+                                             | "WordView-2", "WordView-3", "WordView-4", "ZY3-SASMAC", "ZY3-CRESDA"
+                                             | ]
 
                                          If an existing mosaic dataset is being published as a 
                                          dynamic imagery layer using the ``source_mosaic_dataset`` parameter, the
@@ -3559,10 +3555,10 @@ def create_image_collection(
 |                        |                        |                                              |"Pansharpen",                                 |
 |                        |                        |                                              |"Pansharpen and Multispectral" (default)      |
 +------------------------+------------------------+----------------------------------------------+----------------------------------------------+
-|"Landsat 8"             |"0.42, 0.51, 0.07, 0.0" |"All" (default)                               |"All Bands",                                  |
+|"Landsat 9"             |"0.42, 0.51, 0.07, 0.0" |"All" (default)                               |"All Bands",                                  |
 |                        |                        |                                              |"Brightness Temperature",                     |
 |                        |                        |                                              |"Cirrus", "Cloud","Landcover",                |
-|                        |                        |                                              |"Multispectral",                              |
+|                        |                        |                                              |"Multiband", "Multispectral",                 |
 |                        |                        |                                              |"Panchromatic", "Pansharpen",                 |
 |                        |                        |                                              |"Pansharpen and Multispectral" (default),"QA",|
 |                        |                        |                                              |"SnowIce", "Spectral Indices",                |
@@ -3573,7 +3569,38 @@ def create_image_collection(
 |                        |                        +----------------------------------------------+----------------------------------------------+
 |                        |                        |"Level1"                                      |"All Bands",                                  |
 |                        |                        |                                              |"Cirrus", "Cloud","Landcover",                |
-|                        |                        |                                              |"Multispectral",                              |
+|                        |                        |                                              |"Multiband", "Multispectral",                 |
+|                        |                        |                                              |"Panchromatic", "Pansharpen",                 |
+|                        |                        |                                              |"Pansharpen and Multispectral" (default),"QA",|
+|                        |                        |                                              |"SnowIce",                                    |
+|                        |                        |                                              |"Thermal",                                    |
+|                        |                        |                                              |"Vegetation", "Water"                         |
+|                        |                        +----------------------------------------------+----------------------------------------------+
+|                        |                        |"Surface Reflectance"                         |"Surface Reflectance"                         |
+|                        |                        +----------------------------------------------+----------------------------------------------+
+|                        |                        |"Spectral Indices"                            |"Spectral Indices"                            |
+|                        |                        +----------------------------------------------+----------------------------------------------+
+|                        |                        |"Top of Atmosphere Reflectance"               |"Top of Atmosphere Reflectance"               |
+|                        |                        +----------------------------------------------+----------------------------------------------+
+|                        |                        |"Brightness Temperature"                      |"Brightness Temperature"                      |
+|                        |                        +----------------------------------------------+----------------------------------------------+
+|                        |                        |"Surface Temperature"                         |"Surface Temperature"                         |
++------------------------+------------------------+----------------------------------------------+----------------------------------------------+
+|"Landsat 8"             |"0.42, 0.51, 0.07, 0.0" |"All" (default)                               |"All Bands",                                  |
+|                        |                        |                                              |"Brightness Temperature",                     |
+|                        |                        |                                              |"Cirrus", "Cloud","Landcover",                |
+|                        |                        |                                              |"Multiband", "Multispectral",                 |
+|                        |                        |                                              |"Panchromatic", "Pansharpen",                 |
+|                        |                        |                                              |"Pansharpen and Multispectral" (default),"QA",|
+|                        |                        |                                              |"SnowIce", "Spectral Indices",                |
+|                        |                        |                                              |"Surface Reflectance", "Thermal",             |
+|                        |                        |                                              |"Top of Atmosphere Reflectance",              |
+|                        |                        |                                              |"Vegetation", "Water"                         |
+|                        |                        |                                              |"Surface Temperature"                         |
+|                        |                        +----------------------------------------------+----------------------------------------------+
+|                        |                        |"Level1"                                      |"All Bands",                                  |
+|                        |                        |                                              |"Cirrus", "Cloud","Landcover",                |
+|                        |                        |                                              |"Multiband", "Multispectral",                 |
 |                        |                        |                                              |"Panchromatic", "Pansharpen",                 |
 |                        |                        |                                              |"Pansharpen and Multispectral" (default),"QA",|
 |                        |                        |                                              |"SnowIce",                                    |
@@ -3593,7 +3620,7 @@ def create_image_collection(
 |"Landsat 7 ETM+"        |"0.11, 0.14, 0.14, 0.61"| "All" (default)                              |"All Bands",                                  |
 |                        |                        |                                              |"Brightness Temperature",                     |
 |                        |                        |                                              |"Cirrus", "Cloud","Landcover",                |
-|                        |                        |                                              |"Multispectral",                              |
+|                        |                        |                                              |"Multiband", "Multispectral",                 |
 |                        |                        |                                              |"Panchromatic", "Pansharpen",                 |
 |                        |                        |                                              |"Pansharpen and Multispectral" (default),"QA",|
 |                        |                        |                                              |"SnowIce", "Spectral Indices",                |
@@ -3604,7 +3631,7 @@ def create_image_collection(
 |                        |                        +----------------------------------------------+----------------------------------------------+
 |                        |                        |"Level1"                                      |"All Bands",                                  |
 |                        |                        |                                              |"Cirrus", "Cloud","Landcover",                |
-|                        |                        |                                              |"Multispectral",                              |
+|                        |                        |                                              |"Multiband", "Multispectral",                 |
 |                        |                        |                                              |"Panchromatic", "Pansharpen",                 |
 |                        |                        |                                              |"Pansharpen and Multispectral" (default),"QA",|
 |                        |                        |                                              |"SnowIce",                                    |
@@ -3624,7 +3651,7 @@ def create_image_collection(
 |"Landsat 4-5 TM"        |                        | "All" (default)                              |"All Bands",                                  |
 |                        |                        |                                              |"Brightness Temperature",                     |
 |                        |                        |                                              |"Cirrus", "Cloud","Landcover",                |
-|                        |                        |                                              |"Multispectral" (default),                    |
+|                        |                        |                                              |"Multiband", "Multispectral" (default),       |
 |                        |                        |                                              |"Panchromatic", "Pansharpen",                 |
 |                        |                        |                                              |"Pansharpen and Multispectral", "QA",         |
 |                        |                        |                                              |"SnowIce", "Spectral Indices",                |
@@ -3635,7 +3662,7 @@ def create_image_collection(
 |                        |                        +----------------------------------------------+----------------------------------------------+
 |                        |                        |"Level1"                                      |"All Bands",                                  |
 |                        |                        |                                              |"Cirrus", "Cloud","Landcover",                |
-|                        |                        |                                              |"Multispectral" (default),                    |
+|                        |                        |                                              |"Multiband", "Multispectral" (default),       |
 |                        |                        |                                              |"Panchromatic", "Pansharpen" ,                |
 |                        |                        |                                              |"Pansharpen and Multispectral", "QA",         |
 |                        |                        |                                              |"SnowIce",                                    |
@@ -3652,7 +3679,7 @@ def create_image_collection(
 |                        |                        +----------------------------------------------+----------------------------------------------+
 |                        |                        |"Surface Temperature"                         |"Surface Temperature"                         |
 +------------------------+------------------------+----------------------------------------------+----------------------------------------------+
-|"Landsat 1-5 MSS"       |                        | "All" (default), "Level1"                    |"All Bands",                                  |
+|"Landsat 1-5 MSS"       |                        | "All" (default), "Level1"                    |"All Bands", "Multiband",                     |
 |                        |                        |                                              |"Multispectral" (default),                    |
 |                        |                        |                                              |"Pseudocolor", "Thermal", "QA"                |
 +------------------------+------------------------+----------------------------------------------+----------------------------------------------+ 
@@ -3699,6 +3726,42 @@ def create_image_collection(
 |                        |                        |"Standard OrthoreadyAcomp"                    |"Pansharpen AComp"                            |
 +------------------------+------------------------+----------------------------------------------+----------------------------------------------+
 | "Pleiades-1"           |"0.9, 0.75, 0.5, 0.5"   |"All" (default), "ORTHO",                     |"All Bands",                                  |
+|                        |                        |"PRIMARY", "PROJECTED"                        |"Multispectral",                              |
+|                        |                        |                                              |"Multispectral Display",                      | 
+|                        |                        |                                              |"Multispectral Reflectance",                  |
+|                        |                        |                                              |"Panchromatic",                               |
+|                        |                        |                                              |"Panchromatic Display",                       |
+|                        |                        |                                              |"Panchromatic Reflectance",                   |
+|                        |                        |                                              |"Pansharpen"                                  |
+|                        |                        |                                              |"Pansharpen and Multispectral" (default),     |
+|                        |                        |                                              |"Pansharpen Display",                         |
+|                        |                        |                                              |"Pansharpen Reflectance"                      |
+|                        |                        +----------------------------------------------+----------------------------------------------+
+|                        |                        |"ORTHO DISPLAY"                               |"Multispectral Display" (default),            |
+|                        |                        |                                              |"Panchromatic Display",                       |
+|                        |                        |                                              |"Pansharpen Display"                          |
+|                        |                        +----------------------------------------------+----------------------------------------------+
+|                        |                        |"ORTHO REFLECTANCE"                           |"Multispectral Reflectance" (default),        |
+|                        |                        |                                              |"Panchromatic Reflectance",                   |
+|                        |                        |                                              |"Pansharpen Reflectance"                      |
+|                        |                        +----------------------------------------------+----------------------------------------------+
+|                        |                        |"PRIMARY DISPLAY"                             |"Multispectral Display" (default),            |
+|                        |                        |                                              |"Panchromatic Display",                       |
+|                        |                        |                                              |"Pansharpen Display"                          |
+|                        |                        +----------------------------------------------+----------------------------------------------+
+|                        |                        |"PRIMARY REFLECTANCE"                         |"Multispectral Reflectance" (default),        |
+|                        |                        |                                              |"Panchromatic Reflectance",                   |
+|                        |                        |                                              |"Pansharpen Reflectance"                      |
+|                        |                        +----------------------------------------------+----------------------------------------------+
+|                        |                        |"PROJECTED DISPLAY"                           |"Multispectral Display" (default),            |
+|                        |                        |                                              |"Panchromatic Display",                       |
+|                        |                        |                                              |"Pansharpen Dispplay"                         |
+|                        |                        +----------------------------------------------+----------------------------------------------+
+|                        |                        |"PROJECTED REFLECTANCE"                       |"Multispectral Reflectance" (default),        |
+|                        |                        |                                              |"Panchromatic Reflectance",                   |
+|                        |                        |                                              |"Pansharpen Reflectance"                      |
++------------------------+------------------------+----------------------------------------------+----------------------------------------------+
+| "Pleiades Neo"         |"0.45, 0.55, 0, 0"      |"All" (default), "ORTHO",                     |"All Bands",                                  |
 |                        |                        |"PRIMARY", "PROJECTED"                        |"Multispectral",                              |
 |                        |                        |                                              |"Multispectral Display",                      | 
 |                        |                        |                                              |"Multispectral Reflectance",                  |
@@ -3912,13 +3975,26 @@ def create_image_collection(
 | "RapidEye"             |                        |"All", "Level1B",                             |"Multispectral" (default)                     |
 |                        |                        |"Level3A", "Level3B"                          |                                              |
 +------------------------+------------------------+----------------------------------------------+----------------------------------------------+
-| "SkySat"               |"0.41, 0.16, 0.13, 0.3" |"All", "Basic", "Ortho"                       |"All Bands",                                  |
+| "SkySat"               |"0.41, 0.16, 0.13, 0.3" |"All" (default), "Basic", "Ortho"             |"All Bands",                                  |
 |                        |                        |                                              |"Multispectral",                              |
 |                        |                        |                                              |"Panchromatic",                               |
 |                        |                        |                                              |"Pansharpen" ,                                |
-|                        |                        |                                              |"All Bands",                                  |
 |                        |                        |                                              |"Skysat Pansharpen",                          |
 |                        |                        |                                              |"Visual"                                      |
+|                        |                        |                                              |"Pansharpen and Multispectral" (default)      |
++------------------------+------------------------+----------------------------------------------+----------------------------------------------+
+| "Jilin-1"              |"0.2501, 0.3646, 0"     |"All" (default), "LEVEL1"                     |"All Bands",                                  |
+|                        |                        |                                              |"Multispectral",                              |
+|                        |                        |                                              |"Panchromatic",                               |
+|                        |                        |                                              |"Pansharpen" ,                                |
+|                        |                        |                                              |"Pansharpen and Multispectral" (default)      |
++------------------------+------------------------+----------------------------------------------+----------------------------------------------+
+| "PlanetScope"          |"0.166,0.167,0.167,0.5" |"All" (default), "Level1", "Level3"           |"Multispectral" (default)                     |
++------------------------+------------------------+----------------------------------------------+----------------------------------------------+
+| "SuperView-1"          |"0.85, 0.7, 0.35, 1"    |"All" (default), "LEVEL1B", "LEVEL2A",        |"All Bands",                                  |
+|                        |                        |"LEVEL3A"                                     |"Multispectral",                              |
+|                        |                        |                                              |"Panchromatic",                               |
+|                        |                        |                                              |"Pansharpen" ,                                |
 |                        |                        |                                              |"Pansharpen and Multispectral" (default)      |
 +------------------------+------------------------+----------------------------------------------+----------------------------------------------+
 
@@ -4071,7 +4147,7 @@ def add_image(
     the entire image collection must be reset to the original state.
 
     ==================                   ====================================================================
-    **Argument**                         **Description**
+    **Parameter**                         **Description**
     ------------------                   --------------------------------------------------------------------
     input_rasters                        Required list. The list of input rasters to be added to
                                          the image collection being created. This parameter can
@@ -4092,13 +4168,16 @@ def add_image(
 
 
                                          Choice list:
-                                             | ["ASTER", "DMCII", "DubaiSat-2", "GeoEye-1", "GF-1 PMS", "GF-1 WFV"
-                                             | "GF-2 PMS", "GRIB", "HDF","IKONOS", "KOMPSAT-2", "KOMPSAT-3", "Landsat 1-5 MSS"
-                                             | "Landsat 4-5 TM", "Landsat 7 ETM+", "Landsat 8", "NetCDF", "Pleiades-1"
-                                             | "QuickBird", "RapidEye", "Raster Dataset", "Sentinel-2"," SkySat"
-                                             | "SPOT 5", "SPOT 6", "SPOT 7", "UAV/UAS", "WordView-1"
-                                             | "WordView-2", "WordView-3", "WordView-4", "ZY3-SASMAC", "Aerial", "ScannedAerial",
-                                             | "ZY3-CRESDA"]
+
+                                             | [
+                                             | "Aerial", "ASTER", "DMCII", "DubaiSat-2", "GeoEye-1", "GF-1 PMS", "GF-1 WFV",
+                                             | "GF-2 PMS", "GRIB", "HDF", "IKONOS", "Jilin-1", "KOMPSAT-2", "KOMPSAT-3",
+                                             | "Landsat 1-5 MSS", "Landsat 4-5 TM", "Landsat 7 ETM+", "Landsat 8", "Landsat 9",
+                                             | "NetCDF", "PlanetScope", "Pleiades-1", "Pleiades NEO", "QuickBird", "RapidEye",
+                                             | "Raster Dataset", "ScannedAerial", "Sentinel-2", "SkySat", "SPOT 5", "SPOT 6",
+                                             | "SPOT 7", "Superview-1", "Tiled Imagery Layer", "UAV/UAS", "WordView-1",
+                                             | "WordView-2", "WordView-3", "WordView-4", "ZY3-SASMAC", "ZY3-CRESDA"
+                                             | ]
                                          
 
                                          Example:
@@ -4218,7 +4297,7 @@ def delete_image(
     source image.
 
     ==================     ====================================================================
-    **Argument**           **Description**
+    **Parameter**           **Description**
     ------------------     --------------------------------------------------------------------
     image_collection       Required, the input image collection from which to delete images
                            This can be the 'itemID' of an exisiting portal item or a url
@@ -4263,7 +4342,7 @@ def delete_image_collection(
     the source images that the image collection references.
 
     ==================     ====================================================================
-    **Argument**           **Description**
+    **Parameter**           **Description**
     ------------------     --------------------------------------------------------------------
     image_collection       Required, the input image collection to delete.
 
@@ -4473,14 +4552,13 @@ def optimum_travel_cost_network(
     future: bool = False,
     **kwargs,
 ):
-
     """
     .. image:: _static/images/ra_optimum_travel_cost_network/ra_optimum_travel_cost_network.png
 
     Calculates the optimum cost network from a set of input regions.
 
     ====================================     ====================================================================
-    **Argument**                             **Description**
+    **Parameter**                             **Description**
     ------------------------------------     --------------------------------------------------------------------
     input_regions_raster                     Required Imagery Layer object. The layer that defines the regions to find the optimum travel cost netork for.
                                              The layer can be raster or feature.
@@ -4578,7 +4656,7 @@ def list_datastore_content(
     List the contents of the datastore registered with the server (fileShares, cloudStores, rasterStores).
 
     ==================     ====================================================================
-    **Argument**           **Description**
+    **Parameter**           **Description**
     ------------------     --------------------------------------------------------------------
     datastore              Required string or list. fileshare, rasterstore or cloudstore datastore from which the contents are to be listed.
                            It can be a string specifying the datastore path example: "/fileShares/SensorData", "/cloudStores/testcloud",
@@ -4635,12 +4713,11 @@ def build_footprints(
     future: bool = False,
     **kwargs,
 ):
-
     """
     Computes the extent of every raster in an image collection.
 
     ====================================     ====================================================================
-    **Argument**                             **Description**
+    **Parameter**                             **Description**
     ------------------------------------     --------------------------------------------------------------------
     image_collection                         Required. The input image collection.The image_collection can be a
                                              portal Item or an image service URL or a URI.
@@ -4714,12 +4791,11 @@ def build_overview(
     future: bool = False,
     **kwargs,
 ):
-
     """
     Generates overviews on an image collection.
 
     ====================================     ====================================================================
-    **Argument**                             **Description**
+    **Parameter**                             **Description**
     ------------------------------------     --------------------------------------------------------------------
     image_collection                         Required. The input image collection.The image_collection can be a
                                              portal Item or an image service URL or a URI.
@@ -4790,7 +4866,7 @@ def calculate_statistics(
     Calculates statistics for an image collection
 
     ====================================     ====================================================================
-    **Argument**                             **Description**
+    **Parameter**                             **Description**
     ------------------------------------     --------------------------------------------------------------------
     image_collection                         Required. The input image collection.The image_collection can be a
                                              portal Item or an image service URL or a URI.
@@ -4875,14 +4951,13 @@ def determine_travel_costpath_as_polyline(
     future: bool = False,
     **kwargs,
 ):
-
     """
     .. image:: _static/images/ra_determine_travel_costpath_as_polyline/ra_determine_travel_costpath_as_polyline.png 
 
     Calculates the least cost polyline path between sources and known destinations.
 
     ====================================     ====================================================================
-    **Argument**                             **Description**
+    **Parameter**                             **Description**
     ------------------------------------     --------------------------------------------------------------------
     input_source_data                        The layer that identifies the cells to determine the least 
                                              costly path from. This parameter can have either a raster input or 
@@ -4989,12 +5064,11 @@ def _calculate_distance(
     future=False,
     **kwargs,
 ):
-
     """
     Calculates the Euclidean distance, direction, and allocation from a single source or set of sources.
 
     ====================================     ====================================================================
-    **Argument**                             **Description**
+    **Parameter**                             **Description**
     ------------------------------------     --------------------------------------------------------------------
     input_source_data                        The layer that defines the sources to calculate the distance to.
                                              The layer can be raster or feature. To use a raster input, it must
@@ -5105,7 +5179,7 @@ def generate_multidimensional_anomaly(
     Function available in ArcGIS Image Server 10.8 and higher.
 
     ====================================     ====================================================================
-    **Argument**                             **Description**
+    **Parameter**                             **Description**
     ------------------------------------     --------------------------------------------------------------------
     input_multidimensional_raster            The input imagery layer object.
     ------------------------------------     --------------------------------------------------------------------
@@ -5299,7 +5373,7 @@ def build_multidimensional_transpose(
     Function available in ArcGIS Image Server 10.8 and higher.
 
     ====================================     ====================================================================
-    **Argument**                             **Description**
+    **Parameter**                             **Description**
     ------------------------------------     --------------------------------------------------------------------
     input_multidimensional_raster            Required :class:`~arcgis.raster.ImageryLayer` object. The input multidimensional raster.
                                              Portal Item can be passed.
@@ -5386,7 +5460,7 @@ def aggregate_multidimensional_raster(
     Function available in ArcGIS Image Server 10.8 and higher.
 
     ====================================     ====================================================================
-    **Argument**                             **Description**
+    **Parameter**                             **Description**
     ------------------------------------     --------------------------------------------------------------------
     input_multidimensional_raster            Required :class:`~arcgis.raster.ImageryLayer` object. The input multidimensional raster.
                                              Portal Item can be passed.
@@ -5772,7 +5846,7 @@ def generate_trend_raster(
     Function available in ArcGIS Image Server 10.8 and higher.
 
     ====================================     ====================================================================
-    **Argument**                             **Description**
+    **Parameter**                             **Description**
     ------------------------------------     --------------------------------------------------------------------
     input_multidimensional_raster            Required :class:`~arcgis.raster.ImageryLayer` object. The input multidimensional raster.
                                              Portal Item can be passed.
@@ -5984,7 +6058,7 @@ def predict_using_trend_raster(
     Function available in ArcGIS Image Server 10.8 and higher.
 
     ====================================     ====================================================================
-    **Argument**                             **Description**
+    **Parameter**                             **Description**
     ------------------------------------     --------------------------------------------------------------------
     input_multidimensional_raster            Required :class:`~arcgis.raster.ImageryLayer` object. The input multidimensional raster.
                                              Portal Item can be passed.
@@ -6178,6 +6252,9 @@ def find_argument_statistics(
     ignore_nodata: bool = True,
     output_name: Optional[str] = None,
     context: Optional[dict[str, Any]] = None,
+    argument_value: Optional[int] = None,
+    comparison: Optional[str] = "EQUAL_TO",
+    occurrence: Optional[str] = "FIRST_OCCURRENCE",
     *,
     gis: Optional[GIS] = None,
     future: bool = False,
@@ -6188,7 +6265,7 @@ def find_argument_statistics(
     Function available in ArcGIS Image Server 10.8 and higher.
 
     ====================================     ====================================================================
-    **Argument**                             **Description**
+    **Parameter**                             **Description**
     ------------------------------------     --------------------------------------------------------------------
     input_raster                             Required :class:`~arcgis.raster.ImageryLayer` object. The input raster.
                                              Portal Item can be passed.
@@ -6236,6 +6313,8 @@ def find_argument_statistics(
                                              - ARGUMENT_MEDIAN : The dimension value at which the median variable value is reached will be extracted.
 
                                              - DURATION : The longest dimension duration for which the variable values fall between the minimum and maximum values.
+
+                                             - ARGUMENT_VALUE: The dimension value at which the specified variable value is reached will be extracted.
     ------------------------------------     --------------------------------------------------------------------
     min_value                                Optional Float. The minimum variable value to be used to extract the duration.
 
@@ -6315,6 +6394,36 @@ def find_argument_statistics(
 
                                                     {"parallelProcessingFactor": "60%"}
     ------------------------------------     --------------------------------------------------------------------
+    argument_value                           Optional Integer. The value at which a comparison will be made to extract
+                                             the dimension value. This parameter is required when the statistics_type
+                                             parameter is set to ARGUMENT_VALUE.
+
+                                             |
+                                             .. note::
+                                                    This parameter is currently only available on ArcGIS online.
+    ------------------------------------     --------------------------------------------------------------------
+    comparison                               Optional String. Specifies the comparison type that will be used to
+                                             extract the dimension value.
+
+                                             - EQUAL_TO : The extracted dimension is equal to the specified value. This is the default.
+
+                                             - GREATER_THAN : The extracted dimension is greater than the specified value.
+
+                                             - SMALLER_THAN : The extracted dimension is smaller than the specified value.
+
+                                             .. note::
+                                                    This parameter is currently only available on ArcGIS online.
+    ------------------------------------     --------------------------------------------------------------------
+    occurrence                               Optional String. Specifies whether the value of the dimension will be returned the first
+                                             time or last time the argument statistic is reached.
+
+                                             - FIRST_OCCURRENCE : The value of the dimension will be returned the first time the argument statistic is reached. This is the default.
+
+                                             - LAST_OCCURRENCE : The value of the dimension will be returned the last time the argument statistic is reached.
+
+                                             .. note::
+                                                    This parameter is currently only available on ArcGIS online.
+    ------------------------------------     --------------------------------------------------------------------
     gis                                      Keyword only parameter. Optional :class:`~arcgis.gis.GIS` object. the GIS on which this tool runs. If not specified,
                                              the active GIS is used.
     ------------------------------------     --------------------------------------------------------------------
@@ -6388,6 +6497,9 @@ def find_argument_statistics(
         ignore_nodata=ignore_nodata,
         context=context,
         future=future,
+        argument_value=argument_value,
+        comparison=comparison,
+        occurrence=occurrence,
         **kwargs,
     )
 
@@ -6408,7 +6520,7 @@ def linear_spectral_unmixing(
     Function available in ArcGIS Image Server 10.8 and higher.
 
     ====================================     ====================================================================
-    **Argument**                             **Description**
+    **Parameter**                             **Description**
     ------------------------------------     --------------------------------------------------------------------
     input_raster                             Required :class:`~arcgis.raster.ImageryLayer` object. The input raster.
                                              Portal Item can be passed.
@@ -6572,7 +6684,7 @@ def subset_multidimensional_raster(
     Function available in ArcGIS Image Server 10.8 and higher.
 
     ====================================     ====================================================================
-    **Argument**                             **Description**
+    **Parameter**                             **Description**
     ------------------------------------     --------------------------------------------------------------------
     input_multidimensional_raster            Required :class:`~arcgis.raster.ImageryLayer` object. The input multidimensional raster.
                                              Portal Item can be passed.
@@ -6798,7 +6910,6 @@ def costpath_as_polyline(
     future=False,
     **kwargs,
 ):
-
     """
     .. image:: _static/images/ra_costpath_as_polyline/ra_costpath_as_polyline.png 
 
@@ -6806,7 +6917,7 @@ def costpath_as_polyline(
     Function available in ArcGIS Image Server 10.8 and higher.
 
     ====================================     ====================================================================
-    **Argument**                             **Description**
+    **Parameter**                             **Description**
     ------------------------------------     --------------------------------------------------------------------
     input_destination_data                   A raster or feature layer that identifies those cells from which the 
                                              least-cost path is determined to the least costly source.
@@ -6909,13 +7020,12 @@ def define_nodata(
     future: bool = False,
     **kwargs,
 ):
-
     """
     Function specifies one or more values to be represented as NoData.
     Function available in ArcGIS Image Server 10.8 and higher.
 
     ====================================     ====================================================================
-    **Argument**                             **Description**
+    **Parameter**                             **Description**
     ------------------------------------     --------------------------------------------------------------------
     input_raster                             Required :class:`~arcgis.raster.ImageryLayer` object. Portal Item can be passed.
     ------------------------------------     --------------------------------------------------------------------
@@ -7011,13 +7121,12 @@ def optimal_path_as_line(
     future: bool = False,
     **kwargs,
 ):
-
     """
     Calculates the optimal path from a source to a destination as a feature.
     Function available in ArcGIS Image Server 10.8.1 and higher.
 
     ====================================     ====================================================================
-    **Argument**                             **Description**
+    **Parameter**                             **Description**
     ------------------------------------     --------------------------------------------------------------------
     input_destination_data                   Required :class:`~arcgis.raster.ImageryLayer` or :class:`~arcgis.features.FeatureLayer` object. Portal Item can be passed.
                                              A dataset that identifies locations from which the optimal path is
@@ -7142,13 +7251,12 @@ def optimal_region_connections(
     future: bool = False,
     **kwargs,
 ):
-
     """
     Calculates the optimal connectivity network between two or more input regions.
     Function available in ArcGIS Image Server 10.8.1 and higher.
 
     ====================================     ====================================================================
-    **Argument**                             **Description**
+    **Parameter**                             **Description**
     ------------------------------------     --------------------------------------------------------------------
     input_region_data                        Required :class:`~arcgis.raster.ImageryLayer` or :class:`~arcgis.features.FeatureLayer` object. Portal Item can be passed.
                                              The input regions to be connected by the optimal network.
@@ -7327,7 +7435,6 @@ def _distance_accumulation(
     future=False,
     **kwargs,
 ):
-
     gis = _arcgis.env.active_gis if gis is None else gis
     return gis._tools.rasteranalysis.distance_accumulation(
         input_source_raster_or_features=input_source_raster_or_features,
@@ -7378,7 +7485,6 @@ def _distance_allocation(
     future=False,
     **kwargs,
 ):
-
     gis = _arcgis.env.active_gis if gis is None else gis
     return gis._tools.rasteranalysis.distance_allocation(
         input_source_raster_or_features=input_source_raster_or_features,
@@ -7419,14 +7525,13 @@ def analyze_changes_using_ccdc(
     future: bool = False,
     **kwargs,
 ):
-
     """
     Function evaluates changes in pixel values over time using the CCDC algorithm,
     and generates a multidimensional raster containing the model results.
     Function available in ArcGIS Image Server 10.8.1 and higher.
 
     ====================================     ====================================================================
-    **Argument**                             **Description**
+    **Parameter**                             **Description**
     ------------------------------------     --------------------------------------------------------------------
     input_multidimensional_raster            Required :class:`~arcgis.raster.ImageryLayer` object. The input multidimensional raster.
                                              Portal Item can be passed.
@@ -7627,7 +7732,6 @@ def detect_change_using_change_analysis_raster(
     future: bool = False,
     **kwargs,
 ):
-
     """
     Function generates a raster containing pixel change information using the
     output change analysis raster from the :meth:`~arcgis.raster.analytics.analyze_changes_using_ccdc`
@@ -7635,7 +7739,7 @@ def detect_change_using_change_analysis_raster(
     Function available in ArcGIS Image Server 10.8.1 and higher.
 
     ====================================     ====================================================================
-    **Argument**                             **Description**
+    **Parameter**                             **Description**
     ------------------------------------     --------------------------------------------------------------------
     input_change_analysis_raster             Required :class:`~arcgis.raster.ImageryLayer` object. The raster generated from the :meth:`~arcgis.raster.analytics.analyze_changes_using_ccdc` or :meth:`~arcgis.raster.analytics.analyze_changes_using_landtrendr`
                                              Portal Item can be passed.
@@ -8007,7 +8111,7 @@ def manage_multidimensional_raster(
     Function available in ArcGIS Image Server 10.8.1 and higher.
 
     ====================================     ====================================================================
-    **Argument**                             **Description**
+    **Parameter**                             **Description**
     ------------------------------------     --------------------------------------------------------------------
     target_multidimensional_raster           Required :class:`~arcgis.raster.ImageryLayer` object. The input multidimensional raster.
                                              Portal Item can be passed.
@@ -8122,7 +8226,6 @@ def sample(
     future: bool = False,
     **kwargs,
 ):
-
     """
     Function creates a table that shows the values of cells from a raster, 
     or set of rasters, for defined locations. The locations are defined by raster cells, 
@@ -8132,7 +8235,7 @@ def sample(
     Function available in ArcGIS Image Server 10.8.1 and higher.
 
     ====================================     ====================================================================
-    **Argument**                             **Description**
+    **Parameter**                             **Description**
     ------------------------------------     --------------------------------------------------------------------
     input_rasters                            Required list of :class:`~arcgis.raster.ImageryLayer` object. List of portal items can be passed.
     ------------------------------------     --------------------------------------------------------------------
@@ -8291,13 +8394,12 @@ def merge_multidimensional_rasters(
     future: bool = False,
     **kwargs,
 ):
-
     """
     Function merges several multidimensional rasters spatially, or across variables and dimensions into one.
     Function available in ArcGIS Image Server 10.9 and higher (not available in ArcGIS Online).
 
     ====================================     =============================================================================================================================================
-    **Argument**                             **Description**
+    **Parameter**                             **Description**
     ------------------------------------     ---------------------------------------------------------------------------------------------------------------------------------------------
     input_multidimensional_rasters           Required list of :class:`~arcgis.raster.ImageryLayer` object. List of input multidimensional rasters to be combined.
     ------------------------------------     ---------------------------------------------------------------------------------------------------------------------------------------------
@@ -8462,14 +8564,13 @@ def analyze_changes_using_landtrendr(
     future: bool = False,
     **kwargs,
 ):
-
     """
     Function evaluates changes in pixel values over time using the Landsat-based detection of trends
     in disturbance and recovery (LandTrendr) method and generates a change analysis raster containing the model results.
     Function available in ArcGIS Image Server 10.9 and higher.
 
     ====================================     ====================================================================
-    **Argument**                             **Description**
+    **Parameter**                             **Description**
     ------------------------------------     --------------------------------------------------------------------
     input_multidimensional_raster            Required :class:`~arcgis.raster.ImageryLayer` object. The input multidimensional raster.
                                              Portal Item can be passed.
@@ -8726,7 +8827,7 @@ def analyze_changes_using_landtrendr(
 #    The tool does not support file transfers to or from geodatabases.
 
 #    ====================================     ====================================================================
-#    **Argument**                             **Description**
+#    **Parameter**                             **Description**
 #    ------------------------------------     --------------------------------------------------------------------
 #    input_files                              Required str or list, input files or folders that will be copied to the output folder.
 #                                             It can be a string specifying the datastore path.
@@ -8790,6 +8891,7 @@ def analyze_changes_using_landtrendr(
 
 #    gis = _arcgis.env.active_gis if gis is None else gis
 
+
 #    return gis._tools.rasteranalysis.transfer_files(input_files=input_files,
 #                                                    output_datastore=output_datastore,
 #                                                    tf_filter=tf_filter,
@@ -8815,12 +8917,11 @@ def zonal_statistics_as_table(
     future: bool = False,
     **kwargs,
 ):
-
     """
     Calculates  the values of a raster within the zones of another dataset and reports the results to a table.
 
     ====================================     ====================================================================
-    **Argument**                             **Description**
+    **Parameter**                             **Description**
     ------------------------------------     --------------------------------------------------------------------
     input_zone_raster_or_features            Required. The input that defines the zones. Both raster and feature 
                                              can be used for the zone input.
@@ -9008,13 +9109,12 @@ def compute_change_raster(
     future: bool = False,
     **kwargs,
 ):
-
     """
     Function calculates the absolute, relative, or categorical difference between two raster datasets.
     Function available in ArcGIS Image Server 10.9 and higher.
 
     ====================================     ====================================================================
-    **Argument**                             **Description**
+    **Parameter**                             **Description**
     ------------------------------------     --------------------------------------------------------------------
     input_from_raster                        Required :class:`~arcgis.raster.ImageryLayer` object. The initial or earlier raster to be analyzed.
     ------------------------------------     --------------------------------------------------------------------
@@ -9229,13 +9329,12 @@ def summarize_categorical_raster(
     future=False,
     **kwargs,
 ):
-
     """
     Generates a table containing the pixel count for each class, in each slice of an input categorical raster.
     Function available in ArcGIS Image Server 10.9.1 and higher (not available in ArcGIS Online).
 
     ====================================     ====================================================================
-    **Argument**                             **Description**
+    **Parameter**                             **Description**
     ------------------------------------     --------------------------------------------------------------------
     input_from_raster                        Required :class:`~arcgis.raster.ImageryLayer` object. The multidimensional, categorical raster to be summarized.
     ------------------------------------     --------------------------------------------------------------------
@@ -9367,14 +9466,13 @@ def train_random_trees_regression_model(
     future=False,
     **kwargs,
 ):
-
     """
     Models the relationship between explanatory variables (independent variables) and a target dataset (dependent variable).
     Function available in ArcGIS Image Server 10.9.1 and higher (not available in ArcGIS Online).
 
 
     ====================================     =============================================================================================================================================
-    **Argument**                             **Description**
+    **Parameter**                             **Description**
     ------------------------------------     ---------------------------------------------------------------------------------------------------------------------------------------------
     input_rasters                            Required :class:`~arcgis.raster.ImageryLayer` object. The single-band, multidimensional, or
                                              multiband rasters, or mosaic datasets, containing explanatory variables.
@@ -9540,7 +9638,7 @@ def export_to_tile_package(
         Currently supported only on ArcGIS online.
 
     ===============     ====================================================================
-    **Argument**        **Description**
+    **Parameter**        **Description**
     ---------------     --------------------------------------------------------------------
     input_data          Required Tiled ImageryLayer portal :class:`~arcgis.gis.Item` to be exported as tile package.
     ---------------     --------------------------------------------------------------------
@@ -9569,4 +9667,245 @@ def export_to_tile_package(
         output_tile_package=output_name,
         future=future,
         **kwargs,
+    )
+
+
+def derive_continuous_flow(
+    input_surface_raster: ImageryLayer,
+    input_depressions_data: Optional[FeatureLayer] = None,
+    input_weight_raster: Optional[ImageryLayer] = None,
+    flow_direction_type: Optional[str] = "D8",
+    force_flow: Optional[str] = "NORMAL",
+    output_flow_accumulation_raster_name: Optional[str] = None,
+    output_flow_direction_raster_name: Optional[str] = None,
+    context: Optional[dict[str, Any]] = None,
+    *,
+    gis: Optional[GIS] = None,
+    future: bool = False,
+    **kwargs,
+):
+    """
+    Generates a raster of accumulated flow into each cell from an input surface raster with no prior sink or depression filling required.
+    
+    ====================================     ====================================================================
+    **Argument**                             **Description**
+    ------------------------------------     --------------------------------------------------------------------
+    input_surface_raster                     Required :class:`~arcgis.raster.ImageryLayer` object. The input elevation surface.
+    ------------------------------------     --------------------------------------------------------------------
+    input_depressions_data                   Optional :class:`~arcgis.features.FeatureLayer`/ :class:`~arcgis.raster.ImageryLayer`.\
+                                             A dataset that defines real depressions. The depressions can\
+                                             be defined either through a raster or a feature layer.\
+                                            
+                                             If input is a raster, the depression cells must take a valid value, including\
+                                             zero, and the areas that are not depressions must be NoData.
+    ------------------------------------     --------------------------------------------------------------------
+    input_weight_raster                      Optional :class:`~arcgis.raster.ImageryLayer`. A raster that defines the fraction of flow that contributes\
+                                             to flow accumulation at each cell. The weight is only applied to flow accumulation.
+                                             
+                                             If no weight raster is specified, a default weight of 1 will be applied to each cell. 
+    ------------------------------------     --------------------------------------------------------------------
+    flow_direction_type                      Optional string. Specifies the flow direction type to use.
+    
+                                             Choice list: ['D8', 'MFD'] 
+    
+                                                - D8 is for the D8 flow direction type. This is the default. 
+                                                - MFD is for the Multi Flow Direction type.
+    ------------------------------------     --------------------------------------------------------------------
+    force_flow                               Optional string. Specifies if edge cells will always flow outward or follow normal flow rules.
+    
+                                             Choice list: ['NORMAL', 'FORCE']. The default value is 'NORMAL'.
+    ------------------------------------     --------------------------------------------------------------------
+    output_flow_accumulation_raster_name     Optional string. If not provided, an Image Service is created by the method and\
+                                             used as the output raster.
+                                             
+                                             The output raster representing flow accumulation (number of upstream cells\
+                                             draining to each cell). The output raster is of floating-point type. You can pass\
+                                             in an existing Image Service Item from your GIS to use that instead. 
+                                            
+                                             Alternatively, you can pass in the name of the output Image Service that should be\
+                                             created by this method to be used as the output for the tool. A RuntimeError is\
+                                             raised if a service by that name already exists.
+    ------------------------------------     --------------------------------------------------------------------
+    output_flow_direction_raster_name        Optional string. Name of the flow_direction_raster. This parameter determines\
+                                             whether flow_direction_raster should be generated or not. Set this parameter,\
+                                             in order to generate the flow_direction_raster.
+    ------------------------------------     --------------------------------------------------------------------
+    context                                  Context contains additional settings that affect task execution.
+
+                                             context parameter overwrites values set through arcgis.env parameter
+
+                                             This function has the following settings:
+
+                                              - Extent (extent): A bounding box that defines the analysis area.
+
+                                                Example:
+                                                    {"extent: {"xmin": -122.68, 
+                                                    "ymin": 45.53,
+                                                    "xmax": -122.45,
+                                                    "ymax": 45.6,
+                                                    "spatialReference": {"wkid": 4326}}}
+
+                                              - Output Spatial Reference (outSR): The output raster will be
+                                                projected into the output spatial reference.
+
+                                                Example:
+                                                    {"outSR": {spatial reference}}
+
+                                              - Snap Raster (snapRaster): The output raster will have its
+                                                cells aligned with the specified snap raster.
+
+                                                Example:
+                                                    {'snapRaster': {'url': '<image_service_url>'}}
+
+                                              - Cell Size (cellSize): The output raster will have the resolution
+                                                specified by cell size.
+
+                                                Example:
+                                                    {'cellSize': 11} or {'cellSize': {'url': <image_service_url>}}  or {'cellSize': 'MaxOfIn'}
+    ------------------------------------     --------------------------------------------------------------------
+    gis                                      Optional GIS. The GIS on which this tool runs. If not specified, the active GIS is used.
+    ------------------------------------     --------------------------------------------------------------------
+    future                                   Keyword only parameter. Optional Boolean. If True, the result will be a GPJob object and
+                                             results will be returned asynchronously.
+    ====================================     ====================================================================     
+
+    """
+
+    gis = _arcgis.env.active_gis if gis is None else gis
+    return gis._tools.rasteranalysis.derive_continuous_flow(
+        input_surface_raster=input_surface_raster,
+        output_flow_accumulation_raster_name=output_flow_accumulation_raster_name,
+        input_depressions_data=input_depressions_data,
+        input_weight_raster=input_weight_raster,
+        output_flow_direction_raster_name=output_flow_direction_raster_name,
+        flow_direction_type=flow_direction_type,
+        force_flow=force_flow,
+        context=context,
+        future=future,
+        **kwargs,
+    )
+
+
+def mosaic_image(
+    input_rasters: list[ImageryLayer],
+    target_raster: ImageryLayer,
+    mosaic_operator: str = "LAST",
+    mosaic_colormap_mode: str = "FIRST",
+    no_data_value: Optional[float] = None,
+    context: Optional[dict[str, Any]] = None,
+    *,
+    gis: Optional[GIS] = None,
+    future: bool = False,
+):
+    """
+    Merges multiple existing raster datasets into an existing raster dataset. 
+    Function available in ArcGIS Image Server 10.9 and higher.
+    Supported only for Cloud Raster format based Imagery Layers.
+
+    ====================================     ====================================================================
+    **Parameter**                             **Description**
+    ------------------------------------     --------------------------------------------------------------------
+    input_rasters                             Required list of :class:`~arcgis.raster.ImageryLayer` objects.
+                                              Single or multiple rasters which will be mosaicked to the target raster. 
+    ------------------------------------     --------------------------------------------------------------------
+    target_raster                            Required :class:`~arcgis.raster.ImageryLayer` object. The raster to which the input rasters will be added.
+                                             This must be an existing raster dataset (cloud raster format (CRF) based image service).
+    ------------------------------------     --------------------------------------------------------------------
+    mosaic_operator                          Optional String. Specifies the method that will be used to mosaic overlapping areas.
+
+                                             - FIRST - The output cell value of the overlapping areas will be the value from the first raster\
+                                                       dataset mosaicked into that location.
+                                             - LAST - The output cell value of the overlapping areas will be the value from the last raster dataset\
+                                                      mosaicked into that location. This is the default.
+                                             - BLEND  - The output cell value of the overlapping areas will be a horizontally weighted calculation of\
+                                                        the values of the cells in the overlapping area.
+                                             - MEAN - The output cell value of the overlapping areas will be the average value of the overlapping cells.
+                                             - MINIMUM - The output cell value of the overlapping areas will be the minimum value of the overlapping cells.
+                                             - MAXIMUM - The output cell value of the overlapping areas will be the maximum value of the overlapping cells.
+                                             - SUM - The output cell value of the overlapping areas will be the total sum of the overlapping cells.
+                                             
+                                             Example:
+
+                                                "LAST"
+    ------------------------------------     --------------------------------------------------------------------
+    mosaic_colormap_mode                     Optional String. Specifies the method that will be used to choose which color map from the
+                                             input rasters will be applied to the mosaic output.
+
+                                             - FIRST - The color map from the first raster dataset in the list will be applied to the\
+                                                       output raster mosaic. This is the default.
+                                             - LAST - The color map from the last raster dataset in the list will be applied to the output raster mosaic.
+                                             - MATCH  - All the color maps will be considered when mosaicking. If all possible values are\
+                                                        already used (for the bit depth), the tool will match the value with the closest available color.
+                                             - REJECT  - Only the raster datasets that do not have a color map associated with them will be mosaicked.
+                                             
+                                             Example:
+
+                                                "FIRST"
+    ------------------------------------     --------------------------------------------------------------------
+    no_data_value                            Optional Float or Integer. All the pixels with the specified value will be set to NoData
+                                             in the output raster dataset (target_raster).
+
+                                             Example:
+
+                                                21
+    ------------------------------------     --------------------------------------------------------------------
+    context                                  Context contains additional settings that affect task execution.
+
+                                             context parameter overwrites values set through arcgis.env parameter
+
+                                             This function has the following settings:
+
+                                             - Resampling Method (resamplingMethod): The output raster will be
+                                               resampled to method specified.
+                                               The supported values are: BILINEAR, NEAREST, CUBIC.
+
+                                                Example:
+
+                                                   {'resamplingMethod': "NEAREST"}
+
+
+                                             - Parallel Processing Factor (parallelProcessingFactor): controls
+                                               Raster Processing (CPU) service instances.
+
+                                                Example:
+
+                                                Syntax example with a specified number of processing instances:
+
+                                                    {"parallelProcessingFactor": "2"}
+
+                                                Syntax example with a specified percentage of total
+                                                processing instances:
+
+                                                    {"parallelProcessingFactor": "60%"}
+    ------------------------------------     --------------------------------------------------------------------
+    gis                                      Optional GIS. The :class:`~arcgis.gis.GIS` on which this tool runs. If not specified, the active GIS is used.
+    ------------------------------------     --------------------------------------------------------------------
+    future                                   Keyword only parameter. Optional Boolean. If True, the result will be a GPJob object and
+                                             results will be returned asynchronously.
+    ====================================     ====================================================================
+
+    :return:
+        The output imagery layer item
+
+    .. code-block:: python
+
+        # Usage Example:
+
+        mosaiced_target_op = mosaic_image(input_rasters=[raster_1, raster_2],
+                                          target_raster=raster_3,
+                                          mosaic_operator="FIRST",
+                                          mosaic_colormap_mode="FIRST",
+                                          gis=gis)
+    """
+
+    gis = _arcgis.env.active_gis if gis is None else gis
+    return gis._tools.rasteranalysis.mosaic_image(
+        input_rasters=input_rasters,
+        target_raster=target_raster,
+        mosaic_operator=mosaic_operator,
+        mosaic_colormap_mode=mosaic_colormap_mode,
+        no_data_value=no_data_value,
+        context=context,
+        gis=gis,
+        future=future,
     )

@@ -5,6 +5,7 @@ from arcgis.env import active_gis
 from arcgis._impl.common._mixins import PropertyMap
 from arcgis.features._version import Version
 
+
 ###########################################################################
 class ValidationManager(object):
     """
@@ -68,7 +69,7 @@ class ValidationManager(object):
         Updates errors on the validation tables.
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         error_features      Required List.  The error features to be updated.
 
@@ -148,7 +149,7 @@ class ValidationManager(object):
 
 
         ====================     ====================================================================
-        **Argument**             **Description**
+        **Parameter**             **Description**
         --------------------     --------------------------------------------------------------------
         evaluation               Required List of Strings.  A list of evaluation types.
 

@@ -8,6 +8,8 @@ from ...gis import GIS, Item, User
 from ._resources import PortalResourceManager
 from ._base import BasePortalAdmin
 from ...apps.tracker._location_tracking import LocationTrackingManager
+from ._dsmgr import DataStoreMetricsManager
+
 
 ########################################################################
 class AGOLAdminManager(object):
@@ -38,6 +40,8 @@ class AGOLAdminManager(object):
     _category_schema = None
     _certificates = None
     _servers = None
+    _dmm = None
+
     # ----------------------------------------------------------------------
     def __init__(self, gis, ux=None, metadata=None, collaborations=None):
         """initializer"""
@@ -50,11 +54,17 @@ class AGOLAdminManager(object):
 
     # ----------------------------------------------------------------------
     def __str__(self):
-        return "< %s @ %s >" % (type(self).__name__, self._gis._portal.resturl)
+        return "< %s @ %s >" % (
+            type(self).__name__,
+            self._gis._portal.resturl,
+        )
 
     # ----------------------------------------------------------------------
     def __repr__(self):
-        return "< %s @ %s >" % (type(self).__name__, self._gis._portal.resturl)
+        return "< %s @ %s >" % (
+            type(self).__name__,
+            self._gis._portal.resturl,
+        )
 
     # ----------------------------------------------------------------------
     @property
@@ -73,6 +83,19 @@ class AGOLAdminManager(object):
 
     # ----------------------------------------------------------------------
     @property
+    def datastore_metrics(self) -> DataStoreMetricsManager:
+        """
+        Provides administrators information about the datastore on ArcGIS Online.
+
+         :return:
+            :class:`~arcgis.gis.admin._dsmgr.DataStoreMetricsManager` object
+        """
+        if self._dmm is None:
+            self._dmm = DataStoreMetricsManager(gis=self._gis)
+        return self._dmm
+
+    # ----------------------------------------------------------------------
+    @property
     def _user_experience_program(self):
         """
         ArcGIS Online works continuously to improve our products and one of
@@ -87,7 +110,7 @@ class AGOLAdminManager(object):
         organization.
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         value               Required boolean. True means that the organization will be enrolled
                             in the Esri User Experience Improvement Program. False means the
@@ -290,7 +313,7 @@ class AGOLAdminManager(object):
         This property allows `org_admins` to be able to see all scheduled tasks on the enterprise
 
         ================  ===============================================================================
-        **Argument**      **Description**
+        **Parameter**      **Description**
         ----------------  -------------------------------------------------------------------------------
         item              Optional Item. The item to query tasks about.
         ----------------  -------------------------------------------------------------------------------
@@ -352,7 +375,7 @@ class AGOLAdminManager(object):
         Returns a CSV file or Pandas's DataFrame containing the login history from a start_date to the present.
 
         ================  ===============================================================================
-        **Argument**      **Description**
+        **Parameter**      **Description**
         ----------------  -------------------------------------------------------------------------------
         start_date        Required datetime.datetime object. The beginning date to start with.
         ----------------  -------------------------------------------------------------------------------
@@ -456,7 +479,7 @@ class AGOLAdminManager(object):
 
             res = self._gis._con.post(url, params)
             data.extend(res["items"])
-            while len(res["items"]) > 0 and res["nextKey"]:
+            while len(res["items"]) > 0 and "nextKey" in res:
                 params["start"] = res["nextKey"]
                 res = self._gis._con.post(url, params)
                 data.extend(res["items"])
@@ -470,7 +493,7 @@ class AGOLAdminManager(object):
 
             res = self._gis._con.post(url, params)
             data.extend(res["items"])
-            while len(res["items"]) > 0 and res["nextKey"]:
+            while len(res["items"]) > 0 and "nextKey" in res:
                 params["start"] = res["nextKey"]
                 res = self._gis._con.post(url, params)
                 data.extend(res["items"])

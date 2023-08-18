@@ -1,21 +1,179 @@
-from fastai.vision import ImageSegment, Image
-from fastai.vision.image import open_image, show_image, pil2tensor
+from fastai.vision import Image
 from fastai.vision.data import SegmentationProcessor, ImageList
 from fastai.layers import CrossEntropyFlat
 from fastai.basic_train import LearnerCallback
+from fastai.torch_core import add_metrics
+from torch.jit.annotations import List, Dict
+from torchvision.models.detection.roi_heads import (
+    fastrcnn_loss,
+    maskrcnn_loss,
+    maskrcnn_inference,
+)
+from torchvision.models.detection.transform import (
+    resize_boxes,
+    paste_masks_in_image,
+)
 import torch
 import warnings
-import PIL
 import numpy as np
-from skimage import io
 import matplotlib.pyplot as plt
-from torch import LongTensor
-import os
 from .._utils.common import ArcGISMSImage
 from typing import Callable
 import warnings
 from .._utils.utils import check_imbalance
 from fastprogress.fastprogress import progress_bar
+from torchvision.ops import boxes as box_ops
+from fastai.vision.transform import dihedral_affine
+from fastai.vision import ImageBBox
+
+
+def forward_roi(self, features, proposals, image_shapes, targets=None):
+    """
+    Arguments:
+        features (List[Tensor])
+        proposals (List[Tensor[N, 4]])
+        image_shapes (List[Tuple[H, W]])
+        targets (List[Dict])
+    """
+
+    train_val = getattr(self, "train_val", False)
+
+    if targets is not None:
+        for t in targets:
+            floating_point_types = (torch.float, torch.double, torch.half)
+            assert (
+                t["boxes"].dtype in floating_point_types
+            ), "target boxes must of float type"
+            assert t["labels"].dtype == torch.int64, "target labels must of int64 type"
+
+    losses = {}
+    result = torch.jit.annotate(List[Dict[str, torch.Tensor]], [])
+
+    if self.training:
+        if train_val:
+            original_prpsl = [p.clone() for p in proposals]
+        (
+            proposals,
+            matched_idxs,
+            labels,
+            regression_targets,
+        ) = self.select_training_samples(proposals, targets)
+
+        box_features = self.box_roi_pool(features, proposals, image_shapes)
+        box_features = self.box_head(box_features)
+        class_logits, box_regression = self.box_predictor(box_features)
+
+        loss_classifier, loss_box_reg = fastrcnn_loss(
+            class_logits, box_regression, labels, regression_targets
+        )
+
+        # during training, only focus on positive boxes
+        num_images = len(proposals)
+        mask_proposals = []
+        pos_matched_idxs = []
+        for img_id in range(num_images):
+            pos = torch.where(labels[img_id] > 0)[0]
+            mask_proposals.append(proposals[img_id][pos])
+            pos_matched_idxs.append(matched_idxs[img_id][pos])
+
+        mask_features = self.mask_roi_pool(features, mask_proposals, image_shapes)
+        mask_features = self.mask_head(mask_features)
+        mask_logits = self.mask_predictor(mask_features)
+
+        gt_masks = [t["masks"] for t in targets]
+        gt_labels = [t["labels"] for t in targets]
+        rcnn_loss_mask = maskrcnn_loss(
+            mask_logits, mask_proposals, gt_masks, gt_labels, pos_matched_idxs
+        )
+
+        losses = {
+            "loss_classifier": loss_classifier,
+            "loss_box_reg": loss_box_reg,
+            "loss_mask": rcnn_loss_mask,
+        }
+
+    if not self.training or train_val:
+        if train_val:
+            proposals = original_prpsl
+
+        box_features = self.box_roi_pool(features, proposals, image_shapes)
+        box_features = self.box_head(box_features)
+        class_logits, box_regression = self.box_predictor(box_features)
+
+        boxes, scores, labels = self.postprocess_detections(
+            class_logits, box_regression, proposals, image_shapes
+        )
+        num_images = len(boxes)
+        for i in range(num_images):
+            result.append(
+                {
+                    "boxes": boxes[i],
+                    "labels": labels[i],
+                    "scores": scores[i],
+                }
+            )
+
+        mask_proposals = [p["boxes"] for p in result]
+        mask_features = self.mask_roi_pool(features, mask_proposals, image_shapes)
+        mask_features = self.mask_head(mask_features)
+        mask_logits = self.mask_predictor(mask_features)
+        labels = [r["labels"] for r in result]
+        masks_probs = maskrcnn_inference(mask_logits, labels)
+        for mask_prob, r in zip(masks_probs, result):
+            r["masks"] = mask_prob
+
+    return result, losses
+
+
+def postprocess_transform(self, result, image_shapes, original_image_sizes):
+    train_val = getattr(self, "train_val", False)
+
+    if not self.training or train_val:
+        for i, (pred, im_s, o_im_s) in enumerate(
+            zip(result, image_shapes, original_image_sizes)
+        ):
+            boxes = pred["boxes"]
+            boxes = resize_boxes(boxes, im_s, o_im_s)
+            result[i]["boxes"] = boxes
+            if "masks" in pred:
+                masks = pred["masks"]
+                masks = paste_masks_in_image(masks, boxes, o_im_s)
+                result[i]["masks"] = masks
+
+    elif self.training:
+        return result
+
+    return result
+
+
+def post_nms_top_n(self):
+    train_val = getattr(self, "train_val", False)
+
+    if train_val:
+        return self._post_nms_top_n["testing"]
+    elif self.training:
+        return self._post_nms_top_n["training"]
+    return self._post_nms_top_n["testing"]
+
+
+def pre_nms_top_n(self):
+    train_val = getattr(self, "train_val", False)
+
+    if train_val:
+        self._pre_nms_top_n["testing"]
+    elif self.training:
+        return self._pre_nms_top_n["training"]
+    return self._pre_nms_top_n["testing"]
+
+
+def eager_outputs_modified(self, losses, detections):
+    train_val = getattr(self, "train_val", False)
+
+    if train_val:
+        return detections, losses
+    elif self.training:
+        return losses
+    return detections
 
 
 class ArcGISImageSegment(Image):
@@ -49,7 +207,6 @@ class ArcGISImageSegment(Image):
         alpha=0.5,
         **kwargs,
     ):
-
         if ax is None:
             fig, ax = plt.subplots(figsize=figsize)
         masks = self.data[0].numpy()
@@ -138,7 +295,6 @@ class ArcGISSegmentationLabelList(ImageList):
             labeled_mask = np.zeros((1, img_shape[0], img_shape[1]))
 
             for j in range(len(self.class_mapping)):
-
                 if k < len(fn):
                     lbl_name = int(
                         self.index_dir[self.inverse_class_mapping[fn[k].parent.name]]
@@ -257,6 +413,8 @@ class ArcGISInstanceSegmentationMSItemList(ArcGISInstanceSegmentationItemList):
 
 
 def mask_rcnn_loss(loss_value, *args):
+    if isinstance(loss_value, tuple):
+        loss_value = loss_value[1]
 
     final_loss = 0.0
     for i in loss_value.values():
@@ -271,12 +429,10 @@ def mask_to_dict(last_target, device):
     target_list = []
 
     for i in range(len(last_target)):
-
         boxes = []
         masks = np.zeros((1, last_target[i].shape[1], last_target[i].shape[2]))
         labels = []
         for j in range(last_target[i].shape[0]):
-
             mask = np.array(last_target[i].data[j].cpu())
             obj_ids = np.unique(mask)
 
@@ -328,14 +484,62 @@ class train_callback(LearnerCallback):
 
     def on_batch_begin(self, last_input, last_target, **kwargs):
         "Handle new batch `xb`,`yb` in `train` or validation."
+        train = kwargs.get("train")
+        self.model.train()
+        if train:
+            self.model.roi_heads.train_val = False
+            self.model.rpn.train_val = False
+            self.model.train_val = False
+            self.model.transform.train_val = False
+        else:
+            self.model.backbone.eval()  # to get feature in eval mode for evaluation
+            self.model.roi_heads.train_val = True
+            self.model.rpn.train_val = True
+            self.model.train_val = True
+            self.model.transform.train_val = True
         target_list = mask_to_dict(last_target, self.c_device)
         if last_input.shape[0] < 2:
             last_input = torch.cat((last_input, last_input))
             target_list.append(target_list[0])
-        self.learn.model.train()
+
         last_input = [list(last_input), target_list]
-        last_target = [torch.tensor([1]) for i in last_target]
+        last_target = target_list  # [torch.tensor([1]) for i in last_target]
         return {"last_input": last_input, "last_target": last_target}
+
+
+class AveragePrecision(LearnerCallback):
+    def __init__(self, learn):
+        super().__init__(learn)
+
+    def on_epoch_begin(self, **kwargs):
+        self.aps = []
+
+    def on_batch_end(self, last_output, last_target, **kwargs):
+        last_output = last_output[0]
+        for i in range(len(last_output)):
+            last_output[i]["masks"] = last_output[i]["masks"].squeeze()
+            if last_output[i]["masks"].shape[0] == 0:
+                continue
+            if len(last_output[i]["masks"].shape) == 2:
+                last_output[i]["masks"] = last_output[i]["masks"][None]
+            ap = compute_ap(
+                last_target[i]["labels"],
+                last_target[i]["masks"],
+                last_output[i]["labels"],
+                last_output[i]["scores"],
+                last_output[i]["masks"],
+            )
+            self.aps.append(ap)
+
+    def on_epoch_end(self, last_metrics, **kwargs):
+        self.model.roi_heads.train_val = False
+        self.model.rpn.train_val = False
+        self.model.train_val = False
+        self.model.transform.train_val = False
+        if self.aps == []:
+            self.aps.append(0.0)
+        self.aps = torch.mean(torch.tensor(self.aps))
+        return add_metrics(last_metrics, self.aps)
 
 
 def masks_iou(masks1, masks2):
@@ -389,7 +593,6 @@ def compute_matches(
     iou_threshold=0.5,
     detect_threshold=0.5,
 ):
-
     # Method is based on https://github.com/matterport/Mask_RCNN
     indices = torch.argsort(pred_scores, descending=True)
     pred_class_ids = pred_class_ids[indices]
@@ -424,7 +627,6 @@ def compute_ap(
     iou_threshold=0.5,
     detect_threshold=0.5,
 ):
-
     # Method is based on https://github.com/matterport/Mask_RCNN
     pred_match = compute_matches(
         gt_class_ids,
@@ -450,10 +652,150 @@ def compute_ap(
     return mAP
 
 
-def compute_class_AP(
-    model, dl, n_classes, show_progress, detect_thresh=0.5, iou_thresh=0.5, mean=False
-):
+def batch_dihedral(x, k):
+    flips = []
+    if k & 1:
+        flips.append(2)
+    if k & 2:
+        flips.append(3)
+    if flips:
+        x = torch.flip(x, flips)
+    if k & 4:
+        x = x.transpose(2, 3)
+    return x.contiguous()
 
+
+def recover_boxes(bboxes, size, k):
+    if bboxes.size(0):
+        device = bboxes.device
+        bboxes = ImageBBox.create(*size, bboxes.detach().cpu())
+        bboxes = dihedral_affine(bboxes, k)
+        if k == 5 or k == 6:
+            bboxes = dihedral_affine(bboxes, 3)
+        bboxes = (size[0] * (bboxes.data + 1) / 2).to(device)
+
+    return bboxes
+
+
+def intersect(box_a, box_b):
+    max_xy = torch.min(box_a[:, None, 2:], box_b[None, :, 2:])
+    min_xy = torch.max(box_a[:, None, :2], box_b[None, :, :2])
+    inter = torch.clamp((max_xy - min_xy), min=0)
+    return inter[:, :, 0] * inter[:, :, 1]
+
+
+def box_area(b):
+    return (b[:, 2] - b[:, 0]) * (b[:, 3] - b[:, 1])
+
+
+def boxious(box_a, box_b):
+    inter = intersect(box_a, box_b)
+    union = box_area(box_a).unsqueeze(1) + box_area(box_b).unsqueeze(0) - inter
+    return inter / union
+
+
+def pred_mean_merge(pred, iou_thresold=0.5, same_pred=1):
+    bboxes = pred["boxes"]
+    masks = pred["masks"].squeeze()
+    scores, labels = pred["scores"], pred["labels"]
+    ious = boxious(bboxes, bboxes)
+    numOfboxes = ious.shape[0]
+    # merge predictions with iou>thresold
+    ref_boxs, merge_boxids = np.where(ious > iou_thresold)
+    _, idx = np.unique(ref_boxs, return_index=True)
+    counter = np.array(range(numOfboxes))
+    i = 0
+    merge_masks, merge_boxes, merge_scores, merge_labels = [], [], [], []
+    while i < numOfboxes:
+        if counter[i] == -1:
+            i += 1
+            continue
+        if i == numOfboxes - 1:
+            matched_idx = merge_boxids[idx[i] :]
+        else:
+            matched_idx = merge_boxids[idx[i] : idx[i + 1]]
+        if len(matched_idx) > same_pred:
+            merge_masks.append(masks[matched_idx, :, :].mean(dim=0))
+            merge_boxes.append(bboxes[matched_idx, :].mean(dim=0))
+            merge_scores.append(scores[matched_idx].mean())
+            merge_labels.append(labels[matched_idx[0]])
+
+        counter[np.isin(counter, matched_idx)] = -1
+        i += 1
+    return (
+        torch.stack(merge_masks) if merge_masks else torch.tensor([]),
+        torch.stack(merge_boxes) if merge_boxes else torch.tensor([]),
+        torch.tensor(merge_scores),
+        torch.tensor(merge_labels),
+    )
+
+
+def merge_tta_prediction(predictions, nms_thres=0.3, merge_policy="mean"):
+    device = predictions[0]["boxes"].device
+    result = {k: [] for k in predictions[0].keys()}
+    for pred in predictions:
+        for k, v in pred.items():
+            result[k].append(v)
+
+    for k, v in result.items():
+        result[k] = torch.cat(v).detach().cpu()
+
+    if merge_policy == "mean":
+        (
+            result["masks"],
+            result["boxes"],
+            result["scores"],
+            result["labels"],
+        ) = pred_mean_merge(result, nms_thres)
+    else:
+        keep = box_ops.batched_nms(
+            result["boxes"],
+            result["scores"],
+            result["labels"],
+            nms_thres,
+        )
+
+        for k, v in result.items():
+            result[k] = result[k][keep]
+
+    for k, v in result.items():
+        result[k] = result[k].to(device)
+
+    return result
+
+
+def predict_tta(model, batch, detect_thresh=0.5, merge_policy="mean"):
+    temp = model.roi_heads.score_thresh
+    model.roi_heads.score_thresh = detect_thresh
+    ttaPreds = [[] for _ in range(batch.shape[0])]
+    for k in model.arcgis_tta:
+        transforms = batch_dihedral(batch, k)
+        pred = model(list(transforms))
+        for i, p in enumerate(pred):
+            p["masks"] = batch_dihedral(p["masks"], k)
+            if k == 5 or k == 6:
+                p["masks"] = batch_dihedral(p["masks"], 3)
+            p["boxes"] = recover_boxes(p["boxes"], batch.shape[-2:], k)
+            ttaPreds[i].append(p)
+    for i, pred in enumerate(ttaPreds):
+        ttaPreds[i] = merge_tta_prediction(
+            pred, model.roi_heads.nms_thresh, merge_policy
+        )
+    model.roi_heads.score_thresh = temp
+
+    return ttaPreds
+
+
+def compute_class_AP(
+    model,
+    dl,
+    n_classes,
+    show_progress,
+    detect_thresh=0.5,
+    iou_thresh=0.5,
+    mean=False,
+    tta_prediction=False,
+):
     model.learn.model.eval()
     if mean:
         aps = []
@@ -461,10 +803,12 @@ def compute_class_AP(
         aps = [[] for _ in range(n_classes)]
     with torch.no_grad():
         for input, target in progress_bar(dl, display=show_progress):
-            predictions = model.learn.model(list(input))
+            if tta_prediction:
+                predictions = predict_tta(model.learn.model, input, detect_thresh)
+            else:
+                predictions = model.learn.model(list(input))
             ground_truth = mask_to_dict(target, model._device)
             for i in range(len(predictions)):
-
                 predictions[i]["masks"] = predictions[i]["masks"].squeeze()
                 if predictions[i]["masks"].shape[0] == 0:
                     continue

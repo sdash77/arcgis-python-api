@@ -69,7 +69,7 @@ def prepare_data_future(
     -For entity extraction from text, use IOB, BILUO or ner_json formats.
 
     =====================   ===========================================
-    **Argument**            **Description**
+    **Parameter**            **Description**
     ---------------------   -------------------------------------------
     path                    Required string. Path to data directory.
     ---------------------   -------------------------------------------
@@ -125,7 +125,7 @@ def prepare_data_future(
     **Keyword Arguments**
 
     =====================   ===========================================
-    **Argument**            **Description**
+    **Parameter**            **Description**
     ---------------------   -------------------------------------------
     imagery_type            Optional string. Type of imagery used to export
                             the training data, valid values are:

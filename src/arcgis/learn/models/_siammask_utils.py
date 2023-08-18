@@ -585,7 +585,6 @@ class ResAdjust(nn.Module):
         self.feature_size = out_channels * len(self.fuse_layers)
 
     def _make_layer(self, block, plances, dilation, out, number=1):
-
         layers = []
 
         for _ in range(number):
@@ -603,7 +602,6 @@ class ResAdjust(nn.Module):
         return nn.Sequential(*layers)
 
     def forward(self, p2, p3, p4):
-
         outputs = []
 
         if 2 in self.fuse_layers:
@@ -1680,7 +1678,7 @@ def siamese_track(
             b = (out_sz[1] - 1) / bbox[3]
             c = -a * bbox[0]
             d = -b * bbox[1]
-            mapping = np.array([[a, 0, c], [0, b, d]]).astype(np.float)
+            mapping = np.array([[a, 0, c], [0, b, d]]).astype(float)
             crop = cv2.warpAffine(
                 image,
                 mapping,

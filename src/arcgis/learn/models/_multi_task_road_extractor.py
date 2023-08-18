@@ -80,7 +80,7 @@ class MultiTaskRoadExtractor(ArcGISModel):
     Implementation based on https://doi.org/10.1109/CVPR.2019.01063 .
 
     =====================   =====================================================
-    **Argument**            **Description**
+    **Parameter**            **Description**
     ---------------------   -----------------------------------------------------
     data                    Required fastai Databunch. Returned data object from
                             :meth:`~arcgis.learn.prepare_data`  function.
@@ -103,7 +103,7 @@ class MultiTaskRoadExtractor(ArcGISModel):
     **kwargs**
 
     =============================   =============================================
-    **Argument**                    **Description**
+    **Parameter**                    **Description**
     -----------------------------   ---------------------------------------------
     mtl_model                       Optional String. It is used to create model
                                     from linknet or
@@ -456,12 +456,11 @@ class MultiTaskRoadExtractor(ArcGISModel):
         return ["valid_loss", "accuracy", "miou", "dice"]
 
     def mIOU(self, mean=False, show_progress=True):
-
         """
         Computes mean IOU on the validation set for each class.
 
         =====================   ===========================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ---------------------   -------------------------------------------
         mean                    Optional bool. If False returns class-wise
                                 mean IOU, otherwise returns mean iou of all
@@ -657,7 +656,7 @@ class MultiTaskRoadExtractor(ArcGISModel):
         Deep Learning Package(DLPK) or Esri Model Definition (EMD) file.
 
         =====================   ===========================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ---------------------   -------------------------------------------
         emd_path                Required string. Path to Deep Learning Package
                                 (DLPK) or Esri Model Definition(EMD) file.
@@ -695,6 +694,7 @@ class MultiTaskRoadExtractor(ArcGISModel):
             )
             data.orient_c = orient_c
             data.class_mapping = class_mapping
+            data._is_empty = True
             data = get_multispectral_data_params_from_emd(data, emd)
             data.emd_path = emd_path
             data.emd = emd
@@ -708,7 +708,7 @@ class MultiTaskRoadExtractor(ArcGISModel):
         **kwargs**
 
         =====================   ===========================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ---------------------   -------------------------------------------
         rows                    Number of rows of data to be displayed, if
                                 batch size is smaller, then the rows will
@@ -737,7 +737,7 @@ class MultiTaskRoadExtractor(ArcGISModel):
         **kwargs**
 
         =====================   ===========================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ---------------------   -------------------------------------------
         rows                    Number of rows of data to be displayed, if
                                 batch size is smaller, then the rows will

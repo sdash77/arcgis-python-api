@@ -6,13 +6,8 @@ import unittest
 from arcgis.gis import GIS, Item
 from arcgis.features import FeatureLayer
 from arcgis.features.find_locations import create_watersheds
-from config_tests import setup_profiles, stage_data
 
-test_items = ["435fcf6cff1f4f34989e151c1f25d64a"]  # Esri Offices
-profiles = ["online_test", "ent_test", "kube_test"]
-setup_profiles(profiles[0], profiles[1], profiles[2])
-stage_data(test_items)
-
+profiles = ["your_online_profile", "your_enterprise_profile"]
 
 class TestCreateWatersheds(unittest.TestCase):
     def test_overwrite(self):
@@ -23,9 +18,9 @@ class TestCreateWatersheds(unittest.TestCase):
             print("User: ", gis.users.me.username)
             # gather layer
             if gis._is_agol:
-                office_item = gis.content.get("435fcf6cff1f4f34989e151c1f25d64a")
+                office_item = gis.content.get("c687b8a5b56349818c333c7d46e906bd")
             else:
-                office_item = gis.content.get("435fcf6cff1f4f34989e151c1f25d64a")
+                office_item = gis.content.get("0d82289805f04b74916e44dfb1f27f03")
             assert isinstance(office_item, Item)
             office_lyr = office_item.layers[0]
             assert isinstance(office_lyr, FeatureLayer)
@@ -35,7 +30,7 @@ class TestCreateWatersheds(unittest.TestCase):
             output_name = "overwrite_test_create_watersheds_" + test_id
             print("Creating ", output_name)
             target_item = create_watersheds(
-                input_layer=office_lyr, output_name=output_name
+                input_layer=office_lyr, output_name=output_name, context={"outSR": {"wkid": 4326}}
             )
             assert isinstance(target_item, Item)
             target_layer = target_item.layers[0]
@@ -48,7 +43,7 @@ class TestCreateWatersheds(unittest.TestCase):
                 input_layer=office_lyr,
                 source_database="90m",
                 output_name=target_layer,
-                context={"overwrite": True},
+                context={"outSR": {"wkid": 4326}, "overwrite": True},
             )
             assert isinstance(overwrite, Item)
             assert target_item.id == overwrite.id

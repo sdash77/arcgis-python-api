@@ -9,7 +9,7 @@ class AssignmentManager(object):
     It can be accessed from the project as :py:attr:`~arcgis.apps.workforce.Project.assignments`
 
     ==================     ====================================================================
-    **Argument**           **Description**
+    **Parameter**           **Description**
     ------------------     --------------------------------------------------------------------
     project                Required :class:`~arcgis.apps.workforce.Project`. The project to
                            manage.
@@ -39,7 +39,7 @@ class AssignmentManager(object):
 
 
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
         object_id              Optional :class:`integer`. The object id of the assignment to get
         ------------------     --------------------------------------------------------------------
@@ -56,7 +56,7 @@ class AssignmentManager(object):
 
 
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
         where                  Optional :class:`string`. The where clause to use to query
                                assignments. Defaults to '1=1'
@@ -72,7 +72,7 @@ class AssignmentManager(object):
 
 
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
         assignments            Required :class:`List` of :class:`~arcgis.apps.workforce.Assignment`.
                                The list of assignments to add.
@@ -108,7 +108,7 @@ class AssignmentManager(object):
         Creates and adds a new assignment to the project
 
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
         feature                Optional :class:`~arcgis.features.Feature`.
                                A feature containing the assignments attributes. If this is provided
@@ -200,7 +200,7 @@ class AssignmentManager(object):
 
 
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
         assignments            Required :class:`List` of :class:`~arcgis.apps.workforce.Assignment`.
                                The list of assignments to update.
@@ -216,7 +216,7 @@ class AssignmentManager(object):
 
 
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
         assignments            Required :class:`List` of :class:`~arcgis.apps.workforce.Assignment`.
                                The list of assignments to remove.
@@ -231,7 +231,7 @@ class AssignmentTypeManager:
     It can be accessed from the project as :py:attr:`~arcgis.apps.workforce.Project.assignment_types`
 
     ==================     ====================================================================
-    **Argument**           **Description**
+    **Parameter**           **Description**
     ------------------     --------------------------------------------------------------------
     project                Required :class:`~arcgis.apps.workforce.Project`. The project to
                            manage.
@@ -260,7 +260,7 @@ class AssignmentTypeManager:
 
 
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
         code                   Optional :class:`integer`. The code of the assignment type.
         ------------------     --------------------------------------------------------------------
@@ -290,7 +290,7 @@ class AssignmentTypeManager:
         Adds an assignment type to the project.
 
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
         coded_value            Optional :class:`dict`. The dictionary storing the code and
                                name of the type. Only works for v1 projects.
@@ -310,7 +310,7 @@ class AssignmentTypeManager:
         Adds the list of assignment types to the project.
 
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
         assignment_types       Required :class:`List` of :class:`~arcgis.apps.workforce.AssignmentTypes`.
                                The list of assignment types to add.
@@ -329,7 +329,7 @@ class AssignmentTypeManager:
 
 
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
         assignment_types       Required :class:`List` of :class:`~arcgis.apps.workforce.AssignmentTypes`.
                                The list of assignment types to update.
@@ -348,7 +348,7 @@ class AssignmentTypeManager:
 
 
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
         assignment_types       Required :class:`List` of :class:`~arcgis.apps.workforce.AssignmentTypes`.
                                The list of assignment types to remove.
@@ -366,7 +366,7 @@ class AssignmentAttachmentManager(object):
     It can be accessed from the assignment as :py:attr:`~arcgis.apps.workforce.Assignment.attachments`
 
     ==================     ====================================================================
-    **Argument**           **Description**
+    **Parameter**           **Description**
     ------------------     --------------------------------------------------------------------
     assignment             Required :class:`~arcgis.apps.workforce.Assignment`. The assignment to
                            manage.
@@ -391,7 +391,7 @@ class AssignmentAttachmentManager(object):
 
 
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
         file_path              Required :class:`string` The file to upload.
         ==================     ====================================================================
@@ -404,7 +404,7 @@ class AssignmentAttachmentManager(object):
 
 
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
         attachments            Required :class:`List` of :class:`~arcgis.apps.workforce.Attachment`.
                                The list of attachments to delete.
@@ -418,7 +418,7 @@ class AssignmentAttachmentManager(object):
 
 
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
         out_folder             Required :class:`string`. The folder to download the attachments to.
         ==================     ====================================================================
@@ -440,7 +440,7 @@ class DispatcherManager:
      It can be accessed from the project as :py:attr:`~arcgis.apps.workforce.Project.dispatchers`
 
      ==================     ====================================================================
-     **Argument**           **Description**
+     **Parameter**           **Description**
      ------------------     --------------------------------------------------------------------
      project                Required :class:`~arcgis.apps.workforce.Project`. The project to
                             manage.
@@ -468,7 +468,7 @@ class DispatcherManager:
         This gets a dispatcher by their object id, global id, or user id.
 
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
         object_id              Optional :class:`integer`. The object id of the dispatcher to get
         ------------------     --------------------------------------------------------------------
@@ -488,7 +488,7 @@ class DispatcherManager:
 
 
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
         where                  Optional :class:`string`. The where clause to use to query
                                dispatchers. Defaults to '1=1'
@@ -503,7 +503,7 @@ class DispatcherManager:
         Creates and adds a dispatcher to the project.
 
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
         project                Required :class:`~arcgis.apps.workforce.Project`. The project that
                                the dispatcher belongs to.
@@ -528,7 +528,7 @@ class DispatcherManager:
 
 
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
         dispatchers            Required :class:`List` of :class:`~arcgis.apps.workforce.Dispatcher`.
                                The list of dispatchers to add.
@@ -544,7 +544,7 @@ class DispatcherManager:
 
 
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
         dispatchers            Required :class:`List` of :class:`~arcgis.apps.workforce.Dispatcher`.
                                The list of dispatchers to update.
@@ -560,7 +560,7 @@ class DispatcherManager:
 
 
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
         dispatchers            Required :class:`List` of :class:`~arcgis.apps.workforce.Dispatcher`.
                                The list of dispatchers to remove.
@@ -575,7 +575,7 @@ class TrackManager:
     It can be accessed from the project as :py:attr:`~arcgis.apps.workforce.Project.tracks`
 
     ==================     ====================================================================
-    **Argument**           **Description**
+    **Parameter**           **Description**
     ------------------     --------------------------------------------------------------------
     project                Required :class:`~arcgis.apps.workforce.Project`. The project to
                            manage.
@@ -592,7 +592,7 @@ class TrackManager:
         This gets a track by their object id or global id.
 
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
         object_id              Optional :class:`integer`. The object id of the track to get
         ------------------     --------------------------------------------------------------------
@@ -610,7 +610,7 @@ class TrackManager:
 
 
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
         where                  Optional :class:`string`. The where clause to use to query
                                tracks. Defaults to '1=1'
@@ -625,7 +625,7 @@ class TrackManager:
         Adds a track to the project.
 
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
         feature                Optional :class:`~arcgis.features.Feature`.
                                The feature to use.
@@ -647,7 +647,7 @@ class TrackManager:
 
 
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
         tracks                 Required :class:`List` of :class:`~arcgis.apps.workforce.Track`.
                                The list of tracks to add.
@@ -663,7 +663,7 @@ class TrackManager:
 
 
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
         tracks                 Required :class:`List` of :class:`~arcgis.apps.workforce.Track`.
                                The list of tracks to remove.
@@ -677,7 +677,7 @@ class TrackManager:
 
 
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
         tracks                 Required :class:`List` of :class:`~arcgis.apps.workforce.Track`.
                                The list of tracks to update.
@@ -712,7 +712,7 @@ class WorkerManager:
      It can be accessed from the project as :py:attr:`~arcgis.apps.workforce.Project.workers`
 
      ==================     ====================================================================
-     **Argument**           **Description**
+     **Parameter**           **Description**
      ------------------     --------------------------------------------------------------------
      project                Required :class:`~arcgis.apps.workforce.Project`. The project to
                             manage.
@@ -739,7 +739,7 @@ class WorkerManager:
         This gets a worker by their object id, global id, or user id.
 
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
         object_id              Optional :class:`integer`. The object id of the worker to get
         ------------------     --------------------------------------------------------------------
@@ -759,7 +759,7 @@ class WorkerManager:
 
 
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
         where                  Optional :class:`string`. The where clause to use to query
                                workers. Defaults to '1=1'
@@ -775,7 +775,7 @@ class WorkerManager:
 
 
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
         workers                Required :class:`List` of :class:`~arcgis.apps.workforce.Worker`.
                                The list of workers to add.
@@ -800,7 +800,7 @@ class WorkerManager:
         Creates and adds a new worker to the project.
 
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
         feature                Optional :class:`~arcgis.features.Feature`. The feature representing
                                the worker.
@@ -840,7 +840,7 @@ class WorkerManager:
 
 
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
         workers                Required :class:`List` of :class:`~arcgis.apps.workforce.Worker`.
                                The list of workers to update.
@@ -856,7 +856,7 @@ class WorkerManager:
 
 
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
         workers                Required :class:`List` of :class:`~arcgis.apps.workforce.Worker`.
                                The list of workers to remove.
@@ -898,7 +898,7 @@ class AssignmentIntegrationManager:
     The urlTemplate can be generated by using the :py:mod:`~arcgis.apps.integrations` module
 
     ==================     ====================================================================
-    **Argument**           **Description**
+    **Parameter**           **Description**
     ------------------     --------------------------------------------------------------------
     project                Required :class:`~arcgis.apps.workforce.Project`. The project to
                            manage.
@@ -918,7 +918,7 @@ class AssignmentIntegrationManager:
         This gets an integration dictionary by its id
 
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
         integration_id         Required :class:`string`. The id of the integration. This is field
                                'appid' for a Version 2 Workforce project.
@@ -940,11 +940,11 @@ class AssignmentIntegrationManager:
         This returns all of the assignment integrations for the project
 
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
         where                  Optional :class:`string`. ArcGIS where clause - version 2 projects
                                only. Defaults to "1=1"
-        ------------------     --------------------------------------------------------------------
+        ==================     ====================================================================
 
         :returns: :class:`List` A list of the integrations.
         """
@@ -958,7 +958,7 @@ class AssignmentIntegrationManager:
         This adds an integration to the project
 
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
         integration_id         Required :class:`string`. The id of the integration
         ------------------     --------------------------------------------------------------------
@@ -1022,7 +1022,7 @@ class AssignmentIntegrationManager:
     def batch_add(self, integrations):
         """
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
         integrations           Required :class:`List` of :class:`dict`. The integrations to add
         ==================     ====================================================================
@@ -1043,7 +1043,7 @@ class AssignmentIntegrationManager:
     def batch_delete(self, integrations):
         """
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
         integrations            Required :class:`List` of :class:`dict`. The integrations to delete
         ==================     ====================================================================

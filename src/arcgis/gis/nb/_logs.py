@@ -4,6 +4,7 @@ from arcgis.gis import GIS
 from arcgis._impl.common._mixins import PropertyMap
 import datetime as _dt
 
+
 ########################################################################
 class LogManager(object):
     """
@@ -16,6 +17,7 @@ class LogManager(object):
     _url = None
     _gis = None
     _properties = None
+
     # ----------------------------------------------------------------------
     def __init__(self, url, gis):
         """Constructor"""
@@ -81,7 +83,7 @@ class LogManager(object):
         Get/set the current log settings.
 
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
         value                  Required dict. A dictionary with the key/values pairs to modify settings.
         ==================     ====================================================================
@@ -134,7 +136,7 @@ class LogManager(object):
         aggregate, filter, and page through logs across the entire site.
 
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
         start_time             Optional string/integer. The most recent time to query.  Default is now.
                                Time can be specified in milliseconds since UNIX epoch, or as an
@@ -218,7 +220,6 @@ class LogManager(object):
             qFilter["machines"] = machines.split(",")
         params["filter"] = qFilter
         if export is True and out_path is not None:
-
             messages = self._con.get(url, params)
             with open(out_path, mode="wb") as f:
                 hasKeys = False

@@ -54,6 +54,7 @@ try:
     from .._video_utils import VideoUtils
     from .._utils.env import is_arcgispronotebook
     from .._utils.pascal_voc_rectangles import _reconstruct
+    from .._utils.utils import chips_to_batch
 except Exception as e:
     import_exception = "\n".join(
         traceback.format_exception(type(e), e, e.__traceback__)
@@ -144,30 +145,13 @@ class YOLOv3Tracer(torch.nn.Module):
         return out_final
 
 
-def chips_to_batch(chips, model_height, model_width, batch_size=1):
-    dtype = np.float32
-    band_count = 3
-    if len(chips) != 0:
-        dtype = chips[0].dtype
-
-    batch = np.zeros(
-        shape=(batch_size, band_count, model_height, model_width),
-        dtype=dtype,
-    )
-    for b in range(batch_size):
-        if b < len(chips):
-            batch[b, :, :model_height, :model_height] = chips[b]
-
-    return batch
-
-
 # Yolov3 model
 class YOLOv3(ArcGISModel):
     """
     Creates a YOLOv3 object detector.
 
     =====================   ===========================================
-    **Argument**            **Description**
+    **Parameter**            **Description**
     ---------------------   -------------------------------------------
     data                    Required fastai Databunch. Returned data object from
                             :meth:`~arcgis.learn.prepare_data` function. YOLOv3 only supports image
@@ -181,7 +165,6 @@ class YOLOv3(ArcGISModel):
     """
 
     def __init__(self, data=None, pretrained_path=None, **kwargs):
-
         self._check_dataset_support(data)
 
         if data is None:
@@ -315,7 +298,7 @@ class YOLOv3(ArcGISModel):
         Displays the results of a trained model on a part of the validation set.
 
         =====================   ===========================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ---------------------   -------------------------------------------
         rows                    Optional int. Number of rows of results
                                 to be displayed.
@@ -353,7 +336,7 @@ class YOLOv3(ArcGISModel):
         Displays the results of a trained model on a part of the validation set.
 
         =====================   ===========================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ---------------------   -------------------------------------------
         rows                    Optional int. Number of rows of results
                                 to be displayed.
@@ -433,14 +416,14 @@ class YOLOv3(ArcGISModel):
         return_scores=True,
         visualize=False,
         resize=False,
-        **kwargs,
+        batch_size=1,
     ):
         """
         Predicts and displays the results of a trained model on a single image.
         This method is only supported for RGB images.
 
         =====================   ===========================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ---------------------   -------------------------------------------
         image_path              Required. Path to the image file to make the
                                 predictions on.
@@ -474,12 +457,6 @@ class YOLOv3(ArcGISModel):
                                 by applying the model on cropped sections of
                                 the image (of the same size as the model was
                                 trained on).
-        =====================   ===========================================
-
-        **kwargs**
-
-        =====================   ===========================================
-        **Argument**            **Description**
         ---------------------   -------------------------------------------
         batch_size              Optional int. Batch size to be used
                                 during tiled inferencing. Deafult value 1.
@@ -503,6 +480,9 @@ class YOLOv3(ArcGISModel):
         else:
             image = image_path
 
+        if image is None:
+            raise Exception(str("No such file or directory: %s" % (image_path)))
+
         orig_height, orig_width, _ = image.shape
         orig_frame = image.copy()
 
@@ -516,8 +496,6 @@ class YOLOv3(ArcGISModel):
                 image = cv2.resize(image, (self._data.resize_to, self._data.resize_to))
 
         height, width, _ = image.shape
-
-        batch_size = int(kwargs.get("batch_size", 1))
         tytx = self._data.chip_size
 
         if self._data.chip_size is not None:
@@ -656,8 +634,11 @@ class YOLOv3(ArcGISModel):
                 figsize = (20, 20)
             else:
                 figsize = (4, 4)
-            fig, ax = plt.subplots(1, 1, figsize=figsize)
-            ax.imshow(image)
+
+            plt.figure(figsize=figsize)
+            plt.xticks([])
+            plt.yticks([])
+            plt.imshow(image)
 
         if return_scores:
             return predictions, labels, scores
@@ -694,7 +675,7 @@ class YOLOv3(ArcGISModel):
         This method is only supported for RGB images.
 
         =====================   ===========================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ---------------------   -------------------------------------------
         input_video_path        Required. Path to the video file to make the
                                 predictions on.
@@ -782,7 +763,7 @@ class YOLOv3(ArcGISModel):
         Computes average precision on the validation set for each class.
 
         =====================   ===========================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ---------------------   -------------------------------------------
         detect_thresh           Optional float. The probability above which
                                 a detection will be considered for computing
@@ -921,7 +902,6 @@ class YOLOv3(ArcGISModel):
         return [save_path_tflite, save_path_onnx]
 
     def _get_emd_params(self, save_inference_file):
-
         class_data = {}
         _emd_template = {}
         _emd_template["Framework"] = "arcgis.learn.models._inferencing"
@@ -968,7 +948,7 @@ class YOLOv3(ArcGISModel):
         Creates a YOLOv3 Object Detector from an Esri Model Definition (EMD) file.
 
         =====================   ===========================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ---------------------   -------------------------------------------
         emd_path                Required string. Path to Deep Learning Package
                                 (DLPK) or Esri Model Definition(EMD) file.

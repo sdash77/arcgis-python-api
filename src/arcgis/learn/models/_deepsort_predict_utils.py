@@ -80,7 +80,7 @@ def non_max_suppression(boxes, max_bbox_overlap, scores=None):
     if len(boxes) == 0:
         return []
 
-    boxes = boxes.astype(np.float)
+    boxes = boxes.astype(float)
     pick = []
 
     x1 = boxes[:, 0]
@@ -675,7 +675,6 @@ class NearestNeighborDistanceMetric(object):
     """
 
     def __init__(self, metric, matching_threshold, budget=None):
-
         if metric == "euclidean":
             self._metric = _nn_euclidean_distance
         elif metric == "cosine":
@@ -1152,7 +1151,6 @@ class Tracker:
 def get_corrected_labels_scores(
     labels=None, scores=None, target_len=0, default_label="Object", default_score=1.0
 ):
-
     if labels is None:
         labels = [default_label] * target_len
     elif len(labels) < target_len:
@@ -1227,7 +1225,7 @@ class Detection(object):
     """
 
     def __init__(self, tlwh, confidence, feature, label):
-        self.tlwh = np.asarray(tlwh, dtype=np.float)
+        self.tlwh = np.asarray(tlwh, dtype=float)
         self.confidence = float(confidence)
         self.feature = np.asarray(feature, dtype=np.float32)
         self.label = label
@@ -1252,7 +1250,6 @@ class Detection(object):
 
 class DeepSortPredictor(object):
     def __init__(self, model, cfg, device, update_interval):
-
         self.min_confidence = cfg["min_confidence"]
         self.nms_max_overlap = cfg["nms_max_overlap"]
         self._update_interval = update_interval
@@ -1310,7 +1307,7 @@ class DeepSortPredictor(object):
             outputs.append(
                 np.array(
                     [x1, y1, x2 - x1, y2 - y1, track_id, track_score, track_age],
-                    dtype=np.float,
+                    dtype=float,
                 )
             )
         if len(outputs) > 0:

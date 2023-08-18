@@ -14,6 +14,7 @@ _arcgis = LazyLoader("arcgis")
 network = LazyLoader("arcgis.network")
 _features = LazyLoader("arcgis.features")
 
+
 # --------------------------------------------------------------------------
 def enrich_layer(
     input_layer: Union[
@@ -47,7 +48,7 @@ def enrich_layer(
     The result will be a new layer of input features that includes all demographic and geographic information from given data collections.
 
     =====================================================================     ====================================================================
-    **Argument**                                                              **Description**
+    **Parameter**                                                              **Description**
     ---------------------------------------------------------------------     --------------------------------------------------------------------
     input_layer                                                               Required layer. The features to enrich with new data. See :ref:`Feature Input<FeatureInput>`.
     ---------------------------------------------------------------------     --------------------------------------------------------------------
@@ -96,6 +97,7 @@ def enrich_layer(
 
 
                                                                               .. code-block:: python
+
                                                                                 # Example Usage
 
                                                                                                           "ymin": -9187921.892449,

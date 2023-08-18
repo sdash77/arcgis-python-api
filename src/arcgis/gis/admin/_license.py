@@ -8,6 +8,7 @@ from ..._impl.common._mixins import PropertyMap
 from ...gis import GIS, User
 from ._base import BasePortalAdmin
 
+
 ########################################################################
 class LicenseManager(BasePortalAdmin):
     """
@@ -15,7 +16,7 @@ class LicenseManager(BasePortalAdmin):
     ArcGIS Enterprise (Portal)
 
     ===============     ====================================================
-    **Argument**        **Description**
+    **Parameter**        **Description**
     ---------------     ----------------------------------------------------
     url                 required string, the web address of the site to
                         manage licenses.
@@ -102,7 +103,7 @@ class LicenseManager(BasePortalAdmin):
         Retrieves a license by it's name (title)
 
         ===============     ====================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     ----------------------------------------------------
         name                required string, name of the entitlement to locate
                             on the organization.
@@ -194,7 +195,7 @@ class LicenseManager(BasePortalAdmin):
         for ArcGIS Pro.
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         value               Required bool.
                             Value: True | False
@@ -216,7 +217,8 @@ class LicenseManager(BasePortalAdmin):
 
         lic = self.get("arcgis pro")
         url = "{base}content/listings/{itemid}/setDisconnectSettings".format(
-            base=self._gis._portal.resturl, itemid=lic.properties.provision.itemId
+            base=self._gis._portal.resturl,
+            itemid=lic.properties.provision.itemId,
         )
         params = {
             "f": "json",
@@ -242,6 +244,7 @@ class Bundle(object):
     _properties = None
     _gis = None
     _id = None
+
     # ----------------------------------------------------------------------
     def __init__(self, url, properties=None, gis=None):
         """Constructor"""
@@ -342,7 +345,7 @@ class Bundle(object):
         Assigns the current application bundle to a list of users
 
         ===============     ====================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     ----------------------------------------------------
         users               Required List. A list of user names or User objects
                             to assign the current application bundle to.
@@ -378,7 +381,7 @@ class Bundle(object):
         Revokes the current application bundle to a list of users
 
         ===============     ====================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     ----------------------------------------------------
         users               Required List. A list of user names or User objects
                             to remove the current application bundle to.
@@ -416,7 +419,7 @@ class License(object):
 
 
     ===============     ====================================================
-    **Argument**        **Description**
+    **Parameter**        **Description**
     ---------------     ----------------------------------------------------
     gis                 Required GIS, the gis connection object
     ---------------     ----------------------------------------------------
@@ -433,6 +436,7 @@ class License(object):
     _properties = None
     _gis = None
     _con = None
+
     # ----------------------------------------------------------------------
     def __init__(self, gis, info):
         """Constructor"""
@@ -449,7 +453,10 @@ class License(object):
                 self._gis._portal.resturl,
             )
         except:
-            return "<%s at %s >" % (type(self).__name__, self._gis._portal.resturl)
+            return "<%s at %s >" % (
+                type(self).__name__,
+                self._gis._portal.resturl,
+            )
 
     # ----------------------------------------------------------------------
     def __repr__(self):
@@ -460,7 +467,10 @@ class License(object):
                 self._gis._portal.resturl,
             )
         except:
-            return "<%s at %s >" % (type(self).__name__, self._gis._portal.resturl)
+            return "<%s at %s >" % (
+                type(self).__name__,
+                self._gis._portal.resturl,
+            )
 
     # ----------------------------------------------------------------------
     @property
@@ -554,7 +564,7 @@ class License(object):
         Checks if the entitlement is assigned or not.
 
         ===============     ====================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     ----------------------------------------------------
         user                Required string, the name of the user you want to
                             examine the entitlements for.
@@ -592,7 +602,7 @@ class License(object):
         Checks if a user has the entitlement assigned to them
 
         ===============     ====================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     ----------------------------------------------------
         username            Required string, the name of the user you want to
                             examine the entitlements for.
@@ -636,7 +646,7 @@ class License(object):
         grants a user an entitlement.
 
         ===============     ====================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     ----------------------------------------------------
         username            Required string, the name of the user you wish to
                             assign an entitlement to.
@@ -656,6 +666,8 @@ class License(object):
            Boolean. True if successful else False.
         """
         item_id = self.properties["listing"]["itemId"]
+        if hasattr(username, "username"):
+            username = username.username
         if isinstance(entitlements, str):
             entitlements = entitlements.split(",")
 
@@ -669,7 +681,10 @@ class License(object):
 
         params = {
             "f": "json",
-            "userEntitlements": {"users": [username], "entitlements": entitlements},
+            "userEntitlements": {
+                "users": [username],
+                "entitlements": entitlements,
+            },
         }
         if suppress_email is not None:
             params["suppressCustomerEmail"] = suppress_email
@@ -684,13 +699,16 @@ class License(object):
 
     # ----------------------------------------------------------------------
     def revoke(
-        self, username: str, entitlements: list[str] | str, suppress_email: bool = True
+        self,
+        username: str,
+        entitlements: list[str] | str,
+        suppress_email: bool = True,
     ):
         """
         removes a specific license from a given entitlement
 
         ===============     ====================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     ----------------------------------------------------
         username            Required string, the name of the user you wish to
                             assign an entitlement to.
@@ -709,7 +727,9 @@ class License(object):
         """
         if entitlements == "*":
             return self.assign(
-                username=username, entitlements=[], suppress_email=suppress_email
+                username=username,
+                entitlements=[],
+                suppress_email=suppress_email,
             )
         if isinstance(entitlements, str):
             entitlements = entitlements.split(",")
@@ -726,6 +746,8 @@ class License(object):
                 for e in entitlements:
                     es2.append(lookup[e])
                 return self.assign(
-                    username=username, entitlements=es2, suppress_email=suppress_email
+                    username=username,
+                    entitlements=es2,
+                    suppress_email=suppress_email,
                 )
         return False

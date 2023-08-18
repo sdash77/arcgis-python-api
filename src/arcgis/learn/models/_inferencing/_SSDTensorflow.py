@@ -24,7 +24,7 @@ def convert_bounding_boxes_to_coord_list(bounding_boxes):
     num_bounding_boxes = bounding_boxes.shape[0]
     bounding_box_coord_list = []
     for i in range(num_bounding_boxes):
-        coord_array = np.empty(shape=(4, 2), dtype=np.float)
+        coord_array = np.empty(shape=(4, 2), dtype=float)
         coord_array[0][0] = bounding_boxes[i][0]
         coord_array[0][1] = bounding_boxes[i][1]
 
@@ -43,7 +43,6 @@ def convert_bounding_boxes_to_coord_list(bounding_boxes):
 
 
 def _create_anchors(anc_grids, anc_zooms, anc_ratios):
-
     anchor_scales = [(anz * i, anz * j) for anz in anc_zooms for (i, j) in anc_ratios]
 
     _anchors_per_cell = len(anchor_scales)
@@ -241,7 +240,6 @@ def remove_bounding_boxes_in_padding(
 
 class ChildObjectDetector:
     def initialize(self, model, model_as_file):
-
         if not HAS_TF_ONNX:
             raise Exception(
                 'Tensorflow(version 1.13.1 or above), Onnx(version 1.5.0) and Onnx_tf(version 1.3.0) libraries are not installed. Install Tensorflow using "conda install tensorflow-gpu=1.13.1". Install onnx and onnx_tf using "pip install onnx onnx_tf".'

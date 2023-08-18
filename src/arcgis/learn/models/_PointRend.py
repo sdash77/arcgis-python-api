@@ -516,7 +516,6 @@ def roi_mask_point_loss(mask_logits, instances, points_coord):
 
 
 def PointRend_target_transform(targets, point_coords):
-
     point_targets = (
         point_sample(
             targets.unsqueeze(1).to(torch.float),
@@ -574,7 +573,6 @@ class PointRendSemSegHead(nn.Module):
         self.point_head = StandardPointHead(num_classes, backbone_features_channel)
 
     def forward(self, coarse_sem_seg_logits, backbone_features):
-
         if self.training:
             with torch.no_grad():
                 point_coords = get_uncertain_point_coords_with_randomness(

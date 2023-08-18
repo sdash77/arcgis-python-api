@@ -1,10 +1,11 @@
 """
 Allows access to the Portal Logs
 """
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Optional, Union
 from .. import GIS
 from ._base import BasePortalAdmin
+
 
 ########################################################################
 class Logs(BasePortalAdmin):
@@ -13,7 +14,7 @@ class Logs(BasePortalAdmin):
     query the logs, clean the logs, and edit log settings.
 
     ================  ===============================================================
-    **Argument**      **Description**
+    **Parameter**      **Description**
     ----------------  ---------------------------------------------------------------
     gis               required GIS, portal connection object
     ----------------  ---------------------------------------------------------------
@@ -26,6 +27,7 @@ class Logs(BasePortalAdmin):
     _url = None
     _con = None
     _portal = None
+
     # ----------------------------------------------------------------------
     def __init__(self, url, gis):
         """Constructor"""
@@ -75,7 +77,7 @@ class Logs(BasePortalAdmin):
         Get/Set the current log settings for the portal.
 
         ================  ===============================================================
-        **Argument**      **Description**
+        **Parameter**      **Description**
         ----------------  ---------------------------------------------------------------
         value             required dictionary, the dictionary of the log settings
         ================  ===============================================================
@@ -135,7 +137,7 @@ class Logs(BasePortalAdmin):
         through logs written by the portal.
 
         ================  ===============================================================
-        **Argument**      **Description**
+        **Parameter**      **Description**
         ----------------  ---------------------------------------------------------------
         start_time        required datetime/float. The most recent time to query.
 
@@ -199,35 +201,36 @@ class Logs(BasePortalAdmin):
            dictionary of messages
         """
         from datetime import datetime
-        from six import integer_types, string_types
 
         url = "%s/query" % self._url
         if isinstance(start_time, datetime):
             start_time = start_time.strftime("%Y-%m-%dT%H:%M:%S")
-        elif isinstance(start_time, string_types):
+        elif isinstance(start_time, str):
             try:
                 datetime.strptime(start_time, "%Y-%m-%dT%H:%M:%S")
             except:
                 raise Exception(
                     "Invalid start_time string, must be in the format YYYY-MM-DDTHH:MM:SS"
                 )
-        elif isinstance(start_time, tuple(list(integer_types) + [float])):
-            start_time = datetime.utcfromtimestamp(start_time).strftime(
+        elif isinstance(start_time, tuple(list(int) + [float])):
+            start_time = datetime.fromtimestamp(start_time, tz=timezone.utc).strftime(
                 "%Y-%m-%dT%H:%M:%S"
             )
         if end_time is None:
             end_time = datetime.now().strftime("%Y-%m-%dT%H:%M:%S")
         elif isinstance(end_time, datetime):
             end_time = end_time.strftime("%Y-%m-%dT%H:%M:%S")
-        elif isinstance(end_time, string_types):
+        elif isinstance(end_time, str):
             try:
                 datetime.strptime(end_time, "%Y-%m-%dT%H:%M:%S")
             except:
                 raise Exception(
                     "Invalid end_time string, must be in the format YYYY-MM-DDTHH:MM:SS"
                 )
-        elif isinstance(end_time, tuple(list(integer_types) + [float])):
-            end_time = datetime.utcfromtimestamp(end_time).strftime("%Y-%m-%dT%H:%M:%S")
+        elif isinstance(end_time, tuple(list(int) + [float])):
+            end_time = datetime.fromtimestamp(end_time, tz=timezone.utc).strftime(
+                "%Y-%m-%dT%H:%M:%S"
+            )
         if query_filter == "*":
             query_filter = {"codes": [], "users": [], "source": "*"}
         params = {

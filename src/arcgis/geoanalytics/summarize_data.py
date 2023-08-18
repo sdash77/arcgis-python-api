@@ -31,6 +31,8 @@ from ._util import (
 _log = _logging.getLogger(__name__)
 
 _use_async = True
+
+
 # --------------------------------------------------------------------------
 def summarize_center_and_dispersion(
     input_layer: Union[
@@ -67,7 +69,7 @@ def summarize_center_and_dispersion(
     Dispersion a group by field of the outage cluster ids.
 
     ===================================================================    =============================================================================
-    **Argument**                                                                                    **Description**
+    **Parameter**                                                                                    **Description**
     -------------------------------------------------------------------    -----------------------------------------------------------------------------
     input_layer                                                            Required Layer. A layer that will be used in analysis.
                                                                            See :ref:`Feature Input<gaxFeatureInput>`.
@@ -215,7 +217,7 @@ def build_multivariable_grid(
     you have calculated, reducing the amount of effort required to build prediction and classification models from point data.
 
     ===================================================================    =============================================================================
-    **Argument**                                                                                    **Description**
+    **Parameter**                                                                                    **Description**
     -------------------------------------------------------------------    -----------------------------------------------------------------------------
     input_layers                                                           Required list of layers. A list of input layers that will be used in analysis.
                                                                            See :ref:`Feature Input<gaxFeatureInput>`.
@@ -541,7 +543,7 @@ def aggregate_points(
         ``bin_size_unit`` must be included.
 
     =================================================     ========================================================================
-    **Argument**                                          **Description**
+    **Parameter**                                          **Description**
     -------------------------------------------------     ------------------------------------------------------------------------
     point_layer                                           Required point :class:`~arcgis.features.FeatureLayer`. The point features that will be aggregated
                                                           into the polygons in the ``polygon_layer`` or bins specified by ``bin_type``.
@@ -815,7 +817,7 @@ def describe_dataset(
     for additional information.
 
     ================   ===============================================================
-    **Argument**       **Description**
+    **Parameter**       **Description**
     ----------------   ---------------------------------------------------------------
     input_layer        Required feature layer. The table, point, line, or polygon feature
                        layer that will be described, summarized, and sampled.
@@ -1018,7 +1020,7 @@ def join_features(
     for additional information.
 
      ==========================================================================================================  =============================================================================================
-     **Argument**                                                                                                **Description**
+     **Parameter**                                                                                                **Description**
      ----------------------------------------------------------------------------------------------------------  ---------------------------------------------------------------------------------------------
      target_layer                                                                                                Required layer. The table, point, line, or polygon features to be joined to. See :ref:`Feature Input<gaxFeatureInput>`.
      ----------------------------------------------------------------------------------------------------------  ---------------------------------------------------------------------------------------------
@@ -1341,7 +1343,7 @@ def reconstruct_tracks(
     as the count of measurements in each track.
 
     ======================================================================================  ===============================================================
-    **Argument**                                                                            **Description**
+    **Parameter**                                                                            **Description**
     --------------------------------------------------------------------------------------  ---------------------------------------------------------------
     input_layer                                                                             Required layer. The point or polygon features from which tracks
                                                                                             will be constructed. See :ref:`Feature Input<gaxFeatureInput>`.
@@ -1620,7 +1622,7 @@ def summarize_attributes(
     .. image:: _static/images/summarize_attributes/summarize_attributes.png
 
     ===========================================================================  ===============================================================
-    **Argument**                                                                 **Description**
+    **Parameter**                                                                 **Description**
     ---------------------------------------------------------------------------  ---------------------------------------------------------------
     input_layer                                                                  Required layer. The features that will be summarized. See :ref:`Feature Input<gaxFeatureInput>`.
     ---------------------------------------------------------------------------  ---------------------------------------------------------------
@@ -1858,7 +1860,7 @@ def summarize_within(
         Either ``summary_polygons`` or ``bin_type`` must be specified.
 
     ===========================================================================  ===============================================================
-    **Argument**                                                                 **Description**
+    **Parameter**                                                                 **Description**
     ---------------------------------------------------------------------------  ---------------------------------------------------------------
     summarized_layer                                                             Required layer. Point, line, or polygon features that will be summarized for each
                                                                                  polygon in ``summary_polygons`` or bins. See :ref:`Feature Input<gaxFeatureInput>`.
@@ -1982,7 +1984,7 @@ def summarize_within(
     minority_majority                                                            Optioal boolean. This boolean parameter is applicable only when a ``group_by_field`` is specified.
                                                                                  If true, the minority (least dominant) or the majority (most dominant) attribute values
                                                                                  for each group field are calculated. Two new fields are added to the ``result_layer`` prefixed with
-                                                                                 Majority_ and Minority_.
+                                                                                 `Majority_` and `Minority_`.
 
                                                                                  .. note::
                                                                                      This parameter is available at ArcGIS Enterprise 10.6.1 and later.

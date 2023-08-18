@@ -6,6 +6,7 @@ import unittest
 from integration.dino_utils.dino_precondition_checks import PreconditionChecks
 from integration.dino_utils.dino_precondition_checks import PortalUtils
 from integration.dino_utils.dino_configs import DinoConfigs
+from integration.config import QALAB_ROOT_PATH
 from configparser import ConfigParser
 import datetime
 
@@ -71,7 +72,7 @@ class Test_GroupManager_portal_builtin(unittest.TestCase):
         _conf_reader2 = ConfigParser()
         _conf_reader2.read(DinoConfigs.root_init_file, "UTF-8")
 
-        cls.qalab_base_path = _conf_reader2["test_data"]["qalab_base_path"]
+        cls.qalab_base_path = QALAB_ROOT_PATH
         cls.qalab_cls_path = (
             cls.qalab_base_path + _conf_reader2["test_data"]["qalab_GroupManager_cls"]
         )
@@ -85,6 +86,12 @@ class Test_GroupManager_portal_builtin(unittest.TestCase):
         cls.gis = GIS(cls.portal_url, cls.portal_username, cls.portal_password)
         if cls.gis is None:
             cls.class_skip = True
+
+        # test groups setup
+        for id in range(150):
+            group = cls.gis.groups.create(
+                title="GroupManager_test_group_" + str(id), tags="test"
+            )
 
         print("==================================================================")
         print("Beginning tests in Test_GroupManager_portal_builtin class")
@@ -112,6 +119,13 @@ class Test_GroupManager_portal_builtin(unittest.TestCase):
 
     @classmethod
     def tearDownClass(cls):
+        # delete test groups
+        group_search_to_delete = cls.gis.groups.search(
+            query="title:GroupManager_test_group"
+        )
+        for group in group_search_to_delete:
+            group.delete()
+        print("Test data deleted.")
         print("\n==================================================================")
 
     def test_search_groups_150_default(self):
@@ -161,7 +175,7 @@ class Test_GroupManager_portal_builtin(unittest.TestCase):
             self.assertGreaterEqual(
                 len(group_search_result),
                 150,
-                "Search did not return > 150 groups when used with query parameters",
+                "Search did not return >= 150 groups when used with query parameters",
             )
 
         except AssertionError as assertErrorException:
@@ -181,8 +195,10 @@ class Test_GroupManager_portal_builtin(unittest.TestCase):
         :return:
         """
         try:
-            group_search_result = self.gis.groups.search(query="title: group_150_2*")
-            # Should return all groups that end with 2x such as group_150_2, group_150_2(0,1,2 .. 9)
+            group_search_result = self.gis.groups.search(
+                query="title: GroupManager_test_group_14*"
+            )
+            # Should return all groups that end with 14x such as GroupManager_test_group_140(1,2,3,4,5,6,7,8,9)
             # resulting in a total of 11
 
             print(
@@ -259,7 +275,7 @@ class Test_GroupManager_portal_builtin(unittest.TestCase):
             self.assertLessEqual(
                 len(group_search_result),
                 110,
-                "Search did not return <= 110 groups when used with max_groups=50",
+                "Search did not return <= 110 groups when used with max_groups=110",
             )
 
         except AssertionError as assertErrorException:

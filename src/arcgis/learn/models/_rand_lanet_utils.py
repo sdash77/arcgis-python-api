@@ -30,51 +30,46 @@ from typing import List, Tuple
 from fastai.torch_core import data_collate
 import types
 from functools import partial
-from ._pointcnn_utils import find_k_neighbor, get_indices
+from ._pointcnn_utils import get_indices
 
-
-def knn_search(support_pts, query_pts, k):
-    """
-    :param support_pts: points you have, B*N1*3
-    :param query_pts: points you want to know the neighbour index, B*N2*3
-    :param k: Number of neighbours in knn search
-    :return: neighbor_idx: neighboring points indexes, B*N2*k
-    """
-
-    _, N1, _ = support_pts.shape
-    B, N2, _ = query_pts.shape
-    _, neighbor_idx, _ = find_k_neighbor(
-        query_pts.contiguous(), support_pts.contiguous(), k, 1
+try:
+    from .._utils.nearest_neighbors import knn_batch as knn_search
+except Exception:
+    raise Exception(
+        f"The arcgis package was not installed, correctly(knn). Use deep learning essentials metapackage from https://github.com/Esri/deep-learning-frameworks"
     )
-    neighbor_idx %= (
-        N1  # get indices in the range of N1 since indices comes in range of B*N1
-    )
-    return neighbor_idx.view(B, N2, k).contiguous()
+from functools import partial
+
+knn_search = partial(knn_search, omp=True)
 
 
-def input_dict(input_list, cfg):
-
+def input_dict(input_list, cfg, is_sqn=False):
     num_layers = cfg["num_layers"]
     inputs = {}
     inputs["xyz"] = []
+    if is_sqn:
+        # add original points
+        inputs["xyz"].append(input_list[3 * num_layers].float())
     for tmp in input_list[:num_layers]:
-        inputs["xyz"].append(tmp.float())  # removed torch.from_numpy
+        inputs["xyz"].append(tmp.float())
     inputs["neigh_idx"] = []
     for tmp in input_list[num_layers : 2 * num_layers]:
-        inputs["neigh_idx"].append(tmp.long())
+        inputs["neigh_idx"].append(torch.from_numpy(tmp).long())
     inputs["sub_idx"] = []
     for tmp in input_list[2 * num_layers : 3 * num_layers]:
-        inputs["sub_idx"].append(tmp.long())
-    inputs["interp_idx"] = []
-    for tmp in input_list[3 * num_layers : 4 * num_layers]:
-        inputs["interp_idx"].append(tmp.long())
-    inputs["features"] = input_list[4 * num_layers].transpose(1, 2).float()
+        inputs["sub_idx"].append(torch.from_numpy(tmp).long())
+    if is_sqn:
+        inputs["features"] = input_list[3 * num_layers + 1].transpose(1, 2).float()
+    else:
+        inputs["interp_idx"] = []
+        for tmp in input_list[3 * num_layers : 4 * num_layers]:
+            inputs["interp_idx"].append(torch.from_numpy(tmp).long())
+        inputs["features"] = input_list[4 * num_layers].transpose(1, 2).float()
 
     return inputs
 
 
-def randlanet_input(batch_pc, cfg):
-
+def batch_preprocess_dict(batch_pc, cfg, is_sqn=False):
     features = batch_pc
     input_points = []
     input_neighbors = []
@@ -82,27 +77,37 @@ def randlanet_input(batch_pc, cfg):
     input_up_samples = []
     # need to handule points with extra fetures
     batch_pc = batch_pc[:, :, :3]  # take x,y,z only
+    min_layer_point = 512
     for i in range(cfg["num_layers"]):
+        layer_num_point = batch_pc.shape[1] // cfg["sub_sampling_ratio"][i]
+        layer_num_point = max(layer_num_point, min_layer_point // (2**i))
         neighbour_idx = knn_search(batch_pc, batch_pc, cfg["k_n"])
-        sub_points = batch_pc[:, : batch_pc.shape[1] // cfg["sub_sampling_ratio"][i], :]
-        pool_i = neighbour_idx[
-            :, : batch_pc.shape[1] // cfg["sub_sampling_ratio"][i], :
-        ]
-        up_i = knn_search(sub_points, batch_pc, 1)
-        input_points.append(batch_pc)
+        sub_points = batch_pc[:, :layer_num_point, :]
+        pool_i = neighbour_idx[:, :layer_num_point, :]
+        if is_sqn:
+            input_points.append(sub_points)
+        else:
+            up_i = knn_search(sub_points, batch_pc, 1)
+            input_points.append(batch_pc)
+            input_up_samples.append(up_i)
         input_neighbors.append(neighbour_idx)
         input_pools.append(pool_i)
-        input_up_samples.append(up_i)
         batch_pc = sub_points
 
-    input_list = input_points + input_neighbors + input_pools + input_up_samples
+    input_list = input_points + input_neighbors + input_pools
+
+    if is_sqn:
+        # add original points
+        input_list += [features[:, :, :3]]
+    else:
+        input_list += input_up_samples
+
     input_list += [features]
 
-    return input_dict(input_list, cfg)
+    return input_dict(input_list, cfg, is_sqn)
 
 
 def transform_data(input, target, sample_point_num, cfg, **kwargs):
-
     (
         input,
         point_nums,
@@ -123,19 +128,24 @@ def transform_data(input, target, sample_point_num, cfg, **kwargs):
         .view(batch, sample_point_num, num_features)
         .contiguous()
     )  ## batch, sample_point_num, num_features
-    target = (
-        target[indices[:, 0], indices[:, 1]].view(batch, sample_point_num).contiguous()
-    )  ## batch, sample_point_num
+    if target is not None:
+        target = (
+            target[indices[:, 0], indices[:, 1]]
+            .view(batch, sample_point_num)
+            .contiguous()
+        )  ## batch, sample_point_num
 
-    return randlanet_input(input, cfg), target
+    return batch_preprocess_dict(input, cfg, **kwargs), target
 
 
-def randlanet_data(data, sample_point_num, cfg):
-    def collate_fn(self, batch, sample_point_num, cfg):
+def prepare_data_dict(data, sample_point_num, cfg, **kwargs):
+    def collate_fn(self, batch, sample_point_num, cfg, **kwargs):
         batch = data_collate(batch)
-        return transform_data(batch[0], batch[1], sample_point_num, cfg)
+        return transform_data(batch[0], batch[1], sample_point_num, cfg, **kwargs)
 
-    collate_fn = partial(collate_fn, sample_point_num=sample_point_num, cfg=cfg)
+    collate_fn = partial(
+        collate_fn, sample_point_num=sample_point_num, cfg=cfg, **kwargs
+    )
     data.train_dl.dl.collate_fn = types.MethodType(collate_fn, data.train_dl.dl)
     data.valid_dl.dl.collate_fn = types.MethodType(collate_fn, data.valid_dl.dl)
 
@@ -160,13 +170,14 @@ class RandLANetSeg(nn.Module):
         self.decoder_0 = Conv2d(d_in, d_out, kernel_size=(1, 1), bn=True)
 
         self.decoder_blocks = nn.ModuleList()
+        num_of_layers = self.config["num_layers"] - 1
         for j in range(self.config["num_layers"]):
-            if j < 3:
+            if j < num_of_layers:
                 d_in = d_out + 2 * self.config["out_channels"][-j - 2]
                 d_out = 2 * self.config["out_channels"][-j - 2]
             else:
-                d_in = 4 * self.config["out_channels"][-4]
-                d_out = 2 * self.config["out_channels"][-4]
+                d_in = 4 * self.config["out_channels"][0]
+                d_out = 2 * self.config["out_channels"][0]
             self.decoder_blocks.append(Conv2d(d_in, d_out, kernel_size=(1, 1), bn=True))
 
         self.fc1 = Conv2d(d_out, 64, kernel_size=(1, 1), bn=True)
@@ -183,7 +194,14 @@ class RandLANetSeg(nn.Module):
     def forward(self, end_points):
         # transform input for infrencing
         if not isinstance(end_points, dict):
-            end_points = randlanet_input(end_points, self.config)
+            device = end_points.device
+            end_points = batch_preprocess_dict(end_points.cpu(), self.config)
+            for key in end_points:
+                if type(end_points[key]) is list:
+                    for i in range(len(end_points[key])):
+                        end_points[key][i] = end_points[key][i].to(device)
+                else:
+                    end_points[key] = end_points[key].to(device)
 
         features = end_points["features"]  # Batch*channel*npoints
         features = self.fc0(features)
@@ -365,7 +383,6 @@ class Att_pooling(nn.Module):
         self.mlp = Conv2d(d_in, d_out, kernel_size=(1, 1), bn=True)
 
     def forward(self, feature_set):
-
         att_activation = self.fc(feature_set)
         att_scores = F.softmax(att_activation, dim=3)
         f_agg = feature_set * att_scores
@@ -384,7 +401,7 @@ class SharedMLP(nn.Sequential):
         preact: bool = False,
         first: bool = False,
         name: str = "",
-        instance_norm: bool = False
+        instance_norm: bool = False,
     ):
         super().__init__()
 
@@ -510,7 +527,7 @@ class Conv1d(_ConvBase):
         bias: bool = True,
         preact: bool = False,
         name: str = "",
-        instance_norm=False
+        instance_norm=False,
     ):
         super().__init__(
             in_size,
@@ -546,7 +563,7 @@ class Conv2d(_ConvBase):
         bias: bool = True,
         preact: bool = False,
         name: str = "",
-        instance_norm=False
+        instance_norm=False,
     ):
         super().__init__(
             in_size,
@@ -577,7 +594,7 @@ class FC(nn.Sequential):
         bn: bool = False,
         init=None,
         preact: bool = False,
-        name: str = ""
+        name: str = "",
     ):
         super().__init__()
 

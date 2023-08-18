@@ -1,13 +1,21 @@
 """
 Contains the base class that all server object inherit from.
 """
+from __future__ import annotations
 from urllib.request import HTTPError
 from arcgis.gis import GIS
 from arcgis._impl.common._isd import InsensitiveDict
 from typing import Dict, Any, Optional, List
 
+
 ###########################################################################
 class KubeSecurityCert(object):
+    """
+    The certificates resource provides access to child operations and
+    resources that can be used to manage all the security certificates
+    configured with an organization.
+    """
+
     _con = None
     _url = None
     _json_dict = None
@@ -93,7 +101,7 @@ class KubeSecurityCert(object):
         """Deletes an Identity Certificate by ID
 
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
         cert_id                Required String. The unique identifier of the certificate.
         ==================     ====================================================================
@@ -156,7 +164,7 @@ class KubeSecurityCert(object):
         Obtains a single certificate for a given type and ID
 
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
         cert_type              Required String. The type of certificate to search for. This can be 'trust' or 'identity'.
         ------------------     --------------------------------------------------------------------
@@ -166,7 +174,6 @@ class KubeSecurityCert(object):
         :return: Dict
         """
         if cert_type.lower() == "trust":
-
             url = self._url + f"/trust/{cert_id}"
             params = {"f": "json"}
             return self._con.get(url, params)
@@ -182,7 +189,7 @@ class KubeSecurityCert(object):
         """Deletes an Identity Certificate by ID
 
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
         cert_id                Required String. The unique identifier of the certificate.
         ==================     ====================================================================
@@ -196,8 +203,10 @@ class KubeSecurityCert(object):
 ###########################################################################
 class KubeSecuritySAML(object):
     """
-    Returns the currently configured security information for the Ingress
-    controller.
+    The saml resource returns information about the SAML configuration for
+    an organization. If SAML is configured, the enabled property will
+    return as true and `identityCertificateName` will show the name of the
+    imported identity certificate.
     """
 
     _con = None
@@ -288,7 +297,7 @@ class KubeSecuritySAML(object):
         :return: dict
         """
         url = self.url + "/update"
-        params = {"f": "json", "ingressSecurityConfig": value}
+        params = {"f": "json", "samlSecurityConfig": value}
         res = self._con.post(url, params)
         if res.get("status", "failed") == "success":
             self._refresh()
@@ -297,8 +306,11 @@ class KubeSecuritySAML(object):
 ###########################################################################
 class KubeSecurityIngress(object):
     """
-    Returns the currently configured security information for the Ingress
-    controller.
+    The ingress resource returns the currently configured security
+    information for the Ingress controller. You can update ingress security
+    configuration properties using the update operation. The update
+    operation must be used when adding an imported wildcard certificate for
+    the Ingress controller.
     """
 
     _con = None
@@ -491,7 +503,7 @@ class KubeSecurityConfig(object):
         Users can test the connection to a user or role (group) store.
 
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
         user_store             Optional dict. Specifies the user store properties. This parameter
                                accepts as input all the properties as defined in the
@@ -522,7 +534,7 @@ class KubeSecurityConfig(object):
         Users can modify the user or role (group) identity stores.
 
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
         user_store             Optional dict. Specifies the user store properties. This parameter accepts as input all the properties as defined in the userStoreConfig and roleStoreConfig section of the Kubernetes help doctumentation.
         ------------------     --------------------------------------------------------------------
@@ -666,3 +678,4 @@ class KubeSecurity(object):
         if self._certs is None:
             url = self._url + "/certificates"
             self._certs = KubeSecurityCert(url, gis=self._gis)
+        return self._certs

@@ -17,7 +17,7 @@ class StatusJob(object):
 
 
     ================  ===============================================================
-    **Argument**      **Description**
+    **Parameter**      **Description**
     ----------------  ---------------------------------------------------------------
     future            Required current.futures.Future.  The async object.
     ----------------  ---------------------------------------------------------------
@@ -49,6 +49,7 @@ class StatusJob(object):
     _end_time = None
     _item_properties = None
     _key = None
+
     # ----------------------------------------------------------------------
     def __init__(
         self, future, op, jobid, gis, notify=False, extra_marker="Group", key=None

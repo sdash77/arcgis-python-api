@@ -11,7 +11,7 @@ def show_batch_labeled_tiles(self, rows=3, **kwargs):  # parameters adjusted in 
     This function randomly picks a few training chips and visualizes them.
 
     =====================   ===========================================
-    **Argument**            **Description**
+    **Parameter**            **Description**
     ---------------------   -------------------------------------------
     rows                    Optional Integer.
                             Number of rows to display.
@@ -30,6 +30,7 @@ def show_batch_labeled_tiles(self, rows=3, **kwargs):  # parameters adjusted in 
     ncols = kwargs.get("ncols", nrows)
     # start_index = kwargs.get('start_index', 0) # Does not work with dataloader
 
+    # Modify nrows and ncols according to the dataset
     n_items = kwargs.get("n_items", nrows * ncols)
     n_items = min(n_items, len(self.x))
     nrows = math.ceil(n_items / ncols)
@@ -138,7 +139,7 @@ def show_batch_labeled_tiles(self, rows=3, **kwargs):  # parameters adjusted in 
                 axi.set_title(title)
                 axi.axis("off")
             else:
-                ax[r][c].axis("off")
+                axs[r][c].axis("off")
             idx += 1
     if is_arcgispronotebook():
         plt.show()

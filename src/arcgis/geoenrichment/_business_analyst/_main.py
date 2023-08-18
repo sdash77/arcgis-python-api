@@ -1,21 +1,22 @@
 import asyncio
+import json
+import re
+import uuid
 from collections import namedtuple
 from copy import deepcopy
 from functools import lru_cache
-import json
 from pathlib import Path
-import re
 from typing import Union, Awaitable, Iterable, Optional
-import uuid
 from warnings import warn
 
-from arcgis.features import GeoAccessor, FeatureSet, FeatureCollection
-from arcgis.gis import GIS
-from arcgis.geometry import Geometry, SpatialReference
-from arcgis.network.analysis import get_travel_modes
-from arcgis._impl.common._utils import _lazy_property as lazy_property
 import pandas as pd
 
+from arcgis._impl.common._utils import _lazy_property as lazy_property
+from arcgis.features import GeoAccessor, FeatureSet
+from arcgis.geometry import Geometry, SpatialReference
+from arcgis.gis import GIS
+from arcgis.network.analysis import get_travel_modes
+from ._spatial import change_spatial_reference
 from ._utils import (
     add_proximity_to_enrich_feature_list,
     extract_from_kwargs,
@@ -31,7 +32,6 @@ from ._utils import (
     set_source,
     validate_network_travel_mode,
 )
-from ._spatial import change_spatial_reference
 
 __all__ = ["BusinessAnalyst", "Country"]
 
@@ -44,7 +44,6 @@ class AOI(object):
     """
 
     def __init__(self, source, **kwargs):
-
         # set the enrichment property
         self._ba = self._ba = (
             kwargs["enrichment"] if "enrichment" in kwargs else BusinessAnalyst(source)
@@ -66,7 +65,7 @@ class AOI(object):
         Source being used.
 
         ==================      ====================================================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ------------------      --------------------------------------------------------------------
         in_source               Optional either the 'local' keyword or an instantiated ``GIS`` object
                                 instance.
@@ -80,13 +79,11 @@ class AOI(object):
 
         # if working with a GIS object instance, we need to set a few extra properties
         if isinstance(self._source, GIS):
-
             # run a few checks and get the helper service for geoenrichment
             self._base_url = get_helper_service_url(self.source, "geoenrichment")
 
             # run a check for nuances of hosted notebooks
             if self._source._is_hosted_nb_home:
-
                 # check if there is a private service url (only true for hosted notebooks)
                 res = self._source._private_service_url(self._base_url)
 
@@ -122,7 +119,7 @@ class AOI(object):
         data as a template.
 
         ==================      ====================================================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ------------------      --------------------------------------------------------------------
         enrich_variables        Required Iterable (normally a list) of enrich_variables correlating to
                                 enrichment enrich_variables. These variable names can be simply the name, the
@@ -226,7 +223,7 @@ class AOI(object):
         proximity_type: Optional[str] = None,
         proximity_value: Optional[Union[float, int]] = None,
         proximity_metric: Optional[str] = None,
-        output_spatial_reference: Union[int, dict, SpatialReference] = 4326,
+        output_spatial_reference: Union[int, dict, SpatialReference] = None,
         estimate_credits: bool = False,
         **kwargs,
     ) -> Union[pd.DataFrame, Path, float]:
@@ -244,7 +241,7 @@ class AOI(object):
             Online, and very well may also the be the case if using an instance of ArcGIS Enterprise.
 
         =============================       ====================================================================
-        **Argument**                        **Description**
+        **Parameter**                        **Description**
         -----------------------------       --------------------------------------------------------------------
         geographies                         Required geographic areas or points to be enriched.
                                             enrich_variables: Enrichment enrich_variables to be used,
@@ -314,7 +311,7 @@ class Country(AOI):
     Analyst extension and local data) and ``GIS`` sources.
 
     =============================       ====================================================================
-    **Argument**                        **Description**
+    **Parameter**                        **Description**
     -----------------------------       --------------------------------------------------------------------
     iso3                                The country's ISO3 identifier.
     -----------------------------       --------------------------------------------------------------------
@@ -340,7 +337,6 @@ class Country(AOI):
         year: Optional[int] = None,
         **kwargs,
     ) -> None:
-
         # invoke the AOI init method - mostly just sets the _ba property
         super().__init__(source, **kwargs)
 
@@ -356,7 +352,6 @@ class Country(AOI):
 
         # if the year is provided, validate
         elif self.source == "local" and year is not None:
-
             # just in case it was accidentally input as a string
             year = int(year) if isinstance(year, str) else year
 
@@ -386,7 +381,6 @@ class Country(AOI):
 
         # if local, set a few more properties unique to local
         if self.source == "local":
-
             # to avoid confusion, add year as alias to vintage
             properties["year"] = properties["vintage"]
 
@@ -686,7 +680,7 @@ class BusinessAnalyst(object):
         introspection does *not* cost any credits.
 
     =============================       ====================================================================
-    **Argument**                        **Description**
+    **Parameter**                        **Description**
     -----------------------------       --------------------------------------------------------------------
     source                              Optional ``GIS`` object or ``local`` keyword specifying the Business
                                         Analyst data and analysis source. If ``local``, the Python
@@ -700,7 +694,6 @@ class BusinessAnalyst(object):
     """
 
     def __init__(self, source: Optional[Union[str, GIS]] = None) -> None:
-
         # set the source, defaulting, based on what is available, to local or active_gis, or simply error if neither
         self.source = source
 
@@ -725,13 +718,11 @@ class BusinessAnalyst(object):
 
         # if working with a GIS object instance, we need to set a few extra properties
         if isinstance(self._source, GIS):
-
             # run a few checks and get the helper service for geoenrichment
             self._base_url = get_helper_service_url(self.source, "geoenrichment")
 
             # run a check for nuances of hosted notebooks
             if self._source._is_hosted_nb_home:
-
                 # check if there is a private service url (only true for hosted notebooks)
                 res = self._source._private_service_url(self._base_url)
 
@@ -969,7 +960,7 @@ class BusinessAnalyst(object):
         """
         Get a Country object instance.
         =============================       ====================================================================
-        **Argument**                        **Description**
+        **Parameter**                        **Description**
         -----------------------------       --------------------------------------------------------------------
         iso3                                Required String. The country's ISO3 identifier.
         -----------------------------       --------------------------------------------------------------------
@@ -1090,7 +1081,6 @@ class BusinessAnalyst(object):
 
         # iterate the data collections
         for col in res["DataCollections"]:
-
             # create a dataframe of the enrich_variables, keep only needed columns, and add the data collection name
             coll_df = pd.json_normalize(col["data"])[
                 ["id", "alias", "description", "vintage", "units"]
@@ -1113,7 +1103,7 @@ class BusinessAnalyst(object):
         var_df.insert(3, "enrich_name", var_df.data_collection + "." + var_df.name)
 
         # create column for matching to previously enriched column names
-        regex = re.compile(r"(^\d+)")
+        regex = re.compile(r"(^[0-9]+)")
         fld_vals = var_df.enrich_name.apply(
             lambda val: regex.sub(r"F\1", val.replace(".", "_"))
         )
@@ -1134,7 +1124,7 @@ class BusinessAnalyst(object):
         data as a template.
 
         =============================       ====================================================================
-        **Argument**                        **Description**
+        **Parameter**                        **Description**
         -----------------------------       --------------------------------------------------------------------
         enrich_variables                    Iterable (normally a list) of enrich_variables correlating to
                                             enrichment enrich_variables. These variable names can be simply the name, the
@@ -1248,7 +1238,7 @@ class BusinessAnalyst(object):
         DataFrame as output.
 
         =============================       ====================================================================
-        **Argument**                        **Description**
+        **Parameter**                        **Description**
         -----------------------------       --------------------------------------------------------------------
         enrich_variables                    Iterable (normally a list) or pd.DataFrame
                                             of enrich_variables correlating to
@@ -1291,7 +1281,6 @@ class BusinessAnalyst(object):
 
         # otherwise, create an enrich enrich_variables dataframe from the enrich series for a few more checks
         else:
-
             # get the enrich enrich_variables dataframe
             enrich_vars_df = self.get_enrich_variables_from_iterable(
                 enrich_variables, **kwargs
@@ -1385,6 +1374,66 @@ class BusinessAnalyst(object):
 
         return trvl_df
 
+    def _can_use_arrow(self, geo) -> bool:
+        if not isinstance(geo, pd.DataFrame):
+            return False  # not a DataFrame
+
+        if not geo.spatial.validate():
+            return False  # not a valid SeDF
+
+        if len(geo.spatial.geometry_type) != 1:
+            return False  # more than one geometry type
+
+        if geo.spatial.geometry_type[0] != "polygon":
+            return False  # only polygonal DF are supported at this point
+
+        return True
+
+    def _enrich_using_arrow(self, in_sedf, variables) -> pd.DataFrame:
+        # create a data frame with two columns: object id and shape in WKB
+        input_shape_series = in_sedf.loc[:, in_sedf.spatial.name]
+        df_input = pd.DataFrame({in_sedf.spatial.name: input_shape_series})
+        df_input.spatial.set_geometry(in_sedf.spatial.name)
+
+        # come up with index field that doesn't exist yet
+        orig_index_field = str(uuid.uuid4())
+        # enrichArrowTable returns records in arbitrary order, ORIG_INDEX is in the original order
+        # ORIG_INDEX starts with 0
+        df_input[orig_index_field] = range(0, len(in_sedf))
+
+        geo_accessor = GeoAccessor(df_input)
+        arrow_table = geo_accessor.to_arrow()
+
+        import arcpy._ba
+
+        output_table = arcpy._ba.enrichArrowTable(arrow_table, variables, False)
+
+        enrich_result_df = output_table.to_pandas()
+
+        input_copy_df = in_sedf.copy()
+        input_copy_df[orig_index_field] = range(0, len(in_sedf))
+
+        # we need to rename that field to avoid clashes
+        enrich_result_df.rename(columns={"ORIG_INDEX": orig_index_field}, inplace=True)
+
+        if "ORIG_OID" in enrich_result_df:
+            enrich_result_df.drop(["ORIG_OID"], axis=1, inplace=True)
+
+        # join based on objectid
+        merged_df = input_copy_df.merge(enrich_result_df, on=orig_index_field)
+        merged_df.drop([orig_index_field], axis=1, inplace=True)
+
+        # rearrange columns to move SHAPE to the last one
+        orig_cols = merged_df.columns.tolist()
+        new_cols = [c for c in orig_cols if c != in_sedf.spatial.name] + [
+            in_sedf.spatial.name
+        ]
+        final_df = merged_df[new_cols]
+
+        # return new SeDF based on final_df; shape column name is the same as before
+        final_df.spatial.set_geometry(in_sedf.spatial.name)
+        return final_df
+
     def enrich(
         self,
         geographies: Union[pd.DataFrame, Geometry, Iterable, Path],
@@ -1393,7 +1442,7 @@ class BusinessAnalyst(object):
         proximity_value: Optional[Union[float, int]] = None,
         proximity_metric: Optional[str] = None,
         return_geometry: bool = True,
-        output_spatial_reference: Union[int, dict, SpatialReference] = 4326,
+        output_spatial_reference: Union[int, dict, SpatialReference] = None,
         estimate_credits: bool = False,
         **kwargs,
     ) -> pd.DataFrame:
@@ -1401,7 +1450,7 @@ class BusinessAnalyst(object):
         Enrich enables retrieving apportioned demographic factors for input geographies.
 
         =============================       ====================================================================
-        **Argument**                        **Description**
+        **Parameter**                        **Description**
         -----------------------------       --------------------------------------------------------------------
         geographies                         Input geographies desired to get demographic variables for. Normally
                                             these will be geometries included as part of a spatially enabled Pandas
@@ -1502,6 +1551,11 @@ class BusinessAnalyst(object):
         elif geo_is_df and standard_geography_id_column and not geo_is_dict:
             geographies = geographies[standard_geography_id_column]
 
+        if geo_is_df and output_spatial_reference is None:
+            output_spatial_reference = geographies.spatial.sr
+        elif geo_is_dict and output_spatial_reference is None:
+            if "spatialReference" in first_geo:
+                output_spatial_reference = first_geo["spatialReference"]
         # ensure if specifying a standard geography id column, the standard geography level is also provided
         if standard_geography_id_column is not None:
             assert standard_geography_level is not None, (
@@ -1556,7 +1610,6 @@ class BusinessAnalyst(object):
 
         # if no variables submitted, provide defaults flexibly based on the parent
         if enrich_variables is None:
-
             # pluck out enrich variables into a shorter variable
             ev = self.enrich_variables
 
@@ -1580,7 +1633,6 @@ class BusinessAnalyst(object):
 
         # if a list of enrichment variables was provided, ensure they are valid
         if not isinstance(enrich_variables, pd.DataFrame):
-
             # iteratively go through all the columns and try to find matching variables
             for c in ev_df:
                 enrich_vars = [v.lower() for v in enrich_variables]
@@ -1699,7 +1751,6 @@ class BusinessAnalyst(object):
 
         # if the standard geographies were provided
         if standard_geography_level is not None:
-
             # if input is a dataframe, ensure correctly set up
             if isinstance(geographies, pd.DataFrame):
                 std_geo_in = get_spatially_enabled_dataframe(
@@ -1738,7 +1789,9 @@ class BusinessAnalyst(object):
 
         # if a proximity type is provided, validate
         if proximity_type is not None:
-            proximity_type = validate_network_travel_mode(country, proximity_type)
+            proximity_type = validate_network_travel_mode(
+                country, proximity_type, proximity_metric
+            )
 
             # provide defaults if nothing provided for any of the proximity metrics
             proximity_type = (
@@ -1768,14 +1821,19 @@ class BusinessAnalyst(object):
         )
 
         # now, actually perform enrichment
-        enrich_res = arcpy.ba.EnrichLayer(
-            in_features=in_geo,
-            out_feature_class=f"memory/tmp_enrich_{uuid.uuid4().hex}",
-            variables=evars,
-            buffer_type=proximity_type,
-            distance=proximity_value,
-            unit=proximity_metric,
-        )
+        use_arrow = pro_at_least_version("3.1") and self._can_use_arrow(in_geo)
+
+        if use_arrow:
+            enrich_res = self._enrich_using_arrow(in_sedf=in_geo, variables=evars)
+        else:
+            enrich_res = arcpy.ba.EnrichLayer(
+                in_features=in_geo,
+                out_feature_class=f"memory/tmp_enrich_{uuid.uuid4().hex}",
+                variables=evars,
+                buffer_type=proximity_type,
+                distance=proximity_value,
+                unit=proximity_metric,
+            )
 
         # handle differences in pre 2.9
         if not pro_at_least_version("2.9"):
@@ -1787,38 +1845,59 @@ class BusinessAnalyst(object):
             enrich_res if isinstance(geographies, pd.DataFrame) else enrich_res[0]
         )
 
-        # convert the output to a spatially enabled dataframe
-        enrich_df = GeoAccessor.from_featureclass(enrich_res)
+        # convert the output to a spatially enabled dataframe if necessary (in 3.1 it's done in
+        enrich_df = (
+            enrich_res if use_arrow else GeoAccessor.from_featureclass(enrich_res)
+        )
+
+        if not use_arrow:
+            # in some cases from_featureclass returns a data frame that doesn't pass SEDF validation (enrich_df.spatial.validate)
+            enrich_df.spatial.set_geometry("SHAPE")
 
         # standardize columns to ensure results are as expected
         enrich_df.columns = [
             self._standardize_enrich_column_name(c, country) for c in enrich_df.columns
         ]
-        enrich_df.columns = [pep8ify(c) for c in enrich_df.columns if c != "SHAPE"] + [
-            "SHAPE"
-        ]
+
+        column_candidates_to_remove = ["Shape_Area", "Shape_Length"]
+        # default value set to True to keep backward compatibility
+        sanitize_columns = kwargs.pop("sanitize_columns", True)
+        if sanitize_columns:
+            enrich_df.columns = [pep8ify(c) for c in enrich_df.columns if c != "SHAPE"] + [
+                "SHAPE"
+            ]
+            column_candidates_to_remove = [pep8ify(c) for c in column_candidates_to_remove]
 
         # start creating a list of columns to remove - beginning with the OBJECTID field
         drop_cols = [
-            c for c in enrich_df.columns if c in ["shape_area", "shape_length"]
+            c for c in enrich_df.columns if c in column_candidates_to_remove
         ]
-        drop_cols.append(pep8ify(arcpy.Describe(enrich_res).OIDFieldName))
 
-        # get rid of the temporary output to save memory
-        arcpy.management.Delete(enrich_res)
+        if not use_arrow:
+            if sanitize_columns:
+                drop_cols.append(pep8ify(arcpy.Describe(enrich_res).OIDFieldName))
+            else:
+                drop_cols.append(arcpy.Describe(enrich_res).OIDFieldName)
+
+        if not use_arrow:
+            # get rid of the temporary output to save memory
+            arcpy.management.Delete(enrich_res)
 
         # if returning geometry
         if return_geometry:
-
             # ensure the spatial reference is correct
-            enrich_df = change_spatial_reference(enrich_df, output_spatial_reference)
+
+            if output_spatial_reference:
+                enrich_df = change_spatial_reference(
+                    enrich_df, output_spatial_reference
+                )
 
             # removing unneeded columns - using inplace to preserve all spatial namespace properties
             enrich_df.drop(columns=drop_cols, inplace=True)
 
         # if not returning geometry, drop the geometry column
         else:
-            drop_cols.append("SHAPE")
+            drop_cols.append(enrich_df.spatial.name)
 
             # remove unneeded columns - not doing inplace to ensure no 'spatial' namespace remnants
             enrich_df = enrich_df.drop(columns=drop_cols)
@@ -1835,7 +1914,7 @@ class BusinessAnalyst(object):
         proximity_value: Optional[Union[float, int]] = None,
         proximity_metric: Optional[str] = None,
         return_geometry: bool = True,
-        output_spatial_reference: Union[int, dict, SpatialReference] = 4326,
+        output_spatial_reference: Union[int, dict, SpatialReference] = None,
         estimate_credits: bool = False,
         **kwargs,
     ) -> pd.DataFrame:
@@ -1882,6 +1961,8 @@ class BusinessAnalyst(object):
         # get the enrichment variables as a string ready to submit as a payload parameter
         evars = self._enrich_variable_preprocessing(enrich_variables, country=country)
 
+        if output_spatial_reference is None:
+            output_spatial_reference = 4326
         # properly format the output spatial reference
         if isinstance(output_spatial_reference, (int, str)):
             output_spatial_reference = SpatialReference(output_spatial_reference)
@@ -1889,8 +1970,8 @@ class BusinessAnalyst(object):
         # start building out the package for enrich REST call
         params = {
             "f": "json",
-            "token": self.source._con.token,
             "analysisVariables": evars,
+            "appID": "esripythonapi",
         }
 
         # if any legacy parameters provided, add them to the payload
@@ -1900,7 +1981,6 @@ class BusinessAnalyst(object):
             "intersecting_geographies",
         ]
         for param in [k for k in kwargs.keys() if k in legacy_params]:
-
             # convert the parameter key from snake case to camel case
             prts = param.split("_")
             param_cml = prts[0] + "".join(prt.title() for prt in prts[1:])
@@ -1962,7 +2042,6 @@ class BusinessAnalyst(object):
 
         # if working with standard geography
         if standard_geography_level is not None:
-
             assert (
                 country is not None
             ), "Standard geography levels can only be used with a Country."
@@ -1974,7 +2053,6 @@ class BusinessAnalyst(object):
 
             # use the count of features and the max bach size to create a list of param payloads
             for idx in range(0, len(geographies), batch_size):
-
                 # peel off just the id's for this batch
                 batch_id_lst = geographies[idx : idx + batch_size]
 
@@ -2010,7 +2088,6 @@ class BusinessAnalyst(object):
 
         # otherwise, working with geometries, so do this thing
         else:
-
             # no matter what the input, get a spatially enabled dataframe
             geographies = get_spatially_enabled_dataframe(geographies)
 
@@ -2039,7 +2116,6 @@ class BusinessAnalyst(object):
                 else len(geographies)
             )
             for idx in range(0, total_cnt, batch_size):
-
                 # get a slice of the input data to enrich, converting to feature set if dataframe
                 if isinstance(geographies, pd.DataFrame):
                     in_batch_df = geographies.iloc[idx : idx + batch_size]
@@ -2103,7 +2179,6 @@ class BusinessAnalyst(object):
 
         # if geometry, which may not be, but if there is, clean up and make sure everything is as expected
         if "SHAPE" in enrich_df.columns:
-
             # ensure it is valid to begin with - doubtful after the join
             enrich_df.spatial.set_geometry("SHAPE")
 
@@ -2119,9 +2194,13 @@ class BusinessAnalyst(object):
         enrich_df.columns = [
             self._standardize_enrich_column_name(c, country) for c in enrich_df.columns
         ]
-        enrich_df.columns = [
-            pep8ify(c) if c != "SHAPE" else c for c in enrich_df.columns
-        ]
+
+        # default value set to True to keep backward compatibility
+        sanitize_columns = kwargs.pop("sanitize_columns", True)
+        if sanitize_columns:
+            enrich_df.columns = [
+                pep8ify(c) if c != "SHAPE" else c for c in enrich_df.columns
+            ]
 
         # stash useful pieces for potential later access in metadata
         enrich_df.attrs["arcgis_ba"] = self
@@ -2151,7 +2230,6 @@ async def _get_enrich_rest(
 
     # iterate the batched payloads
     for payload in payload_lst:
-
         # create an event loop for wrapping requests
         loop = asyncio.get_event_loop()
 

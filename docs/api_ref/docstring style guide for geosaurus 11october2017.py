@@ -44,7 +44,7 @@ def xyz(self, arg1, argument2=None, argument_three=None, arg4demoPruposes=None):
 
 
     ==================     ====================================================================
-    **Argument**           **Description**
+    **Parameter**           **Description**
     ------------------     --------------------------------------------------------------------
     arg1                   Required string. Description text here.  See #2 below!!!!!!
     ------------------     --------------------------------------------------------------------
@@ -82,7 +82,7 @@ def xyz(self, arg1, argument2=None, argument_three=None, arg4demoPruposes=None):
 
 """
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
         arg1example            Required string. Generally, provide a description as a sentence,
                                although a phrase can be appropiate.
@@ -130,8 +130,8 @@ For json responses:
 **Also on returns, do not start the return statement with 'Returns' -- that word is already there.
 
 **And, speak to the positive/expected outcome first and with conviction...
-  -not ‘the item should be updated’,
-  preferred is ‘The item is updated’ 
+  -not 'the item should be updated',
+  preferred is 'The item is updated' 
   -or, not this 'None if the data item is not found at that path and the data item object if its found',
   but this instead 'The data item object, None if not found.' 
 
@@ -140,14 +140,14 @@ For json responses:
 ## 4 ## Table for one or two or 12 arguments
 """
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
         arg1                   Required string. Description text here.
         ==================     ====================================================================
 
 
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
         arg1                   Required string. Description text here.
         ------------------     --------------------------------------------------------------------
@@ -156,7 +156,7 @@ For json responses:
 
 
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
         arg1                   Required string. Description text here.
         ------------------     --------------------------------------------------------------------
@@ -194,7 +194,7 @@ For json responses:
 """
 
         =======================     ====================================================================
-        **Argument**                **Description**
+        **Parameter**                **Description**
         -----------------------     --------------------------------------------------------------------
         arg1                        Required string. Description text here.
         -----------------------     --------------------------------------------------------------------
@@ -207,7 +207,7 @@ For json responses:
 
 
         ============================     ====================================================================
-        **Argument**                     **Description**
+        **Parameter**                     **Description**
         ----------------------------     --------------------------------------------------------------------
         arg1                             Required string. Description text here.
         ----------------------------     --------------------------------------------------------------------
@@ -220,7 +220,7 @@ For json responses:
 
 
         ====================================     ====================================================================
-        **Argument**                             **Description**
+        **Parameter**                             **Description**
         ------------------------------------     --------------------------------------------------------------------
         arg1                                     Required string. Description text here.
         ------------------------------------     --------------------------------------------------------------------
@@ -251,7 +251,7 @@ def create_tile_service(
     layers and hosted feature layer views as a tile service.
 
     ================  ===============================================================
-    **Argument**      **Description**
+    **Parameter**      **Description**
     ----------------  ---------------------------------------------------------------
     title             Required string. The name of the new service
                       |br|Example: "SeasideHeightsNJTiles"
@@ -306,7 +306,7 @@ def create_tile_service(
 
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         item_properties     Required dictionary. See table below for the keys and values.
         ---------------     --------------------------------------------------------------------
@@ -396,7 +396,7 @@ def create_tile_service(
                set outside_org to True.
 
         ================  ==========================================================================
-        **Argument**      **Description**
+        **Parameter**      **Description**
         ----------------  --------------------------------------------------------------------------
         query             Required string. A query string.  See notes above.
         ----------------  --------------------------------------------------------------------------
@@ -470,7 +470,7 @@ def create(
     Creates a WebHook to monitor REST endpoints and report activities
 
     =================================  ===============================================================================
-    **Argument**                       **Description**
+    **Parameter**                       **Description**
     ---------------------------------  -------------------------------------------------------------------------------
     name                               Required String. The name of the webhook.
     ---------------------------------  -------------------------------------------------------------------------------
@@ -668,7 +668,7 @@ any line breaks in the file.  Still Pythonic-wise, best to keep lines to ?? 75, 
 
 Spaces between sentences should be one space (typography states this).  (Per the sentences
 in this doc, it is still my habit to do two spaces, trying to break it).  Regardless, Sphinx
-forces/fixes this, but let’s try to be correct in the Python file, too.
+forces/fixes this, but let's try to be correct in the Python file, too.
 
 Full sentences generally.  Phrases can be called for, but generally let's be formal and adhere 
 to proper grammar, punctuation, spelling, and case.
@@ -677,20 +677,20 @@ Be formal, practical and technical, but not high formal.
 
 Spell out all words.  Use dictionary not dict, integer not int.
 
-Known abbreviations are fine (but, don’t assume, many of our users are not developers
+Known abbreviations are fine (but, don't assume, many of our users are not developers
 per se).  If using an abbreviation, capitalize all letters (URL not url) -- this applies to
 descriptions, not to arguments (an argument of url stays as url).  
 
-For Returns, don’t start with ‘Returns the list of…’, otherwise it says ‘Returns:  Returns
-the list of…’.
+For Returns, don't start with 'Returns the list of...', otherwise it says 'Returns:  Returns
+the list of...'.
 
 All Notes should be between the method description and the argument-description table.
 
 Avoid passive voice - uses more words, less logical (the object should be doing something
-to the subject, not vice-versa),  less clear (with subject as start, that’s focus and clear
+to the subject, not vice-versa),  less clear (with subject as start, that's focus and clear
 who is doing what).
 
-Be succinct.  Don’t be unnecessarily wordy. Explicit, informative, but not repetitive.
+Be succinct.  Don't be unnecessarily wordy. Explicit, informative, but not repetitive.
 
 Be explicit.  Cater to our users which can range from developers to GIS specialists and
 system admins (all with 0-20+ years experience) who have to do these sort of things the API  
@@ -700,13 +700,13 @@ Generally avoid pronoun use, but when you do use these, ensure pronoun-reference
 
 Write in the second person (you!).  Address the user specifically.
 
-Sphinx does not like these quotes ‘on-premise GIS’ (angled, curly), must be these quotes
+Sphinx does not like these quotes 'on-premise GIS' (angled, curly), must be these quotes
 'on-premise GIS' (straight up-down).
 
 For class descriptions, generally do not provide details on the methods available in the class.  
 Summarize the capabilities succinctly.  Instead provide details in the method description. *1 below.
 
-Don’t do... but... Should use quotes or bold or italics for controls,  i.e. Click the ‘Update’
+Don't do... but... Should use quotes or bold or italics for controls,  i.e. Click the 'Update'
 link. -- future maybe?
 
 """

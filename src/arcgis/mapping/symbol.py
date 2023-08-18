@@ -345,6 +345,8 @@ cmaps = [
         ],
     ),
 ]
+
+
 ###########################################################################
 def _cmap2rgb(colors, step, alpha=1):
     """converts a color map to RGBA list"""
@@ -510,7 +512,7 @@ def create_symbol(
     polygon geometries.
 
     ====================  =========================================================
-    **Argument**          **Description**
+    **Parameter**          **Description**
     --------------------  ---------------------------------------------------------
     marker_size           optional float.  Numeric size of the symbol given in
                           points.
@@ -554,7 +556,7 @@ def create_symbol(
     This type of symbol only applies to Points, MultiPoints and Polygons.
 
     ====================  =========================================================
-    **Argument**          **Description**
+    **Parameter**          **Description**
     --------------------  ---------------------------------------------------------
     marker_angle          Numeric value that defines the number of degrees ranging
                           from 0-360, that a marker symbol is rotated. The rotation
@@ -609,7 +611,7 @@ def create_symbol(
     This type of symbol only applies to Points, MultiPoints and Polygons.
 
     ====================  =========================================================
-    **Argument**          **Description**
+    **Parameter**          **Description**
     --------------------  ---------------------------------------------------------
     font_decoration       The text decoration. Must be one of the following values:
 
@@ -695,7 +697,7 @@ def create_symbol(
     This type of symbol only applies to line geometries.
 
     ====================  =========================================================
-    **Argument**          **Description**
+    **Parameter**          **Description**
     --------------------  ---------------------------------------------------------
     line_width            optional float. Numeric value indicating the width of the line in points
     --------------------  ---------------------------------------------------------
@@ -768,7 +770,6 @@ def create_symbol(
         return symbol
 
     if symbol_type.lower() == "simple":  # Default Simple Symbol
-
         if symbol_style is None:
             if gtype == "POINT":
                 symbol_type = "esriSMS"

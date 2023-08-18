@@ -1,7 +1,9 @@
+from __future__ import annotations
 import csv
 from datetime import datetime
 from arcgis.gis.kubernetes._admin._base import _BaseKube
 from typing import Dict, Any, Optional, List, Union
+
 
 ########################################################################
 class LogManager(_BaseKube):
@@ -18,13 +20,14 @@ class LogManager(_BaseKube):
     _con = None
     _json_dict = None
     _json = None
+
     # ----------------------------------------------------------------------
     def __init__(self, url, gis, initialize=False):
         """Constructor
 
 
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
         url                    Required string. The machine URL.
         ------------------     --------------------------------------------------------------------
@@ -57,7 +60,7 @@ class LogManager(_BaseKube):
         This operation forces the server to clean the logs, which has the effect of freeing up disk space. However, it is not required that you invoke this operation because the server periodically purges old logs.
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         start_time          Optional String. The date associated with a log, in timestamp format
                             (yyyy-mm-ddThh:mm:ss). If specified, logs created after this time
@@ -144,7 +147,7 @@ class LogManager(_BaseKube):
 
 
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
         query                  Required String. The search terms used to query your organization's
                                logs. This parameter supports keywords (for example, completed) and
@@ -203,7 +206,7 @@ class LogManager(_BaseKube):
         Provides log editing capabilities for the entire site.
 
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
         level                  Optional string. The log level.  Can be one of (in severity order):
                                OFF, DEBUG, VERBOSE, FINE, INFO, WARNING, SEVERE. The default is WARNING.
@@ -253,7 +256,7 @@ class LogManager(_BaseKube):
         aggregate, filter, and page through logs across the entire site.
 
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
         start_time             Optional string. The oldest time to query logs against, formatted as
                                either a timestamp (yyyy-mm-ddThh:mm:ss) or milliseconds from epoch.
@@ -297,7 +300,14 @@ class LogManager(_BaseKube):
 
         """
 
-        allowed_levels = ("SEVERE", "WARNING", "INFO", "FINE", "VERBOSE", "DEBUG")
+        allowed_levels = (
+            "SEVERE",
+            "WARNING",
+            "INFO",
+            "FINE",
+            "VERBOSE",
+            "DEBUG",
+        )
         params = {"f": "json", "num": num}
         params["start"] = 1
         url = "{url}/query".format(url=self._url)

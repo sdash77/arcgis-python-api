@@ -64,7 +64,6 @@ def is_contiguous(class_values):
 def multispectral_additions(
     data, _is_multispectral, rgb_bands, bands, extract_bands, norm_pct, **kwargs
 ):
-
     # Normalize multispectral imagery by calculating stats
     json_file = data.path / "esri_model_definition.emd"
     if json_file.exists():
@@ -707,7 +706,6 @@ def denormalize(x, mean, std, do_x=True):
 def prepare_change_detection_data(
     path, chip_sz, batch_size, val_split_pct, transforms, **kwargs
 ):
-
     if not HAS_FASTAI:
         raise_fastai_import_error(
             import_exception=import_exception, message="", installation_steps=" "
@@ -901,7 +899,6 @@ def predict(
     padding=None,
     save=False,
 ):
-
     if self._data._is_multispectral:
         image_before = ArcGISMSImage.open(
             image_before, imagery_type=self._data._imagery_type
@@ -923,6 +920,7 @@ def predict(
             max_values=self._data._band_max_values,
             mode="minmax",
         )
+
         # scaling Transforms
         def _scaling_tfm(x):
             # Scales Fastai Image Scaling | MS Image Values -> 0 - 1 range
@@ -1080,7 +1078,6 @@ class ImageChunker(object):
 
         # Check if we are adding padding for too small images
         if padding:
-
             # Check if height is too small
             if img.shape[0] < self.rows:
                 padding = np.ones(
@@ -1125,7 +1122,6 @@ class ImageChunker(object):
 
         # Check if we are adding padding for too small images
         if padding:
-
             # Check if height is too small
             if original_image.shape[0] < self.rows:
                 new_images = []
@@ -1155,7 +1151,6 @@ class ImageChunker(object):
         s = scale
         for x in x_chunks:
             for y in y_chunks:
-
                 prior_fill = reconstruction != 0
                 chunk = np.zeros(new_shape)
                 chunk[x[0] * s : x[1] * s, y[0] * s : y[1] * s, :] += chunked_images[i]

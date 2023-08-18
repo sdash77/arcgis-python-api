@@ -50,7 +50,6 @@ except:
 
 
 def IC_show_results(self, nrows=5, **kwargs):
-
     type_data_loader = kwargs.get(
         "data_loader", "validation"
     )  # options : traininig, validation, testing
@@ -114,7 +113,6 @@ def IC_show_results(self, nrows=5, **kwargs):
         predictions = torch.cat(predictions)
 
     if self._is_multispectral:
-
         rgb_bands = kwargs.get("rgb_bands", self._data._symbology_rgb_bands)
 
         e = Exception(

@@ -1,3 +1,4 @@
+from __future__ import annotations
 from typing import Optional
 from urllib.request import HTTPError
 from arcgis._impl.common._isd import InsensitiveDict
@@ -120,7 +121,6 @@ class KubernetesAdmin(_BaseKube):
         :return: `DataStores`
         """
         if self._ds is None:
-
             url = self._url + "/data"
             self._ds = DataStores(url=url, gis=self._gis)
         return self._ds
@@ -164,7 +164,6 @@ class KubernetesAdmin(_BaseKube):
         entitlements.
         """
         if self._license is None:
-
             url = self._gis._portal.resturl + "portals/self/purchases"
             self._license = LicenseManager(url=url, gis=self._gis)
         return self._license
@@ -203,7 +202,7 @@ class KubernetesAdmin(_BaseKube):
         This property allows `org_admins` to be able to see all scheduled tasks on the enterprise
 
         ================  ===============================================================================
-        **Argument**      **Description**
+        **Parameter**      **Description**
         ----------------  -------------------------------------------------------------------------------
         item              Optional Item. The item to query tasks about.
         ----------------  -------------------------------------------------------------------------------

@@ -15,6 +15,7 @@ from arcgis.features.layer import FeatureLayer, FeatureLayerCollection
 from arcgis.gis import GIS, Item
 from .._impl.common._utils import inspect_function_inputs
 
+
 # ----------------------------------------------------------------------
 def generate_tessellation(
     extent_layer: Union[
@@ -34,12 +35,13 @@ def generate_tessellation(
     gis: Optional[GIS] = None,
     estimate: bool = False,
     future: bool = False,
+    bin_resolution: Optional[int] = None,
 ):
     """
     Generates a tessellated grid of regular polygons.
 
     ====================================     ====================================================================
-    **Argument**                             **Description**
+    **Parameter**                             **Description**
     ------------------------------------     --------------------------------------------------------------------
     extent_layer                             Optional layer. A layer defining the processing extent.
     ------------------------------------     --------------------------------------------------------------------
@@ -52,8 +54,8 @@ def generate_tessellation(
                                              'NauticalMiles'.
     ------------------------------------     --------------------------------------------------------------------
     bin_type                                 Optional String. The type of shape to tessellate.
-                                             Allowed values are: 'SQUARE', 'HEXAGON', 'TRIANGLE', 'DIAMOND', or
-                                             'TRANSVERSEHEXAGON'.
+                                             Allowed values are: 'SQUARE', 'HEXAGON', 'TRIANGLE', 'DIAMOND',
+                                             'TRANSVERSEHEXAGON', or `H3_HEXAGON`.
     ------------------------------------     --------------------------------------------------------------------
     intersect_study_area                     Optional Boolean. A boolean defines whether to keep only tessellations intersect with the study area.
 
@@ -87,6 +89,11 @@ def generate_tessellation(
     ------------------------------------     --------------------------------------------------------------------
     future                                   Optional boolean. If True, a future object will be returned and the process
                                              will not wait for the task to complete. The default is False, which means wait for results.
+    ------------------------------------     --------------------------------------------------------------------
+    bin_resolution                           Optional Integer. This becomes required when H3_HEXAGON is used.
+                                             The H3 resolution of the hexagons. Resolution ranges from 0 to 15.
+                                             With each increasing resolution size, the area of the polygons will
+                                             be one seventh the size.
     ====================================     ====================================================================
 
     .. note::
@@ -98,7 +105,8 @@ def generate_tessellation(
         If ``future = True``, then the result is a :class:`~concurrent.futures.Future` object. Call ``result()`` to get the response.
 
     """
-
+    if not bin_resolution is None and (bin_resolution > 15 or bin_resolution < 0):
+        raise ValueError("bin_resolution must be between 0 to 15")
     gis = _arcgis.env.active_gis if gis is None else gis
     if not ((context and "extent" in context) or extent_layer):
         raise ValueError("Tool requires an extent_layer or defined extent.")
@@ -113,6 +121,7 @@ def generate_tessellation(
         "gis": gis,
         "estimate": estimate,
         "future": future,
+        "bin_resolution": bin_resolution,
     }
     params = inspect_function_inputs(
         fn=gis._tools.featureanalysis._tbx.generate_tessellations, **kwargs
@@ -151,7 +160,7 @@ def dissolve_boundaries(
     if they have the same value for State_Name. The end result is a layer of state boundaries.
 
     ====================================     =====================================================================================
-    **Argument**                             **Description**
+    **Parameter**                             **Description**
     ------------------------------------     -------------------------------------------------------------------------------------
     input_layer                              Required layer. The layer containing polygon features that will be dissolved. See :ref:`Feature Input<FeatureInput>`.
     ------------------------------------     -------------------------------------------------------------------------------------
@@ -305,7 +314,7 @@ def extract_data(
     File geodatabases and shapefiles are added to a zip file that can be downloaded.
 
     ===================================    =========================================================
-    **Argument**                           **Description**
+    **Parameter**                           **Description**
     -----------------------------------    ---------------------------------------------------------
     input_layers                           Required list of strings. A list of input layers to be extracted. See :ref:`Feature Input<FeatureInput>`.
     -----------------------------------    ---------------------------------------------------------
@@ -424,7 +433,7 @@ def merge_layers(
     * I have two layers containing parcel information for contiguous townships. I want to join them together into a single layer, keeping only the fields that have the same name and type on the two layers.
 
     ================    ===============================================================
-    **Argument**        **Description**
+    **Parameter**        **Description**
     ----------------    ---------------------------------------------------------------
     input_layer         Required feature layer. The point, line or polygon features with the ``merge_layer``. See :ref:`Feature Input<FeatureInput>`.
     ----------------    ---------------------------------------------------------------
@@ -542,9 +551,9 @@ def overlay_layers(
     """
     .. image:: _static/images//overlay_layers/overlay_layers.png
 
-    .. |Intersect| image:: _static/images/overlay_layers/Intersect.png
-    .. |Union| image:: _static/images/overlay_layers/Union.png
-    .. |Erase| image:: _static/images/overlay_layers/Erase.png
+    .. |Intersect| image:: _static/images/overlay_layers/overlay_intersect.png
+    .. |Union| image:: _static/images/overlay_layers/overlay_union.png
+    .. |Erase| image:: _static/images/overlay_layers/overlay_erase.png
 
 
     The ``overlay_layers`` method combines two or more layers into one single layer.
@@ -561,7 +570,7 @@ def overlay_layers(
     + What wells are within abandoned military bases?
 
     ================    ===============================================================
-    **Argument**        **Description**
+    **Parameter**        **Description**
     ----------------    ---------------------------------------------------------------
     input_layer         Required layer. The point, line, or polygon features that will be
                         overlayed with the ``overlay_layer``. See :ref:`Feature Input<FeatureInput>`.
@@ -682,7 +691,6 @@ def create_route_layers(
     estimate: bool = False,
     future: bool = False,
 ):
-
     """
     The ``create_route_layers`` method creates route layer items on the portal from the input route data.
 
@@ -692,7 +700,7 @@ def create_route_layers(
 
 
     =========================    =========================================================
-    **Argument**                 **Description**
+    **Parameter**                 **Description**
     -------------------------    ---------------------------------------------------------
     route_data                   Required item. The item id for the route data item that is used to create route layer items.
                                  Before running this task, the route data must be added to your portal as an item.

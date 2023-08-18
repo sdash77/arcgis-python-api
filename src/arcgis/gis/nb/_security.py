@@ -2,6 +2,7 @@ import os
 from arcgis.gis import GIS
 from arcgis._impl.common._mixins import PropertyMap
 
+
 ########################################################################
 class SecurityManager(object):
     """
@@ -14,6 +15,7 @@ class SecurityManager(object):
     _url = None
     _gis = None
     _properties = None
+
     # ----------------------------------------------------------------------
     def __init__(self, url, gis):
         """Constructor"""
@@ -54,7 +56,7 @@ class SecurityManager(object):
         **Configuration Properties**
 
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
         httpsProtocols	       The TLS protocols ArcGIS Notebook Server will use. Values must be comma-separated.
         ------------------     --------------------------------------------------------------------
@@ -72,7 +74,7 @@ class SecurityManager(object):
         **Portal Properties**
 
         ==========================     ===========================================================================================
-        **Argument**                   **Description**
+        **Parameter**                   **Description**
         --------------------------     -------------------------------------------------------------------------------------------
         portalMode	                   Must be the value ARCGIS_PORTAL_FEDERATION
         --------------------------     -------------------------------------------------------------------------------------------

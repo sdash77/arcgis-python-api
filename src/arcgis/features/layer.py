@@ -10,7 +10,6 @@ from datetime import datetime
 import json
 import os
 from re import S, search
-import six
 import time
 import concurrent.futures
 from typing import Any, Optional, Union
@@ -76,6 +75,33 @@ class FeatureLayer(Layer):
         self._time_filter = None
 
     @property
+    def field_groups(self) -> dict[str, Any]:
+        """
+        Returns the defined list of field groups for a given layer.
+
+        :returns: dict[str,Any]
+        """
+        url: str = f"{self._url}/fieldGroups"
+        params: dict[str, Any] = {"f": "json"}
+        try:
+            return self._con.get(url, params=params)
+        except:
+            return {}
+
+    @property
+    def contingent_values(self) -> dict[str, Any]:
+        """
+        Returns the define contingent values for the given layer.
+        :returns: Dict[str,Any]
+        """
+        url: str = f"{self._url}/contingentValues"
+        params: dict[str, Any] = {"f": "json"}
+        try:
+            return self._con.get(url, params=params)
+        except:
+            return {}
+
+    @property
     def time_filter(self):
         """
         The ``time_filter`` method is used to set a time filter instead of querying time-enabled map
@@ -133,7 +159,7 @@ class FeatureLayer(Layer):
         Get/Set the Renderer of the Feature Layer.
 
         ==================      ====================================================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ------------------      --------------------------------------------------------------------
         value                   Required dict.
         ==================      ====================================================================
@@ -175,7 +201,7 @@ class FeatureLayer(Layer):
         object.
 
         ===============================     ====================================================================
-        **Argument**                        **Description**
+        **Parameter**                        **Description**
         -------------------------------     --------------------------------------------------------------------
         item                                Required :class:`~arcgis.gis.Item` object. The type of item should be a
                                             ``Feature Service`` that represents a :class:`~arcgis.features.FeatureLayerCollection`
@@ -256,7 +282,7 @@ class FeatureLayer(Layer):
         Downloads the metadata.xml to local disk
 
         =================     ====================================================================
-        **Argument**          **Description**
+        **Parameter**          **Description**
         -----------------     --------------------------------------------------------------------
         save_folder           Optional String. A save location to download the metadata XML file.
         =================     ====================================================================
@@ -280,7 +306,7 @@ class FeatureLayer(Layer):
         The ``update_metadata`` updates a :class:`~arcgis.features.FeatureLayer` metadata from an xml file.
 
         =================     ====================================================================
-        **Argument**          **Description**
+        **Parameter**          **Description**
         -----------------     --------------------------------------------------------------------
         file_path             Required String.  The path to the .xml file that contains the metadata.
         =================     ====================================================================
@@ -336,7 +362,7 @@ class FeatureLayer(Layer):
         layer belongs.
 
         ==================      ====================================================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ------------------      --------------------------------------------------------------------
         value                   Required :class:`~arcgis.features.FeatureLayerCollection`.
         ==================      ====================================================================
@@ -359,7 +385,7 @@ class FeatureLayer(Layer):
         format using the ``output_label_field``.
 
         ====================================     ====================================================================
-        **Argument**                             **Description**
+        **Parameter**                             **Description**
         ------------------------------------     --------------------------------------------------------------------
         output_folder                            Required string. Output folder where the attachments will be stored.
                                                  If None, a default folder is created
@@ -399,7 +425,6 @@ class FeatureLayer(Layer):
 
         folder = "images"
         for row in dataframe_merged.iterrows():
-
             if label_field is not None:
                 folder = row[1][label_field]
 
@@ -456,7 +481,7 @@ class FeatureLayer(Layer):
             classes and no symbols.
 
         =================     ====================================================================
-        **Argument**          **Description**
+        **Parameter**          **Description**
         -----------------     --------------------------------------------------------------------
         definition            Required dict. The definition using the renderer that is generated.
                               Use either class breaks or unique value classification definitions.
@@ -505,13 +530,18 @@ class FeatureLayer(Layer):
         return self._con.post(path=url, postdata=params)
 
     def _add_attachment(
-        self, oid, file_path, keywords=None, return_moment=False, version=None
+        self,
+        oid,
+        file_path,
+        keywords=None,
+        return_moment=False,
+        version=None,
     ):
         """
         Adds an attachment to a feature service
 
         =================     ====================================================================
-        **Argument**          **Description**
+        **Parameter**          **Description**
         -----------------     --------------------------------------------------------------------
         oid                   Required string/integer. OBJECTID value to add attachment to.
         -----------------     --------------------------------------------------------------------
@@ -582,7 +612,7 @@ class FeatureLayer(Layer):
         Removes an attachment from a feature service feature
 
         ===================     ====================================================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         -------------------     --------------------------------------------------------------------
         oid                     Required string/integer. OBJECTID value to add attachment to.
         -------------------     --------------------------------------------------------------------
@@ -617,13 +647,18 @@ class FeatureLayer(Layer):
 
     # ----------------------------------------------------------------------
     def _update_attachment(
-        self, oid, attachment_id, file_path, return_moment=False, version=None
+        self,
+        oid,
+        attachment_id,
+        file_path,
+        return_moment=False,
+        version=None,
     ):
         """
         Updates an existing attachment with a new file
 
         =================     ====================================================================
-        **Argument**          **Description**
+        **Parameter**          **Description**
         -----------------     --------------------------------------------------------------------
         oid                   Required string. OBJECTID value to add attachment to.
         -----------------     --------------------------------------------------------------------
@@ -674,7 +709,7 @@ class FeatureLayer(Layer):
 
 
         ===============================     ====================================================================
-        **Argument**                        **Description**
+        **Parameter**                        **Description**
         -------------------------------     --------------------------------------------------------------------
         attribute                           Required string. The feature layer attribute to query.
         -------------------------------     --------------------------------------------------------------------
@@ -764,7 +799,7 @@ class FeatureLayer(Layer):
         support pagination on aggregated queries.
 
         ==============================     ====================================================================
-        **Argument**                       **Description**
+        **Parameter**                       **Description**
         ------------------------------     --------------------------------------------------------------------
         bin_field                          Required String. The date field used to determine which bin each
                                            feature falls into.
@@ -1118,7 +1153,7 @@ class FeatureLayer(Layer):
             See the :attr:`~arcgis.features.FeatureLayer.query` method for a similar function.
 
         ================================     ====================================================================
-        **Argument**                         **Description**
+        **Parameter**                         **Description**
         --------------------------------     --------------------------------------------------------------------
         top_filter                           Required Dict. The `top_filter` define the aggregation of the data.
 
@@ -1390,6 +1425,9 @@ class FeatureLayer(Layer):
                 "esriFieldTypeGUID": pd.StringDtype(),
                 "esriFieldTypeGlobalID": pd.StringDtype(),
                 "esriFieldTypeXML": object,
+                "esriFieldTypeTimeOnly": _datetime,
+                "esriFieldTypeDateOnly": _datetime,
+                "esriFieldTypeTimestampOffset": _datetime,
             }
 
             def feature_to_row(feature, sr):
@@ -1437,7 +1475,11 @@ class FeatureLayer(Layer):
                     if fld["type"] != "esriFieldTypeGeometry":
                         dtypes[fld["name"]] = _fld_lu[fld["type"]]
                         names.append(fld["name"])
-                    if fld["type"] == "esriFieldTypeDate":
+                    if fld["type"] in [
+                        "esriFieldTypeDate",
+                        "esriFieldTypeDateOnly",
+                        "esriFieldTypeTimestampOffset",
+                    ]:
                         dfields.append(fld["name"])
             if "SHAPE" in df:
                 df.spatial.set_geometry("SHAPE")
@@ -1559,56 +1601,74 @@ class FeatureLayer(Layer):
 
 
         ===============================     ====================================================================
-        **Argument**                        **Description**
+        **Parameter**                        **Description**
         -------------------------------     --------------------------------------------------------------------
         out_analytics                       Required List. A set of analytics to calculate on the Feature Layer.
 
-                                            The definitions for one or more field-based or expression analytics to be computed. This parameter is supported only on layers/tables that indicate supportsAnalytics is true.
-                                            Note: If outAnalyticFieldName is empty or missing, the server assigns a field name to the returned analytic field.
+                                            The definitions for one or more field-based or expression analytics
+                                            to be computed. This parameter is supported only on layers/tables that
+                                            return `true` for *supportsAnalytics* property.
 
-                                            Syntax: An array of analytic definitions. An analytic definition specifies the type of analytic, the field or expression on which it is to be computed, and the resulting output field name.
-                                            Syntax
-                                            [
-                                              {
-                                                "analyticType": "<COUNT | SUM | MIN | MAX | AVG | STDDEV | VAR | FIRST_VALUE, LAST_VALUE, LAG, LEAD, PERCENTILE_CONT, PERCENTILE_DISC, PERCENT_RANK, RANK, NTILE, DENSE_RANK, EXPRESSION>",
-                                                "onAnalyticField": "Field1",
-                                                "outAnalyticFieldName": "Out_Field_Name1",
-                                                 "analyticParameters": {
-                                                      "orderBy": "<orderBy expression",
-                                                      "value": <double value>,// percentile value
-                                                      "partitionBy": "<field name or expression>",
-                                                      "offset": <integer>, // used by LAG/LEAD
-                                                      "windowFrame": {
-                                                         "type": "ROWS" | "RANGE",
-                                                         "extent": {
-                                                            "extentType": "PRECEDING" | "BOUNDARY",
-                                                            "PRECEDING": {
-                                                               "type": <"UNBOUNDED" |
-                                                                       "NUMERIC_CONSTANT" |
-                                                                        "CURRENT_ROW">
-                                                                "value": <numeric constant value>
-                                                             }
-                                                             "BOUNDARY": {
-                                                              "start": "UNBOUNDED_PRECEDING",
-                                                                       "NUMERIC_PRECEDING",
-                                                                        "CURRENT_ROW",
-                                                              "startValue": <numeric constant value>,
-                                                              "end": <"UNBOUNDED_FOLLOWING" |
-                                                                      "NUMERIC_FOLLOWING" |
-                                                                      "CURRENT_ROW",
-                                                              "endValue": <numeric constant value>
+                                            .. note::
+                                                If `outAnalyticFieldName` is empty or missing, the server assigns
+                                                a field name to the returned analytic field.
+
+                                            The argument should be a list of dictionaries that define analystics.
+                                            An analytic definition specifies:
+
+                                            * the type of analytic - key: `analyticType`
+                                            * the field or expression on which it is to be computed - key: `onAnalyticField`
+                                            * the resulting output field name -key: `outAnalyticFieldName`
+                                            * the analytic specifications - `analysticParameters`
+
+                                            See `Overview <https://developers.arcgis.com/rest/services-reference/enterprise/query-analytic.htm#GUID-1713C237-B155-4CFE-8470-FEB3255B7C60>`_
+                                            for details.
+
+                                            .. code-block:: python
+
+                                                # Dictionary structure and options for this parameter
+
+                                                [
+                                                  {
+                                                    "analyticType": "<COUNT | SUM | MIN | MAX | AVG | STDDEV | VAR | FIRST_VALUE, LAST_VALUE, LAG, LEAD, PERCENTILE_CONT, PERCENTILE_DISC, PERCENT_RANK, RANK, NTILE, DENSE_RANK, EXPRESSION>",
+                                                    "onAnalyticField": "Field1",
+                                                    "outAnalyticFieldName": "Out_Field_Name1",
+                                                    "analyticParameters": {
+                                                         "orderBy": "<orderBy expression",
+                                                         "value": <double value>,// percentile value
+                                                         "partitionBy": "<field name or expression>",
+                                                         "offset": <integer>, // used by LAG/LEAD
+                                                         "windowFrame": {
+                                                            "type": "ROWS" | "RANGE",
+                                                            "extent": {
+                                                               "extentType": "PRECEDING" | "BOUNDARY",
+                                                               "PRECEDING": {
+                                                                  "type": <"UNBOUNDED" |
+                                                                          "NUMERIC_CONSTANT" |
+                                                                           "CURRENT_ROW">
+                                                                   "value": <numeric constant value>
+                                                                }
+                                                                "BOUNDARY": {
+                                                                 "start": "UNBOUNDED_PRECEDING",
+                                                                          "NUMERIC_PRECEDING",
+                                                                           "CURRENT_ROW",
+                                                                 "startValue": <numeric constant value>,
+                                                                 "end": <"UNBOUNDED_FOLLOWING" |
+                                                                         "NUMERIC_FOLLOWING" |
+                                                                         "CURRENT_ROW",
+                                                                 "endValue": <numeric constant value>
+                                                                }
+                                                              }
                                                             }
-                                                          }
-                                                        }
-                                                     }
-                                                }
-                                              }
-                                            ]
+                                                         }
+                                                    }
+                                                  }
+                                                ]
 
 
                                             .. code-block:: python
 
-                                                #Usage Example:
+                                                # Usage Example:
 
                                                 >>> out_analytics =
                                                         [{"analyticType": "FIRST_VALUE",
@@ -1777,13 +1837,17 @@ class FeatureLayer(Layer):
         The ``query`` method queries a :class:`~arcgis.features.FeatureLayer` based on a ``sql`` statement.
 
         ===============================     ====================================================================
-        **Argument**                        **Description**
+        **Parameter**                        **Description**
         -------------------------------     --------------------------------------------------------------------
         where                               Optional string. The default is 1=1. The selection sql statement.
         -------------------------------     --------------------------------------------------------------------
         out_fields                          Optional List of field names to return. Field names can be specified
                                             either as a List of field names or as a comma separated string.
                                             The default is "*", which returns all the fields.
+
+                                            .. note::
+                                                If specifying `return_count_only`, `return_id_only`, or `return_extent_only`
+                                                as True, do not specify this parameter in order to avoid errors.
         -------------------------------     --------------------------------------------------------------------
         object_ids                          Optional string. The object IDs of this layer or table to be queried.
                                             The object ID values should be a comma-separated string.
@@ -1861,6 +1925,10 @@ class FeatureLayer(Layer):
                                             or descending, respectively, following every field to control the
                                             ordering.
                                             example: STATE_NAME ASC, RACE DESC, GENDER
+
+                                            .. note::
+                                                If specifying `return_count_only`, `return_id_only`, or `return_extent_only`
+                                                as True, do not specify this parameter in order to avoid errors.
         -------------------------------     --------------------------------------------------------------------
         group_by_fields_for_statistics      Optional string. One or more field names on which the values need to
                                             be grouped for calculating the statistics.
@@ -2185,11 +2253,19 @@ class FeatureLayer(Layer):
                 del key, val
 
         if not return_all_records or "outStatistics" in params:
+            # we cannot assume that because return_all_records is False it means we specified something else
+            if return_count_only or return_extent_only or return_ids_only:
+                # Remove to avoid missing when wanting counts only
+                if "orderByFields" in params:
+                    del params["orderByFields"]
             if as_df:
                 return self._query_df(url, params)
             return self._query(url, params, raw=as_raw)
 
         params["returnCountOnly"] = True
+        # need to make edits to out fields if more than one to avoid server error. Split and use only first
+        out_fields = params["outFields"]
+        params["outFields"] = params["outFields"].split(",")[0]
         if where == "1=1":
             if "objectIdField" in self.properties:
                 params["where"] = f"{self.properties.objectIdField} > 0"
@@ -2201,7 +2277,8 @@ class FeatureLayer(Layer):
             max_records = self.properties["maxRecordCount"]
         else:
             max_records = 1000
-
+        # reassign to original
+        params["outFields"] = out_fields
         supports_pagination = True
         if (
             "advancedQueryCapabilities" not in self.properties
@@ -2223,7 +2300,7 @@ class FeatureLayer(Layer):
                 "esriFieldTypeDouble": pd.Float64Dtype(),
                 "esriFieldTypeFloat": pd.Float64Dtype(),
                 "esriFieldTypeString": pd.StringDtype(),
-                "esriFieldTypeDate": np.datetime64,
+                "esriFieldTypeDate": "datetime64[ns]",  # np.datetime64,
                 "esriFieldTypeOID": pd.Int64Dtype(),
                 "esriFieldTypeGeometry": object,
                 "esriFieldTypeBlob": object,
@@ -2231,6 +2308,9 @@ class FeatureLayer(Layer):
                 "esriFieldTypeGUID": pd.StringDtype(),
                 "esriFieldTypeGlobalID": pd.StringDtype(),
                 "esriFieldTypeXML": object,
+                "esriFieldTypeTimeOnly": object,
+                "esriFieldTypeDateOnly": object,
+                "esriFieldTypeTimestampOffset": object,
             }
             columns = {}
             for fld in self.properties.fields:
@@ -2267,7 +2347,12 @@ class FeatureLayer(Layer):
                 dt_fields = [
                     fld["name"]
                     for fld in self.properties.fields
-                    if fld["type"] == "esriFieldTypeDate"
+                    if fld["type"]
+                    in [
+                        "esriFieldTypeDate",
+                        "esriFieldTypeDateOnly",
+                        "esriFieldTypeTimestampOffset",
+                    ]
                 ]
                 if "SHAPE" in df.columns:
                     df.spatial.set_geometry("SHAPE")
@@ -2278,13 +2363,12 @@ class FeatureLayer(Layer):
                         if fld in df.columns:
                             df[fld] = pd.to_datetime(
                                 df[fld] / 1000,
-                                infer_datetime_format=True,
                                 unit="s",
                             )
                     except:
                         if fld in df.columns:
                             df[fld] = pd.to_datetime(
-                                df[fld], infer_datetime_format=True
+                                df[fld],
                             )
                 return df
 
@@ -2336,7 +2420,6 @@ class FeatureLayer(Layer):
                     if len(records.features) < max_records:
                         break
                 else:
-
                     df = self._query_df(url, params)
                     count += len(df)
                     dfs.append(df)
@@ -2349,7 +2432,12 @@ class FeatureLayer(Layer):
             dt_fields = [
                 fld["name"]
                 for fld in self.properties.fields
-                if fld["type"] == "esriFieldTypeDate"
+                if fld["type"]
+                in [
+                    "esriFieldTypeDate",
+                    "esriFieldTypeDateOnly",
+                    "esriFieldTypeTimestampOffset",
+                ]
             ]
             if len(dfs) == 1:
                 df = dfs[0]
@@ -2365,13 +2453,11 @@ class FeatureLayer(Layer):
                     try:
                         df[fld] = pd.to_datetime(
                             df[fld] / 1000,
-                            infer_datetime_format=True,
                             unit="s",
                         )
                     except:
                         df[fld] = pd.to_datetime(
                             df[fld],
-                            infer_datetime_format=True,
                             errors="coerce",
                         )
             return df
@@ -2396,7 +2482,7 @@ class FeatureLayer(Layer):
 
 
         ===============================     ====================================================================
-        **Argument**                        **Description**
+        **Parameter**                        **Description**
         -------------------------------     --------------------------------------------------------------------
         sql                                 Required String. The SQL expression of WHERE clause to validate.
                                             Example: "Population > 300000"
@@ -2467,7 +2553,7 @@ class FeatureLayer(Layer):
             See the :attr:`~arcgis.features.FeatureLayer.query` method for a similar function.
 
         ======================     ====================================================================
-        **Argument**               **Description**
+        **Parameter**               **Description**
         ----------------------     --------------------------------------------------------------------
         object_ids                 Required string. The object IDs of the table/layer to be queried
         ----------------------     --------------------------------------------------------------------
@@ -2599,7 +2685,7 @@ class FeatureLayer(Layer):
         authored by the :class:`~arcgis.gis.User` using ArcGIS Pro or ArcGIS Desktop.
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         oid                 Optional string. Object id of the feature to get the HTML popup.
         ===============     ====================================================================
@@ -2646,7 +2732,7 @@ class FeatureLayer(Layer):
             The ``append`` method is only available in ArcGIS Online and ArcGIS Enterprise 10.8.1+
 
         ========================   ====================================================================
-        **Argument**               **Description**
+        **Parameter**               **Description**
         ------------------------   --------------------------------------------------------------------
         item_id                    Optional string. The ID for the Portal item that contains the source
                                    file.
@@ -2854,7 +2940,7 @@ class FeatureLayer(Layer):
         :class:`~arcgis.features.Table`
 
         ======================     ====================================================================
-        **Argument**               **Description**
+        **Parameter**               **Description**
         ----------------------     --------------------------------------------------------------------
         deletes                    Optional string. A comma separated string of OIDs to remove from the
                                    service.
@@ -3246,7 +3332,7 @@ class FeatureLayer(Layer):
                 c for c in adds.columns.tolist() if c.lower() not in ["objectid", "fid"]
             ]
             params["adds"] = json.dumps(
-                [{"attributes": row} for row in adds[cols].to_dict(orient="record")],
+                [{"attributes": row} for row in adds[cols].to_dict("records")],
                 default=_date_handler,
             )
         elif isinstance(adds, FeatureSet):
@@ -3297,7 +3383,7 @@ class FeatureLayer(Layer):
                 if c.lower() not in ["objectid", "fid"]
             ]
             params["updates"] = json.dumps(
-                [{"attributes": row} for row in updates[cols].to_dict(orient="record")],
+                [{"attributes": row} for row in updates[cols].to_dict("records")],
                 default=_date_handler,
             )
         elif len(updates) > 0:
@@ -3330,7 +3416,6 @@ class FeatureLayer(Layer):
             else:
                 raise Exception("Could not find ObjectId or FID field.")
         elif deletes is not None and isinstance(deletes, FeatureSet):
-
             field_name = None
             if deletes.object_id_field_name:
                 field_name = deletes.object_id_field_name
@@ -3630,6 +3715,9 @@ class FeatureLayer(Layer):
                 "esriFieldTypeGUID": str,
                 "esriFieldTypeGlobalID": str,
                 "esriFieldTypeXML": object,
+                "esriFieldTypeTimeOnly": pd.datetime,
+                "esriFieldTypeDateOnly": pd.datetime,
+                "esriFieldTypeTimestampOffset": pd.datetime,
             }
         else:
             from datetime import datetime as _datetime
@@ -3649,6 +3737,10 @@ class FeatureLayer(Layer):
                 "esriFieldTypeGUID": pd.StringDtype(),
                 "esriFieldTypeGlobalID": pd.StringDtype(),
                 "esriFieldTypeXML": object,
+                "esriFieldTypeTimeOnly": pd.StringDtype(),
+                "esriFieldTypeDateOnly": object,
+                "esriFieldTypeTimestampOffset": object,
+                "esriFieldTypeBigInteger": pd.Int64Dtype(),
             }
 
         def feature_to_row(feature, sr):
@@ -3744,7 +3836,12 @@ class FeatureLayer(Layer):
                 if fld["type"] != "esriFieldTypeGeometry":
                     dtypes[fld["name"]] = _fld_lu[fld["type"]]
                     names.append(fld["name"])
-                if fld["type"] == "esriFieldTypeDate":
+                if fld["type"] in [
+                    "esriFieldTypeDate",
+                    #
+                    "esriFieldTypeDateOnly",
+                    "esriFieldTypeTimestampOffset",
+                ]:
                     dfields.append(fld["name"])
         if dtypes:
             df = df.astype(dtypes)
@@ -3752,19 +3849,17 @@ class FeatureLayer(Layer):
         if "SHAPE" in featureset_dict:
             df.spatial.set_geometry("SHAPE")
         if len(dfields) > 0:
-
             for fld in [fld for fld in dfields if fld in df.columns]:
                 try:
                     df[fld] = pd.to_datetime(
                         df[fld] / 1000,
-                        infer_datetime_format=True,
                         errors="coerce",
                         unit="s",
                     )
                 except:
-
                     df[fld] = pd.to_datetime(
-                        df[fld], errors="coerce", infer_datetime_format=True
+                        df[fld],
+                        errors="coerce",
                     )
         return df
 
@@ -3787,7 +3882,7 @@ class Table(FeatureLayer):
         The table_id is the id of the table in :class:`~arcgis.features.FeatureLayerCollection` (feature service).
 
         ===============================     ====================================================================
-        **Argument**                        **Description**
+        **Parameter**                        **Description**
         -------------------------------     --------------------------------------------------------------------
         item                                Required :class:`~arcgis.gis.Item` object. The type of item should be a
                                             ``Feature Service`` that represents a
@@ -3831,7 +3926,7 @@ class Table(FeatureLayer):
         The ``query`` method queries a :class:`~arcgis.features.Table` Layer based on a set of criteria.
 
         ===============================     ====================================================================
-        **Argument**                        **Description**
+        **Parameter**                        **Description**
         -------------------------------     --------------------------------------------------------------------
         where                               Optional string. The default is 1=1. The selection sql statement.
         -------------------------------     --------------------------------------------------------------------
@@ -4132,6 +4227,9 @@ class Table(FeatureLayer):
                 "esriFieldTypeGUID": pd.StringDtype(),
                 "esriFieldTypeGlobalID": pd.StringDtype(),
                 "esriFieldTypeXML": object,
+                "esriFieldTypeTimeOnly": object,
+                "esriFieldTypeDateOnly": object,
+                "esriFieldTypeTimestampOffset": object,
             }
             columns = {}
             for fld in self.properties.fields:
@@ -4163,7 +4261,12 @@ class Table(FeatureLayer):
                 dt_fields = [
                     fld["name"]
                     for fld in self.properties.fields
-                    if fld["type"] == "esriFieldTypeDate"
+                    if fld["type"]
+                    in [
+                        "esriFieldTypeDate",
+                        "esriFieldTypeDateOnly",
+                        "esriFieldTypeTimestampOffset",
+                    ]
                 ]
                 if "SHAPE" in df.columns:
                     df.spatial.set_geometry("SHAPE")
@@ -4174,13 +4277,12 @@ class Table(FeatureLayer):
                         if fld in df.columns:
                             df[fld] = pd.to_datetime(
                                 df[fld] / 1000,
-                                infer_datetime_format=True,
                                 unit="s",
                             )
                     except:
                         if fld in df.columns:
                             df[fld] = pd.to_datetime(
-                                df[fld], infer_datetime_format=True
+                                df[fld],
                             )
                 return df
 
@@ -4232,7 +4334,6 @@ class Table(FeatureLayer):
                     if len(records.features) < max_records:
                         break
                 else:
-
                     df = self._query_df(url, params)
                     count += len(df)
                     dfs.append(df)
@@ -4245,7 +4346,12 @@ class Table(FeatureLayer):
             dt_fields = [
                 fld["name"]
                 for fld in self.properties.fields
-                if fld["type"] == "esriFieldTypeDate"
+                if fld["type"]
+                in [
+                    "esriFieldTypeDate",
+                    "esriFieldTypeDateOnly",
+                    "esriFieldTypeTimestampOffset",
+                ]
             ]
             if len(dfs) == 1:
                 df = dfs[0]
@@ -4258,11 +4364,11 @@ class Table(FeatureLayer):
                 df.spatial._meta.source = self
             for fld in dt_fields:
                 try:
-                    df[fld] = pd.to_datetime(
-                        df[fld] / 1000, infer_datetime_format=True, unit="s"
-                    )
+                    df[fld] = pd.to_datetime(df[fld] / 1000, unit="s")
                 except:
-                    df[fld] = pd.to_datetime(df[fld], infer_datetime_format=True)
+                    df[fld] = pd.to_datetime(
+                        df[fld],
+                    )
             return df
         return result
 
@@ -4302,7 +4408,9 @@ class FeatureLayerCollection(_GISResource):
         self._populate_layers()
         self._admin = None
         try:
-            from arcgis.gis.server._service._adminfactory import AdminServiceGen
+            from arcgis.gis.server._service._adminfactory import (
+                AdminServiceGen,
+            )
 
             self.service = AdminServiceGen(service=self, gis=gis)
         except:
@@ -4411,7 +4519,7 @@ class FeatureLayerCollection(_GISResource):
             See the :attr:`~arcgis.features.FeatureLayerCollection.query` method for a similar function.
 
         ================================     ====================================================================
-        **Argument**                         **Description**
+        **Parameter**                         **Description**
         --------------------------------     --------------------------------------------------------------------
         layers                               Required List.  An array of layers. The set of domains to return is
                                              based on the domains referenced by these layers. Example: [1,2,3,4]
@@ -4440,7 +4548,8 @@ class FeatureLayerCollection(_GISResource):
     def extract_changes(
         self,
         layers: list[int],
-        servergen: list[dict[str, Any]],
+        servergen: list[int] = None,
+        layer_servergen: list[dict[str, Any]] = None,
         queries: Optional[dict[str, Any]] = None,
         geometry: Optional[Union[Geometry, dict[str, int]]] = None,
         geometry_type: Optional[str] = None,
@@ -4457,6 +4566,7 @@ class FeatureLayerCollection(_GISResource):
         change_extent_grid_cell: Optional[str] = None,
         return_geometry_updates: Optional[bool] = None,
         fields_to_compare: list | None = None,
+        out_sr: int | None = None,
     ):
         """
         A change tracking mechanism for applications. Applications can use ``extract_changes`` to
@@ -4473,12 +4583,33 @@ class FeatureLayerCollection(_GISResource):
         ``extract_changes`` operation can be used to get changes.
 
         ================================     ====================================================================
-        **Argument**                         **Description**
+        **Parameter**                         **Description**
         --------------------------------     --------------------------------------------------------------------
         layers                               Required List.  The list of layers (by index value) and tables to include in the
                                              output.
         --------------------------------     --------------------------------------------------------------------
-        servergen                            Required List.   The servergen numbers allow a client to specify the last
+        servergen                            Required List (when layer_servergen not present). Introduced at 11.0.
+                                             This parameter sets the servergens to apply to all layers included in
+                                             the layers parameter. Either a single generation, or a pair of
+                                             generations, can be used as values for this parameter. If a single
+                                             servergen value is provided, all changes that have happened since
+                                             that generation are returned. If a pair of serverGen values are
+                                             provided, changes that have happened between the first generation
+                                             (the minimum value) and the second generation (the maximum value)
+                                             are returned. If providing two generations, the first value in the
+                                             pair is expected to be the smaller of the two values.
+                                             Support for this parameter is indicated when the service-level
+                                             'supportServerGens' property, under 'extractChangesCapabilities', is
+                                             set as 'True'. This operation requires either 'serverGens' or
+                                             'layerServerGens' be submitted with the request.
+
+                                             .. code-block:: python
+
+                                                # Usage Example:
+
+                                                servergen= [10500,11000]
+        --------------------------------     --------------------------------------------------------------------
+        layer_servergen                      Required List (when servergen not present). The servergen numbers allow a client to specify the last
                                              layer generation numbers (a Unix epoch time value in milliseconds) for the
                                              changes received from the server. All changes made after this value will be
                                              returned.
@@ -4501,9 +4632,9 @@ class FeatureLayerCollection(_GISResource):
 
                                                 # Usage Example:
 
-                                                servergen= [{"id": 0, "serverGen": 10500},
-                                                            {"id": 1, "serverGen": 1100},
-                                                            {"id": 2, "serverGen": 1200}]
+                                                layer_servergen= [{"id": 0, "serverGen": 10500},
+                                                                  {"id": 1, "serverGen": 1100},
+                                                                  {"id": 2, "serverGen": 1200}]
         --------------------------------     --------------------------------------------------------------------
         queries                              Optional Dictionary. In addition to the layers and geometry
                                              parameters, the `queries` parameter can be used to further define
@@ -4655,26 +4786,32 @@ class FeatureLayerCollection(_GISResource):
             'edits': [{'id': 0,
               'objectIds': {'adds': [], 'updates': [194], 'deletes': []}}]}
         """
+        if servergen is None and layer_servergen is None:
+            raise ValueError("Please provide a servergen or layer_servergen")
         url = "%s/extractChanges" % self._url
         params = {
             "f": "json",
-            "layerQueries": queries,
-            "layers": layers,
-            "geometry": geometry,
-            "geometryType": geometry_type,
-            "inSR": in_sr,
-            "gdbVersion": version,
+            "layerQueries": queries or "",
+            "layers": layers,  # ",".join([str(lyr) for lyr in layers]),
+            "geometry": geometry or "",
+            "outSR": out_sr or "",
+            "geometryType": geometry_type or "esriGeometryEnvelope",
+            "inSR": in_sr or "",
+            "gdbVersion": version or "",
             "returnInserts": return_inserts,
             "returnUpdates": return_updates,
             "returnDeletes": return_deletes,
+            "returnDeletedFeatures": return_deletes,
             "returnIdsOnly": return_ids_only,
             "returnExtentOnly": return_extent_only,
             "returnAttachments": return_attachments,
             "returnAttachmentsDatabyURL": attachments_by_url,
             "dataFormat": data_format,
-            "layerServerGens": servergen,
+            "serverGens": servergen or "",
+            "layerServerGens": layer_servergen or "",
             "changesExtentGridCell": change_extent_grid_cell,
-            "fieldsToCompare": None,
+            "fieldsToCompare": None or "",
+            "async": True,
         }
         if not fields_to_compare is None:
             params["fieldsToCompare"] = {"fields": fields_to_compare}
@@ -4725,7 +4862,7 @@ class FeatureLayerCollection(_GISResource):
          statement.
 
         ===============================     ====================================================================
-        **Argument**                        **Description**
+        **Parameter**                        **Description**
         -------------------------------     --------------------------------------------------------------------
         time_filter                         Optional list. The format is of `[<startTime>, <endTime>]` using
                                             datetime.date, datetime.datetime or timestamp in milliseconds.
@@ -4812,7 +4949,7 @@ class FeatureLayerCollection(_GISResource):
         dependent on the type of layer that is queried.
 
         ======================     ====================================================================
-        **Argument**               **Description**
+        **Parameter**               **Description**
         ----------------------     --------------------------------------------------------------------
         layers                     Required list. Array of layerIds for which to get the data elements.
         ======================     ====================================================================
@@ -4858,7 +4995,7 @@ class FeatureLayerCollection(_GISResource):
             See the :attr:`~arcgis.features.FeatureLayerCollection.query` method for a similar function.
 
         ======================     ====================================================================
-        **Argument**               **Description**
+        **Parameter**               **Description**
         ----------------------     --------------------------------------------------------------------
         object_ids                 Optional string. the object IDs of the table/layer to be queried.
         ----------------------     --------------------------------------------------------------------
@@ -4948,7 +5085,7 @@ class FeatureLayerCollection(_GISResource):
         Removes a replica from a feature service
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         replica_id          Optional string. The replica_id returned by the feature service when
                             the replica was created.
@@ -4969,7 +5106,7 @@ class FeatureLayerCollection(_GISResource):
 
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         replica_id          Optional string. The replica_id returned by the feature service when
                             the replica was created.
@@ -5021,7 +5158,7 @@ class FeatureLayerCollection(_GISResource):
         for the layers in the replica.
 
         =============================   ====================================================================
-        **Argument**                    **Description**
+        **Parameter**                    **Description**
         -----------------------------   --------------------------------------------------------------------
         replicaName                     Optional string. The name of the replica
         -----------------------------   --------------------------------------------------------------------
@@ -5132,7 +5269,8 @@ class FeatureLayerCollection(_GISResource):
                                         transformation on each layer when the spatial reference used in
                                         geometry is different than the layer's spatial reference.
         -----------------------------   --------------------------------------------------------------------
-        time_reference_unknown_client   Setting timeReferenceUnknownClient as trueindicates that the client is                  capable of working with data values that are not in UTC. If its not set
+        time_reference_unknown_client   Setting timeReferenceUnknownClient as true indicates that the client is
+                                        capable of working with data values that are not in UTC. If its not set
                                         to true, and the service layer's datesInUnknownTimeZone property is true,
                                         then an error is returned. The default is false
 
@@ -5223,13 +5361,11 @@ class FeatureLayerCollection(_GISResource):
         if out_path is not None and os.path.isdir(out_path):
             dl_url = None
             if "resultUrl" in res:
-
                 dl_url = res["resultUrl"]
             elif "responseUrl" in res:
                 dl_url = res["responseUrl"]
 
             if dl_url is not None:
-
                 return self._con.get(
                     path=dl_url,
                     file_name=dl_url.split("/")[-1],
@@ -5261,6 +5397,7 @@ class FeatureLayerCollection(_GISResource):
 
         """
         url = "{url}/cleanupChangeTracking".format(url=self._url)
+        url = url.replace("/rest/services/", "/rest/admin/services/")
         params = {
             "f": "json",
             "layers": layers,
@@ -5379,7 +5516,7 @@ class FeatureLayerCollection(_GISResource):
         table below.
 
         ===============                 ====================================================================
-        **Argument**                    **Description**
+        **Parameter**                    **Description**
         ---------------                 --------------------------------------------------------------------
         replica_id                      The ID of the replica you want to synchronize.
         ---------------                 --------------------------------------------------------------------
@@ -5575,7 +5712,7 @@ class FeatureLayerCollection(_GISResource):
             Once the operation is completed successfully, item id of the uploaded item is returned.
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         path                Optional string. Filepath of the file to upload.
         ---------------     --------------------------------------------------------------------

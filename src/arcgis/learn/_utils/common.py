@@ -127,7 +127,12 @@ def read_image(path, resize_to: int = None, keep_raw=False):
 
 class ArcGISMSImage(Image):
     def show(
-        self, ax=None, rgb_bands=None, show_axis=False, title=None, return_ax=False
+        self,
+        ax=None,
+        rgb_bands=None,
+        show_axis=False,
+        title=None,
+        return_ax=False,
     ):
         if rgb_bands is None:
             rgb_bands = getattr(self, "rgb_bands", [0, 1, 2])
@@ -276,7 +281,10 @@ class ArcGISImageList(ImageList):
     ):
         try:
             labelval = [(func(o)) for o in self.items]
-            total_sample = np.array(labelval)
+            if any(isinstance(el, list) for el in labelval):
+                total_sample = np.concatenate(np.array(labelval))
+            else:
+                total_sample = np.array(labelval)
             unique_sample = set(total_sample)
             check_imbalance(total_sample, unique_sample, class_imbalance_pct, stratify)
         except Exception as e:
@@ -382,7 +390,7 @@ def get_post_processed_model(arcgis_model, input_normalization=True):
 
 
 def get_color_array(color_mapping: dict, alpha=0.7):
-    color_array = np.array(list(color_mapping.values()), dtype=np.float) / 255
+    color_array = np.array(list(color_mapping.values()), dtype=float) / 255
     color_array = np.concatenate(
         [
             color_array,
@@ -563,10 +571,14 @@ def get_percent_minmax(imagetensor_batch, min_clip=0.0025, max_clip=0.005):
         max_vals.append(v[1])
     return (
         torch.tensor(
-            min_vals, dtype=imagetensor_batch.dtype, device=imagetensor_batch.device
+            min_vals,
+            dtype=imagetensor_batch.dtype,
+            device=imagetensor_batch.device,
         ),
         torch.tensor(
-            max_vals, dtype=imagetensor_batch.dtype, device=imagetensor_batch.device
+            max_vals,
+            dtype=imagetensor_batch.dtype,
+            device=imagetensor_batch.device,
         ),
     )
 
@@ -671,7 +683,12 @@ def _get_emd_path(emd_path):
 
     if emd_path.suffix != ".emd":
         list_files = get_files(emd_path, extensions=[".emd"])
-        assert len(list_files) == 1
+        try:
+            assert len(list_files) == 1
+        except AssertionError as e:
+            raise Exception(
+                f"There are multiple emd files in the saved path.Save the model in a different path."
+            )
         # return cls.from_model(list_files[0])
         emd_path = list_files[0]
     return emd_path

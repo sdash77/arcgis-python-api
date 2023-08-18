@@ -9,7 +9,7 @@ _service = LazyLoader("arcgis.gis.server._service")
 from arcgis.gis import GIS, agoserver, server
 import unittest
 
-PROFILES = ["your_online_profile"]  # "your_dev_online_profile",
+PROFILES = ["your_online_admin_profile"]  # "your_dev_online_profile",
 
 
 class TestAgolServer(unittest.TestCase):
@@ -37,7 +37,7 @@ class TestAgolServer(unittest.TestCase):
             for server in gis.hosting_servers:
                 assert isinstance(server, agoserver.AGOLServicesDirectory)
                 assert server.properties
-                assert isinstance(server.services, list)
+                assert isinstance(server.properties["services"], list)
                 assert len(server.folders) == 0
 
 
@@ -141,6 +141,7 @@ class TestHostingServerProperty(unittest.TestCase):
                 username="admin",
                 password="esri.agp",
                 url="https://gpportal.esri.com/portal",
+                verify_cert=False
             )
 
     def test_enterprise_hosting_servers(self):

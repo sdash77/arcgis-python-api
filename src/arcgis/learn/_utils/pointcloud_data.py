@@ -48,16 +48,14 @@ try:
         SubsetRandomSampler,
         SequentialSampler,
     )
-    import torch.nn.functional as F
     import torch
     import numpy as np
     from fastai.data_block import DataBunch
-    import matplotlib.pyplot as plt
-    from mpl_toolkits.mplot3d import Axes3D
     import arcgis
     from fastai.data_block import ItemList
     from fastprogress.fastprogress import master_bar, progress_bar
     from scipy.spatial.transform import Rotation as R
+    from ..models._rand_lanet_utils import batch_preprocess_dict
 except ImportError:
     # To avoid breaking builds.
     class Dataset:
@@ -120,7 +118,7 @@ def pad_tensor(cur_tensor, max_points, to_float=True):
     return cur_tensor, cur_points
 
 
-def concatenate_tensors(read_file, input_keys, tile, max_points):
+def concatenate_tensors(read_file, input_keys, tile, max_points=0, pad=True):
     cat_tensor = []
 
     cur_tensor = torch.tensor(
@@ -129,7 +127,8 @@ def concatenate_tensors(read_file, input_keys, tile, max_points):
     if len(cur_tensor.shape) < 2:
         cur_tensor = cur_tensor[:, None]
 
-    cur_tensor, cur_points = pad_tensor(cur_tensor, max_points)
+    if pad:
+        cur_tensor, cur_points = pad_tensor(cur_tensor, max_points)
     cat_tensor.append(cur_tensor)
 
     for key, min_max in input_keys.items():
@@ -145,8 +144,11 @@ def concatenate_tensors(read_file, input_keys, tile, max_points):
             cur_tensor = (cur_tensor - min_val) / (
                 max_val - min_val
             )  ## Test with one_hot
-            cur_tensor, cur_points = pad_tensor(cur_tensor, max_points)
+            if pad:
+                cur_tensor, cur_points = pad_tensor(cur_tensor, max_points)
             cat_tensor.append(cur_tensor)
+    if not pad:
+        return torch.cat(cat_tensor, dim=1)
 
     return torch.cat(cat_tensor, dim=1), cur_tensor.new_tensor(cur_points).long()
 
@@ -544,7 +546,6 @@ class PointCloudDataset(Dataset):
         return xyzs, labels, xyzs_scaled
 
     def __getitem__(self, i, return_scaled=False, add_centers=False):
-
         tile_index = i
         tile = self.tiles[i]
         read_file = self.h5files[tile[0]]
@@ -597,9 +598,7 @@ class PointCloudDataset(Dataset):
             ]
 
         if getattr(self, "_get_metainfo_h5", False):
-
             if self._api_model_h5:
-
                 point_feature, point_num = pad_tensor(
                     torch.tensor(rescaled_xyz).float(), self.max_point, to_float=True
                 )
@@ -646,7 +645,6 @@ def class_string(label_array, prefix="", class_mapping=None):
 
 
 def mask_classes(labels, mask_class, classes, class2idx=None, remap_classes=None):
-
     if not set(mask_class).issubset(set(classes)):
         raise Exception(f"`mask_class` {mask_class} must be a subset of {classes}")
     if remap_classes is not None:
@@ -676,14 +674,13 @@ def get_max_display_points(self, kwargs):
 
 
 def show_point_cloud_batch(self, rows=2, figsize=(6, 12), color_mapping=None, **kwargs):
-
     """
     It will plot 3d point cloud data you exported in the notebook.
     Visualization of data, exported in a geographic coordinate system
     is not yet supported.
 
     =====================   ===========================================
-    **Argument**            **Description**
+    **Parameter**            **Description**
     ---------------------   -------------------------------------------
     rows                    Optional rows. Number of rows to show. Default
                             value is 2 and maximum value is the `batch_size`
@@ -697,7 +694,7 @@ def show_point_cloud_batch(self, rows=2, figsize=(6, 12), color_mapping=None, **
     **kwargs**
 
     =====================   ===========================================
-    **Argument**            **Description**
+    **Parameter**            **Description**
     ---------------------   -------------------------------------------
     mask_class              Optional list of integers. Array containing
                             class values to mask. Use this parameter to
@@ -848,14 +845,13 @@ def recenter(pc):
 
 
 def show_point_cloud_batch_TF(self, rows=2, color_mapping=None, **kwargs):
-
     """
     It will plot 3d point cloud data you exported in the notebook.
     Visualization of data, exported in a geographic coordinate system
     is not yet supported.
 
     =====================   ===========================================
-    **Argument**            **Description**
+    **Parameter**            **Description**
     ---------------------   -------------------------------------------
     rows                    Optional rows. Number of rows to show. Default
                             value is 2 and maximum value is the `batch_size`
@@ -869,7 +865,7 @@ def show_point_cloud_batch_TF(self, rows=2, color_mapping=None, **kwargs):
     **kwargs**
 
     =====================   ===========================================
-    **Argument**            **Description**
+    **Parameter**            **Description**
     ---------------------   -------------------------------------------
     mask_class              Optional list of integers. Array containing
                             class values to mask. Use this parameter to
@@ -1521,7 +1517,6 @@ def filter_files(fname, meta, classes_to_check, min_points):
 
 
 def raise_class_mismatch_warning(train_classes, valid_classes, remap_classes):
-
     train_classes_mapped = list(set([remap_classes.get(c, c) for c in train_classes]))
     valid_classes_mapped = list(set([remap_classes.get(c, c) for c in valid_classes]))
 
@@ -2106,23 +2101,12 @@ def get_predictions(
     np.random.shuffle(indices_shuffle)
     indices_batch_shuffle = np.reshape(indices_shuffle, (batch_size, sample_num, 1))
 
-    model_input = np.concatenate(
+    model_input = torch.cat(
         [points_batch[i, s[:, 0]][None] for i, s in enumerate(indices_batch_shuffle)],
-        axis=0,
+        dim=0,
     )
 
-    ## Putting model in evaluation mode and inferencing.
-    pointcnn_model.learn.model.eval()
-    with torch.no_grad():
-        probs = (
-            pointcnn_model.learn.model(
-                torch.tensor(model_input).to(pointcnn_model._device).float()
-            )
-            .softmax(dim=-1)
-            .cpu()
-        )
-
-    seg_probs = probs.numpy()
+    seg_probs = model_predictions(pointcnn_model, model_input, point_num)
 
     probs_2d = np.reshape(seg_probs, (sample_num * batch_size, -1))  ## Complete probs
     predictions = [(-1, 0.0, None)] * point_num  ## predictions
@@ -2283,7 +2267,6 @@ def inference_las(
             merged_confidence = None
 
             for pred_file in pred_list:
-
                 with h5py.File(os.path.join(out_path, pred_file), mode="r") as data:
                     labels_seg = data["label_seg"][...].astype(np.int64)
                     indices = data["indices_split_to_full"][...].astype(np.int64)
@@ -2473,7 +2456,6 @@ def get_title_text(idx, save_html, max_display_point):
 
 
 def show_results(self, rows, color_mapping=None, **kwargs):
-
     """
     It will plot results from your trained model with ground truth on the
     left and predictions on the right.
@@ -2481,7 +2463,7 @@ def show_results(self, rows, color_mapping=None, **kwargs):
     is not yet supported.
 
     =====================   ===========================================
-    **Argument**            **Description**
+    **Parameter**            **Description**
     ---------------------   -------------------------------------------
     rows                    Optional rows. Number of rows to show. Deafults
                             value is 2.
@@ -2494,7 +2476,7 @@ def show_results(self, rows, color_mapping=None, **kwargs):
     **kwargs**
 
     =====================   ===========================================
-    **Argument**            **Description**
+    **Parameter**            **Description**
     ---------------------   -------------------------------------------
     mask_class              Optional array of integers. Array containing
                             class values to mask. Default value is [].
@@ -2728,7 +2710,7 @@ def compute_precision_recall(self):
     all_y = []
     all_pred = []
     for x_in, y_in in iter(valid_dl):
-        if not getattr(self, "_is_RandLANet", False):
+        if not getattr(self, "_is_ModelInputDict", False):
             x_in, point_nums = x_in  ## (batch, total_points, num_features), (batch,)
             batch, _, num_features = x_in.shape
             indices = torch.tensor(
@@ -2873,7 +2855,7 @@ class Transform3d(object):
     Applicable only for dataset_type=’PointCloud’.
 
     =====================   ===========================================
-    **Argument**            **Description**
+    **Parameter**            **Description**
     ---------------------   -------------------------------------------
     rotation_range          Optional tuple of length 4. It contains a list
                             of angles(in radians) for X, Z and Y coordinates
@@ -2975,19 +2957,43 @@ def convert_extra_features(attributes, features_to_keep):
     return attributes_dict, features_to_keep
 
 
-def model_predictions(model, data):
-
+def model_predictions(model, data, point_nums):
     model.learn.model.eval()
     with torch.no_grad():
-        probs = model.learn.model(data.to(model._device).float()).softmax(dim=-1).cpu()
+        if getattr(model, "_is_ModelInputDict", False):
+            if isinstance(point_nums, int):
+                point_nums = [point_nums]
+            for batch_idx, p_num in enumerate(point_nums):
+                if data.shape[1] != p_num:
+                    # shifted xyz only not other fetures for knn
+                    min_point = data[batch_idx, :p_num, :3].min(dim=0)[0][None]
+                    max_point = data[batch_idx, :p_num, :3].max(dim=0)[0][None]
+                    diameter = torch.cdist(min_point, max_point, p=2).max()
+                    shift_point = 100 * diameter * max_point
+                    data[batch_idx, p_num:, :3] += (
+                        torch.rand(data.shape[1] - p_num, 3) + shift_point
+                    )
+            data = batch_preprocess_dict(
+                data, model.encoder_params, model.__str__() == "<SQNSeg>"
+            )
+            for key in data:
+                if type(data[key]) is list:
+                    for i in range(len(data[key])):
+                        data[key][i] = data[key][i].to(model._device)
+                else:
+                    data[key] = data[key].to(model._device)
+            probs = model.learn.model(data).softmax(dim=-1).cpu()
+        else:
+            probs = (
+                model.learn.model(data.to(model._device).float()).softmax(dim=-1).cpu()
+            )
 
     return probs.numpy()
 
 
 def get_batch_predictions(model, data, point_nums, point_batch_size):
-
     if model._data.max_point == model.sample_point_num:
-        return model_predictions(model, data)
+        return model_predictions(model, data, point_nums)
 
     # handle case if max point in the block is greter than model.sample_point_num
     indices = []
@@ -3012,7 +3018,7 @@ def get_batch_predictions(model, data, point_nums, point_batch_size):
         model_input.append(input_point)
 
     model_input = torch.cat(model_input, dim=0)
-    seg_probs = model_predictions(model, model_input)
+    seg_probs = model_predictions(model, model_input, point_nums)
 
     # for each point of batch
     model_output = []
@@ -3031,7 +3037,6 @@ def get_batch_predictions(model, data, point_nums, point_batch_size):
 
 
 def split_prediction(model, predictions, point_nums):
-
     label = []
     confidance = []
     per_cls_conf = []
@@ -3046,12 +3051,10 @@ def split_prediction(model, predictions, point_nums):
 
 
 def predict_batch_h5(self, dl, output_path, progressor):
-
     current_file_name = ""
     point_batch_size = 1 * math.ceil(self._data.max_point / self.sample_point_num)
 
     for (data, point_num), tile_index in progress_bar(dl):
-
         pred = get_batch_predictions(self, data, point_num, point_batch_size)
 
         tile = dl.dataset.tiles[tile_index]
@@ -3065,7 +3068,6 @@ def predict_batch_h5(self, dl, output_path, progressor):
         # add batch_size for spliting prediction till last batch number
         unique_index = list(np.sort(unique_index)) + [dl.batch_size]
         for i, ufname in enumerate(fname):
-
             if ufname != current_file_name:
                 current_file_name = ufname
                 h5_file = dl.dataset.h5files[tile[unique_index[i]][0]]
@@ -3159,7 +3161,6 @@ def predict_h5(self, path, output_path, **kwargs):
 
 
 def calculate_per_class_stats(all_pred, all_y, total_classes):
-
     true_positives = [0] * total_classes
     false_positives = [0] * total_classes
     false_negatives = [0] * total_classes
@@ -3175,7 +3176,6 @@ def calculate_per_class_stats(all_pred, all_y, total_classes):
 
 
 def show_results_tool(self, rows, color_mapping=None, **kwargs):
-
     """
     It will plot results from your trained model with ground truth on the
     left and predictions on the right.
@@ -3183,7 +3183,7 @@ def show_results_tool(self, rows, color_mapping=None, **kwargs):
     is not yet supported.
 
     =====================   ===========================================
-    **Argument**            **Description**
+    **Parameter**            **Description**
     ---------------------   -------------------------------------------
     rows                    Optional rows. Number of rows to show. Deafults
                             value is 2.
@@ -3196,7 +3196,7 @@ def show_results_tool(self, rows, color_mapping=None, **kwargs):
     **kwargs**
 
     =====================   ===========================================
-    **Argument**            **Description**
+    **Parameter**            **Description**
     ---------------------   -------------------------------------------
     mask_class              Optional array of integers. Array containing
                             class values to mask. Default value is [].

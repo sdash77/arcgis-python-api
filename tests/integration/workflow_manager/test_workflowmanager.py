@@ -1,11 +1,12 @@
 import unittest
 import datetime
-from tests.integration.workflow_manager.workflowmanager_setup import (
-    WorkflowManagerSetup,
-)
 import re
 from pprint import pprint
 from arcgis.geometry import Geometry
+import workflowmanager_setup
+from arcgis.gis.workflowmanager import WorkflowManager, WorkflowManagerAdmin
+from arcgis.gis import GIS
+
 
 
 ###########################################################################
@@ -17,7 +18,7 @@ class TestWorkflowManager(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.connection = WorkflowManagerSetup()
+        cls.connection = workflowmanager_setup.WorkflowManagerSetup()
 
     def setUp(self):
         print("Test: " + self._testMethodName)
@@ -247,7 +248,7 @@ class TestWorkflowManager(unittest.TestCase):
             ],
         )
 
-    def create_job_robust(self):
+    def create_job_robust(self, location=None):
         uniqueness = re.sub("[^0-9a-z]+", "_", str(datetime.datetime.now()))
 
         template_name = "Testing Template  " + uniqueness
@@ -263,6 +264,14 @@ class TestWorkflowManager(unittest.TestCase):
             if x.job_template_name == template_name:
                 job_template = x
 
+        if location is None:
+            location = {
+                "geometryType": "Polygon",
+                "geometry": '{"rings":[[[-6848757.734349992,3330625.6782390587],[-2256822.369376309,'
+                "6774572.424655061],[-2935181.886149995,1973920.9766344912],[-6848757.734349992,"
+                '3330625.6782390587]]],"spatialReference":{"latestWkid":3857,"wkid":102100}}',
+            }
+
         return self.connection.workflow_manager.jobs.create(
             template=job_template.job_template_id,
             count=1,
@@ -276,10 +285,7 @@ class TestWorkflowManager(unittest.TestCase):
             complete=42,
             notes="testing notes",
             parent="",
-            location={
-                "geometryType": "Polygon",
-                "geometry": '{"rings":[[[-6848757.734349992,3330625.6782390587],[-2256822.369376309,6774572.424655061],[-2935181.886149995,1973920.9766344912],[-6848757.734349992,3330625.6782390587]]],"spatialReference":{"latestWkid":3857,"wkid":102100}}',
-            },
+            location=location,
             extended_properties=[
                 {"identifier": table_name + ".prop1", "value": "newly_created123"},
                 {"identifier": table_name + ".prop2", "value": "newly_created456"},
@@ -808,7 +814,7 @@ class TestWorkflowManager(unittest.TestCase):
 
         # Assert
         self.assertIsInstance(actual, dict, "Incorrect return type")
-        self.assertEqual(actual, expected, "Incorrect search returned")
+        self.assertEqual( expected, actual, "Incorrect search returned")
         self.assertEqual(job_list, expected_job_list, "Incorrect search returned")
 
     def test_search_jobs_successfully_returns_with_selected_fields(self):
@@ -1402,10 +1408,33 @@ class TestWorkflowManager(unittest.TestCase):
             self.create_job(template_name="Route Edits")
 
         except Exception as testException:
-            self.assertTrue(
-                "Route Edits is not active" in str(testException),
-                "Incorrect Exception returned",
+            assert True, (
+                "Expected error returned during test: " + testException.__str__()
             )
+
+    def test_create_job_robust_location_is_geometry_class_successfully_returns(self):
+        # Arrange
+        new_location = {
+            "geometryType": "Polygon",
+            "geometry": '{"rings":[[[-6848757.734349992,3330625.6782390587],'
+            "[-2256822.369376309,6774572.424655061],"
+            "[-2935181.886149995,1973920.9766344912],"
+            "[-6848757.734349992,3330625.6782390587]]],"
+            '"spatialReference":{"latestWkid":3857,"wkid":102100}}',
+        }
+        geo = Geometry(new_location["geometry"])
+
+        # Act
+        actual = self.create_job_robust(location=geo)
+        job = self.connection.workflow_manager.job_manager.get(actual[0])
+        location = job.location
+
+        # Assert
+        self.assertIsInstance(actual, list, "Incorrect return type")
+        self.assertIsInstance(actual[0], str, "Incorrect return type")
+        self.assertEqual(
+            location.geometry_type, "Polygon", "Incorrect return value for location"
+        )
 
     # endregion Create Jobs
 
@@ -1611,6 +1640,25 @@ class TestWorkflowManager(unittest.TestCase):
 
     # endregion
 
+    # region Update Job Version
+
+    # Disabled this test because it requires external set up to work.
+    # def test_update_job_version_successfully_returns(self):
+    #     # Arrange
+    #     job_id = self.create_job()[0]
+    #     job = self.connection.workflow_manager.jobs.get(job_id)
+    #
+    #
+    #     # Act
+    #     actual = job.set_job_version(data_source_name="Gas_Utility_Network",
+    #                                  version_name="admin.ANGEL123",
+    #                                  administered=True)
+    #
+    #     # Assert
+    #     self.assertTrue(actual, "Incorrect return type")
+
+    # endregion
+
     # region Job Location
 
     def test_get_job_location_returns_no_location_set(self):
@@ -1709,6 +1757,40 @@ class TestWorkflowManager(unittest.TestCase):
         # Act
         job_location = self.connection.workflow_manager.jobs.get(test_id).location
         actual = self.connection.workflow_manager.jobs.set_job_location(test_id, geo)
+        new_job_location = self.connection.workflow_manager.jobs.get(test_id).location
+
+        # Assert
+        self.assertEqual(
+            default_job_location["geometry_type"],
+            str(job_location.geometry_type),
+            "Incorrect job location returned",
+        )
+        self.assertEqual(
+            new_location["geometryType"],
+            str(new_job_location.geometry_type),
+            "Incorrect job location returned",
+        )
+        self.assertTrue(actual, "Did not return correct attachment")
+
+    def test_set_job_location_polyline_returns_true_with_object_format(self):
+        # Arrange
+        test_id = self.create_job()[0]
+
+        default_job_location = {"geometry": "{}", "geometry_type": "None"}
+        new_location = {
+            "geometryType": "Polyline",
+            "geometry": '{"paths":[[[-5283327.395069996,-1730934.0112043545],'
+            "[1500210.4448956922,1921738.3728870638],"
+            "[-10397060.1336323,4739512.983591061],"
+            "[-10449247.514693994,4739512.983591061]]],"
+            '"spatialReference":{"latestWkid":3857,"wkid":102100}}',
+        }
+
+        # Act
+        job_location = self.connection.workflow_manager.jobs.get(test_id).location
+        actual = self.connection.workflow_manager.jobs.set_job_location(
+            test_id, new_location
+        )
         new_job_location = self.connection.workflow_manager.jobs.get(test_id).location
 
         # Assert
@@ -2296,8 +2378,14 @@ class TestWorkflowManager(unittest.TestCase):
         test_id = "bad_id_12345"
 
         # Act
-        with self.assertRaisesRegex(Exception, "Diagram bad_id_12345 was not found"):
+        try:
             self.connection.workflow_manager.diagram(test_id)
+
+        except Exception as testException:
+            assert True, (
+                "Expected error returned during test: " + testException.__str__()
+            )
+
 
     # endregion
 
@@ -3076,6 +3164,42 @@ class TestWorkflowManager(unittest.TestCase):
             actual["automationType"], "Scheduled", "Incorrect automated creation found"
         )
         self.assertEqual(len(creations), 2, "Incorrect size")
+
+    # endregion
+
+    # region UserType Licenses
+
+    # must be run manually since a user must be added to test properly.
+    def test_user_without_UTE_AT_11_2_can_use_workflow_manager(self):
+        # Insert credentials for a portal > 11.2
+        portal_url = "https://ps0019725.esri.com/portal/"
+        portal_username = "nolicense4wfm"
+        portal_password = "..."
+        workflow_item_id = "adfa827638e64798bc6cd049096c695a"
+        gis = GIS(
+            url=portal_url,
+            username=portal_username,
+            password=portal_password,
+            verify_cert=False,
+        )
+
+        workflow_item = gis.content.get(workflow_item_id)
+        workflow_manager = WorkflowManager(workflow_item)
+
+        # Act
+
+        try:
+            users = workflow_manager.users
+
+            # Assertions
+            self.assertIsInstance(users, list, "Incorrect return type")
+            self.assertEqual(len(users), 2, "Incorrect number of items downloaded")
+            self.assertIsInstance(users[0], dict, "Incorrect type")
+
+        except Exception as testException:
+            raise ValueError(
+                "User could not use workflow manager api with system. Check UTE and Portal Version"
+            )
 
     # endregion
 

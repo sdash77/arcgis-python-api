@@ -310,8 +310,6 @@ class APIKeyManager(object):
         if privileges is None:
             privileges = [
                 "premium:user:geocode:temporary",
-                "premium:user:networkanalysis:routing",
-                "premium:user:networkanalysis:servicearea",
                 "portal:apikey:basemaps",
             ]
         result = api_item.register(
@@ -390,7 +388,10 @@ class APIKeyManager(object):
             res = self._gis._con.post(url, params)
             k.extend(
                 k=[
-                    APIKey(Item(gis=self._gis, itemid=k["itemId"]), gis=self._gis)
+                    APIKey(
+                        Item(gis=self._gis, itemid=k["itemId"]),
+                        gis=self._gis,
+                    )
                     for k in res["apiKeys"]
                 ]
             )

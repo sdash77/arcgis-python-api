@@ -6,7 +6,7 @@ class DatePicker(object):
     Creates a Date Selector widget for Side Panel or Header.
 
     =========================   ===========================================
-    **Argument**                **Description**
+    **Parameter**                **Description**
     -------------------------   -------------------------------------------
     range                       Optional boolean. True to create a range
                                 selector.
@@ -132,7 +132,6 @@ class DatePicker(object):
         self.label = label
 
     def _convert_to_json(self):
-
         if self._selection_type == "range":
             self._operator_logic = "between"
         else:
@@ -178,7 +177,7 @@ class NumberSelector(object):
     Creates a Number Selector widget for Side Panel or Header.
 
     =========================   ===========================================
-    **Argument**                **Description**
+    **Parameter**                **Description**
     -------------------------   -------------------------------------------
     range                       Optional boolean. True to create a range
                                 selector.
@@ -192,7 +191,7 @@ class NumberSelector(object):
     **Keyword Arguments**
 
     =========================   ===========================================
-    **Argument**                **Description**
+    **Parameter**                **Description**
     -------------------------   -------------------------------------------
     operator                    Optional string for non-range input.
 
@@ -211,7 +210,6 @@ class NumberSelector(object):
     def __init__(
         self, range=False, display_type="spinner", label="Select a number", **kwargs
     ):
-
         self._json = {}
         self._display_type = display_type
         self.type = "numberSelectorWidget"
@@ -288,7 +286,7 @@ class NumberSelector(object):
         Set the item to pick values from for spinner and slider display type.
 
         =========================   ===========================================
-        **Argument**                **Description**
+        **Parameter**                **Description**
         -------------------------   -------------------------------------------
         item                        Required Portal :class:`~arcgis.gis.Item` . Item to pick values from.
         -------------------------   -------------------------------------------
@@ -346,7 +344,7 @@ class NumberSelector(object):
         Set the item to pick values from for spinner and slider display type.
 
         =========================   ===========================================
-        **Argument**                **Description**
+        **Parameter**                **Description**
         -------------------------   -------------------------------------------
         lower_limit                 Optional integer. Set the lower limit.
         -------------------------   -------------------------------------------
@@ -356,7 +354,7 @@ class NumberSelector(object):
         **Keyword Arguments**
 
         =========================   ===========================================
-        **Argument**                **Description**
+        **Parameter**                **Description**
         -------------------------   -------------------------------------------
         default                     Optional integer. Set default value for
                                     non-range selector.
@@ -382,7 +380,6 @@ class NumberSelector(object):
         }
 
     def _convert_to_json(self):
-
         # self._dataset = {
         #     "type": "serviceDataset",
         #     "dataSource": {
@@ -476,7 +473,7 @@ class CategorySelector(object):
         Set defined values for the dropdown.
 
         =========================   ===========================================
-        **Argument**                **Description**
+        **Parameter**                **Description**
         -------------------------   -------------------------------------------
         key_value_pairs             Optional list of tuples. The tuple should
                                     contain labels and their corresponding values.
@@ -519,7 +516,7 @@ class CategorySelector(object):
         Set feature values for dropdown.
 
         =========================   ===========================================
-        **Argument**                **Description**
+        **Parameter**                **Description**
         -------------------------   -------------------------------------------
         item                        Required Portal :class:`~arcgis.gis.Item` . Dropdown values will be populated from this.
         -------------------------   -------------------------------------------
@@ -560,7 +557,7 @@ class CategorySelector(object):
         Set group by values for dropdown.
 
         =========================   ===========================================
-        **Argument**                **Description**
+        **Parameter**                **Description**
         -------------------------   -------------------------------------------
         item                        Required Portal :class:`~arcgis.gis.Item` .
                                     Dropdown values will be populated from this.

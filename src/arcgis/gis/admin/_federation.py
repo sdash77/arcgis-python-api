@@ -6,6 +6,8 @@ from .. import GIS
 from ._base import BasePortalAdmin
 
 ########################################################################
+
+
 class Federation(BasePortalAdmin):
     """
     This resource returns information about the ArcGIS Servers registered
@@ -17,6 +19,7 @@ class Federation(BasePortalAdmin):
     _con = None
     _portal = None
     # ----------------------------------------------------------------------
+
     def __init__(self, url, gis):
         """Constructor"""
         if isinstance(gis, GIS):
@@ -35,15 +38,15 @@ class Federation(BasePortalAdmin):
         for ArcGIS.
 
         ===========================     ====================================================================
-        **Argument**                    **Description**
+        **Parameter**                    **Description**
         ---------------------------     --------------------------------------------------------------------
         url:                            Required string. The URL of the GIS server used by external users
                                         when accessing the ArcGIS Server site. If the site includes the Web
                                         Adaptor, the URL includes the Web Adaptor address, for example,
-                                        https://webadaptor.domain.com/arcgis. If you've added ArcGIS
+                                        ``https://webadaptor.domain.com/arcgis``. If you've added ArcGIS
                                         Server to your organization's reverse proxy server, the URL is
                                         the reverse proxy server address (for example,
-                                        https://reverseproxy.domain.com/myorg). Note that the federation
+                                        ``https://reverseproxy.domain.com/myorg``). Note that the federation
                                         operation will perform a validation check to determine if the
                                         provided URL is accessible from the server site. If the resulting
                                         validation check fails, a warning will be generated in the Portal
@@ -54,7 +57,7 @@ class Federation(BasePortalAdmin):
         ---------------------------     --------------------------------------------------------------------
         admin_url                       Required string. The URL used for accessing ArcGIS Server when
                                         performing administrative operations on the internal network, for
-                                        example, https://gisserver.domain.com:6443/arcgis.
+                                        example, ``https://gisserver.domain.com:6443/arcgis``.
         ---------------------------     --------------------------------------------------------------------
         username                        Required string. The username of the primary site administrator account
         ---------------------------     --------------------------------------------------------------------
@@ -95,7 +98,7 @@ class Federation(BasePortalAdmin):
         This operation unfederates an ArcGIS Server from Portal for ArcGIS.
 
         ===========================     ====================================================================
-        **Argument**                    **Description**
+        **Parameter**                    **Description**
         ---------------------------     --------------------------------------------------------------------
         server_id                       Required string. The unique ID of the server
         ===========================     ====================================================================
@@ -122,7 +125,7 @@ class Federation(BasePortalAdmin):
         with the ArcGIS Server.
 
         ===========================     ====================================================================
-        **Argument**                    **Description**
+        **Parameter**                    **Description**
         ---------------------------     --------------------------------------------------------------------
         server_id                       Required string. The unique ID of the server
         ---------------------------     --------------------------------------------------------------------
@@ -174,7 +177,7 @@ class Federation(BasePortalAdmin):
         Server federated with Portal for ArcGIS.
 
         ===========================     ====================================================================
-        **Argument**                    **Description**
+        **Parameter**                    **Description**
         ---------------------------     --------------------------------------------------------------------
         server_id                       Required string. The unique ID of the server
         ===========================     ====================================================================

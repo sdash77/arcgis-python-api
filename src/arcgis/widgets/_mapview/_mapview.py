@@ -16,8 +16,18 @@ import dateutil.parser
 import tempfile
 
 from arcgis.geometry import Point, Polygon, Polyline, MultiPoint, Geometry
-from arcgis.features import FeatureSet, Feature, FeatureCollection, FeatureLayer
-from arcgis.raster import ImageryLayer, Raster, _ImageServerRaster, _ArcpyRaster
+from arcgis.features import (
+    FeatureSet,
+    Feature,
+    FeatureCollection,
+    FeatureLayer,
+)
+from arcgis.raster import (
+    ImageryLayer,
+    Raster,
+    _ImageServerRaster,
+    _ArcpyRaster,
+)
 from arcgis.gis import Layer
 from arcgis.gis import Item
 
@@ -29,7 +39,9 @@ from traitlets import Unicode, List, Bool, Dict, Tuple, Float, observe
 Datetime = ipywidgets.trait_types.Datetime
 from IPython.display import display, HTML
 
-from arcgis.widgets._mapview._webscene_utils import DEFAULT_WEBSCENE_TEXT_PROPERTY
+from arcgis.widgets._mapview._webscene_utils import (
+    DEFAULT_WEBSCENE_TEXT_PROPERTY,
+)
 from arcgis.widgets._mapview._loading_icon_str import _loading_icon_str
 from arcgis.widgets._mapview._raster import LocalRasterOverlayManager
 from arcgis.widgets._mapview._raster._numpy_utils import *
@@ -108,7 +120,12 @@ def _get_extent(item):
         return dict(item.properties.layerDefinition.extent)
     elif isinstance(item, Layer):
         try:
-            return dict(item.properties.extent)
+            if "extent" in item.properties:
+                return dict(item.properties.extent)
+            elif "fullExtent" in item.properties:
+                return dict(item.properties["fullExtent"])
+            elif "initialExtent" in item.properties:
+                return dict(item.properties["initialExtent"])
         except:
             ext = item.extent
             return {
@@ -175,7 +192,7 @@ def _reproject_extent(extents, target_sr={"wkid": 102100, "latestWkid": 3857}):
     """Reproject Extent
 
     ==================     ====================================================================
-    **Argument**              **Description**
+    **Parameter**              **Description**
     ------------------     --------------------------------------------------------------------
     extents                   extent or list of extents you want to project.
     ------------------     --------------------------------------------------------------------
@@ -233,7 +250,7 @@ class MapView(widgets.DOMWidget):
     The ``MapView`` class creates a mapping widget for Jupyter Notebook and JupyterLab.
 
     ==================     ====================================================================
-    **Argument**              **Description**
+    **Parameter**              **Description**
     ------------------     --------------------------------------------------------------------
     gis                    The active :class:`~arcgis.gis.GIS` instance you want this map widget to use.
     ------------------     --------------------------------------------------------------------
@@ -262,7 +279,6 @@ class MapView(widgets.DOMWidget):
 
     """
 
-    # region Class, instance and interop variables
     _view_name = Unicode("ArcGISMapIPyWidgetView").tag(sync=True)
     _model_name = Unicode("ArcGISMapIPyWidgetModel").tag(sync=True)
     _view_module = Unicode("arcgis-map-ipywidget").tag(sync=True)
@@ -282,7 +298,7 @@ class MapView(widgets.DOMWidget):
         Get/Set the level of zoom applied to the Map Widget.
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         value               Required int.
                             .. note::
@@ -320,7 +336,7 @@ class MapView(widgets.DOMWidget):
         of the map would be 1:X.
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         value               Required int.
         ===============     ====================================================================
@@ -351,7 +367,7 @@ class MapView(widgets.DOMWidget):
 
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         value               Required bool.
                             Values:
@@ -379,7 +395,7 @@ class MapView(widgets.DOMWidget):
         of the view in degrees in 2D mode.
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         value               Required float.
         ===============     ====================================================================
@@ -461,29 +477,31 @@ class MapView(widgets.DOMWidget):
         """
         Get/Set the basemap you would like to apply to the widget.
 
-         ===============     ====================================================================
-         **Argument**        **Description**
-         ---------------     --------------------------------------------------------------------
-         value               Required string. Ex: ('topo', 'national-geographic', etc.).
-                             .. note::
-                                 See :attr:`~arcgis.widgets.MapView.basemaps` for a full list of possible maps
-         ===============     ====================================================================
+        ===============     ====================================================================
+        **Parameter**       **Description**
+        ---------------     --------------------------------------------------------------------
+        value               Required string. Ex: ('topo', 'national-geographic', etc.).
 
-         :return: basemap being used.
+                            .. note::
+                                See :attr:`~arcgis.widgets.MapView.basemaps` for a full list
+                                of options.
+        ===============     ====================================================================
 
-         .. code-block:: python
+        :return: basemap being used.
 
-             # Usage example: Set the widget basemap equal to an item
+        .. code-block:: python
 
-             from arcgis.mapping import WebMap
-             widget = gis.map()
+            # Usage example: Set the widget basemap equal to an item
 
-             # Use basemap from another item as your own
-             widget.basemap = webmap
-             widget.basemap = tiled_map_service_item
-             widget.basemap = image_layer_item
-             widget.basemap = webmap2.basemap
-             widget.basemap - 'national-geographic'
+            >>> from arcgis.mapping import WebMap
+            >>> widget = gis.map()
+
+            >>> # Use basemap from another item as your own
+            >>> widget.basemap = webmap
+            >>> widget.basemap = tiled_map_service_item
+            >>> widget.basemap = image_layer_item
+            >>> widget.basemap = webmap2.basemap
+            >>> widget.basemap - 'national-geographic'
 
         """
         return self._basemap
@@ -491,11 +509,18 @@ class MapView(widgets.DOMWidget):
     @basemap.setter
     def basemap(self, value):
         if value in self.basemaps:
+            if value.startswith("arcgis-"):
+                if self.gis is None or self.gis._portal.is_logged_in is False:
+                    raise ValueError(
+                        "This basemap requires you to be authenticated. Please login or try a different basemap."
+                    )
             self._basemap = value
             self.webmap.basemap = value
+            self._webmap = self.webmap._webmapdict
         elif value in self.gallery_basemaps:
             self._basemap = value
             self.webmap.basemap = value
+            self._webmap = self.webmap._webmapdict
         else:
             try:
                 self.webmap.basemap = value
@@ -506,6 +531,7 @@ class MapView(widgets.DOMWidget):
                 copy_gallery = dict(self._gallery_basemaps)
                 self._gallery_basemaps = {}
                 self._gallery_basemaps = copy_gallery
+                self._webmap = self.webmap._webmapdict
             except Exception:
                 raise RuntimeError("Basemap '{}' isn't valid".format(value))
 
@@ -551,25 +577,25 @@ class MapView(widgets.DOMWidget):
         Get/Set the map widget's extent.
 
 
-            ==================     ====================================================================
-            **Argument**           **Description**
-            ------------------     --------------------------------------------------------------------
-            value                  Required dict.
-                                   A `[[xmin, ymin], [xmax, ymax]]` list, Spatially Enabled Data Frame ``full_extent``,
-                                   or a dict that represents the JSON of the map widget's extent.
+        ==================     ====================================================================
+        **Parameter**           **Description**
+        ------------------     --------------------------------------------------------------------
+        value                  Required dict.
+                                A `[[xmin, ymin], [xmax, ymax]]` list, Spatially Enabled Data Frame ``full_extent``,
+                                or a dict that represents the JSON of the map widget's extent.
 
-                                    Examples for each:
-                                    web_map.extent = [[-124.35, 32.54], [-114.31, 41.95]]
-                                    web_map.extent = data_frame.spatial.full_extent
-                                    web_map.extent = {
-                                            "xmin": -124.35,
-                                            "ymin": 32.54,
-                                            "xmax": -114.31,
-                                            "ymax": 41.95
-                                        }
-            ==================     ====================================================================
+                                Examples for each:
+                                web_map.extent = [[-124.35, 32.54], [-114.31, 41.95]]
+                                web_map.extent = data_frame.spatial.full_extent
+                                web_map.extent = {
+                                        "xmin": -124.35,
+                                        "ymin": 32.54,
+                                        "xmax": -114.31,
+                                        "ymax": 41.95
+                                    }
+        ==================     ====================================================================
 
-            .. code-block:: python
+        .. code-block:: python
 
                 #Usage Example
 
@@ -640,7 +666,7 @@ class MapView(widgets.DOMWidget):
         Get/Set the center of the ``Map Widget``.
 
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
         setter                 A `[lat, long]` list, or a dict that represents the JSON of the map
                                widget's center.
@@ -845,37 +871,119 @@ class MapView(widgets.DOMWidget):
         return [self._hashed_layers[key] for key in self._hashed_layers]
 
     # end how we store layers
+    @property
+    def basemaps(self):
+        """
+        The ``basemaps`` layers are a list of possible basemaps to set :attr:`~arcgis.widgets.MapView.basemap` with:
 
-    basemaps = [
-        "dark-gray-vector",
-        "gray-vector",
-        "hybrid",
-        "oceans",
-        "osm",
-        "satellite",
-        "streets-navigation-vector",
-        "streets-night-vector",
-        "streets-relief-vector",
-        "streets-vector",
-        "terrain",
-        "topo-vector",
-    ]
-    """
-    The ``basemaps`` layers are a list of possible basemaps to set :attr:`~arcgis.widgets.MapView.basemap` with:
-    
-    1. Dark Grey Vector
-    2. Gray Vector
-    3. Hybrid
-    4. Oceans
-    5. OSM
-    6. Satellite
-    7. Streets Navigation Vector
-    8. Streets Night Vector
-    9. Streets Relief Vector
-    10. Streets Vector
-    11. Terrain
-    12. Topographic Vector
-    """
+        1. Dark Grey Vector
+        2. Gray Vector
+        3. Hybrid
+        4. Oceans
+        5. OSM
+        6. Satellite
+        7. Streets Navigation Vector
+        8. Streets Night Vector
+        9. Streets Relief Vector
+        10. Streets Vector
+        11. Terrain
+        12. Topographic Vector
+
+        There are basemap layers available if you are authenticated or provide an api key.
+
+        1. ArcGIS Imagery
+        2. ArcGIS Imagery Standard
+        3. ArcGIS Imagery Labels
+        4. ArcGIS Light Gray
+        5. ArcGIS Dark Gray
+        6. ArcGIS Navigation
+        7. ArcGIS Navigation Night
+        8. ArcGIS Streets
+        9. ArcGIS Streets Night
+        10. ArcGIS Streets Relief
+        11. ArcGIS Topographic
+        12. ArcGIS Oceans
+        13. ArcGIS Standard
+        14. ArcGIS Standard Relief
+        15. ArcGIS Streets
+        16. ArcGIS Streets Relief
+        17. ArcGIS Open Street Map Light Gray
+        18. ArcGIS Open Street Map Dark Gray
+        19. ArcGIS Terrain
+        20. ArcGIS Community
+        21. ArcGIS Charted Territory
+        22. ArcGIS Colored Pencil
+        23. ArcGIS Nova
+        24. ArcGIS Modern Antique
+        25. ArcGIS Midcentury
+        26. ArcGIS Newspaper
+        27. ArcGIS Hillshade Light
+        28. ArcGIS Hillshade Dark
+        29. ArcGIS Human Geography
+        30. ArcGIS Human Geography Dark
+
+        """
+        if self._gis._is_authenticated:
+            return [
+                "dark-gray-vector",
+                "gray-vector",
+                "hybrid",
+                "oceans",
+                "osm",
+                "satellite",
+                "streets-navigation-vector",
+                "streets-night-vector",
+                "streets-relief-vector",
+                "streets-vector",
+                "terrain",
+                "topo-vector",
+                "arcgis-imagery",
+                "arcgis-imagery-standard",
+                "arcgis-imagery-labels",
+                "arcgis-light-gray",
+                "arcgis-dark-gray",
+                "arcgis-navigation",
+                "arcgis-navigation-night",
+                "arcgis-streets",
+                "arcgis-streets-night",
+                "arcgis-streets-relief",
+                "arcgis-topographic",
+                "arcgis-oceans",
+                "osm-standard",
+                "osm-standard-relief",
+                "osm-streets",
+                "osm-streets-relief",
+                "osm-light-gray",
+                "osm-dark-gray",
+                "arcgis-terrain",
+                "arcgis-community",
+                "arcgis-charted-territory",
+                "arcgis-colored-pencil",
+                "arcgis-nova",
+                "arcgis-modern-antique",
+                "arcgis-midcentury",
+                "arcgis-newspaper",
+                "arcgis-hillshade-light",
+                "arcgis-hillshade-dark",
+                "arcgis-human-geography",
+                "arcgis-human-geography-dark",
+            ]
+        else:
+            return [
+                "dark-gray-vector",
+                "gray-vector",
+                "hybrid",
+                "oceans",
+                "osm",
+                "satellite",
+                "streets-navigation-vector",
+                "streets-night-vector",
+                "streets-relief-vector",
+                "streets-vector",
+                "terrain",
+                "topo-vector",
+            ]
+
     # End other properties that don't interact with the model
 
     def __init__(self, gis=None, item=None, mode="2D", **kwargs):
@@ -923,6 +1031,12 @@ class MapView(widgets.DOMWidget):
         self._synced_mapviews = []
         self._mapview_uuid_to_dlinks = {}
         self._dlinks = []
+        if gis:
+            self._gis = gis
+        else:
+            from arcgis import env
+
+            self._gis = env.active_gis
 
     # Start screenshot specific section
 
@@ -1039,7 +1153,7 @@ class MapView(widgets.DOMWidget):
             Only works in a Jupyter Notebook environment.
 
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
         output_in_cell         Optional bool, default ``True``. Will display the screenshot in the
                                output area of the cell where this function is called.
@@ -1125,7 +1239,7 @@ class MapView(widgets.DOMWidget):
             this 'snapshot' state of the map, regardless of any future Python code ran.
 
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
         output_in_cell         Optional bool, default ``True``. Will display the embedded HTML
                                interactive map in the output area of the cell where this function
@@ -1164,7 +1278,8 @@ class MapView(widgets.DOMWidget):
                 display(
                     HTML(
                         self._assemble_html_embed_html_str(
-                            iframe_srcdoc_html, class_id_root="map-html-embed-in-cell-"
+                            iframe_srcdoc_html,
+                            class_id_root="map-html-embed-in-cell-",
                         )
                     )
                 )
@@ -1202,7 +1317,6 @@ class MapView(widgets.DOMWidget):
                 if hasattr(auth, "token")
             ]
             if len(tokens) > 0:
-
                 self._portal_token = str(tokens[0])
                 self._auth_mode = "tokenBased"
             else:
@@ -1217,7 +1331,7 @@ class MapView(widgets.DOMWidget):
 
     def _get_portal_url(self):
         try:
-            return self.gis._portal.resturl.split("sharing")[0]
+            return self.gis._portal._public_rest_url.split("sharing")[0]
         except Exception as e:
             return self.gis.url
 
@@ -1255,10 +1369,23 @@ class MapView(widgets.DOMWidget):
             self._gallery_basemaps = {}
             self._gallery_basemaps = copy_gallery
         elif (
-            "defaultBasemap" in self.gis.org_settings
+            self.gis.org_settings is not None
+            and "defaultBasemap" in self.gis.org_settings
             and self.gis.org_settings["defaultBasemap"]
         ):
             self._gallery_basemaps["default"] = self.gis.org_settings["defaultBasemap"]
+            self._basemap = "default"
+            # Add to text property so default is recorded
+            self._default_webscene_text_property["baseMap"] = self._gallery_basemaps[
+                "default"
+            ]
+            # You need to re-write this dict to trigger the JS side change
+            copy_gallery = dict(self._gallery_basemaps)
+            self._gallery_basemaps = {}
+            self._gallery_basemaps = copy_gallery
+        else:
+            # Enterprise 10.7.1 workflow
+            self._gallery_basemaps["default"] = self.gis.properties["defaultBasemap"]
             self._basemap = "default"
             # Add to text property so default is recorded
             self._default_webscene_text_property["baseMap"] = self._gallery_basemaps[
@@ -1299,7 +1426,6 @@ class MapView(widgets.DOMWidget):
                 self.extent = item.item.extent
 
     def _check_if_webscene(self, item):
-
         if isinstance(item, Item):
             if item.type.lower() == "web scene":
                 self.webscene_item = item
@@ -1360,7 +1486,7 @@ class MapView(widgets.DOMWidget):
         map widget.
 
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
         item                   Required object. You can specify :class:`~arcgis.gis.Item` objects, ``Layer`` objects
                                such as :class:`~arcgis.features.FeatureLayer` , ImageryLayer, MapImageLayer,
@@ -1418,6 +1544,11 @@ class MapView(widgets.DOMWidget):
         ):
             item = item.spatial.to_feature_collection()
         self._add_layer_to_widget(item, options)
+        if "opacity" in options:
+            # Extra steps because the layer opacity will only update after renderering on
+            # the widget. Weird behavior with no other solution found.
+            wm_layer = dict(self.webmap.layers[-1])  # last layer added
+            self.update_layer(wm_layer)
 
     def _add_layer_to_webmap(self, item, options):
         webmap_options = dict(options)
@@ -1548,7 +1679,7 @@ class MapView(widgets.DOMWidget):
         and have it by dynamically changed on the mapview.
 
         ==================      ====================================================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ------------------      --------------------------------------------------------------------
         layer                   Required Feature Layer or Feature Layer dictionary.
                                 The existing mapview layer with updated properties.
@@ -1561,6 +1692,7 @@ class MapView(widgets.DOMWidget):
         ==================      ====================================================================
 
         .. code-block:: python
+
             # Create a mapview and add layer
             map1 = gis.map("Oregon")
             map1.add_layer(<fl_to_add>)
@@ -1591,7 +1723,7 @@ class MapView(widgets.DOMWidget):
         :attr:`~arcgis.widgets.MapView.layers` property.
 
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
         layers                 Optional list. Specify the list of layers to be removed from the map widget. You can get
                                the list of layers on the map by querying the 'layers' property.
@@ -1705,7 +1837,7 @@ class MapView(widgets.DOMWidget):
             elif is_numpy_array(item):
                 return get_hash_numpy_array(item)
             elif isinstance(item, Raster):
-                return str(hash(item.path))
+                return str(hash(item.catalog_path))
             elif isinstance(item, ImageryLayer):
                 return str(hash(item.url))
             else:
@@ -1726,7 +1858,7 @@ class MapView(widgets.DOMWidget):
         The ``display_message`` method displays a message on the upper-right corner of the ``map widget``.
 
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
         msg                    A required String. The message to be displayed.
         ==================     ====================================================================
@@ -1763,7 +1895,7 @@ class MapView(widgets.DOMWidget):
             calling this method.
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         item_properties     Required dictionary. See table below for the keys and values.
         ---------------     --------------------------------------------------------------------
@@ -1781,7 +1913,7 @@ class MapView(widgets.DOMWidget):
         folder              Optional string. Name of the folder where placing item.
         ===============     ====================================================================
 
-        *Key:Value Dictionary Options for Argument item_properties*
+        *Key:Value Dictionary Options for Parameter item_properties*
 
         =================  =====================================================================
         **Key**            **Value**
@@ -1852,7 +1984,12 @@ class MapView(widgets.DOMWidget):
             )
 
     def _save_as_webmap(
-        self, item_properties, thumbnail=None, metadata=None, owner=None, folder=None
+        self,
+        item_properties,
+        thumbnail=None,
+        metadata=None,
+        owner=None,
+        folder=None,
     ):
         from arcgis.mapping import WebMap
 
@@ -1932,7 +2069,8 @@ class MapView(widgets.DOMWidget):
 
                         # Add to webmap
                         self.webmap.add_layer(
-                            fset, {"title": "Notes from ArcGIS API for Python"}
+                            fset,
+                            {"title": "Notes from ArcGIS API for Python"},
                         )
 
     def _check_if_graphic_already_saved(self, geom):
@@ -1945,7 +2083,12 @@ class MapView(widgets.DOMWidget):
         return False
 
     def _save_as_webscene(
-        self, item_properties, thumbnail=None, metadata=None, owner=None, folder=None
+        self,
+        item_properties,
+        thumbnail=None,
+        metadata=None,
+        owner=None,
+        folder=None,
     ):
         self.mode = "3D"
         self._check_item_properties(item_properties)
@@ -2000,7 +2143,7 @@ class MapView(widgets.DOMWidget):
             method.
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         item_properties     Optional dictionary. See table below for the keys and values.
         ---------------     --------------------------------------------------------------------
@@ -2013,7 +2156,7 @@ class MapView(widgets.DOMWidget):
         metadata            Optional string. Either a path or URL to the metadata.
         ===============     ====================================================================
 
-        *Key:Value Dictionary Options for Argument item_properties*
+        *Key:Value Dictionary Options for Parameter item_properties*
 
         =================  =====================================================================
         **Key**            **Value**
@@ -2062,12 +2205,16 @@ class MapView(widgets.DOMWidget):
         if mode == "2D" or "webmap" in mode.lower():
             self.mode = "2D"
             return self._update_as_webmap(
-                item_properties=item_properties, thumbnail=thumbnail, metadata=metadata
+                item_properties=item_properties,
+                thumbnail=thumbnail,
+                metadata=metadata,
             )
         elif mode == "3D" or "webscene" in mode.lower():
             self.mode = "3D"
             return self._update_as_webscene(
-                item_properties=item_properties, thumbnail=thumbnail, metadata=metadata
+                item_properties=item_properties,
+                thumbnail=thumbnail,
+                metadata=metadata,
             )
 
     def _update_as_webmap(self, item_properties, thumbnail, metadata):
@@ -2110,7 +2257,10 @@ class MapView(widgets.DOMWidget):
         return result
 
     def export_to_html(
-        self, path_to_file, title="Exported ArcGIS Map Widget", credentials_prompt=False
+        self,
+        path_to_file,
+        title="Exported ArcGIS Map Widget",
+        credentials_prompt=False,
     ):
         """
         The ``export_to_html`` method takes the current state of the map widget and exports it to a
@@ -2132,7 +2282,7 @@ class MapView(widgets.DOMWidget):
             server.
 
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
         path_to_file           Required string. The path to save the HTML file on disk.
         ------------------     --------------------------------------------------------------------
@@ -2177,7 +2327,7 @@ class MapView(widgets.DOMWidget):
             :class:`~arcgis.features.FeatureSet` objects.
 
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
         shape                  Required object.
                                Known :class:`~arcgis.geometry.Geometry` objects:
@@ -2296,7 +2446,9 @@ class MapView(widgets.DOMWidget):
                 self._add_graphic(graphic)
                 f = Feature(shape)
                 fset = FeatureSet(
-                    [f], geometry_type=geometry_kind, spatial_reference={"wkid": 4326}
+                    [f],
+                    geometry_type=geometry_kind,
+                    spatial_reference={"wkid": 4326},
                 )
 
             # Now that the `fset` is set, add to webmap
@@ -2401,7 +2553,7 @@ class MapView(widgets.DOMWidget):
         2. The drawn geometry
 
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
         remove                 Optional boolean. Set to true to remove the callback from the list
                                of callbacks.
@@ -2418,7 +2570,7 @@ class MapView(widgets.DOMWidget):
             The callback will be called with one argument, the clicked widget instance.
 
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
         remove                 Optional boolean. Set to true to remove the callback from the list
                                of callbacks.
@@ -2455,7 +2607,7 @@ class MapView(widgets.DOMWidget):
             gG9knfWwKBGcvAAAAAElFTkSuQmCC"> icon in the widget UI.</p>
 
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
         title                  What text will display as the widget tab. Default: "ArcGIS Map".
         ------------------     --------------------------------------------------------------------
@@ -2493,7 +2645,7 @@ class MapView(widgets.DOMWidget):
         The ``zoom_to_layer`` method snaps the map to the extent of the provided :class:`~arcgis.gis.Item` object(s).
 
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
         item                   The item at which you want to zoom your map to.
                                This can be a single or a list of :class:`~arcgis.gis.Item`, ``Layer`` , ``DataFrame`` ,
@@ -2551,6 +2703,7 @@ class MapView(widgets.DOMWidget):
     _time_info = Dict({}).tag(sync=True)
 
     _writeonly_start_time = Datetime().tag(sync=True)
+    _writeonly_start_time.default_value = dt.datetime(1970, 1, 2)
     _readonly_start_time = Unicode("").tag(sync=True)
     """JS can't send `Date` objects -- ISO string of time"""
 
@@ -2560,7 +2713,8 @@ class MapView(widgets.DOMWidget):
         The ``start_time`` property is a representation of a `datetime.datetime` property.
         If `time_mode` == `"time-window"`,
         represents the lower bound 'thumb' of the time slider. For all other
-        `time_mode` values, ``start_time`` represents the single thumb on the time slider."""
+        `time_mode` values, ``start_time`` represents the single thumb on the time slider.
+        """
         date_as_iso = dateutil.parser.parse(self._readonly_start_time)
         date_local = date_as_iso.astimezone()
         return date_local
@@ -2569,10 +2723,11 @@ class MapView(widgets.DOMWidget):
     def start_time(self, value):
         if not isinstance(value, dt.datetime):
             raise Exception("Value must be of type `datetime.datetime`")
-        self._writeonly_start_time = dt.datetime(1, 1, 1)
+        self._writeonly_start_time = dt.datetime(1970, 1, 2)
         self._writeonly_start_time = value
 
     _writeonly_end_time = Datetime().tag(sync=True)
+    _writeonly_end_time.default_value = dt.datetime(1970, 1, 2)
     _readonly_end_time = Unicode("").tag(sync=True)
     """JS can't send `Date` objects -- ISO string of time"""
 
@@ -2591,7 +2746,7 @@ class MapView(widgets.DOMWidget):
     def end_time(self, value):
         if not isinstance(value, dt.datetime):
             raise Exception("Value must be of type `datetime.datetime`")
-        self._writeonly_end_time = dt.datetime(1, 1, 1)
+        self._writeonly_end_time = dt.datetime(1970, 1, 2)
         self._writeonly_end_time = value
 
     def _update_time_extent_if_applicable(self, item):
@@ -2638,7 +2793,7 @@ class MapView(widgets.DOMWidget):
         slider.
 
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
         start_time             Required ``datetime.datetime``. The lower bound of the time extent to
                                display on the time slider.
@@ -2712,7 +2867,7 @@ class MapView(widgets.DOMWidget):
             sync. Thus, driving one of these ``MapView`` objects will make the other ``MapView`` objects follow.
 
         ==================     ===================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     -------------------------------------------------------------------
         mapview                Either a single :class:`~arcgis.widgets.MapView` instance, or a list of ``MapView``
                                instances to synchronize to.
@@ -2767,45 +2922,53 @@ class MapView(widgets.DOMWidget):
             their_dlinks = []
             self_dlinks.append(
                 ipywidgets.dlink(
-                    (self, "_readonly_extent"), (mapview, "_link_writeonly_extent")
+                    (self, "_readonly_extent"),
+                    (mapview, "_link_writeonly_extent"),
                 )
             )
             their_dlinks.append(
                 ipywidgets.dlink(
-                    (mapview, "_readonly_extent"), (self, "_link_writeonly_extent")
+                    (mapview, "_readonly_extent"),
+                    (self, "_link_writeonly_extent"),
                 )
             )
 
             self_dlinks.append(
                 ipywidgets.dlink(
-                    (self, "_readonly_rotation"), (mapview, "_link_writeonly_rotation")
+                    (self, "_readonly_rotation"),
+                    (mapview, "_link_writeonly_rotation"),
                 )
             )
             their_dlinks.append(
                 ipywidgets.dlink(
-                    (mapview, "_readonly_rotation"), (self, "_link_writeonly_rotation")
+                    (mapview, "_readonly_rotation"),
+                    (self, "_link_writeonly_rotation"),
                 )
             )
 
             self_dlinks.append(
                 ipywidgets.dlink(
-                    (self, "_readonly_heading"), (mapview, "_link_writeonly_heading")
+                    (self, "_readonly_heading"),
+                    (mapview, "_link_writeonly_heading"),
                 )
             )
             their_dlinks.append(
                 ipywidgets.dlink(
-                    (mapview, "_readonly_heading"), (self, "_link_writeonly_heading")
+                    (mapview, "_readonly_heading"),
+                    (self, "_link_writeonly_heading"),
                 )
             )
 
             self_dlinks.append(
                 ipywidgets.dlink(
-                    (self, "_readonly_tilt"), (mapview, "_link_writeonly_tilt")
+                    (self, "_readonly_tilt"),
+                    (mapview, "_link_writeonly_tilt"),
                 )
             )
             their_dlinks.append(
                 ipywidgets.dlink(
-                    (mapview, "_readonly_tilt"), (self, "_link_writeonly_tilt")
+                    (mapview, "_readonly_tilt"),
+                    (self, "_link_writeonly_tilt"),
                 )
             )
             self._mapview_uuid_to_dlinks[mapview._uuid] = self_dlinks
@@ -2823,7 +2986,7 @@ class MapView(widgets.DOMWidget):
         instances made via `my_mapview.sync_navigation(other_mapview)`.
 
         ==================     ===================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     -------------------------------------------------------------------
         mapview                (Optional) Either a single `MapView` instance, or a list of
                                `MapView` instances to unsynchronize. If not specified, will

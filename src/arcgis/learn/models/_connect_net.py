@@ -8,7 +8,7 @@ class ConnectNet(MultiTaskRoadExtractor):
     Implementation based on https://doi.org/10.1109/CVPR.2019.01063 .
 
     =====================   =====================================================
-    **Argument**            **Description**
+    **Parameter**            **Description**
     ---------------------   -----------------------------------------------------
     data                    Required fastai Databunch. Returned data object from
                             :meth:`~arcgis.learn.prepare_data`  function.
@@ -33,7 +33,7 @@ class ConnectNet(MultiTaskRoadExtractor):
     **kwargs**
 
     =============================   =============================================
-    **Argument**                    **Description**
+    **Parameter**                    **Description**
     -----------------------------   ---------------------------------------------
     mtl_model                       Optional String. It is used to create model
                                     from linknet or

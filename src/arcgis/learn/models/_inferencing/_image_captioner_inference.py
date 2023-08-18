@@ -53,6 +53,7 @@ class ChildObjectDetector:
 
         # Using arcgis.learn FeatureClassifer from_model function.
         self.cf = ImageCaptioner.from_model(emd_path=model)
+        self._learnmodel = self.cf
         self.model = self.cf.learn.model.to(self.device)
         self.model.eval()
 
@@ -80,7 +81,6 @@ class ChildObjectDetector:
         return required_parameters
 
     def getConfiguration(self, **scalars):
-
         if "BatchSize" not in self.emd and "batch_size" not in scalars:
             self.batch_size = 1
         elif "BatchSize" not in self.emd and "batch_size" in scalars:
@@ -114,7 +114,6 @@ class ChildObjectDetector:
         }
 
     def vectorize(self, **pixelBlocks):
-
         # Get pixel blocks - tuple of 3-d rasters: ([bands,height,width],[bands,height.width],...)
         # Convert tuple to 4-d numpy array
         batch_images = np.asarray(pixelBlocks["rasters_pixels"])

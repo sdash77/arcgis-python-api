@@ -32,7 +32,7 @@ var inferNoTypeLayer = function(noTypeLayer, widget){
                                 'esri/layers/VectorTileLayer',
                                 'esri/layers/SceneLayer',
                                 'esri/layers/FeatureLayer',
-                                'esri/tasks/support/FeatureSet',
+                                'esri/rest/support/FeatureSet',
                                 'esri/layers/WMSLayer',
                                 'esri/layers/WMTSLayer',
                                 'esri/layers/GeoRSSLayer',
@@ -78,6 +78,11 @@ var inferNoTypeLayer = function(noTypeLayer, widget){
                             console.log("Applying rendering rule to imagery layer..");
                             var renderingRuleJSON = 
                                 noTypeLayer.options.imageServiceParameters.renderingRule;
+                            if (renderingRuleJSON) {
+                                if ("function" in renderingRuleJSON) {
+                                    renderingRuleJSON = { "rasterFunctionDefinition": renderingRuleJSON };
+                                }
+                            }
                             var renderingRule = RasterFunction.fromJSON(renderingRuleJSON);
                             typedLayer.renderingRule = renderingRule;}
                         if('mosaicRule' in noTypeLayer.options.imageServiceParameters){

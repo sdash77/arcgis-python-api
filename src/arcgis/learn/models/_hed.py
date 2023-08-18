@@ -59,19 +59,15 @@ class CustomHED:
         return model
 
     def on_batch_begin(self, learn, model_input_batch, model_target_batch, **kwargs):
-
         return model_input_batch, model_target_batch
 
     def transform_input(self, xb):
-
         return xb
 
     def transform_input_multispectral(self, xb):
-
         return xb
 
     def loss(self, model_output, *model_target):
-
         final_loss = self.hed.hed_loss(model_output, *model_target)
 
         return final_loss
@@ -114,7 +110,7 @@ class HEDEdgeDetector(ModelExtension):
     Creates a :class:`~arcgis.learn.HEDEdgeDetector` model
 
     =====================   ===========================================
-    **Argument**            **Description**
+    **Parameter**            **Description**
     ---------------------   -------------------------------------------
     data                    Required fastai Databunch. Returned data object from
                             :meth:`~arcgis.learn.prepare_data`  function.
@@ -224,7 +220,7 @@ class HEDEdgeDetector(ModelExtension):
         Creates a :class:`~arcgis.learn.HEDEdgeDetector` object from an Esri Model Definition (EMD) file.
 
         =====================   ===========================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ---------------------   -------------------------------------------
         emd_path                Required string. Path to Deep Learning Package
                                 (DLPK) or Esri Model Definition(EMD) file.
@@ -265,6 +261,7 @@ class HEDEdgeDetector(ModelExtension):
             )
             data.class_mapping = class_mapping
             data.color_mapping = color_mapping
+            data._is_empty = True
             data.emd_path = emd_path
             data.emd = emd
             data.classes = ["background"]
@@ -276,12 +273,11 @@ class HEDEdgeDetector(ModelExtension):
         return cls(data, backbone, pretrained_path=str(model_file))
 
     def compute_precision_recall(self, thresh=0.5, buffer=3, show_progress=True):
-
         """
         Computes precision, recall and f1 score on validation set.
 
         =====================   ===========================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ---------------------   -------------------------------------------
         thresh                  Optional float. The probability on which
                                 the detection will be considered edge pixel.
@@ -294,7 +290,6 @@ class HEDEdgeDetector(ModelExtension):
         """
 
     def show_results(self, rows=5, thresh=0.5, thinning=True, **kwargs):
-
         """
         Displays the results of a trained model on a part of the validation set.
         """

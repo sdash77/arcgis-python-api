@@ -20,6 +20,7 @@ try:
     from fastai.data_block import DatasetType
     import torch
     import pandas as pd
+    from functools import reduce
     from .utils import arcpy_localization_helper
 
     HAS_FASTAI = True
@@ -49,12 +50,17 @@ try:
 except:
     HAS_SK_LEARN = False
 
+warnings.formatwarning = lambda msg, *args, **kwargs: f"{msg}\n"
+
 
 class DummyTransform(object):
     def __int__(self):
         pass
 
     def fit_transform(self, x):
+        return x
+
+    def transform(self, x):
         return x
 
     def inverse_transform(self, x):
@@ -64,6 +70,8 @@ class DummyTransform(object):
 class TabularDataObject(object):
     _categorical_variables = []
     _continuous_variables = []
+    _text_variables = []
+    _image_variables = []
     dependent_variables = []
 
     @classmethod
@@ -83,8 +91,9 @@ class TabularDataObject(object):
         batch_size=64,
         index_field=None,
         column_transforms_mapping=None,
+        random_split=True,
+        **kwargs,
     ):
-
         if not HAS_FASTAI:
             return
 
@@ -104,6 +113,7 @@ class TabularDataObject(object):
             cell_sizes,
             distance_feature_layers,
             index_field,
+            **kwargs,
         )
 
         if input_features is None:
@@ -120,6 +130,11 @@ class TabularDataObject(object):
         ]
         tabular_data._continuous_variables = tabular_data._field_mapping[
             "continuous_variables"
+        ]
+        tabular_data._text_variables = tabular_data._field_mapping["text_variables"]
+        tabular_data._image_variables = tabular_data._field_mapping["image_variables"]
+        tabular_data._embedding_variables = tabular_data._field_mapping[
+            "embed_variables"
         ]
         tabular_data._dependent_variable = tabular_data._field_mapping[
             "dependent_variable"
@@ -141,9 +156,9 @@ class TabularDataObject(object):
                     260145,
                     "WARNING",
                 )
-                tabular_data._dataframe = tabular_data._dataframe[
-                    ~tabular_data._dataframe[tabular_data._dependent_variable].isna()
-                ]
+                tabular_data._dataframe = tabular_data._dataframe.dropna(
+                    subset=tabular_data._dependent_variable
+                )
         tabular_data._index_data = tabular_data._field_mapping["index_data"]
         tabular_data._index_field = index_field
 
@@ -153,6 +168,7 @@ class TabularDataObject(object):
         tabular_data._bs = batch_size
         tabular_data._seed = seed
         tabular_data._cell_sizes = cell_sizes
+        tabular_data._random_split = random_split
 
         tabular_data._is_empty = False
 
@@ -172,11 +188,14 @@ class TabularDataObject(object):
                             imabalanced_class_list[row] = count
                 except Exception as e:
                     warnings.warn(f"Unable to check for class imbalance [reason : {e}]")
+
                 if stratify:
                     if len(imabalanced_class_list) > 0:
                         try:
                             warnings.warn(
-                                f'We see a class imbalance in the dataset. The class(es) {",".join([str(key) for key in imabalanced_class_list.keys()])} does not have enough data points in your dataset.'
+                                f"We see a class imbalance in the dataset. "
+                                f'The class(es) {",".join([str(key) for key in imabalanced_class_list.keys()])} does '
+                                f"not have enough data points in your dataset."
                             )
                         except:
                             warnings.warn("We see a class imbalance in the dataset")
@@ -200,7 +219,10 @@ class TabularDataObject(object):
                                 ].index
                             )
                             warnings.warn(
-                                f'For valid statification all classes should have at least {str(req_instances_per_class)} data points, class(es) {",".join(str(classes_below_req_intances))} in your data does not meet the condition. Unable to perform stratified splitting, falling back to random split'
+                                f"For valid statification all classes should have at least"
+                                f" {str(req_instances_per_class)} data points, class(es)"
+                                f' {",".join(str(classes_below_req_intances))} in your data does not meet the'
+                                f" condition. Unable to perform stratified splitting, falling back to random split"
                             )
                             validation_indexes = tabular_data._dataframe.sample(
                                 n=round(val_split_pct * len(tabular_data._dataframe)),
@@ -228,7 +250,11 @@ class TabularDataObject(object):
                     if len(imabalanced_class_list) > 0:
                         try:
                             warnings.warn(
-                                f'We see a class imbalance in the dataset. The class(es) {",".join([str(key) for key in imabalanced_class_list.keys()])} does not have enough data points in your dataset. Although, class imbalance cannot be overcome easily, adding the parameter stratify = True will to a certain extent help get over this problem.'
+                                f"We see a class imbalance in the dataset. The class(es) "
+                                f'{",".join([str(key) for key in imabalanced_class_list.keys()])} '
+                                f"does not have enough data points in your dataset. Although, "
+                                f"class imbalance cannot be overcome easily, adding the parameter stratify = True "
+                                f"will to a certain extent help get over this problem."
                             )
                         except:
                             warnings.warn("We see a class imbalance in the dataset")
@@ -238,28 +264,45 @@ class TabularDataObject(object):
                         random_state=seed,
                     ).index.to_list()
             else:
-                validation_indexes = random.sample(
-                    range(len(tabular_data._dataframe)),
-                    round(val_split_pct * len(tabular_data._dataframe)),
-                )
+                if val_split_pct > 1:
+                    val_split_pct = val_split_pct / len(tabular_data._dataframe)
+                if tabular_data._random_split:
+                    validation_indexes = random.sample(
+                        range(len(tabular_data._dataframe)),
+                        round(val_split_pct * len(tabular_data._dataframe)),
+                    )
+                else:
+                    number_of_rec = math.ceil(
+                        val_split_pct * len(tabular_data._dataframe)
+                    )
+                    validation_indexes = list(
+                        range(
+                            len(tabular_data._dataframe) - number_of_rec,
+                            len(tabular_data._dataframe),
+                        )
+                    )
 
             tabular_data._validation_indexes = validation_indexes
+        if tabular_data._dependent_variable:
+            if tabular_data._is_classification():
+                tabular_data._training_indexes = list(
+                    set([i for i in tabular_data._dataframe.index])
+                    - set(validation_indexes)
+                )
+            else:
+                tabular_data._training_indexes = list(
+                    set([i for i in range(len(tabular_data._dataframe))])
+                    - set(validation_indexes)
+                )
 
-        if tabular_data._is_classification():
-            tabular_data._training_indexes = list(
-                set([i for i in tabular_data._dataframe.index])
-                - set(validation_indexes)
-            )
-        else:
+        if not tabular_data._dependent_variable:
             tabular_data._training_indexes = list(
                 set([i for i in range(len(tabular_data._dataframe))])
                 - set(validation_indexes)
             )
-        if not tabular_data._dependent_variable:
             tabular_data._validation_indexes = list(
                 set([i for i in range(len(tabular_data._dataframe))])
             )
-
         if tabular_data._dependent_variable:
             tabular_data._is_classification = tabular_data._is_classification()
         else:
@@ -458,17 +501,22 @@ class TabularDataObject(object):
                 260144,
                 "ERROR",
             )
+        classification_check_list = []
+        for columns in labels.columns:
+            unique_labels = labels[columns].unique()
 
-        unique_labels = labels.unique()
+            column_label = np.array(labels[columns])
 
-        labels = np.array(labels)
+            # from numbers import Integral
 
-        from numbers import Integral
-
-        if isinstance(labels[0], (float, np.float32)) or len(unique_labels) > 20:
-            return False
-        else:
-            return True
+            if (
+                isinstance(column_label[0], (float, np.float32))
+                or len(unique_labels) > 20
+            ):
+                classification_check_list.append(False)
+            else:
+                classification_check_list.append(True)
+        return all(classification_check_list)
 
     def _is_categorical(self, labels):
         unique_labels = labels.unique()
@@ -480,7 +528,8 @@ class TabularDataObject(object):
         if isinstance(labels[0], (float, np.float32)) or len(unique_labels) > 20:
             return False
 
-        if isinstance(int(labels[0]), (str, Integral)):
+        # if isinstance(int(labels[0]), (str, Integral)): # removing type casting.
+        if isinstance(labels[0], (str, Integral)):
             return True
 
     @property
@@ -512,8 +561,15 @@ class TabularDataObject(object):
             raise Exception("This module requires scikit-learn.")
 
         dataframe = self._dataframe
+        # Dtype conversion because native pandas format will break the plotting libraries
+        for i in dataframe.columns:
+            if isinstance(dataframe.loc[:, i].dtype, pd.Float64Dtype):
+                dataframe.loc[:, i] = dataframe.loc[:, i].astype(np.float64)
 
         labels = None
+        # restore the behaviour as earler
+        if isinstance(self._dependent_variable, list):
+            self._dependent_variable = self._dependent_variable[0]
 
         if self._dependent_variable:
             labels = np.array(dataframe[self._dependent_variable])
@@ -528,6 +584,7 @@ class TabularDataObject(object):
 
             self._procs = make_column_transformer(
                 (numerical_transformer, self._continuous_variables),
+                (numerical_transformer, self._embedding_variables),
                 (categorical_transformer, self._categorical_variables),
             )
 
@@ -564,14 +621,17 @@ class TabularDataObject(object):
             processed_data = _procs.fit_transform(dataframe)
         except:
             msg = arcpy_localization_helper(
-                "Unable to fit transforms. This could be because some of the columns in your dataset have multiple datatypes.",
+                "Unable to fit transforms. This could be because some of the columns in your dataset have multiple "
+                "datatypes.",
                 260143,
                 "ERROR",
             )
 
         if self._is_classification:
             scaled_features_df = pd.DataFrame(
-                processed_data, index=dataframe.index, columns=dataframe.columns
+                processed_data,
+                index=dataframe.index,
+                columns=self._continuous_variables + self._categorical_variables,
             )
             scaled_labels_df = pd.DataFrame(labels, index=dataframe.index)
 
@@ -590,6 +650,7 @@ class TabularDataObject(object):
                 validation_labels = (
                     scaled_labels_df.loc[self._validation_indexes].to_numpy().squeeze()
                 )
+
             del scaled_features_df
             del scaled_labels_df
         else:
@@ -605,21 +666,44 @@ class TabularDataObject(object):
 
         return training_data, training_labels, validation_data, validation_labels
 
-    def _time_series_bunch(self, seq_len, normalize=True, bunch=True):
+    def _time_series_bunch(
+        self, seq_len, location_var, normalize=True, bunch=True, multistep=False
+    ):
+        step = 1
+        if multistep and len(list(self._dataframe.columns.values)) != 1:
+            step = seq_len // 2
+
+        self._index_seq = None
         if self._index_data is not None:
             bunched = []
-            for i in range(len(self._index_data) - seq_len - 1):
+            # Changing it because it misses the edge case
+            # for i in range(len(self._index_data) - seq_len - 1):
+            for i in range(len(self._index_data) - seq_len - (step - 1)):
                 bunched.append(list(self._index_data[i : i + seq_len]))
 
             self._index_seq = np.array(bunched)
+
+        if location_var:
+            location_var_data = self._dataframe[location_var]
+            self._dataframe = self._dataframe.drop(location_var, axis=1)
+            if location_var in self._continuous_variables:
+                self._continuous_variables.remove(location_var)
+            elif location_var in self._categorical_variables:
+                self._categorical_variables.remove(location_var)
+            else:
+                location_var_data = None
+        else:
+            location_var_data = None
 
         if self._is_raster_only:
             return self._raster_timeseries_bunch(normalize, bunch)
 
         if len(list(self._dataframe.columns.values)) == 1:
-            return self._univariate_bunch(seq_len, normalize, bunch)
+            return self._univariate_bunch(seq_len, normalize, bunch, location_var_data)
         else:
-            return self._multivariate_bunch(seq_len, normalize, bunch)
+            return self._multivariate_bunch(
+                seq_len, normalize, bunch, location_var_data, multistep=multistep
+            )
 
     def _raster_timeseries_bunch(self, normalize=True, bunched=True):
         kwargs_variables = {"num_workers": 0} if sys.platform == "win32" else {}
@@ -632,45 +716,12 @@ class TabularDataObject(object):
         ):
             kwargs_variables["device"] = torch.device("cpu")
 
-        self._encoder_mapping = None
-        mapping = {}
-        df = self._dataframe.copy()  # .drop(self._dependent_variable, axis=1)
-
-        for col in list(df.columns.values):
-            if self._is_categorical(df[col]):
-                labelEncoder = LabelEncoder()
-                df[col] = np.array(labelEncoder.fit_transform(df[col]), dtype="int64")
-                mapping[col] = labelEncoder
-
-        self._encoder_mapping = mapping
-
-        if normalize:
-            if len(self._column_transforms_mapping) == 0:
-                for col in list(df.columns):
-                    self._column_transforms_mapping[col] = [MinMaxScaler()]
-            else:
-                for col in list(df.columns):
-                    if len(self._column_transforms_mapping.get(col, [])) == 0:
-                        self._column_transforms_mapping[col] = [DummyTransform()]
-
-            processed_dataframe = df.copy()
-            for col in list(df.columns):
-                transformed_data = df[col]
-                for transform in self._column_transforms_mapping.get(col, []):
-                    transformed_data = transform.fit_transform(
-                        np.array(transformed_data, dtype=df[col].dtype).reshape(-1, 1)
-                    )
-                    transformed_data = transformed_data.squeeze(1)
-                processed_dataframe[col] = np.array(
-                    transformed_data, dtype=df[col].dtype
-                )
-        else:
-            processed_dataframe = df.copy()
-
+        processed_dataframe = self._col_transform(normalize=normalize)
         big_bunch = []
 
         proc_df = processed_dataframe.copy()
         proc_df = proc_df.drop(self._dependent_variable, axis=1)
+        # Why this was inserted it can simply be converted to array
 
         for i in range(len(processed_dataframe)):
             big_bunch.append([proc_df.iloc[i].values])
@@ -681,6 +732,7 @@ class TabularDataObject(object):
         validation_indexes = random.sample(
             range(big_bunch.shape[0]), round(self._val_split_pct * big_bunch.shape[0])
         )
+
         self._validation_indexes_ts = validation_indexes
 
         self._training_indexes_ts = list(
@@ -712,7 +764,12 @@ class TabularDataObject(object):
 
         return data
 
-    def _multivariate_bunch(self, seq_len, normalize=True, bunched=True):
+    def _multivariate_bunch(
+        self, seq_len, normalize=True, bunched=True, location_var=None, multistep=False
+    ):
+        step = 1
+        if multistep:
+            step = seq_len // 2
         kwargs_variables = {"num_workers": 0} if sys.platform == "win32" else {}
 
         kwargs_variables["bs"] = self._bs
@@ -723,75 +780,76 @@ class TabularDataObject(object):
         ):
             kwargs_variables["device"] = torch.device("cpu")
 
-        self._encoder_mapping = None
-        mapping = {}
-        df = self._dataframe.copy()  # .drop(self._dependent_variable, axis=1)
-
-        for col in list(df.columns.values):
-            if self._is_categorical(df[col]):
-                labelEncoder = LabelEncoder()
-                df[col] = np.array(labelEncoder.fit_transform(df[col]), dtype="int64")
-                mapping[col] = labelEncoder
-
-        self._encoder_mapping = mapping
-
-        if normalize:
-            if len(self._column_transforms_mapping) == 0:
-                for col in list(df.columns):
-                    self._column_transforms_mapping[col] = [MinMaxScaler()]
-            else:
-                for col in list(df.columns):
-                    if len(self._column_transforms_mapping.get(col, [])) == 0:
-                        self._column_transforms_mapping[col] = [DummyTransform()]
-
-            processed_dataframe = df.copy()
-            for col in list(df.columns):
-                transformed_data = df[col]
-                for transform in self._column_transforms_mapping.get(col, []):
-                    transformed_data = transform.fit_transform(
-                        np.array(transformed_data, dtype=df[col].dtype).reshape(-1, 1)
-                    )
-                    transformed_data = transformed_data.squeeze(1)
-                processed_dataframe[col] = np.array(
-                    transformed_data, dtype=df[col].dtype
-                )
-        else:
-            processed_dataframe = df.copy()
-
+        processed_dataframe = self._col_transform(normalize)
         big_bunch = []
+        target_bunch = []
+        if location_var is not None:
+            big_loc_processed_dataframe = pd.DataFrame()
+            big_loc_processed_dataframe["temp_location"] = location_var
+            unq_locations = location_var.unique()
+        else:
+            unq_locations = [None]
+        # preserve the ordering of the column
+        order_columns = (
+            self._dependent_variable
+            + self._continuous_variables
+            + self._categorical_variables
+        )
+        processed_dataframe = processed_dataframe.loc[:, order_columns]
 
-        for i in range(len(processed_dataframe) - seq_len - 1):
-            bunch = []
-            for col in list(processed_dataframe.columns.values):
-                bunch.append(list(processed_dataframe[col][i : i + seq_len]))
+        base_index = 0
+        all_index = []
+        for k in range(len(unq_locations)):
+            if unq_locations[0] is not None:
+                loc_processed_dataframe = processed_dataframe[
+                    big_loc_processed_dataframe["temp_location"] == unq_locations[k]
+                ]
+                loc_processed_dataframe.reset_index(inplace=True, drop=True)
+            else:
+                loc_processed_dataframe = processed_dataframe
 
-            big_bunch.append(bunch)
-
+            for i in range(len(loc_processed_dataframe) - seq_len - step + 1):
+                bunch = []
+                tb = []
+                for col in list(loc_processed_dataframe.columns.values):
+                    bunch.append(list(loc_processed_dataframe[col][i : i + seq_len]))
+                    if col in self._dependent_variable:
+                        small_tb = []
+                        for st in range(step):
+                            small_tb.append(
+                                loc_processed_dataframe[col][i + st + seq_len]
+                            )
+                        tb.append(small_tb)
+                big_bunch.append(bunch)
+                target_bunch.append(
+                    np.stack(tb, axis=1).ravel()
+                )  # relying on the fastai loss calculation where they
+                # flatten the output then calculate the loss
+            total_slices = len(loc_processed_dataframe) - seq_len - step + 1
+            base_index = self._sample_slice(
+                len(loc_processed_dataframe),
+                all_index,
+                base_index,
+                total_slices,
+                multistep=multistep,
+                step=step,
+            )
+        # generate the validatio index in slices
         big_bunch = np.array(big_bunch)
-
+        target_bunch = np.array(target_bunch)
         random.seed(self._seed)
-        validation_indexes = random.sample(
-            range(big_bunch.shape[0]), round(self._val_split_pct * big_bunch.shape[0])
+        validation_indexes = reduce(
+            lambda x, y: x + y, map(lambda i: list(i[0] + np.array(i[1])), all_index)
         )
         self._validation_indexes_ts = validation_indexes
 
         self._training_indexes_ts = list(
             set([i for i in range(big_bunch.shape[0])]) - set(validation_indexes)
         )
-
         X_train = big_bunch.take(self._training_indexes_ts, axis=0)
         X_valid = big_bunch.take(self._validation_indexes_ts, axis=0)
-
-        y_train = np.array(
-            processed_dataframe[self._dependent_variable].take(
-                self._training_indexes_ts
-            )
-        )
-        y_valid = np.array(
-            processed_dataframe[self._dependent_variable].take(
-                self._validation_indexes_ts
-            )
-        )
+        y_train = target_bunch.take(self._training_indexes_ts, axis=0)
+        y_valid = target_bunch.take(self._validation_indexes_ts, axis=0)
 
         if bunched is False:
             return X_train, X_valid, y_train, y_valid
@@ -804,7 +862,9 @@ class TabularDataObject(object):
 
         return data
 
-    def _univariate_bunch(self, seq_len, normalize=True, bunch=True):
+    def _univariate_bunch(self, seq_len, normalize=True, bunch=True, location_var=None):
+        # handle the case, as the whole bunch is written as per string convert it to string
+        _dependent_variable = self._dependent_variable[0]
         kwargs_variables = {"num_workers": 0} if sys.platform == "win32" else {}
 
         kwargs_variables["bs"] = self._bs
@@ -825,59 +885,99 @@ class TabularDataObject(object):
             self._encoder_mapping = None
             mapping = {}
             labelEncoder = LabelEncoder()
-            self._dataframe[self._dependent_variable] = np.array(
-                labelEncoder.fit_transform(self._dataframe[self._dependent_variable]),
+            self._dataframe[_dependent_variable] = np.array(
+                labelEncoder.fit_transform(self._dataframe[_dependent_variable]),
                 dtype="int64",
             )
-            mapping[self._dependent_variable] = labelEncoder
+            mapping[_dependent_variable] = labelEncoder
             self._encoder_mapping = mapping
 
         if normalize:
-            if not self._column_transforms_mapping.get(self._dependent_variable):
-                self._column_transforms_mapping[self._dependent_variable] = [
-                    MinMaxScaler()
-                ]
+            if not self._column_transforms_mapping.get(_dependent_variable):
+                self._column_transforms_mapping[_dependent_variable] = [MinMaxScaler()]
 
             processed_dataframe = self._dataframe.copy()
-            transformed_data = processed_dataframe[self._dependent_variable]
-            for transform in self._column_transforms_mapping[self._dependent_variable]:
-                transformed_data = transform.fit_transform(
-                    np.array(
-                        transformed_data,
-                        dtype=processed_dataframe[self._dependent_variable].dtype,
-                    ).reshape(-1, 1)
-                )
+            transformed_data = processed_dataframe[_dependent_variable]
+            for transform in self._column_transforms_mapping[_dependent_variable]:
+                try:
+                    transformed_data = transform.fit_transform(
+                        np.array(
+                            transformed_data,
+                            dtype=processed_dataframe[_dependent_variable].dtype,
+                        ).reshape(-1, 1)
+                    )
+                except:
+                    transformed_data = transform.fit_transform(
+                        np.array(
+                            transformed_data,
+                            dtype=type(processed_dataframe[_dependent_variable][0]),
+                        ).reshape(-1, 1)
+                    )
                 transformed_data = transformed_data.squeeze(1)
 
-            processed_dataframe[self._dependent_variable] = np.array(
-                transformed_data, dtype=self._dataframe[self._dependent_variable].dtype
-            )
+            try:
+                processed_dataframe[_dependent_variable] = np.array(
+                    transformed_data,
+                    dtype=self._dataframe[_dependent_variable].dtype,
+                )
+            except:
+                processed_dataframe[_dependent_variable] = np.array(
+                    transformed_data,
+                    dtype=type(processed_dataframe[_dependent_variable][0]),
+                )
         else:
             processed_dataframe = self._dataframe.copy()
 
-        for i in range(len(processed_dataframe[self._dependent_variable]) - seq_len):
-            for j in range(seq_len):
-                if len(processed_dataframe[self._dependent_variable]) > i + seq_len - 1:
-                    df_columns[f"att{j + 1}"].append(
-                        processed_dataframe[self._dependent_variable][i + j]
-                    )
-                else:
-                    continue
-
-            df_columns["target"].append(
-                processed_dataframe[self._dependent_variable][i + seq_len]
-            )
-
         import pandas as pd
 
+        if location_var is not None:
+            big_loc_processed_dataframe = pd.DataFrame()
+            big_loc_processed_dataframe["temp_location"] = location_var
+            unq_locations = location_var.unique()
+        else:
+            unq_locations = [None]
+
+        base_index = 0
+        all_index = []
+        for k in range(len(unq_locations)):
+            if unq_locations[0] is not None:
+                loc_processed_dataframe = processed_dataframe[
+                    big_loc_processed_dataframe["temp_location"] == unq_locations[k]
+                ]
+                loc_processed_dataframe.reset_index(inplace=True, drop=True)
+            else:
+                loc_processed_dataframe = processed_dataframe
+            for i in range(len(loc_processed_dataframe[_dependent_variable]) - seq_len):
+                for j in range(seq_len):
+                    if (
+                        len(loc_processed_dataframe[_dependent_variable])
+                        > i + seq_len - 1
+                    ):
+                        df_columns[f"att{j + 1}"].append(
+                            loc_processed_dataframe[_dependent_variable][i + j]
+                        )
+                    else:
+                        continue
+
+                df_columns["target"].append(
+                    loc_processed_dataframe[_dependent_variable][i + seq_len]
+                )
+            total_slices = len(loc_processed_dataframe) - seq_len
+            base_index = self._sample_slice(
+                len(loc_processed_dataframe),
+                all_index,
+                base_index,
+                total_slices,
+                multistep=False,
+            )
         df = pd.DataFrame(df_columns)
 
         columns = list(df.columns.values)
         columns.remove("target")
 
         random.seed(self._seed)
-        validation_indexes = random.sample(
-            range(len(df)), round(self._val_split_pct * len(df))
+        validation_indexes = reduce(
+            lambda x, y: x + y, map(lambda i: list(i[0] + np.array(i[1])), all_index)
         )
         self._validation_indexes_ts = validation_indexes
 
@@ -911,6 +1011,110 @@ class TabularDataObject(object):
 
         return data
 
+    def _sample_slice(
+        self, total_length, all_index, base_index, total_slices, multistep=False, step=1
+    ):
+        if self._val_split_pct < 1:
+            validation_no_rec = round(self._val_split_pct * total_length)
+        else:
+            validation_no_rec = self._val_split_pct
+        if multistep:
+            # First separate last n steps and then sample rest of the records from the bunchs
+            number_of_extra_records = validation_no_rec - step
+            extra_records = list(range(total_slices - step, total_slices))
+            if number_of_extra_records > 0:
+                extra_records += random.sample(
+                    range(total_slices - step), number_of_extra_records
+                )
+            all_index.append((base_index, extra_records))
+        else:
+            if self._random_split:
+                # validation_no_rec = round(self._val_split_pct * len(loc_processed_dataframe))
+                all_index.append(
+                    (base_index, random.sample(range(total_slices), validation_no_rec))
+                )
+            else:
+                # number_of_rec = math.ceil(self._val_split_pct * len(loc_processed_dataframe))
+                all_index.append(
+                    (
+                        base_index,
+                        list(range(total_slices - validation_no_rec, total_slices)),
+                    )
+                )
+        base_index += total_slices
+        return base_index
+
+    def _col_transform(self, normalize):
+        self._encoder_mapping = None
+        mapping = {}
+        df = self._dataframe.copy()  # .drop(self._dependent_variable, axis=1)
+
+        for col in list(df.columns.values):
+            if self._is_categorical(df[col]):
+                labelEncoder = LabelEncoder()
+                df[col] = np.array(labelEncoder.fit_transform(df[col]), dtype="int64")
+                mapping[col] = labelEncoder
+                if col not in self._categorical_variables:
+                    warnings.warn(
+                        f"Field {col} is not marked as categorical. But, "
+                        f"we inferred it as categorical variable. Treating it as categorical variable"
+                        f" for processing. "
+                    )
+                    self._categorical_variables.append(col)
+                    if col in self._continuous_variables:
+                        self._continuous_variables.remove(col)
+
+        self._encoder_mapping = mapping
+        if normalize:
+            for col in list(df.columns):
+                if len(self._column_transforms_mapping.get(col, [])) == 0:
+                    if col in self._encoder_mapping:
+                        self._column_transforms_mapping[col] = [
+                            self._encoder_mapping[col]
+                        ]
+                    else:
+                        self._column_transforms_mapping[col] = [MinMaxScaler()]
+                else:
+                    # adding this to preserve the default label encoder.
+                    if col in self._encoder_mapping:
+                        self._column_transforms_mapping[col] = [
+                            self._encoder_mapping[col]
+                        ]
+
+            processed_dataframe = df.copy()
+            for col in list(df.columns):
+                transformed_data = df[col]
+                for transform in self._column_transforms_mapping.get(col, []):
+                    if isinstance(transform, LabelEncoder):
+                        transformed_data = np.array(transformed_data).reshape(-1, 1)
+                    else:
+                        try:
+                            transformed_data = transform.fit_transform(
+                                np.array(transformed_data, dtype=df[col].dtype).reshape(
+                                    -1, 1
+                                )
+                            )
+                        except:
+                            transformed_data = transform.fit_transform(
+                                np.array(
+                                    transformed_data,
+                                    dtype=type(df[col][0]),
+                                ).reshape(-1, 1)
+                            )
+                        transformed_data = transformed_data.squeeze(1)
+                try:
+                    processed_dataframe[col] = np.array(
+                        transformed_data, dtype=df[col].dtype
+                    )
+                except:
+                    processed_dataframe[col] = np.array(
+                        transformed_data, dtype=type(df[col][0])
+                    )
+        else:
+            processed_dataframe = df.copy()
+
+        return processed_dataframe
+
     def _process_data(self, dataframe, fit=True):
         if not HAS_NUMPY:
             raise Exception("This module requires numpy.")
@@ -936,27 +1140,54 @@ class TabularDataObject(object):
         if self._encoder_mapping:
             for variable, encoder in self._encoder_mapping.items():
                 try:
-                    dataframe[variable] = np.array(
-                        encoder.fit_transform(
-                            dataframe[variable].values.astype(str).reshape(-1, 1)
-                        ),
-                        dtype="int64",
-                    )
+                    if fit:
+                        dataframe[variable] = np.array(
+                            encoder.fit_transform(
+                                dataframe[variable].values.astype(str).reshape(-1, 1)
+                            ),
+                            dtype="int64",
+                        )
+                    else:
+                        dataframe[variable] = np.array(
+                            encoder.transform(
+                                dataframe[variable].values.astype(str).reshape(-1, 1)
+                            ),
+                            dtype="int64",
+                        )
                 except:
-                    dataframe[variable] = np.array(
-                        encoder.fit_transform(
-                            dataframe[variable]
-                            .values.astype(str)
-                            .to_numpy()
-                            .reshape(-1, 1)
-                        ),
-                        dtype="int64",
-                    )
+                    if fit:
+                        dataframe[variable] = np.array(
+                            encoder.fit_transform(
+                                dataframe[variable]
+                                .values.astype(str)
+                                .to_numpy()
+                                .reshape(-1, 1)
+                            ),
+                            dtype="int64",
+                        )
+                    else:
+                        dataframe[variable] = np.array(
+                            encoder.transform(
+                                dataframe[variable]
+                                .values.astype(str)
+                                .to_numpy()
+                                .reshape(-1, 1)
+                            ),
+                            dtype="int64",
+                        )
 
         if fit:
             processed_data = _procs.fit_transform(dataframe)
         else:
             processed_data = _procs.transform(dataframe)
+        if self._procs:
+            list_of_transformed_cols = []
+            for cnt, transform in enumerate(self._procs.transformers):
+                for col in self._procs.transformers[cnt][-1]:
+                    list_of_transformed_cols.append(col)
+            processed_orig_data = dataframe.copy()
+            processed_orig_data[list_of_transformed_cols] = processed_data
+            processed_data = processed_orig_data
 
         return processed_data
 
@@ -964,7 +1195,7 @@ class TabularDataObject(object):
         """
         Shows a chunk of data prepared without applying transforms.
         =====================   ===========================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ---------------------   -------------------------------------------
         rows                    Optional integer. Number of rows of dataframe
                                 or graph to plot. This parameter is not used
@@ -991,11 +1222,20 @@ class TabularDataObject(object):
 
         random_batch = random.sample(self._training_indexes, rows)
 
-        # using loc instead of iloc to get data when dataframe doesnt have continuous indexes
+        # using loc instead of iloc to get data when dataframe doesn't have continuous indexes
         if self._is_classification:
             return self._dataframe.loc[random_batch].sort_index()
         else:
             return self._dataframe.iloc[random_batch].sort_index()
+
+    def _safe_div(self, arr):
+        len_arr = len(arr) - 1
+        if len_arr % 10 == 0:
+            return np.linspace(0, len_arr, 10).astype(int)
+        elif len_arr < 10:
+            return np.linspace(0, len_arr, len_arr + 1).astype(int)
+        else:
+            return np.linspace(0, len_arr, 6).astype(int)
 
     def _show_graph(self, seq_len=None, rows=5):
         """
@@ -1007,10 +1247,28 @@ class TabularDataObject(object):
 
         import matplotlib.pyplot as plt
 
+        # Check whether the index is timestamp
+        sample_ticks = False
+        index_data_copy = self._index_data
+        if not pd.core.dtypes.common.is_datetime_or_timedelta_dtype(index_data_copy):
+            # Try to convert the datatype to timestamp
+            warnings.warn("Index field is not timestamp. Converting it to timestamp.")
+            try:
+                index_data_copy = pd.to_datetime(
+                    index_data_copy, infer_datetime_format=True
+                )
+            except:
+                sample_ticks = True
+
         if seq_len is not None:
-            X_train, X_valid, y_train, y_valid = self._time_series_bunch(
-                seq_len, False, False
-            )
+            try:
+                X_train, X_valid, y_train, y_valid = self._time_series_bunch(
+                    seq_len, False, False
+                )
+            except:
+                ts_bunch = self._time_series_bunch(seq_len, False, False)
+                X_train = ts_bunch.train_ds.x.items
+                y_train = ts_bunch.train_ds.y.items
 
             n_items = rows**2
             if n_items > len(X_train):
@@ -1021,10 +1279,10 @@ class TabularDataObject(object):
             y_train_sample = np.array(y_train).take(sample, axis=0)
 
             batched_index = []
-            if self._index_data is not None:
+            if index_data_copy is not None:
                 indexes = 0
-                while indexes < len(self._index_data):
-                    batched_index.append(self._index_data[indexes : indexes + seq_len])
+                while indexes < len(index_data_copy):
+                    batched_index.append(index_data_copy[indexes : indexes + seq_len])
                     indexes = indexes + seq_len
             else:
                 j = 0
@@ -1040,7 +1298,17 @@ class TabularDataObject(object):
                 for j in range(rows):
                     for predictor in X_train_sample[i + j]:
                         axs[i, j].plot(batched_index[i + j], predictor)
-                    axs[i, j].set_title(y_train_sample[i + j])
+
+                    if isinstance(y_train_sample[i + j], (list, np.ndarray)):
+                        val = ",".join([str(i) for i in y_train_sample[i + j]])
+                    else:
+                        val = y_train_sample[i + j]
+
+                    axs[i, j].set_title(val)
+                    if sample_ticks:
+                        axs[i, j].xaxis.set_major_locator(
+                            plt.FixedLocator(self._safe_div(range(seq_len)))
+                        )
                     axs[i, j].tick_params(axis="x", labelrotation=60)
 
             plt.tight_layout()
@@ -1048,10 +1316,8 @@ class TabularDataObject(object):
         else:
             # plotting the points
             # y = self._dataframe[self._dependent_variable]
-            x_field = "Time"
-            if self._index_data is not None:
-                x = self._index_data
-                x_field = self._index_field
+            if index_data_copy is not None:
+                x = index_data_copy
             else:
                 x = [i for i in range(len(self._dataframe[self._dependent_variable]))]
 
@@ -1064,10 +1330,22 @@ class TabularDataObject(object):
             for col in list(self._dataframe.columns):
                 if isinstance(axs, np.ndarray):
                     axs[counter].plot(x, self._dataframe[col], label=col)
+                    if sample_ticks:
+                        axs[counter].xaxis.set_major_locator(
+                            plt.FixedLocator(
+                                self._safe_div(range(len(self._dataframe[col])))
+                            )
+                        )
                     axs[counter].set_title(col)
                     axs[counter].tick_params(axis="x", labelrotation=60)
                 else:
                     axs.plot(x, self._dataframe[col], label=col)
+                    if sample_ticks:
+                        axs.xaxis.set_major_locator(
+                            plt.FixedLocator(
+                                self._safe_div(range(len(self._dataframe[col])))
+                            )
+                        )
                     axs.set_title(col)
                     axs.tick_params(axis="x", labelrotation=60)
                 counter = counter + 1
@@ -1084,6 +1362,7 @@ class TabularDataObject(object):
         cell_sizes=[3, 4, 5, 6, 7],
         distance_feature_layers=None,
         index_field=None,
+        **kwargs,
     ):
         feature_variables = feature_variables if feature_variables else []
         raster_variables = raster_variables if raster_variables else []
@@ -1094,11 +1373,20 @@ class TabularDataObject(object):
         raster_field_variables = []
         continuous_variables = []
         categorical_variables = []
+        text_variables = []
+        image_variables = []
         for field in feature_variables:
             if isinstance(field, tuple):
                 if field[1]:
-                    categorical_variables.append(field[0])
-                    feature_field_variables.append(field[0])
+                    if str(field[1]).lower() == "text":
+                        text_variables.append(field[0])
+                        feature_field_variables.append(field[0])
+                    elif str(field[1]).lower() == "image":
+                        image_variables.append(field[0])
+                        feature_field_variables.append(field[0])
+                    else:
+                        categorical_variables.append(field[0])
+                        feature_field_variables.append(field[0])
                 else:
                     continuous_variables.append(field[0])
                     feature_field_variables.append(field[0])
@@ -1211,7 +1499,37 @@ class TabularDataObject(object):
             distance_feature_layers,
             raster_variables,
             index_field,
+            **kwargs,
         )
+        measurer = np.vectorize(len)
+        col_length = dict(
+            zip(dataframe, measurer(dataframe.values.astype(str)).max(axis=0))
+        )
+        unique_values = {}
+        for i in dataframe.columns:
+            if i != "SHAPE":
+                unique_values[i] = len(dataframe[i].unique())
+        total_rows = dataframe.count().max()
+        for col in categorical_variables:
+            if unique_values[col] / total_rows > 0.5 and col_length[col] > 200:
+                categorical_variables.remove(col)
+                text_variables.append(col)
+            elif (
+                unique_values[col] / total_rows > 0.5
+                and col_length[col] > 5
+                and len(dataframe[col][0].split("\\")[0]) < 3
+            ):
+                categorical_variables.remove(col)
+                image_variables.append(col)
+            else:
+                pass
+        new_embd_cols = []
+        if len(text_variables + image_variables) > 0:
+            dataframe, new_embd_cols = _extract_embeddings(
+                text_variables, image_variables, dataframe
+            )
+            # continuous_variables = continuous_variables + new_embd_cols
+            # feature_field_variables = feature_field_variables + new_embd_cols
 
         dataframe_columns = dataframe.columns
         if distance_feature_layers:
@@ -1225,9 +1543,14 @@ class TabularDataObject(object):
                 h3_field = f"zone{res}_id"
                 if h3_field in dataframe_columns:
                     categorical_variables.append(h3_field)
-        fields_to_keep = continuous_variables + categorical_variables
+
+        fields_to_keep = continuous_variables + categorical_variables + new_embd_cols
+        if isinstance(dependent_variable, str):
+            dependent_variable = [dependent_variable]
+
+        # Changes introduced to capture dependent var as a list.
         if dependent_variable:
-            fields_to_keep = fields_to_keep + [dependent_variable]
+            fields_to_keep = fields_to_keep + dependent_variable
 
         try:
             for col in fields_to_keep:
@@ -1241,7 +1564,7 @@ class TabularDataObject(object):
         for column in dataframe_columns:
             if column not in fields_to_keep:
                 dataframe = dataframe.drop(column, axis=1)
-            elif dependent_variable and column == dependent_variable:
+            elif dependent_variable and column in dependent_variable:
                 continue
             elif column in categorical_variables and dataframe[column].dtype == float:
                 warnings.warn(f"Changing column {column} to continuous")
@@ -1275,7 +1598,6 @@ class TabularDataObject(object):
                 ("Second", True),
                 ("Elapsed", False),
             ]
-
             for field in date_fields:
                 if field[0] in dataframe_columns:
                     if field[1]:
@@ -1293,6 +1615,9 @@ class TabularDataObject(object):
                 "continuous_variables": continuous_variables
                 if continuous_variables
                 else [],
+                "text_variables": text_variables if text_variables else [],
+                "image_variables": image_variables if image_variables else [],
+                "embed_variables": new_embd_cols if new_embd_cols else [],
                 "index_data": index_data,
                 "feature_field_variables": feature_field_variables
                 if feature_field_variables
@@ -1334,27 +1659,21 @@ class TabularDataObject(object):
                 fields = [["NEAR_DIST", field_2]]
                 arcpy.Near_analysis(data_source, distance_layer, field_names=fields)
                 count = count + 1
-
-            data_source_desc = arcpy.Describe(data_source)
-            transformation = spatial_reference_helper.get_datum_transformation(
-                data_source_desc.spatialReference,
-                arcpy.SpatialReference(4326),
-                data_source_desc.extent,
-            )
-            sdf = pd.DataFrame.spatial.from_featureclass(
-                data_source, sr="4326", datum_transformation=transformation
-            )
-        else:
-            sdf = pd.DataFrame()
-            data_type = arcpy.Describe(input_features).dataType
-            if data_type in ["TableView", "TextFile"]:
-                sdf = pd.DataFrame.spatial.from_table(str(input_features))
-            if len(sdf) == 0:
-                msg = arcpy_localization_helper(
-                    "Could not process the data. Your csv or table might contain columns with all null values. ",
-                    260200,
-                    "ERROR",
+            try:
+                data_source_desc = arcpy.Describe(data_source)
+                transformation = spatial_reference_helper.get_datum_transformation(
+                    data_source_desc.spatialReference,
+                    arcpy.SpatialReference(4326),
+                    data_source_desc.extent,
                 )
+                sdf = pd.DataFrame.spatial.from_featureclass(
+                    data_source, sr="4326", datum_transformation=transformation
+                )
+            except:
+                sdf = sdf_from_table(input_features)
+        else:
+            sdf = sdf_from_table(input_features)
+
         rasters_data = {}
         if data_source:
             for cnt, raster in enumerate(raster_list):
@@ -1441,11 +1760,17 @@ class TabularDataObject(object):
                         data_source, fields, spatial_reference=sr
                     ) as cursor:
                         for row in cursor:
+                            loc = "{locx} {locy}".format(locx=row[0], locy=row[1])
                             # print(u'{0}, {1}'.format(row[0], row[1]))
                             # if arcpy.Describe(data_source).shapeType == "Point":
                             try:
+                                new_coordinate = _adjust_origin_coordinate(
+                                    (row[0], row[1]),
+                                    raster,
+                                    (raster.mean_cell_width, raster.mean_cell_height),
+                                )
                                 raster_value = raster.read(
-                                    origin_coordinate=(row[0], row[1]), ncols=1, nrows=1
+                                    origin_coordinate=(new_coordinate), ncols=1, nrows=1
                                 )
                                 value = raster_value[0][0]
                             except:
@@ -1463,16 +1788,28 @@ class TabularDataObject(object):
 
     @staticmethod
     def _process_layer(
-        input_features, date_field, cell_sizes, distance_layers, rasters, index_field
+        input_features,
+        date_field,
+        cell_sizes,
+        distance_layers,
+        rasters,
+        index_field,
+        **kwargs,
     ):
         index_data = None
+        attachment_list = kwargs.get("image_attach_list", None)
         if input_features is not None:
             if isinstance(input_features, FeatureLayer):
+                import pandas as pd
+
                 input_layer = input_features
                 out_sr = None
                 if cell_sizes and not rasters:
                     out_sr = 4326
-                sdf = input_features.query(out_sr=out_sr).sdf
+                # sdf = input_features.query(out_sr=out_sr).sdf
+                sdf = pd.DataFrame.spatial.from_layer(input_features)
+                if attachment_list:
+                    sdf["Images"] = attachment_list
 
             elif (
                 hasattr(input_features, "dataSource")
@@ -1486,6 +1823,8 @@ class TabularDataObject(object):
                     index_field,
                     is_table_obj=False,
                 )
+                if attachment_list:
+                    sdf["Images"] = attachment_list
                 if cell_sizes and not rasters:
                     sdf = add_h3(sdf, cell_sizes)
                 return sdf, index_data
@@ -1500,6 +1839,8 @@ class TabularDataObject(object):
                 return sdf, index_data
             else:
                 sdf = input_features.copy()
+                if attachment_list:
+                    sdf["Images"] = attachment_list
                 input_layer = None
                 try:
                     input_layer = sdf.spatial.to_feature_collection()
@@ -1533,7 +1874,7 @@ class TabularDataObject(object):
                 for i in range(len(sdf)):
                     original_points.append(sdf.iloc[i]["SHAPE"])
 
-                input_layer_spatial_reference = sdf.spatial._sr
+                input_layer_spatial_reference = sdf.spatial.sr
                 if cell_sizes and not rasters:
                     sdf = add_h3(sdf, cell_sizes)
 
@@ -1572,12 +1913,15 @@ class TabularDataObject(object):
                     for shape in shape_objects_transformed:
                         shape["spatialReference"] = raster.extent["spatialReference"]
                         if isinstance(shape, arcgis.geometry._types.Point):
-                            raster_value = raster.read(
-                                origin_coordinate=(shape["x"], shape["y"]),
-                                ncols=1,
-                                nrows=1,
-                            )
-                            value = raster_value[0][0]
+                            try:
+                                raster_value = raster.read(
+                                    origin_coordinate=(shape["x"], shape["y"]),
+                                    ncols=1,
+                                    nrows=1,
+                                )
+                                value = raster_value[0][0]
+                            except:
+                                value = [0.0]
                         elif isinstance(shape, arcgis.geometry._types.Polygon):
                             xmin, ymin, xmax, ymax = shape.extent
                             start_x, start_y = (
@@ -1796,7 +2140,6 @@ class TabularDataObject(object):
         batch_size=64,
         is_classification=False,
     ):
-
         if procs is None:
             procs = [Categorify, Normalize]
             fm = FillMissing(
@@ -1851,11 +2194,17 @@ class TabularDataObject(object):
         dependent_variable,
         encoder_mapping,
         procs=None,
+        text_variables=None,
+        image_variables=None,
+        embedding_variables=None,
     ):
         class_object = cls()
         class_object._dependent_variable = dependent_variable
         class_object._continuous_variables = continuous_variables
         class_object._categorical_variables = categorical_variables
+        class_object._text_variables = text_variables
+        class_object._image_variables = image_variables
+        class_object._embedding_variables = embedding_variables
         class_object._encoder_mapping = encoder_mapping
         class_object._is_empty = True
         class_object._procs = procs
@@ -1975,12 +2324,13 @@ def explain_prediction(
 
 
 def add_h3(sdf, cell_sizes):
+    if "SHAPE" not in sdf.columns:
+        return sdf
     if sdf["SHAPE"].iloc[0]["spatialReference"]["wkid"] == 4326:
         if (
             "polygon" in sdf.spatial.geometry_type
             or "point" in sdf.spatial.geometry_type
         ):
-
             try:
                 sdf = point_to_h3(sdf, cell_sizes)
             except:
@@ -1995,7 +2345,6 @@ def point_to_h3(sdf, cell_sizes):
         h3_id = []
 
         if "polygon" in sdf.spatial.geometry_type:
-
             for poly in sdf["SHAPE"]:
                 centroid = poly.centroid
                 h3_id.append(h3.geo_to_h3(centroid[1], centroid[0], res))
@@ -2173,6 +2522,41 @@ def show_local_interpretation(
         )
 
 
+def _adjust_origin_coordinate(coordinate, raster, cell_size):
+    import math
+
+    x = coordinate[0]
+    y = coordinate[1]
+    xmin = raster.extent["xmin"]
+    ymax = raster.extent["ymax"]
+    dx = cell_size[0]
+    dy = cell_size[1]
+    x = math.floor((x - xmin) / dx)
+    y = math.floor((ymax - y) / dy)
+    xmin_new = xmin + x * dx
+    ymax_new = ymax - y * dy
+    return xmin_new, ymax_new
+
+
+def sdf_from_table(input_features):
+    try:
+        import arcpy
+    except:
+        raise Exception("This method needs arcpy to be installed. Unable to continue")
+
+    sdf = pd.DataFrame()
+    data_type = arcpy.Describe(input_features).dataType
+    if data_type in ["TableView", "TextFile"]:
+        sdf = pd.DataFrame.spatial.from_table(str(input_features))
+    if len(sdf) == 0:
+        msg = arcpy_localization_helper(
+            "Could not process the data. Your csv or table might contain columns with all null values. ",
+            260200,
+            "ERROR",
+        )
+    return sdf
+
+
 def global_interpretation(model, plot_type="bar", method="KernelRegressor"):
     try:
         import shap
@@ -2256,3 +2640,32 @@ def global_interpretation(model, plot_type="bar", method="KernelRegressor"):
             explainer.expected_value[0], shap_values, df, matplotlib=True
         )
     return
+
+
+def _extract_embeddings(text_variables, image_variables, dataframe):
+    new_cols = []
+    import tempfile
+    from arcgis.learn import Embeddings
+
+    for cnt1, var in enumerate(text_variables + image_variables):
+        if var in text_variables:
+            embeddings = Embeddings(dataset_type="text")
+        else:
+            embeddings = Embeddings(dataset_type="image")
+        emb_array = embeddings.get(
+            tempfile.TemporaryDirectory(),
+            return_embeddings=True,
+            dataframe=dataframe,
+            text_column=var,
+        )
+        emb_list = emb_array.tolist()
+        new_col_names = [
+            "emb_" + str(cnt1) + "_" + str(cnt) for cnt in range(len(emb_list[0]))
+        ]
+        for col in new_col_names:
+            new_cols.append(col)
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            for cnt, val in enumerate(new_col_names):
+                dataframe[val] = [value[cnt] for value in emb_list]
+    return dataframe, new_cols

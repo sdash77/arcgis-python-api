@@ -11,20 +11,25 @@ import tempfile
 import collections
 from enum import Enum
 from arcgis._impl.common._mixins import PropertyMap
-from arcgis.gis import GIS, _GISResource, Item
+from arcgis.gis import GIS, _GISResource, Item, ItemDependency
 import concurrent.futures as _cf
 from typing import Optional, Any, Union
 from arcgis.auth.tools import LazyLoader
 from dataclasses import dataclass
 import datetime as _dt
 
+
 features = LazyLoader("arcgis.features")
 _version = LazyLoader("arcgis.features._version")
+_common_utils = LazyLoader("arcgis._impl.common._utils")
+re = LazyLoader("re")
 
 _log = logging.getLogger()
 
 # pylint: disable=protected-access
 ###########################################################################
+
+
 class WebHookEvents(Enum):
     """
     Provides the allowed webhook enumerations for the captured events.
@@ -51,7 +56,7 @@ class WebHookScheduleInfo:
 
 
     =====================================    ===========================================================================
-    **Argument**                             **Description**
+    **Parameter**                             **Description**
     -------------------------------------    ---------------------------------------------------------------------------
     name                                     Required string.  The name of the scheduling task.
     -------------------------------------    ---------------------------------------------------------------------------
@@ -79,7 +84,10 @@ class WebHookScheduleInfo:
         return {
             "name": self.name,
             "startAt": int(self.start_at.timestamp() * 1000),
-            "recurrenceInfo": {"frequency": self.frequency, "interval": self.interval},
+            "recurrenceInfo": {
+                "frequency": self.frequency,
+                "interval": self.interval,
+            },
         }
 
 
@@ -108,7 +116,9 @@ class AttachmentManager(object):
     """
 
     def __init__(
-        self, layer: features.FeatureLayer, version: str | _version.Version = None
+        self,
+        layer: features.FeatureLayer,
+        version: str | _version.Version = None,
     ):
         self._layer = layer
         if isinstance(version, str):
@@ -117,6 +127,52 @@ class AttachmentManager(object):
             self._version = version.properties.versionName
         else:
             self._version = None
+
+    def count(
+        self,
+        where: str | None = None,
+        attachment_where: str | None = None,
+        object_ids: str | None = None,
+        global_ids: str | None = None,
+        attachment_types: str | None = None,
+        size: tuple[int] | list[int] | None = None,
+        keywords: str | None = None,
+    ) -> int:
+        """"""
+        url: str = "{}/{}".format(self._layer.url, "queryAttachments")
+        if object_ids is None:
+            object_ids = []
+        if global_ids is None:
+            global_ids = []
+        if attachment_types is None:
+            attachment_types = []
+        if where is None:
+            where = ""
+        if keywords is None:
+            keywords = []
+        params: dict[str, Any] = {
+            "f": "json",
+            "definitionExpression": where,
+            "attachmentTypes": ",".join(attachment_types),
+            "objectIds": ",".join([str(v) for v in object_ids]),
+            "globalIds": ",".join([str(v) for v in global_ids]),
+            "definitionExpression": where,
+            "attachmentsDefinitionExpression": attachment_where or "",
+            "keywords": ",".join([str(v) for v in keywords]),
+            "size": size,
+            "returnCountOnly": True,
+        }
+        res = self._layer._con._session.get(url=url, params=params)
+        res.raise_for_status()
+        data: dict[str, Any] = res.json()
+        if "attachmentGroups" in data:
+            return sum([grp["count"] for grp in res.json()["attachmentGroups"]])
+        elif "error" in data:
+            raise Exception(data["error"])
+        else:
+            raise Exception(
+                "Could not obtain the attachment counts, verify that attachments is enabled."
+            )
 
     def search(
         self,
@@ -131,7 +187,9 @@ class AttachmentManager(object):
         return_metadata: bool = False,
         return_url: bool = False,
         max_records: int | None = None,
-        offset: int = 0,
+        offset: int | None = None,
+        *,
+        attachment_where: str | None = None,
     ):
         """
 
@@ -140,7 +198,7 @@ class AttachmentManager(object):
 
 
         =========================   ===============================================================
-        **Argument**                **Description**
+        **Parameter**                **Description**
         -------------------------   ---------------------------------------------------------------
         where                       Required string.  The definition expression to be applied to
                                     the related layer/table. From the list of records that are
@@ -249,6 +307,12 @@ class AttachmentManager(object):
                                     The default value is 0. This parameter only applies when
                                     `supportPagination` is true. You can use this option to fetch
                                     records that are beyond `maxRecordCount` property.
+        -------------------------   ---------------------------------------------------------------
+        attachment_where            Optional str. The definition expression to be applied to the
+                                    attachments table. Only those records that conform to this
+                                    expression will be returned. You can get the attachments table
+                                    field names to use in the expression by checking the layer's
+                                    `attachmentProperties`.
         =========================   ===============================================================
 
         :return: A Pandas DataFrame or Dict of the attachments of the :class:`~arcgis.features.FeatureLayer`
@@ -359,6 +423,7 @@ class AttachmentManager(object):
                     ]
         else:
             url = "{}/{}".format(self._layer.url, "queryAttachments")
+
             params = {
                 "f": "json",
                 "attachmentTypes": ",".join(attachment_types),
@@ -372,6 +437,11 @@ class AttachmentManager(object):
                 "resultRecordCount": max_records,
                 "resultOffset": offset,
             }
+            if offset:
+                params["offset"] = offset
+            if attachment_where:
+                params["attachmentsDefinitionExpression"] = attachment_where or ""
+
             iterparams = copy.copy(params)
             for k, v in iterparams.items():
                 if k in ["objectIds", "globalIds", "attachmentTypes"] and v == "":
@@ -476,7 +546,7 @@ class AttachmentManager(object):
             attachment_types=attachment_types,
             as_df=True,
         )
-        for row in attachments.to_dict(orient="records"):
+        for row in attachments.to_dict("records"):
             dlpath = os.path.join(
                 save_folder,
                 "%s" % int(row["PARENTOBJECTID"]),
@@ -498,7 +568,7 @@ class AttachmentManager(object):
         Get the list of attachements for a given OBJECT ID
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         oid                 Required string of the object id
         ===============     ====================================================================
@@ -529,7 +599,7 @@ class AttachmentManager(object):
         * If a list of oid values are given, all the attachments for those object ids will be saved locally.
 
         =========================   ===============================================================
-        **Arguement**               **Description**
+        **Argument**                **Description**
         -------------------------   ---------------------------------------------------------------
         oid                         Optional list/string. A list of object Ids or a single value
                                     to download data from.
@@ -537,7 +607,7 @@ class AttachmentManager(object):
         attachment_id               Optional string. Id of the attachment to download. This is only
                                     honored if return_all is False.
         -------------------------   ---------------------------------------------------------------
-        save_folder                 Optional string. Path to save data to.
+        save_path                   Optional string. Path to save data to.
         =========================   ===============================================================
 
         :return: A path to the folder where the attachement are saved
@@ -623,7 +693,7 @@ class AttachmentManager(object):
         The add operation is performed on a feature service feature resource.
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         oid                 Required string of the object ID.
         ---------------     --------------------------------------------------------------------
@@ -669,7 +739,7 @@ class AttachmentManager(object):
         A layer has attachments if its hasAttachments property is true.
 
         ===================     ====================================================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         -------------------     --------------------------------------------------------------------
         oid                     Required string of the object ID
         -------------------     --------------------------------------------------------------------
@@ -702,13 +772,17 @@ class AttachmentManager(object):
         )
 
     def update(
-        self, oid: str, attachment_id: str, file_path: str, return_moment: bool = False
+        self,
+        oid: str,
+        attachment_id: str,
+        file_path: str,
+        return_moment: bool = False,
     ) -> bool:
         """
         Updates an existing attachment with a new file
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         oid                 Required string of the object ID.
         ---------------     --------------------------------------------------------------------
@@ -758,7 +832,7 @@ class SyncManager(object):
         unregisters a replica from a feature layer collection
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         replica_id          The replicaID returned by the feature service when the replica was created.
         ===============     ====================================================================
@@ -770,7 +844,7 @@ class SyncManager(object):
     def get(self, replica_id: str):
         """
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         replica_id          Required string. replica_id returned by the feature service when
                             the replica was created.
@@ -818,7 +892,7 @@ class SyncManager(object):
 
 
         =============================       ====================================================================
-        **Argument**                        **Description**
+        **Parameter**                        **Description**
         -----------------------------       --------------------------------------------------------------------
         replica_name                        Required string. Name of the replica.
         -----------------------------       --------------------------------------------------------------------
@@ -1060,7 +1134,7 @@ class SyncManager(object):
         tracking information.
 
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
         layers                 Required list. A list of layers and tables to include in the replica.
         ------------------     --------------------------------------------------------------------
@@ -1154,7 +1228,7 @@ class SyncManager(object):
         Creates a replicated service from a parent to another GIS.
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         replica_name        Optional string. Name for replicated item in other GIS
         ---------------     --------------------------------------------------------------------
@@ -1236,7 +1310,7 @@ class SyncManager(object):
         Synchronizes two replicated items between portals
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         parent              Required :class:`~arcgis.gis.Item` that points to the feature service
                             that is the parent dataset. (source)
@@ -1276,7 +1350,8 @@ class SyncManager(object):
                     parent_replica_id = replica["replicaID"]
                     break
             if child_replica_id and parent_replica_id:
-                import tempfile, os
+                import tempfile
+                import os
 
                 child_replica = child_replicas.get(replica_id=child_replica_id)
                 parent_replica = parent_replicas.get(replica_id=parent_replica_id)
@@ -1341,6 +1416,7 @@ class WebHook(object):
     _url = None
     _gis = None
     # ----------------------------------------------------------------------
+
     def __init__(self, url, gis):
         self._url = url
         self._gis = gis
@@ -1383,13 +1459,14 @@ class WebHook(object):
         Updates the existing WebHook's Properties.
 
         =====================================    ===========================================================================
-        **Argument**                             **Description**
+        **Parameter**                             **Description**
         -------------------------------------    ---------------------------------------------------------------------------
         name                                     Optional String. Use valid name for a webhook. This name needs to be unique per service.
         -------------------------------------    ---------------------------------------------------------------------------
         hook_url                                 Optional String.  The URL to which the payloads will be delivered.
         -------------------------------------    ---------------------------------------------------------------------------
-        change_types                             Optional WebHookEvents or String.  The default is "*", which means all events.  This is a
+        change_types                             Optional :class:`~arcgis.features.managers.WebHookEvents` or String.
+                                                 The default is "*", which means all events.  This is a
                                                  comma separated list of values that will fire off the web hook.  The list
                                                  each supported type is below.
         -------------------------------------    ---------------------------------------------------------------------------
@@ -1399,7 +1476,8 @@ class WebHook(object):
         -------------------------------------    ---------------------------------------------------------------------------
         active                                   Optional bool. Enable or disable call backs when the webhook is triggered.
         -------------------------------------    ---------------------------------------------------------------------------
-        schedule_info                            Optional WebHookScheduleInfo or Dict. Allows the trigger to be used as a given schedule.
+        schedule_info                            Optional :class:`~arcgis.features.managers.WebHookScheduleInfo` or Dict.
+                                                 Allows the trigger to be used as a given schedule.
 
                                                  Example Dictionary:
 
@@ -1512,6 +1590,7 @@ class WebHookServiceManager(object):
     _url = None
     _gis = None
     # ----------------------------------------------------------------------
+
     def __init__(self, url, fc, gis) -> None:
         self._url = url
         self._fc = fc
@@ -1568,7 +1647,7 @@ class WebHookServiceManager(object):
 
 
         =====================================    ===========================================================================
-        **Argument**                             **Description**
+        **Parameter**                             **Description**
         -------------------------------------    ---------------------------------------------------------------------------
         name                                     Required String. Use valid name for a webhook. This name needs to be unique per service.
         -------------------------------------    ---------------------------------------------------------------------------
@@ -1670,7 +1749,6 @@ class WebHookServiceManager(object):
             hook_url = self._url + f"/{resp['globalId']}"
             return WebHook(url=hook_url, gis=self._gis)
         else:
-
             return WebHook(url=resp["url"], gis=self._gis)
 
     # ----------------------------------------------------------------------
@@ -1742,7 +1820,6 @@ class FeatureLayerCollectionManager(_GISResource):
         if "layers" in self.properties:
             for table in self.properties.layers:
                 try:
-
                     self._layers.append(
                         FeatureLayerManager(
                             self.url + "/" + str(table["id"]), self._gis
@@ -1764,7 +1841,6 @@ class FeatureLayerCollectionManager(_GISResource):
         if "tables" in self.properties:
             for table in self.properties.tables:
                 try:
-
                     self._tables.append(
                         FeatureLayerManager(
                             self.url + "/" + str(table["id"]), self._gis
@@ -1792,6 +1868,8 @@ class FeatureLayerCollectionManager(_GISResource):
                     url=self._url + "/WebHooks", fc=self._fs, gis=self._gis
                 )
             return self._wh
+        elif self._gis.version >= [8, 2] and self._gis._portal.is_arcgisonline == False:
+            return self._fs.service.webhook_manager
         return None
 
     # ----------------------------------------------------------------------
@@ -1842,6 +1920,155 @@ class FeatureLayerCollectionManager(_GISResource):
         return res
 
     # ----------------------------------------------------------------------
+    def insert_layer(self, data_path: str, name: str = None):
+        """
+        This method will create a feature layer or table and insert it into the existing feature service.
+        If your data path will publish more than one layer or table, only the first will be added.
+
+        ==================     ====================================================================
+        **Argument**           **Description**
+        ------------------     --------------------------------------------------------------------
+        data_path              Required string. The path to the data to be inserted.
+
+                               .. note::
+                                   Shapefiles and file geodatabases must be in a .zip file.
+        ------------------     --------------------------------------------------------------------
+        name                   Optional string. The name of the layer or table to be created.
+        ==================     ====================================================================
+        """
+        # Check that the user is the owner of both the source and the published item or has administrative privileges
+        
+        from ..gis._impl._content_manager._import_data import _perform_insert
+        
+        orig_item = self._gis.content.get(self.properties.serviceItemId)
+        if (
+            self._gis.users.me.username != orig_item.owner
+            and "portal:admin:updateItems" not in self._gis.users.me.privileges
+        ):
+            raise AssertionError(
+                "You must own the service to insert data to it or have administrative privileges."
+            )
+        # Get the data related
+        related_items = orig_item.related_items(rel_type="Service2Data")
+        for i in related_items:
+            if (
+                self._gis.users.me.username != i.owner
+                and "portal:admin:updateItems" not in self._gis.users.me.privileges
+            ):
+                raise AssertionError(
+                    "You must own the service data to insert data or have the administrative privilege to update items (portal:admin:updateItems)."
+                )
+
+        # Get the name for new service if None passed, ensure data_path has all special characters removed and spaces removed
+        data_path = data_path.replace(" ", "_")
+        data_path = re.sub(r"[^a-zA-Z0-9_/\.\\:]", "", data_path)
+        if name is None:
+            name = os.path.basename(data_path)
+
+        # Get the file type
+        file_type = os.path.splitext(data_path)[1]
+        file_types = {
+            ".csv": "CSV",
+            ".sqlite": "SQLite",
+            ".xls": "Excel",
+            ".xlsx": "Excel",
+            ".xml": "XML",
+            ".sd": "Service Definition",
+            ".zip": "Zipfile",
+        }
+        file_type = file_types.get(file_type, None)
+        if file_type is None:
+            raise ValueError(
+                "File type not supported. Supported file types are: zipped shapefiles, zipped file geodatabases, CSV, Excel, XML, SQLite, and Service Definition."
+            )
+
+        # Check if the zipfile is a shapefile or file geodatabase
+        if file_type == "Zipfile":
+            shapefile = _common_utils._is_shapefile(data_path)
+            if shapefile:
+                file_type = "Shapefile"
+            else:
+                file_type = "File Geodatabase"
+
+        # Add to the same folder as the service
+        folder_id = orig_item.ownerFolder
+        if folder_id is not None:
+            folder_name = self._gis.content.get_folder(folder_id)
+        else:
+            folder_name = None
+
+        # Add the file as an item to portal
+        file_item = self._gis.content.add(
+            item_properties={
+                "type": file_type,
+                "title": name,
+                "tags": "inserted",
+            },
+            data=data_path,
+            owner=self._gis.users.me.username,
+            folder=folder_name,
+        )
+
+        # Analyze the file to get publish parameters
+        if file_type == "CSV" or file_type == "Excel":
+            publish_parameters = self._gis.content.analyze(item=file_item)[
+                "publishParameters"
+            ]
+        else:
+            # start creating publish params from new file item
+            publish_parameters = {
+                "hasStaticData": True,
+                "name": os.path.splitext(file_item["name"])[0],
+                "maxRecordCount": 2000,
+                "layerInfo": {"capabilities": "Query"},
+                "targetSR": {"wkid": 102100, "latestWkid": 3857},
+            }
+
+        # Publish the item
+        new_item = file_item.publish(publish_parameters=publish_parameters)
+
+        # Insert layer or table
+        source_info = self._gis.content.analyze(item=file_item)["publishParameters"]
+        if len(new_item.layers) > 0:
+            publish_parameters = new_item.layers[0].properties
+            index = _perform_insert(self, publish_parameters)
+            if (
+                file_type == "File Geodatabase"
+                and "filegdb"
+                in orig_item.layers[index].properties.supportedAppendFormats
+            ) or file_type != "File Geodatabase":
+                if file_type == "File Geodatabase":
+                    upload_format = "filegdb"
+                else:
+                    upload_format = file_type.lower()
+                # Workflow for all file types and file geo databases that support append
+                ItemDependency(orig_item).add("itemid", file_item.id)
+                orig_item.layers[index].append(
+                    item_id=file_item.id,
+                    upload_format=upload_format,
+                    source_info=source_info,
+                )
+            elif file_type == "File Geodatabase":
+                # When filegdb not supported through append, use edit features
+                features = new_item.layers[0].query().features
+                orig_item.layers[index].edit_features(adds=features)
+        elif len(new_item.tables) > 0:
+            publish_parameters = new_item.tables[0].properties
+            index = _perform_insert(self, publish_parameters)
+            ItemDependency(orig_item).add("itemid", file_item.id)
+            orig_item.tables[index].append(
+                item_id=file_item.id,
+                upload_format=file_type,
+                source_info=source_info,
+            )
+
+        # Add relationship between service and data
+        orig_item.add_relationship(rel_item=file_item, rel_type="Service2Data")
+
+        # Remove newly published item since inserted into service
+        new_item.delete()
+        return orig_item
+
     # ----------------------------------------------------------------------
     def create_view(
         self,
@@ -1878,7 +2105,7 @@ class FeatureLayerCollectionManager(_GISResource):
         To learn more about views visit: https://doc.arcgis.com/en/arcgis-online/share-maps/create-hosted-views.htm
 
         ====================     ====================================================================
-        **Argument**             **Description**
+        **Parameter**             **Description**
         --------------------     --------------------------------------------------------------------
         name                     Required string. Name of the new view item
         --------------------     --------------------------------------------------------------------
@@ -1942,6 +2169,11 @@ class FeatureLayerCollectionManager(_GISResource):
         import os
         from . import FeatureLayerCollection
 
+        regex = r"^[-a-zA-Z0-9_]*$"
+        if len(re.findall(regex, name)) == 0:
+            raise ValueError(
+                "The service `name` cannot contain any spaces or special characters except underscores."
+            )
         gis = self._gis
         content = gis.content
         if "serviceItemId" not in self.properties:
@@ -1957,12 +2189,14 @@ class FeatureLayerCollectionManager(_GISResource):
         else:
             url = gis._url
 
-        if "id" in gis.properties.user:
-            me = gis.users.me.username
-            # me = gis.properties.user.id
+        if "serviceItemId" in self.properties:
+            # get the owner of the service
+            user = gis.content.get(self.properties["serviceItemId"])["owner"]
         else:
-            me = gis.users.me.username
-        url = "%s/content/users/%s/createService" % (url, me)
+            # if no service item id then default to logged in user
+            user = gis.users.me.username
+
+        url = "%s/content/users/%s/createService" % (url, user)
         if spatial_reference is None:
             # handle for tables
             if "spatialReference" in fs.properties:
@@ -1983,18 +2217,18 @@ class FeatureLayerCollectionManager(_GISResource):
                     "preserveLayerIds": preserve_layer_ids,
                 }
             ),
+            "tags": tags if tags else item.tags,
+            "snippet": snippet if snippet else item.snippet,
+            "description": description if description else item.description,
             "outputType": "featureService",
         }
         if set_item_id:
             params["itemIdToCreate"] = set_item_id
-        if tags:
-            params["tags"] = tags
-        if snippet:
-            params["snippet"] = snippet
-        if not overwrite is None:
-            params["overwrite"] = overwrite
-        if description:
-            params["description"] = description
+        if overwrite:
+            logging.warning(
+                "overwrite is currently not supported on this platform, and will not be honored"
+            )
+
         res = gis._con.post(path=url, postdata=params)
         view = content.get(res["itemId"])
         fs_view = FeatureLayerCollection(url=view.url, gis=gis)
@@ -2214,13 +2448,7 @@ class FeatureLayerCollectionManager(_GISResource):
                 view.update(data=item_upd_dict)
         else:
             view.update(data=item.get_data())
-        view.update(
-            {
-                "tags": ",".join(item.tags),
-                "description": item.description or "",
-                "snippet": item.snippet or "",
-            }
-        )
+
         return content.get(res["itemId"])
 
     # ----------------------------------------------------------------------
@@ -2229,7 +2457,7 @@ class FeatureLayerCollectionManager(_GISResource):
 
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         url                 Required String. The URL endpoint to check the status
         ===============     ====================================================================
@@ -2290,7 +2518,7 @@ class FeatureLayerCollectionManager(_GISResource):
         to an already published service.
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         json_dict           Required dict. The part to add to the hosted service. The format
                             can be derived from the `properties` property.
@@ -2338,7 +2566,7 @@ class FeatureLayerCollectionManager(_GISResource):
         code and description.
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         json_dict           Required dict. The part to add to the hosted service. The format
                             can be derived from the `properties` property.
@@ -2357,13 +2585,11 @@ class FeatureLayerCollectionManager(_GISResource):
         """
         definition = None
         if json_dict is not None:
-
             if isinstance(json_dict, PropertyMap):
                 definition = dict(json_dict)
             if isinstance(json_dict, collections.OrderedDict):
                 definition = json_dict
             else:
-
                 definition = collections.OrderedDict()
                 if "hasStaticData" in json_dict:
                     definition["hasStaticData"] = json_dict["hasStaticData"]
@@ -2442,7 +2668,7 @@ class FeatureLayerCollectionManager(_GISResource):
         for additional information on this function.
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         json_dict           Required dict. The part to add to the hosted service. The format
                             can be derived from the `properties` property.
@@ -2497,7 +2723,7 @@ class FeatureLayerCollectionManager(_GISResource):
         layer.
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         data                Required string. Path to the file used to overwrite the hosted
                             feature layer collection.
@@ -2594,7 +2820,6 @@ class FeatureLayerCollectionManager(_GISResource):
             "File Geodatabase",
             "Microsoft Excel",
         ]:
-
             path = (
                 "content/items/"
                 + feature_layer_item.itemid
@@ -2620,9 +2845,6 @@ class FeatureLayerCollectionManager(_GISResource):
             # overwriting a SD case - no need for detailed publish parameters
             publish_parameters = None
 
-        # endregion
-
-        # region Perform overwriting
         if related_data_item.update(item_properties=params, data=data_file):
             published_item = related_data_item.publish(
                 publish_parameters, overwrite=True
@@ -2789,13 +3011,29 @@ class FeatureLayerManager(_GISResource):
         self._hydrate()
 
     # ----------------------------------------------------------------------
+    @property
+    def contingent_values(self) -> dict[str, Any]:
+        """returns the contingent values for the service endpoint"""
+        url: str = f"{self._url}/contingentValues"
+        params: dict[str, Any] = {"f": "json"}
+        return self._gis._con.get(url, params)
+
+    # ----------------------------------------------------------------------
+    @property
+    def field_groups(self) -> dict[str, Any]:
+        """returns the field groups for the service endpoint"""
+        url: str = f"{self._url}/fieldGroups"
+        params: dict[str, Any] = {"f": "json"}
+        return self._gis._con.get(url, params)
+
+    # ----------------------------------------------------------------------
     @classmethod
     def fromitem(cls, item: Item, layer_id: int = 0):
         """
         Creates a :class:`~arcgis.features.managers.FeatureLayerManager` object from a GIS Item.
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         item                Required of type :class:`~arcgis.features.FeatureService` that represents
                             a :class:`~arcgis.features.FeatureLayerCollection` .
@@ -2835,7 +3073,7 @@ class FeatureLayerManager(_GISResource):
         to an already published service.
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         json_dict           Required dict. The part to add to the hosted service. The format
                             can be derived from the `properties` property.
@@ -2882,7 +3120,7 @@ class FeatureLayerManager(_GISResource):
         code and description.
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         json_dict           Required dict. The part to add to the hosted service. The format
                             can be derived from the `properties` property.
@@ -2933,7 +3171,7 @@ class FeatureLayerManager(_GISResource):
         for additional information on this function.
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         json_dict           Required dict. The part to add to the hosted service. The format
                             can be derived from the `properties` property.
@@ -3001,7 +3239,7 @@ class FeatureLayerManager(_GISResource):
             - do not have `sync` enabled
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         attachment_only     Optional boolean. If True, deletes all the attachments for this layer.
                             None of the layer features will be deleted.
@@ -3055,7 +3293,7 @@ class FeatureLayerManager(_GISResource):
 
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         url                 Required String. The URL endpoint to check the status
         ===============     ====================================================================

@@ -3,7 +3,7 @@ Tests the functionality of the knowledge graph
 """
 import sys
 
-# sys.path.insert(0, r"C:\SVN\geosaurus_master\src")
+sys.path.insert(0, r"YOUR PATH HERE")
 import unittest
 from arcgis.gis import GIS
 
@@ -11,12 +11,14 @@ from arcgis.gis import GIS
 try:
     from arcgis.graph import KnowledgeGraph
 
-    url = "https://dev0018783.esri.com/server/rest/services/Hosted/KGS_PanamaPapers/KnowledgeGraphServer"
+    # url = "https://dev0018783.esri.com/server/rest/services/Hosted/KGS_PanamaPapers/KnowledgeGraphServer"
+    url = "https://dev0022980.esri.com/server/rest/services/Hosted/python_testing/KnowledgeGraphServer"
     gis = GIS(
-        "https://dev0018783.esri.com/portal/",
+        # "https://dev0018783.esri.com/portal/",
+        "https://dev0022980.esri.com/portal",
         "publisher2",
         "esri.agp123",
-        verify_cert=False,
+        # verify_cert=False,
         trust_env=True,
     )
     kg = KnowledgeGraph(url, gis=gis)
@@ -54,6 +56,50 @@ class TestKGMethods(unittest.TestCase):
 
     def test_validate_import(self):
         kg._validate_import()
+
+    def test_apply_edits(self):
+        import time
+        with self.subTest(msg="Add test"):
+            add_dict = {
+                "_objectType": "entity",
+                "_typeName": "Person",
+                "_id": "{3e16d8fe-7f68-45ef-805a-a54d78995472}".upper(),
+                "_properties": {
+                    "name": "Pikachu",
+                }
+            }
+
+            res = kg.apply_edits(adds = [add_dict])
+            assert isinstance(res, dict)
+            time.sleep(1)
+            assert len(kg.search("Pikachu")) > 0
+
+        with self.subTest(msg="Update test"):
+            update_dict = {
+                "_objectType": "entity",
+                "_typeName": "Person",
+                "_id": "{3e16d8fe-7f68-45ef-805a-a54d78995472}".upper(),
+                "_properties": {
+                    "name": "Raichu",
+                }
+            }
+
+            res = kg.apply_edits(updates = [update_dict])
+            assert isinstance(res, dict)
+            time.sleep(1)
+            assert len(kg.search("Raichu")) > 0
+        
+        with self.subTest(msg="Delete test"):
+            delete_dict = {
+                "_objectType": "entity",
+                "_typeName": "Person",
+                "_ids": ["{3e16d8fe-7f68-45ef-805a-a54d78995472}".upper()]
+            }
+
+            res = kg.apply_edits(deletes = [delete_dict])
+            assert isinstance(res, dict)
+            time.sleep(1)
+            assert len(kg.search("Raichu")) == 0
 
 
 @unittest.skipIf(SKIP, "Cannot login or get service")

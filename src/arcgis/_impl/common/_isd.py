@@ -3,6 +3,7 @@ import ujson as _ujson
 from collections import OrderedDict
 from collections.abc import MutableMapping, Mapping
 
+
 ###########################################################################
 class InsensitiveDict(MutableMapping):
     """

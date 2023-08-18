@@ -23,7 +23,7 @@ class Track:
     Creates a Track object, used to maintain the state of a track.
 
     =====================   ===========================================
-    **Argument**            **Description**
+    **Parameter**            **Description**
     ---------------------   -------------------------------------------
     id                      Required int. ID for each track initialized
     ---------------------   -------------------------------------------

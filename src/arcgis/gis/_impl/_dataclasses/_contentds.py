@@ -15,6 +15,8 @@ __all__ = [
     "ServiceTypeEnum",
 ]
 ###########################################################################
+
+
 def _parse_enum(value: Enum | Any | None) -> Any | None:
     """returns the Enum's value or the current value"""
     if isinstance(value, Enum):
@@ -165,7 +167,7 @@ class ItemTypeEnum(Enum):
 
 ###########################################################################
 class MetadataFormatEnum(Enum):
-    FGDB = "fgdc"
+    FGDB = "fgdb"
     INSPIRE = "inspire"
     ISO19139 = "iso19139"
     ISO19139_32 = "iso19139-3.2"
@@ -184,7 +186,8 @@ class ServiceTypeEnum(Enum):
 class ItemProperties:
     """
     Item parameters correspond to properties of an item that are available
-    to update on the Add Item and Update Item operations.
+    to update on the :meth:`~arcgis.gis.ContentManager.add` and
+    :meth:`~arcgis.gis.Item.update` operations.
     """
 
     title: str
@@ -212,6 +215,7 @@ class ItemProperties:
     service_proxy: dict | None = None
     categories: list[str] | None = None
     text: dict | str | None = None
+    extension: str | None = None
     _dict_data: dict | None = field(init=False)
 
     def __str__(self):
@@ -247,6 +251,7 @@ class ItemProperties:
             "serviceProxyFilter": self.service_proxy,
             "categories": ",".join(self.categories or []),
             "text": self.text or None,
+            "extension": self.extension or None,
         }
 
     def to_dict(self):
@@ -276,6 +281,7 @@ class ItemProperties:
             "serviceProxyFilter": self.service_proxy,
             "categories": ",".join(self.categories or []),
             "text": self.text or None,
+            "extension": self.extension or None,
         }
 
     @classmethod
@@ -309,11 +315,12 @@ class CreateServiceParameter:
     The create service parameter description.
 
     =======================    =============================================================
-    **Argument**               **Description**
+    **Parameter**               **Description**
     -----------------------    -------------------------------------------------------------
     name                       Required String. Name of the Service
     -----------------------    -------------------------------------------------------------
-    output_type                Required ServiceTypeEnum or string. The type of service to create.
+    output_type                Required :class:`~arcgis.gis._impl._dataclasses.ServiceTypeEnum`
+                               or string. The type of service to create.
     -----------------------    -------------------------------------------------------------
     service_description        Optional String. Description given to the service.
     -----------------------    -------------------------------------------------------------
@@ -335,7 +342,11 @@ class CreateServiceParameter:
     -----------------------    -------------------------------------------------------------
     copyright_text             Optional String. Copyright information associated with the dataset.
     -----------------------    -------------------------------------------------------------
-    spatial_reference          Optional Dictionary. All layers added to a hosted feature service need to have the same spatial reference defined for the feature service. When creating a new empty service without specifying its spatial reference, the spatial reference of the hosted feature service is set to the first layer added to that feature service.
+    spatial_reference          Optional Dictionary. All layers added to a hosted feature service need to have the same
+                               spatial reference defined for the feature service. When creating a new
+                               empty service without specifying its spatial reference, the spatial
+                               reference of the hosted feature service is set to the first layer added
+                               to that feature service.
     -----------------------    -------------------------------------------------------------
     initial_extent             Optional Dictionary. The initial extent set for the service.
     -----------------------    -------------------------------------------------------------

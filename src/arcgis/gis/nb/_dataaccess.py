@@ -3,12 +3,14 @@ from arcgis._impl.common._isd import InsensitiveDict
 from typing import List, Dict, Any
 from arcgis.gis import GIS
 
+
 ###########################################################################
 class NotebookFile:
     """Represents a Single File on the ArcGIS Notebook Server"""
 
     _da = None
     _definition = None
+
     # ---------------------------------------------------------------------
     def __init__(self, definition: Dict[str, Any], da: "NotebookDataAccess"):
         self._definition = definition
@@ -60,6 +62,7 @@ class NotebookDataAccess:
 
     _url = None
     _gis = None
+
     # ---------------------------------------------------------------------
     def __init__(self, url, gis):
         self._url = url
@@ -71,7 +74,7 @@ class NotebookDataAccess:
         Uploads a file to the Notebook Server
 
         ===================  ==========================================================================
-        **Argument**         **Description**
+        **Parameter**         **Description**
         -------------------  --------------------------------------------------------------------------
         fp                   Required String. The path of the file to upload
         ===================  ==========================================================================
@@ -102,7 +105,12 @@ class NotebookDataAccess:
         :return: List[Dict[str, Any]]
         """
         url = f"{self._url}/notebookworkspace"
-        params = {"f": "json", "restype": "container", "comp": "list"}
+        params = {
+            "f": "json",
+            "restype": "container",
+            "comp": "list",
+            "token": self._gis._con.token,
+        }
         return [
             NotebookFile(f, self)
             for f in self._gis._con.get(url, params).pop("Blobs", [])

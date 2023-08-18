@@ -907,7 +907,7 @@ def edit_vehicle_routing_problem(
     analysis of only two routes.
 
     ====================================     ====================================================================
-    **Argument**                             **Description**
+    **Parameter**                             **Description**
     ------------------------------------     --------------------------------------------------------------------
     orders                                   Required FeatureSet. Specify one or more orders (up to 2,000).
                                              These are the locations that the routes of the vehicle routing
@@ -1096,14 +1096,6 @@ def edit_vehicle_routing_problem(
     url = gis.properties.helperServices.syncVRP.url[
         : -len("/EditVehicleRoutingProblem")
     ]
-    if isinstance(travel_mode, str):
-        travel_mode = _utils.find_travel_mode(gis=gis, travel_mode=travel_mode)
-    elif isinstance(travel_mode, dict):
-        params["travel_mode"] = travel_mode
-    else:
-        travel_mode = _utils.find_travel_mode(
-            gis=gis, travel_mode=_utils.default_travel_mode(gis=gis)
-        )
     url = _validate_url(url, gis)
     tbx = _create_toolbox(url, gis=gis)
     defaults = dict(
@@ -1112,6 +1104,14 @@ def edit_vehicle_routing_problem(
             tbx.edit_vehicle_routing_problem.__defaults__,
         )
     )
+    if isinstance(travel_mode, str):
+        travel_mode = _utils.find_travel_mode(gis=gis, travel_mode=travel_mode)
+    elif isinstance(travel_mode, dict):
+        defaults["travel_mode"] = travel_mode
+    else:
+        travel_mode = _utils.find_travel_mode(
+            gis=gis, travel_mode=_utils.default_travel_mode(gis=gis)
+        )
     if breaks is None:
         breaks = defaults["breaks"]
     if time_units is None:
@@ -1270,14 +1270,14 @@ def solve_vehicle_routing_problem(
     ignore_invalid_order_locations: bool = False,
 ):
     """
-    .. |either| image:: _static/images/solve_vehicle_routing_problem/either_side.png
-    .. |left| image:: _static/images/solve_vehicle_routing_problem/left_side.png
-    .. |turn| image:: _static/images/solve_vehicle_routing_problem/no_u_turn.png
-    .. |right| image:: _static/images/solve_vehicle_routing_problem/right_side.png
-    .. |ALLOW_UTURNS| image:: _static/images/solve_vehicle_routing_problem/ALLOW_UTURNS.png
-    .. |NO_UTURNS| image:: _static/images/solve_vehicle_routing_problem/NO_UTURNS.png
-    .. |ALLOW_DEAD_ENDS_ONLY| image:: _static/images/solve_vehicle_routing_problem/ALLOW_DEAD_ENDS_ONLY.png
-    .. |ALLOW_DEAD_ENDS_AND_INTERSECTIONS_ONLY| image:: _static/images/solve_vehicle_routing_problem/ALLOW_DEAD_ENDS_AND_INTERSECTIONS_ONLY.png
+    .. |either| image:: _static/images/solve_vehicle_routing_problem/routing_either_side.png
+    .. |left| image:: _static/images/solve_vehicle_routing_problem/routing_left_side.png
+    .. |turn| image:: _static/images/solve_vehicle_routing_problem/routing_no_u_turn.png
+    .. |right| image:: _static/images/solve_vehicle_routing_problem/routing_right_side.png
+    .. |ALLOW_UTURNS| image:: _static/images/solve_vehicle_routing_problem/routing_ALLOW_UTURNS.png
+    .. |NO_UTURNS| image:: _static/images/solve_vehicle_routing_problem/routing_NO_UTURNS.png
+    .. |ALLOW_DEAD_ENDS_ONLY| image:: _static/images/solve_vehicle_routing_problem/routing_ALLOW_DEAD_ENDS_ONLY.png
+    .. |ALLOW_DEAD_ENDS_AND_INTERSECTIONS_ONLY| image:: _static/images/solve_vehicle_routing_problem/routing_ALLOW_DEAD_ENDS_AND_INTERSECTIONS_ONLY.png
 
 
     ``solve_vehicle_routing_problem`` tool solves a vehicle routing problem (VRP) to find the best routes for a fleet of vehicles.
@@ -1300,7 +1300,7 @@ def solve_vehicle_routing_problem(
     route by the driver.
 
     ======================================    ==========================================================================================================================================
-    **Argument**                              **Description**
+    **Parameter**                              **Description**
     --------------------------------------    ------------------------------------------------------------------------------------------------------------------------------------------
     orders                                    Required :class:`~arcgis.features.FeatureSet`. Specify one or more orders (up to 2,000). These are the locations
                                               that the routes of the vehicle routing problem (VRP) analysis

@@ -1,5 +1,8 @@
 import sys, os
 
+sys.path.insert(
+    0, r"C:\SVN\geosaurus_multiiwa_fix_handle_ports_properly\src"
+)
 import unittest
 from arcgis.auth import EsriAPIKeyAuth
 

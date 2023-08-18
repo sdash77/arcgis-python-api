@@ -3,6 +3,8 @@ This is the ArcGIS Notebook Server API Framework
 """
 
 import os
+import copy
+import warnings
 from urllib.parse import urlparse
 
 from arcgis.gis import GIS
@@ -13,6 +15,7 @@ from ._system import SystemManager
 from ._security import SecurityManager
 from ._machines import MachineManager
 from ._nbm import NotebookManager
+
 
 ########################################################################
 class NotebookServer(object):
@@ -32,6 +35,7 @@ class NotebookServer(object):
     _services = None
     _version = None
     _sitemanager = None
+
     # ----------------------------------------------------------------------
     def __init__(self, url, gis):
         """Constructor"""
@@ -127,7 +131,7 @@ class NotebookServer(object):
 
     # ----------------------------------------------------------------------
     @property
-    def health_check(self):
+    def health_check(self) -> bool:
         """
 
         The `health_check` verifies that your ArcGIS Notebook Server site
@@ -140,9 +144,20 @@ class NotebookServer(object):
 
         """
         netloc = urlparse(self._url).netloc
-        url = "https://{base}:11443/arcgis/rest/info/healthcheck".format(base=netloc)
+        if netloc.find(":11443") > -1:
+            url = "https://{base}/arcgis/rest/info/healthcheck".format(base=netloc)
+        else:
+            url = "https://{base}:11443/arcgis/rest/info/healthcheck".format(
+                base=netloc
+            )
         params = {"f": "json"}
-        res = self._gis._con.get(url, params)
+        verify_original = copy.deepcopy(self._gis._con._verify_cert)
+        if self._gis._con._verify_cert:
+            self._gis._con._verify_cert = False
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            res = self._gis._con.get(url, params)
+        self._gis._con._verify_cert = verify_original
         if "success" in res:
             return res["success"]
         return res
@@ -227,6 +242,8 @@ class NotebookServer(object):
         """The URL of the notebook server."""
         return self._url
 
+    # ----------------------------------------------------------------------
+    @property
     def services(self):
         """
         Provices access to managing notebook created geoprocessing tools
@@ -240,5 +257,5 @@ class NotebookServer(object):
             from arcgis.gis.nb._services import NBServicesManager
 
             url = self._url + "/services"
-            self._services = NBServicesManager(url, self._gis)
+            self._services = NBServicesManager(url, self._gis, nbs=self)
         return self._services

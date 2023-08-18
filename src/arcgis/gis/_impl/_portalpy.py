@@ -17,7 +17,7 @@ from ..._impl.common._utils import _to_utf8
 from urllib import request
 from urllib.parse import urlparse
 
-__version__ = "2.1.0"
+__version__ = "2.2.0"
 
 _log = logging.getLogger(__name__)
 
@@ -102,6 +102,7 @@ class Portal(object):
         **kwargs,
     ):
         """The Portal constructor. Requires URL and optionally username/password."""
+        self._security_kwargs = kwargs.pop("security_kwargs", None)
         self._use_gen_token = kwargs.pop("use_gen_token", False)
         url = url.strip()  # be permissive in accepting home app urls
         homepos = url.find("/home")
@@ -196,6 +197,7 @@ class Portal(object):
                     custom_adapter=custom_adapter,
                     is_hosted_nb_home=is_hosted_nb_home,
                     use_gen_token=self._use_gen_token,
+                    security_kwargs=self._security_kwargs,
                 )
             else:
                 if token == api_key:
@@ -224,6 +226,7 @@ class Portal(object):
                     custom_adapter=custom_adapter,
                     is_hosted_nb_home=is_hosted_nb_home,
                     use_gen_token=self._use_gen_token,
+                    security_kwargs=self._security_kwargs,
                 )
         # self.get_version(True)
         self.get_properties(True)
@@ -239,7 +242,7 @@ class Portal(object):
             Portal or the owner of the group.
 
         ============  ======================================
-        **Argument**  **Description**
+        **Parameter**  **Description**
         ------------  --------------------------------------
         user_names    list of usernames
         ------------  --------------------------------------
@@ -274,7 +277,7 @@ class Portal(object):
         Removes the group's thumbnail
 
         ============  ======================================
-        **Argument**  **Description**
+        **Parameter**  **Description**
         ------------  --------------------------------------
         group_id      required string, The group id to remove the thumbnail for.
         ============  ======================================
@@ -315,7 +318,7 @@ class Portal(object):
 
 
         ===============     ====================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     ----------------------------------------------------
         item_properties     Required dictionary, see below for the keys and values
         ---------------     ----------------------------------------------------
@@ -389,7 +392,6 @@ class Portal(object):
                 if not os.path.isfile(os.path.abspath(data)):
                     raise RuntimeError("File(" + data + ") not found.")
             if isinstance(data, (io.BytesIO, io.StringIO)):
-
                 fn = item_properties.get("fileName", None)
                 if fn is None:
                     raise ValueError(
@@ -603,7 +605,6 @@ class Portal(object):
     def create_group_from_dict(
         self, group: dict[str, Any], thumbnail: Optional[str] = None
     ):
-
         """Creates a group and returns a group id if successful.
 
         .. note::
@@ -611,7 +612,7 @@ class Portal(object):
            dict returned from another PortalPy call and copying it.
 
         ============  ======================================
-        **Argument**  **Description**
+        **Parameter**  **Description**
         ------------  --------------------------------------
         group         dict object
         ------------  --------------------------------------
@@ -663,7 +664,7 @@ class Portal(object):
         """Creates a group and returns a group id if successful.
 
         ================  ========================================================
-        **Argument**      **Description**
+        **Parameter**      **Description**
         ----------------  --------------------------------------------------------
         title             required string, name of the group
         ----------------  --------------------------------------------------------
@@ -708,7 +709,7 @@ class Portal(object):
         """Deletes a group.
 
         ================  ========================================================
-        **Argument**      **Description**
+        **Parameter**      **Description**
         ----------------  --------------------------------------------------------
         group_id          string containing the id for the group to be deleted.
         ================  ========================================================
@@ -733,7 +734,7 @@ class Portal(object):
         """Deletes an item.
 
         ================  ========================================================
-        **Argument**      **Description**
+        **Parameter**      **Description**
         ----------------  --------------------------------------------------------
         item_id           required string, unique identifier for the item
         ----------------  --------------------------------------------------------
@@ -767,7 +768,7 @@ class Portal(object):
         """checks if you can delete the item.
 
         ================  ========================================================
-        **Argument**      **Description**
+        **Parameter**      **Description**
         ----------------  --------------------------------------------------------
         item_id           Required string, unique identifier for the item
         ----------------  --------------------------------------------------------
@@ -801,7 +802,7 @@ class Portal(object):
         """Enable or disable delete protection on the item
 
         ================  ========================================================
-        **Argument**      **Description**
+        **Parameter**      **Description**
         ----------------  --------------------------------------------------------
         item_id           Required string, unique identifier for the item
         ----------------  --------------------------------------------------------
@@ -831,12 +832,15 @@ class Portal(object):
             return resp
 
     def share_item_as_group_admin(
-        self, item_id: str, groups: str = "", allow_members_to_edit: bool = False
+        self,
+        item_id: str,
+        groups: str = "",
+        allow_members_to_edit: bool = False,
     ):
         """Shares public item with the specified list of groups belonging to caller
 
         =====================   ========================================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ---------------------   --------------------------------------------------------
         item_id                 Required string, unique identifier for the item
         ---------------------   --------------------------------------------------------
@@ -865,7 +869,7 @@ class Portal(object):
         """Stops sharing public item with the specified list of groups belonging to caller
 
         ================  ========================================================
-        **Argument**      **Description**
+        **Parameter**      **Description**
         ----------------  --------------------------------------------------------
         item_id           required string, unique identifier for the item
         ----------------  --------------------------------------------------------
@@ -899,7 +903,7 @@ class Portal(object):
         """Shares an item with the specified list of groups
 
         ================  ========================================================
-        **Argument**      **Description**
+        **Parameter**      **Description**
         ----------------  --------------------------------------------------------
         item_id           required string, unique identifier for the item
         ----------------  --------------------------------------------------------
@@ -940,12 +944,16 @@ class Portal(object):
             return resp
 
     def unshare_item(
-        self, item_id: str, owner: str, folder: Optional[str] = None, groups: str = ""
+        self,
+        item_id: str,
+        owner: str,
+        folder: Optional[str] = None,
+        groups: str = "",
     ):
         """Stops sharing the item with the specified list of groups
 
         ================  ========================================================
-        **Argument**      **Description**
+        **Parameter**      **Description**
         ----------------  --------------------------------------------------------
         item_id           required string, unique identifier for the item
         ----------------  --------------------------------------------------------
@@ -986,7 +994,7 @@ class Portal(object):
 
 
         ================  ========================================================
-        **Argument**      **Description**
+        **Parameter**      **Description**
         ----------------  --------------------------------------------------------
         username          required string, the name of the user
         ----------------  --------------------------------------------------------
@@ -1022,7 +1030,7 @@ class Portal(object):
             require a token and this can be appended to those requests.
 
         ================  ========================================================
-        **Argument**      **Description**
+        **Parameter**      **Description**
         ----------------  --------------------------------------------------------
         username          required string, name of the user
         ----------------  --------------------------------------------------------
@@ -1417,11 +1425,16 @@ class Portal(object):
         return self.con.post("content/items/" + itemid, self._postdata())
 
     def get_item_data(
-        self, itemid: str, try_json: bool = True, folder: Optional[str] = None
+        self,
+        itemid: str,
+        try_json: bool = True,
+        folder: Optional[str] = None,
     ):
         # print('content/items/' + itemid + '/data')
         return self.con.get(
-            "content/items/" + itemid + "/data", try_json=try_json, out_folder=folder
+            "content/items/" + itemid + "/data",
+            try_json=try_json,
+            out_folder=folder,
         )
         # return self.con.post('content/items/' + itemid + '/data', self._postdata(), use_ordered_dict=try_json)
         # return self.con.post('content/items/' + itemid + '/data', self._postdata(), use_ordered_dict=True)
@@ -1522,7 +1535,7 @@ class Portal(object):
             The user executing the command must be group owner
 
         ================  ========================================================
-        **Argument**      **Description**
+        **Parameter**      **Description**
         ----------------  --------------------------------------------------------
         user_names:       a required string list of users to invite
         ----------------  --------------------------------------------------------
@@ -1623,7 +1636,7 @@ class Portal(object):
              for the situation when you need to log in later.
 
         ================  ========================================================
-        **Argument**      **Description**
+        **Parameter**      **Description**
         ----------------  --------------------------------------------------------
         username          required string
         ----------------  --------------------------------------------------------
@@ -1702,7 +1715,7 @@ class Portal(object):
             can not be undone.  The changes are immediately made and permanent.
 
         ================  ========================================================
-        **Argument**      **Description**
+        **Parameter**      **Description**
         ----------------  --------------------------------------------------------
         username          required string, user who will have items/groups transferred
         ----------------  --------------------------------------------------------
@@ -1726,7 +1739,7 @@ class Portal(object):
 
 
         ================  ========================================================
-        **Argument**      **Description**
+        **Parameter**      **Description**
         ----------------  --------------------------------------------------------
         group_id          required string, unique identifier for the group
         ----------------  --------------------------------------------------------
@@ -1758,7 +1771,7 @@ class Portal(object):
                 reassign_user method.  This method only moves one item at a time.
 
         ================  ========================================================
-        **Argument**      **Description**
+        **Parameter**      **Description**
         ----------------  --------------------------------------------------------
         item_id           required string, unique identifier for the item
         ----------------  --------------------------------------------------------
@@ -1806,7 +1819,7 @@ class Portal(object):
             be provided.
 
         =====================   ========================================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ---------------------   --------------------------------------------------------
         username                required string, account being reset
         ---------------------   --------------------------------------------------------
@@ -1841,7 +1854,7 @@ class Portal(object):
         """Remove users from a group.
 
         ================  ========================================================
-        **Argument**      **Description**
+        **Parameter**      **Description**
         ----------------  --------------------------------------------------------
         user_names        required string, comma-separated list of users
         ----------------  --------------------------------------------------------
@@ -1892,7 +1905,6 @@ class Portal(object):
         categories: Optional[str] = None,
         category_filters: Optional[str] = None,
     ):
-
         if not outside_org:
             accountid = self._properties.get("id")
             if accountid and q:
@@ -1938,7 +1950,8 @@ class Portal(object):
         sort_order: str = "asc",
         max_groups: int = 1000,
         outside_org: bool = False,
-        categories: Optional[str] = None,
+        categories: str | None = None,
+        filter: str | None = None,
     ):
         """Searches for portal groups.
 
@@ -1958,7 +1971,7 @@ class Portal(object):
                set outside_org to True.
 
         ================  ========================================================
-        **Argument**      **Description**
+        **Parameter**      **Description**
         ----------------  --------------------------------------------------------
         q                 required string, query string.  See notes.
         ----------------  --------------------------------------------------------
@@ -1969,6 +1982,10 @@ class Portal(object):
         max_groups        optional int, maximum number of groups returned
         ----------------  --------------------------------------------------------
         outside_org       optional boolean, controls whether to search outside your org
+        ----------------  --------------------------------------------------------
+        categories        optional string.
+        ----------------  --------------------------------------------------------
+        filter            optional string.
         ================  ========================================================
 
         :return:
@@ -2019,7 +2036,13 @@ class Portal(object):
         # Execute the search and get back the results
         count = 0
         resp = self._groups_page(
-            q, 1, min(max_groups, 100), sort_field, sort_order, categories
+            q,
+            1,
+            min(max_groups, 100),
+            sort_field,
+            sort_order,
+            categories,
+            filter,
         )
         results = resp.get("results")
         count += int(resp["num"])
@@ -2032,6 +2055,7 @@ class Portal(object):
                 sort_field,
                 sort_order,
                 categories,
+                filter,
             )
             resp_users = resp.get("results")
             results.extend(resp_users)
@@ -2075,7 +2099,7 @@ class Portal(object):
                into parenthesis when using outside_org.
 
         ================  ========================================================
-        **Argument**      **Description**
+        **Parameter**      **Description**
         ----------------  --------------------------------------------------------
         q                 required string, query string.  See notes.
         ----------------  --------------------------------------------------------
@@ -2184,7 +2208,7 @@ class Portal(object):
             enterprise accounts.
 
         ================  ========================================================
-        **Argument**      **Description**
+        **Parameter**      **Description**
         ----------------  --------------------------------------------------------
         username          required string, must be unique in the Portal, >4 characters
         ----------------  --------------------------------------------------------
@@ -2236,7 +2260,7 @@ class Portal(object):
             the description argument.
 
         ================  ========================================================
-        **Argument**      **Description**
+        **Parameter**      **Description**
         ----------------  --------------------------------------------------------
         username          required string, name of the user to be updated.
         ----------------  --------------------------------------------------------
@@ -2300,7 +2324,10 @@ class Portal(object):
 
         # Send the POST request, and return the id from the response
         resp = self.con.post(
-            "community/users/" + username + "/update", postdata, files, ssl=True
+            "community/users/" + username + "/update",
+            postdata,
+            files,
+            ssl=True,
         )
 
         if resp:
@@ -2316,7 +2343,7 @@ class Portal(object):
             do everything that is possible in Portal.
 
         ================  ========================================================
-        **Argument**      **Description**
+        **Parameter**      **Description**
         ----------------  --------------------------------------------------------
         username          required string, the name of the user whose role will change
         ----------------  --------------------------------------------------------
@@ -2362,7 +2389,7 @@ class Portal(object):
             Only provide the values for the arguments you wish to update.
 
         ==================      ========================================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ------------------      --------------------------------------------------------
         group_id                Required string, the group to modify
         ------------------      --------------------------------------------------------
@@ -2494,7 +2521,7 @@ class Portal(object):
 
 
         ==================     ====================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     ----------------------------------------------------
         item_properties        optional dictionary, see below for the keys and values
         ------------------     ----------------------------------------------------
@@ -2603,7 +2630,11 @@ class Portal(object):
                         os.rename(large_thumbnail, new_thumbnail)
                         large_thumbnail = new_large_thumbnail
             files.append(
-                ("largeThumbnail", large_thumbnail, os.path.basename(large_thumbnail))
+                (
+                    "largeThumbnail",
+                    large_thumbnail,
+                    os.path.basename(large_thumbnail),
+                )
             )
         # If owner isn't specified, use the logged in user
         if not owner:
@@ -2682,7 +2713,7 @@ class Portal(object):
         """Creates a folder for the given user with the given title.
 
         ================  ========================================================
-        **Argument**      **Description**
+        **Parameter**      **Description**
         ----------------  --------------------------------------------------------
         owner             required string, the name of the user
         ----------------  --------------------------------------------------------
@@ -2703,7 +2734,7 @@ class Portal(object):
         """Deletes folder owned by owner with the given folder name.
 
         ================  ========================================================
-        **Argument**      **Description**
+        **Parameter**      **Description**
         ----------------  --------------------------------------------------------
         owner             required string, the name of the user
         ----------------  --------------------------------------------------------
@@ -2720,7 +2751,8 @@ class Portal(object):
             return False
         else:
             resp = self.con.post(
-                "content/users/" + owner + "/" + folder_id + "/delete", postdata
+                "content/users/" + owner + "/" + folder_id + "/delete",
+                postdata,
             )
             if resp:
                 return resp.get("success")
@@ -2742,7 +2774,7 @@ class Portal(object):
         """Finds the folder for a particular owner and returns its id.
 
         ================  ========================================================
-        **Argument**      **Description**
+        **Parameter**      **Description**
         ----------------  --------------------------------------------------------
         owner             required string, the name of the user
         ----------------  --------------------------------------------------------
@@ -2839,7 +2871,14 @@ class Portal(object):
         return self.con.post("search", postdata)
 
     def _groups_page(
-        self, q=None, start=1, num=10, sortfield="", sortorder="asc", categories=None
+        self,
+        q=None,
+        start=1,
+        num=10,
+        sortfield="",
+        sortorder="asc",
+        categories=None,
+        filter=None,
     ):
         _log.info(
             "Searching groups (q="
@@ -2862,6 +2901,8 @@ class Portal(object):
         )
         if categories is not None:
             postdata["categoryFilters"] = categories
+        if filter is not None:
+            postdata["filter"] = filter
         return self.con.post("community/groups", postdata)
 
     def _org_users_page(

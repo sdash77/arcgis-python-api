@@ -7,13 +7,14 @@ from arcgis import env as _env
 from arcgis._impl.common._isd import InsensitiveDict
 from functools import lru_cache
 
+
 ###########################################################################
 class OGCCollection:
     """
     Represents a single OGC dataset
 
     ================  ===============================================================================
-    **Argument**      **Description**
+    **Parameter**      **Description**
     ----------------  -------------------------------------------------------------------------------
     url               Required String. The web address endpoint.
     ----------------  -------------------------------------------------------------------------------
@@ -72,7 +73,7 @@ class OGCCollection:
         Queries the :class:`~arcgis.mapping.ogc.OGCFeatureService` Layer and returns back the information as a Spatially Enabled DataFrame.
 
         ================  ===============================================================================
-        **Argument**      **Description**
+        **Parameter**      **Description**
         ----------------  -------------------------------------------------------------------------------
         query             Optional String. A SQL based query applied to the service.
         ----------------  -------------------------------------------------------------------------------
@@ -115,7 +116,6 @@ class OGCCollection:
             while True:
                 res = self._gis._con.get(url, params)
                 if res["numberReturned"] == 0:
-
                     break
                 elif return_all == False and len(results) >= limit:
                     results = results[:limit]
@@ -178,7 +178,7 @@ class OGCFeatureService:
     Represents the Hosted OGC Feature Server
 
     ================  ===============================================================================
-    **Argument**      **Description**
+    **Parameter**      **Description**
     ----------------  -------------------------------------------------------------------------------
     url               Required String. The web address endpoint.
     ----------------  -------------------------------------------------------------------------------
@@ -190,6 +190,7 @@ class OGCFeatureService:
     _gis = None
     _url = None
     _properties = None
+
     # ---------------------------------------------------------------------
     def __init__(self, url, gis=None) -> "OGCFeatureService":
         """Constructor"""

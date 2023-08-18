@@ -161,7 +161,7 @@ def convertAngles2VecMap(shape, vecmapAngles, bin_size=10.0):
     """
 
     h, w = shape
-    vecmap = np.zeros((h, w, 2), dtype=np.float)
+    vecmap = np.zeros((h, w, 2), dtype=float)
     max_angle_bin = 360.0 / bin_size
 
     for h1 in range(h):
@@ -188,7 +188,7 @@ def convertVecMap2Angles(shape, vecmap, bin_size=10):
     """
 
     im_h, im_w = shape
-    angles = np.zeros((im_h, im_w), dtype=np.float)
+    angles = np.zeros((im_h, im_w), dtype=float)
     angles.fill(360)
 
     for h in range(im_h):

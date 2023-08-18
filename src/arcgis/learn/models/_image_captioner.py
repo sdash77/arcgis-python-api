@@ -30,7 +30,7 @@ class ImageCaptioner(ArcGISModel):
     Creates an Image Captioning model.
 
     =====================   ===========================================
-    **Argument**            **Description**
+    **Parameter**            **Description**
     ---------------------   -------------------------------------------
     data                    Required fastai Databunch. Returned data object
                             from :meth:`~arcgis.learn.prepare_data` function.
@@ -47,7 +47,7 @@ class ImageCaptioner(ArcGISModel):
     **kwargs**
 
     =====================   ===========================================
-    **Argument**            **Description**
+    **Parameter**            **Description**
     ---------------------   -------------------------------------------
     decoder_params          Optional dictionary. The keys of the dictionary are
                             `embed_size`, `hidden_size`, `attention_size`,
@@ -79,7 +79,6 @@ class ImageCaptioner(ArcGISModel):
     """
 
     def __init__(self, data, backbone=None, pretrained_path=None, **kwargs):
-
         if not HAS_FASTAI:
             raise_fastai_import_error(
                 import_exception=import_exception, message="", installation_steps=" "
@@ -110,13 +109,12 @@ class ImageCaptioner(ArcGISModel):
 
     @classmethod
     def from_model(cls, emd_path, data=None):
-
         """
         Creates a ImageCaptioner model from an Esri Model Definition (EMD)
         file.
 
         =====================   ===========================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ---------------------   -------------------------------------------
         emd_path                Required string. Path to Deep Learning Package
                                 (DLPK) or Esri Model Definition(EMD) file.
@@ -147,6 +145,7 @@ class ImageCaptioner(ArcGISModel):
 
             data.emd_path = emd_path
             data.emd = emd
+            data._is_empty = True
             for key, value in emd["DataAttributes"].items():
                 setattr(data, key, value)
 
@@ -207,7 +206,7 @@ class ImageCaptioner(ArcGISModel):
         **kwargs**
 
         =====================   ===========================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ---------------------   -------------------------------------------
         beam_width              Optional int. The size of beam to be used
                                 during beam search decoding. Default is 5.
@@ -271,7 +270,7 @@ class ImageCaptioner(ArcGISModel):
         **kwargs**
 
         =====================   ===========================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ---------------------   -------------------------------------------
         beam_width              Optional int. The size of beam to be used
                                 during beam search decoding. Default is 5.
@@ -295,7 +294,7 @@ class ImageCaptioner(ArcGISModel):
         Learning Package zip for deployment to Image Server or ArcGIS Pro.
 
         =====================   ===========================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ---------------------   -------------------------------------------
         name_or_path            Required string. Name of the model to save. It
                                 stores it at the pre-defined location. If path
@@ -346,7 +345,7 @@ class ImageCaptioner(ArcGISModel):
         Loads a compatible saved model for inferencing or fine tuning from the disk.
 
         =====================   ===========================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ---------------------   -------------------------------------------
         name_or_path            Required string. Name or Path to
                                 Deep Learning Package (DLPK) or

@@ -4,7 +4,6 @@ Generates Layer Types from the given inputs.
 """
 from __future__ import absolute_import
 import os
-from six import add_metaclass
 from urllib.parse import urlparse
 from arcgis.gis import GIS
 from arcgis.features.layer import FeatureLayer, FeatureLayerCollection
@@ -109,8 +108,7 @@ class ServiceFactory(type):
 
 
 ###########################################################################
-@add_metaclass(ServiceFactory)
-class Service(object):
+class Service(object, metaclass=ServiceFactory):
     """
     The Layer class allows users to pass a url, connection or other object
     to the class and get back properties and functions specifically related

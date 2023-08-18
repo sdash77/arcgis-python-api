@@ -7,6 +7,7 @@ from ..gis._impl._con import Connection
 from ..gis import GIS, Item
 from urllib.parse import unquote
 
+
 ########################################################################
 class Comment(dict):
     """

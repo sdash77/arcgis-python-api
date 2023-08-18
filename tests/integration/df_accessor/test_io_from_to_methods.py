@@ -1,8 +1,6 @@
 import os, sys
 import unittest
 
-sys.path.insert(0, r"C:\SVN\geosaurus_master_issue_8072\src")
-sys.path.insert(0, r"C:\SVN\geosaurus_master_issue_8072\tests")
 import shutil
 import tempfile
 import pandas as pd
@@ -14,6 +12,7 @@ from arcgis.geometry import Geometry
 from configparser import ConfigParser
 from pathlib import Path
 from integration.dino_utils.dino_configs import DinoConfigs
+from integration.config import QALAB_ROOT_PATH
 
 ##--------------------------------------------------------------------------
 ##
@@ -39,11 +38,13 @@ from arcgis.features.geo._io.serviceops import (
 _conf_reader2 = ConfigParser()
 _conf_reader2.read(DinoConfigs.root_init_file, "UTF-8")
 
-qalab_base_path = _conf_reader2["test_data"]["qalab_base_path"]
+qalab_base_path = QALAB_ROOT_PATH
 qalab_data_path = qalab_base_path + _conf_reader2["test_data"]["qalab_dataprep"]
 qalab_gax_datasets = (
     qalab_base_path + _conf_reader2["test_data"]["qalab_geoanalytics_datasets"]
 )
+
+local_data_path = os.path.dirname(os.path.abspath(__file__))
 
 
 class TestIOFromToMethods(unittest.TestCase):
@@ -101,7 +102,7 @@ class TestIOFromToMethods(unittest.TestCase):
             """
             import geopandas as gpd
 
-            geo_df = gpd.read_file("./world30.shp")
+            geo_df = gpd.read_file(os.path.join(local_data_path + "./world30.shp"))
 
             assert isinstance(geo_df, gpd.GeoDataFrame)
 
@@ -280,7 +281,7 @@ class TestIOFromToMethods(unittest.TestCase):
         Test to ensure we handle well when column names are not strings
         :return:
         """
-        df = pd.read_csv("usa_cities_few.csv")
+        df = pd.read_csv(os.path.join(local_data_path + "/usa_cities_few.csv"))
         sedf = pd.DataFrame.spatial.from_xy(df, "Longitude", "Latitude")
 
         # add column name that is numeric
@@ -311,7 +312,7 @@ class TestIOFromToMethods(unittest.TestCase):
         Test to ensure we handle well when column names are not strings
         :return:
         """
-        df = pd.read_csv("usa_cities_few.csv")
+        df = pd.read_csv(os.path.join(local_data_path + "/usa_cities_few.csv"))
         sedf = pd.DataFrame.spatial.from_xy(df, "Longitude", "Latitude")
 
         # add column name that is numeric
@@ -342,7 +343,7 @@ class TestIOFromToMethods(unittest.TestCase):
         Test to ensure we handle well when column names are not strings
         :return:
         """
-        df = pd.read_csv("usa_cities_few_bad_cols.csv")
+        df = pd.read_csv(os.path.join(local_data_path + "/usa_cities_few_bad_cols.csv"))
         print(df.columns)
         sedf = pd.DataFrame.spatial.from_xy(df, "Longitude", "Latitude")
         sedf.spatial.set_geometry("SHAPE")
@@ -369,7 +370,7 @@ class TestIOFromToMethods(unittest.TestCase):
         Cases where column names have varying casing styles, leading numbers
         :return:
         """
-        df = pd.read_csv("usa_cities_few_bad_cols.csv")
+        df = pd.read_csv(os.path.join(local_data_path + "/usa_cities_few_bad_cols.csv"))
         sedf = pd.DataFrame.spatial.from_xy(df, "Longitude", "Latitude")
         original_col_list = list(sedf.columns)
 

@@ -22,7 +22,14 @@ from ._system import Directory, Licenses, System, Indexer, EmailManager
 from ._system import PortalLicense
 from ._system import WebAdaptor, WebAdaptors
 from ._collaboration import Collaboration, CollaborationManager
-from ._ux import UX
+from ._ux import (
+    UX,
+    MapSettings,
+    HomePageSettings,
+    ItemSettings,
+    SecuritySettings,
+    StockImage,
+)
 from ._creditmanagement import CreditManager
 from ._security import PasswordPolicy
 from ._resources import PortalResourceManager
@@ -30,5 +37,11 @@ from ._catagoryschema import CategoryManager
 from ._idp import IdentityProviderManager
 from ._wh import WebhookManager, Webhook
 from ._usage import AGOLUsageReports
+from ._dsmgr import (
+    DataStoreMetricsManager,
+    DataStoreAggregation,
+    DataStoreTimeUnit,
+    DataStoreMetric,
+)
 
 __all__ = ["PortalAdminManager", "AGOLAdminManager"]

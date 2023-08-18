@@ -12,6 +12,7 @@ from arcgis.features.geo._array import GeoArray
 
 _HASARCPY, _HASSHAPELY = None, None
 
+
 # ----------------------------------------------------------------------
 @lru_cache(maxsize=10)
 def _check_geometry_engine():
@@ -263,7 +264,7 @@ def overlay_dask(sdf1, sdf2, op="union"):
     Enabled DataFrames.
 
     =========================    =========================================================
-    **Argument**                 **Description**
+    **Parameter**                 **Description**
     -------------------------    ---------------------------------------------------------
     sdf1                         Required Spatially Enabled DataFrame. The dataframe to have the operation performed on.
     -------------------------    ---------------------------------------------------------

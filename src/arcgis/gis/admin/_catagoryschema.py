@@ -50,7 +50,7 @@ class CategoryManager(object):
         When schema is used as a setter, the parameter:
 
         =======================    =============================================================
-        **Argument**               **Description**
+        **Parameter**               **Description**
         -----------------------    -------------------------------------------------------------
         value                      optional list. The schema list.
                                    Syntax Example:
@@ -107,7 +107,7 @@ class CategoryManager(object):
         Assigns or removes a category to a single item.
 
         =======================    =============================================================
-        **Argument**               **Description**
+        **Parameter**               **Description**
         -----------------------    -------------------------------------------------------------
         item                       Required Item or Item ID (string). The content within a GIS
                                    that will be updated with a list of categories.
@@ -137,7 +137,7 @@ class CategoryManager(object):
         Adds a category to an existing set of items
 
         =======================    =============================================================
-        **Argument**               **Description**
+        **Parameter**               **Description**
         -----------------------    -------------------------------------------------------------
         items                      Required Items. The content within a GIS that will be
                                    updated with a list of categories.

@@ -11,7 +11,7 @@ class RuntimeManager:
     Provides information about the Runtimes in the Notebook Server
 
     ================  ===============================================================================
-    **Argument**      **Description**
+    **Parameter**      **Description**
     ----------------  -------------------------------------------------------------------------------
     url               Required String. The base url for the RuntimeManager endpoints.
     ----------------  -------------------------------------------------------------------------------

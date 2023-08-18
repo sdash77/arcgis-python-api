@@ -52,6 +52,8 @@ try:
     from fastprogress.fastprogress import progress_bar
     from .._utils.env import is_arcgispronotebook
     import matplotlib.pyplot as plt
+    from .._utils.utils import chips_to_batch
+    from .._utils.pascal_voc_rectangles import _reconstruct
 except Exception as e:
     import_exception = "\n".join(
         traceback.format_exception(type(e), e, e.__traceback__)
@@ -92,7 +94,7 @@ class RetinaNet(ArcGISModel):
     Based on the `Fast.ai notebook <https://github.com/fastai/fastai_dev/blob/master/dev_nb/102a_coco.ipynb>`_
 
     =====================   ===========================================
-    **Argument**            **Description**
+    **Parameter**            **Description**
     ---------------------   -------------------------------------------
     data                    Required fastai Databunch. Returned data object from
                             :meth:`~arcgis.learn.prepare_data` function.
@@ -126,7 +128,6 @@ class RetinaNet(ArcGISModel):
         *args,
         **kwargs,
     ):
-
         if pretrained_path is not None:
             backbone_pretrained = False
         else:
@@ -403,7 +404,7 @@ class RetinaNet(ArcGISModel):
         Creates a RetinaNet Object Detector from an Esri Model Definition (EMD) file.
 
         =====================   ===========================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ---------------------   -------------------------------------------
         emd_path                Required string. Path to Deep Learning Package
                                 (DLPK) or Esri Model Definition(EMD) file.
@@ -479,7 +480,7 @@ class RetinaNet(ArcGISModel):
         Displays the results of a trained model on a part of the validation set.
 
         =====================   ===========================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ---------------------   -------------------------------------------
         rows                    Optional int. Number of rows of results
                                 to be displayed.
@@ -512,7 +513,7 @@ class RetinaNet(ArcGISModel):
         Displays the results of a trained model on a part of the validation set.
 
         =====================   ===========================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ---------------------   -------------------------------------------
         rows                    Optional int. Number of rows of results
                                 to be displayed.
@@ -575,7 +576,7 @@ class RetinaNet(ArcGISModel):
         This method is only supported for RGB images.
 
         =====================   ===========================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ---------------------   -------------------------------------------
         input_video_path        Required. Path to the video file to make the
                                 predictions on.
@@ -654,6 +655,46 @@ class RetinaNet(ArcGISModel):
             resize,
         )
 
+    def _predict_batch(self, images):
+        model = self.learn.model
+        model.eval()
+        model = model.to(self._device)
+        normed_batch_tensor = images.to(self._device)
+        predictions = model(normed_batch_tensor)
+        normed_batch_tensor.detach().cpu()
+        del normed_batch_tensor
+        return predictions
+
+    def _get_batched_predictions(self, chips, tytx, norm, batch_size=1):
+        data = []
+        data_counter = 0
+        final_class = []
+        final_bbox = []
+        for idx in range(len(chips)):
+            chip = chips[idx]
+            frame = np.moveaxis(
+                norm(cv2.cvtColor(chip["chip"], cv2.COLOR_BGR2RGB)), -1, 0
+            )
+            data.append(frame)
+            data_counter += 1
+            if data_counter % batch_size == 0 or idx == len(chips) - 1:
+                batch = chips_to_batch(data, tytx, tytx, batch_size)
+                batch_classes, batch_bboxes = self._predict_batch(
+                    torch.tensor(batch).float()
+                )
+                extra_chips = batch_size - len(data)
+                batch_output_class = (
+                    batch_classes[: (len(batch_classes) - extra_chips)].detach().cpu()
+                )
+                batch_output_bbox = (
+                    batch_bboxes[: (len(batch_bboxes) - extra_chips)].detach().cpu()
+                )
+                final_class.append(batch_output_class)
+                final_bbox.append(batch_output_bbox)
+                data = []
+                data_counter = 0
+        return torch.cat(final_class), torch.cat(final_bbox)
+
     def predict(
         self,
         image_path,
@@ -662,13 +703,14 @@ class RetinaNet(ArcGISModel):
         return_scores=True,
         visualize=False,
         resize=False,
+        batch_size=1,
     ):
         """
         Predicts and displays the results of a trained model on a single image.
         This method is only supported for RGB images.
 
         =====================   ===========================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ---------------------   -------------------------------------------
         image_path              Required. Path to the image file to make the
                                 predictions on.
@@ -700,6 +742,9 @@ class RetinaNet(ArcGISModel):
                                 by applying the model on cropped sections of
                                 the image (of the same size as the model was
                                 trained on).
+        ---------------------   -------------------------------------------
+        batch_size              Optional int. Batch size to be used
+                                during tiled inferencing. Deafult value 1.
         =====================   ===========================================
 
         :return: 'List' of xmin, ymin, width, height of predicted bounding boxes on the given image
@@ -715,6 +760,9 @@ class RetinaNet(ArcGISModel):
         else:
             image = image_path
 
+        if image is None:
+            raise Exception(str("No such file or directory: %s" % (image_path)))
+
         orig_height, orig_width, _ = image.shape
         orig_frame = image.copy()
 
@@ -728,6 +776,7 @@ class RetinaNet(ArcGISModel):
                 image = cv2.resize(image, (self._data.resize_to, self._data.resize_to))
 
         height, width, _ = image.shape
+        tytx = self._data.chip_size
 
         if self._data.chip_size is not None:
             chips = _get_image_chips(image, self._data.chip_size)
@@ -750,6 +799,12 @@ class RetinaNet(ArcGISModel):
         if len(chips) == 1:
             include_pad_detections = True
 
+        imagenet_stats = ([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
+
+        mean = 255 * np.array(imagenet_stats[0], dtype=np.float32)
+        std = 255 * np.array(imagenet_stats[1], dtype=np.float32)
+        norm = lambda x: (x - mean) / std
+
         from .._utils.pascal_voc_rectangles import modified_getitem
         from fastai.data_block import LabelList
 
@@ -757,32 +812,34 @@ class RetinaNet(ArcGISModel):
         LabelList.__getitem__ = modified_getitem
 
         try:
-            for chip in chips:
-                frame = Image(
-                    pil2tensor(
-                        PIL.Image.fromarray(
-                            cv2.cvtColor(chip["chip"], cv2.COLOR_BGR2RGB)
-                        ),
-                        dtype=np.float32,
-                    ).div_(255)
+            pred_class, pred_bbox = self._get_batched_predictions(
+                chips, tytx, norm, batch_size
+            )
+
+            class dummy:
+                pass
+
+            dummy_x = dummy()
+            dummy_x.size = [tytx, tytx]
+            for chip_idx, (pc, pb) in enumerate(zip(pred_class, pred_bbox)):
+                pc = pc.detach().clone()
+                pb = pb.detach().clone()
+                pp_output = self._analyze_pred(
+                    pred=(pc, pb), thresh=threshold, nms_overlap=nms_overlap
                 )
-                bbox = self.learn.predict(
-                    frame,
-                    thresh=threshold,
-                    nms_overlap=nms_overlap,
-                    ret_scores=True,
-                    model=self,
-                )[0]
-                if bbox:
+                bbox = _reconstruct(
+                    pp_output, dummy_x, pad_idx=0, classes=self._data.classes
+                )
+                if bbox is not None:
                     scores = bbox.scores
                     bboxes, lbls = bbox._compute_boxes()
                     bboxes.add_(1).mul_(
                         torch.tensor(
                             [
-                                chip["height"] / 2,
-                                chip["width"] / 2,
-                                chip["height"] / 2,
-                                chip["width"] / 2,
+                                chips[chip_idx]["height"] / 2,
+                                chips[chip_idx]["width"] / 2,
+                                chips[chip_idx]["height"] / 2,
+                                chips[chip_idx]["width"] / 2,
                             ]
                         )
                     ).long()
@@ -795,10 +852,10 @@ class RetinaNet(ArcGISModel):
                         data = bb2hw(bbox)
                         if include_pad_detections or not _exclude_detection(
                             (data[0], data[1], data[2], data[3]),
-                            chip["width"],
-                            chip["height"],
+                            chips[chip_idx]["width"],
+                            chips[chip_idx]["height"],
                         ):
-                            chip["predictions"].append(
+                            chips[chip_idx]["predictions"].append(
                                 {
                                     "xmin": data[0],
                                     "ymin": data[1],
@@ -870,7 +927,7 @@ class RetinaNet(ArcGISModel):
         Computes average precision on the validation set for each class.
 
         =====================   ===========================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ---------------------   -------------------------------------------
         detect_thresh           Optional float. The probability above which
                                 a detection will be considered for computing

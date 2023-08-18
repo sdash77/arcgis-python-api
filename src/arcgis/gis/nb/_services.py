@@ -46,12 +46,14 @@ class NBServicesManager:
 
     _properties = None
     _gis = None
+    _nbs = None
     _url = None
 
-    def __init__(self, url: str, gis: GIS):
+    def __init__(self, url: str, gis: GIS, nbs: "NotebookServer"):
         """initializer"""
         self._url = url
         self._gis = gis
+        self._nbs = nbs
 
     @property
     def properties(self) -> dict:
@@ -108,7 +110,7 @@ class NBServicesManager:
         deleted, the associated web tool is also deleted.
 
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
         item                   Required Item. The notebook Item to create a service from.
         ------------------     --------------------------------------------------------------------

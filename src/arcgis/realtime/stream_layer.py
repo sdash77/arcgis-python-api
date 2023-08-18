@@ -7,7 +7,6 @@ to subscribe to the streamed feature data or to broadcast updates and alerts.
 from arcgis.gis import *
 from arcgis.features import *
 
-import six
 from urllib.parse import urlencode
 
 
@@ -63,7 +62,7 @@ class StreamLayer(Layer):
         analysis of real-time data as it is received.
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         on_features         callback function that is called every time features are streamed
                             to the client.
@@ -90,7 +89,7 @@ class StreamLayer(Layer):
                 connectWS,
             )
         except:
-            print(
+            raise ImportError(
                 "Install autobahn, twisted, pyOpenssl, service_identity packages to subscribe"
             )
 

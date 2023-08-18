@@ -9,7 +9,7 @@ class Details(_BaseWidget):
     Creates a dashboard Details element.
 
     =========================   ===========================================
-    **Argument**                **Description**
+    **Parameter**                **Description**
     -------------------------   -------------------------------------------
     item                        Required Portal :class:`~arcgis.gis.Item` object. Item object should
                                 be a :class:`~arcgis.features.FeatureLayer` .

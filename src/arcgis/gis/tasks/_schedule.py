@@ -5,6 +5,7 @@ from arcgis.gis import GIS, User, Item
 from arcgis._impl.common._isd import InsensitiveDict
 from arcgis._impl.common._utils import local_time_to_online
 
+
 ###########################################################################
 class BaseTask(object):
     """
@@ -44,7 +45,7 @@ class Run(BaseTask):
     Represents a single run of a scheduled task.
 
     ==================     ====================================================================
-    **Argument**           **Description**
+    **Parameter**           **Description**
     ------------------     --------------------------------------------------------------------
     url                    Required string. The URL to the REST endpoint.
     ------------------     --------------------------------------------------------------------
@@ -54,6 +55,7 @@ class Run(BaseTask):
 
     _gis = None
     _url = None
+
     # ----------------------------------------------------------------------
     def __init__(self, url: str, gis: GIS):
         super(Run, self)
@@ -89,7 +91,7 @@ class Run(BaseTask):
         Updates the Run's Status Message and Result Message.
 
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
         status                 Optional String. The status of the run.  The allowed values are:
                                `scheduled`, `executing`, `succeeded`, `failed`, or `skipped`.
@@ -102,7 +104,13 @@ class Run(BaseTask):
 
         """
         params = {"f": "json"}
-        status_values = ["scheduled", "executing", "succeeded", "failed", "skipped"]
+        status_values = [
+            "scheduled",
+            "executing",
+            "succeeded",
+            "failed",
+            "skipped",
+        ]
         if status is None and description is None:
             return False
         if status and status.lower() in status_values:
@@ -130,7 +138,7 @@ class Task(BaseTask):
     Represents a scheduled task that can be modified for a user.
 
     ==================     ====================================================================
-    **Argument**           **Description**
+    **Parameter**           **Description**
     ------------------     --------------------------------------------------------------------
     url                    Required string. The URL to the REST endpoint.
     ------------------     --------------------------------------------------------------------
@@ -176,7 +184,7 @@ class Task(BaseTask):
         The `enable` method allows administrators to enable or disable the scheduled task..
 
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
         enabled                Required Boolean.  If True, the status of the task is set to active.
                                If False, the task is set active to False.
@@ -235,13 +243,21 @@ class Task(BaseTask):
         Updates the current Task
 
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
         item                   Optional Item. The item to update the schedule for.
         ------------------     --------------------------------------------------------------------
         cron                   Optional String. The executution time syntax.
         ------------------     --------------------------------------------------------------------
-        task_type              Optional String. The type of task. Two valid options are
+        task_type              Required String. The type of task, either executing a notebook or
+                               updating an Insights workbook, that will be executed against the
+                               specified item.  For notebook server tasks use ``ExecuteNotebook``,
+                               for Insights notebook use: ``UpdateInsightsWorkbook``. Use
+                               ``ExecuteSceneCook`` to cook scene tiles. Use ``ExecuteWorkflowManager``
+                               to run workflow manager tasks.
+                               Values: `ExecuteNotebook`, `UpdateInsightsWorkbook`,
+                               `ExecuteSceneCook`, `ExecuteWorkflowManager`, `ExecuteReport`, or
+                               `GPService`ns are
                                ``ExecuteNotebook`` or ``UpdateInsightsWorkbook``
         ------------------     --------------------------------------------------------------------
         occurences             Optional Integer. The maximum number of occurrences this task should execute.
@@ -368,7 +384,7 @@ class TaskManager(object):
     This operation is for Enterprise configuration 10.8.1+.
 
     ==================     ====================================================================
-    **Argument**           **Description**
+    **Parameter**           **Description**
     ------------------     --------------------------------------------------------------------
     url                    Required string. The URL to the REST endpoint.
     ------------------     --------------------------------------------------------------------
@@ -407,7 +423,7 @@ class TaskManager(object):
         This property allows users to search for tasks based on criteria.
 
         ================  ===============================================================================
-        **Argument**      **Description**
+        **Parameter**      **Description**
         ----------------  -------------------------------------------------------------------------------
         item              Optional Item. The item to query tasks about.
         ----------------  -------------------------------------------------------------------------------
@@ -464,7 +480,7 @@ class TaskManager(object):
         Creates a new scheduled task for a notebook `Item`.
 
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
         item                   Required Item. The item to schedule a task on.
         ------------------     --------------------------------------------------------------------
@@ -480,6 +496,9 @@ class TaskManager(object):
                                for Insights notebook use: ``UpdateInsightsWorkbook``. Use
                                ``ExecuteSceneCook`` to cook scene tiles. Use ``ExecuteWorkflowManager``
                                to run workflow manager tasks.
+                               Values: `ExecuteNotebook`, `UpdateInsightsWorkbook`,
+                               `ExecuteSceneCook`, `ExecuteWorkflowManager`, `ExecuteReport`, or
+                               `GPService`
         ------------------     --------------------------------------------------------------------
         occurences             Optional Integer. The total number of instance that can run at a single time.
         ------------------     --------------------------------------------------------------------
