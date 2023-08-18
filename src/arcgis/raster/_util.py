@@ -1640,12 +1640,11 @@ def _get_stac_metadata_file(item):
     }
 
     earth_search_map = {
-        **dict.fromkeys(["sentinel-s2-l2a-cogs"], 1),
+        **dict.fromkeys(["sentinel-s2-l2a-cogs", "sentinel-2-l2a"], 1),
         **dict.fromkeys(
             ["sentinel-s2-l2a", "sentinel-s2-l1c", "sentinel-2-l1c"],
             ("visual", "productInfo.json"),
         ),
-        **dict.fromkeys(["sentinel-2-l2a"], 1),
         **dict.fromkeys(["naip"], "image"),
         **dict.fromkeys(["landsat-c2-l2"], "mtl.txt"),
         **dict.fromkeys(["sentinel-1-grd"], "safe-manifest"),
@@ -1693,7 +1692,7 @@ def _get_stac_metadata_file(item):
             [
                 cog["href"]
                 for cog in item["assets"].values()
-                if cog["href"].endswith(".tif")
+                if cog["href"].endswith((".tif", ".tiff"))
             ]
             if target == "All COGs"
             else item["assets"][target]["href"]
@@ -1702,6 +1701,8 @@ def _get_stac_metadata_file(item):
         href = item["links"][target]["href"]
     elif isinstance(target, tuple):
         directory = os.path.dirname(item["assets"][target[0]]["href"])
+        if collection_id == "sentinel-s2-l2a":
+            directory = os.path.dirname(directory)
         href = f"{directory}/{target[1]}"
 
     href = (
@@ -1709,6 +1710,9 @@ def _get_stac_metadata_file(item):
         if href is not None and isinstance(href, str) and href.startswith("s3")
         else href
     )
+
+    if collection_id.startswith(("sentinel-2", "sentinel-s2", "landsat")):
+        href = rf"{href}\Multiband"
 
     return href
 

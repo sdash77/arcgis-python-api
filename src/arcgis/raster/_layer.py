@@ -8247,8 +8247,17 @@ class Raster:
                               the URL of the STAC item. It can be a Static STAC item URL or a STAC
                               API Item URL.
 
+                              .. note::
+
+                                STAC items from the following STAC APIs are supported:
+
+                                    - https://planetarycomputer.microsoft.com/api/stac/v1
+                                    - https://earth-search.aws.element84.com/v0
+                                    - https://earth-search.aws.element84.com/v1
+                                    - https://services.sentinel-hub.com/api/v1/catalog
+
                               Example:
-                                    "https://sentinel-cogs.s3.us-west-2.amazonaws.com/sentinel-s2-l2a-cogs/12/S/YJ/2020/10/S2A_12SYJ_20201006_0_L2A/S2A_12SYJ_20201006_0_L2A.json"
+                                    "https://planetarycomputer.microsoft.com/api/stac/v1/collections/naip/items/tx_m_2609719_se_14_060_20201217"
         -----------------     --------------------------------------------------------------------
         request_params        Optional dictionary. This parameter can be used to set the properties
                               for making the STAC Item request. These are the `requests.get() method <https://requests.readthedocs.io/en/master/api/#requests.get>`__
@@ -12566,8 +12575,18 @@ class RasterCollection:
         stac_api              Required string. URL of the STAC API root endpoint. The STAC API where
                               the search needs to be performed.
 
+                              .. note::
+
+                                The following STAC APIs are supported:
+
+                                    - https://planetarycomputer.microsoft.com/api/stac/v1
+                                    - https://earth-search.aws.element84.com/v0
+                                    - https://earth-search.aws.element84.com/v1
+                                    - https://services.sentinel-hub.com/api/v1/catalog
+
+
                               Example:
-                                    "https://earth-search.aws.element84.com/v0"
+                                    "https://planetarycomputer.microsoft.com/api/stac/v1"
         -----------------     --------------------------------------------------------------------
         query                 Optional dictionary. The GET/POST request query dictionary that can be
                               used to query a STAC API's search endpoint. (keys/values would depend
@@ -12580,8 +12599,8 @@ class RasterCollection:
 
                               Example:
                                     | {
-                                    |   "collections": ["sentinel-s2-l2a-cogs"],
-                                    |   "bbox": [-110,39.5,-105,40.5],
+                                    |   "collections": ["sentinel-2-l2a"],
+                                    |   "bbox": [-110, 39.5, -105, 40.5],
                                     |   "query": {"eo:cloud_cover": {"lt": 0.5}},
                                     |   "datetime": "2020-10-05T00:00:00Z/2020-10-10T12:31:12Z",
                                     |   "limit": 100
@@ -12660,8 +12679,8 @@ class RasterCollection:
 
             rc = RasterCollection.from_stac_api(stac_api=stac_api_url,
                                                 query={
-                                                        "collections": ["sentinel-s2-l2a-cogs"],
-                                                        "bbox": [-110,39.5,-105,40.5],
+                                                        "collections": ["sentinel-2-l2a"],
+                                                        "bbox": [-110, 39.5, -105, 40.5],
                                                         "query": {"eo:cloud_cover": {"lt": 0.5}},
                                                         "datetime": "2020-10-05T00:00:00Z/2020-10-10T12:31:12Z",
                                                         "limit": 100
@@ -12727,11 +12746,12 @@ class RasterCollection:
                         raise RuntimeError(
                             "Unsupported bbox: project operation failed for the given Polygon/Envelope object"
                         )
-                    bbox_list = []
-                    bbox_list.append(projected_envelope[0]["xmin"])
-                    bbox_list.append(projected_envelope[0]["ymin"])
-                    bbox_list.append(projected_envelope[0]["xmax"])
-                    bbox_list.append(projected_envelope[0]["ymax"])
+                    bbox_list = [
+                        projected_envelope[0]["xmin"],
+                        projected_envelope[0]["ymin"],
+                        projected_envelope[0]["xmax"],
+                        projected_envelope[0]["ymax"],
+                    ]
 
                     if request_method.upper() == "GET":
                         bbox_str = ",".join(str(e) for e in bbox_list)
@@ -12762,6 +12782,9 @@ class RasterCollection:
                 f"Invalid JSON Response from the STAC API: Please verify that the STAC API URL and the specified query are correct-\n{json_data}"
             )
         items = json_data["features"]
+
+        if len(items) < 1:
+            raise RuntimeError(f"No STAC items found. Please specify a better query")
 
         rc_attribute_dict = {}
         attribute_dict = {} if attribute_dict is None else attribute_dict
