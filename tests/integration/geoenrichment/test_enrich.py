@@ -41,6 +41,7 @@ def enrich_check(
     prx_val: Union[int, float] = None,
     prx_mtrc: str = None,
     output_spatial_reference: int = 4326,
+    sanitize_columns: bool = True,
 ) -> None:
     with expectation:
 
@@ -53,6 +54,7 @@ def enrich_check(
             proximity_value=prx_val,
             proximity_metric=prx_mtrc,
             output_spatial_reference=output_spatial_reference,
+            sanitize_columns=sanitize_columns,
         )
 
         assert isinstance(enrich_res, pd.DataFrame)
@@ -63,7 +65,10 @@ def enrich_check(
             enrich_vars = enrich_src._ba_cntry.get_enrich_variables_from_iterable(
                 enrich_vars
             )
-        enrich_var_cols = [pep8ify(val) for val in enrich_vars["name"]]
+        if sanitize_columns:
+            enrich_var_cols = [pep8ify(val) for val in enrich_vars["name"]]
+        else:
+            enrich_var_cols = [val for val in enrich_vars["name"]]
         enrich_res_cols = list(enrich_res.columns)
         assert all([(enrich_col in enrich_res_cols) for enrich_col in enrich_var_cols])
 
@@ -387,6 +392,17 @@ class TestEnrichLocal(unittest.TestCase):
             self.polygon_df_inst,
             ["populationtotals.TOTPOP_CY", "AtRisk.TOTPOP_CY"],
             does_not_raise(),
+        )
+
+    @skip_if_no_local
+    def test_enrich_local_save_original_column_names(self):
+        usa_local_inst = usa_local()
+        enrich_check(
+            usa_local_inst,
+            self.polygon_df_inst,
+            ["populationtotals.TOTPOP_CY", "AtRisk.TOTPOP_CY"],
+            does_not_raise(),
+            sanitize_columns=False,
         )
 
     @skip_if_no_local
@@ -817,6 +833,25 @@ class TestEnrichOnline(unittest.TestCase):
             assert enriched_areas
             assert isinstance(enriched_areas, pd.DataFrame)
             assert _is_geoenabled(enriched_areas)
+
+    @skip_if_no_agol
+    def test_enrich_save_original_column_names(self):
+        from arcgis.geoenrichment import enrich, BufferStudyArea
+
+        with does_not_raise():
+            buffered = BufferStudyArea(
+                area="380 New York St Redlands CA 92373",
+                radii=[3],
+                units="Miles",
+                overlap=False,
+                travel_mode="driving",
+            )
+            enrich_res = enrich(study_areas=[buffered], gis=self.usa_agol_inst._gis, sanitize_columns=False)
+            assert isinstance(enrich_res, pd.DataFrame)
+            assert _is_geoenabled(enrich_res)
+            enrich_res_cols = list(enrich_res.columns)
+            sanitized_enrich_var_cols = [pep8ify(val) for val in enrich_res_cols if pep8ify(val) != val]
+            assert all([(enrich_col not in enrich_res_cols) for enrich_col in sanitized_enrich_var_cols])
 
 
 if __name__ == "__main__":
