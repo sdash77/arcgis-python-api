@@ -1937,9 +1937,9 @@ class FeatureLayerCollectionManager(_GISResource):
         ==================     ====================================================================
         """
         # Check that the user is the owner of both the source and the published item or has administrative privileges
-        
+
         from ..gis._impl._content_manager._import_data import _perform_insert
-        
+
         orig_item = self._gis.content.get(self.properties.serviceItemId)
         if (
             self._gis.users.me.username != orig_item.owner

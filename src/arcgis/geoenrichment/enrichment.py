@@ -1725,7 +1725,7 @@ def enrich(
                         value = value.true_centroid
                     elif "geometry" in value:
                         value = value["geometry"]
-                    
+
                     # if it's a dictionary representing a polygon...
                     if "rings" in value:
                         polygon = Polygon(value)

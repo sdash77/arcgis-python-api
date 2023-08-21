@@ -1863,15 +1863,15 @@ class BusinessAnalyst(object):
         # default value set to True to keep backward compatibility
         sanitize_columns = kwargs.pop("sanitize_columns", True)
         if sanitize_columns:
-            enrich_df.columns = [pep8ify(c) for c in enrich_df.columns if c != "SHAPE"] + [
-                "SHAPE"
+            enrich_df.columns = [
+                pep8ify(c) for c in enrich_df.columns if c != "SHAPE"
+            ] + ["SHAPE"]
+            column_candidates_to_remove = [
+                pep8ify(c) for c in column_candidates_to_remove
             ]
-            column_candidates_to_remove = [pep8ify(c) for c in column_candidates_to_remove]
 
         # start creating a list of columns to remove - beginning with the OBJECTID field
-        drop_cols = [
-            c for c in enrich_df.columns if c in column_candidates_to_remove
-        ]
+        drop_cols = [c for c in enrich_df.columns if c in column_candidates_to_remove]
 
         if not use_arrow:
             if sanitize_columns:
