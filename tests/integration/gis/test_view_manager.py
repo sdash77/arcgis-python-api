@@ -1,8 +1,4 @@
 import sys
-
-#
-#  Update the Path to set the test area
-sys.path.insert(0, r"C:\SVN\geosaurus_master_issue_8787\src")
 import logging, uuid
 import unittest
 from arcgis.auth.tools._util import detect_proxy
@@ -11,9 +7,9 @@ from arcgis.gis import (
     Item,
     ViewManager,
     ViewLayerDefParameter,
-    SpatialRelationship,
-    SpatialFilter,
 )
+from arcgis.gis._impl import SpatialRelationship, SpatialFilter
+
 
 __logger__ = logging.getLogger()
 

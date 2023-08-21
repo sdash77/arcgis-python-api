@@ -1219,7 +1219,7 @@ def prepare_tabulardata(
                     for step in transform[1].steps:
                         column_transforms_mapping[column].append(step[1])
                 else:
-                    column_transforms_mapping[column].append(transform[1])
+                    column_transforms_mapping[column].append(transform[1].__class__())
 
     data = TabularDataObject.prepare_data_for_layer_learner(
         input_features,

@@ -1,3 +1,6 @@
+import sys
+
+# sys.path.insert(0, r"C:\\ipython_workfolder\\geosaurus\\src")
 import os
 import unittest
 
@@ -7,8 +10,11 @@ gis = GIS(profile="your_online_profile", verify_cert=False)
 
 # Major cities point layer
 try:
-    item = gis.content.search("major_cities", "Feature Layer")[0]
-    assert item
+    pitem = gis.content.search(
+        "major_cities owner:{username}".format(username=gis.users.me.username),
+        "Feature Layer",
+    )[0]
+    assert pitem
 except:
     fp = "./major_cities"
     if os.path.isfile(path=fp):
@@ -20,8 +26,10 @@ except:
             data=fp,
         )
         pitem = item.publish()
+    else:
+        raise Exception("major_cities not found")
 
-layer = item.layers[0]
+layer = pitem.layers[0]
 print(layer)
 
 
@@ -133,7 +141,7 @@ class TestQueryFeatureLayer(unittest.TestCase):
         Test query with historic_moments parameter
         """
         try:
-            item = gis.content.search("Traffic Collisions")[0]
+            pitem = gis.content.search("Traffic Collisions")[0]
         except:
             fp = "./traffic_collisions"
             if os.path.isfile(path=fp):
@@ -144,8 +152,8 @@ class TestQueryFeatureLayer(unittest.TestCase):
                     },
                     data=fp,
                 )
-                item.publish()
-        layer_1 = item.layers[0]
+                pitem = item.publish()
+        layer_1 = pitem.layers[0]
         historic = layer_1.query(historic_moment=3)
         assert historic
 

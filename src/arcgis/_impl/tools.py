@@ -9097,7 +9097,7 @@ class _RasterAnalysisTools(BaseAnalytics):
                 return input_param
 
         if "ImageServer" in url or "MapServer" in url:
-            if "serviceToken" in input_param:
+            if "serviceToken" in input_param and "token" not in url:
                 url = url + "?token=" + input_param["serviceToken"]
                 input_param.update({"url": url})
 
@@ -9171,6 +9171,63 @@ class _RasterAnalysisTools(BaseAnalytics):
             output_raster["itemProperties"].update({"folderId": folderId})
         output_raster = json.dumps(output_raster)
         return output_raster, output_service
+
+    def _set_output_feature(self, output_name, task, output_properties=None):
+        gis = self._gis
+        output_feature = None
+        output_service = None
+
+        folder = None
+        folderId = None
+
+        if output_properties is not None:
+            if "folder" in output_properties:
+                folder = output_properties["folder"]
+        if folder is not None:
+            user = gis.properties.user.username
+            if isinstance(folder, dict):
+                if "id" in folder and "title" in folder:
+                    folderId = folder["id"]
+                    folder = folder["title"]
+            else:
+                folderId = gis._portal.get_folder_id(user, folder)
+            if folderId is None:
+                folder_dict = gis.content.create_folder(folder, user)
+                folder = folder_dict["title"]
+                folderId = folder_dict["id"]
+
+        if output_name is None or isinstance(output_name, str):
+            if output_name is None:
+                output_name = f"{str(task)}_{_id_generator()}"
+            output_service = self._create_output_feature_service(
+                output_name=output_name,
+                output_service_name=output_name,
+                task=task,
+                folder=folder,
+            )
+            output_feature = {
+                "serviceProperties": {
+                    "name": output_service.name,
+                    "serviceUrl": output_service.url,
+                },
+                "itemProperties": {"itemId": output_service.itemid},
+            }
+        elif isinstance(output_name, Item):
+            output_service = None
+            output_feature = {
+                "serviceProperties": {
+                    "name": output_name.name,
+                    "serviceUrl": output_name.url,
+                },
+                "itemProperties": {"itemId": output_name.itemid},
+            }
+        else:
+            raise TypeError("output_name must be a string (service name) or Item.")
+
+        if folderId is not None:
+            output_feature["itemProperties"].update({"folderId": folderId})
+        output_feature = json.dumps(output_feature)
+        return output_feature, output_service
 
     def _set_image_collection_param(self, image_collection):
         if isinstance(image_collection, str):
@@ -17820,6 +17877,127 @@ class _RasterAnalysisTools(BaseAnalytics):
         )
 
         gpjob._is_ra = True
+        gpjob._item_properties = True
+        if future:
+            return RAJob(gpjob)
+        return RAJob(gpjob).result()
+
+    def multidimensional_principal_components(
+        self,
+        input_multidimensional_raster,
+        mode="DIMENSION_REDUCTION",
+        dimension=None,
+        output_principal_components_name=None,
+        output_loadings_name=None,
+        output_eigen_values_table_name=None,
+        variable=None,
+        number_of_principal_components="95%",
+        context=None,
+        future=False,
+        **kwargs,
+    ):
+        """
+        input_multidimensional_raster: inputMultidimensionalRaster (str). Required parameter.
+
+        mode: mode (str). Required parameter.
+
+        dimension: dimension (str). Required parameter.
+
+        output_principal_components_name: outputPrincipalComponents (str). Required parameter.
+
+        output_loadings_name: outputLoadingsName (str). Required parameter.
+
+        output_eigen_values_table_name: outputEigenValuesTableName (str). Optional parameter.
+
+        variable: variable (str). Optional parameter.
+
+        number_of_principal_components: numOfPrincipalComponents (str). Optional parameter.
+
+        context: context (str). Optional parameter.
+
+        future: future (str). Optional parameter.
+        """
+
+        task = "MultidimensionalPrincipalComponents"
+        gis = self._gis
+
+        context_param = {}
+        _set_raster_context(context_param, context)
+        if "context" in context_param.keys():
+            context = context_param["context"]
+
+        input_multidimensional_raster = self._layer_input(
+            input_layer=input_multidimensional_raster
+        )
+
+        mode_val = mode
+        if mode is not None:
+            mode_allowed_values = [
+                "DIMENSION_REDUCTION",
+                "SPATIAL_REDUCTION",
+            ]
+            if [element.lower() for element in mode_allowed_values].count(
+                mode.lower()
+            ) <= 0:
+                raise RuntimeError(
+                    "mode can only be one of the following: " + str(mode_allowed_values)
+                )
+
+            for element in mode_allowed_values:
+                if mode.upper() == element:
+                    mode_val = element
+
+        if mode_val.lower() == "dimension_reduction":
+            (
+                output_principal_components_name,
+                output_image_service,
+            ) = self._set_output_raster(
+                output_name=output_principal_components_name,
+                task=task,
+                output_properties=kwargs,
+            )
+            output_loadings_name, output_feature_service = self._set_output_feature(
+                output_name=output_loadings_name, task=task, output_properties=kwargs
+            )
+        # mode is "spatial_reduction" here
+        else:
+            (
+                output_principal_components_name,
+                output_image_service,
+            ) = self._set_output_feature(
+                output_name=output_principal_components_name,
+                task=task,
+                output_properties=kwargs,
+            )
+            output_loadings_name, output_feature_service = self._set_output_raster(
+                output_name=output_loadings_name, task=task, output_properties=kwargs
+            )
+
+        if output_eigen_values_table_name is not None:
+            (
+                output_eigen_values_table_name,
+                output_feature_service,
+            ) = self._set_output_feature(
+                output_name=output_eigen_values_table_name,
+                task=task,
+                output_properties=kwargs,
+            )
+
+        gpjob = self._tbx.multidimensional_principal_components(
+            input_multidimensional_raster=input_multidimensional_raster,
+            mode=mode_val,
+            dimension=dimension,
+            output_principal_components_name=output_principal_components_name,
+            output_loadings_name=output_loadings_name,
+            output_eigen_values_table_name=output_eigen_values_table_name,
+            variable=variable,
+            number_of_principal_components=number_of_principal_components,
+            context=context,
+            gis=self._gis,
+            future=True,
+        )
+
+        gpjob._is_ra = (True,)
         gpjob._item_properties = True
         if future:
             return RAJob(gpjob)
