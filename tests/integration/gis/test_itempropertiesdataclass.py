@@ -1,8 +1,4 @@
 import sys
-
-#
-#  Update the Path to set the test area
-# sys.path.insert(0, r"C:\SVN\geosaurus_master_issue_8716\src")
 import logging
 import unittest
 from arcgis.auth.tools._util import detect_proxy
@@ -94,7 +90,7 @@ class TestItemProperties(unittest.TestCase):
             isinstance(content, ContentManager)
             item = content.add(item_properties=original_ip.to_dict(), text=data)
             ip = ItemProperties.fromitem(item)
-            assert item.update(ip)
+            assert item.update(ip.to_dict())
             assert item.delete()
 
     def test_update_item(self):
@@ -107,9 +103,9 @@ class TestItemProperties(unittest.TestCase):
             isinstance(content, ContentManager)
             item = content.add(item_properties=original_ip.to_dict(), text=data)
             ip = ItemProperties.fromitem(item)
-            assert item.update(ip)
+            assert item.update(ip.to_dict())
             ip.title = "CHanged the Title"
-            assert item.update(ip)
+            assert item.update(ip.to_dict())
             assert item.title == ip.title
             assert item.delete()
 
