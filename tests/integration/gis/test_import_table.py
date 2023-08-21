@@ -1,8 +1,4 @@
 import sys
-
-#
-#  Update the Path to set the test area
-sys.path.insert(0, r"C:\SVN\geosaurus_issue_9325a\src")
 import logging
 import unittest
 import os
@@ -26,7 +22,7 @@ def enable_verbose_logging(root):
 
 
 profiles = [
-    'your_dev_enterprise_profile',
+    'your_enterprise_profile',
     'your_online_profile',
 ]
 PROXIES = detect_proxy(True)  # Handles Fiddler when True

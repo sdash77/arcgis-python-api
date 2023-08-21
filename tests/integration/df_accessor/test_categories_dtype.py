@@ -10,6 +10,7 @@ from arcgis.auth.tools._util import detect_proxy
 import pandas as pd
 import numpy as np
 from arcgis.features import GeoAccessor, GeoSeriesAccessor
+from integration.config import QALAB_ROOT_PATH
 
 
 __logger__ = logging.getLogger()
@@ -41,7 +42,7 @@ import os
 @unittest.skipIf(SKIP_NO_ARCPY, "ArcPy not present, skipping this test.")
 class TestCategoriesSeDF(unittest.TestCase):
     def test_categories_to_featureclass(self):
-        fc = r"\\qalab_server\pydata\v109\geosaurus\df_accessor_test\world30.shp"
+        fc = QALAB_ROOT_PATH + r"\df_accessor_test\world30.shp"
         if arcpy.Exists(fc):
             sdf = pd.DataFrame.spatial.from_featureclass(fc)
 
@@ -58,7 +59,7 @@ class TestCategoriesSeDF(unittest.TestCase):
             assert arcpy.Exists(out_fc)
 
     def test_categories_to_featureset_featureclass(self):
-        fc = r"\\qalab_server\pydata\v109\geosaurus\df_accessor_test\world30.shp"
+        fc = QALAB_ROOT_PATH + r"\df_accessor_test\world30.shp"
         if arcpy.Exists(fc):
             sdf = pd.DataFrame.spatial.from_featureclass(fc)
 
@@ -77,7 +78,7 @@ class TestCategoriesSeDF(unittest.TestCase):
             assert fs.features[0].attributes['cats_str']
 
     def test_categories_to_featurecollection(self):
-        fc = r"\\qalab_server\pydata\v109\geosaurus\df_accessor_test\world30.shp"
+        fc = QALAB_ROOT_PATH + r"\df_accessor_test\world30.shp"
         if arcpy.Exists(fc):
             sdf = pd.DataFrame.spatial.from_featureclass(fc)
 

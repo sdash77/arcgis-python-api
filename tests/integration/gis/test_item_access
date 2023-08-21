@@ -45,6 +45,37 @@ class TestItemAccess(unittest.TestCase):
 
                 test_item.delete()
 
+    # ----------------------------------------------------------------------
+    def test_item_access_with_share(self):
+        for profile in profiles:
+            with self.subTest(msg=profile):
+                gis = GIS(profile=profile, verify_cert=False)
+                test_item = gis.content.add(
+                    item_properties={
+                        "access": "public",
+                        "type": "Feature Service",
+                        "url": "https://services7.arcgis.com/JEwYeAy2cc8qOe3o/arcgis/rest/services/CapitolhillEnrichedByPop585927/FeatureServer",
+                    },
+                    data="https://services7.arcgis.com/JEwYeAy2cc8qOe3o/arcgis/rest/services/CapitolhillEnrichedByPop585927/FeatureServer",
+                )
+
+                result = test_item.share(everyone=False, org=True, groups="test_group")
+                assert test_item.shared_with["everyone"] == False
+                assert test_item.shared_with["org"] == True
+                assert result["notSharedWith"][0] == "test_group"  # expected to fail
+
+                test_item.share(everyone=True)
+                assert test_item.shared_with["everyone"] == True
+                assert test_item.shared_with["org"] == True
+                assert test_item.shared_with["groups"] == []
+
+                test_item.share(everyone=False, org=False, groups=None)
+                assert test_item.shared_with["everyone"] == False
+                assert test_item.shared_with["org"] == False
+                assert test_item.shared_with["groups"] == []
+
+                test_item.delete()
+
 
 if __name__ == "__main__":
     unittest.main()
