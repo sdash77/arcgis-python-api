@@ -750,7 +750,9 @@ class TimeSeriesModel(ArcGISModel):
         )
         distance_feature_layers = distance_features if distance_features else []
 
-        continuous_variables = self._data._continuous_variables
+        continuous_variables = (
+            self._data._continuous_variables + self._data._dependent_variable
+        )
 
         feature_layer_columns = []
         for column in dataframe.columns:
@@ -952,6 +954,7 @@ class TimeSeriesModel(ArcGISModel):
         # pandas series will be deprecated.
         #
         from pandas.api.types import is_datetime64_any_dtype as is_datetime
+
         datetime_dict = {}
         delta = None
         index_field_name = None
@@ -960,32 +963,58 @@ class TimeSeriesModel(ArcGISModel):
             index_field_name = match_field_names.get(
                 self._data._index_field, self._data._index_field
             )
-            if index_field_name in list(orig_dataframe.columns) and is_datetime(
-                orig_dataframe[index_field_name]
-            ):
-                delta = (
-                    orig_dataframe[index_field_name].iloc[1]
-                    - orig_dataframe[index_field_name].iloc[0]
-                )
-                end_value = None
-                if delta is not None:
-                    end_value = orig_dataframe[index_field_name].iloc[
-                        len(orig_dataframe) - 1
-                    ]
+            if index_field_name in list(orig_dataframe.columns):
+                if is_datetime(orig_dataframe[index_field_name]):
+                    delta = (
+                        orig_dataframe[index_field_name].iloc[1]
+                        - orig_dataframe[index_field_name].iloc[0]
+                    )
+                    end_value = None
+                    if delta is not None:
+                        end_value = orig_dataframe[index_field_name].iloc[
+                            len(orig_dataframe) - 1
+                        ]
+                else:
+                    orig_dataframe[index_field_name], sample = self._convert_datetime(
+                        orig_dataframe[index_field_name]
+                    )
+                    if not sample:
+                        delta = (
+                            orig_dataframe[index_field_name].iloc[1]
+                            - orig_dataframe[index_field_name].iloc[0]
+                        )
+                        end_value = None
+                        if delta is not None:
+                            end_value = orig_dataframe[index_field_name].iloc[
+                                len(orig_dataframe) - 1
+                            ]
+
         for i in orig_dataframe.columns:
             if i != index_field_name:
                 if is_datetime(orig_dataframe[i]):
-                    new_delta = (
-                        orig_dataframe[i].iloc[1]
-                        - orig_dataframe[i].iloc[0]
-                    )
+                    new_delta = orig_dataframe[i].iloc[1] - orig_dataframe[i].iloc[0]
                     end_value_temp = None
                     if new_delta is not None:
-                        end_value_temp = orig_dataframe[i].iloc[
-                            len(orig_dataframe) - 1
-                        ]
+                        end_value_temp = orig_dataframe[i].iloc[len(orig_dataframe) - 1]
                     if new_delta is not None:
                         datetime_dict[i] = tuple([new_delta, end_value_temp])
+                else:
+                    if orig_dataframe[i].dtype == "object":
+                        # check whether it is time
+                        orig_dataframe[i], sample = self._convert_datetime(
+                            orig_dataframe[i]
+                        )
+                        if not sample:
+                            new_delta = (
+                                orig_dataframe[i].iloc[1] - orig_dataframe[i].iloc[0]
+                            )
+                            end_value_temp = None
+                            if new_delta is not None:
+                                end_value_temp = orig_dataframe[i].iloc[
+                                    len(orig_dataframe) - 1
+                                ]
+                            if new_delta is not None:
+                                datetime_dict[i] = tuple([new_delta, end_value_temp])
 
         pred_temp_df = pd.DataFrame(
             np.full([number_of_predictions, orig_dataframe.shape[1]], np.NAN)

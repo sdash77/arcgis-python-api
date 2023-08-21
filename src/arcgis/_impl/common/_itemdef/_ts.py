@@ -54,7 +54,11 @@ class _TileItemDefinition(BaseCloneItemDefinition):  # _ItemDefinition):
 
                 # Add the new item
                 new_item = self._add_new_item(item_properties)
-
+            else:
+                logging.info(
+                    self.portal_item.title
+                    + " not cloned; already existent in target org."
+                )
             _share_item_with_groups(
                 new_item, self.sharing, self._clone_mapping["Group IDs"]
             )

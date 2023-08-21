@@ -57,7 +57,6 @@ SURVEY_123 = re.compile(r"(?<=[&?]field:)(.+?)(?==)", re.IGNORECASE)
 ORDER_BY = re.compile(r"^.+(?= (?:a|de)sc$)", re.IGNORECASE)
 XML_SURVEY = re.compile(r"""(?<=/)\w.+?\b""", re.IGNORECASE)
 
-
 # region Group and Item Definition Classes
 
 
@@ -82,6 +81,7 @@ class _DeepCloner:
         owner=None,
         preserve_item_id=False,
         from_dash=False,
+        wab_code_attach=True,
     ):
         self._preserve_item_id = preserve_item_id
         self._graph = {}
@@ -96,6 +96,8 @@ class _DeepCloner:
         self._copy_data = copy_data
         self._copy_global_ids = copy_global_ids
         self._search_existing_items = search_existing_items
+        self._print_warning = False
+        self._wab_code_attach = wab_code_attach
         self._clone_mapping = {
             "Item IDs": {},
             "Group IDs": {},
@@ -161,6 +163,14 @@ class _DeepCloner:
                         new_item = cloned_item
             else:
                 new_item = _search_org_for_existing_item(self.target, item)
+                logging.info(
+                    item.title + " not cloned; already existent in target org."
+                )
+                if not self._print_warning:
+                    self._print_warning = True
+                    print(
+                        "Already existent or Living Atlas items excluded from cloning. Check info-level logs for details."
+                    )
 
             map_dict[item_id] = new_item.itemid
 
@@ -340,6 +350,16 @@ class _DeepCloner:
         if item.id in self._clone_mapping["Item IDs"]:
             return None
         from arcgis.gis.clone import clone_registry
+
+        # check if living atlas item, if so don't process it
+        if getattr(item, "groupDesignations", None) == "livingatlas":
+            logging.info(item.title + " not cloned; part of Living Atlas.")
+            if not self._print_warning:
+                self._print_warning = True
+                print(
+                    "Already existent or Living Atlas items excluded from cloning. Check info-level logs for details."
+                )
+            return None
 
         # if the item is in the clone_registry then use the item definition.
         if isinstance(item, arcgis.gis.Item) and item["type"] in clone_registry():
@@ -1438,6 +1458,7 @@ class _DeepCloner:
                 search_existing=self._search_existing_items,
                 owner=self.owner,
                 preserve_item_id=self._preserve_item_id,
+                code_attach=self._wab_code_attach,
             )
 
         elif item["type"] == "Operation View":
@@ -2209,7 +2230,11 @@ class _ItemDefinition(CloneNode):
 
                 # Add the new item
                 new_item = self._add_new_item(item_properties, data)
-
+            else:
+                logging.info(
+                    self.portal_item.title
+                    + " not cloned; already existent in target org."
+                )
             _share_item_with_groups(
                 new_item, self.sharing, self._clone_mapping["Group IDs"]
             )
@@ -2246,7 +2271,11 @@ class _TextItemDefinition(_ItemDefinition):
 
                 # Add the new item
                 new_item = self._add_new_item(item_properties)
-
+            else:
+                logging.info(
+                    self.portal_item.title
+                    + " not cloned; already existent in target org."
+                )
             _share_item_with_groups(
                 new_item, self.sharing, self._clone_mapping["Group IDs"]
             )
@@ -2327,7 +2356,11 @@ class _FeatureCollectionDefinition(_TextItemDefinition):
 
                 # Add the new item
                 new_item = self._add_new_item(item_properties)
-
+            else:
+                logging.info(
+                    self.portal_item.title
+                    + " not cloned; already existent in target org."
+                )
             _share_item_with_groups(
                 new_item, self.sharing, self._clone_mapping["Group IDs"]
             )
@@ -2421,7 +2454,11 @@ class _FeatureServiceRefDef(_TextItemDefinition):
 
                 # Add the new item
                 new_item = self._add_new_item(item_properties)
-
+            else:
+                logging.info(
+                    self.portal_item.title
+                    + " not cloned; already existent in target org."
+                )
             _share_item_with_groups(
                 new_item, self.sharing, self._clone_mapping["Group IDs"]
             )
@@ -2878,6 +2915,10 @@ class _FeatureServiceDefinition(_TextItemDefinition):
                         layer_id_mapping,
                         relationship_field_mapping,
                     ) = _compare_service(new_item, self.portal_item, currentVersion)
+                    logging.info(
+                        self.portal_item.title
+                        + " not cloned; already existent in target org."
+                    )
 
             if not new_item:
                 # Get the definition of the original feature service
@@ -4176,6 +4217,11 @@ class _WebMapDefinition(_TextItemDefinition):
 
                 # Add the new item
                 new_item = self._add_new_item(item_properties)
+            else:
+                logging.info(
+                    self.portal_item.title
+                    + " not cloned; already existent in target org."
+                )
 
             _share_item_with_groups(
                 new_item, self.sharing, self._clone_mapping["Group IDs"]
@@ -4235,7 +4281,11 @@ class _OperationViewDefintion(_TextItemDefinition):
 
                 # Add the new item
                 new_item = self._add_new_item(item_properties)
-
+            else:
+                logging.info(
+                    self.portal_item.title
+                    + " not cloned; already existent in target org."
+                )
             _share_item_with_groups(
                 new_item, self.sharing, self._clone_mapping["Group IDs"]
             )
@@ -4372,7 +4422,11 @@ class _DashboardDefinition(_TextItemDefinition):
 
                 # Add the new item
                 new_item = self._add_new_item(item_properties)
-
+            else:
+                logging.info(
+                    self.portal_item.title
+                    + " not cloned; already existent in target org."
+                )
             _share_item_with_groups(
                 new_item, self.sharing, self._clone_mapping["Group IDs"]
             )
@@ -4610,6 +4664,7 @@ class _ApplicationDefinition(_TextItemDefinition):
         folder=None,
         search_existing=True,
         owner=None,
+        code_attach=True,
         **kwargs,
     ):
         super().__init__(
@@ -4629,6 +4684,7 @@ class _ApplicationDefinition(_TextItemDefinition):
         self._preserve_item_id = kwargs.pop("preserve_item_id", False)
         self._source_app_title = source_app_title
         self._update_url = update_url
+        self._code_attach = code_attach
 
     @property
     def source_app_title(self):
@@ -4895,7 +4951,7 @@ class _ApplicationDefinition(_TextItemDefinition):
                     new_item.update(item_properties)
 
                 # Add a code attachment if the application is Web AppBuilder so that it can be downloaded
-                if is_web_appbuilder:
+                if is_web_appbuilder and self._code_attach:
                     url = "{0}sharing/rest/content/items/{1}/package".format(
                         org_url[org_url.find("://") + 1 :], new_item["id"]
                     )
@@ -4927,7 +4983,11 @@ class _ApplicationDefinition(_TextItemDefinition):
                     new_item = self.target.content.get(new_item["id"])
                     if new_item["url"] != url:
                         new_item.update({"url": url})
-
+            else:
+                logging.info(
+                    self.portal_item.title
+                    + " not cloned; already existent in target org."
+                )
             _share_item_with_groups(
                 new_item, self.sharing, self._clone_mapping["Group IDs"]
             )
@@ -5089,6 +5149,11 @@ class _FormDefinition(_ItemDefinition):
                 # Update Survey123 form data
                 original_item = self.info
                 self.update_form(self.target, new_item, self._clone_mapping)
+            else:
+                logging.info(
+                    self.portal_item.title
+                    + " not cloned; already existent in target org."
+                )
             _share_item_with_groups(
                 new_item, self.sharing, self._clone_mapping["Group IDs"]
             )
@@ -5471,7 +5536,11 @@ class _QuickCaptureDefinition(_ItemDefinition):
                     file.write(json.dumps(qc_json))
 
                 new_item.resources.update(qc_json_file, None, "qc.project.json")
-
+            else:
+                logging.info(
+                    self.portal_item.title
+                    + " not cloned; already existent in target org."
+                )
             _share_item_with_groups(
                 new_item, self.sharing, self._clone_mapping["Group IDs"]
             )
@@ -5568,7 +5637,11 @@ class _NotebookDefinition(_ItemDefinition):
 
                 # Update python notebook
                 new_item.update(data=new_notebook)
-
+            else:
+                logging.info(
+                    self.portal_item.title
+                    + " not cloned; already existent in target org."
+                )
             _share_item_with_groups(
                 new_item, self.sharing, self._clone_mapping["Group IDs"]
             )
@@ -5737,7 +5810,11 @@ class _WorkforceProjectDefinition(_TextItemDefinition):
                 item_properties["text"] = json.dumps(workforce_json)
                 # Add the new item
                 new_item = self._add_new_item(item_properties)
-
+            else:
+                logging.info(
+                    self.portal_item.title
+                    + " not cloned; already existent in target org."
+                )
             _share_item_with_groups(
                 new_item, self.sharing, self._clone_mapping["Group IDs"]
             )
@@ -5824,6 +5901,11 @@ class _ProMapDefinition(_ItemDefinition):
                 self._data = new_mapx
 
                 new_item = super().clone()
+            else:
+                logging.info(
+                    self.portal_item.title
+                    + " not cloned; already existent in target org."
+                )
             _share_item_with_groups(
                 new_item, self.sharing, self._clone_mapping["Group IDs"]
             )
@@ -6038,6 +6120,11 @@ class _ProProjectPackageDefinition(_ItemDefinition):
                         pass
 
                 new_item = super().clone()
+            else:
+                logging.info(
+                    self.portal_item.title
+                    + " not cloned; already existent in target org."
+                )
             _share_item_with_groups(
                 new_item, self.sharing, self._clone_mapping["Group IDs"]
             )

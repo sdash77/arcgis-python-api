@@ -337,3 +337,10 @@ def chunks(l, n):
     """yield successive n-sized chunks from l."""
     for i in range(0, len(l), n):
         yield l[i : i + n]
+
+
+# --------------------------------------------------------------------------
+def is_pdf_file(file_path):
+    """check the file first bytes to match with pdf signature"""
+    with open(file_path, "rb") as f:
+        return f.read(4) == b"%PDF"

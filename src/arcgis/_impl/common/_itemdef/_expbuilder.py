@@ -3,6 +3,7 @@ import uuid
 import copy
 import shutil
 import tempfile
+import logging
 from arcgis._impl.common._clone import CloneNode, _deep_get, _ItemDefinition
 from arcgis._impl.common._clone import (
     _search_org_for_existing_item,
@@ -179,7 +180,10 @@ class _WebExperience(_ItemDefinition):
             _share_item_with_groups(
                 new_item, self.sharing, self._clone_mapping["Group IDs"]
             )
-
+        else:
+            logging.info(
+                self.portal_item.title + " not cloned; already existent in target org."
+            )
         self.resolved = True
         self._clone_mapping["Item IDs"][original_item["id"]] = new_item["id"]
         return new_item

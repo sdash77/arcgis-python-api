@@ -1,3 +1,6 @@
+import sys
+
+# sys.path.insert(0, r"C:\SVN\geosaurus_master\src")
 import unittest
 import os
 from arcgis.gis import GIS
@@ -104,10 +107,20 @@ class TestPortalAdminManager(unittest.TestCase):
             "users",
             "credits",
         ]
+        date_str = '2023-02-01'
+        date_format = '%Y-%m-%d'
+        date_obj = datetime.strptime(date_str, date_format)
         for report in reports:
             with self.subTest(report):
-                generated = usage_reports.generate_report(focus="org", report_type=report, duration="monthly")
+                generated = usage_reports.generate_report(
+                    focus="org",
+                    report_type=report,
+                    duration="monthly",
+                    start_time=date_obj,
+                )
                 assert generated
+                assert generated.result().delete()
+
 
 if __name__ == "__main__":
     unittest.main()

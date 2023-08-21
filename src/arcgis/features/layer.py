@@ -1605,52 +1605,70 @@ class FeatureLayer(Layer):
         -------------------------------     --------------------------------------------------------------------
         out_analytics                       Required List. A set of analytics to calculate on the Feature Layer.
 
-                                            The definitions for one or more field-based or expression analytics to be computed. This parameter is supported only on layers/tables that indicate supportsAnalytics is true.
-                                            Note: If outAnalyticFieldName is empty or missing, the server assigns a field name to the returned analytic field.
+                                            The definitions for one or more field-based or expression analytics
+                                            to be computed. This parameter is supported only on layers/tables that
+                                            return `true` for *supportsAnalytics* property.
 
-                                            Syntax: An array of analytic definitions. An analytic definition specifies the type of analytic, the field or expression on which it is to be computed, and the resulting output field name.
-                                            Syntax
-                                            [
-                                              {
-                                                "analyticType": "<COUNT | SUM | MIN | MAX | AVG | STDDEV | VAR | FIRST_VALUE, LAST_VALUE, LAG, LEAD, PERCENTILE_CONT, PERCENTILE_DISC, PERCENT_RANK, RANK, NTILE, DENSE_RANK, EXPRESSION>",
-                                                "onAnalyticField": "Field1",
-                                                "outAnalyticFieldName": "Out_Field_Name1",
-                                                 "analyticParameters": {
-                                                      "orderBy": "<orderBy expression",
-                                                      "value": <double value>,// percentile value
-                                                      "partitionBy": "<field name or expression>",
-                                                      "offset": <integer>, // used by LAG/LEAD
-                                                      "windowFrame": {
-                                                         "type": "ROWS" | "RANGE",
-                                                         "extent": {
-                                                            "extentType": "PRECEDING" | "BOUNDARY",
-                                                            "PRECEDING": {
-                                                               "type": <"UNBOUNDED" |
-                                                                       "NUMERIC_CONSTANT" |
-                                                                        "CURRENT_ROW">
-                                                                "value": <numeric constant value>
-                                                             }
-                                                             "BOUNDARY": {
-                                                              "start": "UNBOUNDED_PRECEDING",
-                                                                       "NUMERIC_PRECEDING",
-                                                                        "CURRENT_ROW",
-                                                              "startValue": <numeric constant value>,
-                                                              "end": <"UNBOUNDED_FOLLOWING" |
-                                                                      "NUMERIC_FOLLOWING" |
-                                                                      "CURRENT_ROW",
-                                                              "endValue": <numeric constant value>
+                                            .. note::
+                                                If `outAnalyticFieldName` is empty or missing, the server assigns
+                                                a field name to the returned analytic field.
+
+                                            The argument should be a list of dictionaries that define analystics.
+                                            An analytic definition specifies:
+
+                                            * the type of analytic - key: `analyticType`
+                                            * the field or expression on which it is to be computed - key: `onAnalyticField`
+                                            * the resulting output field name -key: `outAnalyticFieldName`
+                                            * the analytic specifications - `analysticParameters`
+
+                                            See `Overview <https://developers.arcgis.com/rest/services-reference/enterprise/query-analytic.htm#GUID-1713C237-B155-4CFE-8470-FEB3255B7C60>`_
+                                            for details.
+
+                                            .. code-block:: python
+
+                                                # Dictionary structure and options for this parameter
+
+                                                [
+                                                  {
+                                                    "analyticType": "<COUNT | SUM | MIN | MAX | AVG | STDDEV | VAR | FIRST_VALUE, LAST_VALUE, LAG, LEAD, PERCENTILE_CONT, PERCENTILE_DISC, PERCENT_RANK, RANK, NTILE, DENSE_RANK, EXPRESSION>",
+                                                    "onAnalyticField": "Field1",
+                                                    "outAnalyticFieldName": "Out_Field_Name1",
+                                                    "analyticParameters": {
+                                                         "orderBy": "<orderBy expression",
+                                                         "value": <double value>,// percentile value
+                                                         "partitionBy": "<field name or expression>",
+                                                         "offset": <integer>, // used by LAG/LEAD
+                                                         "windowFrame": {
+                                                            "type": "ROWS" | "RANGE",
+                                                            "extent": {
+                                                               "extentType": "PRECEDING" | "BOUNDARY",
+                                                               "PRECEDING": {
+                                                                  "type": <"UNBOUNDED" |
+                                                                          "NUMERIC_CONSTANT" |
+                                                                           "CURRENT_ROW">
+                                                                   "value": <numeric constant value>
+                                                                }
+                                                                "BOUNDARY": {
+                                                                 "start": "UNBOUNDED_PRECEDING",
+                                                                          "NUMERIC_PRECEDING",
+                                                                           "CURRENT_ROW",
+                                                                 "startValue": <numeric constant value>,
+                                                                 "end": <"UNBOUNDED_FOLLOWING" |
+                                                                         "NUMERIC_FOLLOWING" |
+                                                                         "CURRENT_ROW",
+                                                                 "endValue": <numeric constant value>
+                                                                }
+                                                              }
                                                             }
-                                                          }
-                                                        }
-                                                     }
-                                                }
-                                              }
-                                            ]
+                                                         }
+                                                    }
+                                                  }
+                                                ]
 
 
                                             .. code-block:: python
 
-                                                #Usage Example:
+                                                # Usage Example:
 
                                                 >>> out_analytics =
                                                         [{"analyticType": "FIRST_VALUE",

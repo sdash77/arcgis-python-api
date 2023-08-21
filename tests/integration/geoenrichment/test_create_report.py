@@ -7,6 +7,8 @@ import os
 import logging
 import tempfile
 import unittest
+
+from arcgis._impl.common._utils import is_pdf_file
 from arcgis.auth.tools._util import detect_proxy
 from arcgis.gis import GIS
 from arcgis.geometry import Point
@@ -61,6 +63,7 @@ class Test_GE_CreateReport(unittest.TestCase):
             out_name="profile.pdf",
         )
         assert os.path.isfile(pt_report)
+        assert is_pdf_file(pt_report)
         if os.path.isfile(pt_report):
             os.remove(pt_report)
 
@@ -76,6 +79,22 @@ class Test_GE_CreateReport(unittest.TestCase):
             out_name="profile.pdf",
         )
         assert os.path.isfile(pt_report)
+        assert is_pdf_file(pt_report)
+        if os.path.isfile(pt_report):
+            os.remove(pt_report)
+
+    def test_create_report_empty_out_name(self):
+        """tests the create report logic"""
+        address = "380 New York Street Redlands, California"
+
+        pt_report = create_report(
+            study_areas=[address],
+            report="business_loc",
+            export_format="PDF",
+            out_folder=tempfile.gettempdir(),
+        )
+        assert os.path.isfile(pt_report)
+        assert is_pdf_file(pt_report)
         if os.path.isfile(pt_report):
             os.remove(pt_report)
 

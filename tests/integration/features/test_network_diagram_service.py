@@ -3,7 +3,7 @@ from arcgis.gis import GIS
 from arcgis.features._network_diagram import NetworkDiagramManager, Diagram
 
 gis = GIS(
-    "https://utilitynetwork.esri.com/portal", "python_api_team", "python_api_team.109"
+    "https://utilitynetwork.esri.com/portal", "python_api_team", "python_api_team.109", verify_cert=False
 )
 
 
@@ -12,7 +12,7 @@ class TestUtilityNetworkManager(unittest.TestCase):
 
     def test_diagrams(self):
         net_diag_ser = NetworkDiagramManager(
-            "https://utilitynetwork.esri.com/server/rest/services/GettingToKnow29_Postgres/NetworkDiagramServer",
+            "https://utilitynetwork.esri.com/server/rest/services/GettingToKnow25_Postgres/NetworkDiagramServer",
             gis=gis,
         )
         """Test Diagrams and Diagram methods"""
@@ -21,7 +21,7 @@ class TestUtilityNetworkManager(unittest.TestCase):
         assert diagrams
 
         # Get one diagram
-        diagram = net_diag_ser.diagram("basicex_mytest")
+        diagram = net_diag_ser.diagram("Basic_ppp1")
         assert diagram
         assert isinstance(diagram, Diagram)
 
@@ -55,7 +55,7 @@ class TestUtilityNetworkManager(unittest.TestCase):
 
     def test_find_diagrams(self):
         net_diag_ser = NetworkDiagramManager(
-            "https://utilitynetwork.esri.com/server/rest/services/GettingToKnow29_Postgres/NetworkDiagramServer",
+            "https://utilitynetwork.esri.com/server/rest/services/GettingToKnow25_Postgres/NetworkDiagramServer",
             gis=gis,
         )
 
@@ -69,7 +69,7 @@ class TestUtilityNetworkManager(unittest.TestCase):
 
     def test_query_consistency_states(self):
         net_diag_ser = NetworkDiagramManager(
-            "https://utilitynetwork.esri.com/server/rest/services/GettingToKnow29_Postgres/NetworkDiagramServer",
+            "https://utilitynetwork.esri.com/server/rest/services/GettingToKnow25_Postgres/NetworkDiagramServer",
             gis=gis,
         )
 
@@ -80,7 +80,7 @@ class TestUtilityNetworkManager(unittest.TestCase):
 
     def test_templates(self):
         net_diag_ser = NetworkDiagramManager(
-            "https://utilitynetwork.esri.com/server/rest/services/GettingToKnow29_Postgres/NetworkDiagramServer",
+            "https://utilitynetwork.esri.com/server/rest/services/GettingToKnow25_Postgres/NetworkDiagramServer",
             gis=gis,
         )
 
@@ -93,7 +93,7 @@ class TestUtilityNetworkManager(unittest.TestCase):
 
     def test_dataset(self):
         net_diag_ser = NetworkDiagramManager(
-            "https://utilitynetwork.esri.com/server/rest/services/GettingToKnow29_Postgres/NetworkDiagramServer",
+            "https://utilitynetwork.esri.com/server/rest/services/GettingToKnow25_Postgres/NetworkDiagramServer",
             gis=gis,
         )
 

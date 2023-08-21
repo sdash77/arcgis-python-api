@@ -9,6 +9,7 @@ import unittest
 from arcgis.auth.tools._util import detect_proxy
 from arcgis.gis import GIS
 from arcgis.geoprocessing._job import GPJob
+from integration.config import QALAB_ROOT_PATH
 
 __logger__ = logging.getLogger()
 
@@ -25,7 +26,7 @@ profiles = ['your_enterprise_profile']
 PROXIES = detect_proxy(True)  # Handles Fiddler when True
 enable_verbose_logging(__logger__)
 
-data_location = r"\\qalab_server\pydata\v109\geosaurus\data_prep\SDs"
+data_location = QALAB_ROOT_PATH + r"\data_prep\SDs"
 
 
 class TestServerPublishSDFile(unittest.TestCase):
