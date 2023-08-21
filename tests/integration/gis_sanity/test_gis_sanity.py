@@ -14,6 +14,7 @@ from arcgis.gis import GIS
 from arcgis.gis import ItemProperties, ItemTypeEnum
 from arcgis.features import FeatureLayerCollection
 from arcgis.gis import ContentManager
+from integration.config import QALAB_ROOT_PATH
 
 __logger__ = logging.getLogger()
 
@@ -48,17 +49,20 @@ def get_config_parser() -> dict:
     """
     configs = [
         os.path.join(
-            r"\\qalab_server\pydata\v109\geosaurus\esri_requests",
+            QALAB_ROOT_PATH,
+            "esri_requests",
             "config.ini",
         ),
         os.path.join(os.path.dirname(__file__), "config.ini.txt"),
         os.path.join(os.path.dirname(__file__), "config.ini"),
         os.path.join(
-            r"\\qalab_server\pydata\v109\geosaurus\esri_requests",
+            QALAB_ROOT_PATH,
+            "esri_requests",
             "config.ini",
         ),
         os.path.join(
-            r"\\qalab_server\pydata\v109\geosaurus\esri_requests",
+            QALAB_ROOT_PATH,
+            "esri_requests",
             "config.ini.txt",
         ),
     ]
@@ -142,7 +146,7 @@ class Test_GIS_Sanity_Operations(unittest.TestCase):
         for gis in self.gis_storage:
             item = gis.content.add(
                 item_properties=ip,
-                data=r"\\qalab_server\pydata\v109\geosaurus\image\cows2.jpg",
+                data=QALAB_ROOT_PATH + r"\image\cows2.jpg",
             )
             assert item.delete()
 
@@ -156,7 +160,7 @@ class Test_GIS_Sanity_Operations(unittest.TestCase):
                     "type": "Vector Tile Package",
                     "tags": "a,b,c",
                 },
-                data=r"\\qalab_server\pydata\v109\geosaurus\VTC\2nZproduction.vtpk",
+                data=QALAB_ROOT_PATH + r"\VTC\2nZproduction.vtpk",
             )
             assert item.delete()
 
@@ -180,7 +184,7 @@ class Test_GIS_Sanity_Operations(unittest.TestCase):
         Tests the Multiform POST operation using edit_features
         Tests the common publish operation
         """
-        fc = r"\\qalab_server\pydata\v109\geosaurus\fgdb\FGDB_Test.zip"
+        fc = QALAB_ROOT_PATH + r"\fgdb\FGDB_Test.zip"
         ip = ItemProperties(
             title="HFL_APPLY_EDITS", item_type=ItemTypeEnum.FILE_GEODATABASE
         )
@@ -215,7 +219,7 @@ class Test_GIS_Sanity_Operations(unittest.TestCase):
         Tests the Multiform POST operation using edit_features
         Tests the common publish operation
         """
-        fc = r"\\qalab_server\pydata\v109\geosaurus\fgdb\FGDB_Test.zip"
+        fc = QALAB_ROOT_PATH + r"\fgdb\FGDB_Test.zip"
         ip = ItemProperties(
             title="HFL_APPLY_EDITS", item_type=ItemTypeEnum.FILE_GEODATABASE
         )

@@ -2,7 +2,6 @@ import sys
 
 #
 #  Update the Path to set the test area
-sys.path.insert(0, r"C:\SVN\geosaurus_issue_10109\src")
 import os
 import logging
 import unittest
@@ -23,7 +22,7 @@ def enable_verbose_logging(root):
     root.addHandler(handler)
 
 
-profiles = ['your_online_profile', 'your_enterprise_profile']
+profiles = ['your_online_admin_profile', 'your_enterprise_profile']
 PROXIES = detect_proxy(True)  # Handles Fiddler when True
 # enable_verbose_logging(__logger__)
 
@@ -35,7 +34,7 @@ class TestCloneWorkflows(unittest.TestCase):
     def setUpClass(cls):
         cls.result_files = []
         cls.source_gis_online = GIS(
-            profile='your_dev_online_profile',
+            profile=profiles[0],
             verify_cert=False,
             proxy=PROXIES,
         )

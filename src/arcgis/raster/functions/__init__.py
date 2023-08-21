@@ -148,6 +148,7 @@ def _clone_layer(
     newlyr._filtered = layer._filtered
     newlyr._uses_gbl_function = layer._uses_gbl_function
     newlyr._raster_info = layer._raster_info
+    newlyr._tiles_only = False  # layer with raster function applied is not tiles only
 
     if hasattr(layer, "_lazy_token"):
         newlyr._lazy_token = layer._lazy_token
@@ -210,6 +211,7 @@ def _clone_layer_without_copy(layer, function_chain, function_chain_ra):
     newlyr._filtered = layer._filtered
     newlyr._uses_gbl_function = layer._uses_gbl_function
     newlyr._raster_info = layer._raster_info
+    newlyr._tiles_only = False  # layer with raster function applied is not tiles only
 
     if hasattr(layer, "_lazy_token"):
         newlyr._lazy_token = layer._lazy_token
@@ -318,6 +320,9 @@ def _clone_layer_raster(
     newlyr._engine_obj._filtered = layer._filtered
     newlyr._engine_obj._uses_gbl_function = layer._uses_gbl_function
     newlyr._engine_obj._do_not_hydrate = layer._do_not_hydrate
+    newlyr._engine_obj._tiles_only = (
+        False  # layer with raster function applied is not tiles only
+    )
     # newlyr._engine_obj.extent = layer.extent
     if hasattr(layer, "_lazy_token"):
         newlyr._engine_obj._lazy_token = layer._lazy_token
@@ -445,7 +450,10 @@ def _clone_layer_raster_without_copy(layer, function_chain, function_chain_ra):
     newlyr._engine_obj._filtered = layer._filtered
     newlyr._engine_obj._uses_gbl_function = layer._uses_gbl_function
     newlyr._engine_obj._do_not_hydrate = layer._do_not_hydrate
-    newlyr._engine_obj.extent = layer.extent
+    newlyr._engine_obj._tiles_only = (
+        False  # layer with raster function applied is not tiles only
+    )
+    # newlyr._engine_obj.extent = layer.extent
     if hasattr(layer, "_lazy_token"):
         newlyr._engine_obj._lazy_token = layer._lazy_token
     else:
@@ -1969,21 +1977,18 @@ def clip(
     template_dict = {
         "rasterFunction": "Clip",
         "rasterFunctionArguments": {
-            "ClippingGeometry": geometry,
             "ClipType": 1 if clip_outside else 2,
             "Raster": raster,
         },
     }
 
+    if geometry is not None:
+        template_dict["rasterFunctionArguments"]["ClippingGeometry"] = geometry
+
     if astype is not None:
         template_dict["outputPixelType"] = astype.upper()
 
     extent_envelope = None
-
-    if clipping_raster is not None and isinstance(
-        clipping_raster, (Raster, ImageryLayer)
-    ):
-        extent_envelope = dict(clipping_raster.extent)
 
     try:
         from arcgis.geometry import Envelope, Geometry
@@ -13467,6 +13472,179 @@ def merge_rasters(
         template_dict["rasterFunctionArguments"]["MosaicOperator"] = in_mosaic_type
 
     return _clone_layer(layer, template_dict, raster_ra, variable_name="Rasters")
+
+
+def region_pixel_count(raster, max_region_size=100, pixel_neighborhood=4):
+    """
+    The region_pixel_count function returns an image where each pixel contains the number of pixels within a connected region.
+    This function is available from 11.2 onwards.
+
+    The arguments for this function are as follows:
+
+    ================================     ====================================================================
+    **Parameter**                         **Description**
+    --------------------------------     --------------------------------------------------------------------
+    raster                               Required :class:`Raster <arcgis.raster.Raster>` /  :class:`ImageryLayer <arcgis.raster.ImageryLayer>` object.
+    --------------------------------     --------------------------------------------------------------------
+    max_region_size                      Optional integer. The maximum number of pixels a region can contain. The default is 100.
+    --------------------------------     --------------------------------------------------------------------
+    pixel_neighborhood                   Optional integer. The number of neighborhoods to be used (4 or 8) when assessing pixel connectivity. The default is 4.
+    ================================     ====================================================================
+
+    :return: The output raster with the function applied.
+
+    .. code-block:: python
+
+        # Usage Example 1: Generate the raster where each pixel contains the number of pixels within a connected region of the input raster.
+
+        op_lyr = region_pixel_count(raster=img_lyr, max_region_size=100, pixel_neighborhood=4)
+    """
+    layer, raster, raster_ra = _raster_input(raster)
+
+    template_dict = {
+        "rasterFunction": "RegionPixelCount",
+        "rasterFunctionArguments": {
+            "Raster": raster,
+        },
+    }
+
+    pixel_neighborhood_types = {4: 0, 8: 1}
+
+    if (
+        isinstance(pixel_neighborhood, int)
+        and pixel_neighborhood in pixel_neighborhood_types
+    ):
+        in_pixel_neighborhood = pixel_neighborhood_types[pixel_neighborhood]
+    else:
+        raise ValueError(
+            "Invalid pixel_neighborhood. pixel_neighborhood should be 4 or 8"
+        )
+
+    if max_region_size is not None:
+        template_dict["rasterFunctionArguments"]["MaxRegionSize"] = max_region_size
+
+    if pixel_neighborhood is not None:
+        template_dict["rasterFunctionArguments"][
+            "PixelNeighborhood"
+        ] = in_pixel_neighborhood
+
+    return _clone_layer(layer, template_dict, raster_ra)
+
+
+def gradient(raster, gradient_dimension="X", denominator_unit="DEFAULT"):
+    """
+    Compute gradient along a specified dimension.
+    This function is available from 11.2 onwards.
+
+    The arguments for this function are as follows:
+
+    ================================     ====================================================================
+    **Parameter**                         **Description**
+    --------------------------------     --------------------------------------------------------------------
+    raster                               Required :class:`Raster <arcgis.raster.Raster>` /  :class:`ImageryLayer <arcgis.raster.ImageryLayer>` object.
+    --------------------------------     --------------------------------------------------------------------
+    gradient_dimension                   | Optional string. The gradient dimension. The default is 'X'.
+                                           The dimensions that are available to calculate gradient on.
+                                         
+                                         | For non-multidimensional input, X, Y and XY are available.
+                                         
+                                         | For multidimensional input, X, Y and XY and all dimensions in the data are available.
+                                           If there are two or more dimensions, gradient will be calculated on the gradient dimension
+                                           for all slices in other dimensions.
+                                         
+                                         | XY option outputs a 3-band raster where band 1 represents the gradient along X dimension
+                                           and bands 2 and 3 represents the gradient along Y dimension.
+    --------------------------------     --------------------------------------------------------------------
+    denominator_unit                     Optional string. The default is "DEFAULT".
+                                         The unit of the denominator. Depends on the selected Gradient Dimension.
+
+                                         For X, Y, XY, the options are:
+
+                                         - DEFAULT : Output is the difference between adjacent cells. This is the default.
+                                         - CELLSIZE : Output is the difference between adjacent cells divided by the cellsize\
+                                                      of the input. The output unit is the same as the unit of the X/Y coordinates\
+                                                      of the input. If the data is in a geographic coordinate system,\
+                                                      it will be converted to meters.
+
+                                         For StdTime, the options are:
+
+                                         - DEFAULT : Output is the difference between adjacent slices. This is the default.
+                                         - PER_HOUR : Output is the difference between adjacent slices divided by the difference\
+                                                      between their time values and converted to per hour rate.
+                                         - PER_DAY : Output is the difference between adjacent slices divided by the difference\
+                                                     between their time values and converted to per day rate.
+                                         - PER_MONTH : Output is the difference between adjacent slices divided by the\
+                                                       difference between their time values and converted to per month rate.
+                                         - PER_YEAR : Output is the difference between adjacent slices divided by the\
+                                                      difference between their time values and converted to per year rate.
+                                         - PER_DECADE : Output is the difference between adjacent slices divided by the difference\
+                                                        between their time values and converted to per decade rate.
+
+                                         For non-time dimension, the options are:
+
+                                         - DEFAULT : Output is the difference between adjacent slices. This is the default.
+                                         - DIMENSION_INTERVAL : Output is the difference between adjacent slices divided by\
+                                                                the difference between their dimension values.
+    ================================     ====================================================================
+
+    :return: The output raster with the function applied.
+
+    .. code-block:: python
+
+        # Usage Example 1: This example calculates the gradient along X and Y dimensions of a raster.
+
+        gradient_raster = gradient(raster=img_lyr, gradient_dimension="XY", denominator_unit="CELLSIZE")
+    """
+    layer, raster, raster_ra = _raster_input(raster)
+
+    template_dict = {
+        "rasterFunction": "Gradient",
+        "rasterFunctionArguments": {
+            "Raster": raster,
+        },
+    }
+
+    if gradient_dimension is not None:
+        complete_dim_list = None
+        try:
+            from .utility import _get_dimension_names
+
+            dim_list = _get_dimension_names(layer)
+            complete_dim_list = ["X", "Y", "XY"]
+            complete_dim_list.extend(dim_list)
+        except:
+            pass
+        if complete_dim_list:
+            if gradient_dimension not in complete_dim_list:
+                raise RuntimeError(
+                    "gradient_dimension should be one of the following "
+                    + str(complete_dim_list)
+                )
+        template_dict["rasterFunctionArguments"][
+            "GradientDimension"
+        ] = gradient_dimension
+
+    denominator_unit_list = [
+        "DEFAULT",
+        "CELLSIZE",
+        "PER_HOUR",
+        "PER_DAY",
+        "PER_MONTH",
+        "PER_YEAR",
+        "PER_DECADE",
+        "DIMENSION_INTERVAL",
+    ]
+    if denominator_unit is not None:
+        if denominator_unit.upper() not in denominator_unit_list:
+            raise RuntimeError(
+                "denominator_unit should be one of the following "
+                + str(denominator_unit_list)
+            )
+        template_dict["rasterFunctionArguments"][
+            "DenominatorUnit"
+        ] = denominator_unit.upper()
+
+    return _clone_layer(layer, template_dict, raster_ra)
 
 
 class RFT:

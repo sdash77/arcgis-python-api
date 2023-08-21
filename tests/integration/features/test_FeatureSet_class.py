@@ -6,9 +6,11 @@ import unittest
 from integration.dino_utils.dino_precondition_checks import PreconditionChecks
 from integration.dino_utils.dino_precondition_checks import PortalUtils
 from integration.dino_utils.dino_configs import DinoConfigs
+from integration.config import QALAB_ROOT_PATH
 from configparser import ConfigParser
 import datetime
 import os
+import tempfile
 
 # region PreCondition check
 test_skip = False
@@ -69,7 +71,7 @@ class Test_Feature_class(unittest.TestCase):
         _conf_reader = ConfigParser()
         _conf_reader.read(DinoConfigs.root_init_file, "UTF-8")
 
-        cls.qalab_base_path = _conf_reader["test_data"]["qalab_base_path"]
+        cls.qalab_base_path = QALAB_ROOT_PATH
         cls.qalab_cls_path = (
             cls.qalab_base_path + _conf_reader["test_data"]["qalab_FeatureSet_cls"]
         )
@@ -115,21 +117,19 @@ class Test_Feature_class(unittest.TestCase):
         try:
             temp = None
             gis = GIS()
-            # calling a feature layer corresponding to the USA Freeway System in arcgis online
-            content = gis.content.get(
-                "c6b6cebc24ea4c619fbf4f5ed124fefa"
-            )  # original item: 91c6a5f6410b4991ab0db1d7c26daacb"
+            # using Living Atlas curated content Transportation item
+            content = gis.content.get("f42ecc08a3634182b8678514af35fac3") 
 
             layer = content.layers[0]
-            features_req = layer.query(where="OBJECTID = 1")
+            features_req = layer.query(where="BASENAME = '20'")
 
             csv_file = r"generatedCSVfile.csv"
-            path = os.path.join(self.qalab_cls_path, csv_file)
-            temp = features_req.save(self.qalab_cls_path, csv_file)
+            path = tempfile.gettempdir()
+            temp = features_req.save(path, csv_file)
 
             print(temp)
 
-            self.assertEqual(temp, path, "CSV file not created successfully")
+            self.assertEqual(temp, os.path.join(path, csv_file), "CSV file not created successfully")
 
         except AssertionError as assertErrorException:
             test_skip = True
@@ -150,19 +150,19 @@ class Test_Feature_class(unittest.TestCase):
             temp = None
 
             gis = GIS()
-            # calling a feature layer corresponding to the USA Freeway System in arcgis online
-            content = gis.content.get("c6b6cebc24ea4c619fbf4f5ed124fefa")
+            # using Living Atlas curated content Transportation item
+            content = gis.content.get("f42ecc08a3634182b8678514af35fac3")
 
             layer = content.layers[0]
             features_req = layer.query(where="OBJECTID = -1")
 
             csv_file = r"generatedCSVfile_nofeat.csv"
-            path = os.path.join(self.qalab_cls_path, csv_file)
-            temp = features_req.save(self.qalab_cls_path, csv_file)
+            path = tempfile.gettempdir()
+            temp = features_req.save(path, csv_file)
 
             print(temp)
 
-            self.assertEqual(temp, path, "CSV file not created successfully")
+            self.assertEqual(temp, os.path.join(path, csv_file), "CSV file not created successfully")
 
         except AssertionError as assertErrorException:
             test_skip = True

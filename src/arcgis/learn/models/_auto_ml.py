@@ -43,6 +43,16 @@ try:
     from sklearn import preprocessing
     import numpy as np
     import pandas as pd
+    from sklearn.pipeline import make_pipeline
+    from sklearn.compose import make_column_transformer
+    from sklearn.impute import SimpleImputer
+    from sklearn.preprocessing import (
+        Normalizer,
+        LabelEncoder,
+        MinMaxScaler,
+        StandardScaler,
+        OrdinalEncoder,
+    )
 except Exception as e:
     import_exception = "\n".join(
         traceback.format_exception(type(e), e, e.__traceback__)
@@ -149,16 +159,15 @@ class AutoML(object):
     """
 
     def __init__(
-            self,
-            data=None,
-            total_time_limit=3600,
-            mode="Basic",
-            algorithms=None,
-            eval_metric="auto",
-            n_jobs=1,
-            ml_task="auto",
-            **kwargs
-
+        self,
+        data=None,
+        total_time_limit=3600,
+        mode="Basic",
+        algorithms=None,
+        eval_metric="auto",
+        n_jobs=1,
+        ml_task="auto",
+        **kwargs,
     ):
         try:
             import platform
@@ -190,7 +199,7 @@ class AutoML(object):
             )
         if getattr(self._data, "_is_not_empty", False):
             if (len(data._training_indexes) < 20) & (
-                    eval_metric in ["r2", "rmse", "mse", "mape", "spearman", "pearson"]
+                eval_metric in ["r2", "rmse", "mse", "mape", "spearman", "pearson"]
             ):
                 warnings.warn(
                     "The eval metric you have passed, is not valid for a classification usecase. If the use case is regression, then ensure that your dataset has atleast 22 records"
@@ -225,15 +234,20 @@ class AutoML(object):
                 self._validation_labels,
             ) = self._data._ml_data
 
-            self._all_data_df = self._data._dataframe[self._data._continuous_variables
-                                                      + self._data._categorical_variables
-                                                      + self._data._embedding_variables]
-            self._all_labels = self._data._dataframe[self._data._dependent_variable].values
+            self._all_data_df = self._data._dataframe[
+                self._data._continuous_variables
+                + self._data._categorical_variables
+                + self._data._embedding_variables
+            ]
+            self._all_data_df = self._impute_missing_values(data=self._all_data_df)
+            self._all_labels = self._data._dataframe[
+                self._data._dependent_variable
+            ]  # .values
             self._validation_data_df = pd.DataFrame(
                 self._validation_data,
                 columns=self._data._continuous_variables
-                        + self._data._categorical_variables
-                        + self._data._embedding_variables,
+                + self._data._categorical_variables
+                + self._data._embedding_variables,
             )
             if ml_task == "auto":
                 ml_task = self.get_ml_task(self._all_labels)
@@ -285,11 +299,25 @@ class AutoML(object):
             self._privileged_groups = kwargs.get("privileged_groups", [])
             self._underprivileged_groups = kwargs.get("unprivileged_groups", [])
 
-            if self._fairness_metric == 'group_loss_difference' and self._fairness_threshold == 'auto':
+            for grp in self._underprivileged_groups:
+                for key in grp:
+                    val = grp[key]
+                    if val == "":
+                        self._underprivileged_groups = []
+
+            if (
+                self._fairness_metric == "group_loss_difference"
+                and self._fairness_threshold == "auto"
+            ):
                 warnings.warn(
                     "Fairness Threshold value is required to be passed when the chosen fairness metric is group_loss_difference."
                 )
-                #exit()
+                # exit()
+
+            if self._fairness_metric == "equalised_odds_ratio":
+                self._fairness_metric = "equalized_odds_ratio"
+            if self._fairness_metric == "equalised_odds_difference":
+                self._fairness_metric = "equalized_odds_difference"
 
             self._model = base_AutoML(
                 results_path=result_path,
@@ -305,8 +333,7 @@ class AutoML(object):
                 fairness_metric=self._fairness_metric,
                 fairness_threshold=self._fairness_threshold,
                 privileged_groups=self._privileged_groups,
-                underprivileged_groups=self._underprivileged_groups
-
+                underprivileged_groups=self._underprivileged_groups,
             )
         else:
             result_path = self._data.path
@@ -328,6 +355,27 @@ class AutoML(object):
         except:
             return "auto"
 
+    def _impute_missing_values(self, data=None):
+        numerical_transformer = make_pipeline(SimpleImputer(strategy="median"))
+
+        categorical_transformer = make_pipeline(SimpleImputer(strategy="constant"))
+
+        _procs = make_column_transformer(
+            (numerical_transformer, self._data._continuous_variables),
+            (categorical_transformer, self._data._categorical_variables),
+            (numerical_transformer, self._data._embedding_variables),
+        )
+        if data is None:
+            data = self._all_data_df
+        try:
+            processed_data = _procs.fit_transform(data)
+            processed_data_df = pd.DataFrame(
+                processed_data, columns=data.columns.values.tolist()
+            )
+        except:
+            processed_data_df = data
+        return processed_data_df
+
     def fit(self, sample_weight=None):
         """
         Fits the AutoML model.
@@ -338,12 +386,17 @@ class AutoML(object):
             elif isinstance(self._all_labels[0], float):
                 self._all_labels = self._all_labels.astype(np.float)
             if self._sensitive_variables:
-                sensitive_features = self._all_data_df[self._sensitive_variables].astype('category')
+                sensitive_features = self._all_data_df[
+                    self._sensitive_variables
+                ].astype("category")
             else:
                 sensitive_features = None
             try:
                 self._model.fit(
-                    self._all_data_df, self._all_labels, sample_weight=sample_weight,sensitive_features=sensitive_features
+                    self._all_data_df,
+                    self._all_labels,
+                    sample_weight=sample_weight,
+                    sensitive_features=sensitive_features,
                 )
             except:
                 msg = arcpy_localization_helper(
@@ -419,17 +472,20 @@ class AutoML(object):
         """
         if getattr(self._data, "_is_not_empty", True):
             with warnings.catch_warnings():
-                warnings.simplefilter(
-                    "ignore", UserWarning
+                warnings.simplefilter("ignore", UserWarning)
+                return self._model.score(
+                    self._validation_data_df, self._validation_labels
                 )
-                return self._model.score(self._validation_data_df, self._validation_labels)
         else:
             raise Exception(
                 "This method is not available when the model is initiated for prediction"
             )
 
     def fairness_score(
-            self, sensitive_feature, fairness_metrics=None, visualize=False,
+        self,
+        sensitive_feature,
+        fairness_metrics=None,
+        visualize=False,
     ):
         """
         Shows sample results for the model.
@@ -467,7 +523,9 @@ class AutoML(object):
                 replace=False,
                 random_state=42,
             ).index.to_list()
-        self.sensitive_feature_series = self._validation_data_df.loc[:, sensitive_feature]
+        self.sensitive_feature_series = self._validation_data_df.loc[
+            :, sensitive_feature
+        ]
         if self._sensitive_variables:
             return "Since AutoML was trained with fairness mitigation, the fairness score can be obtained by running the report() method."
 
@@ -476,9 +534,13 @@ class AutoML(object):
                 "This method is not available when the model is initiated for prediction"
             )
 
-        y_true = self._data._dataframe.loc[validation_indexes][self._data._dependent_variable]
-        y_pred = self.predict(self._data._dataframe.loc[validation_indexes], prediction_type='dataframe')
-        y_pred = y_pred['prediction_results'].to_numpy()
+        y_true = self._data._dataframe.loc[validation_indexes][
+            self._data._dependent_variable
+        ]
+        y_pred = self.predict(
+            self._data._dataframe.loc[validation_indexes], prediction_type="dataframe"
+        )
+        y_pred = y_pred["prediction_results"].to_numpy()
 
         return calculate_metrics(
             self._data._is_classification,
@@ -653,12 +715,12 @@ class AutoML(object):
 
         if self._model._get_ml_task() == "regression":
             explainer = shap.KernelExplainer(
-                self._shap_predict, shap.sample(self._data._ml_data[0], 500)
+                self._shap_predict, shap.sample(self._all_data_df.values, 500)
             )
         else:
             explainer = shap.KernelExplainer(
                 self._shap_predict,
-                shap.sample(self._data._ml_data[0], 500),
+                shap.sample(self._all_data_df.values, 500),
                 link="logit",
             )
         filename = os.path.join(path, "model_explainer.sav")
@@ -815,6 +877,7 @@ class AutoML(object):
             + self._data._categorical_variables
             + self._data._embedding_variables,
         )
+        data_df = self._impute_missing_values(data=data_df)
         return self._model.predict(data_df)
 
     def _shap_predict(self, data):
@@ -823,6 +886,7 @@ class AutoML(object):
             columns=self._data._continuous_variables
             + self._data._categorical_variables,
         )
+        data_df = self._impute_missing_values(data=data_df)
         if self._model._get_ml_task() == "regression":
             return self._model.predict(data_df)
         else:
@@ -834,6 +898,7 @@ class AutoML(object):
             columns=self._data._continuous_variables
             + self._data._categorical_variables,
         )
+        data_df = self._impute_missing_values(data=data_df)
         return self._model.predict_all(data_df)
 
     def _predict_proba(self, data):
@@ -842,6 +907,7 @@ class AutoML(object):
             columns=self._data._continuous_variables
             + self._data._categorical_variables,
         )
+        data_df = self._impute_missing_values(data=data_df)
         return self._model.predict_proba(data_df)
 
     def predict(
@@ -1027,7 +1093,7 @@ class AutoML(object):
                 dataframe = input_features.query().sdf
 
             if attachment_list:
-                dataframe['Images'] = attachment_list
+                dataframe["Images"] = attachment_list
         elif (
             hasattr(input_features, "dataSource")
             or str(input_features).endswith(".shp")
@@ -1043,7 +1109,7 @@ class AutoML(object):
             if cell_sizes and not rasters:
                 dataframe = add_h3(dataframe, cell_sizes)
             if attachment_list:
-                dataframe['Images'] = attachment_list
+                dataframe["Images"] = attachment_list
             dataframe_complete = True
             self._data._text_variables = self._data._text_variables or []
             self._data._image_variables = self._data._image_variables or []
@@ -1181,9 +1247,11 @@ class AutoML(object):
                 if "emb_" not in column:
                     processed_dataframe = processed_dataframe.drop(column, axis=1)
 
-        processed_numpy = processed_dataframe[self._data._continuous_variables
-                                              + self._data._categorical_variables
-                                              + self._data._embedding_variables]
+        processed_numpy = processed_dataframe[
+            self._data._continuous_variables
+            + self._data._categorical_variables
+            + self._data._embedding_variables
+        ]
         with warnings.catch_warnings():
             warnings.simplefilter("ignore")
             predictions = self._predict(processed_numpy)
@@ -1250,7 +1318,7 @@ class AutoML(object):
                 except:
                     pass
         dataframe_merged = pd.concat([dataframe, shap_df.abs()], axis=1)
-        dataframe_merged = dataframe_merged.filter(regex='^(?!emb_)')
+        dataframe_merged = dataframe_merged.filter(regex="^(?!emb_)")
 
         if prediction_type == "dataframe":
             return dataframe_merged

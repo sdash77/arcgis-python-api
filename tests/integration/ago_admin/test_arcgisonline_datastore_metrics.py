@@ -2,7 +2,6 @@ import sys
 
 #
 #  Update the Path to set the test area
-sys.path.insert(0, r"C:\SVN\geosaurus_issue_10226\src")
 import logging
 import unittest
 from arcgis.auth.tools._util import detect_proxy
@@ -22,7 +21,7 @@ def enable_verbose_logging(root):
     root.addHandler(handler)
 
 
-profiles = ['your_online_profile']
+profiles = ['your_online_admin_profile']
 PROXIES = detect_proxy(True)  # Handles Fiddler when True
 enable_verbose_logging(__logger__)
 
@@ -31,7 +30,7 @@ class Test_DatastoreMetrics(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         cls.gis = GIS(
-            profile='your_online_profile', verify_cert=False, proxy=PROXIES
+            profile='your_online_admin_profile', verify_cert=False, proxy=PROXIES
         )
 
     def test_dmm(self):

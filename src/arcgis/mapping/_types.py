@@ -1946,51 +1946,66 @@ class WebMap(HasTraits, collections.OrderedDict):
         Gets a list of possible base maps to set as the
         :attr:`~arcgis.mapping.WebMap.basemap` for the ``WebMap``.
         """
-        basemaps = [
-            "dark-gray-vector",
-            "gray-vector",
-            "hybrid",
-            "oceans",
-            "osm",
-            "satellite",
-            "streets-navigation-vector",
-            "streets-night-vector",
-            "streets-relief-vector",
-            "streets-vector",
-            "terrain",
-            "topo-vector",
-            "arcgis-imagery",
-            "arcgis-imagery-standard",
-            "arcgis-imagery-labels",
-            "arcgis-light-gray",
-            "arcgis-dark-gray",
-            "arcgis-navigation",
-            "arcgis-navigation-night",
-            "arcgis-streets",
-            "arcgis-streets-night",
-            "arcgis-streets-relief",
-            "arcgis-topographic",
-            "arcgis-oceans",
-            "osm-standard",
-            "osm-standard-relief",
-            "osm-streets",
-            "osm-streets-relief",
-            "osm-light-gray",
-            "osm-dark-gray",
-            "arcgis-terrain",
-            "arcgis-community",
-            "arcgis-charted-territory",
-            "arcgis-colored-pencil",
-            "arcgis-nova",
-            "arcgis-modern-antique",
-            "arcgis-midcentury",
-            "arcgis-newspaper",
-            "arcgis-hillshade-light",
-            "arcgis-hillshade-dark",
-            "arcgis-human-geography",
-            "arcgis-human-geography-dark",
-        ]
-        return basemaps
+        if self._gis._is_authenticated:
+            return [
+                "dark-gray-vector",
+                "gray-vector",
+                "hybrid",
+                "oceans",
+                "osm",
+                "satellite",
+                "streets-navigation-vector",
+                "streets-night-vector",
+                "streets-relief-vector",
+                "streets-vector",
+                "terrain",
+                "topo-vector",
+                "arcgis-imagery",
+                "arcgis-imagery-standard",
+                "arcgis-imagery-labels",
+                "arcgis-light-gray",
+                "arcgis-dark-gray",
+                "arcgis-navigation",
+                "arcgis-navigation-night",
+                "arcgis-streets",
+                "arcgis-streets-night",
+                "arcgis-streets-relief",
+                "arcgis-topographic",
+                "arcgis-oceans",
+                "osm-standard",
+                "osm-standard-relief",
+                "osm-streets",
+                "osm-streets-relief",
+                "osm-light-gray",
+                "osm-dark-gray",
+                "arcgis-terrain",
+                "arcgis-community",
+                "arcgis-charted-territory",
+                "arcgis-colored-pencil",
+                "arcgis-nova",
+                "arcgis-modern-antique",
+                "arcgis-midcentury",
+                "arcgis-newspaper",
+                "arcgis-hillshade-light",
+                "arcgis-hillshade-dark",
+                "arcgis-human-geography",
+                "arcgis-human-geography-dark",
+            ]
+        else:
+            return [
+                "dark-gray-vector",
+                "gray-vector",
+                "hybrid",
+                "oceans",
+                "osm",
+                "satellite",
+                "streets-navigation-vector",
+                "streets-night-vector",
+                "streets-relief-vector",
+                "streets-vector",
+                "terrain",
+                "topo-vector",
+            ]
 
     @property
     def gallery_basemaps(self):
@@ -4486,9 +4501,9 @@ class EnterpriseVectorTileLayerManager(arcgis.gis._GISResource):
     # ----------------------------------------------------------------------
     def rebuild_cache(self, min_scale=None, max_scale=None):
         """
-        The rebuild_cache operation update the scene layer cache to reflect
-        any changes made to the feature layer used to publish this scene layer.
-        The results of the operation is the url to the scene service once it is
+        The rebuild_cache operation updates the vector tile layer cache to reflect
+        any changes made.
+        The results of the operation is the url to the vector tile service once it is
         done rebuilding.
 
         ======================      =======================================================

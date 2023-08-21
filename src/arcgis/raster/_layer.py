@@ -8248,8 +8248,29 @@ class Raster:
                               the URL of the STAC item. It can be a Static STAC item URL or a STAC
                               API Item URL.
 
+                              .. note::
+
+                                STAC items from the following STAC APIs are supported:
+
+                                    - https://planetarycomputer.microsoft.com/api/stac/v1 (Following collections are supported: daymet-annual-pr, daymet-daily-hi, \
+                                        3dep-seamless, 3dep-lidar-dsm, sentinel-1-rtc, gridmet, daymet-annual-na, daymet-monthly-na, daymet-annual-hi, \
+                                        daymet-monthly-hi, daymet-monthly-pr, hgb, cop-dem-glo-30, cop-dem-glo-90, terraclimate, gnatsgo-rasters, 3dep-lidar-hag, \
+                                        3dep-lidar-intensity, 3dep-lidar-pointsourceid, mtbs, noaa-c-cap, alos-fnf-mosaic, 3dep-lidar-returns, mobi, landsat-c2-l2, \
+                                        chloris-biomass, daymet-daily-pr, 3dep-lidar-dtm-native, 3dep-lidar-classification, 3dep-lidar-dtm, gap, alos-dem, jrc-gsw, \
+                                        hrea, sentinel-2-l2a, daymet-daily-na, nrcan-landcover, ecmwf-forecast, noaa-mrms-qpe-24h-pass2, sentinel-1-grd, nasadem, \
+                                        io-lulc, landsat-c2-l1, drcog-lulc, chesapeake-lc-7, chesapeake-lc-13, chesapeake-lu, noaa-mrms-qpe-1h-pass1, \
+                                        noaa-mrms-qpe-1h-pass2, noaa-nclimgrid-monthly, usda-cdl, esa-cci-lc, esa-cci-lc-netcdf, noaa-climate-normals-netcdf, \
+                                        noaa-climate-normals-gridded, io-lulc-9-class, io-biodiversity, naip, noaa-cdr-sea-surface-temperature-whoi, \
+                                        noaa-cdr-ocean-heat-content, noaa-cdr-sea-surface-temperature-whoi-netcdf, sentinel-3-olci-wfr-l2-netcdf, \
+                                        noaa-cdr-ocean-heat-content-netcdf, sentinel-3-synergy-v10-l2-netcdf, sentinel-3-olci-lfr-l2-netcdf, \
+                                        sentinel-3-slstr-lst-l2-netcdf, sentinel-3-slstr-wst-l2-netcdf, sentinel-3-synergy-syn-l2-netcdf, \
+                                        sentinel-3-synergy-vgp-l2-netcdf, sentinel-3-synergy-vg1-l2-netcdf, esa-worldcover)
+                                    - https://earth-search.aws.element84.com/v0 (All collections are suported)
+                                    - https://earth-search.aws.element84.com/v1 (All collections are suported)
+                                    - https://services.sentinel-hub.com/api/v1/catalog (All collections are suported)
+
                               Example:
-                                    "https://sentinel-cogs.s3.us-west-2.amazonaws.com/sentinel-s2-l2a-cogs/12/S/YJ/2020/10/S2A_12SYJ_20201006_0_L2A/S2A_12SYJ_20201006_0_L2A.json"
+                                    "https://planetarycomputer.microsoft.com/api/stac/v1/collections/naip/items/tx_m_2609719_se_14_060_20201217"
         -----------------     --------------------------------------------------------------------
         request_params        Optional dictionary. This parameter can be used to set the properties
                               for making the STAC Item request. These are the `requests.get() method <https://requests.readthedocs.io/en/master/api/#requests.get>`__
@@ -8332,12 +8353,19 @@ class Raster:
         item = json_data
 
         from ._util import _get_stac_metadata_file
+        from arcgis.raster.functions import composite_band
 
         metadata_file = _get_stac_metadata_file(item)
         if not metadata_file:
             raise RuntimeError("STAC Item not supported")
 
-        ras = Raster(metadata_file, engine=engine, gis=gis)
+        ras = (
+            composite_band(
+                rasters=[Raster(file, engine=engine, gis=gis) for file in metadata_file]
+            )
+            if isinstance(metadata_file, list)
+            else Raster(metadata_file, engine=engine, gis=gis)
+        )
         return ras
 
     def get_raster_bands(self, band_ids_or_names: Optional[list[str]] = None):
@@ -12560,8 +12588,30 @@ class RasterCollection:
         stac_api              Required string. URL of the STAC API root endpoint. The STAC API where
                               the search needs to be performed.
 
+                              .. note::
+
+                                The following STAC APIs are supported:
+
+                                    - https://planetarycomputer.microsoft.com/api/stac/v1 (Following collections are supported: daymet-annual-pr, daymet-daily-hi, \
+                                        3dep-seamless, 3dep-lidar-dsm, sentinel-1-rtc, gridmet, daymet-annual-na, daymet-monthly-na, daymet-annual-hi, \
+                                        daymet-monthly-hi, daymet-monthly-pr, hgb, cop-dem-glo-30, cop-dem-glo-90, terraclimate, gnatsgo-rasters, 3dep-lidar-hag, \
+                                        3dep-lidar-intensity, 3dep-lidar-pointsourceid, mtbs, noaa-c-cap, alos-fnf-mosaic, 3dep-lidar-returns, mobi, landsat-c2-l2, \
+                                        chloris-biomass, daymet-daily-pr, 3dep-lidar-dtm-native, 3dep-lidar-classification, 3dep-lidar-dtm, gap, alos-dem, jrc-gsw, \
+                                        hrea, sentinel-2-l2a, daymet-daily-na, nrcan-landcover, ecmwf-forecast, noaa-mrms-qpe-24h-pass2, sentinel-1-grd, nasadem, \
+                                        io-lulc, landsat-c2-l1, drcog-lulc, chesapeake-lc-7, chesapeake-lc-13, chesapeake-lu, noaa-mrms-qpe-1h-pass1, \
+                                        noaa-mrms-qpe-1h-pass2, noaa-nclimgrid-monthly, usda-cdl, esa-cci-lc, esa-cci-lc-netcdf, noaa-climate-normals-netcdf, \
+                                        noaa-climate-normals-gridded, io-lulc-9-class, io-biodiversity, naip, noaa-cdr-sea-surface-temperature-whoi, \
+                                        noaa-cdr-ocean-heat-content, noaa-cdr-sea-surface-temperature-whoi-netcdf, sentinel-3-olci-wfr-l2-netcdf, \
+                                        noaa-cdr-ocean-heat-content-netcdf, sentinel-3-synergy-v10-l2-netcdf, sentinel-3-olci-lfr-l2-netcdf, \
+                                        sentinel-3-slstr-lst-l2-netcdf, sentinel-3-slstr-wst-l2-netcdf, sentinel-3-synergy-syn-l2-netcdf, \
+                                        sentinel-3-synergy-vgp-l2-netcdf, sentinel-3-synergy-vg1-l2-netcdf, esa-worldcover)
+                                    - https://earth-search.aws.element84.com/v0 (All collections are suported)
+                                    - https://earth-search.aws.element84.com/v1 (All collections are suported)
+                                    - https://services.sentinel-hub.com/api/v1/catalog (All collections are suported)
+
+
                               Example:
-                                    "https://earth-search.aws.element84.com/v0"
+                                    "https://planetarycomputer.microsoft.com/api/stac/v1"
         -----------------     --------------------------------------------------------------------
         query                 Optional dictionary. The GET/POST request query dictionary that can be
                               used to query a STAC API's search endpoint. (keys/values would depend
@@ -12574,8 +12624,8 @@ class RasterCollection:
 
                               Example:
                                     | {
-                                    |   "collections": ["sentinel-s2-l2a-cogs"],
-                                    |   "bbox": [-110,39.5,-105,40.5],
+                                    |   "collections": ["sentinel-2-l2a"],
+                                    |   "bbox": [-110, 39.5, -105, 40.5],
                                     |   "query": {"eo:cloud_cover": {"lt": 0.5}},
                                     |   "datetime": "2020-10-05T00:00:00Z/2020-10-10T12:31:12Z",
                                     |   "limit": 100
@@ -12654,8 +12704,8 @@ class RasterCollection:
 
             rc = RasterCollection.from_stac_api(stac_api=stac_api_url,
                                                 query={
-                                                        "collections": ["sentinel-s2-l2a-cogs"],
-                                                        "bbox": [-110,39.5,-105,40.5],
+                                                        "collections": ["sentinel-2-l2a"],
+                                                        "bbox": [-110, 39.5, -105, 40.5],
                                                         "query": {"eo:cloud_cover": {"lt": 0.5}},
                                                         "datetime": "2020-10-05T00:00:00Z/2020-10-10T12:31:12Z",
                                                         "limit": 100
@@ -12721,11 +12771,12 @@ class RasterCollection:
                         raise RuntimeError(
                             "Unsupported bbox: project operation failed for the given Polygon/Envelope object"
                         )
-                    bbox_list = []
-                    bbox_list.append(projected_envelope[0]["xmin"])
-                    bbox_list.append(projected_envelope[0]["ymin"])
-                    bbox_list.append(projected_envelope[0]["xmax"])
-                    bbox_list.append(projected_envelope[0]["ymax"])
+                    bbox_list = [
+                        projected_envelope[0]["xmin"],
+                        projected_envelope[0]["ymin"],
+                        projected_envelope[0]["xmax"],
+                        projected_envelope[0]["ymax"],
+                    ]
 
                     if request_method.upper() == "GET":
                         bbox_str = ",".join(str(e) for e in bbox_list)
@@ -12757,6 +12808,9 @@ class RasterCollection:
             )
         items = json_data["features"]
 
+        if len(items) < 1:
+            raise RuntimeError(f"No STAC items found. Please specify a better query")
+
         rc_attribute_dict = {}
         attribute_dict = {} if attribute_dict is None else attribute_dict
         for key in attribute_dict:
@@ -12773,14 +12827,22 @@ class RasterCollection:
                 ]
 
         from ._util import _get_stac_metadata_file
+        from arcgis.raster.functions import composite_band
 
         raster_list = []
         for item in items:
             metadata_file = _get_stac_metadata_file(item)
             if not metadata_file:
                 raise RuntimeError(f"STAC Item not supported-\n{item}")
-
-            ras = Raster(metadata_file, engine=engine, gis=gis)
+            ras = (
+                composite_band(
+                    rasters=[
+                        Raster(file, engine=engine, gis=gis) for file in metadata_file
+                    ]
+                )
+                if isinstance(metadata_file, list)
+                else Raster(metadata_file, engine=engine, gis=gis)
+            )
             raster_list.append(ras)
 
         if "Geometry" not in rc_attribute_dict:
@@ -15896,11 +15958,12 @@ class _ImageServerRasterCollection(ImageryLayer, RasterCollection):
             for i in range(0, len(df.index)):
                 # self._do_not_hydrate=True
                 rft = self._generate_raster_item_rft(int(df[oid_name].loc[i]))
-                df.loc[i, "Raster"] = Raster(rft)
+                df.loc[i, "Raster"] = Raster(rft, gis=self._gis)
                 df.loc[i, "Raster"]._engine_obj._fn = rft
                 df.loc[i, "Raster"]._engine_obj._fnra = rft
                 df.loc[i, "Raster"]._engine_obj._do_not_hydrate = True
                 df.loc[i, "Raster"]._engine_obj._tiles_only = False
+                df.loc[i, "Raster"]._engine_obj._lazy_token = self._lazy_token
 
         return df
 

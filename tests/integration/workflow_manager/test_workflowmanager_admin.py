@@ -144,6 +144,31 @@ class TestWorkflowManager(unittest.TestCase):
         # Assert
         self.assertTrue(actual, "Incorrect return type")
 
+
+def test_import_item__with_passphrase_returns_successfully(self):
+    # Act
+    item_id = self.connection.workflow_manager_admin.create_item(
+        "Testing_Item_" + str(datetime.datetime.now())
+    )
+
+    passphrase = "test phrase"
+    item = self.connection._gis.content.get(item_id)
+    filepath = self.connection.workflow_manager_admin.export_item(
+        item, passphrase=passphrase
+    )
+
+    item_id_two = self.connection.workflow_manager_admin.create_item(
+        "Testing_Item_" + str(datetime.datetime.now())
+    )
+
+    item_two = self.connection._gis.content.get(item_id_two)
+    actual = self.connection.workflow_manager_admin.import_item(
+        item_two, filepath, passphrase=passphrase
+    )
+
+    # Assert
+    self.assertTrue(actual, "Incorrect return type")
+
     # endregion
 
     # region Export Item
@@ -156,6 +181,23 @@ class TestWorkflowManager(unittest.TestCase):
 
         item = self.connection._gis.content.get(item_id)
         actual = self.connection.workflow_manager_admin.export_item(item)
+
+        # Assert
+        self.assertIsInstance(actual, str, "Incorrect return type")
+        self.assertTrue(
+            "workflow_configuration" in actual, "Did not return a temporary file path"
+        )
+
+    def test_export_item_with_passphrase_returns_successfully(self):
+        # Act
+        item_id = self.connection.workflow_manager_admin.create_item(
+            "Testing_Item_" + str(datetime.datetime.now())
+        )
+
+        item = self.connection._gis.content.get(item_id)
+        actual = self.connection.workflow_manager_admin.export_item(
+            item, passphrase="test phrase"
+        )
 
         # Assert
         self.assertIsInstance(actual, str, "Incorrect return type")
