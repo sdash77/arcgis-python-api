@@ -228,6 +228,8 @@ class _StoryMapDefinition(CloneNode):
             webmap_mapper = {}
             for wm in web_maps:
                 webmap_to_copy = self.portal_item._gis.content.get(wm)
+                if not webmap_to_copy:
+                    continue
 
                 # check if webmap is in clone mapping
                 if wm in self._clone_mapping["Item IDs"]:
@@ -306,9 +308,12 @@ class _StoryMapDefinition(CloneNode):
                 new_item.resources.add(self.resources, archive=True)
             for resource in new_item.resources.list():
                 if ".json" in resource["resource"]:
-                    res = new_item.resources.get(resource["resource"])
+                    s_res = json.dumps(
+                        new_item.resources.get(resource["resource"]), ensure_ascii=False
+                    )
                     for k, v in webmap_mapper.items():
-                        res = res.replace(k, v)
+                        s_res = s_res.replace(k, v)
+                    res = json.loads(s_res)
                     tfile = tempfile.NamedTemporaryFile(mode="w+", suffix=".json")
                     json.dump(res, tfile)
                     tfile.seek(0)
