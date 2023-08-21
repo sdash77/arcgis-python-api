@@ -9097,7 +9097,7 @@ class _RasterAnalysisTools(BaseAnalytics):
                 return input_param
 
         if "ImageServer" in url or "MapServer" in url:
-            if "serviceToken" in input_param:
+            if "serviceToken" in input_param and "token" not in url:
                 url = url + "?token=" + input_param["serviceToken"]
                 input_param.update({"url": url})
 
