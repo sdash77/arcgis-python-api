@@ -3,7 +3,8 @@ from arcgis.gis import GIS
 from arcgis.features._utility import UtilityNetworkManager
 from arcgis.features._trace_configuration import TraceConfiguration
 
-gis = GIS("https://utilitynetwork.esri.com/portal", "python_api_team", "python_api_team.109")
+gis = GIS("https://utilitynetwork.esri.com/portal", "python_api_team", "python_api_team.109", verify_cert=False)
+
 # Create Topographic Service
 try:
     # Server gets updated at 2:30PM PST Everyday. Do not test around then.
@@ -147,7 +148,9 @@ class TestUtilityNetworkManager(unittest.TestCase):
 
         # Alter
         alteration = manager.alter(
-            global_id=updated_query["traceConfigurations"][0]["globalId"],
+            global_id=[tc["globalId"]
+                       for tc in updated_query["traceConfigurations"]
+                       if tc["name"] == "Connected_IncludeContainers"][0],
             name="Connected_IncludeContainers_update",
             description="Connected trace example with containers (updated 112020)",
             result_types=[
