@@ -3329,7 +3329,7 @@ def create_image_collection(
                                          - Name of a folder on the portal
                                          - Path to local raster dataset(s)
                                          - :class:`~arcgis.raster.RasterCollection` object created from a list of datastore\
-                                            rasters or using the :meth:`~arcgis.raster.Rasterollection.from_stac_api`method.
+                                            rasters or using the :meth:`~arcgis.raster.RasterCollection.from_stac_api`method.
 
                                          The function can create hosted imagery layers on enterprise and AGOL from 
                                          local raster datasets by uploading the data to the server.
