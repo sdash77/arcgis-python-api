@@ -4763,6 +4763,12 @@ class ImageryLayer(Layer):
             img_lyr = gis.content.search("my_image_service", item_type="Imagery Layer")[0].layers[0]
             gps_info = img_lyr.query_gps_info(where="OBJECTID=1")
 
+            # Usage Example 2
+
+            img_lyr = gis.content.search("my_image_service", item_type="Imagery Layer")[0].layers[0]
+            aoi_intersects = arcgis.geometry.filters.intersects(geometry=geometry_obj)
+            gps_info = img_lyr.query_gps_info(geometry_filter=aoi_intersects)
+
         """
 
         if self.tiles_only:
