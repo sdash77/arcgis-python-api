@@ -2,7 +2,8 @@ import sys
 
 #
 #  Update the Path to set the test area
-sys.path.insert(0, r"C:\SVN\geosaurus_master_issue_8640a\src")
+#sys.path.insert(0, r"C:\SVN\geosaurus_master_issue_8640a\src")
+
 import os
 import json
 import uuid
@@ -29,7 +30,7 @@ def enable_verbose_logging(root):
     root.addHandler(handler)
 
 
-profiles = ['your_dev_online_profile']
+profiles = ['your_online_admin_profile']
 PROXIES = detect_proxy(True)  # Handles Fiddler when True
 enable_verbose_logging(__logger__)
 

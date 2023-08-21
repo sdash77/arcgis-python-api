@@ -1,14 +1,11 @@
 import sys
 import os
-
-#
-#  Update the Path to set the test area
-sys.path.insert(0, r"C:\SVN\geosaurus_issue_9564\src")
 import logging
 import unittest
 from arcgis.auth.tools._util import detect_proxy
 from arcgis.gis import GIS, Item, ContentManager, User, UserManager
 from arcgis.features import FeatureLayer, FeatureLayerCollection
+from integration.config import QALAB_ROOT_PATH
 
 __logger__ = logging.getLogger()
 
@@ -28,7 +25,7 @@ PROXIES = detect_proxy(True)  # Handles Fiddler when True
 enable_verbose_logging(__logger__)
 
 FILE_PATH = (
-    r"\\qalab_server\pydata\v109\geosaurus\ContingentValues\CV_Gas.zip"
+    QALAB_ROOT_PATH + r"\ContingentValues\CV_Gas.zip"
 )
 
 

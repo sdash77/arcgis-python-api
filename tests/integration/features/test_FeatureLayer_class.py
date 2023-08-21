@@ -6,6 +6,7 @@ import unittest
 from integration.dino_utils.dino_precondition_checks import PreconditionChecks
 from integration.dino_utils.dino_precondition_checks import PortalUtils
 from integration.dino_utils.dino_configs import DinoConfigs
+from integration.config import QALAB_ROOT_PATH
 from configparser import ConfigParser
 import datetime
 
@@ -34,6 +35,7 @@ except ImportError:
     print("API import error. Quitting test")
     raise (exit())
 # endregion PreCondition Check
+
 
 # TestModule
 @unittest.skipIf(
@@ -65,27 +67,22 @@ class Test_FeatureLayer_portal(unittest.TestCase):
 
         # region Read config data
         _conf_reader = ConfigParser()
-        _conf_reader.read(DinoConfigs.portal_list_file, "UTF-8")
+        _conf_reader.read(DinoConfigs.root_init_file, "UTF-8")
 
-        cls.portal_url = _conf_reader["datascienceqa"]["url"]
-        cls.portal_username = _conf_reader["datascienceqa"]["admin_user"]
-        cls.portal_password = _conf_reader["datascienceqa"]["admin_password"]
-
-        _conf_reader2 = ConfigParser()
-        _conf_reader2.read(DinoConfigs.root_init_file, "UTF-8")
-
-        cls.qalab_base_path = _conf_reader2["test_data"]["qalab_base_path"]
+        cls.qalab_base_path = QALAB_ROOT_PATH
         cls.qalab_cls_path = (
-            cls.qalab_base_path + _conf_reader2["test_data"]["qalab_FeatureLayer_cls"]
+            cls.qalab_base_path + _conf_reader["test_data"]["qalab_FeatureLayer_cls"]
         )
         # endregion
 
         # region precondition checks and sign in
-        r1 = PreconditionChecks.can_ping_portal(cls.portal_url)
+        r1 = PreconditionChecks.can_ping_portal(
+            GIS(profile="your_ent_admin_profile").url
+        )
         if not r1:
             cls.class_skip = True
 
-        cls.gis = GIS(cls.portal_url, cls.portal_username, cls.portal_password)
+        cls.gis = GIS(profile="your_ent_admin_profile")
         if cls.gis is None:
             cls.class_skip = True
         # endregion
@@ -450,27 +447,22 @@ class Test_FeatureLayer_kubernetes(unittest.TestCase):
 
         # region Read config data
         _conf_reader = ConfigParser()
-        _conf_reader.read(DinoConfigs.portal_list_file, "UTF-8")
+        _conf_reader.read(DinoConfigs.root_init_file, "UTF-8")
 
-        cls.portal_url = _conf_reader["kubeportal"]["url"]
-        cls.portal_username = _conf_reader["kubeportal"]["admin_user"]
-        cls.portal_password = _conf_reader["kubeportal"]["admin_password"]
-
-        _conf_reader2 = ConfigParser()
-        _conf_reader2.read(DinoConfigs.root_init_file, "UTF-8")
-
-        cls.qalab_base_path = _conf_reader2["test_data"]["qalab_base_path"]
+        cls.qalab_base_path = _conf_reader["test_data"]["qalab_base_path"]
         cls.qalab_cls_path = (
-            cls.qalab_base_path + _conf_reader2["test_data"]["qalab_FeatureLayer_cls"]
+            cls.qalab_base_path + _conf_reader["test_data"]["qalab_FeatureLayer_cls"]
         )
         # endregion
 
         # region precondition checks and sign in
-        r1 = PreconditionChecks.can_ping_portal(cls.portal_url)
+        r1 = PreconditionChecks.can_ping_portal(
+            GIS(profile="your_kubernetes_profile").url
+        )
         if not r1:
             cls.class_skip = True
 
-        cls.gis = GIS(cls.portal_url, cls.portal_username, cls.portal_password)
+        cls.gis = GIS(profile="your_kubernetes_profile")
         if cls.gis is None:
             cls.class_skip = True
         # endregion
@@ -512,8 +504,7 @@ class Test_FeatureLayer_kubernetes(unittest.TestCase):
             if "Editing" not in flc.properties.capabilities:
                 result = flc.manager.update_definition(
                     {
-                        "capabilities": "Create,Delete,Query,Update,Editing,Extract",
-                        "syncEnabled": True,
+                        "capabilities": "Create,Delete,Query,Update,Editing,Extract,Sync"
                     }
                 )
                 if result.get("success"):
@@ -561,8 +552,7 @@ class Test_FeatureLayer_kubernetes(unittest.TestCase):
             if "Editing" not in flc.properties.capabilities:
                 result = flc.manager.update_definition(
                     {
-                        "capabilities": "Create,Delete,Query,Update,Editing,Extract",
-                        "syncEnabled": True,
+                        "capabilities": "Create,Delete,Query,Update,Editing,Extract,Sync"
                     }
                 )
                 if result.get("success"):
@@ -834,13 +824,6 @@ class Test_FeatureLayer_online(unittest.TestCase):
         """
 
         # region Read config data
-        _conf_reader = ConfigParser()
-        _conf_reader.read(DinoConfigs.portal_list_file, "UTF-8")
-
-        cls.portal_url = _conf_reader["arcgiscom"]["url"]
-        cls.portal_username = _conf_reader["arcgiscom"]["admin_user"]
-        cls.portal_password = _conf_reader["arcgiscom"]["admin_password"]
-
         _conf_reader2 = ConfigParser()
         _conf_reader2.read(DinoConfigs.root_init_file, "UTF-8")
 
@@ -851,11 +834,13 @@ class Test_FeatureLayer_online(unittest.TestCase):
         # endregion
 
         # region precondition checks and sign in
-        r1 = PreconditionChecks.can_ping_portal(cls.portal_url)
+        r1 = PreconditionChecks.can_ping_portal(
+            GIS(profile="your_online_admin_profile").url
+        )
         if not r1:
             cls.class_skip = True
 
-        cls.gis = GIS(cls.portal_url, cls.portal_username, cls.portal_password)
+        cls.gis = GIS(profile="your_online_admin_profile")
         if cls.gis is None:
             cls.class_skip = True
         # endregion
@@ -1369,3 +1354,5 @@ def tearDownModule():
     #
     #     except Exception as testException:
     #         self.fail("Error during test: " + testException.__str__())
+if __name__ == "__main__":
+    unittest.main()

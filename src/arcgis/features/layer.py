@@ -1425,6 +1425,9 @@ class FeatureLayer(Layer):
                 "esriFieldTypeGUID": pd.StringDtype(),
                 "esriFieldTypeGlobalID": pd.StringDtype(),
                 "esriFieldTypeXML": object,
+                "esriFieldTypeTimeOnly": _datetime,
+                "esriFieldTypeDateOnly": _datetime,
+                "esriFieldTypeTimestampOffset": _datetime,
             }
 
             def feature_to_row(feature, sr):
@@ -1472,7 +1475,11 @@ class FeatureLayer(Layer):
                     if fld["type"] != "esriFieldTypeGeometry":
                         dtypes[fld["name"]] = _fld_lu[fld["type"]]
                         names.append(fld["name"])
-                    if fld["type"] == "esriFieldTypeDate":
+                    if fld["type"] in [
+                        "esriFieldTypeDate",
+                        "esriFieldTypeDateOnly",
+                        "esriFieldTypeTimestampOffset",
+                    ]:
                         dfields.append(fld["name"])
             if "SHAPE" in df:
                 df.spatial.set_geometry("SHAPE")
@@ -1598,52 +1605,70 @@ class FeatureLayer(Layer):
         -------------------------------     --------------------------------------------------------------------
         out_analytics                       Required List. A set of analytics to calculate on the Feature Layer.
 
-                                            The definitions for one or more field-based or expression analytics to be computed. This parameter is supported only on layers/tables that indicate supportsAnalytics is true.
-                                            Note: If outAnalyticFieldName is empty or missing, the server assigns a field name to the returned analytic field.
+                                            The definitions for one or more field-based or expression analytics
+                                            to be computed. This parameter is supported only on layers/tables that
+                                            return `true` for *supportsAnalytics* property.
 
-                                            Syntax: An array of analytic definitions. An analytic definition specifies the type of analytic, the field or expression on which it is to be computed, and the resulting output field name.
-                                            Syntax
-                                            [
-                                              {
-                                                "analyticType": "<COUNT | SUM | MIN | MAX | AVG | STDDEV | VAR | FIRST_VALUE, LAST_VALUE, LAG, LEAD, PERCENTILE_CONT, PERCENTILE_DISC, PERCENT_RANK, RANK, NTILE, DENSE_RANK, EXPRESSION>",
-                                                "onAnalyticField": "Field1",
-                                                "outAnalyticFieldName": "Out_Field_Name1",
-                                                 "analyticParameters": {
-                                                      "orderBy": "<orderBy expression",
-                                                      "value": <double value>,// percentile value
-                                                      "partitionBy": "<field name or expression>",
-                                                      "offset": <integer>, // used by LAG/LEAD
-                                                      "windowFrame": {
-                                                         "type": "ROWS" | "RANGE",
-                                                         "extent": {
-                                                            "extentType": "PRECEDING" | "BOUNDARY",
-                                                            "PRECEDING": {
-                                                               "type": <"UNBOUNDED" |
-                                                                       "NUMERIC_CONSTANT" |
-                                                                        "CURRENT_ROW">
-                                                                "value": <numeric constant value>
-                                                             }
-                                                             "BOUNDARY": {
-                                                              "start": "UNBOUNDED_PRECEDING",
-                                                                       "NUMERIC_PRECEDING",
-                                                                        "CURRENT_ROW",
-                                                              "startValue": <numeric constant value>,
-                                                              "end": <"UNBOUNDED_FOLLOWING" |
-                                                                      "NUMERIC_FOLLOWING" |
-                                                                      "CURRENT_ROW",
-                                                              "endValue": <numeric constant value>
+                                            .. note::
+                                                If `outAnalyticFieldName` is empty or missing, the server assigns
+                                                a field name to the returned analytic field.
+
+                                            The argument should be a list of dictionaries that define analystics.
+                                            An analytic definition specifies:
+
+                                            * the type of analytic - key: `analyticType`
+                                            * the field or expression on which it is to be computed - key: `onAnalyticField`
+                                            * the resulting output field name -key: `outAnalyticFieldName`
+                                            * the analytic specifications - `analysticParameters`
+
+                                            See `Overview <https://developers.arcgis.com/rest/services-reference/enterprise/query-analytic.htm#GUID-1713C237-B155-4CFE-8470-FEB3255B7C60>`_
+                                            for details.
+
+                                            .. code-block:: python
+
+                                                # Dictionary structure and options for this parameter
+
+                                                [
+                                                  {
+                                                    "analyticType": "<COUNT | SUM | MIN | MAX | AVG | STDDEV | VAR | FIRST_VALUE, LAST_VALUE, LAG, LEAD, PERCENTILE_CONT, PERCENTILE_DISC, PERCENT_RANK, RANK, NTILE, DENSE_RANK, EXPRESSION>",
+                                                    "onAnalyticField": "Field1",
+                                                    "outAnalyticFieldName": "Out_Field_Name1",
+                                                    "analyticParameters": {
+                                                         "orderBy": "<orderBy expression",
+                                                         "value": <double value>,// percentile value
+                                                         "partitionBy": "<field name or expression>",
+                                                         "offset": <integer>, // used by LAG/LEAD
+                                                         "windowFrame": {
+                                                            "type": "ROWS" | "RANGE",
+                                                            "extent": {
+                                                               "extentType": "PRECEDING" | "BOUNDARY",
+                                                               "PRECEDING": {
+                                                                  "type": <"UNBOUNDED" |
+                                                                          "NUMERIC_CONSTANT" |
+                                                                           "CURRENT_ROW">
+                                                                   "value": <numeric constant value>
+                                                                }
+                                                                "BOUNDARY": {
+                                                                 "start": "UNBOUNDED_PRECEDING",
+                                                                          "NUMERIC_PRECEDING",
+                                                                           "CURRENT_ROW",
+                                                                 "startValue": <numeric constant value>,
+                                                                 "end": <"UNBOUNDED_FOLLOWING" |
+                                                                         "NUMERIC_FOLLOWING" |
+                                                                         "CURRENT_ROW",
+                                                                 "endValue": <numeric constant value>
+                                                                }
+                                                              }
                                                             }
-                                                          }
-                                                        }
-                                                     }
-                                                }
-                                              }
-                                            ]
+                                                         }
+                                                    }
+                                                  }
+                                                ]
 
 
                                             .. code-block:: python
 
-                                                #Usage Example:
+                                                # Usage Example:
 
                                                 >>> out_analytics =
                                                         [{"analyticType": "FIRST_VALUE",
@@ -2228,8 +2253,11 @@ class FeatureLayer(Layer):
                 del key, val
 
         if not return_all_records or "outStatistics" in params:
-            if "orderByFields" in params:
-                del params["orderByFields"]
+            # we cannot assume that because return_all_records is False it means we specified something else
+            if return_count_only or return_extent_only or return_ids_only:
+                # Remove to avoid missing when wanting counts only
+                if "orderByFields" in params:
+                    del params["orderByFields"]
             if as_df:
                 return self._query_df(url, params)
             return self._query(url, params, raw=as_raw)
@@ -2272,7 +2300,7 @@ class FeatureLayer(Layer):
                 "esriFieldTypeDouble": pd.Float64Dtype(),
                 "esriFieldTypeFloat": pd.Float64Dtype(),
                 "esriFieldTypeString": pd.StringDtype(),
-                "esriFieldTypeDate": np.datetime64,
+                "esriFieldTypeDate": "datetime64[ns]",  # np.datetime64,
                 "esriFieldTypeOID": pd.Int64Dtype(),
                 "esriFieldTypeGeometry": object,
                 "esriFieldTypeBlob": object,
@@ -2280,6 +2308,9 @@ class FeatureLayer(Layer):
                 "esriFieldTypeGUID": pd.StringDtype(),
                 "esriFieldTypeGlobalID": pd.StringDtype(),
                 "esriFieldTypeXML": object,
+                "esriFieldTypeTimeOnly": object,
+                "esriFieldTypeDateOnly": object,
+                "esriFieldTypeTimestampOffset": object,
             }
             columns = {}
             for fld in self.properties.fields:
@@ -2316,7 +2347,12 @@ class FeatureLayer(Layer):
                 dt_fields = [
                     fld["name"]
                     for fld in self.properties.fields
-                    if fld["type"] == "esriFieldTypeDate"
+                    if fld["type"]
+                    in [
+                        "esriFieldTypeDate",
+                        "esriFieldTypeDateOnly",
+                        "esriFieldTypeTimestampOffset",
+                    ]
                 ]
                 if "SHAPE" in df.columns:
                     df.spatial.set_geometry("SHAPE")
@@ -2396,7 +2432,12 @@ class FeatureLayer(Layer):
             dt_fields = [
                 fld["name"]
                 for fld in self.properties.fields
-                if fld["type"] == "esriFieldTypeDate"
+                if fld["type"]
+                in [
+                    "esriFieldTypeDate",
+                    "esriFieldTypeDateOnly",
+                    "esriFieldTypeTimestampOffset",
+                ]
             ]
             if len(dfs) == 1:
                 df = dfs[0]
@@ -3291,7 +3332,7 @@ class FeatureLayer(Layer):
                 c for c in adds.columns.tolist() if c.lower() not in ["objectid", "fid"]
             ]
             params["adds"] = json.dumps(
-                [{"attributes": row} for row in adds[cols].to_dict(orient="record")],
+                [{"attributes": row} for row in adds[cols].to_dict("records")],
                 default=_date_handler,
             )
         elif isinstance(adds, FeatureSet):
@@ -3342,7 +3383,7 @@ class FeatureLayer(Layer):
                 if c.lower() not in ["objectid", "fid"]
             ]
             params["updates"] = json.dumps(
-                [{"attributes": row} for row in updates[cols].to_dict(orient="record")],
+                [{"attributes": row} for row in updates[cols].to_dict("records")],
                 default=_date_handler,
             )
         elif len(updates) > 0:
@@ -3674,6 +3715,9 @@ class FeatureLayer(Layer):
                 "esriFieldTypeGUID": str,
                 "esriFieldTypeGlobalID": str,
                 "esriFieldTypeXML": object,
+                "esriFieldTypeTimeOnly": pd.datetime,
+                "esriFieldTypeDateOnly": pd.datetime,
+                "esriFieldTypeTimestampOffset": pd.datetime,
             }
         else:
             from datetime import datetime as _datetime
@@ -3693,6 +3737,10 @@ class FeatureLayer(Layer):
                 "esriFieldTypeGUID": pd.StringDtype(),
                 "esriFieldTypeGlobalID": pd.StringDtype(),
                 "esriFieldTypeXML": object,
+                "esriFieldTypeTimeOnly": pd.StringDtype(),
+                "esriFieldTypeDateOnly": object,
+                "esriFieldTypeTimestampOffset": object,
+                "esriFieldTypeBigInteger": pd.Int64Dtype(),
             }
 
         def feature_to_row(feature, sr):
@@ -3788,7 +3836,12 @@ class FeatureLayer(Layer):
                 if fld["type"] != "esriFieldTypeGeometry":
                     dtypes[fld["name"]] = _fld_lu[fld["type"]]
                     names.append(fld["name"])
-                if fld["type"] == "esriFieldTypeDate":
+                if fld["type"] in [
+                    "esriFieldTypeDate",
+                    #
+                    "esriFieldTypeDateOnly",
+                    "esriFieldTypeTimestampOffset",
+                ]:
                     dfields.append(fld["name"])
         if dtypes:
             df = df.astype(dtypes)
@@ -4174,6 +4227,9 @@ class Table(FeatureLayer):
                 "esriFieldTypeGUID": pd.StringDtype(),
                 "esriFieldTypeGlobalID": pd.StringDtype(),
                 "esriFieldTypeXML": object,
+                "esriFieldTypeTimeOnly": object,
+                "esriFieldTypeDateOnly": object,
+                "esriFieldTypeTimestampOffset": object,
             }
             columns = {}
             for fld in self.properties.fields:
@@ -4205,7 +4261,12 @@ class Table(FeatureLayer):
                 dt_fields = [
                     fld["name"]
                     for fld in self.properties.fields
-                    if fld["type"] == "esriFieldTypeDate"
+                    if fld["type"]
+                    in [
+                        "esriFieldTypeDate",
+                        "esriFieldTypeDateOnly",
+                        "esriFieldTypeTimestampOffset",
+                    ]
                 ]
                 if "SHAPE" in df.columns:
                     df.spatial.set_geometry("SHAPE")
@@ -4285,7 +4346,12 @@ class Table(FeatureLayer):
             dt_fields = [
                 fld["name"]
                 for fld in self.properties.fields
-                if fld["type"] == "esriFieldTypeDate"
+                if fld["type"]
+                in [
+                    "esriFieldTypeDate",
+                    "esriFieldTypeDateOnly",
+                    "esriFieldTypeTimestampOffset",
+                ]
             ]
             if len(dfs) == 1:
                 df = dfs[0]
@@ -5331,6 +5397,7 @@ class FeatureLayerCollection(_GISResource):
 
         """
         url = "{url}/cleanupChangeTracking".format(url=self._url)
+        url = url.replace("/rest/services/", "/rest/admin/services/")
         params = {
             "f": "json",
             "layers": layers,

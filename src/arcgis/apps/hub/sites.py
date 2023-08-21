@@ -180,17 +180,27 @@ class Site(OrderedDict):
         =====================     ====================================================================
         **Parameter**              **Description**
         ---------------------     --------------------------------------------------------------------
-        items_list                Required list. A list of Item or item ids to add to the initiative
+        items_list                Required list. A list of Item or item ids to add to the Site.
         =====================     ====================================================================
         """
-        # Fetch Initiative Collaboration group
-        _collab_group = self._gis.groups.get(self.collab_group_id)
-        # Fetch Content Group
-        _content_group = self._gis.groups.get(self.content_group_id)
-        # share items with groups
-        return self._gis.content.share_items(
-            items_list, groups=[_collab_group, _content_group]
-        )
+        # If input list is of item_ids, generate a list of corresponding items
+        if type(items_list[0]) == str:
+            items = [self._gis.content.get(item_id) for item_id in items_list]
+        else:
+            items = items_list
+        # Fetch existing sharing privileges for each item, to retain them after adding to content library
+        for item in items:
+            sharing = item.shared_with
+            everyone = sharing["everyone"]
+            org = sharing["org"]
+            groups = sharing["groups"]
+            # add current site's content group to list of groups to share to
+            groups.append(self.content_group_id)
+            # share item to this group
+            status = item.share(everyone=everyone, org=org, groups=groups)
+            if status["results"][0]["success"] == False:
+                return status
+        return status
 
     def add_catalog_group(self, group_id: str):
         """
@@ -293,7 +303,7 @@ class Site(OrderedDict):
                 session = self._gis._con._session
                 headers = {k: v for k, v in session.headers.items()}
                 headers["Content-Type"] = "application/json"
-                headers["Authorization"] = self._gis._con.token
+                headers["Authorization"] = "X-Esri-Authorization"
                 path = "https://hub.arcgis.com/api/v3/domains/" + _siteId
                 _delete_domain = session.delete(url=path, headers=headers)
                 if _delete_domain.status_code == 200:
@@ -445,7 +455,7 @@ class Site(OrderedDict):
         =====================     ====================================================================
 
         To find the list of applicable options for argument site_properties -
-        https://esri.github.io/arcgis-python-api/apidoc/html/arcgis.gis.toc.html#arcgis.gis.Item.update
+        https://developers.arcgis.com/python/api-reference/arcgis.gis.toc.html#arcgis.gis.Item.update
 
         :return:
            A boolean indicating success (True) or failure (False).
@@ -483,7 +493,7 @@ class Site(OrderedDict):
                 session = self._gis._con._session
                 headers = {k: v for k, v in session.headers.items()}
                 headers["Content-Type"] = "application/json"
-                headers["Authorization"] = self._gis._con.token
+                headers["Authorization"] = "X-Esri-Authorization"
                 path = "https://hub.arcgis.com/api/v3/domains/" + _siteId
                 _delete_domain = session.delete(url=path, headers=headers)
                 # if deletion is successful
@@ -491,11 +501,6 @@ class Site(OrderedDict):
                     # Create new domain entry
 
                     # Create domain entry for new site
-                    _HEADERS = {
-                        "Content-Type": "application/json",
-                        "Authorization": self._gis._con.token,
-                        "Referer": self._gis._con._referer,
-                    }
                     _body = {
                         "hostname": subdomain
                         + "-"
@@ -503,7 +508,6 @@ class Site(OrderedDict):
                         + ".hub.arcgis.com",
                         "siteId": self.item.id,
                         "siteTitle": self.title,
-                        "clientKey": client_key,
                         "orgId": self._gis.properties.id,
                         "orgKey": self._gis.properties["urlKey"],
                         "orgTitle": self._gis.properties["name"],
@@ -511,14 +515,14 @@ class Site(OrderedDict):
                     }
                     headers = {k: v for k, v in session.headers.items()}
                     headers["Content-Type"] = "application/json"
-                    headers["Authorization"] = self._gis._con.token
+                    headers["Authorization"] = "X-Esri-Authorization"
                     _new_domain = session.post(
                         url="https://hub.arcgis.com/api/v3/domains",
                         data=json.dumps(_body),
                         headers=headers,
                     )
                     if _new_domain.status_code == 200:
-                        # define new domain and hostname
+                        # define new domain, hostname and client_key
                         hostname = (
                             subdomain
                             + "-"
@@ -526,6 +530,7 @@ class Site(OrderedDict):
                             + ".hub.arcgis.com"
                         )
                         domain = self._gis.url[:8] + hostname
+                        _client_key = _new_domain.json()["clientKey"]
                         # update initiative item
                         if self._gis.hub._hub_enabled:
                             self.initiative.item.update(item_properties={"url": domain})
@@ -534,6 +539,7 @@ class Site(OrderedDict):
                         data["values"]["defaultHostname"] = hostname
                         data["values"]["subdomain"] = subdomain
                         data["values"]["internalUrl"] = hostname
+                        data["values"]["clientId"] = _client_key
                         if self.item.update(
                             item_properties={"url": domain, "text": data}
                         ):
@@ -603,16 +609,7 @@ class Site(OrderedDict):
         resources = self.item.resources.list()
         for resource in resources:
             if "draft-" in resource["resource"]:
-                path = (
-                    self._gis.url
-                    + "/sharing/rest/content/items/"
-                    + self.itemid
-                    + "/resources/"
-                    + resource["resource"]
-                    + "?token="
-                    + self._gis._con.token
-                )
-                self.item.resources.remove(file=path)
+                self.item.resources.remove(file=resource["resource"])
         # Update the data of the site
         self.definition["values"]["layout"] = layout._json()
         return self.item.update(item_properties={"text": self.definition})
@@ -695,8 +692,8 @@ class SiteManager(object):
 
         if self._gis._portal.is_arcgisonline:
             # register site as an app
-            _app_dict = site.register(app_type="browser", redirect_uris=[site.url])
-            client_key = _app_dict["client_id"]
+            # _app_dict = site.register(app_type="browser", redirect_uris=[site.url])
+            # client_key = _app_dict["client_id"]
 
             # Check for length of domain
             if len(subdomain + "-" + self._gis.properties["urlKey"]) > 63:
@@ -708,11 +705,6 @@ class SiteManager(object):
 
             session = self._gis._con._session
             # Create domain entry for new site
-            _HEADERS = {
-                "Content-Type": "application/json",
-                "Authorization": self._gis._con.token,
-                "Referer": self._gis._con._referer,
-            }
             _body = {
                 "hostname": subdomain
                 + "-"
@@ -720,16 +712,14 @@ class SiteManager(object):
                 + ".hub.arcgis.com",
                 "siteId": site.id,
                 "siteTitle": site.title,
-                "clientKey": client_key,
                 "orgId": self._gis.properties.id,
                 "orgKey": self._gis.properties["urlKey"],
                 "orgTitle": self._gis.properties["name"],
                 "sslOnly": True,
             }
-
             headers = {k: v for k, v in session.headers.items()}
             headers["Content-Type"] = "application/json"
-            headers["Authorization"] = self._gis._con.token
+            headers["Authorization"] = "X-Esri-Authorization"
             _new_domain = session.post(
                 url="https://hub.arcgis.com/api/v3/domains",
                 data=json.dumps(_body),
@@ -737,6 +727,7 @@ class SiteManager(object):
             )
             if _new_domain.status_code == 200:
                 _siteId = _new_domain.json()["id"]
+                _client_key = _new_domain.json()["clientKey"]
             else:
                 return _new_domain
         else:
@@ -759,7 +750,10 @@ class SiteManager(object):
                     "portalProperties"
                 ]["sharedTheme"]["header"]
             except KeyError:
-                raise KeyError("Hub does not exist or is inaccessible.")
+                site_data["values"]["theme"]["globalNav"] = {
+                    "background": "#fff",
+                    "text": "#000000",
+                }
         site_data["values"]["title"] = site.title
         site_data["values"]["layout"]["header"]["component"]["settings"][
             "title"
@@ -770,7 +764,7 @@ class SiteManager(object):
         site_data["values"]["updatedBy"] = self._gis.users.me.username
         if self._gis._portal.is_arcgisonline:
             site_data["values"]["siteId"] = _siteId
-            site_data["values"]["clientId"] = client_key
+            site_data["values"]["clientId"] = _client_key
         else:
             site_data["values"]["clientId"] = "arcgisonline"
         # Add collaboration group to gallery card only if it exists in the usual spot
@@ -791,7 +785,6 @@ class SiteManager(object):
         site_data["values"]["map"] = self._gis.properties["defaultBasemap"]
         site_data["values"]["defaultExtent"] = self._gis.properties["defaultExtent"]
 
-        # site_data['values']['theme'] = self._gis.properties['portalProperties']['sharedTheme']
         return site_data
 
     def add(self, title, subdomain=None):
@@ -870,7 +863,7 @@ class SiteManager(object):
             session = self._gis._con._session
             headers = {k: v for k, v in session.headers.items()}
             headers["Content-Type"] = "application/json"
-            headers["Authorization"] = self._gis._con.token
+            headers["Authorization"] = "X-Esri-Authorization"
             response = session.get(
                 url=f"https://hub.arcgis.com/api/v3/domains/" + domain[8:],
                 headers=headers,
@@ -1304,7 +1297,7 @@ class SiteManager(object):
             session = self._gis._con._session
             headers = {k: v for k, v in session.headers.items()}
             headers["Content-Type"] = "application/json"
-            headers["Authorization"] = self._gis._con.token
+            headers["Authorization"] = "X-Esri-Authorization"
             _site_domain = self._gis._con.get(path, headers=headers)
             try:
                 siteId = _site_domain["siteId"]

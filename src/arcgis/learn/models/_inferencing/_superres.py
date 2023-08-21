@@ -150,6 +150,7 @@ class ChildImageClassifier:
             )
 
         self.superres = SuperResolution.from_emd(data=None, emd_path=model)
+        self._learnmodel = self.superres
         self.model = self.superres.learn.model.to(self.device)
         self.model.eval()
 
@@ -212,7 +213,7 @@ class ChildImageClassifier:
         )
 
         superres_prediction = util.pixel_classify_superres_image(
-            self.model, batch, self.device
+            self.model, batch, self.device, model_info=self.json_info
         )
         superres_prediction = batch_to_tile(
             superres_prediction.unsqueeze(dim=1).detach().cpu().numpy(),

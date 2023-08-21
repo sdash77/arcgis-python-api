@@ -21,7 +21,7 @@ try:
     HAS_GSSAPI = True
 except ImportError:
     HAS_GSSAPI = False
-from ._utils import parse_url
+from ._utils import parse_url, assemble_url
 
 from ._schain import SupportMultiAuth
 
@@ -145,12 +145,7 @@ class EsriHttpNegotiateAuth(AuthBase, SupportMultiAuth):
 
         """
         parsed = parse_url(url=r.url)
-        if parsed.port:
-            server_url = f'{parsed.scheme}://{parsed.netloc}:{parsed.port}/{parsed.path[1:].split("/")[0]}'
-        else:
-            server_url = (
-                f'{parsed.scheme}://{parsed.netloc}/{parsed.path[1:].split("/")[0]}'
-            )
+        server_url = assemble_url(parsed)
         token_url: str = None
         if server_url in self._server_log:
             token_url: str = self._server_log[server_url]
@@ -192,7 +187,7 @@ class EsriHttpNegotiateAuth(AuthBase, SupportMultiAuth):
             token_str = resp["token"]
             request.headers["X-Esri-Authorization"] = f"Bearer {token_str}"
 
-            return request
+            return request.copy()
         else:
             return r
 

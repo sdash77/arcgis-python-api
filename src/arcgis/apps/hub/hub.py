@@ -38,12 +38,8 @@ class Hub(object):
     url                 Required string. If no URL is provided by user while connecting
                         to the GIS, then the URL will be ArcGIS Online.
     ----------------    ---------------------------------------------------------------
-    username            Optional string as entered while connecting to GIS. The login user name
-                        (case-sensitive).
-    ----------------    ---------------------------------------------------------------
-    password            Optional string as entered while connecting to GIS. If a username is
-                        provided, a password is expected.  This is case-sensitive. If the password
-                        is not provided, the user is prompted in the interactive dialog.
+    GIS                 Required authenticated GIS object for the ArcGIS Online
+                        organization associated with your Hub.
     ================    ===============================================================
 
     """

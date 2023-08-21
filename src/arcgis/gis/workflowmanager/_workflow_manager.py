@@ -21,18 +21,21 @@ def _underscore_to_camelcase(name):
 
 
 def _check_license(gis):
-    user_url = f"{gis._portal.resturl}community/self"
-    raw_user = gis._con.get(user_url, {"returnUserLicenseTypeExtensions": True})
-    if "userLicenseTypeExtensions" in raw_user:
-        licenses = raw_user["userLicenseTypeExtensions"]
-        has_license = "workflow" in licenses
-    else:
-        has_license = False
+    is_portal = gis.properties.get("isPortal", False)
+    portal_version = float(gis.properties.get("currentVersion", "0"))
+    if is_portal and portal_version < 10.3:  # < ArcGIS Enterprise 11.1
+        user_url = f"{gis._portal.resturl}community/self"
+        raw_user = gis._con.get(user_url, {"returnUserLicenseTypeExtensions": True})
+        if "userLicenseTypeExtensions" in raw_user:
+            licenses = raw_user["userLicenseTypeExtensions"]
+            has_license = "workflow" in licenses
+        else:
+            has_license = False
 
-    if has_license is False:
-        raise ValueError(
-            "No Workflow Manager license is available for the current user"
-        )
+        if has_license is False:
+            raise ValueError(
+                "No Workflow Manager license is available for the current user"
+            )
 
 
 def _initialize(instance, gis):
@@ -242,29 +245,33 @@ class WorkflowManagerAdmin:
         job_template_ids: Optional[str] = None,
         diagram_ids: Optional[str] = None,
         include_other_configs: bool = True,
+        passphrase: Optional[str] = None,
     ):
         """
         Exports a new Workflow Manager configuration (.wmc) file based on the indicated item. This configuration file
         includes the version, job templates, diagrams, roles, role-group associations, lookup tables, charts and
-        queries, templates, and user settings of the indicated item. Encrypted settings for the item will only have
-        their key but not the value exported. This file can be used with the import endpoint to update other item
-        configurations. Configurations from Workflow items with a server that is on a more recent version will not
-        import due to incompatability.
+        queries, templates, and user settings of the indicated item. This file can be used with the import endpoint
+        to update other item configurations. Configurations from Workflow items with a server that is on a more
+        recent version will not import due to incompatability.
 
-        ==================  =========================================================
-        **Argument**        **Description**
-        ------------------  ---------------------------------------------------------
-        item                Required Item. The Workflow Manager Item to be exported
-        ------------------  ---------------------------------------------------------
-        job_template_ids    Optional. The job template(s) to be exported. If job template is exported,
-                            the associated diagram must be included to be exported.
-        ------------------  ---------------------------------------------------------
-        diagram_ids         Optional. The diagram(s) to be exported. If not defined, all diagrams are exported.
-                            If defined as empty, no diagram is exported
-        ------------------  ---------------------------------------------------------
-        include_other_configs Optional. If false other configurations are not exported including templates,
-                              User defined settings, shared searches, shared queries, email settings etc.
-        ==================  =========================================================
+        =====================  =========================================================
+        **Argument**           **Description**
+        ---------------------  ---------------------------------------------------------
+        item                   Required Item. The Workflow Manager Item to be exported
+        ---------------------  ---------------------------------------------------------
+        job_template_ids       Optional. The job template(s) to be exported. If job template is exported,
+                               the associated diagram must be included to be exported.
+        ---------------------  ---------------------------------------------------------
+        diagram_ids            Optional. The diagram(s) to be exported. If not defined, all diagrams are exported.
+                               If defined as empty, no diagram is exported
+        ---------------------  ---------------------------------------------------------
+        include_other_configs  Optional. If false other configurations are not exported including templates,
+                               User defined settings, shared searches, shared queries, email settings etc.
+        ---------------------  ---------------------------------------------------------
+        passphrase             Optional. If exporting encrypted user defined settings, define a passphrase.
+                               If no passphrase is specified, the keys for encrypted user defined settings will be
+                               exported without their values.
+        =====================  =========================================================
 
         :return:
             success object
@@ -275,6 +282,8 @@ class WorkflowManagerAdmin:
             params["jobTemplateIds"] = job_template_ids
         if diagram_ids is not None:
             params["diagramIds"] = diagram_ids
+        if passphrase is not None:
+            params["passphrase"] = passphrase
 
         url = "{base}/admin/{id}/export".format(base=self._url, id=item.id)
         return_obj = self._gis._con.post(
@@ -286,7 +295,7 @@ class WorkflowManagerAdmin:
             self._gis._con._handle_json_error(return_obj["error"], 0)
         return return_obj
 
-    def import_item(self, item: Item, config_file):
+    def import_item(self, item: Item, config_file, passphrase: Optional[str] = None):
         """
         Imports a new Workflow Manager configuration from the selected .wmc file. Configurations from Workflow
         items with a server that is on a more recent version will not import due to incompatability. This will
@@ -302,6 +311,10 @@ class WorkflowManagerAdmin:
         item                Required Item. The Workflow Manager Item that to import the configuration to.
         ------------------  ---------------------------------------------------------
         config_file         Required. The file path to the workflow manager configuration file.
+        ------------------  ---------------------------------------------------------
+        passphrase          Optional. If importing encrypted user defined settings, specify the same passphrase
+                            used when exporting the configuration file. If no passphrase is specified, the keys for
+                            encrypted user defined settings will be imported without their values.
         ==================  =========================================================
 
         :return:
@@ -310,13 +323,17 @@ class WorkflowManagerAdmin:
         """
 
         url = "{base}/admin/{id}/import".format(base=self._url, id=item.id)
+        data = {}
+        if passphrase is not None:
+            data["passphrase"] = passphrase
 
         return_obj = self._gis._con.post(
             url,
             files={"file": config_file},
+            params=data,
             try_json=False,
             json_encode=False,
-            post_json=True,
+            post_json=False,
         )
         return_obj = json.loads(return_obj)
 
@@ -727,24 +744,21 @@ class JobManager:
             # USAGE EXAMPLE: Updating a Job's properties
 
             # create a WorkflowManager object from the workflow item
-            >>> workflow_manager = WorkflowManager(wf_item)
+            workflow_manager = WorkflowManager(wf_item)
 
-            >>> job = workflow_manager.jobs.get(job_id)
-            >>> job.priority = 'Updated'
+            updates = { 'priority': 'High' }
+            updates['extended_properties']: [
+                {
+                    "identifier": "table_name.prop1",
+                    "value": "updated_123"
+                },
+                {
+                    "identifier": "table_name.prop2",
+                    "value": "updated_456"
+                },
+            ]
 
-            >>> table_name = job.extended_properties[0]["tableName"]
-            >>> job.extended_properties = [
-                    {
-                        "identifier": table_name + ".prop1",
-                        "value": "updated_123"
-                    },
-                    {
-                        "identifier": table_name + ".prop2",
-                        "value": "updated_456"
-                    },
-                ]
-
-            >>> workflow_manager.jobs.update(job_id, vars(job))
+            workflow_manager.jobs.update(job_id, updates)
 
         """
         try:
@@ -893,7 +907,7 @@ class WorkflowManager:
 
         # USAGE EXAMPLE: Creating a WorkflowManager object from a workflow item
 
-        from arcgis.workflow import WorkflowManager
+        from arcgis.gis.workflowmanager import WorkflowManager
         from arcgis.gis import GIS
 
         # connect to your GIS and get the web map item
@@ -903,7 +917,7 @@ class WorkflowManager:
         # create a WorkflowManager object from the workflow item
         wm = WorkflowManager(wf_item)
         type(wm)
-        >> arcgis.workflowmanager.WorkflowManager
+        >> arcgis.gis.workflowmanager.WorkflowManager
 
         # explore the users in this workflow using the 'users' property
         wm.users
@@ -2149,30 +2163,30 @@ class SavedSearchesManager:
 
         .. code-block:: python
 
-            # USAGE EXAMPLE: Updating a Job's properties
+            # USAGE EXAMPLE: Updating a search's properties
 
             # create a WorkflowManager object from the workflow item
-            >>> workflow_manager = WorkflowManager(wf_item)
+            workflow_manager = WorkflowManager(wf_item)
 
-            >>> workflow_manager.create_saved_search(name="name",
-                                                    definition={
-                                                        "start": 0,
-                                                        "fields": ["job_status"],
-                                                        "displayNames": ["Status"  ],
-                                                        "sortFields": [{"field": "job_status",
-                                                                        "sortOrder": "Asc:}]
-                                                                },
-                                                    search_type='Chart',
-                                                    color_ramp='Flower Field Inverse',
-                                                    sort_index=2000)
+            workflow_manager.create_saved_search(name="name",
+                                                 definition={
+                                                     "start": 0,
+                                                     "fields": ["job_status"],
+                                                     "displayNames": ["Status"  ],
+                                                     "sortFields": [{"field": "job_status",
+                                                                     "sortOrder": "Asc:}]
+                                                             },
+                                                 search_type='Chart',
+                                                 color_ramp='Flower Field Inverse',
+                                                 sort_index=2000)
 
-            >>> search_lst = workflow_manager.searches("All")
-            >>> search = [x for x in search_lst if x["searchId"] == searchid][0]
+            search_lst = workflow_manager.searches("All")
+            search = [x for x in search_lst if x["searchId"] == searchid][0]
 
-            >>> search["colorRamp"] = "Default"
-            >>> search["name"] = "Updated search"
+            search["colorRamp"] = "Default"
+            search["name"] = "Updated search"
 
-            >>> actual = workflow_manager.update_saved_search(search)
+            actual = workflow_manager.update_saved_search(search)
 
         """
         try:
@@ -2734,20 +2748,20 @@ class Job(object):
         """
         Sets the version of the job.
 
-        ===============     ====================================================================
+        ================    ===================================================================
         **Argument**        **Description**
-        ---------------     --------------------------------------------------------------------
+        ----------------    -------------------------------------------------------------------
         data_source_name    Required. The name of the data source for the job version to be set.
-        ---------------     --------------------------------------------------------------------
+        ----------------    -------------------------------------------------------------------
         version_guid        Optional. The guid of the version to be set. If the value is null or not defined,
                             the versionName must be defined. versionGuid is preferred to be defined for better
                             performance.
-        ---------------     --------------------------------------------------------------------
+        ----------------    -------------------------------------------------------------------
         version_name        Optional. The name of the version to be set. If the value is null or not defined,
                             the versionGuid must be defined.
-        ---------------     --------------------------------------------------------------------
+        ----------------    -------------------------------------------------------------------
         administered        Optional. If true, the version can be claimed. If not defined, the default value is false.
-        ===============     ====================================================================
+        ================    ===================================================================
 
         :return:
             success object
@@ -3074,7 +3088,7 @@ class JobTemplate(object):
 
         .. code-block:: python
 
-            # USAGE EXAMPLE: Creating a automated creation for a job template
+            # USAGE EXAMPLE: Creating an automated creation for a job template
 
             # create a WorkflowManager object from the workflow item
             wm = WorkflowManager(wf_item)

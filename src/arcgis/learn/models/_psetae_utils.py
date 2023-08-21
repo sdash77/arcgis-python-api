@@ -468,7 +468,7 @@ class miou(Callback):
             else:
                 iou += inter / union
         miou = iou / n_observed
-        return add_metrics(last_metrics, miou)
+        return add_metrics(last_metrics, miou.detach().cpu().numpy())
 
 
 def mIou_new(y_true, y_pred, cls_list):
@@ -665,12 +665,10 @@ def get_ntrainparams(model):
     return sum(p.numel() for p in model.parameters() if p.requires_grad)
 
 
-def model_eval(valid_dt, model, class_dict):
-    validarr = torch.cat([i[0][None, :, :, :] for i, j in valid_dt], axis=0)
-    for i, j in valid_dt:
-        batch_size = i[0].shape[0]
-        break
-    labsarr = torch.stack([j for i, j in valid_dt])
+def model_eval(data, model, class_dict, convertmap):
+    validarr = torch.cat([i[0][None, :, :, :] for i, j in data.valid_ds], axis=0)
+    batch_size = data.batch_size
+    labsarr = torch.stack([j for i, j in data.valid_ds])
     final_img = torch.moveaxis(validarr, 3, 1)[:, :, :, :, None]
     img_arr = torch.reshape(
         final_img,
@@ -691,11 +689,16 @@ def model_eval(valid_dt, model, class_dict):
         with torch.no_grad():
             pred = model(i, sim)
         prediction.append(pred.argmax(dim=1))
+    if convertmap:
+        prediction = np.array(
+            [convertmap.get(item, item) for item in torch.cat(prediction).cpu().numpy()]
+        )
+        final_labs = np.array(
+            [convertmap.get(item, item) for item in final_labs.cpu().numpy()]
+        )
 
-    preds = np.array(
-        [class_dict.get(item, item) for item in torch.cat(prediction).cpu().numpy()]
-    )
-    trues = np.array([class_dict.get(item, item) for item in final_labs.cpu().numpy()])
+    preds = np.array([class_dict.get(item, item) for item in prediction])
+    trues = np.array([class_dict.get(item, item) for item in final_labs])
     mats = confusion_matrix_analysis(confusion_matrix(preds, trues), class_dict)
     miou = mIou_new(preds, trues, list(class_dict.values()))
     return mats, miou

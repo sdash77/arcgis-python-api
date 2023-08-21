@@ -12,6 +12,10 @@ import arcgis as _arcgis
 from arcgis.raster._layer import ImageryLayer as _ImageryLayer
 from arcgis.raster._util import _set_context, _id_generator
 from ._scannedmapdigitizer import ScannedMapDigitizer
+from .models._timm_utils import load_timm_bckbn_pretrained
+from timm.models import helpers
+
+helpers.load_pretrained = load_timm_bckbn_pretrained
 
 if not _LAMBDA_TEXT_CLASSIFICATION:
     from .models import (
@@ -55,6 +59,7 @@ if not _LAMBDA_TEXT_CLASSIFICATION:
         EfficientDet,
         SQNSeg,
         PSETAE,
+        MMDetection3D,
     )
 
     from ._object_tracker import ObjectTracker
@@ -63,6 +68,12 @@ if not _LAMBDA_TEXT_CLASSIFICATION:
 from ._data import prepare_data, prepare_tabulardata, prepare_textdata
 from ._process_df import process_df, add_datepart
 from ._utils.evaluate_batchsize import estimate_batch_size
+
+
+_point_cloud_classification_model_list = ["PointCNN", "RandLANet", "SQNSeg"]
+
+
+_point_cloud_detection_model_list = ["MMDetection3D"]
 
 
 def _set_param(gis, params, param_name, input_param):
@@ -1733,53 +1744,10 @@ def export_point_dataset(
     **kwargs
 ):
     """
-    Exports the las files into h5 blocks.
-
-    .. note::
-      This function has been deprecated starting from `ArcGIS API for
-      Python` version 1.9.0. Export data using `Prepare Point Cloud Training Data` tool available
-      in 3D Analyst Extension from ArcGIS Pro 2.8 onwards.
-
-
-    ==================     =======================================================================================================
-    **Parameter**           **Description**
-    ------------------     -------------------------------------------------------------------------------------------------------
-    data_path              Required string. Folder containing two folders with
-                           las files.
-
-                           Folder structure:
-                            ``train/``
-                             ``*.las``
-                            ``val/``
-                             ``*.las``
-    ------------------     -------------------------------------------------------------------------------------------------------
-    output_path            Required string. Path where exported files will be
-                           dumped. This directory either should be empty or
-                           be a totally new directory.
-    ------------------     -------------------------------------------------------------------------------------------------------
-    block_size             Optional float. Size of the h5 block file.
-                           The unit of this parameter is the same as that of the
-                           dataset's coordinate system. Default: 50.0 Units.
-                           The default value is based on the assumption that
-                           dataset's coordinate system is in metric units.
-    ------------------     -------------------------------------------------------------------------------------------------------
-    max_points             Optional integer. Maximum number of points to be
-                           included in each h5 block file.
-                           Default: 8192 points.
-    ------------------     -------------------------------------------------------------------------------------------------------
-    extra_features         Optional list of tuple. Extra features to read
-                           from las files. The length of tuple is 3, which
-                           contain feature name, max, and min values
-                           respectively. For example:
-                           If you want extra features like `intensity` or
-                           `number of returns` to be considered while
-                           training, set this parameter like:
-                           `extra_features=[('intensity', 5000, 0),
-                           ('num_returns', 5, 0)]`.
-                           The default behavior has changed from v1.8.0.
-                           Default: [].
-    ==================     =======================================================================================================
-
+    Note:
+    This function has been deprecated starting from `ArcGIS API for
+    Python` version 1.9.0. Export data using `Prepare Point Cloud Training Data` tool available
+    in 3D Analyst Extension from ArcGIS Pro 2.8 onwards.
 
     """
 

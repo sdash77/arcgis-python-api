@@ -32,6 +32,7 @@ from ._business_analyst._utils import (
     avail_arcpy,
 )
 from ._ge import _GeoEnrichment
+from ._helper import service_properties
 
 
 def _check_gis_source(gis=None):
@@ -891,16 +892,55 @@ class Country(object):
             )
 
         """
-        # pull out named areas if present
-        if isinstance(study_areas, Iterable) and not isinstance(
+        # pull out named area properties if present and set to use country instead of just BA global
+        standard_geography_level = None
+
+        # If dictionary was passed, turn to list
+        if isinstance(study_areas, dict):
+            if isinstance(study_areas, Geometry):
+                study_areas = [study_areas]
+            else:
+                study_areas = list(study_areas.values())
+
+        if isinstance(study_areas, BufferStudyArea):
+            study_areas = [study_areas]
+
+        ### Begin creating Study Area ###
+        if isinstance(study_areas, list):
+            # For extent
+            study_areas = [
+                Geometry(area).polygon
+                if isinstance(area, dict) and "xmin" in area
+                else area
+                for area in study_areas
+            ]
+            first_geo = study_areas[0]
+            for index, value in enumerate(study_areas):
+                if isinstance(value, BufferStudyArea):
+                    # returns a string
+                    value = value.area
+                    study_areas[index] = value
+        if isinstance(study_areas, GeoAccessor) or isinstance(
             study_areas, pd.DataFrame
         ):
-            if isinstance(study_areas, dict):
-                study_areas = list(study_areas.values())
-            first_geo = study_areas[0]
-            if isinstance(first_geo, NamedArea):
-                study_areas = [na._areaid for na in study_areas]
-                standard_geography_level = first_geo._currlvl
+            if isinstance(study_areas, pd.DataFrame):
+                study_areas = study_areas.spatial
+            first_geo = Point(
+                {
+                    "x": study_areas.true_centroid[0],
+                    "y": study_areas.true_centroid[1],
+                    "spatialReference": study_areas.sr,
+                }
+            )
+            study_areas = study_areas._data
+
+        # assign further properties if found
+        if isinstance(first_geo, NamedArea):
+            standard_geography_level = first_geo._currlvl
+        elif isinstance(first_geo, BufferStudyArea):
+            proximity_metric = first_geo.units.lower() if first_geo.units else None
+            proximity_value = first_geo.radii
+            proximity_type = first_geo.travel_mode
 
         # if data collections passed in kwargs, pull enrich variables out
         if "data_collections" in kwargs.keys():
@@ -1237,16 +1277,19 @@ def create_report(
                            stream. The attributes are used by Portal to determine where and how
                            an item is stored. Parameter attributes include: user, folder,
                            title, item_properties, URL, token, and referrer.
-                           Example
 
-                           Creating a new output in a Portal for ArcGIS Instance:
+                           Example:
 
-                           | return_type = {'user' : 'testUser',
-                           |               'folder' : 'FolderName',
-                           |               'title' : 'Report Title',
-                           |               'item_properties' : '<properties>',
-                           |               'url' : '``https://hostname.domain.com/webadaptor``',
-                           |               'token' : 'token', 'referrer' : 'referrer'}
+                                Creating a new output in a Portal for ArcGIS Instance:
+                                return_type = {
+                                    "user": "testUser",
+                                    "folder": "FolderName",
+                                    "title": "Report Title",
+                                    "item_properties": {...},
+                                    "url": "https://hostname.domain.com/webadaptor",
+                                    "token": "...",
+                                    "referrer": "..."
+                                }
     ------------------     --------------------------------------------------------------------
     use_data               Optional dictionary. This parameter explicitly specify the country
                            or dataset to query. When all input features specified in the
@@ -1482,6 +1525,7 @@ def enrich(
     proximity_type=None,
     proximity_value=None,
     proximity_metric=None,
+    sanitize_columns=True,
 ):
     """
     Enrich provides access to a massive dataset describing exactly who people are
@@ -1507,40 +1551,35 @@ def enrich(
     study_areas                   Required list, dictionary, :class:`~arcgis.features.FeatureSet`
                                   or SpatiallyEnabledDataFrame containing the input areas to be enriched.
 
-                                  study_areas can be a SpatiallyEnabledDataFrame, :class:`~arcgis.features.FeatureSet` or a
+                                  `study_areas` can be a Spatially Enabled DataFrame, :class:`~arcgis.features.FeatureSet` or a
                                   lists of the following types:
 
-                                  * addresses, points of interest, place names or other
-                                  supported locations as strings.
+                                  * addresses, points of interest, place names or other supported locations as strings.
 
-                                  * dicts such as [{"address":{"Address":"380 New York St.",
-                                  "Admin1":"Redlands","Admin2":"CA","Postal":"92373",
-                                  "CountryCode":"USA"}}] for multiple field addresses
+                                  * dicts for multiple field addresses such as:
+                                    Example: [{"address": {"Address":"380 New York St.", "Postal":"92373", "CountryCode":"USA"}}, {"address": {"text": "380 New York St Redlands CA 92373"}}]
 
                                   * :class:`~arcgis.geometry.Geometry` instances
 
                                   * BufferStudyArea instances. By default, one-mile ring
-                                  buffers are created around the points to collect and append
-                                  enrichment data. You can use BufferStudyArea to change the ring
-                                  buffer size or create drive-time service areas around the points.
+                                    buffers are created around the points to collect and append
+                                    enrichment data. You can use BufferStudyArea to change the ring
+                                    buffer size or create network service areas around the points.
 
                                   * NamedArea instances to support standard geography. They are
-                                  obtained using Country.subgeographies()/search(). When
-                                  the NamedArea instances should be combined together (union), a list
-                                  of such NamedArea instances should constitute a study area in the
-                                  list of requested study areas. Otherwise, pass in the result of subgeographies
-                                  as a dictionary.
+                                    obtained using Country.subgeographies()/search().
 
-                                    .. code-block:: python
-                                        usa = Country("USA")
-                                        ca_counties = usa.subgeographies.states['California'].counties
+                                        .. code-block:: python
 
-                                        # Pass as a dictionary
-                                        counties_df = enrich(study_areas=ca_counties, data_collections=['Age'])
-                                        counties_df
+                                            usa = Country("USA")
+                                            ca_counties = usa.subgeographies.states['California'].counties
 
-                                        # Pass as a list
-                                        counties_df = enrich(study_areas=list(ca_counties.values()), data_collections=['Age'])
+                                            # Pass as a dictionary
+                                            counties_df = enrich(study_areas=ca_counties, data_collections=['Age'])
+                                            counties_df
+
+
+                                  For more information and example see: https://developers.arcgis.com/python/guide/part2-where-to-enrich-study-areas/#enriching-study-areas
     -------------------------     --------------------------------------------------------------------
     data_collections              Optional list. A Data Collection is a preassembled list of
                                   attributes that will be used to enrich the input features.
@@ -1607,6 +1646,12 @@ def enrich(
                                   defining the proximity value. For instance, if specifying one
                                   kilometer, this value will be ``kilometers``. Default is
                                   ``kilometers``.
+    -------------------------     --------------------------------------------------------------------
+    sanitize_columns              Optional boolean. Convert output column names to snake case python style.
+                                  Default is ``True``.
+                                  Examples:
+                                  Value is ``True``: ['source_country', 'area_type', 'aggregation_method', 'totpop']
+                                  Value is ``False``: ['sourceCountry', 'areaType', 'aggregationMethod', 'TOTPOP']
     =========================     ====================================================================
 
     :return:
@@ -1624,16 +1669,27 @@ def enrich(
 
     # If dictionary was passed, turn to list
     if isinstance(study_areas, dict):
-        study_areas = list(study_areas.values())
+        if isinstance(study_areas, Geometry):
+            study_areas = [study_areas]
+        else:
+            study_areas = list(study_areas.values())
 
     if isinstance(study_areas, BufferStudyArea):
         study_areas = list(study_areas)
-
     # keep list of countries for data_collection check
     sa_to_country = {}
 
     ### Begin creating Study Area to Country dict ###
     if isinstance(study_areas, list):
+        # Process the study areas for extent values
+        #
+        # [f(x) if condition else g(x) for x in sequence]
+        study_areas = [
+            Geometry(area).polygon
+            if isinstance(area, dict) and "xmin" in area
+            else area
+            for area in study_areas
+        ]
         first_geo = study_areas[0]
         for index, value in enumerate(study_areas):
             cntry = None
@@ -1669,8 +1725,19 @@ def enrich(
                         value = value.true_centroid
                     elif "geometry" in value:
                         value = value["geometry"]
+
+                    # if it's a dictionary representing a polygon...
+                    if "rings" in value:
+                        polygon = Polygon(value)
+                        value = polygon.true_centroid
                     # geocode the geom and extract the country
                     geocoded_area = reverse_geocode(value)
+                    cntry = Country(geocoded_area["address"]["CountryCode"])
+                elif isinstance(value, dict) and "xmin" in value:
+                    extent = Geometry(value)
+                    centroid = extent.polygon.true_centroid
+                    value = extent.polygon
+                    geocoded_area = reverse_geocode(centroid)
                     cntry = Country(geocoded_area["address"]["CountryCode"])
             if index == 0:
                 # if the first instance is a geocoded area, assign enrich_src
@@ -1726,6 +1793,7 @@ def enrich(
                     proximity_metric=proximity_metric,
                     standard_geography_level=standard_geography_level,
                     return_geometry=return_geometry,
+                    sanitize_columns=sanitize_columns,
                 )
 
                 enrich_res = pd.concat([enrich_res, enrich_df], ignore_index=True)
@@ -1744,6 +1812,7 @@ def enrich(
                 proximity_metric=proximity_metric,
                 standard_geography_level=standard_geography_level,
                 return_geometry=return_geometry,
+                sanitize_columns=sanitize_columns,
             )
     # check if data collections used as input parameter against available data collections
     elif data_collections is not None:
@@ -1775,6 +1844,7 @@ def enrich(
                         proximity_metric=proximity_metric,
                         standard_geography_level=standard_geography_level,
                         return_geometry=return_geometry,
+                        sanitize_columns=sanitize_columns,
                     )
                     enrich_res = pd.concat([enrich_res, enrich_df], ignore_index=True)
                 else:
@@ -1827,6 +1897,7 @@ def enrich(
                 proximity_metric=proximity_metric,
                 standard_geography_level=standard_geography_level,
                 return_geometry=return_geometry,
+                sanitize_columns=sanitize_columns,
             )
 
     return enrich_res
@@ -1850,6 +1921,8 @@ def _preproces_data_colletions_and_analysis_variables(
 
     # if variables provided, prep as well
     if enrich_vars is not None and not isinstance(enrich_vars, pd.DataFrame):
+        if isinstance(src, Country):
+            src = src._ba_cntry  # change to business analyst country class
         av_vars = src.get_enrich_variables_from_iterable(enrich_vars, **kwargs)
     else:
         av_vars = None
@@ -2223,8 +2296,19 @@ def interesting_facts(
     """
     if gis is None:
         gis: GIS = _env.active_gis
+    if (
+        "supportedOperations" in service_properties(gis=gis)
+        and not "InterestingFacts" in service_properties(gis=gis)["supportedOperations"]
+    ):
+        raise Exception(
+            "Interesting Facts functionality is not supported. Please make "
+            "sure you are using ArcGIS Online or Enterprise version the supports "
+            "interesting facts and check with your administrator to enable this functi"
+            "onality."
+        )
     if out_sr is None:
         out_sr = {"wkid": 3857}
+
     url: str = f"{gis.properties.helperServices.geoenrichment.url}/Geoenrichment/InterestingFacts"
     study_areas = _process_study_areas(areas=study_areas)
     params = {

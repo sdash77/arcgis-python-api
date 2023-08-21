@@ -6,6 +6,7 @@ These tools primarily operate on items and layers from the GIS.
 """
 from __future__ import absolute_import, division, print_function, annotations
 
+from arcgis._impl.common._deprecate import deprecated
 import json
 import logging
 import os
@@ -40,7 +41,7 @@ from arcgis.geoprocessing import import_toolbox
 from ._async.jobs import GeometryJob
 from arcgis.raster._util import _set_context as _set_raster_context
 from arcgis._impl.common._utils import inspect_function_inputs
-from arcgis.geoprocessing._job import RAJob
+from arcgis.geoprocessing._job import RAJob, OMJob
 from functools import lru_cache
 from arcgis.raster import Raster, ImageryLayer, _ImageServerRaster
 
@@ -928,7 +929,7 @@ class _FeatureAnalysisTools(BaseAnalytics):
                                                 group_by_field is specified. If true, the minority (least dominant) or
                                                 the majority (most dominant) attribute values for each group field
                                                 within each boundary are calculated. Two new fields are added to the
-                                                aggregated_layer prefixed with Majority_ and Minority_.
+                                                aggregated_layer prefixed with `Majority_` and `Minority_`.
                                                 The default is false.
         ------------------------------------    --------------------------------------------------------------------
         percent_points                          Optional boolean. This boolean parameter is applicable only when a
@@ -4976,6 +4977,7 @@ class _FeatureAnalysisTools(BaseAnalytics):
         context=None,
         estimate=False,
         future=False,
+        bin_resolution=None,
     ):
         """
         Generates a tessellated grid of regular polygons.
@@ -5028,6 +5030,11 @@ class _FeatureAnalysisTools(BaseAnalytics):
         estimate                                 Optional Boolean. If True, the number of credits to run the operation will be returned.
         ------------------------------------     --------------------------------------------------------------------
         future                                   Optional boolean. If True, the result will be a GPJob object and results will be returned asynchronously.
+        ------------------------------------     --------------------------------------------------------------------
+        bin_resolution                           Optional Integer. This becomes required when H3_HEXAGON is used.
+                                                 The H3 resolution of the hexagons. Resolution ranges from 0 to 15.
+                                                 With each increasing resolution size, the area of the polygons will
+                                                 be one seventh the size.
         ====================================     ====================================================================
 
         .. note::
@@ -5057,6 +5064,8 @@ class _FeatureAnalysisTools(BaseAnalytics):
                 params["binSize"] = bin_size
             if bin_size_unit:
                 params["binSizeUnit"] = bin_size_unit
+            if bin_resolution:
+                params["binResolution"] = bin_resolution
             if extent_layer:
                 params["extentLayer"] = extent_layer
             params["intersectStudyArea"] = intersect_study_area
@@ -5067,17 +5076,14 @@ class _FeatureAnalysisTools(BaseAnalytics):
             from arcgis.features._credits import _estimate_credits
 
             return _estimate_credits(task=task, parameters=params)
-        gpjob = self._tbx.generate_tessellations(
-            bin_type=bin_type,
-            bin_size=bin_size,
-            bin_size_unit=bin_size_unit,
-            extent_layer=extent_layer,
-            intersect_study_area=intersect_study_area,
-            output_name=output_name,
-            context=context,
-            gis=self._gis,
-            future=True,
-        )
+        params = {}
+        for key in list(self._tbx.generate_tessellations.__annotations__.keys()):
+            if "return" != key:
+                params[key] = eval(key)
+
+        params["future"] = True
+
+        gpjob = self._tbx.generate_tessellations(**params)
         gpjob._is_fa = True
         if future:
             return gpjob
@@ -6327,7 +6333,7 @@ class _FeatureAnalysisTools(BaseAnalytics):
         -------------------------------------   ---------------------------------------------------------
         minority_majority                       Optional boolean. This boolean parameter is applicable only when a ``group_by_field`` is specified.
                                                 If true, the minority (least dominant) or the majority (most dominant) attribute values for each group
-                                                field are calculated. Two new fields are added to the ``result_layer`` prefixed with Majority_ and Minority_.
+                                                field are calculated. Two new fields are added to the ``result_layer`` prefixed with `Majority_` and `Minority_`.
 
                                                 The default is False.
         -------------------------------------   ---------------------------------------------------------
@@ -6782,7 +6788,7 @@ class _FeatureAnalysisTools(BaseAnalytics):
         -------------------------   --------------------------------------------------------------------------------------------------------------------
         minority_majority           Optional boolean. This boolean parameter is applicable only when a ``group_by_field`` is specified. If true, the minority (least dominant) or the
                                     majority (most dominant) attribute values for each group field within each nearby area are calculated. Two new fields are added to
-                                    the ``result_layer`` prefixed with Majority_ and Minority_.
+                                    the ``result_layer`` prefixed with `Majority_` and `Minority_`.
 
                                     The default is False.
         -------------------------   --------------------------------------------------------------------------------------------------------------------
@@ -7758,9 +7764,10 @@ class _OrthoMappingTools:
             future=True,
         )
         job._is_ortho = True
+        omjob = OMJob(job)
         if future:
-            return job
-        return job.result()
+            return omjob
+        return omjob.result()
 
     # ----------------------------------------------------------------------
     def compute_color_correction(
@@ -7772,6 +7779,7 @@ class _OrthoMappingTools:
         context=None,
         gis=None,
         future=False,
+        flight_json_details=None,
         **kwargs,
     ):
         """
@@ -7878,9 +7886,11 @@ class _OrthoMappingTools:
             future=True,
         )
         job._is_ortho = True
+        omjob = OMJob(job)
+        omjob._flight_details = flight_json_details
         if future:
-            return job
-        return job.result()
+            return omjob
+        return omjob.result()
 
     # ----------------------------------------------------------------------
     def compute_control_points(
@@ -7891,6 +7901,7 @@ class _OrthoMappingTools:
         context=None,
         gis=None,
         future=False,
+        flight_json_details=None,
         **kwargs,
     ):
         """
@@ -7971,10 +7982,13 @@ class _OrthoMappingTools:
             gis=gis,
             future=True,
         )
+
         job._is_ortho = True
+        omjob = OMJob(job)
+        omjob._flight_details = flight_json_details
         if future:
-            return job
-        return job.result()
+            return omjob
+        return omjob.result()
 
     # ----------------------------------------------------------------------
     def compute_seamlines(
@@ -7984,6 +7998,7 @@ class _OrthoMappingTools:
         context=None,
         gis=None,
         future=False,
+        flight_json_details=None,
         **kwargs,
     ):
         """
@@ -8066,9 +8081,11 @@ class _OrthoMappingTools:
         )
 
         job._is_ortho = True
+        omjob = OMJob(job)
+        omjob._flight_details = flight_json_details
         if future:
-            return job
-        return job.result()
+            return omjob
+        return omjob.result()
 
     # ----------------------------------------------------------------------
     def compute_sensor_model(
@@ -8079,6 +8096,7 @@ class _OrthoMappingTools:
         context=None,
         gis=None,
         future=False,
+        flight_json_details=None,
         **kwargs,
     ):
         """
@@ -8161,9 +8179,11 @@ class _OrthoMappingTools:
         )
 
         job._is_ortho = True
+        omjob = OMJob(job)
+        omjob._flight_details = flight_json_details
         if future:
-            return job
-        return job.result()
+            return omjob
+        return omjob.result()
 
     # ----------------------------------------------------------------------
     def edit_control_points(
@@ -8173,6 +8193,7 @@ class _OrthoMappingTools:
         context=None,
         gis=None,
         future=False,
+        flight_json_details=None,
         **kwargs,
     ):
         """
@@ -8234,9 +8255,11 @@ class _OrthoMappingTools:
         )
 
         job._is_ortho = True
+        omjob = OMJob(job)
+        omjob._flight_details = flight_json_details
         if future:
-            return job
-        return job.result()
+            return omjob
+        return omjob.result()
 
     # ----------------------------------------------------------------------
     def generate_dem(
@@ -8249,6 +8272,7 @@ class _OrthoMappingTools:
         context=None,
         gis=None,
         future=False,
+        flight_json_details=None,
         **kwargs,
     ):
         """
@@ -8383,9 +8407,16 @@ class _OrthoMappingTools:
         )
 
         job._is_ortho = True
+        job._item_properties = True
+        item = None
+        if output_dem:
+            item = output_dem
+
+        omjob = OMJob(job, item=item)
+        omjob._flight_details = flight_json_details
         if future:
-            return job
-        return job.result()
+            return omjob
+        return omjob.result()
 
     # ----------------------------------------------------------------------
     def generate_orthomosaic(
@@ -8397,6 +8428,7 @@ class _OrthoMappingTools:
         context=None,
         gis=None,
         future=False,
+        flight_json_details=None,
         **kwargs,
     ):
         """
@@ -8502,10 +8534,18 @@ class _OrthoMappingTools:
             gis=gis,
             future=True,
         )
+
         job._is_ortho = True
+        job._item_properties = True
+        item = None
+        if output_ortho_image:
+            item = output_ortho_image
+
+        omjob = OMJob(job, item=item)
+        omjob._flight_details = flight_json_details
         if future:
-            return job
-        return job.result()
+            return omjob
+        return omjob.result()
 
     # ----------------------------------------------------------------------
     def generate_report(
@@ -8514,6 +8554,7 @@ class _OrthoMappingTools:
         report_format=None,
         gis=None,
         future=False,
+        flight_json_details=None,
         **kwargs,
     ):
         """
@@ -8570,9 +8611,12 @@ class _OrthoMappingTools:
             gis=gis,
             future=True,
         )
+        job._is_ortho = True
+        omjob = OMJob(job)
+        omjob._flight_details = flight_json_details
         if future:
-            return job
-        return job.result()
+            return omjob
+        return omjob.result()
 
     # ----------------------------------------------------------------------
     def get_processing_states(self, image_collection, gis=None, future=False, **kwargs):
@@ -8603,9 +8647,10 @@ class _OrthoMappingTools:
             )
         job = tool(image_collection=image_collection, gis=gis, future=True)
         job._is_ortho = True
+        omjob = OMJob(job)
         if future:
-            return job
-        return job.result()
+            return omjob
+        return omjob.result()
 
     # ----------------------------------------------------------------------
     def match_control_points(
@@ -8616,6 +8661,7 @@ class _OrthoMappingTools:
         context=None,
         gis=None,
         future=False,
+        flight_json_details=None,
         **kwargs,
     ):
         """
@@ -8682,9 +8728,11 @@ class _OrthoMappingTools:
             future=True,
         )
         job._is_ortho = True
+        omjob = OMJob(job)
+        omjob._flight_details = flight_json_details
         if future:
-            return job
-        return job.result()
+            return omjob
+        return omjob.result()
 
     # ----------------------------------------------------------------------
     def query_camera_info(self, camera_query=None, gis=None, future=False, **kwargs):
@@ -8713,13 +8761,20 @@ class _OrthoMappingTools:
 
         job = self._tbx.query_camera_info(query=camera_query, gis=gis, future=True)
         job._is_ortho = True
+        omjob = OMJob(job)
         if future:
-            return job
-        return job.result()
+            return omjob
+        return omjob.result()
 
     # ----------------------------------------------------------------------
     def query_control_points(
-        self, image_collection, where, gis=None, future=False, **kwargs
+        self,
+        image_collection,
+        where,
+        gis=None,
+        future=False,
+        flight_json_details=None,
+        **kwargs,
     ):
         """
         The `query_control_points` allows users to use a SQL query to query certain control
@@ -8754,9 +8809,11 @@ class _OrthoMappingTools:
             future=True,
         )
         job._is_ortho = True
+        omjob = OMJob(job)
+        omjob._flight_details = flight_json_details
         if future:
-            return job
-        return job.result()
+            return omjob
+        return omjob.result()
 
     # ----------------------------------------------------------------------
     def reset_image_collection(
@@ -8791,9 +8848,10 @@ class _OrthoMappingTools:
             image_collection=image_collection, gis=gis, future=True
         )
         job._is_ortho = True
+        omjob = OMJob(job)
         if future:
-            return job
-        return job.result()
+            return omjob
+        return omjob.result()
 
 
 ###########################################################################
@@ -9039,7 +9097,7 @@ class _RasterAnalysisTools(BaseAnalytics):
                 return input_param
 
         if "ImageServer" in url or "MapServer" in url:
-            if "serviceToken" in input_param:
+            if "serviceToken" in input_param and "token" not in url:
                 url = url + "?token=" + input_param["serviceToken"]
                 input_param.update({"url": url})
 
@@ -9113,6 +9171,63 @@ class _RasterAnalysisTools(BaseAnalytics):
             output_raster["itemProperties"].update({"folderId": folderId})
         output_raster = json.dumps(output_raster)
         return output_raster, output_service
+
+    def _set_output_feature(self, output_name, task, output_properties=None):
+        gis = self._gis
+        output_feature = None
+        output_service = None
+
+        folder = None
+        folderId = None
+
+        if output_properties is not None:
+            if "folder" in output_properties:
+                folder = output_properties["folder"]
+        if folder is not None:
+            user = gis.properties.user.username
+            if isinstance(folder, dict):
+                if "id" in folder and "title" in folder:
+                    folderId = folder["id"]
+                    folder = folder["title"]
+            else:
+                folderId = gis._portal.get_folder_id(user, folder)
+            if folderId is None:
+                folder_dict = gis.content.create_folder(folder, user)
+                folder = folder_dict["title"]
+                folderId = folder_dict["id"]
+
+        if output_name is None or isinstance(output_name, str):
+            if output_name is None:
+                output_name = f"{str(task)}_{_id_generator()}"
+            output_service = self._create_output_feature_service(
+                output_name=output_name,
+                output_service_name=output_name,
+                task=task,
+                folder=folder,
+            )
+            output_feature = {
+                "serviceProperties": {
+                    "name": output_service.name,
+                    "serviceUrl": output_service.url,
+                },
+                "itemProperties": {"itemId": output_service.itemid},
+            }
+        elif isinstance(output_name, Item):
+            output_service = None
+            output_feature = {
+                "serviceProperties": {
+                    "name": output_name.name,
+                    "serviceUrl": output_name.url,
+                },
+                "itemProperties": {"itemId": output_name.itemid},
+            }
+        else:
+            raise TypeError("output_name must be a string (service name) or Item.")
+
+        if folderId is not None:
+            output_feature["itemProperties"].update({"folderId": folderId})
+        output_feature = json.dumps(output_feature)
+        return output_feature, output_service
 
     def _set_image_collection_param(self, image_collection):
         if isinstance(image_collection, str):
@@ -9769,6 +9884,7 @@ class _RasterAnalysisTools(BaseAnalytics):
         return RAJob(gpjob, output_service).result()
 
     # ----------------------------------------------------------------------
+    @deprecated(deprecated_in="2.2.0", removed_in="3.0.0", current_version="2.2.0")
     def calculate_distance(
         self,
         input_source_raster_or_features,  #
@@ -17609,7 +17725,11 @@ class _RasterAnalysisTools(BaseAnalytics):
         if future:
             if output_direction_raster:
                 return RAJob(
-                    gpjob, item=[output_accumulation_service, output_direction_service]
+                    gpjob,
+                    item=[
+                        output_accumulation_service,
+                        output_direction_service,
+                    ],
                 )
             return RAJob(
                 gpjob,
@@ -17617,7 +17737,8 @@ class _RasterAnalysisTools(BaseAnalytics):
             )
         if output_direction_raster:
             return RAJob(
-                gpjob, item=[output_accumulation_service, output_direction_service]
+                gpjob,
+                item=[output_accumulation_service, output_direction_service],
             ).result()
         return RAJob(
             gpjob,
@@ -17706,6 +17827,127 @@ class _RasterAnalysisTools(BaseAnalytics):
         )
 
         gpjob._is_ra = True
+        gpjob._item_properties = True
+        if future:
+            return RAJob(gpjob)
+        return RAJob(gpjob).result()
+
+    def multidimensional_principal_components(
+        self,
+        input_multidimensional_raster,
+        mode="DIMENSION_REDUCTION",
+        dimension=None,
+        output_principal_components_name=None,
+        output_loadings_name=None,
+        output_eigen_values_table_name=None,
+        variable=None,
+        number_of_principal_components="95%",
+        context=None,
+        future=False,
+        **kwargs,
+    ):
+        """
+        input_multidimensional_raster: inputMultidimensionalRaster (str). Required parameter.
+
+        mode: mode (str). Required parameter.
+
+        dimension: dimension (str). Required parameter.
+
+        output_principal_components_name: outputPrincipalComponents (str). Required parameter.
+
+        output_loadings_name: outputLoadingsName (str). Required parameter.
+
+        output_eigen_values_table_name: outputEigenValuesTableName (str). Optional parameter.
+
+        variable: variable (str). Optional parameter.
+
+        number_of_principal_components: numOfPrincipalComponents (str). Optional parameter.
+
+        context: context (str). Optional parameter.
+
+        future: future (str). Optional parameter.
+        """
+
+        task = "MultidimensionalPrincipalComponents"
+        gis = self._gis
+
+        context_param = {}
+        _set_raster_context(context_param, context)
+        if "context" in context_param.keys():
+            context = context_param["context"]
+
+        input_multidimensional_raster = self._layer_input(
+            input_layer=input_multidimensional_raster
+        )
+
+        mode_val = mode
+        if mode is not None:
+            mode_allowed_values = [
+                "DIMENSION_REDUCTION",
+                "SPATIAL_REDUCTION",
+            ]
+            if [element.lower() for element in mode_allowed_values].count(
+                mode.lower()
+            ) <= 0:
+                raise RuntimeError(
+                    "mode can only be one of the following: " + str(mode_allowed_values)
+                )
+
+            for element in mode_allowed_values:
+                if mode.upper() == element:
+                    mode_val = element
+
+        if mode_val.lower() == "dimension_reduction":
+            (
+                output_principal_components_name,
+                output_image_service,
+            ) = self._set_output_raster(
+                output_name=output_principal_components_name,
+                task=task,
+                output_properties=kwargs,
+            )
+            output_loadings_name, output_feature_service = self._set_output_feature(
+                output_name=output_loadings_name, task=task, output_properties=kwargs
+            )
+        # mode is "spatial_reduction" here
+        else:
+            (
+                output_principal_components_name,
+                output_image_service,
+            ) = self._set_output_feature(
+                output_name=output_principal_components_name,
+                task=task,
+                output_properties=kwargs,
+            )
+            output_loadings_name, output_feature_service = self._set_output_raster(
+                output_name=output_loadings_name, task=task, output_properties=kwargs
+            )
+
+        if output_eigen_values_table_name is not None:
+            (
+                output_eigen_values_table_name,
+                output_feature_service,
+            ) = self._set_output_feature(
+                output_name=output_eigen_values_table_name,
+                task=task,
+                output_properties=kwargs,
+            )
+
+        gpjob = self._tbx.multidimensional_principal_components(
+            input_multidimensional_raster=input_multidimensional_raster,
+            mode=mode_val,
+            dimension=dimension,
+            output_principal_components_name=output_principal_components_name,
+            output_loadings_name=output_loadings_name,
+            output_eigen_values_table_name=output_eigen_values_table_name,
+            variable=variable,
+            number_of_principal_components=number_of_principal_components,
+            context=context,
+            gis=self._gis,
+            future=True,
+        )
+
+        gpjob._is_ra = (True,)
         gpjob._item_properties = True
         if future:
             return RAJob(gpjob)

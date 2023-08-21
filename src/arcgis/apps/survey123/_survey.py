@@ -11,6 +11,7 @@ from arcgis.gis import GIS, Item
 from requests.utils import quote
 import xml.etree.ElementTree as ET
 from .exceptions import ServerError
+import requests
 
 ########################################################################
 
@@ -75,24 +76,50 @@ class SurveyManager:
         return Survey(item=item, sm=self)
 
     # ----------------------------------------------------------------------
-    def _xform2webform(self, xform: str):
-        """
-        converts the xform xml to JSON for the item
+    def _xform2webform(xform, portalUrl, connectVersion=None):
+        """Converts a XForm XML to Enketo Web form by Enketo Transformer"""
+        (dir_path, file_name) = os.path.split(xform)
+        xlsx_name = os.path.splitext(file_name)[0]
 
-        ============   ================================================
-        *Inputs*       *Description*
-        ------------   ------------------------------------------------
-        xform          Required String. xform xml string
-        ============   ================================================
+        # xform_tree = ET.parse(xform)
+        # root = xform_tree.getroot()
+        # xform_string = ET.tostring(root, encoding='utf8', method='xml')
 
-        :returns: dict
+        with open(xform, "r", encoding="utf-8") as intext:
+            xform_string = intext.read()
 
-        """
-        url = "https://{base}/api/xform2webform".format(base=self._baseurl)
-        params = {"xform": xform}
-        return self._gis._con.post(
-            path=url, postdata=params, files=None, verify_cert=False
-        )
+        url = "https://survey123.arcgis.com/api/xform2webform"
+        params = {"xform": xform_string}
+        if connectVersion:
+            params["connectVersion"] = connectVersion
+        try:
+            r = requests.post(url, params)
+            response_json = r.json()
+            r.close()
+        except requests.exceptions.ConnectionError as c:
+            return "Unable to complete request with message: " + str(c)
+        except requests.exceptions.Timeout as t:
+            return "Connection timed out: " + str(t)
+
+        else:
+            with open(
+                os.path.join(dir_path, xlsx_name + ".webform"), "w", encoding="utf-8"
+            ) as fp:
+                # with open(os.path.join(dir_path, xlsx_name + ".webform"), 'w') as fp:
+                response_json["surveyFormJson"]["portalUrl"] = portalUrl
+                webform = {
+                    "form": response_json["form"],
+                    "languageMap": response_json["languageMap"],
+                    "model": response_json["model"],
+                    "success": response_json["success"],
+                    "surveyFormJson": response_json["surveyFormJson"],
+                    "transformerVersion": response_json["transformerVersion"],
+                }
+
+                fp.write(json.dumps(webform, indent=2))
+                # fp.write(json.dumps(response_json, indent=2))
+                # fp.close()
+            return os.path.join(dir_path, xlsx_name + ".webform")
 
     # ----------------------------------------------------------------------
     def _xls2xform(self, file_path: str):
@@ -193,18 +220,24 @@ class Survey:
         if len(related) > 0:
             self._ssi = related[0]
             self._ssi_layers = self._ssi.layers + self._ssi.tables
-            _idx = 0
+
+            ssi_layer = None
             if self.layer_name:
                 for layer in self._ssi_layers:
                     if layer.properties["name"] == self.layer_name:
                         _idx = layer.properties["id"]
-            self._ssi_url = self._ssi_layers[_idx]._url
+                        ssi_layer = layer
+                        break
+            if not ssi_layer:
+                ssi_layer = self._ssi_layers[0]
+                _idx = ssi_layer.properties["id"]
+            self._ssi_url = ssi_layer._url
             try:
                 if self._ssi_layers[0].properties["isView"] == True:
-                    view_url = self._ssi_layers[_idx]._url[:-1]
+                    view_url = ssi_layer._url[:-1]
                     self.parent_fl_url = self._find_parent(view_url) + f"/{str(_idx)}"
             except KeyError:
-                self.parent_fl_url = self._ssi_layers[_idx]._url
+                self.parent_fl_url = ssi_layer._url
 
     # ----------------------------------------------------------------------
     @property
@@ -272,68 +305,162 @@ class Survey:
         save_folder: Optional[str] = None,
     ) -> str:
         """
-        Creates an MS Word Report or PDF.  The `generate_report` method allows users to either save the
-        report to the enterprise or export it directly to disk.
+        The `generate_report` method allows users to create Microsoft Word and PDF reports
+        from a survey using a report template. Reports are saved as an :class:`~arcgis.gis.Item` in an ArcGIS
+        content folder or saved locally on disk. For additional information on parameters,
+        see `Create Report <https://developers.arcgis.com/survey123/api-reference/rest/report/#create-report>`.
 
-        To save to disk, do not specify a `folder_id`.
+        .. note::
+            The Survey123 report service may output one or more `.docx` or `.pdf` files, or a zipped
+            package of these files. Whether the output is contained in a `.zip` file depends
+            on the number of files generated and their size. For more information, see the
+            `packageFiles` parameter in the `Create Report <https://developers.arcgis.com/survey123/api-reference/rest/report/#request-parameters-3>`_ documentation.
 
-        For additional information on parameters, see `Create Report <https://developers.arcgis.com/survey123/api-reference/rest/report/#create-report>`_.
+        .. note::
+            To save to disk, do not specify a `folder_id` argument.
 
         ================  ===============================================================
         **Parameter**      **Description**
         ----------------  ---------------------------------------------------------------
-        report_template   Required :class:`~arcgis.gis.Item` .  The report template Item.
+        report_template   Required :class:`~arcgis.gis.Item`. The report template.
         ----------------  ---------------------------------------------------------------
-        where             Optional String. This is the select statement used to export
-                          part or whole of the dataset.  If the record count is > 1, then
-                          the item must be saved to your organization.
-        ----------------  ---------------------------------------------------------------
-        utc_offset        Optional String.  This is the time offset from UTC to match the
-                          users timezone. Example: EST - "+04:00"
-        ----------------  ---------------------------------------------------------------
-        report_title      Optional String. Specify the file name (without extension) of the
-                          result report file. For example, if outputFormat is .pdf, input:
-                          "abc" -> output: "abc.pdf"; input: "abc.docx" -> output: "abc.docx.pdf".
+        where             Optional String. The select statement issued on survey
+                          :class:`~arcgis.features.FeatureLayer` to report on
+                          all survey records or a subset.
 
-                          If mergeFiles is either nextPage or continuous,
-                          outputReportName will be used as the merged file name. See
-                          `Create Report <https://developers.arcgis.com/survey123/api-reference/rest/report/#create-report>`_
-                          for detailed explanation.
-        ----------------  ---------------------------------------------------------------
-        package_name      Optional String. Specify the file name (without extension)of the
-                          packaged file when packageFiles is true, for example, <outputPackageName>.zip.
-        ----------------  ---------------------------------------------------------------
-        save_folder       Optional String. Specify the folder location where the output file should be stored.
-                          If `folder_id` is specified the save_folder will be ignored.
-        ----------------  ---------------------------------------------------------------
-        output_format     Optional String. Currently only docx and pdf are supported.
-        ----------------  ---------------------------------------------------------------
-        folder_id         Optional String. The folder ID of the user's content.
-        ----------------  ---------------------------------------------------------------
-        merge_files       Optional String. Specify if print multiple records into a single
-                          report file (merged mode) or multiple files (split mode), and if
-                          in merge mode, start the next record on a new page or continue
-                          with the current page. Note: A merged file larger than 500MB
-                          will be split into mulitple files.
+                          Query the `parent_fl_url` property of the
+                          :class:`~arcgis.apps.survey123.Survey` object to get the
+                          feature layer URL and retrieve a list of fields.
 
-                          + `none` - Print multiple records in split mode, each record becomes a separated report file. This is the default value.
-                          + `nextPage` - Print multiple records in merge mode, the content of the next record starts on the next new page.
-                          + `continuous` - Print multiple records in merge mode, the content of the next record starts on the same page of the previous record.
+                          .. code-block:: python
+
+                              >>> gis = GIS(profile="your_profile")
+                              >>> smgr = SurveyManager(gis)
+
+                              >>> survey_item = gis.content.get("<survey form id>")
+                              >>> survey_obj = smgr.get(survey_item.id)
+
+                              >>> survey_fl = FeatureLayer(survey_obj.parent_fl_url, gis)
+
+                              >>> print([f["name"] for f in survey_fl.properties.fields])
         ----------------  ---------------------------------------------------------------
-        survey_item       Optional :class:`~arcgis.gis.Item` . Survey `Item`, to make the operation survey awareness.
+        utc_offset        Optional String.  Time offset from UTC. This offset is applied to
+                          all `date`, `time`, and `dateTime` questions that appear in the report output.
+                          Example: EST - "+04:00"
         ----------------  ---------------------------------------------------------------
-        webmap_item       Optional :class:`~arcgis.gis.Item` . Specify the base map for printing task when printing
-                          a point/polyline/polygon. This takes precedence over the map set for
-                          each question inside a survey.
+        report_title      Optional String. If `folder_id` is provided, the result is an
+                          :class:`~arcgis.gis.Item` with this argument as the title. If
+                          `save_folder` argument is provided, this argument will be the
+                          name of the output file, or the base name for files
+                          in the output zipped package if the server-side component
+                          chose to zip up the output (depends upon the size and number
+                          of files that would result).
+
+
+                          .. note::
+                              If `merge_files` is either `nextPage` or `continuous`,
+                              `report_title` is the output file name.
         ----------------  ---------------------------------------------------------------
-        map_scale         Optional Float. Specify the map scale when printing, the map will center on the feature geometry.
+        package_name      Optional String. Specify the file name (without extension) of the
+                          packaged `.zip` file. If multiple files are packaged, the `report_title`
+                          argument will be used to name individual files in the package.
+
+
+                          .. note::
+                            The Survey123 report service automatically decides whether to package
+                            generated reports as a `.zip` file, depending on the output file count.
+                            See the `packageFiles` parameter description in the `Create Report Request parameters <https://developers.arcgis.com/survey123/api-reference/rest/report/#request-parameters-3>`_
+                            documentation for details.
         ----------------  ---------------------------------------------------------------
-        locale            Optional String. Specify the locale setting to format number and date values.
+        save_folder       Optional String. Specify the folder location where the output
+                          file or zipped file should be stored. If `folder_id` argument
+                          is provided, this argument is ignored.
+        ----------------  ---------------------------------------------------------------
+        output_format     Optional String. Accepts `docx` or `pdf`.
+        ----------------  ---------------------------------------------------------------
+        folder_id         Optional String. If a file :class:`~arcgis.gis.Item` is the
+                          desired output, specify the `id` value of the ArcGIS content
+                          folder.
+        ----------------  ---------------------------------------------------------------
+        merge_files       Optional String. Specify if output is a single file containing individual
+                          records on multiple pages (`nextPage` or `continuous`) or
+                          multiple files (`none`).
+
+                          + `none` - Print multiple records in split mode. Each record
+                            is a separate file. This is the default value.
+                          + `nextPage` - Print multiple records in a single document.
+                            Each record starts on a new page.
+                          + `continuous` - Print multiple records in a single document.
+                            EAch records starts on the same page of the previous record.
+
+                          .. note::
+                              A merged file larger than 500 MB will be split into multiple
+                              files.
+        ----------------  ---------------------------------------------------------------
+        survey_item       Optional survey :class:`~arcgis.gis.Item` to provide
+                          additional information on survey structure.
+        ----------------  ---------------------------------------------------------------
+        webmap_item       Optional web map :class:`~arcgis.gis.Item`. Specify the basemap for all
+                          map questions in the report. This takes precedence over the map set for
+                          each question in the report template.
+        ----------------  ---------------------------------------------------------------
+        map_scale         Optional Float. Specify the map scale for all map questions in the report.
+                          The map will center on the feature geometry. This takes precedence over the
+                          scale set for each question in the report template.
+        ----------------  ---------------------------------------------------------------
+        locale            Optional String. Specify the locale to format number
+                          and date values.
         ================  ===============================================================
 
-        :Returns: Item or string upon completion of `Job <https://developers.arcgis.com/survey123/api-reference/rest/report/#jobs>`_.
-        For details on the return value, see `Response Parameters <https://developers.arcgis.com/survey123/api-reference/rest/report/#response-parameters>`_
-        for :func:`~arcgis.apps.survey123.Survey.generate_report` job.
+        :Returns:
+            An :class:`~arcgis.gis.Item` or string upon completion of the reporting
+            `job <https://developers.arcgis.com/survey123/api-reference/rest/report/#jobs>`_.
+            For details on the returned value, see `Response Parameters <https://developers.arcgis.com/survey123/api-reference/rest/report/#response-parameters>`_
+            for the :func:`~arcgis.apps.survey123.Survey.generate_report` job.
+
+        .. code-block:: python
+
+            # Usage example #1: output a PDF file Item:
+            >>> from arcgis.gis import GIS
+            >>> from arcgis.apps.survey123 import SurveyManager
+
+            >>> gis = GIS(profile="your_profile_name")
+
+            >>> # Get report template and survey items
+            >>> report_templ = gis.content.get("<template item id>")
+            >>> svy_item = gis.content.get("<survey item id>")
+
+            >>> svy_mgr = SurveyManager(gis)
+            >>> svy_obj = svy_mgr.get(svy_item.id)
+
+            >>> user_folder_id = [f["id"]
+                                 for f in gis.users.me.folders
+                                 if f["title"] == "folder_title"][0]
+
+            >>> report_item = svy_obj.generate_report(report_template=report_templ,
+                                                      report_title="Title of Report Item",
+                                                      output_format="pdf",
+                                                      folder_id=user_folder_id,
+                                                      merge_files="continuous")
+
+           # Usage example #2: output a Microsoft Word document named `LessThan20_Report.docx`
+
+           >>> report_file = svy_obj.generate_report(report_template=report_templ,
+                                                     where="objectid < 20",
+                                                     report_title="LessThan20_Report",
+                                                     output_format="docx",
+                                                     save_folder="file\system\directory\",
+                                                     merge_files="nextPage")
+
+           # Usage example #3: output a zip file named `api_gen_report_pkg.zip` of individual
+           #                   pdf files with a base name of `SpecimensOver30`
+
+           >>> report_file = svy_obj.generate_report(report_template=report_templ,
+                                                     where="number_specimens>30",
+                                                     report_title="SpecimensOver30",
+                                                     output_format="pdf",
+                                                     save_folder="file\system\directory",
+                                                     package_name="api_gen_report_pkg")
 
         """
         if isinstance(where, str):
@@ -702,7 +829,7 @@ class Survey:
         ================  ===============================================================
         **Parameter**      **Description**
         ----------------  ---------------------------------------------------------------
-        report_template   Required :class:`~arcgis.gis.Item`  .  The report template Item.
+        report_template   Required :class:`~arcgis.gis.Item`. The report template Item.
         ----------------  ---------------------------------------------------------------
         where             Optional String. This is the select statement used to export
                           part or whole of the dataset.  If the record count is > 1, then
@@ -711,27 +838,37 @@ class Survey:
         utc_offset        Optional String.  This is the time offset from UTC to match the
                           users timezone. Example: EST - "+04:00"
         ----------------  ---------------------------------------------------------------
-        report_title      Optional String. Specify the file name (without extension) of the
-                          result report file. For example, if outputFormat is .pdf, input:
-                          "abc" -> output: "abc.pdf"; input: "abc.docx" -> output: "abc.docx.pdf".
+        report_title      Optional String. An :class:`~arcgis.gis.Item` with this argument
+                          as the title if no `save_folder` argument. If `save_folder`
+                          argument is provided, this argument will be the name of the
+                          output file, or the base name for files in the output zipped
+                          package if the server-side component chose to zip up the output
+                          (depends upon the size and number of files that would result).
 
-                          If packageFiles is true, outputReportName will be used for report files
-                          inside the packaged file. If mergeFiles is either nextPage or continuous,
-                          outputReportName will be used as the merged file name.
+                          .. note::
+                              If `merge_files` is either `nextPage` or `continuous`,
+                              `report_title` is the output file name.
         ----------------  ---------------------------------------------------------------
-        merge_files       Optional String. Specify if print multiple records into a single
-                          report file (merged mode) or multiple files (split mode), and if
-                          in merge mode, start the next record on a new page or continue
-                          with the current page. Note: A merged file larger than 500MB
-                          will be split into multiple files.
+        merge_files       Optional String. Specify if output is a single file containing individual
+                          records on multiple pages (`nextPage` or `continuous`) or
+                          multiple files (`none`).
 
-                          + `none` - Print multiple records in split mode, each record becomes a separated report file. This is the default value.
-                          + `nextPage` - Print multiple records in merge mode, the content of the next record starts on the next new page.
-                          + `continuous` - Print multiple records in merge mode, the content of the next record starts on the same page of the previous record.
+                          + `none` - Print multiple records in split mode. Each record
+                            is a separate file. This is the default value.
+                          + `nextPage` - Print multiple records in a single document.
+                            Each record starts on a new page.
+                          + `continuous` - Print multiple records in a single document.
+                            EAch records starts on the same page of the previous record.
+
+                          .. note::
+                              A merged file larger than 500 MB will be split into multiple
+                              files.
         ----------------  ---------------------------------------------------------------
-        save_folder       Optional String. Specify the folder location where the output file should be stored.
+        save_folder       Optional String. Specify the folder location where the output
+                          file should be stored.
         ----------------  ---------------------------------------------------------------
-        survey_item       Optional :class:`~arcgis.gis.Item` . Survey `Item`, to make the operation survey awareness.
+        survey_item       Optional survey :class:`~arcgis.gis.Item` to provide additional
+                          information on the survey structure.
         ----------------  ---------------------------------------------------------------
         webmap_item       Optional :class:`~arcgis.gis.Item` . Specify the base map for printing task when printing
                           a point/polyline/polygon. This takes precedence over the map set for

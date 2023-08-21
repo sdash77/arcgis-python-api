@@ -150,6 +150,7 @@ class ChildImageClassifier:
             )
 
         self.wnetcgan = WNet_cGAN.from_model(data=None, emd_path=model)
+        self._learnmodel = self.wnetcgan
         self.model = self.wnetcgan.learn.model.to(self.device)
         self.model.eval()
 
