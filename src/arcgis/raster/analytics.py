@@ -10066,3 +10066,120 @@ def multidimensional_principal_components(
         future=future,
         **kwargs,
     )
+
+
+def predict_using_regression_model(
+    input_rasters,
+    input_regression_definition,
+    output_predicted_raster_name=None,
+    context=None,
+    *,
+    gis=None,
+    future=False,
+    **kwargs,
+):
+    """
+    Predicts data values using the regression model which is output from the TrainRandomTreesRegressionModel tool.
+    Function available in ArcGIS Image Server 10.9.1 and higher.
+
+    ====================================     ====================================================================
+    **Argument**                             **Description**
+    ------------------------------------     --------------------------------------------------------------------
+    input_rasters                            Required ImageryLayer object. The single-band, multidimensional, or
+                                             multiband rasters, or mosaic datasets, containing explanatory variables.
+    ------------------------------------     --------------------------------------------------------------------
+    input_regression_definition              Required String or ECD Item. The JSON string or ECD portal item
+                                             that contains the attribute information, statistics or other information
+                                             from the regression model. This JSON is the output of the Train Random
+                                             Trees Regression model tool.
+    ------------------------------------     --------------------------------------------------------------------
+    output_predicted_raster_name             Optional String. If not provided, an Image Service is created by the method and used as the output raster.
+                                             You can pass in an existing Image Service Item from your GIS to use that instead.
+
+                                             Alternatively, you can pass in the name of the output Image Service that should be created by this method to be
+                                             used as the output for the tool.
+
+                                             A RuntimeError is raised if a service by that name already exists.
+    ------------------------------------     --------------------------------------------------------------------
+    context                                  Context contains additional settings that affect task execution.
+
+                                                context parameter overwrites values set through arcgis.env parameter
+
+                                                This function has the following settings:
+
+                                                - Cell size (cellSize) - Set the output raster cell size, or resolution
+
+                                                - Output Spatial Reference (outSR): The output raster will be
+                                                  projected into the output spatial reference.
+
+                                                Example:
+                                                    {"outSR": {spatial reference}}
+
+                                                - Snap Raster (snapRaster): The output raster will have its
+                                                  cells aligned with the specified snap raster.
+
+                                                Example:
+                                                    {'snapRaster': {'url': '<image_service_url>'}}
+
+                                                - Extent (extent): A bounding box that defines the analysis area.
+
+                                                Example:
+                                                    {"extent": {"xmin": -122.68,
+                                                    "ymin": 45.53,
+                                                    "xmax": -122.45,
+                                                    "ymax": 45.6,
+                                                    "spatialReference": {"wkid": 4326}}}
+
+                                                - Cell Alignment (cellAlignment): Adjusts the cell alignent of the output to match
+                                                  that of the specified processing extent.
+                                                  The supported values are: "Default", "Align with input", "Align with Processing Extent"
+
+                                                - Parallel Processing Factor (parallelProcessingFactor): controls
+                                                Raster Processing (CPU) service instances.
+
+                                                Example:
+                                                    Syntax example with a specified number of processing instances:
+
+                                                    {"parallelProcessingFactor": "2"}
+
+                                                    Syntax example with a specified percentage of total
+                                                    processing instances:
+
+                                                    {"parallelProcessingFactor": "60%"}
+
+                                                - Resampling Method (resamplingMethod): The output raster will be
+                                                  resampled to method specified.
+                                                  The supported values are: BILINEAR, NEAREST, CUBIC.
+
+                                                Example:
+                                                    {'resamplingMethod': "NEAREST"}
+    ====================================     ====================================================================
+
+    :return: The imagery layer item
+
+    .. code-block:: python
+
+        # Usage Example
+
+        my_raster_1 = gis.content.search("raster_1", item_type="Imagery Layer")[0].layers[0]
+        my_raster_2 = gis.content.search("raster_2", item_type="Imagery Layer")[0].layers[0]
+        input_rasters = [my_raster_1, my_raster_2]
+
+        # Use an ECD portal item
+        input_regression_definition = gis.content.search("regression_definiton_ecd")[0]
+
+        predict_using_regression_model_op = predict_using_regression_model(input_rasters=input_rasters,
+                                                                           input_regression_definition=input_regression_definition,
+                                                                           gis=gis)
+
+    """
+
+    gis = _arcgis.env.active_gis if gis is None else gis
+    return gis._tools.rasteranalysis.predict_using_regression_model(
+        input_rasters=input_rasters,
+        input_regression_definition=input_regression_definition,
+        output_predicted_raster_name=output_predicted_raster_name,
+        context=context,
+        future=future,
+        **kwargs,
+    )

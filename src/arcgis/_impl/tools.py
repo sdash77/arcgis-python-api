@@ -1,4 +1,4 @@
-"""
+﻿"""
 The arcgis.tools module is used for consuming the GIS functionality exposed from ArcGIS Online
 or Portal web services. It has implementations for Spatial Analysis tools, GeoAnalytics tools,
 Raster Analysis tools, Geoprocessing tools, Geocoders and Geometry Utility services.
@@ -17516,6 +17516,73 @@ class _RasterAnalysisTools(BaseAnalytics):
         if future:
             return RAJob(gpjob)
 
+        return RAJob(gpjob).result()
+
+    def predict_using_regression_model(
+        self,
+        input_rasters,
+        input_regression_definition,
+        output_predicted_raster_name=None,
+        context=None,
+        future=False,
+        **kwargs,
+    ):
+        """
+        input_rasters: inputRasters (str). Required parameter.
+
+        input_regression_definition: inputRegressionDefinition (str). Required parameter.
+
+        output_predicted_raster_name: outputPredictedRasterName (str). Optional parmameter.
+
+        context: context (str). Optional parameter.
+        """
+
+        task = "PredictUsingRegressionModel"
+        gis = self._gis
+
+        if self._gis._is_agol:
+            supported_ra_methods = dir(self._tbx)
+            if "predict_using_regression_model" not in supported_ra_methods:
+                raise RuntimeError(
+                    f"{task} is not supported on this ArcGIS Online organization."
+                )
+
+        context_param = {}
+        _set_raster_context(context_param, context)
+        if "context" in context_param.keys():
+            context = context_param["context"]
+
+        input_rasters = self._set_multiple_raster_inputs(input_rasters=input_rasters)
+
+        if isinstance(input_regression_definition, Item):
+            input_regression_definition = {"itemId": input_regression_definition.itemid}
+        elif isinstance(input_regression_definition, str):
+            if (
+                "/fileShares/" in input_regression_definition
+                or "/rasterStores/" in input_regression_definition
+                or "/cloudStores/" in input_regression_definition
+            ):
+                input_regression_definition = {"uri": input_regression_definition}
+
+        output_predicted_raster_name, output_service = self._set_output_raster(
+            output_name=output_predicted_raster_name,
+            task=task,
+            output_properties=kwargs,
+        )
+
+        gpjob = self._tbx.predict_using_regression_model(
+            input_rasters=input_rasters,
+            input_regression_definition=input_regression_definition,
+            output_predicted_raster_name=output_predicted_raster_name,
+            context=context,
+            gis=self._gis,
+            future=True,
+        )
+
+        gpjob._is_ra = (True,)
+        gpjob._item_properties = True
+        if future:
+            return RAJob(gpjob)
         return RAJob(gpjob).result()
 
     def derive_continuous_flow(
