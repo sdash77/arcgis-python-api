@@ -3248,7 +3248,7 @@ def train_classifier(
     ================================     ====================================================================
 
     :return:
-       Returns .ecs file in dictionary format
+       Named Tuple
 
     .. code-block:: python
 
@@ -9561,12 +9561,12 @@ def train_random_trees_regression_model(
                                                Syntax example with a specified number of processing instances:
 
                                                     {"parallelProcessingFactor": "60%"}
-    ------------------------------------     --------------------------------------------------------------------
+    ------------------------------------     ---------------------------------------------------------------------------------------------------------------------------------------------
     output_ecd_item_name                     Optional String or Item. The output ECD Portal item to be created.
                                              If an Item is provided, the given item will be overwritten with the ECD instead.
-    ------------------------------------     --------------------------------------------------------------------
+    ------------------------------------     ---------------------------------------------------------------------------------------------------------------------------------------------
     gis                                      Optional GIS. The :class:`~arcgis.gis.GIS` on which this tool runs. If not specified, the active GIS is used.
-    ------------------------------------     --------------------------------------------------------------------
+    ------------------------------------     ---------------------------------------------------------------------------------------------------------------------------------------------
     future                                   Keyword only parameter. Optional Boolean. If True, the result will be a GPJob object and
                                              results will be returned asynchronously.
     ------------------------------------     ---------------------------------------------------------------------------------------------------------------------------------------------
