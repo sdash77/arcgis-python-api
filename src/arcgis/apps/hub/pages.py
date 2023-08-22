@@ -107,8 +107,8 @@ class Page(OrderedDict):
         slug                      Optional string. The slug or subdomain for the page.
         =====================     ====================================================================
 
-        To find the list of applicable options for argument page_properties -
-        https://developers.arcgis.com/python/api-reference/arcgis.gis.toc.html#arcgis.gis.Item.update
+        To find the list of applicable options for the `page_properties` argument, please see the `Item`
+        :meth:`~arcgis.gis.Item.update` method documentation.
 
         :return:
            A boolean indicating success (True) or failure (False).
