@@ -1,4 +1,4 @@
-"""
+﻿"""
 The arcgis.tools module is used for consuming the GIS functionality exposed from ArcGIS Online
 or Portal web services. It has implementations for Spatial Analysis tools, GeoAnalytics tools,
 Raster Analysis tools, Geoprocessing tools, Geocoders and Geometry Utility services.
@@ -13003,17 +13003,8 @@ class _RasterAnalysisTools(BaseAnalytics):
                     classifier_parameters=classifier_parameters,
                     segmented_raster=segmented_raster,
                     segment_attributes=segment_attributes,
+                    dimension_value_field=dimension_value_field,
                     output_ecd_item_name=output_ecd_item_name,
-                    gis=gis,
-                    future=True,
-                )
-            elif (current_version is not None) and current_version < 10.9:
-                gpjob = self._tbx.train_classifier(
-                    input_raster=input_raster,
-                    input_training_sample_json=input_training_sample_json,
-                    classifier_parameters=classifier_parameters,
-                    segmented_raster=segmented_raster,
-                    segment_attributes=segment_attributes,
                     gis=gis,
                     future=True,
                 )
@@ -13025,6 +13016,16 @@ class _RasterAnalysisTools(BaseAnalytics):
                     segmented_raster=segmented_raster,
                     segment_attributes=segment_attributes,
                     dimension_value_field=dimension_value_field,
+                    gis=gis,
+                    future=True,
+                )
+            elif (current_version is not None) and current_version < 10.9:
+                gpjob = self._tbx.train_classifier(
+                    input_raster=input_raster,
+                    input_training_sample_json=input_training_sample_json,
+                    classifier_parameters=classifier_parameters,
+                    segmented_raster=segmented_raster,
+                    segment_attributes=segment_attributes,
                     gis=gis,
                     future=True,
                 )
