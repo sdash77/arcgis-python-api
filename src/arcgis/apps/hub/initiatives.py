@@ -425,7 +425,7 @@ class Initiative(OrderedDict):
         =====================     ====================================================================
 
 
-        To find the list of applicable options for argument `initiative_properties`, please see the *Item* 
+        To find the list of applicable options for argument `initiative_properties`, please see the *Item*
         :meth:`~arcgis.gis.Item.update` documentation.
 
         :return:

@@ -10244,7 +10244,9 @@ class _RasterAnalysisTools(BaseAnalytics):
 
         if input_classifier_definition is not None:
             if isinstance(input_classifier_definition, Item):
-                input_classifier_definition = {"itemId": input_classifier_definition.itemid}
+                input_classifier_definition = {
+                    "itemId": input_classifier_definition.itemid
+                }
 
         gpjob = self._tbx.classify(
             input_raster=input_raster,
@@ -12987,12 +12989,10 @@ class _RasterAnalysisTools(BaseAnalytics):
             if isinstance(output_ecd_item_name, Item):
                 output_ecd_item_name = {
                     "name": output_ecd_item_name.name,
-                    "itemId": output_ecd_item_name.itemid
+                    "itemId": output_ecd_item_name.itemid,
                 }
             elif isinstance(output_ecd_item_name, str):
-                output_ecd_item_name = json.dumps(
-                    {"name": output_ecd_item_name}
-                )
+                output_ecd_item_name = json.dumps({"name": output_ecd_item_name})
 
         if self._current_version is not None:
             current_version = self._current_version
@@ -17453,12 +17453,10 @@ class _RasterAnalysisTools(BaseAnalytics):
             if isinstance(output_ecd_item_name, Item):
                 output_ecd_item_name = {
                     "name": output_ecd_item_name.name,
-                    "itemId": output_ecd_item_name.itemid
+                    "itemId": output_ecd_item_name.itemid,
                 }
             elif isinstance(output_ecd_item_name, str):
-                output_ecd_item_name = json.dumps(
-                    {"name": output_ecd_item_name}
-                )
+                output_ecd_item_name = json.dumps({"name": output_ecd_item_name})
 
         if self._current_version is not None:
             current_version = self._current_version
