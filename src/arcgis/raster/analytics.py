@@ -2818,7 +2818,7 @@ def classify(
     --------------------------------     --------------------------------------------------------------------
     input_raster                         Required :class:`~arcgis.raster.ImageryLayer` object.
     --------------------------------     --------------------------------------------------------------------
-    input_classifier_definition          Required dict.
+    input_classifier_definition          Required dict or ECD Portal item.
 
                                          The classifier definition dictionary generated from the train_classifier function.
 
@@ -3162,6 +3162,7 @@ def train_classifier(
     segmented_raster=None,
     segment_attributes="COLOR;MEAN",
     dimension_value_field=None,
+    output_ecd_item_name=None,
     *,
     gis: Optional[GIS] = None,
     future: bool = False,
@@ -3236,6 +3237,9 @@ def train_classifier(
 
                                          Parameter available in ArcGIS Image Server 10.9 and higher.
     --------------------------------     --------------------------------------------------------------------
+    output_ecd_item_name                 Optional String or Item. The output ECD Portal item to be created.
+                                         If an Item is provided, the given item will be overwritten with the ECD instead.
+    --------------------------------     --------------------------------------------------------------------
     gis                                  Keyword only parameter. Optional :class:`~arcgis.gis.GIS` object. If not specified, the currently active connection
                                          is used.
     --------------------------------     --------------------------------------------------------------------
@@ -3244,7 +3248,7 @@ def train_classifier(
     ================================     ====================================================================
 
     :return:
-       Returns .ecs file in dictionary format
+       Named Tuple
 
     .. code-block:: python
 
@@ -3268,6 +3272,7 @@ def train_classifier(
         segment_attributes=segment_attributes,
         dimension_value_field=dimension_value_field,
         future=future,
+        output_ecd_item_name=output_ecd_item_name,
         **kwargs,
     )
 
@@ -6522,7 +6527,7 @@ def linear_spectral_unmixing(
     input_raster                             Required :class:`~arcgis.raster.ImageryLayer` object. The input raster.
                                              Portal Item can be passed.
     ------------------------------------     --------------------------------------------------------------------
-    input_spectral_profile                   Required Dict or String. The class spectral profile information.
+    input_spectral_profile                   Required Dict, String or ECD Portal item. The class spectral profile information.
     ------------------------------------     --------------------------------------------------------------------
     value_option                             Optional List of string(s). Specifies the options to define the output pixel values.
 
@@ -9457,6 +9462,7 @@ def train_random_trees_regression_model(
     percent_samples_for_testing=10,
     output_importance_table_name=None,
     context=None,
+    output_ecd_item_name=None,
     *,
     gis=None,
     future=False,
@@ -9465,7 +9471,6 @@ def train_random_trees_regression_model(
     """
     Models the relationship between explanatory variables (independent variables) and a target dataset (dependent variable).
     Function available in ArcGIS Image Server 10.9.1 and higher (not available in ArcGIS Online).
-
 
     ====================================     =============================================================================================================================================
     **Parameter**                             **Description**
@@ -9551,14 +9556,14 @@ def train_random_trees_regression_model(
 
                                                Example:
 
+                                                    {"parallelProcessingFactor": "2"}
+
                                                Syntax example with a specified number of processing instances:
 
-                                                {"parallelProcessingFactor": "2"}
-
-                                               Syntax example with a specified percentage of total
-                                               processing instances:
-
-                                                {"parallelProcessingFactor": "60%"}
+                                                    {"parallelProcessingFactor": "60%"}
+    ------------------------------------     ---------------------------------------------------------------------------------------------------------------------------------------------
+    output_ecd_item_name                     Optional String or Item. The output ECD Portal item to be created.
+                                             If an Item is provided, the given item will be overwritten with the ECD instead.
     ------------------------------------     ---------------------------------------------------------------------------------------------------------------------------------------------
     gis                                      Optional GIS. The :class:`~arcgis.gis.GIS` on which this tool runs. If not specified, the active GIS is used.
     ------------------------------------     ---------------------------------------------------------------------------------------------------------------------------------------------
@@ -9576,8 +9581,7 @@ def train_random_trees_regression_model(
                                                 | 'title': 'trial'}
     ====================================     =============================================================================================================================================
 
-
-    :return: Dictionary
+    :return: Named Tuple
 
     .. code-block:: python
 
@@ -9618,6 +9622,7 @@ def train_random_trees_regression_model(
         output_importance_table_name=output_importance_table_name,
         context=context,
         future=future,
+        output_ecd_item_name=output_ecd_item_name,
         **kwargs,
     )
 
