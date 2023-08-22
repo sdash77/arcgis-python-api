@@ -1556,9 +1556,9 @@ class GIS(object):
         mode                   Optional string of either '2D' or '3D' to specify map mode. Defaults to '2D'.
         ------------------     --------------------------------------------------------------------
         geocoder               Optional Geocoder. Allows users to specify a geocoder to find a given location.
-                               See the `Understanding geocoders
-                               <https://developers.arcgis.com/python/guide/understanding-geocoders/>`_
-                               page in the ArcGIS API for Python guide for more information.
+                               See the `What is geocoding?
+                               <https://developers.arcgis.com/python/guide/part1-what-is-geocoding/>`_
+                               guide for more information.
         ==================     ====================================================================
 
 
@@ -1570,7 +1570,7 @@ class GIS(object):
             This can be accomplished by signing into your ArcGIS Enterprise portal or ArcGIS Online organization in a
             browser, then navigating to:
 
-            `Organization` > `Settings` > `Security` > `Allow origins` > `Add` > http://localhost:8888
+            `Organization` > `Settings` > `Security` > `Allow origins` > `Add` > `http://localhost:8888`
             (replace with the host/port you are running on)
 
         .. code-block:: python

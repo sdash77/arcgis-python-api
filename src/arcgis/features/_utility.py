@@ -422,6 +422,7 @@ class UtilityNetworkManager(object):
         moment: int | None = None,
         run_async: bool = False,
         out_sr: int | None = None,
+        pbf: bool = False,
     ) -> dict:
         """
         The `export_subnetwork` operation is used to export information
@@ -469,6 +470,8 @@ class UtilityNetworkManager(object):
                                                     the current moment.
         ------------------------------------        --------------------------------------------------------------------
         out_sr                                      Optional Integer. Optional parameter specifying the output spatial reference.
+        ------------------------------------        --------------------------------------------------------------------
+        pbf                                         Optional Boolean. If true, the response will be in PBF format.
         ====================================        ====================================================================
 
         :return:
@@ -504,7 +507,11 @@ class UtilityNetworkManager(object):
             params["resultTypes"] = result_types
         if out_sr:
             params["outSR"] = out_sr
-        return self._con.post(url, params)
+        if pbf:
+            params["f"] = "pbf"
+            return self._con.post(url, params, force_bytes=True)
+        else:
+            return self._con.post(url, params)
 
     # ----------------------------------------------------------------------
     def query_network_moments(

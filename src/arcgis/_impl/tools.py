@@ -10691,6 +10691,23 @@ class _RasterAnalysisTools(BaseAnalytics):
         use_input_rasters_by_ref = None
         upload_properties = None
 
+        from arcgis.raster import RasterCollection
+        from arcgis.raster._layer import _LocalRasterCollection
+
+        if isinstance(input_rasters, RasterCollection):
+            if input_rasters._ras_coll_engine == _LocalRasterCollection:
+                raster_list = [ras["Raster"].catalog_path for ras in input_rasters]
+                input_rasters = raster_list
+                if context is None or not isinstance(context, dict):
+                    context = {"byref": True}
+                else:
+                    context["byref"] = True
+
+            else:
+                raise RuntimeError(
+                    "This type of RasterCollection input is not supported for create_image_collection()"
+                )
+
         if context is not None:
             if "image_collection_properties" in context:
                 image_collection_properties = context["image_collection_properties"]

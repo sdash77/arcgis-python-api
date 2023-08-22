@@ -1536,52 +1536,183 @@ def _get_stac_metadata_file(item):
     :return string (URL of the STAC Item metadata file)
     """
 
-    pc_sign_url = "https://planetarycomputer.microsoft.com/api/sas/v1/sign?href="
-    href = None
-    if "planetarycomputer" in item["links"][0]["href"]:
-        if item["type"] == "Collection" and item["id"].startswith("daymet"):
-            href = item["assets"]["zarr-https"]["href"]
-        elif item["collection"] == "naip":
-            href = item["assets"]["image"]["href"]
-        elif item["collection"] in ["landsat-c2-l1", "landsat-c2-l2"]:
-            mtl_file = item["assets"]["mtl.txt"]["href"]
-            href = _requests.get(pc_sign_url + mtl_file).json()["href"]
+    planetary_computer_map = {
+        **dict.fromkeys(
+            [
+                "3dep-seamless",
+                "3dep-lidar-dsm",
+                "cop-dem-glo-30",
+                "cop-dem-glo-90",
+                "3dep-lidar-hag",
+                "3dep-lidar-intensity",
+                "3dep-lidar-pointsourceid",
+                "noaa-c-cap",
+                "3dep-lidar-returns",
+                "3dep-lidar-dtm-native",
+                "3dep-lidar-classification",
+                "3dep-lidar-dtm",
+                "gap",
+                "alos-dem",
+                "io-lulc",
+                "drcog-lulc",
+                "chesapeake-lc-7",
+                "chesapeake-lc-13",
+                "chesapeake-lu",
+                "io-lulc-9-class",
+                "io-biodiversity",
+                "ecmwf-forecast",
+            ],
+            "data",
+        ),
+        **dict.fromkeys(
+            [
+                "sentinel-1-rtc",
+                "hgb",
+                "gnatsgo-rasters",
+                "mobi",
+                "chloris-biomass",
+                "jrc-gsw",
+                "hrea",
+                "noaa-nclimgrid-monthly",
+                "usda-cdl",
+                "esa-cci-lc",
+                "noaa-climate-normals-gridded",
+                "noaa-cdr-sea-surface-temperature-whoi",
+                "noaa-cdr-ocean-heat-content",
+                "esa-worldcover",
+            ],
+            "All COGs",
+        ),
+        **dict.fromkeys(
+            [
+                "daymet-annual-pr",
+                "daymet-daily-hi",
+                "gridmet",
+                "daymet-annual-na",
+                "daymet-monthly-na",
+                "daymet-annual-hi",
+                "daymet-monthly-hi",
+                "daymet-monthly-pr",
+                "terraclimate",
+                "daymet-daily-pr",
+                "daymet-daily-na",
+            ],
+            "zarr-https",
+        ),
+        **dict.fromkeys(
+            [
+                "sentinel-1-grd",
+                "sentinel-3-olci-wfr-l2-netcdf",
+                "sentinel-3-synergy-v10-l2-netcdf",
+                "sentinel-3-olci-lfr-l2-netcdf",
+                "sentinel-3-slstr-lst-l2-netcdf",
+                "sentinel-3-slstr-wst-l2-netcdf",
+                "sentinel-3-synergy-syn-l2-netcdf",
+                "sentinel-3-synergy-vgp-l2-netcdf",
+                "sentinel-3-synergy-vg1-l2-netcdf",
+            ],
+            "safe-manifest",
+        ),
+        **dict.fromkeys(
+            [
+                "esa-cci-lc-netcdf",
+                "noaa-climate-normals-netcdf",
+                "noaa-cdr-sea-surface-temperature-whoi-netcdf",
+                "noaa-cdr-ocean-heat-content-netcdf",
+            ],
+            "netcdf",
+        ),
+        **dict.fromkeys(
+            [
+                "noaa-mrms-qpe-24h-pass2",
+                "noaa-mrms-qpe-1h-pass1",
+                "noaa-mrms-qpe-1h-pass2",
+            ],
+            "cog",
+        ),
+        **dict.fromkeys(["landsat-c2-l2", "landsat-c2-l1"], "mtl.txt"),
+        **dict.fromkeys(["sentinel-2-l2a"], "product-metadata"),
+        **dict.fromkeys(["mtbs"], "burn-severity"),
+        **dict.fromkeys(["alos-fnf-mosaic"], "C"),
+        **dict.fromkeys(["nrcan-landcover"], "landcover"),
+        **dict.fromkeys(["nasadem"], "elevation"),
+        **dict.fromkeys(["naip"], "image"),
+    }
 
-    elif "earth-search.aws.element84" in item["links"][0]["href"]:
-        if item["collection"] in ["sentinel-s2-l2a-cogs", "sentinel-2-l2a"]:
-            if "sentinel-s2-l2a-cogs" in item["links"][1]["href"]:
-                href = rf"{item['links'][1]['href']}\Multiband"
-        elif item["collection"] in ["cop-dem-glo-30", "cop-dem-glo-90"]:
-            href = item["assets"]["data"]["href"]
-        elif item["collection"] == "naip":
-            href = item["assets"]["image"]["href"]
-        elif item["collection"] == "landsat-c2-l2":
-            href = item["assets"]["mtl.txt"]["href"]
-        elif item["collection"] == "sentinel-1-grd":
-            href = item["assets"]["safe-manifest"]["href"]
+    earth_search_map = {
+        **dict.fromkeys(["sentinel-s2-l2a-cogs", "sentinel-2-l2a"], 1),
+        **dict.fromkeys(
+            ["sentinel-s2-l2a", "sentinel-s2-l1c", "sentinel-2-l1c"],
+            ("visual", "productInfo.json"),
+        ),
+        **dict.fromkeys(["naip"], "image"),
+        **dict.fromkeys(["landsat-c2-l2"], "mtl.txt"),
+        **dict.fromkeys(["sentinel-1-grd"], "safe-manifest"),
+        **dict.fromkeys(["cop-dem-glo-30", "cop-dem-glo-90"], "data"),
+    }
 
-        href = (
-            rf"/vsis3{href[4:]}" if href is not None and href.startswith("s3") else href
+    sentinel_hub_map = {
+        **dict.fromkeys(["sentinel-2"], ("data", "productInfo.json")),
+        **dict.fromkeys(["sentinel-1"], ("s3", "manifest.safe")),
+    }
+
+    product_file_map = {
+        "planetarycomputer.microsoft.com/api/stac": planetary_computer_map,
+        "earth-search.aws.element84.com": earth_search_map,
+        "services.sentinel-hub.com/api": sentinel_hub_map,
+    }
+
+    stacs = list(product_file_map.keys())
+
+    self_link = next(
+        (link["href"] for link in item["links"] if link["rel"] == "self"), None
+    )
+
+    if self_link is None:
+        return
+
+    item_stac = next((stac for stac in stacs if stac in self_link), None)
+
+    if item_stac is None:
+        return
+
+    collection_id = (
+        item["collection"]
+        if "collection" in item
+        else (
+            item["properties"]["constellation"] if item_stac == stacs[2] else item["id"]
         )
+    )
 
-    else:
-        if "metadata" in item["assets"]:
-            href = item["assets"]["metadata"]["href"]
-        elif "MTL" in item["assets"]:
-            href = item["assets"]["MTL"]["href"]
-        elif "data" in item["assets"]:
-            data_href = item["assets"]["data"]["href"]
-            mtl_file = item["id"] + "_MTL.txt"
-            href = data_href.replace("index.html", mtl_file)
-        else:
-            links = item["links"]
-            for i in range(len(links)):
-                if links[i]["rel"] == "metadata":
-                    href = links[i]["href"]
-                elif links[i]["rel"] == "canonical":
-                    s3_path = links[i]["href"]
-                    if "sentinel-s2-l2a-cogs" in s3_path and s3_path.endswith(".json"):
-                        href = rf"/vsi{s3_path}\Multiband"
+    target = product_file_map[item_stac].get(collection_id)
+
+    href = None
+    if isinstance(target, str):
+        href = (
+            [
+                cog["href"]
+                for cog in item["assets"].values()
+                if cog["href"].endswith((".tif", ".tiff"))
+            ]
+            if target == "All COGs"
+            else item["assets"][target]["href"]
+        )
+    elif isinstance(target, int):
+        href = item["links"][target]["href"]
+    elif isinstance(target, tuple):
+        directory = os.path.dirname(item["assets"][target[0]]["href"])
+        if collection_id == "sentinel-s2-l2a":
+            directory = os.path.dirname(directory)
+        href = f"{directory}/{target[1]}"
+
+    href = (
+        rf"/vsis3{href[4:]}"
+        if href is not None and isinstance(href, str) and href.startswith("s3")
+        else href
+    )
+
+    if collection_id.startswith(("sentinel-2", "sentinel-s2", "landsat")):
+        href = rf"{href}\Multiband"
 
     return href
 
