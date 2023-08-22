@@ -1,11 +1,17 @@
 import sys
+
 sys.path.insert(0, "C:\ipython_workfolder\geosaurus\src")
 import unittest
 from arcgis.gis import GIS
 from arcgis.features._utility import UtilityNetworkManager
 from arcgis.features._trace_configuration import TraceConfiguration
 
-gis = GIS("https://utilitynetwork.esri.com/portal", "python_api_team", "python_api_team.109", verify_cert=False)
+gis = GIS(
+    "https://utilitynetwork.esri.com/portal",
+    "python_api_team",
+    "python_api_team.109",
+    verify_cert=False,
+)
 
 # Create Topographic Service
 try:
@@ -150,9 +156,11 @@ class TestUtilityNetworkManager(unittest.TestCase):
 
         # Alter
         alteration = manager.alter(
-            global_id=[tc["globalId"]
-                       for tc in updated_query["traceConfigurations"]
-                       if tc["name"] == "Connected_IncludeContainers"][0],
+            global_id=[
+                tc["globalId"]
+                for tc in updated_query["traceConfigurations"]
+                if tc["name"] == "Connected_IncludeContainers"
+            ][0],
             name="Connected_IncludeContainers_update",
             description="Connected trace example with containers (updated 112020)",
             result_types=[
@@ -168,13 +176,18 @@ class TestUtilityNetworkManager(unittest.TestCase):
         )
         assert alteration
         updated_query = manager.query()
-        assert (
-            updated_query["traceConfigurations"][0]["name"]
-            == "Connected_IncludeContainers_update"
-        )
+        assert "Connected_IncludeContainers_update" in [
+            tc["name"] for tc in updated_query["traceConfigurations"]
+        ]
 
         # Delete
-        assert manager.delete([updated_query["traceConfigurations"][0]["globalId"]])
+        gbl_id = [
+            cfg["globalId"]
+            for cfg in updated_query["traceConfigurations"]
+            if cfg["name"] == "Connected_IncludeContainers_update"
+        ][0]
+
+        assert manager.delete([gbl_id])
         updated_query = manager.query()
         assert len(updated_query["traceConfigurations"]) == number_trace_configs
 
@@ -192,7 +205,10 @@ class TestUtilityNetworkManager(unittest.TestCase):
                 return_edits=True,
             )
         except Exception as e:
-            if "A dirty area is not present within the validate network topology input extent. A validate network topology process did not occur." in e.args[0]:
+            if (
+                "A dirty area is not present within the validate network topology input extent. A validate network topology process did not occur."
+                in e.args[0]
+            ):
                 # Normal exception to have
                 return True
 
