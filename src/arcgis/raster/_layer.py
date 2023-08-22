@@ -7196,8 +7196,6 @@ class ImageryLayer(Layer):
             return None
 
     def _set_mosaic_rule(self):
-        if str(self.properties["capabilities"]).lower().find("catalog") == -1:
-            return None
         mosaic_method_mapping = {
             "none": "esriMosaicNone",
             "center": "esriMosaicCenter",
@@ -7211,6 +7209,8 @@ class ImageryLayer(Layer):
 
         mosaic_rule = {}
         if type(self) == ImageryLayer:
+            if str(self.properties["capabilities"]).lower().find("catalog") == -1:
+                return None
             if ("defaultMosaicMethod" in self.properties.keys()) and self.properties[
                 "defaultMosaicMethod"
             ] != None:
