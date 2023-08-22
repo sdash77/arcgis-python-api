@@ -9902,3 +9902,165 @@ def mosaic_image(
         gis=gis,
         future=future,
     )
+
+
+def multidimensional_principal_components(
+    input_multidimensional_raster,
+    mode="DIMENSION_REDUCTION",
+    dimension=None,
+    output_principal_components_name: Optional[str] = None,
+    output_loadings_name: Optional[str] = None,
+    output_eigen_values_table_name: Optional[str] = None,
+    variable: Optional[str] = None,
+    number_of_principal_components: Optional[str] = "95%",
+    context: Optional[dict[str, Any]] = None,
+    *,
+    gis: Optional[GIS] = None,
+    future: bool = False,
+    **kwargs,
+):
+    """
+    Transforms multidimensional rasters into their principal components, loadings, and eigenvalues. It transforms
+    the data into a reduced number of components that account for the variance of the data, so that spatial and
+    temporal patterns can be readily identified.
+
+    .. note::
+           Function available in ArcGIS Image Server 11.1 and higher.
+
+    ====================================     ====================================================================
+    **Argument**                             **Description**
+    ------------------------------------     --------------------------------------------------------------------
+    input_multidimensional_raster            Required ImageryLayer object. The input multidimensional raster.
+    ------------------------------------     --------------------------------------------------------------------
+    mode                                     Required String. Specifies the method that will be used to
+                                             perform principal component analysis.
+
+                                             - DIMENSION_REDUCTION : The input time series data will be treated as a set of images. Principal components that extract prevalent patterns over time will be computed. This is the default.
+
+                                             - SPATIAL_REDUCTION : The input time series data will be treated as a set of pixels. Principal components that extract prevalent patterns and locations over time will be computed as a set of one-dimensional arrays stored in a table.
+    ------------------------------------     --------------------------------------------------------------------
+    dimension                                Required String. The dimension name used to process the principal components.
+    ------------------------------------     --------------------------------------------------------------------
+    output_principal_components_name         | Optional String. If not provided, a service is created by the method and used as the output.
+
+                                             | When the mode parameter is specified as DIMENSION_REDUCTION, the output will be a multiband raster with the components as bands. The first band is the first principal component with the largest eigenvalue, the second band has the principal component with the second largest eigenvalue, and so on.
+
+                                             | When the mode parameter is specified as SPATIAL_REDUCTION, the output is a table
+                                             | containing a set of time series data representing the principal components.
+
+                                             | You can pass in an existing Item from your GIS to use that instead.
+                                             | Alternatively, you can pass in the name of the output that should be created by this method to be used as the output for the tool.
+                                             | A RuntimeError is raised if a service by that name already exists.
+    ------------------------------------     --------------------------------------------------------------------
+    output_loadings_name                     | Optional String. If not provided, a service is created by the method and used as the output.
+
+                                             | When the mode parameter is specified as DIMENSION_REDUCTION, the output will be a table containing the weights that each input raster contributed to the principal components. These weights define the correlations of the input data and the output principal components.
+
+                                             | When the mode parameter is specified as SPATIAL_REDUCTION, the output is a raster where pixel values are the weights contributing to the principal components. Pixels with larger values are more corelated to the principal components. This output may have a larger cell size than the input raster because a random reprojection is applied to reduce the computation complexity.
+
+                                             | You can pass in an existing Item from your GIS to use that instead.
+                                             | Alternatively, you can pass in the name of the output that should be created by this method to be used as the output for the tool.
+                                             | A RuntimeError is raised if a service by that name already exists.
+    ------------------------------------     --------------------------------------------------------------------
+    output_eigen_values_table_name           Optional String. The name for the output eigen values table.
+
+                                             You can pass in an existing Item from your GIS to use
+                                             that instead.
+
+                                             Alternatively, you can pass in the name of the output
+                                             that should be created by this method to be used as the output for
+                                             the tool.
+                                             A RuntimeError is raised if a service by that name already exists.
+    ------------------------------------     --------------------------------------------------------------------
+    variable                                 Optional String. The variable of the input multidimensional raster
+                                             used in computation. If the input raster is multidimensional and no
+                                             variable is specified, only the first variable will be analyzed, by default.
+    ------------------------------------     --------------------------------------------------------------------
+    number_of_principal_components           Optional String. The number of principal components to compute, usually
+                                             fewer than the number of input rasters. This parameter also takes the
+                                             form of percentage (%). For example, 90% means the number of components
+                                             that can explain 90% of variance in the data will be computed.
+                                             The default is "95%".
+    ------------------------------------     --------------------------------------------------------------------
+    context                                  Context contains additional settings that affect task execution.
+
+                                             context parameter overwrites values set through arcgis.env parameter
+
+                                             This function has the following settings:
+
+                                              - Extent (extent): A bounding box that defines the analysis area.
+
+                                                Example:
+                                                    {"extent": {"xmin": -122.68,
+                                                    "ymin": 45.53,
+                                                    "xmax": -122.45,
+                                                    "ymax": 45.6,
+                                                    "spatialReference": {"wkid": 4326}}}
+
+                                              - Output Spatial Reference (outSR): The output raster will be
+                                                projected into the output spatial reference.
+
+                                                Example:
+                                                    {"outSR": {spatial reference}}
+
+                                              - Snap Raster (snapRaster): The output raster will have its
+                                                cells aligned with the specified snap raster.
+
+                                                Example:
+                                                    {'snapRaster': {'url': '<image_service_url>'}}
+
+                                              - Parallel Processing Factor (parallelProcessingFactor): controls
+                                                Raster Processing (CPU) service instances.
+
+                                                Example:
+                                                    Syntax example with a specified number of processing instances:
+
+                                                    {"parallelProcessingFactor": "2"}
+
+                                                    Syntax example with a specified percentage of total
+                                                    processing instances:
+
+                                                    {"parallelProcessingFactor": "60%"}
+
+                                              - Resampling Method (resamplingMethod): The output raster will be
+                                                resampled to method specified.
+                                                The supported values are: BILINEAR, NEAREST, CUBIC.
+
+                                                Example:
+                                                    {'resamplingMethod': "NEAREST"}
+    ------------------------------------     --------------------------------------------------------------------
+    gis                                      Optional GIS. The GIS on which this tool runs. If not specified, the
+                                             active GIS is used.
+    ------------------------------------     --------------------------------------------------------------------
+    future                                   Optional Boolean. If True, the result will be a GPJob object and
+                                             results will be returned asynchronously.
+    ====================================     ====================================================================
+
+    :return: Named Tuple
+
+    .. code-block:: python
+
+        # Usage Example
+
+        input_mdim_raster = gis.content.search("my_multidimensional_raster", item_type="Imagery Layer")[0].layers[0]
+        mdim_pc_op = multidimensional_principal_components(input_multidimensional_raster=input_mdim_raster,
+                                                           mode="DIMENSION_REDUCTION",
+                                                           output_principal_components_name="op_principal_components",
+                                                           output_loadings_name="op_loadings")
+
+    """
+
+    gis = _arcgis.env.active_gis if gis is None else gis
+    return gis._tools.rasteranalysis.multidimensional_principal_components(
+        input_multidimensional_raster=input_multidimensional_raster,
+        mode=mode,
+        dimension=dimension,
+        output_principal_components_name=output_principal_components_name,
+        output_loadings_name=output_loadings_name,
+        output_eigen_values_table_name=output_eigen_values_table_name,
+        variable=variable,
+        number_of_principal_components=number_of_principal_components,
+        context=context,
+        future=future,
+        **kwargs,
+    )
