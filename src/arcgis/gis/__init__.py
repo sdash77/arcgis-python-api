@@ -5822,6 +5822,9 @@ class GroupManager(object):
                               will have access. `None` is the default.
 
                               Values: `org`, `collaboration`, or `none`
+
+                              .. note::
+                                For Enterprise only "org" is accepted.
         --------------------  ---------------------------------------------------------
         autojoin              Optional Boolean. The default is `False`. Only applies to
                               org accounts. If `True`, this group will allow joined
