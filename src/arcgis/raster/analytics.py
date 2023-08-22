@@ -9472,7 +9472,6 @@ def train_random_trees_regression_model(
     Models the relationship between explanatory variables (independent variables) and a target dataset (dependent variable).
     Function available in ArcGIS Image Server 10.9.1 and higher (not available in ArcGIS Online).
 
-
     ====================================     =============================================================================================================================================
     **Parameter**                             **Description**
     ------------------------------------     ---------------------------------------------------------------------------------------------------------------------------------------------
@@ -9582,8 +9581,7 @@ def train_random_trees_regression_model(
                                                 | 'title': 'trial'}
     ====================================     =============================================================================================================================================
 
-
-    :return: Dictionary
+    :return: Named Tuple
 
     .. code-block:: python
 
