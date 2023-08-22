@@ -4,8 +4,10 @@ import uuid
 from enum import Enum
 from arcgis.auth.tools import LazyLoader
 import copy
+import os
 import importlib
-from ._ref import template_list
+
+# from ._ref import template_list
 
 # from arcgis.gis import GIS
 import re
@@ -15,6 +17,34 @@ _arcgis_gis = LazyLoader("arcgis.gis")
 arcgis = LazyLoader("arcgis")
 json = LazyLoader("json")
 time = LazyLoader("time")
+
+template_list = [
+    "blank_fullscreen",
+    "blank_scrolling",
+    "foldable",
+    "launchpad",
+    "jewelrybox",
+    "billboard",
+    "journey",
+    "ribbon",
+    "general",
+    "introduction",
+    "gallery",
+    "epic",
+    "snapshot",
+    "summary",
+    "timeline",
+    "scenic",
+    "exhibition",
+    "dart",
+    "pocket",
+    "quick_navigation",
+    "parallax",
+    "dash",
+    "indicator",
+    "monitor",
+    "reveal",
+]
 
 
 class Templates(Enum):
@@ -229,19 +259,15 @@ class WebExperience(object):
             temp_low = template.lower()
             temp_low.replace(" ", "_")
             if temp_low in template_list:
-                dict_name = "arcgis.apps.expbuilder._ref." + temp_low
+                json_temp = temp_low + ".json"
             else:
-                dict_name = "arcgis.apps.expbuilder._ref.blank_fullscreen"
-            temp_dict = copy.deepcopy(importlib.import_module(dict_name))
+                json_temp = "blank_fullscreen.json"
+            json_path = os.path.join(
+                os.path.dirname(__file__), "_ref", "templates", json_temp
+            )
 
-            """if temp_low in arcgis.apps.expbuilder._ref.template_list:
-                temp_dict = copy.deepcopy(
-                    arcgis.apps.expbuilder._ref.templates[temp_low]
-                )
-            else:
-                temp_dict = copy.deepcopy(
-                    arcgis.apps.expbuilder._ref.templates["blank fullscreen"]
-                )"""
+            with open(json_path, "r") as f:
+                temp_dict = json.load(f)
 
             temp_dict["attributes"]["portalUrl"] = self._gis.url
             # temp_dict["timestamp"]
