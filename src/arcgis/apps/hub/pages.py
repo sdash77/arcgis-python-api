@@ -107,8 +107,8 @@ class Page(OrderedDict):
         slug                      Optional string. The slug or subdomain for the page.
         =====================     ====================================================================
 
-        To find the list of applicable options for the `page_properties` argument, please see the `Item`
-        :meth:`~arcgis.gis.Item.update` method documentation.
+        To find the list of applicable options for argument page_properties -
+        https://developers.arcgis.com/python/api-reference/arcgis.gis.toc.html#arcgis.gis.Item.update
 
         :return:
            A boolean indicating success (True) or failure (False).
@@ -472,6 +472,12 @@ class PageManager(object):
     def unlink(self, page: Page, site=None) -> bool:
         """
         Unlinks the page from the specific site.
+
+        .. note::
+
+            This method will only detach the page from the site. In order to remove links to this 
+            page from the site's UI, you will have to manually remove it from the site through 
+            the site's Layout Editior. 
 
         =======================    =============================================================
         **Parameter**               **Description**
