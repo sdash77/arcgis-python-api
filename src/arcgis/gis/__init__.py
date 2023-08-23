@@ -5822,6 +5822,9 @@ class GroupManager(object):
                               will have access. `None` is the default.
 
                               Values: `org`, `collaboration`, or `none`
+
+                              .. note::
+                                For Enterprise only "org" is accepted.
         --------------------  ---------------------------------------------------------
         autojoin              Optional Boolean. The default is `False`. Only applies to
                               org accounts. If `True`, this group will allow joined
@@ -5882,7 +5885,10 @@ class GroupManager(object):
         if hidden_members in [True, False]:
             params["hiddenMembers"] = hidden_members
         if membership_access in ["org", "collaboration", None, "none"]:
-            if membership_access is None:
+            if self._gis._is_agol is False:
+                # Only value for Enterprise is org
+                params["membershipAccess"] = "org"
+            elif self._gis._is_agol and membership_access is None:
                 membership_access = "none"
             params["membershipAccess"] = membership_access
         if autojoin in [True, False]:
