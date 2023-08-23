@@ -3380,8 +3380,8 @@ class UserManager(object):
         firstname: str,
         lastname: str,
         email: str,
+        role: str,
         description: Optional[str] = None,
-        role: Optional[str] = None,
         provider: str = "arcgis",
         idp_username: Optional[str] = None,
         level: int = 2,
@@ -3461,10 +3461,6 @@ class UserManager(object):
         ----------------  -------------------------------------------------------------------------------
         email             Required string. The email address for the user. This is important!
         ----------------  -------------------------------------------------------------------------------
-        description       Optional string. The description of the user account.
-        ----------------  -------------------------------------------------------------------------------
-        thumbnail         Optional string. The URL to an image to represent the user.
-        ----------------  -------------------------------------------------------------------------------
         role              Optional string. The :class:`role <arcgis.gis.Role>` name or `role_id` value to
                           assign the new member. To assign one of the `default Administrator, Publisher,
                           or User roles <https://enterprise.arcgis.com/en/portal/latest/administer/windows/member-roles.htm#ESRI_SECTION1_C30D73392D964D51A8B606128A8A6E8F>`_
@@ -3481,6 +3477,11 @@ class UserManager(object):
 
                               >>> for org_role in gis.users.roles.all():
                                       print(f"{org_role.name:25}{org_role.role_id}")
+        ----------------  -------------------------------------------------------------------------------
+        description       Optional string. The description of the user account.
+        ----------------  -------------------------------------------------------------------------------
+        thumbnail         Optional string. The URL to an image to represent the user.
+
         ----------------  -------------------------------------------------------------------------------
         provider          Optional string. The identity provider for the account. The default value is
                           `arcgis`. Possible values:
@@ -3983,8 +3984,10 @@ class UserManager(object):
 
         if isinstance(role, Role):
             role = role.role_id
-        elif role.lower() in role_lookup:
+        elif role and role.lower() in role_lookup:
             role = role_lookup[role.lower()]
+        else:
+            role = ""
 
         if self._gis._portal.is_arcgisonline or (
             self._gis._portal.is_kubernetes and provider != "enterprise"
