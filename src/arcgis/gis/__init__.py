@@ -3461,7 +3461,7 @@ class UserManager(object):
         ----------------  -------------------------------------------------------------------------------
         email             Required string. The email address for the user. This is important!
         ----------------  -------------------------------------------------------------------------------
-        role              Optional string. The :class:`role <arcgis.gis.Role>` name or `role_id` value to
+        role              Required string. The :class:`role <arcgis.gis.Role>` name or `role_id` value to
                           assign the new member. To assign one of the `default Administrator, Publisher,
                           or User roles <https://enterprise.arcgis.com/en/portal/latest/administer/windows/member-roles.htm#ESRI_SECTION1_C30D73392D964D51A8B606128A8A6E8F>`_
                           enter ``org_admin``, ``org_publisher``, or ``org_user``, respectively.
