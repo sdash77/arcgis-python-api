@@ -3303,7 +3303,7 @@ class UserManager(object):
         return results
 
     # ----------------------------------------------------------------------
-    @deprecated(deprecated_in="2.2.0", removed_in="3.0.0", current_version="2.2.0")
+    @deprecated(deprecated_in="2.2.0", removed_in="3.0.0", current_version="2.2.0", details="This was deprecated at Enterprise 10.9")
     def send_notification(
         self,
         users: Union[list[str], list[User]],
