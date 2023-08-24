@@ -174,7 +174,9 @@ class StoryMap(object):
         # Create draft resource name
         draft = "draft_" + str(int(time.time() * 1000)) + ".json"
         # Will be posted as a draft
-        sm_version = self._gis._con.get("https://storymaps.arcgis.com/version")
+        sm_version = self._gis._con.get("https://storymaps.arcgis.com/version")[
+            "version"
+        ]
         keywords = ",".join(
             [
                 "arcgis-storymaps",
@@ -1066,7 +1068,10 @@ class StoryMap(object):
         draft = "draft_" + str(int(time.time() * 1000)) + ".json"
         json_str = json.dumps(self._properties, ensure_ascii=False)
         self._add_resource(resource_name=draft, text=json_str, access="private")
-
+        # get the story map version from endpoint
+        sm_version = self._gis._con.get("https://storymaps.arcgis.com/version")[
+            "version"
+        ]
         # Find type keywords to use based on whether to publish or not
         # PUBLISH MODE
         if publish is True:
@@ -1101,9 +1106,6 @@ class StoryMap(object):
                     or "smpublisherapp"
                 ) in keyword:
                     keywords.remove(keyword)
-            sm_version = self._gis._con.get("https://storymaps.arcgis.com/version")[
-                "version"
-            ]
             new_keywords = [
                 "smstatuspublished",
                 "smversiondraft:" + sm_version,

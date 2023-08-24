@@ -7,6 +7,7 @@
 import os
 from integration.dino_utils.dino_precondition_checks import PortalUtils
 from integration.dino_utils.dino_configs import DinoConfigs
+from integration.config import QALAB_ROOT_PATH
 from configparser import ConfigParser
 from arcgis.gis import GIS
 
@@ -71,10 +72,9 @@ if __name__ == "__main__":
     portal_url = _conf_reader["arcgiscom"]["url"]
     pub1_username = _conf_reader["arcgiscom"]["admin_user"]
     pub1_password = _conf_reader["arcgiscom"]["admin_password"]
-    data_path = _conf_reader2["test_data"]["qalab_base_path"]
 
     pub1_gis = GIS(portal_url, pub1_username, pub1_password)
-    populate_portal_content_1(pub1_gis, data_path)
+    populate_portal_content_1(pub1_gis, QALAB_ROOT_PATH)
 
     # Create content for publisher2
     # portal_url = _conf_reader['teamportal']['url']

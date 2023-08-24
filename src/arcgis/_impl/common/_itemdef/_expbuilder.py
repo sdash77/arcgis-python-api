@@ -9,6 +9,7 @@ from arcgis._impl.common._clone import (
     _search_org_for_existing_item,
     _share_item_with_groups,
 )
+import tempfile
 
 try:
     import ujson as json
@@ -154,8 +155,12 @@ class _WebExperience(_ItemDefinition):
             new_dict = _clone_dict(
                 config_dict, self.portal_item._gis, self.target, self._search_existing
             )
+            tfile = tempfile.NamedTemporaryFile(mode="w+", suffix=".json")
+            json.dump(new_dict, tfile)
             new_item.resources.update(
-                folder_name="config", file_name="config.json", text=new_dict
+                folder_name="config",
+                file_name="config.json",
+                file=tfile.name,
             )
             if new_item.url:
                 new_item.update(

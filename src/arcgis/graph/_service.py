@@ -1,7 +1,9 @@
 from __future__ import annotations
-import datetime as _dt
 from arcgis.auth.tools import LazyLoader
-
+from typing import Generator
+from arcgis.geometry import Geometry
+import copy
+import datetime
 
 try:
     import arcgis.graph._arcgisknowledge as _kgparser
@@ -9,10 +11,8 @@ try:
     HAS_KG = True
 except ImportError as e:
     HAS_KG = False
-_gis = LazyLoader("arcgis.gis")
 _isd = LazyLoader("arcgis._impl.common._isd")
 from typing import List, Any
-import platform
 
 
 class KnowledgeGraph:
@@ -54,6 +54,17 @@ class KnowledgeGraph:
                 "are using Python 3.9, 3.10 or 3.11 on Windows or Linux platforms."
             )
 
+    def _getInputQuantParams(self, inputQuantParams: dict):
+        clientCoreQuantParams = _kgparser.InputQuantizationParameters()
+        clientCoreQuantParams.xy_resolution = inputQuantParams["xyResolution"]
+        clientCoreQuantParams.x_false_origin = inputQuantParams["xFalseOrigin"]
+        clientCoreQuantParams.y_false_origin = inputQuantParams["yFalseOrigin"]
+        clientCoreQuantParams.z_resolution = inputQuantParams["zResolution"]
+        clientCoreQuantParams.z_false_origin = inputQuantParams["zFalseOrigin"]
+        clientCoreQuantParams.m_resolution = inputQuantParams["mResolution"]
+        clientCoreQuantParams.m_false_origin = inputQuantParams["mFalseOrigin"]
+        return clientCoreQuantParams
+
     @classmethod
     def fromitem(cls, item):
         """Returns the Knowledge Graph service from an Item"""
@@ -87,12 +98,14 @@ class KnowledgeGraph:
                             text search.  This can be isolated to either the `entities` or
                             the `relationships`.  The default is to look in `both`.
 
-                            The allowed values are: both, entities, relationships
+                            The allowed values are: both, entities, relationships,
+                            both_entity_relationship, and meta_entity_provenance. Both and
+                            both_entity_relationship are functionally the same.
         ================    ===============================================================
 
         .. note::
             Check the `service definition for the Knowledge Graph service <https://developers.arcgis.com/rest/services-reference/enterprise/kgs-hosted-server.htm>`_
-            for valid values of category. Not all services support both.
+            for valid values of category. Not all services support both and both_entity_relationship.
 
         .. code-block:: python
 
@@ -108,8 +121,10 @@ class KnowledgeGraph:
         url = self._url + "/graph/search"
         cat_lu = {
             "both": _kgparser.esriNamedTypeCategory.both,
+            "both_entity_relationship": _kgparser.esriNamedTypeCategory.both_entity_relationship,
             "relationships": _kgparser.esriNamedTypeCategory.relationship,
             "entities": _kgparser.esriNamedTypeCategory.entity,
+            "meta_entity_provenance": _kgparser.esriNamedTypeCategory.meta_entity_provenance,
         }
         assert str(category).lower() in cat_lu.keys()
         r_enc = _kgparser.GraphSearchRequestEncoder()
@@ -118,9 +133,10 @@ class KnowledgeGraph:
         r_enc.max_num_results = self.properties["maxRecordCount"]
         r_enc.type_category_filter = cat_lu[category.lower()]
         r_enc.encode()
-        assert r_enc.get_encoding_result().error.error_code == 0
+        error = r_enc.get_encoding_result().error
+        if error.error_code != 0:
+            raise Exception(error.error_message)
         query_dec = _kgparser.GraphQueryDecoder()
-        count = 0
 
         session = self._gis._con._session
         response = session.post(
@@ -135,11 +151,75 @@ class KnowledgeGraph:
         query_dec.data_model = self._datamodel
         for chunk in response.iter_content(8192):
             did_push = query_dec.push_buffer(chunk)
-            count = 0
             while query_dec.next_row():
                 rows.append(query_dec.get_current_row())
-                count += 1
         return rows
+
+    def update_search_index(self, adds: dict = None, deletes: dict = None) -> dict:
+        """
+        Allows users to add or delete search index properties for different entities and
+        relationships from the graph's data model. Can only be existent properties for a given
+        entity/relationship. Note that an empty dictionary result indicates success.
+
+        =========================   ===============================================================
+        **Parameter**                **Description**
+        -------------------------   ---------------------------------------------------------------
+        adds                        Optional dict. See below for structure. The properties to add
+                                    to the search index, specified by entity/relationship.
+        -------------------------   ---------------------------------------------------------------
+        deletes                     Optional dict. See below for structure. The properties to
+                                    delete from the search index, specified by entity/relationship.
+        =========================   ===============================================================
+
+        .. code-block:: python
+
+            # example of an adds or deletes dictionary
+            {
+                "Entity1" : { "property_names": ["prop1", "prop2"]},
+                "Entity2" : {"property_names": ["prop1"]},
+                "RelationshipType1" : { "property_names": ["prop1", "prop2"]},
+                "RelationshipType2" : {"property_names": ["prop1"]},
+            }
+
+        :return: A `dict`. Empty dict indicates success, errors will be returned in the dict.
+
+        """
+
+        self._validate_import()
+        url = self._url + "/dataModel/searchIndex/update"
+        params = {
+            "f": "pbf",
+            "token": self._gis._con.token,
+        }
+        headers = {"Content-Type": "application/octet-stream"}
+
+        enc = _kgparser.GraphUpdateSearchIndexRequestEncoder()
+        if adds:
+            enc.insert_add_search_property(adds)
+        if deletes:
+            enc.insert_delete_search_property(deletes)
+
+        enc.encode()
+        enc_result = enc.get_encoding_result()
+        error = enc_result.error
+        if error.error_code != 0:
+            raise Exception(error.error_message)
+
+        session = self._gis._con._session
+        response = session.post(
+            url=url,
+            params=params,
+            data=enc_result.byte_buffer,
+            stream=True,
+            headers=headers,
+        )
+
+        content = response.content
+        dec = _kgparser.GraphUpdateSearchIndexResponseDecoder()
+        dec.decode(content)
+
+        results = dec.get_results()
+        return results
 
     def query(self, query: str) -> List[dict]:
         """
@@ -183,6 +263,176 @@ class KnowledgeGraph:
             rows.append(r)
         return rows
 
+    def query_streaming(
+        self,
+        query: str,
+        input_transform: dict[str, Any] = None,
+        bind_param: dict[str, Any] = None,
+        include_provenance: bool = False,
+    ):
+        """
+        Query the graph using an openCypher query. Allows for more customization than the base
+        `query()` function. Creates a generator of the query results, from which users can
+        access each row or add them to a list. See below for example usage.
+
+
+        ===================    ===============================================================
+        **Parameter**           **Description**
+        -------------------    ---------------------------------------------------------------
+        query                  Required String. Allows you to return the entities and
+                               relationships in a graph, as well as the properties of those
+                               entities and relationships, by providing an openCypher query.
+        -------------------    ---------------------------------------------------------------
+        input_transform        Optional dict. Allows a user to specify custom quantization
+                               parameters for input geometry, which dictate how geometries are
+                               compressed and transferred to the server. Defaults to lossless
+                               WGS84 quantization.
+        -------------------    ---------------------------------------------------------------
+        bind_param             Optional dict. The bind parameters used to filter
+                               query results. Key of each pair is the string name for it,
+                               which is how the parameter can be referenced in the query. The
+                               value can be any "primitive" type value that may be found as
+                               an attribute of an entity or relationship (e.g., string,
+                               double, boolean, etc.), a list, an anonymous object (a dict),
+                               or a geometry.
+
+                               Anonymous objects and geometries can be passed
+                               in as either their normal Python forms, or following the
+                               format found in Knowledge Graph entries (containing an
+                               "_objectType" key, and "_properties" for anonymous objects).
+
+                               Note: Including bind parameters not used in the query will
+                               cause queries to yield nothing on ArangoDB based services,
+                               while Neo4j based services will still produce results.
+        -------------------    ---------------------------------------------------------------
+        include_provenance     Optional boolean. When `True`, provenance entities (metadata)
+                               will be included in the query results. Defaults to `False`.
+        ===================    ===============================================================
+
+        .. code-block:: python
+
+            # Get a list of all query results
+            query_gen = knowledge_graph.query_streaming("MATCH path = (n)-[r]-(n2) RETURN path LIMIT 5")
+            results = list(gen)
+
+            # Grab one result at a time
+            query_gen = knowledge_graph.query_streaming("MATCH path = (n)-[r]-(n2) RETURN path LIMIT 5")
+            first_result = next(query_gen)
+            second_result = next(query_gen)
+
+
+        """
+
+        self._validate_import()
+        url = f"{self._url}/graph/query"
+        params = {
+            "f": "pbf",
+            "token": self._gis._con.token,
+        }
+        headers = {"Content-Type": "application/octet-stream"}
+
+        # initialize encoder
+        r_enc = _kgparser.GraphQueryRequestEncoder()
+        r_enc.open_cypher_query = query
+
+        # set quant params
+        if input_transform:
+            quant_params = self._getInputQuantParams(input_transform)
+        else:
+            quant_params = _kgparser.InputQuantizationParameters.WGS84_lossless()
+        r_enc.input_quantization_parameters = quant_params
+
+        # set bind parameters
+        if bind_param:
+
+            def convert_to_properties(dictionary, last_key):
+                if not isinstance(dictionary, dict):
+                    return dictionary
+
+                properties_dict = {}
+                for key, value in dictionary.items():
+                    if isinstance(value, dict):
+                        if key != "_properties" and last_key == False:
+                            properties_dict[key] = {
+                                "_objectType": "object",
+                                "_properties": convert_to_properties(value, False),
+                            }
+                        elif key != "properties" and last_key == True:
+                            properties_dict[key] = convert_to_properties(value, False)
+                        else:
+                            properties_dict[key] = convert_to_properties(value, True)
+                    else:
+                        properties_dict[key] = value
+
+                return properties_dict
+
+            for k, v in bind_param.items():
+                if isinstance(v, Geometry):
+                    if "_objectType" not in v.keys():
+                        copy_dict = copy.deepcopy(v)
+                        copy_dict["_objectType"] = "geometry"
+                        converted = _kgparser.from_value_object(copy_dict)
+                    else:
+                        converted = _kgparser.from_value_object(v)
+                    r_enc.set_param_key_value(k, converted)
+
+                elif isinstance(v, dict):
+                    copy_dict = copy.deepcopy(v)
+                    if "_properties" not in copy_dict.keys():
+                        changed = {
+                            "_objectType": "object",
+                            "_properties": convert_to_properties(copy_dict, False),
+                        }
+                        converted = _kgparser.from_value_object(changed)
+                    else:
+                        if "_objectType" not in copy_dict.keys():
+                            copy_dict["_objectType"] = "object"
+                        copy_dict["_properties"] = convert_to_properties(
+                            copy_dict["_properties"], True
+                        )
+                        converted = _kgparser.from_value_object(copy_dict)
+                    r_enc.set_param_key_value(k, converted)
+
+                elif isinstance(
+                    v,
+                    (
+                        datetime.date,
+                        datetime.time,
+                        datetime.datetime,
+                        datetime.timedelta,
+                    ),
+                ):
+                    r_enc.set_param_key_value(k, v)
+                else:
+                    converted = _kgparser.from_value_object(v)
+                    r_enc.set_param_key_value(k, converted)
+
+        # set provenance behavior
+        if include_provenance == True:
+            r_enc.provenance_behavior = _kgparser.ProvenanceBehavior.include
+        else:
+            r_enc.provenance_behavior = _kgparser.ProvenanceBehavior.exclude
+
+        r_enc.encode()
+        error = r_enc.get_encoding_result().error
+        if error.error_code != 0:
+            raise Exception(error.error_message)
+        query_dec = _kgparser.GraphQueryDecoder()
+
+        session = self._gis._con._session
+        response = session.post(
+            url=url,
+            params=params,
+            data=r_enc.get_encoding_result().byte_buffer,
+            stream=True,
+            headers=headers,
+        )
+
+        for chunk in response.iter_content(8192):
+            did_push = query_dec.push_buffer(chunk)
+            while query_dec.next_row():
+                yield query_dec.get_current_row()
+
     @property
     def _datamodel(self) -> object:
         """
@@ -224,6 +474,7 @@ class KnowledgeGraph:
         deletes: list[dict[str, Any]] = [],
         input_transform: dict[str, Any] = None,
         cascade_delete: bool = False,
+        cascade_delete_provenance: bool = False,
     ) -> dict:
         """
         Allows users to add new graph entities/relationships, update existing
@@ -231,28 +482,35 @@ class KnowledgeGraph:
         dictionaries for each of these operations should be structured, please refer to the samples
         further below.
 
-        ================    ===============================================================
-        **Parameter**        **Description**
-        ----------------    ---------------------------------------------------------------
-        adds                Optional list of dicts. The list of objects to add to the
-                            graph, represented in dictionary format.
-        ----------------    ---------------------------------------------------------------
-        updates             Optional list of dicts. The list of existent graph objects that
-                            are to be updated, represented in dictionary format.
-        ----------------    ---------------------------------------------------------------
-        deletes             Optional list of dicts. The list of existent objects to remove
-                            from the graph, represented in dictionary format.
-        ----------------    ---------------------------------------------------------------
-        input_transform     Optional dict. Allows a user to specify custom quantization
-                            parameters for input geometry, which dictate how geometries are
-                            compressed and transferred to the server. Defaults to lossless
-                            WGS84 quantization.
-        ----------------    ---------------------------------------------------------------
-        cascade_delete      Optional boolean. When `True`, relationships connected to
-                            entities that are being deleted will automatically be deleted
-                            as well. When `False`, these relationships must be deleted
-                            manually first. Defaults to `False`.
-        ================    ===============================================================
+        =========================   ===============================================================
+        **Parameter**                **Description**
+        -------------------------   ---------------------------------------------------------------
+        adds                        Optional list of dicts. The list of objects to add to the
+                                    graph, represented in dictionary format.
+        -------------------------   ---------------------------------------------------------------
+        updates                     Optional list of dicts. The list of existent graph objects that
+                                    are to be updated, represented in dictionary format.
+        -------------------------   ---------------------------------------------------------------
+        deletes                     Optional list of dicts. The list of existent objects to remove
+                                    from the graph, represented in dictionary format.
+        -------------------------   ---------------------------------------------------------------
+        input_transform             Optional dict. Allows a user to specify custom quantization
+                                    parameters for input geometry, which dictate how geometries are
+                                    compressed and transferred to the server. Defaults to lossless
+                                    WGS84 quantization.
+        -------------------------   ---------------------------------------------------------------
+        cascade_delete              Optional boolean. When `True`, relationships connected to
+                                    entities that are being deleted will automatically be deleted
+                                    as well. When `False`, these relationships must be deleted
+                                    manually first. Defaults to `False`.
+        -------------------------   ---------------------------------------------------------------
+        cascade_delete_provenance   Optional boolean. When `True`, deleting entities/relationships
+                                    or setting their property values to null will result in
+                                    automatic deletion of associated provenance records. When
+                                    `False`, `apply_edits()` will fail if there are provenance
+                                    records connected to entities/relationships intended for
+                                    deletion or having their properties set to null.
+        =========================   ===============================================================
 
         .. code-block:: python
 
@@ -290,20 +548,8 @@ class KnowledgeGraph:
 
         url = self._url + "/graph/applyEdits"
 
-        # internal helper to get quant params
-        def _getInputQuantParams(inputQuantParams: dict):
-            clientCoreQuantParams = _kgparser.InputQuantizationParameters()
-            clientCoreQuantParams.xy_resolution = inputQuantParams["xyResolution"]
-            clientCoreQuantParams.x_false_origin = inputQuantParams["xFalseOrigin"]
-            clientCoreQuantParams.y_false_origin = inputQuantParams["yFalseOrigin"]
-            clientCoreQuantParams.z_resolution = inputQuantParams["zResolution"]
-            clientCoreQuantParams.z_false_origin = inputQuantParams["zFalseOrigin"]
-            clientCoreQuantParams.m_resolution = inputQuantParams["mResolution"]
-            clientCoreQuantParams.m_false_origin = inputQuantParams["mFalseOrigin"]
-            return clientCoreQuantParams
-
         if input_transform:
-            quant_params = _getInputQuantParams(input_transform)
+            quant_params = self._getInputQuantParams(input_transform)
         else:
             quant_params = _kgparser.InputQuantizationParameters.WGS84_lossless()
 
@@ -320,13 +566,14 @@ class KnowledgeGraph:
         for edit in deletes:
             enc.delete_from_ids(edit)
         enc.cascade_delete = cascade_delete
+        enc.cascade_delete_provenance = cascade_delete_provenance
 
         # encode and prepare for the post request
         enc.encode()
         res = enc.get_encoding_result()
 
         if res.error.error_code != 0:
-            print(res.error.error_message)
+            raise Exception(res.error.error_message)
 
         pbf_params = {
             "f": "pbf",
@@ -417,7 +664,9 @@ class KnowledgeGraph:
             r_enc.add_relationship_type(relationship_type)
 
         r_enc.encode()
-        assert r_enc.get_encoding_result().error.error_code == 0
+        error = r_enc.get_encoding_result().error
+        if error.error_code != 0:
+            raise Exception(error.error_message)
         r_dec = _kgparser.GraphNamedObjectTypeAddsResponseDecoder()
 
         session = self._gis._con._session
@@ -495,7 +744,9 @@ class KnowledgeGraph:
             r_enc.update_relationship_type(named_type_update, mask)
 
         r_enc.encode()
-        assert r_enc.get_encoding_result().error.error_code == 0
+        error = r_enc.get_encoding_result().error
+        if error.error_code != 0:
+            raise Exception(error.error_message)
         r_dec = _kgparser.GraphNamedObjectTypeUpdateResponseDecoder()
 
         session = self._gis._con._session
@@ -616,7 +867,9 @@ class KnowledgeGraph:
             r_enc.add_property(prop)
 
         r_enc.encode()
-        assert r_enc.get_encoding_result().error.error_code == 0
+        error = r_enc.get_encoding_result().error
+        if error.error_code != 0:
+            raise Exception(error.error_message)
         r_dec = _kgparser.GraphPropertyAddsResponseDecoder()
 
         session = self._gis._con._session
@@ -711,8 +964,9 @@ class KnowledgeGraph:
         r_enc.name = property_name
 
         r_enc.encode()
-        if r_enc.get_encoding_result().error.error_code != 0:
-            print(r_enc.get_encoding_result().error.error_message)
+        error = r_enc.get_encoding_result().error
+        if error.error_code != 0:
+            raise Exception(error.error_message)
         r_dec = _kgparser.GraphPropertyUpdateResponseDecoder()
 
         session = self._gis._con._session
@@ -761,7 +1015,9 @@ class KnowledgeGraph:
         r_enc.name = property_name
 
         r_enc.encode()
-        assert r_enc.get_encoding_result().error.error_code == 0
+        error = r_enc.get_encoding_result().error
+        if error.error_code != 0:
+            raise Exception(error.error_message)
         r_dec = _kgparser.GraphPropertyDeleteResponseDecoder()
 
         session = self._gis._con._session

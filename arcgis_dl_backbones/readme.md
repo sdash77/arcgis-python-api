@@ -7,7 +7,7 @@
 
 ## Install the Metapackage
 ````bash
-conda install --offline arcgis_dl_backbones-1.0.1-py_0.tar.bz2
+conda install --offline arcgis_dl_backbones-2.0.1-py_0.tar.bz2
 ````
 
 ## Latest package uploaded

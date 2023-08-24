@@ -473,6 +473,12 @@ class PageManager(object):
         """
         Unlinks the page from the specific site.
 
+        .. note::
+
+            This method will only detach the page from the site. In order to remove links to this 
+            page from the site's UI, you will have to manually remove it from the site through 
+            the site's Layout Editior. 
+
         =======================    =============================================================
         **Parameter**               **Description**
         -----------------------    -------------------------------------------------------------

@@ -10,6 +10,7 @@ sys.path.insert(0, r"C:\ipython_workfolder\geosaurus\tests")
 from integration.dino_utils.dino_precondition_checks import PreconditionChecks
 from integration.dino_utils.dino_precondition_checks import PortalUtils
 from integration.dino_utils.dino_configs import DinoConfigs
+from integration.config import QALAB_ROOT_PATH
 from configparser import ConfigParser
 from pathlib import Path
 import json
@@ -78,7 +79,7 @@ class Test_WebMap_AGO(unittest.TestCase):
         _conf_reader2 = ConfigParser()
         _conf_reader2.read(DinoConfigs.root_init_file, "UTF-8")
 
-        cls.qalab_base_path = _conf_reader2["test_data"]["qalab_base_path"]
+        cls.qalab_base_path = QALAB_ROOT_PATH
         cls.qalab_data_path = (
             cls.qalab_base_path + _conf_reader2["test_data"]["qalab_dataprep"]
         )

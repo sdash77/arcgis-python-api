@@ -1556,9 +1556,9 @@ class GIS(object):
         mode                   Optional string of either '2D' or '3D' to specify map mode. Defaults to '2D'.
         ------------------     --------------------------------------------------------------------
         geocoder               Optional Geocoder. Allows users to specify a geocoder to find a given location.
-                               See the `Understanding geocoders
-                               <https://developers.arcgis.com/python/guide/understanding-geocoders/>`_
-                               page in the ArcGIS API for Python guide for more information.
+                               See the `What is geocoding?
+                               <https://developers.arcgis.com/python/guide/part1-what-is-geocoding/>`_
+                               guide for more information.
         ==================     ====================================================================
 
 
@@ -1570,7 +1570,7 @@ class GIS(object):
             This can be accomplished by signing into your ArcGIS Enterprise portal or ArcGIS Online organization in a
             browser, then navigating to:
 
-            `Organization` > `Settings` > `Security` > `Allow origins` > `Add` > http://localhost:8888
+            `Organization` > `Settings` > `Security` > `Allow origins` > `Add` > `http://localhost:8888`
             (replace with the host/port you are running on)
 
         .. code-block:: python
@@ -3380,8 +3380,8 @@ class UserManager(object):
         firstname: str,
         lastname: str,
         email: str,
+        role: str,
         description: Optional[str] = None,
-        role: Optional[str] = None,
         provider: str = "arcgis",
         idp_username: Optional[str] = None,
         level: int = 2,
@@ -3461,11 +3461,7 @@ class UserManager(object):
         ----------------  -------------------------------------------------------------------------------
         email             Required string. The email address for the user. This is important!
         ----------------  -------------------------------------------------------------------------------
-        description       Optional string. The description of the user account.
-        ----------------  -------------------------------------------------------------------------------
-        thumbnail         Optional string. The URL to an image to represent the user.
-        ----------------  -------------------------------------------------------------------------------
-        role              Optional string. The :class:`role <arcgis.gis.Role>` name or `role_id` value to
+        role              Required string. The :class:`role <arcgis.gis.Role>` name or `role_id` value to
                           assign the new member. To assign one of the `default Administrator, Publisher,
                           or User roles <https://enterprise.arcgis.com/en/portal/latest/administer/windows/member-roles.htm#ESRI_SECTION1_C30D73392D964D51A8B606128A8A6E8F>`_
                           enter ``org_admin``, ``org_publisher``, or ``org_user``, respectively.
@@ -3481,6 +3477,11 @@ class UserManager(object):
 
                               >>> for org_role in gis.users.roles.all():
                                       print(f"{org_role.name:25}{org_role.role_id}")
+        ----------------  -------------------------------------------------------------------------------
+        description       Optional string. The description of the user account.
+        ----------------  -------------------------------------------------------------------------------
+        thumbnail         Optional string. The URL to an image to represent the user.
+
         ----------------  -------------------------------------------------------------------------------
         provider          Optional string. The identity provider for the account. The default value is
                           `arcgis`. Possible values:
@@ -3983,8 +3984,10 @@ class UserManager(object):
 
         if isinstance(role, Role):
             role = role.role_id
-        elif role.lower() in role_lookup:
+        elif role and role.lower() in role_lookup:
             role = role_lookup[role.lower()]
+        else:
+            role = ""
 
         if self._gis._portal.is_arcgisonline or (
             self._gis._portal.is_kubernetes and provider != "enterprise"
@@ -5822,6 +5825,9 @@ class GroupManager(object):
                               will have access. `None` is the default.
 
                               Values: `org`, `collaboration`, or `none`
+
+                              .. note::
+                                For Enterprise only "org" is accepted.
         --------------------  ---------------------------------------------------------
         autojoin              Optional Boolean. The default is `False`. Only applies to
                               org accounts. If `True`, this group will allow joined
@@ -5882,7 +5888,10 @@ class GroupManager(object):
         if hidden_members in [True, False]:
             params["hiddenMembers"] = hidden_members
         if membership_access in ["org", "collaboration", None, "none"]:
-            if membership_access is None:
+            if self._gis._is_agol is False:
+                # Only value for Enterprise is org
+                params["membershipAccess"] = "org"
+            elif self._gis._is_agol and membership_access is None:
                 membership_access = "none"
             params["membershipAccess"] = membership_access
         if autojoin in [True, False]:
@@ -14411,28 +14420,34 @@ class Item(dict):
         allow_members_to_edit: bool = False,
     ):
         """
-        The ``share`` method shares an item with the specified list of groups.
+        The ``share`` method allows you to set the list of groups the Item will be shared with.
+        You can also set the Item to be shared with your org or with everyone(public including org).
 
-        ======================  ========================================================
-        **Parameter**            **Description**
-        ----------------------  --------------------------------------------------------
-        everyone                Optional boolean. Default is False, don't share with
-                                everyone.
-        ----------------------  --------------------------------------------------------
-        org                     Optional boolean. Default is False, don't share with
-                                the organization.
-        ----------------------  --------------------------------------------------------
-        groups                  Optional list of group ids as strings, or a list of
-                                arcgis.gis.Group objects, or a comma-separated list of
-                                group IDs.
-        ----------------------  --------------------------------------------------------
-        allow_members_to_edit   Optional boolean. Default is False, to allow item to be
-                                shared with groups that allow shared update
-        ======================  ========================================================
+        ======================      ========================================================
+        **Parameter**               **Description**
+        ----------------------      --------------------------------------------------------
+        everyone                    Optional boolean. If True, this item will be shared with
+                                    everyone, meaning that it will be publicly accessible and
+                                    available to users outside of the organization.
+                                    If set to False (default), the item will not be shared
+                                    with the public.
+        ----------------------      --------------------------------------------------------
+        org                         Optional boolean. If True, this item will be shared with
+                                    the organization. If set to False (default),
+                                    the item will not be shared with the organization.
+        ----------------------      --------------------------------------------------------
+        groups                      Optional list of group ids as strings, or a list of
+                                    arcgis.gis.Group objects. Default is None, don't share
+                                    with any specific groups.
+        ----------------------      --------------------------------------------------------
+        allow_members_to_edit       Optional boolean. Set to True when the item will be shared
+                                    with groups with item update capability so that any member
+                                    of such groups can update the item that is shared with them.
+        ======================      ========================================================
 
         :return:
             A dictionary with a key titled "`notSharedWith`",containing array of groups with which the item could not be
-            shared.
+            shared as well as "itemId" key containing the item id.
 
         .. code-block:: python
 
@@ -14442,51 +14457,68 @@ class Item(dict):
 
 
         """
-        if everyone:
-            org = True
-        try:
-            folder = self.ownerFolder
-        except:
-            folder = None
-
-        # get list of group IDs
-        group_ids = ""
-        if isinstance(groups, list):
-            for group in groups:
-                if isinstance(group, Group):
-                    group_ids = group_ids + "," + group.id
-
-                elif isinstance(group, str):
-                    # search for group using id
-                    search_result = self._gis.groups.search(
-                        query="id:" + group, max_groups=1
-                    )
-                    if len(search_result) > 0:
-                        group_ids = group_ids + "," + search_result[0].id
-                    else:
-                        raise Exception("Cannot find group with id: " + group)
-                else:
-                    raise Exception("Invalid group(s)")
-        elif isinstance(groups, Group):
-            group_ids = groups.id
-        elif isinstance(groups, str):
-            # old API - groups sent as comma separated group ids
-            group_ids = groups
-        if self.owner == self._gis.users.me.username:
-            url = "{resturl}content/users/{owner}/shareItems".format(
-                resturl=self._gis._portal.resturl, owner=self.owner
+        # Check that the values passed in are valid, groups is checked later if passed in
+        if (
+            not isinstance(everyone, bool)
+            or not isinstance(org, bool)
+            or not isinstance(allow_members_to_edit, bool)
+        ):
+            raise ValueError(
+                "everyone, org, and allow_members_to_edit must be boolean values"
             )
-            params = {
-                "f": "json",
-                "items": self.id,
-                "groups": group_ids,
-                "everyone": everyone,
-                "account": org,
-                "confirmItemControl": allow_members_to_edit,
-            }
-            if allow_members_to_edit:
-                params["confirmItemControl"] = allow_members_to_edit  # True
+
+        # If everyone is True, set org to True
+        if everyone is True:
+            org = True
+
+        # If group is passed in, handle it
+        group_ids = ""
+        if groups is not None:
+            if isinstance(groups, list):
+                for group in groups:
+                    if isinstance(group, Group):
+                        # create string list of group ids
+                        if len(group_ids) == 0:
+                            group_ids = group.id
+                        else:
+                            group_ids = group_ids + "," + group.id
+
+                    elif isinstance(group, str):
+                        # search for group using id to make sure exists
+                        search_result = self._gis.groups.search(
+                            query="id:" + group, max_groups=1
+                        )
+                        if len(search_result) > 0:
+                            group_ids = group_ids + "," + search_result[0].id
+                        else:
+                            raise Exception("Cannot find group with id: " + group)
+                    else:
+                        raise Exception(
+                            "Invalid group(s). Must be a list of group ids or group objects."
+                        )
+            elif isinstance(groups, Group):
+                # Only one group provided
+                group_ids = groups.id
+            elif isinstance(groups, str):
+                # old API - groups sent as comma separated group ids
+                # could be one group or already made string list of many group ids
+                group_ids = groups
+
+        # Check privileges for sharing:
+        can_share = False
+        if self.owner == self._gis.users.me.username:
+            can_share = True
         else:
+            privileges = self._gis.users.me.privileges
+            if len(group_ids) > 0 and "portal:admin:shareToGroup" in privileges:
+                can_share = True
+            if everyone is True and "portal:admin:shareToPublic" in privileges:
+                can_share = True
+            if org is True and "portal:admin:shareToOrg" in privileges:
+                can_share = True
+
+        # Create url and params
+        if can_share:
             url = "{resturl}content/items/{itemid}/share".format(
                 resturl=self._gis._portal.resturl, itemid=self.itemid
             )
@@ -14494,20 +14526,17 @@ class Item(dict):
                 "f": "json",
                 "groups": group_ids,
                 "everyone": everyone,
-                "account": org,
+                "org": org,
+                "confirmItemControl": allow_members_to_edit,
             }
-
-            if allow_members_to_edit:
-                if (
-                    "portal:admin:createUpdateCapableGroup"
-                    in self._gis.users.me.privileges
-                ):
-                    params["confirmItemControl"] = allow_members_to_edit  # True
-
-        res = self._portal.con.post(url, params)
-        self._hydrated = False
-        self._hydrate()
-        return res
+            res = self._portal.con.post(url, params)
+            self._hydrated = False
+            self._hydrate()
+            return res
+        else:
+            raise Exception(
+                "User does not own the item or have the privileges to share this item."
+            )
 
     # ----------------------------------------------------------------------
     def unshare(self, groups: Union[list[str], list[Group]]):

@@ -1525,6 +1525,7 @@ def enrich(
     proximity_type=None,
     proximity_value=None,
     proximity_metric=None,
+    sanitize_columns=True,
 ):
     """
     Enrich provides access to a massive dataset describing exactly who people are
@@ -1645,6 +1646,12 @@ def enrich(
                                   defining the proximity value. For instance, if specifying one
                                   kilometer, this value will be ``kilometers``. Default is
                                   ``kilometers``.
+    -------------------------     --------------------------------------------------------------------
+    sanitize_columns              Optional boolean. Convert output column names to snake case python style.
+                                  Default is ``True``.
+                                  Examples:
+                                  Value is ``True``: ['source_country', 'area_type', 'aggregation_method', 'totpop']
+                                  Value is ``False``: ['sourceCountry', 'areaType', 'aggregationMethod', 'TOTPOP']
     =========================     ====================================================================
 
     :return:
@@ -1718,6 +1725,11 @@ def enrich(
                         value = value.true_centroid
                     elif "geometry" in value:
                         value = value["geometry"]
+
+                    # if it's a dictionary representing a polygon...
+                    if "rings" in value:
+                        polygon = Polygon(value)
+                        value = polygon.true_centroid
                     # geocode the geom and extract the country
                     geocoded_area = reverse_geocode(value)
                     cntry = Country(geocoded_area["address"]["CountryCode"])
@@ -1781,6 +1793,7 @@ def enrich(
                     proximity_metric=proximity_metric,
                     standard_geography_level=standard_geography_level,
                     return_geometry=return_geometry,
+                    sanitize_columns=sanitize_columns,
                 )
 
                 enrich_res = pd.concat([enrich_res, enrich_df], ignore_index=True)
@@ -1799,6 +1812,7 @@ def enrich(
                 proximity_metric=proximity_metric,
                 standard_geography_level=standard_geography_level,
                 return_geometry=return_geometry,
+                sanitize_columns=sanitize_columns,
             )
     # check if data collections used as input parameter against available data collections
     elif data_collections is not None:
@@ -1830,6 +1844,7 @@ def enrich(
                         proximity_metric=proximity_metric,
                         standard_geography_level=standard_geography_level,
                         return_geometry=return_geometry,
+                        sanitize_columns=sanitize_columns,
                     )
                     enrich_res = pd.concat([enrich_res, enrich_df], ignore_index=True)
                 else:
@@ -1882,6 +1897,7 @@ def enrich(
                 proximity_metric=proximity_metric,
                 standard_geography_level=standard_geography_level,
                 return_geometry=return_geometry,
+                sanitize_columns=sanitize_columns,
             )
 
     return enrich_res
