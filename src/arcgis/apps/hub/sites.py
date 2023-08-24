@@ -7,6 +7,7 @@ from collections import OrderedDict
 from urllib.parse import urlparse
 import json
 import os
+import re
 from arcgis.gis import Item
 from functools import wraps
 
@@ -454,8 +455,8 @@ class Site(OrderedDict):
         subdomain                 Optional string. New subdomain for the site.
         =====================     ====================================================================
 
-        To find the list of applicable options for the *site_properties* argument, please see the
-        `Item` :meth:`~arcgis.gis.Item.update` method documentation.
+        To find the list of applicable options for argument site_properties -
+        https://developers.arcgis.com/python/api-reference/arcgis.gis.toc.html#arcgis.gis.Item.update
 
         :return:
            A boolean indicating success (True) or failure (False).
@@ -1229,13 +1230,19 @@ class SiteManager(object):
         if len(site_pages) > 0:
             # Check the value of param
             if pages:
+                replaced = str(new_site.definition)
                 for page in site_pages:
                     try:
                         new_site.pages.unlink(page)
                     except:
                         pass
-                    new_site.pages.clone(page)
-
+                    new_page = new_site.pages.clone(page)
+                    #Replacing references to this page with cloned page in site's layout
+                    replaced = re.sub(page.itemid, new_page.itemid, replaced)
+                    replaced = re.sub(page.title, new_page.title, replaced)
+                    replaced = re.sub(page.slug, new_page.slug, replaced)
+                new_data = json.loads(replaced)
+                new_site.item.update(item_properties={"text":new_data})
         return new_site
 
     def get(self, site_id: str) -> Site:
