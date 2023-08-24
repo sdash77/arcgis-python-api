@@ -23,8 +23,7 @@ from uuid import uuid4
 import configparser
 from contextlib import contextmanager
 import functools
-import random
-import string
+from arcgis._impl.common._deprecate import deprecated
 from datetime import datetime, timedelta
 import logging
 from typing import Any, Optional, Union
@@ -3304,6 +3303,7 @@ class UserManager(object):
         return results
 
     # ----------------------------------------------------------------------
+    @deprecated(deprecated_in="2.2.0", removed_in="3.0.0", current_version="2.2.0")
     def send_notification(
         self,
         users: Union[list[str], list[User]],
