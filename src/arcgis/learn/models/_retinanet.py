@@ -128,7 +128,6 @@ class RetinaNet(ArcGISModel):
         *args,
         **kwargs,
     ):
-
         if pretrained_path is not None:
             backbone_pretrained = False
         else:

@@ -474,7 +474,7 @@ def crop_hwc(image, bbox, out_sz, padding=(0, 0, 0)):
     b = (out_sz - 1) / (bbox[3] - bbox[1])
     c = -a * bbox[0]
     d = -b * bbox[1]
-    mapping = np.array([[a, 0, c], [0, b, d]]).astype(np.float)
+    mapping = np.array([[a, 0, c], [0, b, d]]).astype(float)
     crop = cv2.warpAffine(
         image,
         mapping,
@@ -1062,7 +1062,7 @@ def crop_hwc(image, bbox, out_sz, padding=(0, 0, 0)):
     b = (out_sz - 1) / (bbox[3] - bbox[1])
     c = -a * bbox[0]
     d = -b * bbox[1]
-    mapping = np.array([[a, 0, c], [0, b, d]]).astype(np.float)
+    mapping = np.array([[a, 0, c], [0, b, d]]).astype(float)
     crop = cv2.warpAffine(
         image,
         mapping,

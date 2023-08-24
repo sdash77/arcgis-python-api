@@ -6,6 +6,7 @@ import json
 from ..gis._impl._con import Connection
 from ..gis import GIS, User
 
+
 ########################################################################
 class Notification(dict):
     """

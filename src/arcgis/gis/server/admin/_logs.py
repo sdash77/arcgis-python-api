@@ -7,6 +7,7 @@ from .._common import BaseServer
 from arcgis.gis import GIS
 from typing import Optional
 
+
 ########################################################################
 class LogManager(BaseServer):
     """
@@ -22,6 +23,7 @@ class LogManager(BaseServer):
     _con = None
     _json_dict = None
     _json = None
+
     # ----------------------------------------------------------------------
     def __init__(self, url: str, gis: GIS, initialize: bool = False):
         """Constructor
@@ -291,7 +293,7 @@ class LogManager(BaseServer):
         # for the next request to get the next set of records
         loop = 0
         new_logs = {}
-        while max_records_return > 1:
+        while max_records_return > 1 and has_more:
             if has_more:
                 # get new start time from logs endTime in first loop then from new_logs endTime after
                 params["startTime"] = (
@@ -314,7 +316,6 @@ class LogManager(BaseServer):
                     break
         # if export true then no values returned, file written to
         if export is True and out_path is not None:
-
             with open(file=out_path, mode="w") as f:
                 hasKeys = False
                 if export_type == "TAB":

@@ -254,7 +254,6 @@ class PSPNet(nn.Module):
         self.aux_logits = nn.Conv2d(aux_in_channels, num_classes, kernel_size=1)
 
         if self.pointrend:
-
             if self.vgg:
                 point_num_channels = (
                     self.hook[-3].stored.shape[1] + self.hook[-4].stored.shape[1]
@@ -289,7 +288,6 @@ class PSPNet(nn.Module):
             x = self.final(x)
 
         if self.pointrend:
-
             if self.vgg:
                 pointrend_out = self.pointrend_head(x, [features[-4], features[-3]])
             else:
@@ -298,7 +296,6 @@ class PSPNet(nn.Module):
         result = F.interpolate(x, x_size[2:], mode="bilinear", align_corners=True)
 
         if self.training:
-
             if self.vgg:
                 x = self.aux_logits(features[-2])
             else:
@@ -312,7 +309,6 @@ class PSPNet(nn.Module):
                 return result, x
 
         else:
-
             if self.pointrend:
                 if pointrend_out.shape[-1] != x_size[-1]:
                     pointrend_out = F.interpolate(
@@ -419,6 +415,7 @@ def isin(target, keep_indices):
 
 
 def accuracy(input, target, ignore_mapped_class=[]):
+    """Computes per pixel accuracy."""
     if isinstance(input, tuple):  # while training
         input = input[0]
     if ignore_mapped_class == []:

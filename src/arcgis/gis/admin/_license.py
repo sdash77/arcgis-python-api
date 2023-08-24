@@ -8,6 +8,7 @@ from ..._impl.common._mixins import PropertyMap
 from ...gis import GIS, User
 from ._base import BasePortalAdmin
 
+
 ########################################################################
 class LicenseManager(BasePortalAdmin):
     """
@@ -216,7 +217,8 @@ class LicenseManager(BasePortalAdmin):
 
         lic = self.get("arcgis pro")
         url = "{base}content/listings/{itemid}/setDisconnectSettings".format(
-            base=self._gis._portal.resturl, itemid=lic.properties.provision.itemId
+            base=self._gis._portal.resturl,
+            itemid=lic.properties.provision.itemId,
         )
         params = {
             "f": "json",
@@ -242,6 +244,7 @@ class Bundle(object):
     _properties = None
     _gis = None
     _id = None
+
     # ----------------------------------------------------------------------
     def __init__(self, url, properties=None, gis=None):
         """Constructor"""
@@ -433,6 +436,7 @@ class License(object):
     _properties = None
     _gis = None
     _con = None
+
     # ----------------------------------------------------------------------
     def __init__(self, gis, info):
         """Constructor"""
@@ -449,7 +453,10 @@ class License(object):
                 self._gis._portal.resturl,
             )
         except:
-            return "<%s at %s >" % (type(self).__name__, self._gis._portal.resturl)
+            return "<%s at %s >" % (
+                type(self).__name__,
+                self._gis._portal.resturl,
+            )
 
     # ----------------------------------------------------------------------
     def __repr__(self):
@@ -460,7 +467,10 @@ class License(object):
                 self._gis._portal.resturl,
             )
         except:
-            return "<%s at %s >" % (type(self).__name__, self._gis._portal.resturl)
+            return "<%s at %s >" % (
+                type(self).__name__,
+                self._gis._portal.resturl,
+            )
 
     # ----------------------------------------------------------------------
     @property
@@ -656,6 +666,8 @@ class License(object):
            Boolean. True if successful else False.
         """
         item_id = self.properties["listing"]["itemId"]
+        if hasattr(username, "username"):
+            username = username.username
         if isinstance(entitlements, str):
             entitlements = entitlements.split(",")
 
@@ -669,7 +681,10 @@ class License(object):
 
         params = {
             "f": "json",
-            "userEntitlements": {"users": [username], "entitlements": entitlements},
+            "userEntitlements": {
+                "users": [username],
+                "entitlements": entitlements,
+            },
         }
         if suppress_email is not None:
             params["suppressCustomerEmail"] = suppress_email
@@ -684,7 +699,10 @@ class License(object):
 
     # ----------------------------------------------------------------------
     def revoke(
-        self, username: str, entitlements: list[str] | str, suppress_email: bool = True
+        self,
+        username: str,
+        entitlements: list[str] | str,
+        suppress_email: bool = True,
     ):
         """
         removes a specific license from a given entitlement
@@ -709,7 +727,9 @@ class License(object):
         """
         if entitlements == "*":
             return self.assign(
-                username=username, entitlements=[], suppress_email=suppress_email
+                username=username,
+                entitlements=[],
+                suppress_email=suppress_email,
             )
         if isinstance(entitlements, str):
             entitlements = entitlements.split(",")
@@ -726,6 +746,8 @@ class License(object):
                 for e in entitlements:
                     es2.append(lookup[e])
                 return self.assign(
-                    username=username, entitlements=es2, suppress_email=suppress_email
+                    username=username,
+                    entitlements=es2,
+                    suppress_email=suppress_email,
                 )
         return False

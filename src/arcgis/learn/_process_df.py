@@ -42,9 +42,7 @@ def add_datepart(df, col_name, drop=True, errors="raise"):
     if isinstance(col_dtype, pd.core.dtypes.dtypes.DatetimeTZDtype):
         col_dtype = np.datetime64
     if not np.issubdtype(col_dtype, np.datetime64):
-        df[col_name] = col = pd.to_datetime(
-            col, infer_datetime_format=True, errors=errors
-        )
+        df[col_name] = col = pd.to_datetime(col, errors=errors)
     attr = [
         "Year",
         "Month",
@@ -86,7 +84,12 @@ def _scale(df, mapper=None):
 
 
 def process_df(
-    df, target=None, do_scale=False, add_date_feats=False, mapper=None, test_sz=0.2
+    df,
+    target=None,
+    do_scale=False,
+    add_date_feats=False,
+    mapper=None,
+    test_sz=0.2,
 ):
     """
     This function preprocess the dataframe in following order :

@@ -22,7 +22,6 @@ except:
 
 class ChildImageClassifier:
     def initialize(self, model, model_as_file):
-
         if not HAS_TORCH:
             raise Exception(
                 "PyTorch is not installed. Install it using conda install -c pytorch pytorch torchvision"
@@ -48,11 +47,11 @@ class ChildImageClassifier:
             )
 
         self.automl = AutoML.from_model(emd_path=model)
+        self._learnmodel = self.automl
         # self.model = self.pix2pix_hd.learn.model.to(self.device)
         # self.model.eval()
 
     def getParameterInfo(self, required_parameters):
-
         band_cnt = 0
         for col in self.json_info["_raster_field_variables"]:
             required_parameters.extend(
@@ -72,7 +71,6 @@ class ChildImageClassifier:
         return required_parameters
 
     def getConfiguration(self, **scalars):
-
         self.scalars = scalars
 
         return {"fixedTileSize": 1}

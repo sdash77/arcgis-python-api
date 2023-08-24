@@ -1,6 +1,5 @@
 import arcgis as _arcgis
-from ._arcgis_model import ArcGISModel
-from ._timm_utils import timm_config, filter_timm_models, _get_feature_size
+from ._arcgis_model import ArcGISModel, _change_tail
 from ..._impl.common._deprecate import deprecated
 from .._data import _check_esri_files, _raise_fastai_import_error
 import random
@@ -9,6 +8,7 @@ import traceback
 
 try:
     import pandas
+    import gc
     import tempfile
     import numpy as np
     import json
@@ -30,7 +30,8 @@ try:
     from fastai.vision.image import open_image
     from fastai.data_block import MultiCategoryList
     from fastai.vision.data import ImageDataBunch, ImageList
-    from fastai.vision import imagenet_stats, normalize
+    from fastai.vision import imagenet_stats, normalize, flatten_model
+    from fastai.torch_core import split_model_idx
     from fastai.basic_train import Learner, LearnerCallback
     from torch.utils.data.sampler import WeightedRandomSampler
     from fastai.vision.learner import (
@@ -38,18 +39,14 @@ try:
         ClassificationInterpretation,
         cnn_config,
     )
-    from ._arcgis_model import _set_multigpu_callback, _resnet_family
+    from ._arcgis_model import _set_multigpu_callback, _resnet_family, _get_device
     from fastai.vision.transform import (
         crop,
         rotate,
         dihedral_affine,
         brightness,
         contrast,
-        skew,
-        rand_zoom,
-        get_transforms,
     )
-    import torch.nn.functional as functional
     import glob
     import time
     import xml.etree.ElementTree as ElementTree
@@ -59,12 +56,25 @@ try:
     from .._utils.common import (
         get_multispectral_data_params_from_emd,
         _get_emd_path,
-        image_batch_stretcher,
     )
     from .._utils.env import is_arcgispronotebook
     from matplotlib import pyplot as plt
     from .._utils.image_classification import adapt_fastai_databunch
     import copy
+    import timm
+    from ._timm_utils import (
+        timm_config,
+        filter_timm_models,
+        _get_feature_size,
+        test_cnn_trnsfrmr,
+        gradcam_trnsfrmr,
+        reshape_tensor,
+        complete_transformer_backbone_name,
+    )
+    from fastai.vision import learner
+
+    learner._test_cnn = test_cnn_trnsfrmr
+    ClassificationInterpretation.GradCAM = gradcam_trnsfrmr
 
     HAS_FASTAI = True
 except Exception as e:
@@ -158,7 +168,7 @@ class FeatureClassifier(ArcGISModel):
     def __init__(
         self,
         data,
-        backbone=None,
+        backbone="resnet34",
         pretrained_path=None,
         mixup=False,
         oversample=False,
@@ -166,18 +176,25 @@ class FeatureClassifier(ArcGISModel):
         *args,
         **kwargs,
     ):
-
         # condition when databunch is from fastai
         # it will not contain class_mapping
         if not hasattr(data, "class_mapping"):
             data = adapt_fastai_databunch(data)
+
+        self._free_memory()
+        backbone = complete_transformer_backbone_name(backbone, data.chip_size)
+        if not self._check_backbone_support(backbone):
+            raise Exception(
+                f"Enter only compatible backbones from {', '.join(self.supported_backbones)}"
+            )
+
+        self._check_dataset_support(data)
 
         self._backend = backend
         if self._backend == "tensorflow":
             super().__init__(data, None)
             self._intialize_tensorflow(data, backbone, pretrained_path, mixup, kwargs)
         else:
-
             super().__init__(data, backbone, pretrained_path=pretrained_path, **kwargs)
             data = self._data
 
@@ -194,13 +211,6 @@ class FeatureClassifier(ArcGISModel):
             if _backbone == models.mobilenet_v2:
                 backbone_cut = -1
                 backbone_split = _mobilenet_split
-
-            if not self._check_backbone_support(_backbone):
-                raise Exception(
-                    f"Enter only compatible backbones from {', '.join(self.supported_backbones)}"
-                )
-
-            self._check_dataset_support(self._data)
 
             self._code = feature_classifier_prf
 
@@ -239,14 +249,42 @@ class FeatureClassifier(ArcGISModel):
             else:
                 head = None
 
-            self.learn = cnn_learner(
-                data,
-                self._backbone,
-                metrics=metrics,
-                cut=backbone_cut,
-                split_on=backbone_split,
-                custom_head=head,
+            self._transformer = (
+                type(backbone) is str
+                and backbone in FeatureClassifier._transformer_backbone_original_names()
             )
+
+            if self._transformer:
+                from ._timm_utils import create_transformer_FeatureClassifier
+
+                trnsfrmr_model = create_transformer_FeatureClassifier(
+                    self._backbone.__name__,
+                    num_classes=data.c,
+                    img_size=self._data.chip_size,
+                    pretrained=True,
+                )
+                if self._is_multispectral:
+                    trnsfrmr_model = _change_tail(trnsfrmr_model, data)
+
+                self.learn = Learner(
+                    data,
+                    model=trnsfrmr_model,
+                    metrics=metrics,
+                )
+                idx = self._freeze()
+                if trnsfrmr_model[0].__class__.__name__ == "CoaT":
+                    idx = 8
+                self.learn.layer_groups = split_model_idx(self.learn.model, [idx])
+                self.learn.create_opt(lr=3e-3)
+            else:
+                self.learn = cnn_learner(
+                    data,
+                    self._backbone,
+                    metrics=metrics,
+                    cut=backbone_cut,
+                    split_on=backbone_split,
+                    custom_head=head,
+                )
             if oversample:
                 self.learn.callbacks.append(OverSamplingCallback(self.learn))
             self._arcgis_init_callback()  # make first conv weights learnable
@@ -279,6 +317,29 @@ class FeatureClassifier(ArcGISModel):
     def __repr__(self):
         return "<%s>" % (type(self).__name__)
 
+    def _freeze(self):
+        layers = flatten_model(self.learn.model[0])
+        idx = len(layers) // 2
+        start_idx = 0
+        if self._is_multispectral:
+            start_idx = 1
+        for layer in layers[start_idx:idx]:
+            if (
+                isinstance(layer, (torch.nn.BatchNorm2d))
+                or isinstance(layer, (fastai.torch_core.ParameterModule))
+                or isinstance(layer, (torch.nn.BatchNorm1d))
+                or isinstance(layer, (torch.nn.LayerNorm))
+            ):
+                continue
+            for p in layer.parameters():
+                p.requires_grad = False
+
+        return idx
+
+    def _free_memory(self):
+        gc.collect()
+        torch.cuda.empty_cache()
+
     @staticmethod
     def _available_metrics():
         return ["valid_loss", "accuracy"]
@@ -289,6 +350,45 @@ class FeatureClassifier(ArcGISModel):
         return FeatureClassifier._supported_backbones()
 
     @staticmethod
+    def transformer_backbones():
+        from ._timm_utils import shortened_transformer_backbone
+
+        transformer_model = shortened_transformer_backbone()
+        transformer_model_name = [
+            "*coat*",
+            "*convit*",
+            "*levit*",
+            "*twins*",
+            "*visformer*",
+        ]
+        for tr in transformer_model_name:
+            transformer_model.extend(timm.list_models(tr, pretrained=True))
+        transformer_model = sorted(transformer_model, key=lambda x: x.split("_")[0])
+        transformer_model = list(map(lambda m: "timm:" + m, transformer_model))
+        return transformer_model
+
+    @staticmethod
+    def _transformer_backbone_original_names():
+        """Supported list of transformer backbones for this model."""
+        transformer_model_name = [
+            "*cait*",
+            "*coat*",
+            "*convit*",
+            "*deit*",
+            "*levit*",
+            "*pit*",
+            "*swin*",
+            "*tnt*",
+            "*twins*",
+            "*visformer*",
+            "vit_*",
+        ]
+        trnsfrmr_model = []
+        for tr in transformer_model_name:
+            trnsfrmr_model.extend(timm.list_models(tr, pretrained=True))
+        return list(map(lambda m: "timm:" + m, trnsfrmr_model))
+
+    @staticmethod
     def backbones():
         """Supported list of backbones for this model."""
         return FeatureClassifier._supported_backbones()
@@ -297,7 +397,10 @@ class FeatureClassifier(ArcGISModel):
     def _supported_backbones():
         timm_models = filter_timm_models(["*repvgg*", "*tresnet*"])
         timm_backbones = list(map(lambda m: "timm:" + m, timm_models))
-        return [*_resnet_family, models.mobilenet_v2.__name__] + timm_backbones
+        transformer_backbones = FeatureClassifier._transformer_backbone_original_names()
+        return [*_resnet_family, models.mobilenet_v2.__name__] + sorted(
+            timm_backbones + transformer_backbones
+        )
 
     @property
     def supported_datasets(self):
@@ -387,7 +490,7 @@ class FeatureClassifier(ArcGISModel):
 
         with io.capture_output() as captured:
             self.plot_confusion_matrix()
-            plt.savefig(os.path.join(path, "confusion_matrix.png"))
+            plt.savefig(os.path.join(path, "confusion_matrix.png"), bbox_inches="tight")
             plt.close()
 
     @property
@@ -415,7 +518,7 @@ class FeatureClassifier(ArcGISModel):
             chip_size = self._data.chip_size
             if not isinstance(chip_size, tuple):
                 chip_size = (chip_size, chip_size)
-        num_input_channels = list(self.learn.model.parameters())[0].shape[1]
+        num_input_channels = len(getattr(self._data, "_extract_bands", [0, 1, 2]))
         inp = torch.randn([1, num_input_channels, chip_size[0], chip_size[1]]).to(cpu)
         inp_np = inp.detach().cpu().numpy()
         base = f"{name}-base"
@@ -598,6 +701,7 @@ class FeatureClassifier(ArcGISModel):
             data.emd_path = emd_path
             data.emd = emd
             data = get_multispectral_data_params_from_emd(data, emd)
+            data.device = _get_device()
 
         resize_to = emd.get("resize_to")
         data.resize_to = resize_to
@@ -986,7 +1090,6 @@ class FeatureClassifier(ArcGISModel):
         confidence_field=None,
         predict_function=_prediction_function,
     ):
-
         features = feature_layer.query().features
         features_to_update = []
 
@@ -1088,7 +1191,6 @@ class FeatureClassifier(ArcGISModel):
         confidence_field=None,
         predict_function=None,
     ):
-
         """
         Deprecated in ArcGIS version 1.9.1 and later: Use the Classify Objects Using Deep Learning tool or :meth:`~arcgis.learn.classify_objects`
 
@@ -1462,7 +1564,6 @@ class FeatureClassifier(ArcGISModel):
         batch_size,
         overwrite,
     ):
-
         # class values
         class_values = list(self._data.class_mapping.keys())
 
@@ -1697,8 +1798,12 @@ class FeatureClassifier(ArcGISModel):
                     preds = m(xb)
                     preds[0, cat1].backward()
         acts = hook_a.stored[0].cpu()  # activation maps
+        grad = hook_g.stored[0][0].cpu()
+        if self._transformer:
+            acts = reshape_tensor(acts)
+            grad = reshape_tensor(grad)
+
         if (acts.shape[-1] * acts.shape[-2]) >= heatmap_thresh:
-            grad = hook_g.stored[0][0].cpu()
             grad_chan = grad.mean(1).mean(1)
             mult = F.relu(((acts * grad_chan[..., None, None])).sum(0))
             if image:

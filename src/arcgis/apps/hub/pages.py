@@ -107,8 +107,8 @@ class Page(OrderedDict):
         slug                      Optional string. The slug or subdomain for the page.
         =====================     ====================================================================
 
-        To find the list of applicable options for argument page_properties -
-        https://esri.github.io/arcgis-python-api/apidoc/html/arcgis.gis.toc.html#arcgis.gis.Item.update
+        To find the list of applicable options for the `page_properties` argument, please see the `Item`
+        :meth:`~arcgis.gis.Item.update` method documentation.
 
         :return:
            A boolean indicating success (True) or failure (False).
@@ -173,16 +173,7 @@ class Page(OrderedDict):
         resources = self.item.resources.list()
         for resource in resources:
             if "draft-" in resource["resource"]:
-                path = (
-                    self._gis.url
-                    + "/sharing/rest/content/items/"
-                    + self.itemid
-                    + "/resources/"
-                    + resource["resource"]
-                    + "?token="
-                    + self._gis._con.token
-                )
-                self.item.resources.remove(file=path)
+                self.item.resources.remove(file=resource["resource"])
         # Update the data of the page
         self.definition["values"]["layout"] = layout._json()
         return self.item.update(item_properties={"text": self.definition})

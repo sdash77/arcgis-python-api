@@ -105,6 +105,7 @@ class GeoDaskSpatialAccessor:
     _name = None
     _sindex = None
     _renderer = None
+
     # ----------------------------------------------------------------------
     def __init__(self, obj):
         self._data = obj
@@ -742,7 +743,6 @@ class GeoDaskSpatialAccessor:
         if reset:
             self._sindex = None
         if self._sindex is None:
-
             results = (
                 self._data.map_partitions(
                     lambda part: self._fn_method(
@@ -955,7 +955,6 @@ class GeoDaskSpatialAccessor:
     # ----------------------------------------------------------------------
     @staticmethod
     def from_parquet(folder: str, ext: str = None):
-
         dfs = []
         from ._io._arrow import _read_parquet
 
@@ -1028,6 +1027,7 @@ class GeoDaskSeriesAccessor:
     _data = None
     _index = None
     _name = None
+
     # ----------------------------------------------------------------------
     def __init__(self, series: Series, *args, **kwargs):
         """initializer"""
@@ -1410,8 +1410,8 @@ class GeoDaskSeriesAccessor:
         ---------------     --------------------------------------------------------------------
         method              Optional String. PLANAR measurements reflect the projection of geographic
                             data onto the 2D surface (in other words, they will not take into
-                            account the curvature of the earth). GEODESIC, GREAT_ELLIPTIC,
-                            LOXODROME, and PRESERVE_SHAPE measurement types may be chosen as
+                            account the curvature of the earth). GEODESIC, GREAT_ELLIPTIC, and
+                            LOXODROME measurement types may be chosen as
                             an alternative, if desired.
         ===============     ====================================================================
 

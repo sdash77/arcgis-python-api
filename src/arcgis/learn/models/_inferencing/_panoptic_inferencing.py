@@ -34,7 +34,6 @@ except:
 
 
 def normalize_batch_imagenetstats(batch):
-
     imagenet_stats = [[0.485, 0.456, 0.406], [0.229, 0.224, 0.225]]
     mean = 255 * np.array(imagenet_stats[0], dtype=np.float32)
     std = 255 * np.array(imagenet_stats[1], dtype=np.float32)
@@ -81,7 +80,7 @@ def convert_bounding_boxes_to_coord_list(bounding_boxes):
     num_bounding_boxes = bounding_boxes.shape[0]
     bounding_box_coord_list = []
     for i in range(num_bounding_boxes):
-        coord_array = np.empty(shape=(4, 2), dtype=np.float)
+        coord_array = np.empty(shape=(4, 2), dtype=float)
         coord_array[0][0] = bounding_boxes[i][0]
         coord_array[0][1] = bounding_boxes[i][1]
 
@@ -222,7 +221,6 @@ def remove_bounding_boxes_in_padding(
 
 class ChildPanopticSegmenter:
     def initialize(self, model, model_as_file):
-
         if not HAS_TORCH:
             raise Exception(
                 "PyTorch is not installed. Install it using conda install -c pytorch pytorch torchvision"
@@ -249,6 +247,7 @@ class ChildPanopticSegmenter:
 
         self.json_emd_file = Path(model).parent
         self.model_extension = ModelExtension.from_model(emd_path=model)
+        self._learnmodel = self.model_extension
         self.model = self.model_extension.learn.model.to(self.device)
         self.model.eval()
 
@@ -361,7 +360,6 @@ class ChildPanopticSegmenter:
         }
 
     def vectorize(self, **pixelBlocks):  # 8 x 3 x 224 x 224
-
         input_image = pixelBlocks["raster_pixels"].astype(np.float32)
         batch, batch_height, batch_width = tile_to_batch(
             input_image,
@@ -461,7 +459,6 @@ class ChildPanopticSegmenter:
         return all_activations
 
     def updatePixelsTTA(self, tlc, shape, props, **pixelBlocks):  # 8 x 224 x 224 x 3
-
         model_info = self.json_info
 
         input_image = pixelBlocks["raster_pixels"].astype(np.float32)
@@ -522,7 +519,6 @@ def detect_object_mask(
     is_contig,
     pred_batch,
 ):
-
     tile_height, tile_width = images.shape[2], images.shape[3]
     side = math.sqrt(batch_size)
     N = model_info["Kwargs"]["n_masks"]
@@ -577,7 +573,6 @@ def detect_object_mask(
 
         # handle for prediction with n masks
         if masks.shape[0] != 0:
-
             # for mask dimension hxw (in case of only one predicted mask)
             if len(masks.shape) == 2:
                 masks = masks[None]

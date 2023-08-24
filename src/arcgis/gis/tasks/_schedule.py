@@ -5,6 +5,7 @@ from arcgis.gis import GIS, User, Item
 from arcgis._impl.common._isd import InsensitiveDict
 from arcgis._impl.common._utils import local_time_to_online
 
+
 ###########################################################################
 class BaseTask(object):
     """
@@ -54,6 +55,7 @@ class Run(BaseTask):
 
     _gis = None
     _url = None
+
     # ----------------------------------------------------------------------
     def __init__(self, url: str, gis: GIS):
         super(Run, self)
@@ -102,7 +104,13 @@ class Run(BaseTask):
 
         """
         params = {"f": "json"}
-        status_values = ["scheduled", "executing", "succeeded", "failed", "skipped"]
+        status_values = [
+            "scheduled",
+            "executing",
+            "succeeded",
+            "failed",
+            "skipped",
+        ]
         if status is None and description is None:
             return False
         if status and status.lower() in status_values:
@@ -241,7 +249,15 @@ class Task(BaseTask):
         ------------------     --------------------------------------------------------------------
         cron                   Optional String. The executution time syntax.
         ------------------     --------------------------------------------------------------------
-        task_type              Optional String. The type of task. Two valid options are
+        task_type              Required String. The type of task, either executing a notebook or
+                               updating an Insights workbook, that will be executed against the
+                               specified item.  For notebook server tasks use ``ExecuteNotebook``,
+                               for Insights notebook use: ``UpdateInsightsWorkbook``. Use
+                               ``ExecuteSceneCook`` to cook scene tiles. Use ``ExecuteWorkflowManager``
+                               to run workflow manager tasks.
+                               Values: `ExecuteNotebook`, `UpdateInsightsWorkbook`,
+                               `ExecuteSceneCook`, `ExecuteWorkflowManager`, `ExecuteReport`, or
+                               `GPService`ns are
                                ``ExecuteNotebook`` or ``UpdateInsightsWorkbook``
         ------------------     --------------------------------------------------------------------
         occurences             Optional Integer. The maximum number of occurrences this task should execute.
@@ -480,6 +496,9 @@ class TaskManager(object):
                                for Insights notebook use: ``UpdateInsightsWorkbook``. Use
                                ``ExecuteSceneCook`` to cook scene tiles. Use ``ExecuteWorkflowManager``
                                to run workflow manager tasks.
+                               Values: `ExecuteNotebook`, `UpdateInsightsWorkbook`,
+                               `ExecuteSceneCook`, `ExecuteWorkflowManager`, `ExecuteReport`, or
+                               `GPService`
         ------------------     --------------------------------------------------------------------
         occurences             Optional Integer. The total number of instance that can run at a single time.
         ------------------     --------------------------------------------------------------------

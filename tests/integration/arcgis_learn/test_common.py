@@ -14,24 +14,25 @@ from fastai.vision.learner import ClassificationInterpretation
 import random
 import string
 import glob
+import gc
 from sys import platform
 import pandas as pd
 from integration.arcgis_learn.properties import (
-        data,
-        data_folder,
-        setuposenviron,
-        data_folder_ms,
-        data_inference_only
-    )
-from arcgis.learn import classify_pixels, detect_objects, classify_objects, ImageryModel
+    data,
+    data_folder,
+    setuposenviron,
+    data_folder_ms,
+    data_inference_only,
+)
+from arcgis.learn import classify_pixels, detect_objects, classify_objects
 from arcgis.learn import prepare_data, prepare_tabulardata, prepare_textdata
+from arcgis.learn import AutoDL, ImageryModel
+
 
 import_exception = None
 
 try:
-    import fastai
     import torch
-    import torchvision
 
     HAS_DEPS = True
     print(" ================= Modules Imported ==============")
@@ -48,16 +49,18 @@ parameter_fl = []
 parameter_df = []
 # parameter_autodl = []
 parameter_text = []
+parameter_autodl = []
 authorization_data = {}
 check_ms = False
 current_path = ""
 success_flag = False
 if not HAS_DEPS:
     print("**Environment fails**")
+    module_skip = True
     raise Exception(
         f"""{import_exception} \n\nThis module requires fastai, PyTorch, torchvision and scikit-image as its dependencies."""
     )
-    module_skip = True
+
 else:
     from arcgis.gis import GIS
     from arcgis.features import FeatureLayerCollection
@@ -88,6 +91,7 @@ accuracy_values = {
         "changedetection": 0,
         "mtre": 0,
         "sequencetosequence": 0,
+        "textclassifier": 0,
         "timeseriesmodel": 0,
         "zeroshotclassifier": 0,
         "questionanswering": 0,
@@ -100,8 +104,8 @@ accuracy_values = {
         "mmdetection": 0,
         "mlmodel": 0,
         "automl": 0,
-        "maxdeeplab":0,
-        "detreg":0,
+        "maxdeeplab": 0,
+        "detreg": 0,
     }
 }
 
@@ -117,7 +121,7 @@ success_stat = {
         "pc": 0,
         "co_total": 1,
         "co": 0,
-        "text_total": 8,
+        "text_total": 9,
         "text": 0,
         "others_total": 10,
         "others": 0,
@@ -162,10 +166,11 @@ def updateModelStats():
     data.edit_features(deletes=ind[:])
     data.edit_features(adds=[success_stat])
 
+
 def updateFailureModels():
     gis = GIS(
         "https://deldev.maps.arcgis.com",
-         "demos_deldev",
+        "demos_deldev",
         "DelDevs.1234",
     )
     item = gis.content.get("cd08c8edfb2f401bb0df1aafa6ce36af")
@@ -182,25 +187,30 @@ def updateFailureModels():
     if len(failure_models) > 0:
         for model, accuracy in zip(failure_models, failure_score):
             if model in failed_models:
-                failing_since = sdf.loc[sdf["ModelName"] ==model]["FailingSince"][0]
+                failing_since = sdf.loc[sdf["ModelName"] == model]["FailingSince"][0]
             else:
                 failing_since = convertdate(datetime.today())
             failed_model_data = {
-                    "attributes": {
-                        "ModelName": model,
-                        "Accuracy":accuracy,
-                        "FailingSince": failing_since
-                    }
+                "attributes": {
+                    "ModelName": model,
+                    "Accuracy": accuracy,
+                    "FailingSince": failing_since,
                 }
-            data.edit_features(adds= [failed_model_data])
+            }
+            data.edit_features(adds=[failed_model_data])
     else:
-        data.edit_features(adds= [{
+        data.edit_features(
+            adds=[
+                {
                     "attributes": {
                         "ModelName": "No Failure Case",
-                        "Accuracy":0,
-                        "FailingSince": convertdate(datetime.today())
+                        "Accuracy": 0,
+                        "FailingSince": convertdate(datetime.today()),
                     }
-                }])
+                }
+            ]
+        )
+
 
 def CommonTestUsingDF(
     query,
@@ -212,7 +222,7 @@ def CommonTestUsingDF(
     data_path,
     model_test,
     data_folder_path,
-    self_obj
+    self_obj,
 ):
     from sklearn.preprocessing import MinMaxScaler
     import pandas as pd
@@ -228,34 +238,43 @@ def CommonTestUsingDF(
     result = 0.0
 
     X = [
-        ("county", True),
-        ("state", True),
-        "gender_med",
-        "householdi",
-        "electronic",
-        "raceandhis",
-        ("voter_laws", True),
-        "educationa",
-        "educatio_1",
+        ("Age", True),
+        ("Workclass", True),
+        ("Education", True),
+        "Education_num",
+        ("Marital_status", True),
+        ("Occupation", True),
+        ("Relationship", True),
+        ("Race", True),
+        ("Gender", True),
+        "Capital_gain",
+        "Capital_loss",
+        "Hours_per_week",
+        ("Native_country", True),
     ]
+
     preprocessors = [
         (
-            "county",
-            "state",
-            "gender_med",
-            "householdi",
-            "electronic",
-            "raceandhis",
-            "voter_laws",
-            "educationa",
-            "educatio_1",
+            "Hours_per_week",
+            "Capital_gain",
+            "Capital_loss",
+            "Age",
+            "Workclass",
+            "Education",
+            "Marital_status",
+            "Occupation",
+            "Relationship",
+            "Race",
+            "Gender",
+            "Native_country",
+            "Education_num",
             MinMaxScaler(),
         )
     ]
 
     data_base_model = prepare_tabulardata(
         sdf_train_base,
-        variable_predict="voter_turn",
+        variable_predict="Salary",
         explanatory_variables=X,
         preprocessors=preprocessors,
     )
@@ -263,17 +282,12 @@ def CommonTestUsingDF(
     if model_name == "mlmodel":
         model_object = model_type(
             data_base_model,
-            "sklearn.ensemble.RandomForestRegressor",
-            n_estimators=500,
+            "sklearn.tree.DecisionTreeClassifier",
             random_state=43,
         )
     else:
         model_object = model_type(
-            data_base_model,
-            eval_metric="r2",
-            mode="Explain",
-            total_time_limit=300,
-            algorithms=["Linear"],
+            data_base_model
         )
 
     model_object.fit()
@@ -305,27 +319,25 @@ def CommonTestUsingDF(
         os.path.join(data_folder_path, data_path, f"{model_test}/{model_test}.emd")
     )
 
-# def CommonTestAutoDL(
-#     model_name,
-#     datapath,
-#     datapath_ms,
-#     model,
-#     model_test,
-#     prepare_data_rgb,
-#     prepare_data_ms,
-#     network,
-#     time,
-# ):
-#     data = prepare_data(**prepare_data_rgb)
-#     model_object = model(data, total_time_limit=1)
-#     model_object.fit()
-#     best_model_path = os.path.join(data_folder, datapath, 'models', '*AutoDL_'+model_object.best_model+'*', '*emd')
-#     emd_path = glob.glob(best_model_path)[0]
-#     img_model = ImageryModel()
-#     img_model.load(emd_path, data)
-#     img_model.fit()
-#     fine_tuned_model = os.path.join(data_folder, datapath, 'models', 'fine_tuned_model')
-#     img_model.save(fine_tuned_model)
+
+def CommonTestAutoDL(prepare_data_rgb, model, network, time, datapath):
+    data = prepare_data(**prepare_data_rgb)
+    model_object = model(data, total_time_limit=time, network=network)
+    model_object.fit()
+    best_model_path = os.path.join(
+        data_folder,
+        datapath,
+        "models",
+        "*AutoDL_" + model_object.best_model + "*",
+        "*emd",
+    )
+    emd_path = glob.glob(best_model_path)[0]
+    img_model = ImageryModel()
+    img_model.load(emd_path, data)
+    img_model.fit()
+    fine_tuned_model = os.path.join(data_folder, datapath, "models", "fine_tuned_model")
+    img_model.save(fine_tuned_model)
+
 
 # def CommonTestAutoDLMS(
 #     model_name,
@@ -348,6 +360,7 @@ def CommonTestUsingDF(
 #     img_model.fit()
 #     fine_tuned_model = os.path.join(data_folder_ms, datapath_ms, 'models', 'fine_tuned_model')
 #     img_model.save(fine_tuned_model)
+
 
 def CommonTestUsingFL(
     query,
@@ -459,12 +472,13 @@ def commonTestCases(
     ms_flag,
     current_path,
     num_epochs,
-    self_obj
+    self_obj,
 ):
     global success_flag
     success_flag = False
     from arcgis.learn import prepare_data
-    if model_test == "sequencetosequence_test":
+
+    if model_test == "sequencetosequence_test" or model_test == "textclassifier_test":
         data = prepare_textdata(**preparedata)
     elif model_test == "timeseriesmodel_test":
         from arcgis.learn import prepare_tabulardata
@@ -489,6 +503,8 @@ def commonTestCases(
     elif model_test == "mmsegmentation_test" or model_test == "mmdetection_test":
         all_models = model_type.supported_models
         model_object = model_type(data, model=all_models[0])
+    elif model_test == "psetae_test":
+        model_object = model_type(data, gamma=2, dropout=0.2)
     else:
         model_object = model_type(data)
 
@@ -498,7 +514,6 @@ def commonTestCases(
     # Fit for 1 epochs without LR.
     model_object.fit(1)
     # # Fit for 1 epochs with LR.
-    model_object.fit(1, lr=0.001)
 
     # save model
     d_path = os.path.join(data_folder, data_path, "models", model_test)
@@ -515,6 +530,7 @@ def commonTestCases(
             model_object = model_type(data, backbone=str(backbone))
             model_object.fit(1)
             model_object.save(model_test + "_" + str(backbone))
+            gc.collect()
             torch.cuda.empty_cache()
 
     if os.environ.get("run_nightly") == "1":
@@ -660,7 +676,6 @@ def commonTestCases(
                 )
 
         elif inferencing_parameter["model_type"] == "ClassifyPixelsUsingDeepLearning":
-
             model_path = os.path.join(
                 current_path, data_path, f"models/{model_test}/{model_test}.dlpk"
             )
@@ -700,7 +715,6 @@ def commonTestCases(
                 )
 
         elif inferencing_parameter["model_type"] == "ClassifyObjectsUsingDeepLearning":
-
             model_path = os.path.join(
                 current_path, data_path, f"models/{model_test}/{model_test}.dlpk"
             )
@@ -770,6 +784,8 @@ def commonTestCases(
     )
 
     del model_object
+    gc.collect()
+    torch.cuda.empty_cache()
 
     success_flag = True
 
@@ -910,12 +926,66 @@ def update_parameter_df():
     return parameter_df
 
 
+# def efficientnet_main():
+#     from integration.arcgis_learn.properties import *
+
+
 def text_models():
     for key, val in data_inference_only.items():
         parameter_text.append(
             [key, val["model_name"], val["model"], val["data"], val["labels"]]
         )
     return parameter_text
+
+
+def autodl_main():
+    autodl_data = [
+        os.path.join(data_folder, "autodl_data", "classified_tiles"),
+        os.path.join(data_folder, "autodl_data", "palm_trees"),
+    ]
+    autodl_pretrained_model = [
+        os.path.join(
+            data_folder,
+            "autodl_data",
+            "unet_model",
+            "AutoDL_UnetClassifier_resnet34.emd",
+        ),
+        os.path.join(
+            data_folder,
+            "autodl_data",
+            "ssd_model",
+            "AutoDL_SingleShotDetector_resnet34.emd",
+        ),
+    ]
+    autodl_model = ["DeepLab", "SingleShotDetector"]
+    for ind in range(0, 2):
+        path = autodl_data[ind]
+        data = prepare_data(path, batch_size=None)
+        dl = AutoDL(
+            data,
+            total_time_limit=0.25,
+            verbose=True,
+            network=[autodl_model[ind]],
+            mode="basic",
+        )
+        dl.fit()
+        dl.score()
+        dl.supported_classification_models()
+        dl.supported_detection_models()
+        dl.average_precision_score()
+        dl.lr_find()
+        dl.BestPerformingModel
+        dl.mIOU()
+        del dl
+        gc.collect()
+        torch.cuda.empty_cache()
+        im = ImageryModel()
+        im.load(autodl_pretrained_model[ind], data)
+        im.fit(3)
+        im.save("test_dl")
+        del im
+        gc.collect()
+        torch.cuda.empty_cache()
 
 
 class TestTraining(unittest.TestCase):
@@ -936,7 +1006,14 @@ class TestTraining(unittest.TestCase):
             success_stat["attributes"]["pass"] = success_stat["attributes"]["pass"] + 1
             if test_name == "ms":
                 pass
-            elif test_name in ["ssd", "rn", "fasterrcnn", "yolov3", "maskrcnn", "detreg"]:
+            elif test_name in [
+                "ssd",
+                "rn",
+                "fasterrcnn",
+                "yolov3",
+                "maskrcnn",
+                "detreg",
+            ]:
                 success_stat["attributes"]["od"] = success_stat["attributes"]["od"] + 1
             elif test_name in [
                 "unet",
@@ -949,7 +1026,7 @@ class TestTraining(unittest.TestCase):
                 "bdcnedgedetector",
                 "changedetection",
                 "mtre",
-                "maxdeeplab"
+                "maxdeeplab",
             ]:
                 success_stat["attributes"]["pc"] = success_stat["attributes"]["pc"] + 1
             elif test_name in ["fc"]:
@@ -957,6 +1034,7 @@ class TestTraining(unittest.TestCase):
             elif test_name in [
                 "ner",
                 "sequencetosequence",
+                "textclassifer",
                 "zeroshotclassifier",
                 "questionanswering",
                 "textsummarizer",
@@ -988,6 +1066,7 @@ class TestTraining(unittest.TestCase):
             success_stat["attributes"]["fail"] = success_stat["attributes"]["fail"] + 1
             print("Method is a failure")
             print(self._testMethodName)
+        gc.collect()
         torch.cuda.empty_cache()
         for key, val in data.items():
             os.system(
@@ -1064,7 +1143,7 @@ class TestTraining(unittest.TestCase):
             ms_flag,
             data_folder_path,
             num_epochs,
-            self
+            self,
         )
 
     @unittest.skipIf(module_skip, "Preconditions not met, skipping test")
@@ -1116,21 +1195,24 @@ class TestTraining(unittest.TestCase):
         data_folder_path,
     ):
         CommonTestUsingDF(
-                query,
-                model_type,
-                prepare_tabular_data,
-                regression_parameter,
-                regression_test_score,
-                model_name,
-                data_path,
-                model_test,
-                data_folder_path,
-                self
-            )
+            query,
+            model_type,
+            prepare_tabular_data,
+            regression_parameter,
+            regression_test_score,
+            model_name,
+            data_path,
+            model_test,
+            data_folder_path,
+            self,
+        )
 
+    def test_autodl(self):
+        autodl_main()
 
     @classmethod
     def tearDownClass(cls):
+        gc.collect()
         torch.cuda.empty_cache()
         for key, val in data.items():
             try:
@@ -1149,6 +1231,7 @@ class TestTraining(unittest.TestCase):
 
 ## Remove all model directories
 def tearDownModule():
+    gc.collect()
     torch.cuda.empty_cache()
     if os.environ.get("run_nightly") == "1":
         print("Updating feature layer for accuracy dashboard\n")

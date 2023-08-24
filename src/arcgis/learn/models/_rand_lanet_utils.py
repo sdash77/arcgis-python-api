@@ -31,14 +31,19 @@ from fastai.torch_core import data_collate
 import types
 from functools import partial
 from ._pointcnn_utils import get_indices
-from .._utils.nearest_neighbors import knn_batch as knn_search
+
+try:
+    from .._utils.nearest_neighbors import knn_batch as knn_search
+except Exception:
+    raise Exception(
+        f"The arcgis package was not installed, correctly(knn). Use deep learning essentials metapackage from https://github.com/Esri/deep-learning-frameworks"
+    )
 from functools import partial
 
 knn_search = partial(knn_search, omp=True)
 
 
 def input_dict(input_list, cfg, is_sqn=False):
-
     num_layers = cfg["num_layers"]
     inputs = {}
     inputs["xyz"] = []
@@ -103,7 +108,6 @@ def batch_preprocess_dict(batch_pc, cfg, is_sqn=False):
 
 
 def transform_data(input, target, sample_point_num, cfg, **kwargs):
-
     (
         input,
         point_nums,
@@ -379,7 +383,6 @@ class Att_pooling(nn.Module):
         self.mlp = Conv2d(d_in, d_out, kernel_size=(1, 1), bn=True)
 
     def forward(self, feature_set):
-
         att_activation = self.fc(feature_set)
         att_scores = F.softmax(att_activation, dim=3)
         f_agg = feature_set * att_scores
@@ -398,7 +401,7 @@ class SharedMLP(nn.Sequential):
         preact: bool = False,
         first: bool = False,
         name: str = "",
-        instance_norm: bool = False
+        instance_norm: bool = False,
     ):
         super().__init__()
 
@@ -524,7 +527,7 @@ class Conv1d(_ConvBase):
         bias: bool = True,
         preact: bool = False,
         name: str = "",
-        instance_norm=False
+        instance_norm=False,
     ):
         super().__init__(
             in_size,
@@ -560,7 +563,7 @@ class Conv2d(_ConvBase):
         bias: bool = True,
         preact: bool = False,
         name: str = "",
-        instance_norm=False
+        instance_norm=False,
     ):
         super().__init__(
             in_size,
@@ -591,7 +594,7 @@ class FC(nn.Sequential):
         bn: bool = False,
         init=None,
         preact: bool = False,
-        name: str = ""
+        name: str = "",
     ):
         super().__init__()
 

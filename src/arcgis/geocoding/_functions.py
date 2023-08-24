@@ -44,7 +44,9 @@ class Geocoder(_GISResource):
         """
         super(Geocoder, self).__init__(location, gis)
         try:
-            from arcgis.gis.server._service._adminfactory import AdminServiceGen
+            from arcgis.gis.server._service._adminfactory import (
+                AdminServiceGen,
+            )
 
             self.service = AdminServiceGen(service=self, gis=gis)
         except:
@@ -245,7 +247,7 @@ class Geocoder(_GISResource):
         if not distance is None:
             params["distance"] = distance
         if not out_sr is None:
-            params["outSr"] = out_sr
+            params["outSR"] = out_sr
         if not category is None:
             params["category"] = category
         if out_fields is None:
@@ -273,7 +275,10 @@ class Geocoder(_GISResource):
                 geom = c["location"]
                 geom["spatialReference"] = sr
                 features.append(
-                    {"geometry": Geometry(geom), "attributes": c["attributes"]}
+                    {
+                        "geometry": Geometry(geom),
+                        "attributes": c["attributes"],
+                    }
                 )
 
             return FeatureSet(
@@ -337,7 +342,12 @@ class Geocoder(_GISResource):
             geom = copy.copy(resp["location"])
             del resp["location"]
             fs = FeatureSet(
-                features=[{"geometry": Geometry(geom), "attributes": resp["address"]}]
+                features=[
+                    {
+                        "geometry": Geometry(geom),
+                        "attributes": resp["address"],
+                    }
+                ]
             )
             return fs
         return resp
@@ -462,7 +472,10 @@ class Geocoder(_GISResource):
                         geom["spatialReference"] = sr
                     att = location["attributes"]
                     if geom:
-                        matches[idx] = {"geometry": Geometry(geom), "attributes": att}
+                        matches[idx] = {
+                            "geometry": Geometry(geom),
+                            "attributes": att,
+                        }
                     else:
                         matches[idx] = {"geometry": None, "attributes": att}
                 return FeatureSet(features=matches, spatial_reference=sr)
@@ -1056,7 +1069,6 @@ def geocode_from_items(
         if gis._con.token:
             kwargs["input_table"]["serviceToken"] = gis._con.token
         if geocode_parameters is None:
-
             kwargs["geocode_parameters"] = analyze_geocode_input(
                 input_table_or_item=lyr,
                 geocode_service_url=geocode_service_url,
@@ -1096,7 +1108,6 @@ def geocode_from_items(
         "XLSX",
         "xlsx",
     ]:
-
         if header_rows_to_skip is None:
             hre = "false"
         else:
@@ -1110,7 +1121,6 @@ def geocode_from_items(
         output_type = "Feature Service"
         kwargs["output_type"] = "Feature Service"
         if output_name is None:
-
             kwargs["output_name"] = {
                 "serviceProperties": {"name": "Geocoded_Feature_Service_%s" % uid}
             }

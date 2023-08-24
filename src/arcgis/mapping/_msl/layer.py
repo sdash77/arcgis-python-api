@@ -22,6 +22,7 @@ from arcgis.geometry import SpatialReference
 from arcgis.gis import Item, Layer
 from arcgis.mapping import MapImageLayer
 
+
 ###########################################################################
 class MapFeatureLayer(Layer):
     """
@@ -39,6 +40,7 @@ class MapFeatureLayer(Layer):
     _dynamic_layer = None
     _attachments = None
     _time_filter = None
+
     # ----------------------------------------------------------------------
     def __init__(self, url, gis=None, container=None, dynamic_layer=None):
         """
@@ -300,7 +302,6 @@ class MapFeatureLayer(Layer):
 
         folder = "images"
         for row in dataframe_merged.iterrows():
-
             if label_field is not None:
                 folder = row[1][label_field]
 
@@ -884,8 +885,8 @@ class MapFeatureLayer(Layer):
                                             an array.
 
                                             .. note::
-                                                Check `parameterInfos` at the `layer resources <`Query (Feature Service/Layer) https://developers.arcgis.com/rest/services-reference/enterprise/query-feature-service-layer-.htm>`_ for the available parameterized filters, their default values and
-                                                expected data type.
+                                                Check `parameterValues` at the `Query (Map Service/Layer) <https://developers.arcgis.com/rest/services-reference/enterprise/query-map-service-layer-.htm#GUID-403AC0F3-4B48-45BD-B473-E52E790FD296>`_
+                                                for details on parameterized filters.
         -------------------------------     --------------------------------------------------------------------
         kwargs                              Optional dict. Optional parameters that can be passed to the Query
                                             function.  This will allow users to pass additional parameters not
@@ -1146,13 +1147,12 @@ class MapFeatureLayer(Layer):
                         if fld in df.columns:
                             df[fld] = pd.to_datetime(
                                 df[fld] / 1000,
-                                infer_datetime_format=True,
                                 unit="s",
                             )
                     except:
                         if fld in df.columns:
                             df[fld] = pd.to_datetime(
-                                df[fld], infer_datetime_format=True
+                                df[fld],
                             )
                 return df
 
@@ -1204,7 +1204,6 @@ class MapFeatureLayer(Layer):
                     if len(records.features) < max_records:
                         break
                 else:
-
                     df = self._query_df(url, params)
                     count += len(df)
                     dfs.append(df)
@@ -1230,17 +1229,14 @@ class MapFeatureLayer(Layer):
                 df.spatial._meta.source = self
             for fld in dt_fields:
                 if fld in df.columns:
-
                     try:
                         df[fld] = pd.to_datetime(
                             df[fld] / 1000,
-                            infer_datetime_format=True,
                             unit="s",
                         )
                     except:
                         df[fld] = pd.to_datetime(
                             df[fld],
-                            infer_datetime_format=True,
                             errors="coerce",
                         )
             return df
@@ -1443,6 +1439,16 @@ class MapFeatureLayer(Layer):
         """returns results of query"""
         try:
             result = self._con.post(path=url, postdata=params, token=self._token)
+            if "exceededTransferLimit" in result:
+                while (
+                    "exceededTransferLimit" in result
+                    and result["exceededTransferLimit"] == True
+                ):
+                    params["resultRecordCount"] = params["resultRecordCount"] * 2
+                    result = self._con.post(
+                        path=url, postdata=params, token=self._token
+                    )
+
         except Exception as queryException:
             error_list = [
                 "Error performing query operation",
@@ -2215,14 +2221,11 @@ class MapTable(MapFeatureLayer):
                         if fld in df.columns:
                             df[fld] = pd.to_datetime(
                                 df[fld] / 1000,
-                                infer_datetime_format=True,
                                 unit="s",
                             )
                     except:
                         if fld in df.columns:
-                            df[fld] = pd.to_datetime(
-                                df[fld], infer_datetime_format=True
-                            )
+                            df[fld] = pd.to_datetime(df[fld])
                 return df
 
             return self._query(url, params, raw=as_raw)
@@ -2273,7 +2276,6 @@ class MapTable(MapFeatureLayer):
                     if len(records.features) < max_records:
                         break
                 else:
-
                     df = self._query_df(url, params)
                     count += len(df)
                     dfs.append(df)
@@ -2299,11 +2301,9 @@ class MapTable(MapFeatureLayer):
                 df.spatial._meta.source = self
             for fld in dt_fields:
                 try:
-                    df[fld] = pd.to_datetime(
-                        df[fld] / 1000, infer_datetime_format=True, unit="s"
-                    )
+                    df[fld] = pd.to_datetime(df[fld] / 1000, unit="s")
                 except:
-                    df[fld] = pd.to_datetime(df[fld], infer_datetime_format=True)
+                    df[fld] = pd.to_datetime(df[fld])
             return df
         return result
 
@@ -2397,5 +2397,8 @@ class MapServiceLayer(Layer, metaclass=_MSILayerFactory):
         Constructs a Map Services Layer given a URL and GIS
         """
         super(MapServiceLayer, self).__init__(
-            url=url, gis=gis, container=container, dynamic_layer=dynamic_layer
+            url=url,
+            gis=gis,
+            container=container,
+            dynamic_layer=dynamic_layer,
         )

@@ -8,7 +8,6 @@ import datetime
 from datetime import date
 import tempfile
 from contextlib import contextmanager
-import six
 import logging
 import decimal
 import functools
@@ -101,7 +100,6 @@ def inspect_function_inputs(fn, **params):
     import inspect
 
     try:
-
         args = list(inspect.signature(fn).parameters.keys()) + ["estimate"]
     except ValueError:
         args = inspect.getfullargspec(func=fn).args
@@ -118,6 +116,12 @@ def inspect_function_inputs(fn, **params):
 # ----------------------------------------------------------------------
 def _date_handler(obj):
     import numpy
+
+    npversion = [int(i) for i in numpy.__version__.split(".")]
+    if npversion < [1, 20, 0]:
+        FLOAT_CHECKER = (numpy.float, numpy.float32, numpy.float64)
+    else:
+        FLOAT_CHECKER = (float, numpy.float32, numpy.float64)
     from ._mixins import PropertyMap
 
     if type(obj) is datetime.date:
@@ -135,7 +139,7 @@ def _date_handler(obj):
         return _date_handler(int(obj))
     elif isinstance(obj, decimal.Decimal):
         return float(obj)
-    elif isinstance(obj, (numpy.float, numpy.float32, numpy.float64)):
+    elif isinstance(obj, FLOAT_CHECKER):
         return float(obj)
     elif isinstance(obj, numpy.ndarray):
         return obj.tolist()
@@ -275,7 +279,7 @@ def zipws(path, outfile, keep=True):
     """
     zipobj = zipfile.ZipFile(outfile, "w", zipfile.ZIP_DEFLATED)
     path = os.path.normpath(path)
-    for (dirpath, dirnames, filenames) in os.walk(path):
+    for dirpath, dirnames, filenames in os.walk(path):
         for file in filenames:
             if not file.endswith(".lock") and not file.endswith(".zip"):
                 try:
@@ -311,9 +315,9 @@ def _to_utf8(data):
         return [_to_utf8(element) for element in data]
     elif isinstance(data, str):
         return data
-    elif isinstance(data, six.text_type):
+    elif isinstance(data, str):
         return data.encode("utf-8")
-    elif isinstance(data, (float, six.integer_types)):
+    elif isinstance(data, (float, int)):
         return data
     else:
         return data
@@ -333,3 +337,10 @@ def chunks(l, n):
     """yield successive n-sized chunks from l."""
     for i in range(0, len(l), n):
         yield l[i : i + n]
+
+
+# --------------------------------------------------------------------------
+def is_pdf_file(file_path):
+    """check the file first bytes to match with pdf signature"""
+    with open(file_path, "rb") as f:
+        return f.read(4) == b"%PDF"

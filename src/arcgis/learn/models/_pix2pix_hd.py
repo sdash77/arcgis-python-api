@@ -111,13 +111,19 @@ class Pix2PixHD(ArcGISModel):
             l1_loss = True
         elif self._data.label_nc:
             self.input_nc = label_nc
-        pix2pix_hd = Pix2PixHDModel(label_nc, self.input_nc, self.output_nc, **kwargs)
+        if self._device.type == "cuda":
+            gpu_ids = [torch.cuda.current_device()]
+        else:
+            gpu_ids = []
+        pix2pix_hd = Pix2PixHDModel(
+            label_nc, self.input_nc, self.output_nc, gpu_ids, **kwargs
+        )
 
         self.learn = Learner(
             data,
             pix2pix_hd,
             loss_func=Pix2PixHDLoss(
-                pix2pix_hd, vgg_loss, lambda_feat, l1_loss, lambda_l1
+                pix2pix_hd, vgg_loss, lambda_feat, l1_loss, lambda_l1, gpu_ids
             ),
             callback_fns=[Pix2PixHDTrainer],
             opt_func=partial(optim.Adam, betas=(0.5, 0.99)),
@@ -158,7 +164,6 @@ class Pix2PixHD(ArcGISModel):
 
     @classmethod
     def from_model(cls, emd_path, data=None):
-
         """
         Creates a :class:`~arcgis.learn.Pix2PixHD` object from an Esri Model Definition (EMD) file.
 
@@ -288,19 +293,21 @@ class Pix2PixHD(ArcGISModel):
         """
         Computes Peak Signal-to-Noise Ratio (PSNR) and
         Structural Similarity Index Measure (SSIM) on validation set.
+        Additionally, computes Frechet Inception Distance (FID) for
+        RGB imagery only.
 
         """
         psnr, ssim = compute_metrics(self, self._data.valid_dl, show_progress)
-        if self._data._is_multispectral:
-            fid = None
-            return {"PSNR": "{0:1.4e}".format(psnr), "SSIM": "{0:1.4e}".format(ssim)}
-        else:
+        if self._data._imagery_type_b == "RGB" and self._data.n_channel == 3:
             fid = compute_fid_metric(self, self._data)
             return {
                 "PSNR": "{0:1.4e}".format(psnr),
                 "SSIM": "{0:1.4e}".format(ssim),
                 "FID": "{0:1.4e}".format(fid),
             }
+        else:
+            fid = None
+            return {"PSNR": "{0:1.4e}".format(psnr), "SSIM": "{0:1.4e}".format(ssim)}
 
     @property
     def supported_datasets(self):

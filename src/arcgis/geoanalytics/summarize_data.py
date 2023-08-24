@@ -31,6 +31,8 @@ from ._util import (
 _log = _logging.getLogger(__name__)
 
 _use_async = True
+
+
 # --------------------------------------------------------------------------
 def summarize_center_and_dispersion(
     input_layer: Union[
@@ -1982,7 +1984,7 @@ def summarize_within(
     minority_majority                                                            Optioal boolean. This boolean parameter is applicable only when a ``group_by_field`` is specified.
                                                                                  If true, the minority (least dominant) or the majority (most dominant) attribute values
                                                                                  for each group field are calculated. Two new fields are added to the ``result_layer`` prefixed with
-                                                                                 Majority_ and Minority_.
+                                                                                 `Majority_` and `Minority_`.
 
                                                                                  .. note::
                                                                                      This parameter is available at ArcGIS Enterprise 10.6.1 and later.

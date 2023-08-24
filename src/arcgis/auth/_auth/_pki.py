@@ -2,12 +2,14 @@ from typing import Tuple
 from requests.auth import AuthBase
 from ._schain import SupportMultiAuth
 from ..tools._lazy import LazyLoader
-from ..tools import parse_url
+from ..tools import parse_url, assemble_url
 
 os = LazyLoader("os")
 tempfile = LazyLoader("tempfile")
 _dt = LazyLoader("datetime")
 requests = LazyLoader("requests")
+
+
 ###########################################################################
 class EsriPKIAuth(AuthBase, SupportMultiAuth):
     """Handles PKI authentication when tokens are needed"""
@@ -19,7 +21,11 @@ class EsriPKIAuth(AuthBase, SupportMultiAuth):
     _session = None
 
     def __init__(
-        self, cert: Tuple[str], referer: str = None, verify_cert: bool = True, **kwargs
+        self,
+        cert: Tuple[str],
+        referer: str = None,
+        verify_cert: bool = True,
+        **kwargs,
     ):
         self._server_log = {}
         self._server_log_time = {}
@@ -55,12 +61,7 @@ class EsriPKIAuth(AuthBase, SupportMultiAuth):
     def generate_portal_server_token(self, r, **kwargs):
         """generates a server token using Portal token"""
         parsed = parse_url(r.url)
-        if parsed.port:
-            server_url = f'{parsed.scheme}://{parsed.netloc}:{parsed.port}/{parsed.path[1:].split("/")[0]}'
-        else:
-            server_url = (
-                f'{parsed.scheme}://{parsed.netloc}/{parsed.path[1:].split("/")[0]}'
-            )
+        server_url = assemble_url(parsed)
         if (
             r.text.lower().find("invalid token") > -1
             or r.text.lower().find("token required") > -1

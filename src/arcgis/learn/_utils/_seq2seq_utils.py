@@ -52,7 +52,6 @@ DatasetType = Enum("DatasetType", "Train Valid Test Single Fix")
 
 
 class SequenceToSequenceDataBunch(TextDataBunch):
-
     "Create a `TextDataBunch` suitable for training."
 
     @classmethod
@@ -113,7 +112,6 @@ class SequenceToSequenceTextList(TextList):
     _label_cls = TextList
 
     def reconstruct(self, t: torch.Tensor):
-
         if isinstance(t, (list)):  # handling the 'shift_tfm' dataloader transform
             t = t[0]
         elif t.ndim == 2:

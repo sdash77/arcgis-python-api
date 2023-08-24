@@ -39,7 +39,6 @@ from fastai.vision import flatten_model
 
 
 def get_dilation_index(backbone_name, pointrend=False, keep_dilation=False):
-
     vgg = False
     if "vgg" in backbone_name:
         modify_dilation_index = -5
@@ -56,7 +55,6 @@ def get_dilation_index(backbone_name, pointrend=False, keep_dilation=False):
 
 
 def get_last_module(backbone):
-
     hookable_modules = list(backbone.children())
     if len(hookable_modules) < 5:
 
@@ -75,7 +73,6 @@ def get_last_module(backbone):
 
 
 def get_hooks(backbone_name, hookable_modules):
-
     if "vgg" in backbone_name:
         hooks = [
             hookable_modules[i - 1]
@@ -90,7 +87,6 @@ def get_hooks(backbone_name, hookable_modules):
 
 
 def add_dilation(backbone_fn, hookable_modules, modify_dilation_index):
-
     custom_idx = 0
     for i, module in enumerate(hookable_modules[modify_dilation_index:]):
         dilation = 2 * (i + 1)
@@ -164,7 +160,6 @@ class Deeplab(nn.Module):
         self.aux_classifier = FCNHead(num_channels_aux_classifier, num_classes)
 
         if self.pointrend:
-
             if self.vgg:
                 num_channels = (
                     self.hook[-3].stored.shape[1] + self.hook[-4].stored.shape[1]
@@ -184,7 +179,6 @@ class Deeplab(nn.Module):
             )
 
     def forward(self, x):
-
         x_size = x.size()
         x = self.backbone(x)
         features = self.hook.stored
@@ -195,7 +189,6 @@ class Deeplab(nn.Module):
             x = self.classifier(x)
 
         if self.pointrend:
-
             if self.vgg:
                 pointrend_out = self.pointrend_head(x, [features[-4], features[-3]])
             else:
@@ -204,7 +197,6 @@ class Deeplab(nn.Module):
         result = F.interpolate(x, x_size[2:], mode="bilinear", align_corners=False)
 
         if self.training:
-
             if self.vgg:
                 x = self.aux_classifier(features[-2])
             else:
@@ -217,7 +209,6 @@ class Deeplab(nn.Module):
             else:
                 return result, x
         else:
-
             if self.pointrend:
                 if pointrend_out.shape[-1] != x_size[-1]:
                     pointrend_out = F.interpolate(
@@ -229,7 +220,6 @@ class Deeplab(nn.Module):
 
 
 def mask_iou(mask1, mask2):
-
     mask1 = mask1.permute(0, 2, 3, 1)
     mask2 = mask2.permute(0, 2, 3, 1)
     mask1 = torch.reshape(mask1 > 0, (-1, mask1.shape[-1])).type(torch.float64)
@@ -243,7 +233,6 @@ def mask_iou(mask1, mask2):
 
 
 def compute_miou(model, dl, mean, num_classes, show_progress, ignore_mapped_class=[]):
-
     ious = []
     model.learn.model.eval()
     with torch.no_grad():

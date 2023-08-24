@@ -1,24 +1,9 @@
-import sys
-
-sys.path.insert(0, r"C:\SVN\geosaurus_master_issue_8072\src")
-import copy
-import json
 import unittest
 from arcgis.gis import GIS, Item, User, Group, ProfileManager
 from arcgis._impl.common._utils import local_time_to_online
 import datetime
 
-# --------------------------------------------------------------------------
-if not "your_kubernetes_profile" in ProfileManager().list():
-    from arcgis.gis import GIS
 
-    gis = GIS(
-        url="https://devent.esri.com/gis",
-        username="admin",
-        password="esri.agp",
-        profile="your_kubernetes_profile",
-    )
-# --------------------------------------------------------------------------
 class TestAdvancedUserSearch(unittest.TestCase):
     """
     Tests the advanced User Search
@@ -33,8 +18,9 @@ class TestAdvancedUserSearch(unittest.TestCase):
         profiles = [
             "your_online_profile",
             "your_enterprise_profile",
-            # "your_kubernetes_profile",
+            "your_kubernetes_profile",
         ]
+
         for profile in profiles:
             self._gis.append(GIS(profile=profile, verify_cert=False))
 
@@ -57,9 +43,9 @@ class TestAdvancedUserSearch(unittest.TestCase):
         for gis in self._gis:
             orgid = gis.users.me.orgId
             q = f"orgid: {orgid}"
-            res = gis.users.advanced_search(query=q, start=5, max_users=10)
+            res = gis.users.advanced_search(query=q, start=3, max_users=10)
             assert len(res["results"]) >= 1
-            assert res["start"] == 5
+            assert res["start"] == 3
 
     # ----------------------------------------------------------------------
     def testAllUsers(self):

@@ -1,4 +1,4 @@
-__version__ = "2.1.1"
+__version__ = "2.2.0"
 
 from arcgis.auth.tools import LazyLoader
 
@@ -69,7 +69,7 @@ except ImportError as e:
 try:
     # register with dask
     from .features.geo import _dask  # noqa
-except ImportError:
+except Exception as e:
     pass
 
 

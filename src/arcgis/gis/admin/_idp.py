@@ -2,6 +2,7 @@ from arcgis._impl.common._mixins import PropertyMap
 from arcgis.gis import GIS
 from arcgis import env
 
+
 ########################################################################
 class IdentityProviderManager(object):
     """
@@ -13,6 +14,7 @@ class IdentityProviderManager(object):
     _url = None
     _properties = None
     _allowed_keys = None
+
     # ----------------------------------------------------------------------
     def __init__(self, gis=None):
         """Constructor"""

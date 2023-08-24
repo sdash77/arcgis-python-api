@@ -13,7 +13,9 @@ from ._auth import (
     ArcGISProAuth,
     BaseEsriAuth,
     EsriPKCEAuth,
+    EsriHttpNtlmAuth,
 )
+from ._error import EsriHttpResponseError
 from ._version import __version__
 
 __all__ = [
@@ -32,4 +34,6 @@ __all__ = [
     "BaseEsriAuth",
     "EsriPKCEAuth",
     "__version__",
+    "EsriHttpNtlmAuth",
+    "EsriHttpResponseError",
 ]

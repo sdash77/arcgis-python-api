@@ -28,7 +28,6 @@ from torch.jit.annotations import List, Dict
 
 
 def create_pointrend(model, num_class):
-
     # get model parameter to create modified RoI head
     y = {}
     y["box_roi_pool"] = model.roi_heads.box_roi_pool
@@ -58,7 +57,6 @@ def create_pointrend(model, num_class):
 
 class PointRendROIHeads(RoIHeads):
     def forward(self, features, proposals, image_shapes, targets=None):
-
         """
         Arguments:
             features (List[Tensor])
@@ -70,7 +68,6 @@ class PointRendROIHeads(RoIHeads):
 
         if targets is not None:
             for t in targets:
-
                 floating_point_types = (torch.float, torch.double, torch.half)
                 assert (
                     t["boxes"].dtype in floating_point_types
@@ -106,7 +103,6 @@ class PointRendROIHeads(RoIHeads):
             )
             losses = {"loss_classifier": loss_classifier, "loss_box_reg": loss_box_reg}
         if not self.training or train_val:
-
             if train_val:
                 box_features = self.box_roi_pool(features, original_prpsl, image_shapes)
                 box_features = self.box_head(box_features)
@@ -234,7 +230,6 @@ def calculate_uncertainty(logits, classes):
 class MaskRoIPoolHead(nn.Module):
     # This code is based on https://github.com/facebookresearch/detectron2/blob/master/projects/PointRend
     def __init__(self, num_class):
-
         super().__init__()
         self.mask_coarse_in_features = ["0"]
         self.mask_coarse_side_size = 14
@@ -246,7 +241,6 @@ class MaskRoIPoolHead(nn.Module):
         }  # FPN block 1/stride
 
     def forward(self, features, proposals):
-
         if self.training:
             boxes = [x["proposal_boxes"] for x in proposals]
         else:
@@ -359,7 +353,6 @@ class CoarseMaskHead(nn.Module):
 class PointRendHeads(torch.nn.Module):
     # This code is based on https://github.com/facebookresearch/detectron2/blob/master/projects/PointRend
     def __init__(self, num_class, **kwargs):
-
         super().__init__()
         self._feature_scales = {
             "0": 1.0 / 4,

@@ -4,7 +4,9 @@ import concurrent.futures
 from arcgis.features import FeatureLayer
 from arcgis.gis import GIS, ProfileManager
 
-PROFILES = [None]  # ['your_online_profile']
+PROFILES = ["your_online_profile"]
+
+# Use World Countries Feature Layer item: 2ef6f1c2b2e04e68b30c54899d82d123
 ###########################################################################
 
 
@@ -17,39 +19,39 @@ class TestQueryAnalytics(unittest.TestCase):
     # ----------------------------------------------------------------------
     def test_query(self):
         """Tests the simple query analytics call"""
-        url = "https://servicesdev1.arcgis.com/lidGgNLxw9LL0SbI/arcgis/rest/services/counties/FeatureServer/0"
+        url = "https://services7.arcgis.com/JEwYeAy2cc8qOe3o/arcgis/rest/services/World_Countries/FeatureServer/0"
         gis = GIS(profile=PROFILES[0], verify_cert=False)
         fl = FeatureLayer(url, gis=gis)
         analytics = [
             {
                 "analyticType": "CUME_DIST",
-                "onAnalyticField": "POP1990",
-                "outAnalyticFieldName": "CumDistance",
+                "onAnalyticField": "POP2007",
+                "outAnalyticFieldName": "Cumulative_Distrib",
                 "analyticParameters": {
-                    "orderBy": "POP1990",
-                    "partitionBy": "state_name",
-                },
+                    "orderBy": "POP2007",
+                    "partitionBy": "STATUS"
+                }
             }
         ]
-        result = fl.query_analytics(where="1=1", out_analytics=analytics, future=False)
+        result = fl.query_analytics(where="POP2007 > 0", out_analytics=analytics, future=False)
         assert isinstance(result, pd.DataFrame)
         assert len(result) >= 0
-        assert "CumDistance" in result.columns
+        assert "Cumulative_Distrib" in result.columns
 
     ##----------------------------------------------------------------------
     def test_query_async(self):
         """Tests the simple query analytics call"""
-        url = "https://servicesdev1.arcgis.com/lidGgNLxw9LL0SbI/arcgis/rest/services/counties/FeatureServer/0"
+        url = "https://services7.arcgis.com/JEwYeAy2cc8qOe3o/arcgis/rest/services/World_Countries/FeatureServer/0"
         gis = GIS(profile=PROFILES[0], verify_cert=False)
         fl = FeatureLayer(url, gis=gis)
         analytics = [
             {
                 "analyticType": "CUME_DIST",
-                "onAnalyticField": "POP1990",
-                "outAnalyticFieldName": "CumDistance",
+                "onAnalyticField": "POP2007",
+                "outAnalyticFieldName": "Cumulative_Distrib",
                 "analyticParameters": {
-                    "orderBy": "POP1990",
-                    "partitionBy": "state_name",
+                    "orderBy": "POP2007",
+                    "partitionBy": "STATUS",
                 },
             }
         ]
@@ -58,36 +60,36 @@ class TestQueryAnalytics(unittest.TestCase):
         result = result.result()
         assert isinstance(result, pd.DataFrame)
         assert len(result) >= 0
-        assert "CumDistance" in result.columns
+        assert "Cumulative_Distrib" in result.columns
 
-    # ----------------------------------------------------------------------
+    ## ----------------------------------------------------------------------
     def test_query_async_less_than_100(self):
         """Tests the simple query analytics call"""
-        url = "https://servicesdev1.arcgis.com/lidGgNLxw9LL0SbI/arcgis/rest/services/counties/FeatureServer/0"
+        url = "https://services7.arcgis.com/JEwYeAy2cc8qOe3o/arcgis/rest/services/World_Countries/FeatureServer/0"
         gis = GIS(profile=PROFILES[0], verify_cert=False)
         fl = FeatureLayer(url, gis=gis)
         analytics = [
             {
                 "analyticType": "CUME_DIST",
-                "onAnalyticField": "POP1990",
-                "outAnalyticFieldName": "CumDistance",
+                "onAnalyticField": "POP2007",
+                "outAnalyticFieldName": "Cumulative_Distrib",
                 "analyticParameters": {
-                    "orderBy": "POP1990",
-                    "partitionBy": "state_name",
+                    "orderBy": "POP2007",
+                    "partitionBy": "STATUS",
                 },
             }
         ]
 
         result = fl.query_analytics(
-            where=f"{fl.properties.objectIdField} <= 50",
+            where=f"{fl.properties.objectIdField} <= 100",
             out_analytics=analytics,
             future=True,
         )
         assert isinstance(result, concurrent.futures.Future)
         result = result.result()
         assert isinstance(result, pd.DataFrame)
-        assert len(result) <= 50
-        assert "CumDistance" in result.columns
+        assert len(result) <= 100
+        assert "Cumulative_Distrib" in result.columns
 
 
 ###########################################################################

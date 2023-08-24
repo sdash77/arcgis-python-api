@@ -1,7 +1,8 @@
 import os
 import sys
 
-# sys.path.insert(0, r"c:\SVN\geosaurus_master\src")
+
+# sys.path.insert(0, r"c:\SVN\geosaurus_issue_9708\src")
 from arcgis.auth.tools._util import detect_proxy
 
 # import imp
@@ -36,7 +37,9 @@ class TestHomeNBAUTHLogic(unittest.TestCase):
 
     def test_home_nbauth_login(self):
         """tests the login method using the NBAUTH logic (pre-10.8.1 style of NB_AUTH_FILE"""
-        gis_source = GIS(profile="your_enterprise_profile", verify_cert=False)
+        gis_source = GIS(
+            profile="your_enterprise_profile", verify_cert=False
+        )
         private_url = gis_source._url
         public_url = gis_source._url
         referer = ""
@@ -79,10 +82,13 @@ class TestHomeNBAUTHLogic(unittest.TestCase):
                 clear=True,
             ):
                 with unittest.mock.patch.object(
-                    os, "getenv", return_value=os.path.join(d, ".nbauth.json")
+                    os,
+                    "getenv",
+                    return_value=os.path.join(d, ".nbauth.json"),
                 ):
                     self.assertEqual(
-                        os.environ.get("NB_AUTH_FILE"), os.path.join(d, ".nbauth.json")
+                        os.environ.get("NB_AUTH_FILE"),
+                        os.path.join(d, ".nbauth.json"),
                     )
                     self.assertEqual(len(os.environ), 1)
                     gis = GIS(url="home", verify_cert=False)
@@ -96,7 +102,9 @@ class TestHomeNBAUTHLogic(unittest.TestCase):
         tests the login method using the NBAUTH logic with expiration key
         present (new style 10.8.1+)
         """
-        gis_source = GIS(profile="your_enterprise_profile", verify_cert=False)
+        gis_source = GIS(
+            profile="your_enterprise_profile", verify_cert=False
+        )
         private_url = gis_source._url
         public_url = gis_source._url
         referer = ""
@@ -140,10 +148,13 @@ class TestHomeNBAUTHLogic(unittest.TestCase):
                 clear=True,
             ):
                 with unittest.mock.patch.object(
-                    os, "getenv", return_value=os.path.join(d, ".nbauth.json")
+                    os,
+                    "getenv",
+                    return_value=os.path.join(d, ".nbauth.json"),
                 ):
                     self.assertEqual(
-                        os.environ.get("NB_AUTH_FILE"), os.path.join(d, ".nbauth.json")
+                        os.environ.get("NB_AUTH_FILE"),
+                        os.path.join(d, ".nbauth.json"),
                     )
                     self.assertEqual(len(os.environ), 1)
                     gis = GIS(url="home", verify_cert=False)

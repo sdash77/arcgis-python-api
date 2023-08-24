@@ -10,7 +10,7 @@ import lxml.html
 
 from ._schain import SupportMultiAuth
 from ..tools._lazy import LazyLoader
-from ..tools import parse_url
+from ..tools import parse_url, assemble_url
 
 warnings = LazyLoader("warnings")
 re = LazyLoader("re")
@@ -19,6 +19,7 @@ webbrowser = LazyLoader("webbrowser")
 getpass = LazyLoader("getpass")
 _dt = LazyLoader("datetime")
 requests = LazyLoader("requests")
+
 
 ###########################################################################
 class EsriOAuth2Auth(AuthBase, SupportMultiAuth):
@@ -38,6 +39,7 @@ class EsriOAuth2Auth(AuthBase, SupportMultiAuth):
     _create_time = None
     _refresh_token = None
     _invalid_token_urls = None
+
     # ----------------------------------------------------------------------
     def __init__(
         self,
@@ -62,7 +64,6 @@ class EsriOAuth2Auth(AuthBase, SupportMultiAuth):
         self.legacy = kwargs.pop("legacy", False)
         self._username = username
         if self._username and password is None:
-
             password = getpass.getpass(f"Enter user {username} password:")
         self._password = password
         if session is None:
@@ -184,7 +185,6 @@ class EsriOAuth2Auth(AuthBase, SupportMultiAuth):
         elif (
             self._client_id and self._username is None and self._password is None
         ):  # case 3: client id only
-
             auth_url = "%s/oauth2/authorize" % self.baseurl
             tu = "%s/oauth2/token" % self.baseurl
             oauth = OAuth2Session(
@@ -225,7 +225,6 @@ class EsriOAuth2Auth(AuthBase, SupportMultiAuth):
         elif self._client_id and not (
             self._username is None and self._password is None
         ):  # case 4: client id and username/password (SAML workflow)
-
             parameters = {
                 "client_id": self._client_id,
                 "response_type": "code",
@@ -271,9 +270,24 @@ class EsriOAuth2Auth(AuthBase, SupportMultiAuth):
                 "password": self._password,
                 "oauth_state": oauth_info["oauth_state"],
             }
-            content = self._session.post(
-                "%s/oauth2/signin" % self.baseurl, data=parameters
-            ).text
+            resp = self._session.post(
+                "%s/oauth2/signin" % self.baseurl,
+                data=parameters,
+                verify=False,
+                proxies=self._proxies,
+                allow_redirects=False,
+            )
+            if resp.status_code == 302:
+                url = resp.headers["Location"]
+                if url.find("acceptTermsAndConditions") > -1:
+                    r2 = self._session.post(
+                        url, data={"acceptTermsAndConditions": True}
+                    )
+                    content = r2.text
+                elif url.find("oauth2/approval") > -1:
+                    r2 = self._session.get(url)
+                    content = r2.text
+
             soup = lxml.html.fromstring(content)
             codes = [
                 t[len("SUCCESS code=") :]
@@ -323,12 +337,7 @@ class EsriOAuth2Auth(AuthBase, SupportMultiAuth):
             # Recreate the request without the token
             #
             parsed = parse_url(r.url)
-            if parsed.port:
-                server_url = (
-                    f"{parsed.scheme}://{parsed.netloc}:{parsed.port}/{parsed.path}"
-                )
-            else:
-                server_url = f"{parsed.scheme}://{parsed.netloc}/{parsed.path}"
+            server_url = assemble_url(parsed)
             self._invalid_token_urls.add(server_url)
             r.content
             r.raw.release_conn()
@@ -345,12 +354,7 @@ class EsriOAuth2Auth(AuthBase, SupportMultiAuth):
         if self._invalid_token_urls is None:
             self._invalid_token_urls = set()
         parsed = parse_url(r.url)
-        if parsed.port:
-            server_url = (
-                f"{parsed.scheme}://{parsed.netloc}:{parsed.port}/{parsed.path}"
-            )
-        else:
-            server_url = f"{parsed.scheme}://{parsed.netloc}/{parsed.path}"
+        server_url = assemble_url(parsed)
         if not server_url in self._invalid_token_urls:
             r.register_hook("response", self.handle_40x)
             if self.legacy == False:

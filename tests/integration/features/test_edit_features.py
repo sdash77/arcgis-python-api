@@ -1,10 +1,6 @@
-import sys
-
-sys.path.insert(0, r"C:\SVN\geosaurus_master_issue_apply_edits_form_post\src")
 import unittest
 import pandas as pd
 from pandas import Timestamp
-import arcgis
 from arcgis.gis import GIS
 from arcgis.geometry import Geometry
 from arcgis.features import Feature, FeatureSet, FeatureLayer

@@ -60,7 +60,7 @@ def convert_bounding_boxes_to_coord_list(bounding_boxes):
     num_bounding_boxes = bounding_boxes.shape[0]
     bounding_box_coord_list = []
     for i in range(num_bounding_boxes):
-        coord_array = np.empty(shape=(4, 2), dtype=np.float)
+        coord_array = np.empty(shape=(4, 2), dtype=float)
         coord_array[0][0] = bounding_boxes[i][0]
         coord_array[0][1] = bounding_boxes[i][1]
 
@@ -154,7 +154,6 @@ def batch_to_tile(batch, batch_height, batch_width):
 
 class ChildInstanceDetector:
     def initialize(self, model, model_as_file):
-
         if not HAS_TORCH:
             raise Exception(
                 "PyTorch is not installed. Install it using conda install -c pytorch pytorch torchvision"
@@ -245,6 +244,7 @@ class ChildInstanceDetector:
         self.mask_rcnn = MaskRCNN.from_model(
             emd_path=self.model_emd, chip_size=self.tytx
         )
+        self._learnmodel = self.mask_rcnn
         self.model = self.mask_rcnn.learn.model.to(self.device)
         self.model.eval()
 
@@ -293,7 +293,6 @@ class ChildInstanceDetector:
         }
 
     def vectorize(self, **pixelBlocks):  # 8 x 3 x 224 x 224
-
         input_image = pixelBlocks["raster_pixels"].astype(np.float32)
         batch, batch_height, batch_width = tile_to_batch(
             input_image,
@@ -328,7 +327,6 @@ class ChildInstanceDetector:
 def predict_mask_rcnn(
     model, images, device, chip_size, threshold=0.5, use_tta=False, merge_policy="mean"
 ):
-
     model = model.to(device)
     normed_batch_tensor = torch.tensor(images).to(device).float()
     if use_tta:
@@ -353,7 +351,6 @@ def pixel_mask_image(
     use_tta=False,
     merge_policy="mean",
 ):
-
     side = int(math.sqrt(batch_size))
 
     predictions = predict_mask_rcnn(
@@ -397,29 +394,51 @@ def pixel_mask_image(
                             (next_contour, prev_contour, child_contour, parent_contour),
                         ) in enumerate(hierarchy):
                             if parent_contour == -1:
-                                coord_list = [contours[contour_idx].tolist()]
+                                coord_list = []
+                                # check if it is a state line
+                                closed_contour = (
+                                    all(
+                                        contours[contour_idx].max(axis=0)
+                                        - contours[contour_idx].min(axis=0)
+                                    )
+                                    and contours[contour_idx].shape[0] > 2
+                                )
+                                if closed_contour:
+                                    coord_list.append(contours[contour_idx].tolist())
                                 while child_contour != -1:
-                                    coord_list.append(contours[child_contour].tolist())
+                                    closed_contour = (
+                                        all(
+                                            contours[child_contour].max(axis=0)
+                                            - contours[child_contour].min(axis=0)
+                                        )
+                                        and contours[child_contour].shape[0] > 2
+                                    )
+                                    if closed_contour:
+                                        coord_list.append(
+                                            contours[child_contour].tolist()
+                                        )
                                     child_contour = hierarchy[child_contour][0]
                                 #
-                                all_contour_list.append(coord_list)
-                                pred_class.append(
-                                    predictions[batch_idx]["labels"][n].tolist()
-                                )
-                                pred_score.append(
-                                    predictions[batch_idx]["scores"][n].tolist() * 100
-                                )
-                                box = (
-                                    predictions[batch_idx]["boxes"][n]
-                                    .cpu()
-                                    .detach()
-                                    .numpy()
-                                )
-                                box[0] += j * chip_size
-                                box[2] += j * chip_size
-                                box[1] += i * chip_size
-                                box[3] += i * chip_size
-                                pred_box.append(box)
+                                if coord_list != []:
+                                    all_contour_list.append(coord_list)
+                                    pred_class.append(
+                                        predictions[batch_idx]["labels"][n].tolist()
+                                    )
+                                    pred_score.append(
+                                        predictions[batch_idx]["scores"][n].tolist()
+                                        * 100
+                                    )
+                                    box = (
+                                        predictions[batch_idx]["boxes"][n]
+                                        .cpu()
+                                        .detach()
+                                        .numpy()
+                                    )
+                                    box[0] += j * chip_size
+                                    box[2] += j * chip_size
+                                    box[1] += i * chip_size
+                                    box[3] += i * chip_size
+                                    pred_box.append(box)
 
     if return_bboxes:
         pred_box = np.array(pred_box)

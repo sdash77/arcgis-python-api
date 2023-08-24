@@ -1,19 +1,18 @@
-import sys
 import unittest
-
-sys.path.insert(0, r"C:\ipython_workfolder\geosaurus\src")
 from arcgis.gis import GIS
 from arcgis.features._network_diagram import NetworkDiagramManager, Diagram
 
-gis = GIS("https://utilitynetwork.esri.com/portal", "AChapkowski", "AChapkowski1")
+gis = GIS(
+    "https://utilitynetwork.esri.com/portal", "python_api_team", "python_api_team.109", verify_cert=False
+)
 
 
 class TestUtilityNetworkManager(unittest.TestCase):
     """Tests the Utility Network Service"""
 
-    def diagrams(self):
+    def test_diagrams(self):
         net_diag_ser = NetworkDiagramManager(
-            "https://utilitynetwork.esri.com/server/rest/services/GettingToKnow_Hana/NetworkDiagramServer",
+            "https://utilitynetwork.esri.com/server/rest/services/GettingToKnow25_Postgres/NetworkDiagramServer",
             gis=gis,
         )
         """Test Diagrams and Diagram methods"""
@@ -22,7 +21,7 @@ class TestUtilityNetworkManager(unittest.TestCase):
         assert diagrams
 
         # Get one diagram
-        diagram = net_diag_ser.diagram("basicex_testing")
+        diagram = net_diag_ser.diagram("Basic_ppp1")
         assert diagram
         assert isinstance(diagram, Diagram)
 
@@ -54,9 +53,9 @@ class TestUtilityNetworkManager(unittest.TestCase):
         )
         assert map
 
-    def find_diagrams(self):
+    def test_find_diagrams(self):
         net_diag_ser = NetworkDiagramManager(
-            "https://utilitynetwork.esri.com/server/rest/services/GettingToKnow_Hana/NetworkDiagramServer",
+            "https://utilitynetwork.esri.com/server/rest/services/GettingToKnow25_Postgres/NetworkDiagramServer",
             gis=gis,
         )
 
@@ -68,9 +67,9 @@ class TestUtilityNetworkManager(unittest.TestCase):
         assert infos
         assert "diagramInfos" in infos
 
-    def query_consistency_states(self):
+    def test_query_consistency_states(self):
         net_diag_ser = NetworkDiagramManager(
-            "https://utilitynetwork.esri.com/server/rest/services/GettingToKnow_Hana/NetworkDiagramServer",
+            "https://utilitynetwork.esri.com/server/rest/services/GettingToKnow25_Postgres/NetworkDiagramServer",
             gis=gis,
         )
 
@@ -79,9 +78,9 @@ class TestUtilityNetworkManager(unittest.TestCase):
         assert const_states
         assert len(const_states) == len(names["diagramNames"])
 
-    def templates(self):
+    def test_templates(self):
         net_diag_ser = NetworkDiagramManager(
-            "https://utilitynetwork.esri.com/server/rest/services/GettingToKnow_Hana/NetworkDiagramServer",
+            "https://utilitynetwork.esri.com/server/rest/services/GettingToKnow25_Postgres/NetworkDiagramServer",
             gis=gis,
         )
 
@@ -92,9 +91,9 @@ class TestUtilityNetworkManager(unittest.TestCase):
         assert template
         assert "creationDate" in template
 
-    def dataset(self):
+    def test_dataset(self):
         net_diag_ser = NetworkDiagramManager(
-            "https://utilitynetwork.esri.com/server/rest/services/GettingToKnow_Hana/NetworkDiagramServer",
+            "https://utilitynetwork.esri.com/server/rest/services/GettingToKnow25_Postgres/NetworkDiagramServer",
             gis=gis,
         )
 

@@ -8,6 +8,7 @@ from arcgis.auth.tools import LazyLoader
 
 geometry = LazyLoader("arcgis.geometry")
 
+
 ########################################################################
 class TraceNetworkManager(object):
     """
@@ -34,6 +35,7 @@ class TraceNetworkManager(object):
     _property = None
     _version_guid = None
     _version_name = None
+
     # ----------------------------------------------------------------------
     def __init__(self, url, version=None, gis=None):
         """Constructor"""
@@ -108,6 +110,7 @@ class TraceNetworkManager(object):
 
 
                                 .. code-block:: python
+
                                     [{
                                         "traceLocationType" : "startingPoint" | "barrier",
                                         "globalId" : <guid>,
@@ -229,6 +232,7 @@ class TraceNetworkManager(object):
         envelope                                    Required Dictionary or Envelope. The envelope of the area to validate.
 
                                                     .. code-block:: python
+
                                                         {
                                                             "xmin": <minimum x-coordinate>,
                                                             "ymin": <minimum y-coordinate>,

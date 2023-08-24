@@ -125,7 +125,6 @@ def batch_to_tile(batch, batch_height, batch_width):
 
 class ChildImageClassifier:
     def initialize(self, model, model_as_file):
-
         if not HAS_TORCH:
             raise Exception(
                 "PyTorch is not installed. Install it using conda install -c pytorch pytorch torchvision"
@@ -151,6 +150,7 @@ class ChildImageClassifier:
             )
 
         self.pix2pix_hd = Pix2PixHD.from_model(data=None, emd_path=model)
+        self._learnmodel = self.pix2pix_hd
         self.model = self.pix2pix_hd.learn.model.to(self.device)
         self.model.eval()
 

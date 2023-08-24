@@ -21,6 +21,7 @@ from arcgis.geoprocessing._tool import (
 
 _log = _logging.getLogger(__name__)
 
+
 ###########################################################################
 def _input_string_params(spec, name_type, name_param, num_spaces=20):
     """creates the input strings for the lambda"""
@@ -309,6 +310,7 @@ class GPService:
     _info = None
     _tasks = None
     _properties = None
+
     # ----------------------------------------------------------------------
     def __init__(self, url: str, gis: GIS = None):
         self._url = url
@@ -335,7 +337,6 @@ class GPService:
         :return: Dictionary
         """
         if self._properties is None:
-
             params = {"f": "json"}
             self._properties = _mixins.PropertyMap(
                 self._gis._con.get(self._url, params)

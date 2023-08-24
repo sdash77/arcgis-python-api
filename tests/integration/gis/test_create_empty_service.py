@@ -1,18 +1,12 @@
 import sys
-
-#
-#  Update the Path to set the test area
-# sys.path.insert(0, r"C:\SVN\geosaurus_master_issue_8716\src")
-
 import logging, uuid
 import unittest
 from arcgis.auth.tools._util import detect_proxy
 from arcgis.auth import ArcGISProAuth, EsriWindowsAuth
-
 from arcgis.features import FeatureLayerCollection
-
 from arcgis.gis import GIS, Item
-from arcgis.gis import CreateServiceParameter, ServiceTypeEnum
+from arcgis.gis import CreateServiceParameter
+from arcgis.gis._impl import ServiceTypeEnum
 
 __logger__ = logging.getLogger()
 
@@ -25,22 +19,22 @@ def enable_verbose_logging(root):
     root.addHandler(handler)
 
 
-profiles = ['your_online_profile', 'your_enterprise_profile']
+profiles = ["your_online_profile", "your_enterprise_profile"]
 PROXIES = detect_proxy(True)  # Handles Fiddler when True
 enable_verbose_logging(__logger__)
 
 
 class TestCreateEmptyService(unittest.TestCase):
     def test_service_type_enum(self):
-        assert ServiceTypeEnum.FEATURE_SERVICE.value == 'featureService'
-        assert ServiceTypeEnum.IMAGE_SERVICE.value == 'imageService'
-        assert ServiceTypeEnum.RELATIONSHIP_SERVICE.value == 'relationalCatalogService'
+        assert ServiceTypeEnum.FEATURE_SERVICE.value == "featureService"
+        assert ServiceTypeEnum.IMAGE_SERVICE.value == "imageService"
+        assert ServiceTypeEnum.RELATIONSHIP_SERVICE.value == "relationalCatalogService"
 
     def test_create_empty_service(self):
         for profile in profiles:
             gis = GIS(profile=profile, verify_cert=False, proxy=PROXIES)
             cp = CreateServiceParameter(
-                name='testemptyservice1', output_type=ServiceTypeEnum.FEATURE_SERVICE
+                name="testemptyservice2", output_type=ServiceTypeEnum.FEATURE_SERVICE
             )
             res = gis.content.create_empty_service(cp)
             assert res.delete()

@@ -6,6 +6,7 @@ Inspired by: https://github.com/Colin-b/requests_auth
 """
 from requests.auth import AuthBase
 
+
 ###########################################################################
 class _MultiAuth(AuthBase):
     """Authentication using multiple authentication methods."""

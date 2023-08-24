@@ -147,7 +147,6 @@ class PSPNetClassifier(ArcGISModel):
         *args,
         **kwargs,
     ):
-
         # Set default backbone to be 'resnet50'
         if backbone is None:
             backbone = models.resnet50
@@ -396,6 +395,7 @@ class PSPNetClassifier(ArcGISModel):
             data = get_multispectral_data_params_from_emd(data, emd)
             data.emd_path = emd_path
             data.emd = emd
+            data._is_empty = True
 
         return cls(data, **model_params, pretrained_path=str(model_file))
 
@@ -453,6 +453,7 @@ class PSPNetClassifier(ArcGISModel):
             param.requires_grad = True
 
     def accuracy(self, input=None, target=None, void_code=0, class_mapping=None):
+        """Computes per pixel accuracy."""
         if input is not None or target is not None:
             accuracy(input, target)
         else:
@@ -577,7 +578,6 @@ class PSPNetClassifier(ArcGISModel):
         return float(model_accuracy)
 
     def mIOU(self, mean=False, show_progress=True):
-
         """
         Computes mean IOU on the validation set for each class.
 
@@ -635,6 +635,7 @@ class PSPNetClassifier(ArcGISModel):
 
         Returns per class precision, recall and f1 scores
         """
+        ignore_classes = np.unique(self._ignore_classes + ignore_classes).tolist()
         try:
             self._check_requisites()
             ## Calling imported function `per_class_metrics`

@@ -1,13 +1,11 @@
 import torch
 from torch import nn, LongTensor
 import torch.nn.functional as F
-from fastai.vision import imagenet_stats
-from fastai.vision.image import ImageBBox
-from fastai.vision.data import ObjectCategoryList, ObjectItemList
 from fastai.core import split_kwargs_by_func
 from fastprogress.fastprogress import progress_bar
 from fastai.basic_train import Callback
 from fastai.torch_core import add_metrics
+from .._utils.pointcloud_od import confusion_matrix3d
 
 import numpy as np
 import random
@@ -127,7 +125,6 @@ class SSDHead(nn.Module):
         self.sconvs.append(StdConv(num_channels, 256, stride=1, drop=drop))
 
         for i in range(len(grids)):
-
             if i == 0:
                 stride, pad, filter_size = conv_params(num_features, grids[i])
             else:
@@ -182,7 +179,6 @@ class SSDHeadv2(nn.Module):
         self.sconvs.append(StdConvv2(num_channels, 256, stride=1, drop=drop))
 
         for i in range(len(grids)):
-
             upsample = False
 
             if i == 0 and num_features >= grids[i]:
@@ -366,9 +362,10 @@ def postprocess(
 
 
 class AveragePrecision(Callback):
-    def __init__(self, model, n_classes):
+    def __init__(self, model, n_classes, mode_3d=False):
         self.model = model
         self.n_classes = n_classes
+        self.mode_3d = mode_3d
 
     def on_epoch_begin(self, **kwargs):
         self.tps, self.clas, self.p_scores = [], [], []
@@ -378,23 +375,27 @@ class AveragePrecision(Callback):
         )
 
     def on_batch_end(self, last_output, last_target, **kwargs):
-
         if (
             getattr(self.model, "_is_fasterrcnn", False)
             or "MMDetection" in self.model.__str__()
         ):
             last_output = last_output[0]
 
-        tps, p_scores, clas, self.n_gts = compute_cm(
-            self.model, last_output, last_target, self.n_gts, self.classes
-        )
+        if self.mode_3d:
+            tps, p_scores, clas, self.n_gts = confusion_matrix3d(
+                last_output, last_target, self.n_gts, self.classes
+            )
+        else:
+            tps, p_scores, clas, self.n_gts = compute_cm(
+                self.model, last_output, last_target, self.n_gts, self.classes
+            )
         self.tps.extend(tps)
         self.p_scores.extend(p_scores)
         self.clas.extend(clas)
 
     def on_epoch_end(self, last_metrics, **kwargs):
         aps = compute_ap_score(
-            self.tps, self.p_scores, self.clas, self.n_gts, self.n_classes
+            self.tps, self.p_scores, self.clas, self.n_gts, self.n_classes, self.mode_3d
         )
         aps = torch.mean(torch.tensor(aps))
         return add_metrics(last_metrics, aps)
@@ -418,7 +419,6 @@ def compute_class_AP(
     classes, n_gts = LongTensor(range(n_classes)), torch.zeros(n_classes).long()
     with torch.no_grad():
         for input, target in progress_bar(dl, display=show_progress):
-
             if getattr(model, "_is_model_extension", False):
                 try:
                     if model._is_multispectral:
@@ -432,7 +432,6 @@ def compute_class_AP(
                             model._model_conf.transform_input(input, **transform_kwargs)
                         )
                 except Exception as e:
-
                     if getattr(model, "_is_fasterrcnn", False):
                         output = []
                         for _ in range(input.shape[0]):
@@ -509,10 +508,10 @@ def compute_cm(
     return tps, p_scores, clas, n_gts
 
 
-def compute_ap_score(tps, p_scores, clas, n_gts, n_classes):
+def compute_ap_score(tps, p_scores, clas, n_gts, n_classes, mode_3d=False):
     # If no true positives are found return an average precision score of 0.
     if len(tps) == 0:
-        return [0.0 for cls in range(1, n_classes + 1)]
+        return [0.0 for _ in range(n_classes)]
 
     tps, p_scores, clas = torch.tensor(tps), torch.cat(p_scores, 0), torch.cat(clas, 0)
     fps = 1 - tps
@@ -520,6 +519,8 @@ def compute_ap_score(tps, p_scores, clas, n_gts, n_classes):
     tps, fps, clas = tps[idx], fps[idx], clas[idx]
     aps = []
     for cls in range(1, n_classes + 1):
+        if mode_3d:
+            cls -= 1
         tps_cls, fps_cls = (
             tps[clas == cls].float().cumsum(0),
             fps[clas == cls].float().cumsum(0),
@@ -545,11 +546,9 @@ def compute_ap(precision, recall):
 
 
 def iou(ann, centroids):
-
     similarities = []
 
     for centroid in centroids:
-
         inter = np.prod(np.minimum(ann, centroid))
         union = np.prod(ann) + np.prod(centroid) - inter
         similarities.append(inter / union)
@@ -558,7 +557,6 @@ def iou(ann, centroids):
 
 
 def avg_iou(bboxes, centroids):
-
     sum = 0.0
 
     for bbox in bboxes:
@@ -587,7 +585,7 @@ def kmeans(bboxes, num_anchor):
             return centroids
 
         centroid_sums = np.zeros(
-            (num_points, dim), np.float
+            (num_points, dim), float
         )  # num_points needs to be num_anchors
         for i in range(num_points):
             centroid_sums[cur_centroids[i]] += bboxes[i]

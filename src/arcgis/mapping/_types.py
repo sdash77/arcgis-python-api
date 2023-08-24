@@ -10,6 +10,7 @@ from arcgis.features.layer import FeatureLayer
 from arcgis.gis import Error, Item
 from arcgis.geoprocessing import import_toolbox
 from arcgis.auth.tools import LazyLoader
+from datetime import timezone
 
 collections = LazyLoader("collections")
 json = LazyLoader("json")
@@ -48,6 +49,8 @@ except ImportError:
 
 
 _log = logging.getLogger(__name__)
+
+
 ###########################################################################
 @contextmanager
 def _tempinput(data):
@@ -649,11 +652,29 @@ class WebMap(HasTraits, collections.OrderedDict):
                     else:
                         layer_type = "ArcGISFeatureLayer"
                 elif isinstance(layer, arcgis.raster.ImageryLayer):
-                    layer_type = "ArcGISImageServiceLayer"
+                    if layer.tiles_only:
+                        layer_type = "ArcGISTiledImageServiceLayer"
+                    else:
+                        layer_type = "ArcGISImageServiceLayer"
                     # todo : get renderer info
 
-                elif isinstance(layer, _arcgis_mapping.MapImageLayer):
-                    layer_type = "ArcGISMapServiceLayer"
+                elif isinstance(layer, _arcgis_mapping.MapImageLayer) or isinstance(
+                    layer, _arcgis_mapping.MapRasterLayer
+                ):
+                    try:
+                        if layer.container is not None:
+                            if (
+                                "TilesOnly"
+                                in layer.container.properties["capabilities"]
+                            ):
+                                layer_type = "ArcGISTiledMapServiceLayer"
+                            else:
+                                layer_type = "ArcGISMapServiceLayer"
+                    except:
+                        if "TilesOnly" in layer.properties["capabilities"]:
+                            layer_type = "ArcGISTiledMapServiceLayer"
+                        else:
+                            layer_type = "ArcGISMapServiceLayer"
                 elif isinstance(layer, _arcgis_mapping.VectorTileLayer):
                     layer_type = "VectorTileLayer"
                 elif isinstance(layer, _realtime.StreamLayer):
@@ -1714,6 +1735,11 @@ class WebMap(HasTraits, collections.OrderedDict):
             wm.basemap = wm2.basemap
             wm.basemap = wm2
 
+        .. note::
+            If you set a basemap that does not have the same spatial reference as the map, the map's
+            spatial reference will be updated to reflect this. However, any operational layers will not be
+            re-projected.
+
         """
         if "baseMap" in self._webmapdict.keys():
             self._basemap = self._webmapdict["baseMap"]
@@ -1753,8 +1779,10 @@ class WebMap(HasTraits, collections.OrderedDict):
             }
             self._webmapdict["baseMap"] = self._basemap
         elif value in self.gallery_basemaps:
-            self._basemap = self._gallery_basemaps[value]
-            self._webmapdict["baseMap"] = self._basemap
+            basemap_dict = self._gallery_basemaps[value]
+            self._check_spatial_reference(basemap_dict)
+            self._basemap = basemap_dict
+            self._webmapdict["baseMap"] = basemap_dict
         elif isinstance(value, _gis.Item) and value.type.title() == "Web Map":
             self._basemap = value.get_data()["baseMap"]
             self._webmapdict["baseMap"] = self._basemap
@@ -1768,6 +1796,7 @@ class WebMap(HasTraits, collections.OrderedDict):
         elif isinstance(value, _gis.Item) and (
             value.type.title() == "Image Service" or value.type.title() == "Map Service"
         ):
+            self._check_spatial_reference(value)
             layer_type = self._determine_layer_type(value)
             self._basemap = {
                 "baseMapLayers": [
@@ -1786,6 +1815,7 @@ class WebMap(HasTraits, collections.OrderedDict):
         elif (
             isinstance(value, _gis.Item) and value.type.title() == "Vector Tile Service"
         ):
+            self._check_spatial_reference(value.layers[0])
             try:
                 style_url = (
                     "%s/sharing/rest/content/items/%s/resources/styles/root.json"
@@ -1810,6 +1840,7 @@ class WebMap(HasTraits, collections.OrderedDict):
             }
             self._webmapdict["baseMap"] = self._basemap
         elif isinstance(value, VectorTileLayer):
+            self._check_spatial_reference(value)
             try:
                 style_url = value.url + "/resources/styles/root.json"
                 value._con.get(path=style_url)
@@ -1832,57 +1863,149 @@ class WebMap(HasTraits, collections.OrderedDict):
         else:
             raise RuntimeError("Basemap '{}' isn't valid".format(value))
 
+    def _check_spatial_reference(self, service):
+        """
+        The first basemap layer must match the spatial reference of the webmap.
+
+        This method will update the spatial reference of the webmap but will not reproject the layers within
+        the webmap. Users are responsible for understanding how their layers will interact.
+        """
+        # Get the spatial reference from the webmap
+        wm_sr = self.definition["spatialReference"]["wkid"]
+        layer_sr = None
+
+        if isinstance(service, dict) and not isinstance(service, _gis.Item):
+            for layer in service["baseMapLayers"]:
+                if layer["layerType"] == "VectorTileLayer":
+                    # Vector Tile layer always has spatial reference of 4326
+                    layer_sr = 4326
+            if not layer_sr:
+                # If none of the layers are vector tile layers, get the layer from it's itemid or url and then continue
+                if "itemId" in service["baseMapLayers"][0]:
+                    service = self._gis.content.get(
+                        service["baseMapLayers"][0]["itemId"]
+                    )
+                    return self._check_spatial_reference(service)
+                elif "url" in service["baseMapLayers"][0]:
+                    service = _gis.Layer(service["baseMapLayers"][0]["url"])
+                    return self._check_spatial_reference(service)
+        elif isinstance(service, _gis.Item):
+            # Checking spatial reference of an existing WebMap item or of an existing basemap layer in our webmap
+            # If existing basemap layer, it is because user is moving it to first index position
+            if isinstance(service, _gis.Item):
+                # Existing web map item is being used to set basemap, we only care about first layer
+                service = service.get_data()["baseMap"]["baseMapLayers"][0]
+            if "itemId" in service:
+                service = self._gis.content.get(service["itemId"])
+                return self._check_spatial_reference(service)
+            elif "url" in service:
+                service = _gis.Layer(service["url"])
+                return self._check_spatial_reference(service)
+        else:
+            # Check spatial reference of a layer type (Layer, Map Service Layer, Vector Tile Layer, etc)
+            if "spatialReference" in service.properties:
+                layer_sr = service.properties["spatialReference"]
+            elif (
+                "extent" in service.properties
+                and "spatialReference" in service.properties["extent"]
+            ):
+                layer_sr = dict(service.properties["extent"]["spatialReference"])
+            elif (
+                "fullExtent" in service.properties
+                and "spatialReference" in service.properties["fullExtent"]
+            ):
+                layer_sr = dict(service.properties["fullExtent"]["spatialReference"])
+            elif (
+                "tileInfo" in service.properties
+                and "spatialReference" in service.properties
+            ):
+                layer_sr = dict(service.properties["tileInfo"]["spatialReference"])
+
+        # Get the correct wkid
+        if layer_sr is None:
+            # Could not find a spatial reference. Taking a chance.
+            return
+        elif isinstance(layer_sr, str):
+            layer_sr = int(layer_sr)
+        elif isinstance(layer_sr, dict):
+            layer_sr = layer_sr["wkid"]
+        elif isinstance(layer_sr, _mixins.PropertyMap):
+            # property map
+            layer_sr = dict(layer_sr)["wkid"]
+
+        # Check
+        if wm_sr != layer_sr:
+            self._webmapdict["spatialReference"] = {"wkid": layer_sr}
+            logging.warning(
+                f"The layer's spatial reference does not match that of the webmap. The spatial reference of the webmap will be updated but this might affect the rendering of layers."
+            )
+
     @property
     def basemaps(self):
         """
         Gets a list of possible base maps to set as the
         :attr:`~arcgis.mapping.WebMap.basemap` for the ``WebMap``.
         """
-        basemaps = [
-            "dark-gray-vector",
-            "gray-vector",
-            "hybrid",
-            "oceans",
-            "osm",
-            "satellite",
-            "streets-navigation-vector",
-            "streets-night-vector",
-            "streets-relief-vector",
-            "streets-vector",
-            "terrain",
-            "topo-vector",
-            "arcgis-imagery",
-            "arcgis-imagery-standard",
-            "arcgis-imagery-labels",
-            "arcgis-light-gray",
-            "arcgis-dark-gray",
-            "arcgis-navigation",
-            "arcgis-navigation-night",
-            "arcgis-streets",
-            "arcgis-streets-night",
-            "arcgis-streets-relief",
-            "arcgis-topographic",
-            "arcgis-oceans",
-            "osm-standard",
-            "osm-standard-relief",
-            "osm-streets",
-            "osm-streets-relief",
-            "osm-light-gray",
-            "osm-dark-gray",
-            "arcgis-terrain",
-            "arcgis-community",
-            "arcgis-charted-territory",
-            "arcgis-colored-pencil",
-            "arcgis-nova",
-            "arcgis-modern-antique",
-            "arcgis-midcentury",
-            "arcgis-newspaper",
-            "arcgis-hillshade-light",
-            "arcgis-hillshade-dark",
-            "arcgis-human-geography",
-            "arcgis-human-geography-dark",
-        ]
-        return basemaps
+        if self._gis._is_authenticated:
+            return [
+                "dark-gray-vector",
+                "gray-vector",
+                "hybrid",
+                "oceans",
+                "osm",
+                "satellite",
+                "streets-navigation-vector",
+                "streets-night-vector",
+                "streets-relief-vector",
+                "streets-vector",
+                "terrain",
+                "topo-vector",
+                "arcgis-imagery",
+                "arcgis-imagery-standard",
+                "arcgis-imagery-labels",
+                "arcgis-light-gray",
+                "arcgis-dark-gray",
+                "arcgis-navigation",
+                "arcgis-navigation-night",
+                "arcgis-streets",
+                "arcgis-streets-night",
+                "arcgis-streets-relief",
+                "arcgis-topographic",
+                "arcgis-oceans",
+                "osm-standard",
+                "osm-standard-relief",
+                "osm-streets",
+                "osm-streets-relief",
+                "osm-light-gray",
+                "osm-dark-gray",
+                "arcgis-terrain",
+                "arcgis-community",
+                "arcgis-charted-territory",
+                "arcgis-colored-pencil",
+                "arcgis-nova",
+                "arcgis-modern-antique",
+                "arcgis-midcentury",
+                "arcgis-newspaper",
+                "arcgis-hillshade-light",
+                "arcgis-hillshade-dark",
+                "arcgis-human-geography",
+                "arcgis-human-geography-dark",
+            ]
+        else:
+            return [
+                "dark-gray-vector",
+                "gray-vector",
+                "hybrid",
+                "oceans",
+                "osm",
+                "satellite",
+                "streets-navigation-vector",
+                "streets-night-vector",
+                "streets-relief-vector",
+                "streets-vector",
+                "terrain",
+                "topo-vector",
+            ]
 
     @property
     def gallery_basemaps(self):
@@ -1892,17 +2015,20 @@ class WebMap(HasTraits, collections.OrderedDict):
         gallery.
         """
         if self._gis:
-            bmquery = self._gis.properties["basemapGalleryGroupQuery"]
-            basemapsgrp = self._gis.groups.search(bmquery, outside_org=True)
-            if len(basemapsgrp) == 1:
-                for bm in basemapsgrp[0].content():
-                    if bm.type.lower() == "web map":  # Only use WebMaps
-                        item_data = bm.get_data()
-                        bm_title = bm.title.lower().replace(" ", "_")
-                        self._gallery_basemaps[bm_title] = item_data["baseMap"]
-                return list(self._gallery_basemaps.keys())
-            else:
-                return list(self._gallery_basemaps.keys())
+            try:
+                bmquery = self._gis.properties["basemapGalleryGroupQuery"]
+                basemapsgrp = self._gis.groups.search(bmquery, outside_org=True)
+                if len(basemapsgrp) == 1:
+                    for bm in basemapsgrp[0].content():
+                        if bm.type.lower() == "web map":  # Only use WebMaps
+                            item_data = bm.get_data()
+                            bm_title = bm.title.lower().replace(" ", "_")
+                            self._gallery_basemaps[bm_title] = item_data["baseMap"]
+                    return list(self._gallery_basemaps.keys())
+                else:
+                    return list(self._gallery_basemaps.keys())
+            except:
+                return []
         else:
             return []
 
@@ -2665,6 +2791,11 @@ class WebMap(HasTraits, collections.OrderedDict):
             "exportOptions": export_options,
         }
 
+        # add token parameter to the operational layers if token present
+        if self._gis._con.token is not None:
+            for i in range(len(print_options["operationalLayers"])):
+                print_options["operationalLayers"][i]["token"] = self._gis._con.token
+
         # execute printing
         result = export_map(
             web_map_as_json=print_options,
@@ -2849,6 +2980,7 @@ class OfflineMapAreaManager(object):
     _item = None
     _portal = None
     _web_map = None
+
     # ----------------------------------------------------------------------
     def __init__(self, item, gis):
         self._gis = gis
@@ -2856,7 +2988,6 @@ class OfflineMapAreaManager(object):
         self._item = item
         self._web_map = WebMap(self._item)
         try:
-
             self._url = self._gis.properties.helperServices.packaging.url
             self._pm = self._gis._tools.packaging
 
@@ -3556,7 +3687,10 @@ class OfflineMapAreaManager(object):
                     if "minute" in refresh_rates:
                         minute = refresh_rates["minute"]
                     map_area_refresh_params = {
-                        "startDate": int(datetime.datetime.utcnow().timestamp()) * 1000,
+                        "startDate": int(
+                            datetime.datetime.now(tz=timezone.utc).timestamp()
+                        )
+                        * 1000,
                         "type": "daily",
                         "nthDay": 1,
                         "dayOfWeek": 0,
@@ -3564,7 +3698,10 @@ class OfflineMapAreaManager(object):
                     refresh_schedule = "0 {m} {hour} * * ?".format(m=minute, hour=hour)
                 else:
                     map_area_refresh_params = {
-                        "startDate": int(datetime.datetime.utcnow().timestamp()) * 1000,
+                        "startDate": int(
+                            datetime.datetime.now(tz=timezone.utc).timestamp()
+                        )
+                        * 1000,
                         "type": "daily",
                         "nthDay": 1,
                         "dayOfWeek": 0,
@@ -3582,7 +3719,10 @@ class OfflineMapAreaManager(object):
                     if "day_of_week" in refresh_rates:
                         dayOfWeek = refresh_rates["day_of_week"]
                     map_area_refresh_params = {
-                        "startDate": int(datetime.datetime.utcnow().timestamp()) * 1000,
+                        "startDate": int(
+                            datetime.datetime.now(tz=timezone.utc).timestamp()
+                        )
+                        * 1000,
                         "type": "weekly",
                         "nthDay": 1,
                         "dayOfWeek": dayOfWeek,
@@ -3592,7 +3732,10 @@ class OfflineMapAreaManager(object):
                     )
                 else:
                     map_area_refresh_params = {
-                        "startDate": int(datetime.datetime.utcnow().timestamp()) * 1000,
+                        "startDate": int(
+                            datetime.datetime.now(tz=timezone.utc).timestamp()
+                        )
+                        * 1000,
                         "type": "weekly",
                         "nthDay": 1,
                         "dayOfWeek": 1,
@@ -3613,7 +3756,10 @@ class OfflineMapAreaManager(object):
                     if "day_of_week" in refresh_rates:
                         dayOfWeek = refresh_rates["day_of_week"]
                     map_area_refresh_params = {
-                        "startDate": int(datetime.datetime.utcnow().timestamp()) * 1000,
+                        "startDate": int(
+                            datetime.datetime.now(tz=timezone.utc).timestamp()
+                        )
+                        * 1000,
                         "type": "monthly",
                         "nthDay": nthday,
                         "dayOfWeek": dayOfWeek,
@@ -3623,7 +3769,10 @@ class OfflineMapAreaManager(object):
                     )
                 else:
                     map_area_refresh_params = {
-                        "startDate": int(datetime.datetime.utcnow().timestamp()) * 1000,
+                        "startDate": int(
+                            datetime.datetime.now(tz=timezone.utc).timestamp()
+                        )
+                        * 1000,
                         "type": "monthly",
                         "nthDay": 3,
                         "dayOfWeek": 3,
@@ -3654,7 +3803,6 @@ class OfflineMapAreaManager(object):
         # pkg_tb = Toolbox(url=self._url, gis=self._gis)
         pkg_tb = self._gis._tools.packaging
         if self._gis.version >= [7, 2]:
-
             if _extent:
                 area = _extent
                 area_type = "ENVELOPE"
@@ -3830,14 +3978,12 @@ class OfflineMapAreaManager(object):
 
                 lods.append({"url": layer0_obj.url, "levels": lod_span_str})
             # endregion
-        # endregion
         feature_services = None
         if enable_updates:
             if feature_services is None:
                 feature_services = {}
                 for l in self._web_map.layers:
                     if os.path.dirname(l["url"]) not in feature_services:
-
                         feature_services[os.path.dirname(l["url"])] = {
                             "url": os.path.dirname(l["url"]),
                             "layers": [int(os.path.basename(l["url"]))],
@@ -3974,7 +4120,8 @@ class OfflineMapAreaManager(object):
             if "minute" in refresh_rates:
                 minute = refresh_rates["minute"]
             map_area_refresh_params = {
-                "startDate": int(datetime.datetime.utcnow().timestamp()) * 1000,
+                "startDate": int(datetime.datetime.now(tz=timezone.utc).timestamp())
+                * 1000,
                 "type": "daily",
                 "nthDay": 1,
                 "dayOfWeek": 0,
@@ -3988,7 +4135,8 @@ class OfflineMapAreaManager(object):
             if "day_of_week" in refresh_rates:
                 dayOfWeek = refresh_rates["day_of_week"]
             map_area_refresh_params = {
-                "startDate": int(datetime.datetime.utcnow().timestamp()) * 1000,
+                "startDate": int(datetime.datetime.now(tz=timezone.utc).timestamp())
+                * 1000,
                 "type": "weekly",
                 "nthDay": 1,
                 "dayOfWeek": dayOfWeek,
@@ -4006,7 +4154,8 @@ class OfflineMapAreaManager(object):
             if "day_of_week" in refresh_rates:
                 dayOfWeek = refresh_rates["day_of_week"]
             map_area_refresh_params = {
-                "startDate": int(datetime.datetime.utcnow().timestamp()) * 1000,
+                "startDate": int(datetime.datetime.now(tz=timezone.utc).timestamp())
+                * 1000,
                 "type": "monthly",
                 "nthDay": nthday,
                 "dayOfWeek": dayOfWeek,
@@ -4352,9 +4501,9 @@ class EnterpriseVectorTileLayerManager(arcgis.gis._GISResource):
     # ----------------------------------------------------------------------
     def rebuild_cache(self, min_scale=None, max_scale=None):
         """
-        The rebuild_cache operation update the scene layer cache to reflect
-        any changes made to the feature layer used to publish this scene layer.
-        The results of the operation is the url to the scene service once it is
+        The rebuild_cache operation updates the vector tile layer cache to reflect
+        any changes made.
+        The results of the operation is the url to the vector tile service once it is
         done rebuilding.
 
         ======================      =======================================================
@@ -4747,7 +4896,6 @@ class SymbolService:
     def properties(self) -> dict[str, Any]:
         """returns the service's properties"""
         if self._properties is None:
-
             self._properties = arcgis._impl.common._isd.InsensitiveDict(
                 self._gis._con.get(self._url, {"f": "json"})
             )
@@ -4815,7 +4963,6 @@ class SymbolService:
         save_file_name: str = None
         save_folder: str = None
         if file_path:
-
             save_folder, save_file_name = os.path.dirname(file_path), os.path.basename(
                 file_path
             )
@@ -5153,7 +5300,6 @@ class VectorTileLayer(arcgis.gis.Layer):
             raise Exception("No job results.")
 
         if "results" in job_response:
-
             allResults = job_response["results"]
 
             for k, v in allResults.items():
@@ -5387,7 +5533,9 @@ class MapImageLayerManager(arcgis.gis._GISResource):
         ===============     ====================================================
         :return:
             A dictionary
+
         .. code-block:: python
+
             # USAGE EXAMPLE
             >>> from arcgis.mapping import MapImageLayer
             >>> from arcgis.gis import GIS
@@ -6021,7 +6169,6 @@ class MapImageLayer(arcgis.gis.Layer):
         layer_parameters: Optional[list[dict[str, Any]]] = None,
         **kwargs,
     ):
-
         """
         The ``identify`` operation is performed on a map service resource
         to discover features at a geographic location. The result of this
@@ -7010,7 +7157,6 @@ class MapImageLayer(arcgis.gis.Layer):
                 raise Exception("No job results.")
 
             if "results" in job_response:
-
                 allResults = job_response["results"]
 
                 for k, v in allResults.items():
@@ -7088,7 +7234,6 @@ class Events(object):
         return self._actions
 
     def sync_widget(self, widgets):
-
         if self.enable == False:
             raise Exception("Please enable events")
 

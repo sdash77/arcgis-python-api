@@ -46,7 +46,6 @@ except:
 
 
 def _get_learner_object(data, layers, emb_szs, ps, emb_drop, pretrained_path):
-
     if pretrained_path:
         learn = load_learner(
             os.path.dirname(pretrained_path),
@@ -99,11 +98,13 @@ class FullyConnectedNetwork(ArcGISModel):
     """
 
     def __init__(self, data, layers=None, emb_szs=None, **kwargs):
-
         if data._is_unsupervised:
             raise Exception("Cannot train on unsupervised data")
 
         super().__init__(data, None)
+
+        if isinstance(self._data._dependent_variable, list):
+            self._data._dependent_variable = self._data._dependent_variable[0]
 
         self._backbone = None
         if layers is None:
@@ -166,7 +167,6 @@ class FullyConnectedNetwork(ArcGISModel):
         layers = emd["layers"]
         cell_sizes = emd.get("cell_sizes", None)
         if data is None:
-
             data = TabularDataObject._empty(
                 categorical_variables, continuous_variables, dependent_variable, None
             )
@@ -418,7 +418,6 @@ class FullyConnectedNetwork(ArcGISModel):
             explain = False
             explain_index = None
         if prediction_type in ["features", "dataframe"]:
-
             if input_features is None:
                 raise Exception("Feature Layer required for predict_features=True")
 
@@ -571,7 +570,6 @@ class FullyConnectedNetwork(ArcGISModel):
         explain=False,
         explain_index=None,
     ):
-
         if not os.path.exists(os.path.dirname(output_folder_path)):
             raise Exception("Output directory doesn't exist")
 

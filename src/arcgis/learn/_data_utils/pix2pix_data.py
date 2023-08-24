@@ -242,7 +242,6 @@ def _batch_stats_json(
 
 
 def multispectral_additions(data):
-
     # batch_stats_a = _batch_stats_json(data.path, data.x_a, norm_pct, stats_file_name="esri_normalization_stats_a.json")
     # batch_stats_b = _batch_stats_json(data.path, data.x_b, norm_pct, stats_file_name="esri_normalization_stats_b.json")
 
@@ -270,7 +269,6 @@ def get_files(*args, **kwargs):
 
 
 def apply_tfms(images, other_tfms, resize_to):
-
     image_A, image_B = images
     # To fix when the disk image size is smaller than
     # crop size, otherwise crop_tfm behaves strange    if min(image_B.shape[1:]) / size < 1:
@@ -342,7 +340,6 @@ class Pix2PixHDDataset(Dataset):
         batch_stats_b=None,
         rgb_bands=[0, 1, 2],
     ):
-
         self.path = Path(path)
         self.image_list_A = image_list_A
         self.image_list_B = image_list_B
@@ -384,7 +381,16 @@ class Pix2PixHDDataset(Dataset):
         return len(self.image_list_B)
 
     def __getitem__(self, idx):
-
+        if os.path.isdir(self.path / "labels"):
+            self.image_list_B = [
+                Path(
+                    os.path.join(
+                        os.path.split(i)[0].replace("images2", "labels"),
+                        os.path.split(i)[1],
+                    )
+                )
+                for i in self.image_list_B
+            ]
         if self._is_multispectral:
             # to add mask loading
             image_A = ArcGISMSImage.open(
@@ -581,6 +587,7 @@ def prepare_pix2pix_data(
     norm_pct,
     _is_multispectral,
     working_dir,
+    seed,
     **kwargs,
 ):
     norm_stats = [[0.5, 0.5, 0.5], [0.5, 0.5, 0.5]]  # kwargs.get('norm_stats', stats)
@@ -628,6 +635,10 @@ def prepare_pix2pix_data(
     data._temp_folder = _prepare_working_dir(data.path)
     data.show_batch = types.MethodType(show_batch, data)
     data._dataset_type = "Pix2Pix"
+    data._downsampling_factor = kwargs.get("downsample_factor", None)
+    data.val_split_pct = val_split_pct
+    data.resize_to = resize_to
+    data.seed = seed
     data._extract_bands = None
 
     return data

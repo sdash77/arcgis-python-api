@@ -19,6 +19,7 @@ from .._impl.common._utils import _date_handler
 from .._impl.common._utils import inspect_function_inputs
 import arcgis.network as network
 
+
 # --------------------------------------------------------------------------
 def aggregate_points(
     point_layer: Union[
@@ -96,7 +97,7 @@ def aggregate_points(
                                             group_by_field is specified. If true, the minority (least dominant) or
                                             the majority (most dominant) attribute values for each group field
                                             within each boundary are calculated. Two new fields are added to the
-                                            aggregated_layer prefixed with Majority_ and Minority_.
+                                            aggregated_layer prefixed with `Majority_` and `Minority_`.
                                             The default is false.
     ------------------------------------    --------------------------------------------------------------------
     percent_points                          Optional boolean. This boolean parameter is applicable only when a
@@ -392,7 +393,7 @@ def summarize_nearby(
     -------------------------   --------------------------------------------------------------------------------------------------------------------
     minority_majority           Optional boolean. This boolean parameter is applicable only when a ``group_by_field`` is specified. If true, the minority (least dominant) or the
                                 majority (most dominant) attribute values for each group field within each nearby area are calculated. Two new fields are added to
-                                the ``result_layer`` prefixed with Majority_ and Minority_.
+                                the ``result_layer`` prefixed with `Majority_` and `Minority_`.
 
                                 The default is False.
     -------------------------   --------------------------------------------------------------------------------------------------------------------
@@ -512,7 +513,6 @@ def summarize_center_and_dispersion(
     estimate: bool = False,
     future: bool = False,
 ):
-
     """
     .. image:: _static/images/summarize_center_and_dispersion/summarize_center_and_dispersion.png
 
@@ -700,7 +700,7 @@ def summarize_within(
     -------------------------------------   ---------------------------------------------------------
     minority_majority                       Optional boolean. This boolean parameter is applicable only when a ``group_by_field`` is specified.
                                             If true, the minority (least dominant) or the majority (most dominant) attribute values for each group
-                                            field are calculated. Two new fields are added to the ``result_layer`` prefixed with Majority_ and Minority_.
+                                            field are calculated. Two new fields are added to the ``result_layer`` prefixed with `Majority_` and `Minority_`.
 
                                             The default is False.
     -------------------------------------   ---------------------------------------------------------

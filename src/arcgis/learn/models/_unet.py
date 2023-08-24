@@ -128,7 +128,6 @@ class UnetClassifier(ArcGISModel):
         *args,
         **kwargs,
     ):
-
         if pretrained_path is not None:
             backbone_pretrained = False
         else:
@@ -189,7 +188,6 @@ class UnetClassifier(ArcGISModel):
                 backbone_split = _backbone_meta["split"]
 
             if "timm" in self._backbone.__module__:
-
                 for bckbn in ["densenet", "inception_v4", "vgg"]:
                     if bckbn in self._backbone.__name__:
                         from torch import nn
@@ -534,6 +532,7 @@ class UnetClassifier(ArcGISModel):
             plt.show()
 
     def accuracy(self):
+        """Computes per pixel accuracy on validation set."""
         try:
             return self.learn.validate()[1].tolist()
         except Exception as e:
@@ -561,7 +560,6 @@ class UnetClassifier(ArcGISModel):
         return float(model_accuracy)
 
     def mIOU(self, mean=False, show_progress=True):
-
         """
         Computes mean IOU on the validation set for each class.
 
@@ -696,6 +694,7 @@ class UnetClassifier(ArcGISModel):
 
         Returns per class precision, recall and f1 scores
         """
+        ignore_classes = np.unique(self._ignore_classes + ignore_classes).tolist()
         try:
             self._check_requisites()
             ## Calling imported function `per_class_metrics`

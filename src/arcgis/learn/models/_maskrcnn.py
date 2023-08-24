@@ -285,7 +285,6 @@ class MaskRCNN(ArcGISModel):
         *args,
         **kwargs,
     ):
-
         # Set default backbone to be 'resnet50'
         if backbone is None:
             backbone = models.resnet50
@@ -574,6 +573,7 @@ class MaskRCNN(ArcGISModel):
             data.resize_to = emd.get("resize_to", None)
             data.class_mapping = class_mapping
             data.color_mapping = color_mapping
+            data._is_empty = True
             data.emd_path = emd_path
             data.emd = emd
             data = get_multispectral_data_params_from_emd(data, emd)
@@ -755,7 +755,6 @@ class MaskRCNN(ArcGISModel):
         return predictionsf
 
     def _predict_postprocess(self, predictions, threshold=0.5, box_threshold=0.5):
-
         pred_mask = []
         pred_box = []
 
@@ -1001,7 +1000,6 @@ class MaskRCNN(ArcGISModel):
         show_progress=True,
         tta_prediction=False,
     ):
-
         """
         Computes average precision on the validation set for each class.
 

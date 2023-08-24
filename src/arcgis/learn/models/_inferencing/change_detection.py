@@ -126,7 +126,6 @@ def batch_to_tile(batch, batch_height, batch_width):
 
 class ChildImageClassifier:
     def initialize(self, model, model_as_file):
-
         if not HAS_TORCH:
             raise Exception(
                 "PyTorch is not installed. Install it using conda install -c pytorch pytorch torchvision"
@@ -152,6 +151,7 @@ class ChildImageClassifier:
             )
 
         self.cd_model = ChangeDetector.from_model(emd_path=model)
+        self._learnmodel = self.cd_model
         self.model = self.cd_model.learn.model.to(self.device)
         self.model.eval()
 

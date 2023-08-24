@@ -4,6 +4,7 @@ Contains tools to manage a GIS' metadata properties
 from arcgis._impl.common._mixins import PropertyMap
 from .. import GIS
 
+
 ########################################################################
 class MetadataManager(object):
     """
@@ -14,6 +15,7 @@ class MetadataManager(object):
     _gis = None
     _portal = None
     _con = None
+
     # ----------------------------------------------------------------------
     def __init__(self, gis):
         """Constructor"""

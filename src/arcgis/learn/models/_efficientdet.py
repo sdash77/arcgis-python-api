@@ -53,6 +53,7 @@ class EfficientDet(ArcGISModel):
     ---------------------   -----------------------------------------------------
     data                    Required fastai Databunch. Returned data object from
                             :meth:`~arcgis.learn.prepare_data`  function.
+                            Only (JPEG+PASCAL_VOC_rectangles) format supported.
     ---------------------   -----------------------------------------------------
     backbone                Optional String. Backbone convolutional neural network
                             model used for EfficientDet.
@@ -97,6 +98,9 @@ class EfficientDet(ArcGISModel):
         if not check_data_sanity(data, self.supported_datasets):
             raise Exception("\nInvalid data format\n")
 
+        if not hasattr(data, "_is_empty"):
+            data._is_empty = False
+
         super().__init__(data, backbone, pretrained_path=pretrained_path, **kwargs)
 
         self._check_dataset_support(data)
@@ -122,9 +126,14 @@ class EfficientDet(ArcGISModel):
 
         self._tf_data_loader = _get_tf_data_loader(data)
         self._trainer = EfficientDetTrainer.create(data, self._backbone.get_name())
-        self._tf_dataset = self._trainer.get_tf_dataset(
-            self._tf_data_loader, self._data.batch_size
-        )
+        self._tf_dataset = None
+        if not self._data.is_empty:
+            self._tf_dataset = self._trainer.get_tf_dataset(
+                self._tf_data_loader, self._data.batch_size
+            )
+        else:
+            self._tf_dataset = "empty"
+
         self._setup_backend(data, pretrained_path)
 
         self._code = code
@@ -164,7 +173,6 @@ class EfficientDet(ArcGISModel):
 
     def _setup_backend(self, data, pretrained_path):
         from ._efficientdet_utils import EfficientDetLearner
-        from .._utils.fastai_tf_fit import TfLearner
         import tensorflow as tf
         from tensorflow.keras.models import Model
         from fastai.basics import defaults
@@ -249,6 +257,8 @@ class EfficientDet(ArcGISModel):
             ds_tfms = (train_tfms, val_tfms)
             with warnings.catch_warnings():
                 warnings.simplefilter("ignore", UserWarning)
+                from fastai.vision import ImageList, imagenet_stats
+
                 sd = ImageList([], path=emd_path.parent.parent.parent).split_by_idx([])
                 data = (
                     sd.label_const(
@@ -260,6 +270,7 @@ class EfficientDet(ArcGISModel):
                     .databunch(device=_get_device())
                     .normalize(imagenet_stats)
                 )
+
             # Add 1 for background class
             data.c += 1
             data.chip_size = chip_size
@@ -271,7 +282,10 @@ class EfficientDet(ArcGISModel):
             data.emd = emd
             data = get_multispectral_data_params_from_emd(data, emd)
             data.dataset_type = dataset_type
+            data.batch_size = 1
+            data.path = emd_path.parent
             data.orig_path = None
+            data._val_split_pct = 0.0
 
         data.resize_to = resize_to
         efficientdet = cls(data, backbone, pretrained_path=str(model_file), **kwargs)
@@ -297,7 +311,12 @@ class EfficientDet(ArcGISModel):
         _emd_template["Classes"] = []
 
         class_data = {}
-        for i, class_name in enumerate(self._data.classes[1:]):
+        class_data["Value"] = 0
+        class_data["Name"] = "background"
+        class_data["Color"] = [random.choice(range(256)) for i in range(3)]
+        _emd_template["Classes"].append(class_data.copy())
+
+        for k, class_name in self._data.class_mapping.items():
             inverse_class_mapping = {v: k for k, v in self._data.class_mapping.items()}
             class_data["Value"] = inverse_class_mapping[class_name]
             class_data["Name"] = class_name
@@ -308,7 +327,22 @@ class EfficientDet(ArcGISModel):
 
     @property
     def _model_metrics(self):
-        return self.learn.compute_metrics()
+        ap_dict = dict()
+        if self._data._is_empty:
+            import numpy as np
+
+            ap_dict["AP"] = np.float64(0.0)
+        else:
+            metrics = self.learn.compute_metrics()
+            mean = self.learn._compute_mean_avp
+            if mean is False:
+                for value in metrics:
+                    if value.startswith("AP_/"):
+                        class_name = value[4:]
+                        ap_dict[class_name] = metrics[value]
+            else:
+                ap_dict = metrics["AP"]
+        return dict({"average_precision_score": ap_dict})
 
     @staticmethod
     def _available_metrics():
@@ -419,7 +453,6 @@ class EfficientDet(ArcGISModel):
         },
         resize=False,
     ):
-
         """
         Runs prediction on a video and appends the output VMTI predictions in the metadata file.
         This method is only supported for RGB images.
@@ -506,48 +539,6 @@ class EfficientDet(ArcGISModel):
             resize,
         )
 
-    def plot_losses(self, show=True):
-        """
-        Plot training and validation losses.
-
-        =====================   ===========================================
-        **Argument**            **Description**
-        ---------------------   -------------------------------------------
-        show                    Optional bool. Defaults to True
-                                If set to False, figure will not be plotted
-                                but will be returned, when set to True function
-                                will plot the figure and return nothing.
-        =====================   ===========================================
-
-        :return: `matplotlib.figure.Figure <https://matplotlib.org/stable/api/figure_api.html#matplotlib.figure.Figure>`_
-        """
-        self._check_requisites()
-
-        if not len(self.learn.recorder.losses):  # return none if the recorder is empty
-            raise Exception("Model needs to be fitted, before saving.")
-        import numpy as np
-        import matplotlib.pyplot as plt
-
-        fig, ax = plt.subplots(1, 1)
-        N = max(1, len(self.learn.recorder.losses) // 10)  # smooth with a factor of N
-        ax.plot(
-            np.convolve(self.learn.recorder.losses, np.ones((N,)) / N, mode="valid"),
-            label="Train",
-        )
-        ax.plot(
-            np.convolve(self.learn.recorder.val_loss, np.ones((N,)) / N, mode="valid"),
-            label="Validation",
-        )
-        ax.set_ylabel("Loss")
-        ax.set_xlabel("Epochs")
-        ax.legend()
-
-        if not show:
-            plt.close()
-            return fig
-        else:
-            plt.show()
-
     def average_precision_score(self, mean=False):
         """
         Computes average precision on the validation set for each class.
@@ -562,89 +553,79 @@ class EfficientDet(ArcGISModel):
 
         :return: `dict` if mean is False otherwise `float`
         """
-        metrics = self._model_metrics
-        if mean is False:
-            ap_dict = dict()
-            for value in metrics:
-                if value.startswith("AP_/"):
-                    class_name = value[4:]
-                    ap_dict[class_name] = metrics[value]
-            return dict
-        else:
-            return metrics["AP"]
+        self.learn._compute_mean_avp = mean
+        avp = self._model_metrics["average_precision_score"]
+        self.learn._compute_mean_avp = False
+        return avp
 
-    def show_results(
-        self,
-        rows=4,
-        box_threshold=0.7,
-        imsize=5,
-        cmap="tab20",
-        **kwargs,
-    ):
+    def show_results(self, rows=5, thresh=0.5, nms_overlap=0.1):
         """
         Displays the results of a trained model on a part of the validation set.
 
         =====================   ===========================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ---------------------   -------------------------------------------
-        ---------------------   -------------------------------------------
-        nrows                   Optional int. Number of rows of results
+        rows                    Optional int. Number of rows of results
                                 to be displayed.
         ---------------------   -------------------------------------------
-        box_threshold           Optional float. The probability above which
+        thresh                  Optional float. The probability above which
                                 a detection will be considered valid.
+        ---------------------   -------------------------------------------
+        nms_overlap             Optional float. The intersection over union
+                                threshold with other predicted bounding
+                                boxes, above which the box with the highest
+                                score will be considered a true positive.
         =====================   ===========================================
+
         """
         self._check_requisites()
-
         # Get Number of items
         nrows = rows
         ncols = 2
+        imsize = 5
+        type_data_loader = "validation"
+        return_fig = False
 
-        type_data_loader = kwargs.get(
-            "data_loader", "validation"
-        )  # options : traininig, validation
+        if not self._data._is_empty:
+            x_batch = self.learn.get_gt_batches(nrows, type_data_loader)
+        else:
+            x_batch = None
 
-        return_fig = kwargs.get("return_fig", False)
-
-        x_batch = self.learn.get_gt_batches(nrows, type_data_loader)
         nrows = min(nrows, len(x_batch))
 
         title_font_size = 16
-        if kwargs.get("top", None) is not None:
-            top = kwargs.get("top")
-        else:
-            top = 1 - (math.sqrt(title_font_size) / math.sqrt(100 * nrows * imsize))
+        top = 1 - (math.sqrt(title_font_size) / math.sqrt(100 * nrows * imsize))
 
         fig, ax = plt.subplots(
             nrows=nrows, ncols=ncols, figsize=(ncols * imsize, nrows * imsize)
         )
 
         fig.suptitle("Ground Truth / Predictions", fontsize=title_font_size)
-        for i in range(nrows):
-            if nrows == 1:
-                ax_i = ax
-            else:
-                ax_i = ax[i]
-
-            for j in range(2):
-                image = get_image_for_tracking(x_batch[i][0])
-                image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
-                if j == 0:
-                    bboxes = x_batch[i][1]
+        if not self._data._is_empty:
+            for i in range(nrows):
+                if nrows == 1:
+                    ax_i = ax
                 else:
-                    bboxes, _, _ = self.predict(x_batch[i][0], box_threshold)
-                for bbox in bboxes:
-                    cv2.rectangle(
-                        image,
-                        (int(bbox[0]), int(bbox[1])),
-                        (int(bbox[2]) + int(bbox[0]), int(bbox[3] + int(bbox[1]))),
-                        (255, 0, 0),
-                        2,
-                    )
+                    ax_i = ax[i]
 
-                ax_i[j].imshow(image)  # image
-                ax_i[j].axis("off")
+                for j in range(2):
+                    image = get_image_for_tracking(x_batch[i][0])
+                    image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+                    if j == 0:
+                        bboxes = x_batch[i][1]
+                    else:
+                        bboxes, _, _ = self.predict(x_batch[i][0], thresh, nms_overlap)
+                    for bbox in bboxes:
+                        cv2.rectangle(
+                            image,
+                            (int(bbox[0]), int(bbox[1])),
+                            (int(bbox[2]) + int(bbox[0]), int(bbox[3] + int(bbox[1]))),
+                            (255, 0, 0),
+                            2,
+                        )
+
+                    ax_i[j].imshow(image)  # image
+                    ax_i[j].axis("off")
 
         plt.subplots_adjust(top=top)
         if self._device == torch.device("cuda"):
@@ -653,3 +634,79 @@ class EfficientDet(ArcGISModel):
             plt.show()
         if return_fig:
             return fig
+
+    def fit(
+        self,
+        epochs=10,
+        lr=None,
+        one_cycle=True,
+        early_stopping=False,
+        checkpoint=True,  # "all", "best", True, False ("best" and True are same.)
+        tensorboard=False,
+        monitor="valid_loss",  # whatever is passed here, earlystopping and checkpointing will use that.
+        **kwargs,
+    ):
+        """
+        Train the model for the specified number of epochs and using the
+        specified learning rates
+
+        =====================   ===========================================
+        **Parameter**            **Description**
+        ---------------------   -------------------------------------------
+        epochs                  Required integer. Number of cycles of training
+                                on the data. Increase it if underfitting.
+        ---------------------   -------------------------------------------
+        lr                      Optional float or slice of floats. Learning rate
+                                to be used for training the model. If ``lr=None``,
+                                an optimal learning rate is automatically deduced
+                                for training the model.
+        ---------------------   -------------------------------------------
+        one_cycle               Optional boolean. Parameter to select 1cycle
+                                learning rate schedule. If set to `False` no
+                                learning rate schedule is used.
+        ---------------------   -------------------------------------------
+        early_stopping          Optional boolean. Parameter to add early stopping.
+                                If set to 'True' training will stop if parameter
+                                `monitor` value stops improving for 5 epochs.
+                                A minimum difference of 0.001 is required for
+                                it to be considered an improvement.
+        ---------------------   -------------------------------------------
+        checkpoint              Optional boolean or string.
+                                Parameter to save checkpoint during training.
+                                If set to `True` the best model
+                                based on `monitor` will be saved during
+                                training. If set to 'all', all checkpoints
+                                are saved. If set to False, checkpointing will
+                                be off. Setting this parameter loads the best
+                                model at the end of training.Recommended to set to False.
+        ---------------------   -------------------------------------------
+        tensorboard             Optional boolean. Parameter to write the training log.
+                                If set to 'True' the log will be saved at
+                                `<dataset-path>/training_log` which can be visualized in
+                                tensorboard. Required tensorboardx version=2.1
+
+                                The default value is 'False'.
+
+                                .. note::
+                                    Not applicable for Text Models
+        ---------------------   -------------------------------------------
+        monitor                 Optional string. Parameter specifies
+                                which metric to monitor while checkpointing
+                                and early stopping. Defaults to 'valid_loss'. Value
+                                should be one of the metric that is displayed in
+                                the training table. Use `{model_name}.available_metrics`
+                                to list the available metrics to set here.
+        =====================   ===========================================
+        """
+        if lr is None:
+            lr = self._trainer.model_spec.config.learning_rate
+        super().fit(
+            epochs,
+            lr,
+            one_cycle,
+            early_stopping,
+            checkpoint,
+            tensorboard,
+            monitor,
+            **kwargs,
+        )

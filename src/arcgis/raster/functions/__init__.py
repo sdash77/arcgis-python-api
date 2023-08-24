@@ -15,7 +15,13 @@ Functions can be applied to various rasters (or images), including the following
 # Rasters within mosaic datasets
 from __future__ import annotations
 from typing import Optional, Union
-from .._layer import ImageryLayer, Raster, _ArcpyRaster, RasterCollection
+from .._layer import (
+    ImageryLayer,
+    Raster,
+    _ArcpyRaster,
+    RasterCollection,
+    _ArcpyRasterCollection,
+)
 from .utility import (
     _raster_input,
     _get_raster,
@@ -78,10 +84,21 @@ hidden_inputs = ["ToolName", "PrimaryInputParameterName", "OutputRasterParameter
 def _clone_layer(
     layer, function_chain, raster_ra, raster_ra2=None, variable_name="Raster"
 ):
-
     _set_multidimensional_rules(function_chain)
-
     if isinstance(layer, Raster) or isinstance(layer, RasterCollection):
+        if (isinstance(layer, RasterCollection)) and isinstance(
+            layer, _ArcpyRasterCollection
+        ):
+            if "Rasters" in function_chain["rasterFunctionArguments"].keys():
+                if isinstance(
+                    function_chain["rasterFunctionArguments"]["Rasters"],
+                    RasterCollection,
+                ):
+                    function_chain["rasterFunctionArguments"].pop("Rasters")
+
+            return _clone_layer_raster_without_copy(
+                layer, function_chain, function_chain
+            )
         return _clone_layer_raster(
             layer, function_chain, raster_ra, raster_ra2, variable_name
         )
@@ -131,6 +148,7 @@ def _clone_layer(
     newlyr._filtered = layer._filtered
     newlyr._uses_gbl_function = layer._uses_gbl_function
     newlyr._raster_info = layer._raster_info
+    newlyr._tiles_only = False  # layer with raster function applied is not tiles only
 
     if hasattr(layer, "_lazy_token"):
         newlyr._lazy_token = layer._lazy_token
@@ -193,6 +211,7 @@ def _clone_layer_without_copy(layer, function_chain, function_chain_ra):
     newlyr._filtered = layer._filtered
     newlyr._uses_gbl_function = layer._uses_gbl_function
     newlyr._raster_info = layer._raster_info
+    newlyr._tiles_only = False  # layer with raster function applied is not tiles only
 
     if hasattr(layer, "_lazy_token"):
         newlyr._lazy_token = layer._lazy_token
@@ -207,7 +226,6 @@ def _clone_layer_without_copy(layer, function_chain, function_chain_ra):
 def _clone_layer_raster(
     layer, function_chain, raster_ra, raster_ra2=None, variable_name="Raster"
 ):
-
     function_chain_ra = copy.deepcopy(function_chain)
     function_chain_ra["rasterFunctionArguments"][variable_name] = raster_ra
     if raster_ra2 is not None:
@@ -242,12 +260,14 @@ def _clone_layer_raster(
         if (layer._engine != _ArcpyRaster) and (
             layer.tiles_only or (not allow_raster_function and allow_analysis)
         ):
+            service_url = layer.url
             newlyr = Raster(
                 function_chain_ra,
                 is_multidimensional=layer._is_multidimensional,
                 engine=layer._engine,
                 gis=layer._gis,
             )
+            newlyr._engine_obj._service_url = service_url
         else:
             newlyr = Raster(
                 layer._url,
@@ -300,6 +320,9 @@ def _clone_layer_raster(
     newlyr._engine_obj._filtered = layer._filtered
     newlyr._engine_obj._uses_gbl_function = layer._uses_gbl_function
     newlyr._engine_obj._do_not_hydrate = layer._do_not_hydrate
+    newlyr._engine_obj._tiles_only = (
+        False  # layer with raster function applied is not tiles only
+    )
     # newlyr._engine_obj.extent = layer.extent
     if hasattr(layer, "_lazy_token"):
         newlyr._engine_obj._lazy_token = layer._lazy_token
@@ -315,52 +338,76 @@ def _clone_layer_raster(
 
 
 def _clone_layer_raster_without_copy(layer, function_chain, function_chain_ra):
-
-    if layer._datastore_raster:
-        if isinstance(layer._uri, dict) or isinstance(layer._uri, bytes):
-            newlyr = Raster(
-                function_chain_ra,
-                is_multidimensional=layer._is_multidimensional,
-                engine=layer._engine,
-                gis=layer._gis,
-            )
+    if (isinstance(layer, RasterCollection)) and isinstance(
+        layer, _ArcpyRasterCollection
+    ):
+        if hasattr(layer, "_ras_coll_engine_obj"):
+            rc = layer._ras_coll_engine_obj
         else:
-            newlyr = Raster(
-                layer._uri,
-                is_multidimensional=layer._is_multidimensional,
-                engine=layer._engine,
-                gis=layer._gis,
+            rc = layer
+        try:
+            import arcpy, json
+
+            arcpylyr = arcpy.ia.Apply(
+                rc._raster_collection,
+                json.dumps(function_chain_ra),
             )
+            newlyr = Raster(
+                arcpylyr,
+                is_multidimensional=True,
+                engine=rc[0]["Raster"]._engine,
+            )
+            return newlyr
+        except Exception as err:
+            _LOGGER.warning(err)
     else:
-        allow_raster_function = True
-        allow_analysis = True
-        info = layer._get_service_info()
-        if "allowRasterFunction" in info.keys():
-            allow_raster_function = info["allowRasterFunction"]
-        if not allow_raster_function:
-            if "allowAnalysis" in info.keys():
-                allow_analysis = info["allowAnalysis"]
-            if not allow_analysis:
-                raise RuntimeError("Input image service doesnt allow analysis.")
-        if (layer._engine != _ArcpyRaster) and (
-            layer.tiles_only or (not allow_raster_function and allow_analysis)
-        ):
-            newlyr = Raster(
-                function_chain_ra,
-                is_multidimensional=layer._is_multidimensional,
-                engine=layer._engine,
-                gis=layer._gis,
-            )
+        if (hasattr(layer, "_datastore_raster")) and layer._datastore_raster:
+            if isinstance(layer._uri, dict) or isinstance(layer._uri, bytes):
+                newlyr = Raster(
+                    function_chain_ra,
+                    is_multidimensional=layer._is_multidimensional,
+                    engine=layer._engine,
+                    gis=layer._gis,
+                )
+            else:
+                newlyr = Raster(
+                    layer._uri,
+                    is_multidimensional=layer._is_multidimensional,
+                    engine=layer._engine,
+                    gis=layer._gis,
+                )
         else:
-            newlyr = Raster(
-                layer._url,
-                is_multidimensional=layer._is_multidimensional,
-                engine=layer._engine,
-                gis=layer._gis,
-            )
-            newlyr._engine_obj._tiles_only = layer._tiles_only
+            allow_raster_function = True
+            allow_analysis = True
+            info = layer._get_service_info()
+            if "allowRasterFunction" in info.keys():
+                allow_raster_function = info["allowRasterFunction"]
+            if not allow_raster_function:
+                if "allowAnalysis" in info.keys():
+                    allow_analysis = info["allowAnalysis"]
+                if not allow_analysis:
+                    raise RuntimeError("Input image service doesnt allow analysis.")
+            if (layer._engine != _ArcpyRaster) and (
+                layer.tiles_only or (not allow_raster_function and allow_analysis)
+            ):
+                service_url = layer.url
+                newlyr = Raster(
+                    function_chain_ra,
+                    is_multidimensional=layer._is_multidimensional,
+                    engine=layer._engine,
+                    gis=layer._gis,
+                )
+                newlyr._engine_obj._service_url = service_url
+            else:
+                newlyr = Raster(
+                    layer._url,
+                    is_multidimensional=layer._is_multidimensional,
+                    engine=layer._engine,
+                    gis=layer._gis,
+                )
+                newlyr._engine_obj._tiles_only = layer._tiles_only
 
-    if layer._engine == _ArcpyRaster:
+    if (hasattr(layer, "_engine")) and layer._engine == _ArcpyRaster:
         allow_analysis = True  # check only allow  analysis if engine is arcpy as there is no export image case
         info = None
         try:
@@ -403,7 +450,10 @@ def _clone_layer_raster_without_copy(layer, function_chain, function_chain_ra):
     newlyr._engine_obj._filtered = layer._filtered
     newlyr._engine_obj._uses_gbl_function = layer._uses_gbl_function
     newlyr._engine_obj._do_not_hydrate = layer._do_not_hydrate
-    newlyr._engine_obj.extent = layer.extent
+    newlyr._engine_obj._tiles_only = (
+        False  # layer with raster function applied is not tiles only
+    )
+    # newlyr._engine_obj.extent = layer.extent
     if hasattr(layer, "_lazy_token"):
         newlyr._engine_obj._lazy_token = layer._lazy_token
     else:
@@ -487,7 +537,6 @@ def arg_max(
     undefined_class: Optional[int] = None,
     astype: Optional[str] = None,
 ):
-
     """
     In the ArgMax method, all raster bands from every input raster are assigned a 0-based incremental band index,
     which is first ordered by the input raster index, as shown in the table below, and then by the relative band order
@@ -520,7 +569,6 @@ def arg_min(
     undefined_class: Optional[int] = None,
     astype: Optional[str] = None,
 ):
-
     """
     ArgMin is the argument of the minimum, which returns the Band index for which the given pixel attains
     its minimum value.
@@ -553,7 +601,6 @@ def arg_median(
     undefined_class: Optional[int] = None,
     astype: Optional[str] = None,
 ):
-
     """
     The ArgMedian method returns the Band index for which the given pixel attains the median value of values
     from all bands.
@@ -888,7 +935,6 @@ def ndvi(
     band_indexes: Union[str, list] = "4 3",
     astype: Optional[str] = None,
 ):
-
     """
     Normalized Difference Vegetation Index
     NDVI = ((NIR - Red)/(NIR + Red))
@@ -1351,7 +1397,6 @@ def cire(
     band_indexes: Union[str, list] = "7 6",
     astype: Optional[str] = None,
 ):
-
     """
     The Chlorophyll Index - Red-Edge (CIre) is a vegetation index for estimating
     the chlorophyll content in leaves using the ratio of reflectivity in the
@@ -1385,7 +1430,6 @@ def cig(
     band_indexes: Union[str, list] = "7 3",
     astype: Optional[str] = None,
 ):
-
     """
     The Chlorophyll Index - Green (CIg) is a vegetation index for estimating
     the chlorophyll content in leaves using the ratio of reflectivity in
@@ -1548,7 +1592,6 @@ def clay_minerals(
     band_indexes: Union[str, list] = "6 7",
     astype: Optional[str] = None,
 ):
-
     """
     The Clay Minerals (CM) ratio is a geological index for identifying
     mineral features containing clay and alunite using two shortwave
@@ -1616,7 +1659,6 @@ def bai(
     band_indexes: Union[str, list] = "3 4",
     astype: Optional[str] = None,
 ):
-
     """
     The Burn Area Index (BAI) uses the reflectance values in the red and NIR portion of the spectrum to identify
     the areas of the terrain affected by fire.
@@ -1839,7 +1881,6 @@ def classify(
     classifier_definition: Optional[dict] = None,
     astype: Optional[str] = None,
 ):
-
     """
     classifies a segmented raster to a categorical raster.
 
@@ -1901,7 +1942,6 @@ def clip(
     clipping_raster: Optional[Union[Raster, ImageryLayer]] = None,
     use_input_geometry: bool = True,
 ):
-
     """
     Clips a raster using a rectangular shape according to the extents defined or will clip a raster to the shape of an
     input polygon. The shape defining the clip can clip the extent of the raster or clip out an area within the raster.
@@ -1937,21 +1977,18 @@ def clip(
     template_dict = {
         "rasterFunction": "Clip",
         "rasterFunctionArguments": {
-            "ClippingGeometry": geometry,
             "ClipType": 1 if clip_outside else 2,
             "Raster": raster,
         },
     }
 
+    if geometry is not None:
+        template_dict["rasterFunctionArguments"]["ClippingGeometry"] = geometry
+
     if astype is not None:
         template_dict["outputPixelType"] = astype.upper()
 
     extent_envelope = None
-
-    if clipping_raster is not None and isinstance(
-        clipping_raster, (Raster, ImageryLayer)
-    ):
-        extent_envelope = dict(clipping_raster.extent)
 
     try:
         from arcgis.geometry import Envelope, Geometry
@@ -1970,6 +2007,13 @@ def clip(
         geom_dict = template_dict["rasterFunctionArguments"]["ClippingGeometry"]
 
         template_dict["rasterFunctionArguments"]["Extent"] = extent_envelope
+        if (geom_dict) and not isinstance(
+            Geometry(geom_dict), Envelope
+        ):  # Setting extent to extent envelope will only work for services on or after 11.0
+            if [
+                int(v) for v in str(dict(layer.properties)["currentVersion"]).split(".")
+            ] < [11, 0]:
+                template_dict["rasterFunctionArguments"]["Extent"] = None
 
     except:
         pass
@@ -2053,7 +2097,6 @@ def colormap(
 
 
 def composite_band(rasters, astype: Optional[str] = None, cellsize_type: str = "MaxOf"):
-
     """
     Combines multiple images to form a multiband image.
 
@@ -6767,7 +6810,6 @@ def percentile(
     astype: Optional[str] = None,
     process_as_multiband: Optional[bool] = None,
 ):
-
     """
     The percentile function calculates the percentile of the inputs.
     The arguments for this function are as follows:
@@ -7982,7 +8024,6 @@ def vector_field_renderer(
 
 
 def apply(raster: Union[Raster, ImageryLayer], fn_name, **kwargs):
-
     """
     Applies a server side raster function template defined by the imagery layer (image service)
     The name of the raster function template is available in the imagery layer properties.rasterFunctionInfos.
@@ -8131,8 +8172,11 @@ def vector_field(
     return _clone_layer(layer, template_dict, raster_ra1, raster_ra2)
 
 
-def complex(raster: Union[Raster, ImageryLayer]):
-
+def complex(
+    raster: Union[Raster, ImageryLayer],
+    imaginary_raster: Optional[Raster, ImageryLayer] = None,
+    value_type: str = "AMPLITUDE",
+):
     """
     Complex function computes magnitude from complex values. It is used when
     input raster has complex pixel type. It computes magnitude from complex
@@ -8146,25 +8190,51 @@ def complex(raster: Union[Raster, ImageryLayer]):
     **Parameter**                         **Description**
     --------------------------------     --------------------------------------------------------------------
     raster                                   Required input :class:`Raster <arcgis.raster.Raster>` /  :class:`ImageryLayer <arcgis.raster.ImageryLayer>` object.
+    --------------------------------     --------------------------------------------------------------------
+    imaginary_raster                         Optional input :class:`Raster <arcgis.raster.Raster>` /  :class:`ImageryLayer <arcgis.raster.ImageryLayer>` object.
+                                             The imaginary raster input
+    --------------------------------     --------------------------------------------------------------------
+    value_type                               Optional string. Specifies which value type to calculate:
+
+                                                 - AMPLITUDE - Produces an output containing the amplitude values. This is the default.
+                                                 - PHASE - Produces an output containing the phase values.
+                                                 - COMPLEX - Produces an output containing the complex values.
     ================================     ====================================================================
 
     :return: The output raster.
 
     """
-    layer, raster, raster_ra = _raster_input(raster)
+    layer1, raster1, raster_ra1 = _raster_input(raster)
 
     template_dict = {
         "rasterFunction": "Complex",
         "rasterFunctionArguments": {
-            "Raster": raster,
+            "Raster": raster1,
         },
     }
 
-    return _clone_layer(layer, template_dict, raster_ra)
+    layer2 = None
+    if imaginary_raster is not None:
+        layer2, raster2, raster_ra2 = _raster_input(raster, imaginary_raster)
+        template_dict["rasterFunctionArguments"]["ImaginaryRaster"] = raster2
+
+    if layer1 is not None or (layer2 is not None and layer2._datastore_raster is False):
+        layer = layer1
+    else:
+        layer = layer2
+
+    value_types = ["AMPLITUDE", "PHASE", "COMPLEX"]
+    if value_type is not None:
+        if value_type.upper() not in value_types:
+            raise RuntimeError(
+                "value_type should be one of the following " + str(value_types)
+            )
+        template_dict["rasterFunctionArguments"]["ValueType"] = value_type.upper()
+
+    return _clone_layer(layer, template_dict, raster_ra1)
 
 
 def colormap_to_rgb(raster: Union[Raster, ImageryLayer]):
-
     """
     The colormap_to_rgb function is designed to work with single band image service that has
     internal colormap. It will convert the image into a three-band 8-bit RGB
@@ -8322,7 +8392,6 @@ def identity(raster: Union[Raster, ImageryLayer]):
 def colorspace_conversion(
     raster: Union[Raster, ImageryLayer], conversion_type: str = "rgb_to_hsv"
 ):
-
     """
     The ColorspaceConversion function converts the color model of a three-band
     unsigned 8-bit image from either the hue, saturation, and value (HSV)
@@ -8728,7 +8797,6 @@ def weighted_overlay(
     eval_from: int,
     eval_to: int,
 ):
-
     """
     The WeightedOverlay function allows you to overlay several rasters using a common measurement scale and weights each according to its importance. For more information, see
     `Weighted Overlay function <http://desktop.arcgis.com/en/arcmap/latest/manage-data/raster-and-images/weighted-overlay-function.htm>`_
@@ -8776,7 +8844,6 @@ def weighted_overlay(
 def weighted_sum(
     rasters: Union[Raster, ImageryLayer], fields: list[str], weights: list[float]
 ):
-
     """
     The weighted_sum function allows you to overlay several rasters, multiplying each by their given weight and summing them together. For more information, see
     `Weighted Sum function <http://desktop.arcgis.com/en/arcmap/latest/manage-data/raster-and-images/weighted-sum-function.htm>`_
@@ -8979,7 +9046,6 @@ def focal_stats(
 
 
 def lookup(raster: Union[Raster, ImageryLayer], field: Optional[str] = None):
-
     """
     Creates a new raster by looking up values found in another field in the table of the input raster.
     For more information see,
@@ -9367,7 +9433,6 @@ def monitor_vegetation(
 def constant_raster(
     constant: list, raster_info: Union[Raster, ImageryLayer], gis: Optional[GIS] = None
 ):
-
     """
     Creates a virtual raster with a single pixel value.
 
@@ -9654,7 +9719,6 @@ def aggregate_cells(
     extent_handling: bool = False,
     ignore_nodata: bool = False,
 ):
-
     """
     Generates a reduced-resolution version of a raster.
 
@@ -9938,7 +10002,6 @@ def predict_using_trend(
     interval_value: int = 1,
     interval_unit: str = "HOURS",
 ):
-
     """
     Computes a forecasted multidimensional raster layer using the output trend raster from the generate_trend function.
 
@@ -10038,7 +10101,6 @@ def linear_spectral_unmixing(
     non_negative: bool = False,
     sum_to_one: bool = False,
 ):
-
     """
     Performs subpixel classification and calculates the fractional abundance of different land cover types for individual pixels.
 
@@ -10300,7 +10362,6 @@ def s1_radiometric_calibration(
     raster: Union[Raster, ImageryLayer],
     calibration_type: Optional[Union[str, int]] = None,
 ):
-
     """
     Performs different types of radiometric calibration on Sentinel-1 data.
 
@@ -10353,7 +10414,6 @@ def s1_radiometric_calibration(
 
 
 def s1_thermal_noise_removal(raster: Union[Raster, ImageryLayer]):
-
     """
     Removes thermal noise from Sentinel-1 data.
 
@@ -10852,7 +10912,6 @@ def compute_change(
     from_class_name_field_name: Optional[str] = None,
     to_class_name_field_name: Optional[str] = None,
 ):
-
     """
     Produce raster outputs representing of various changes.
     Function available in ArcGIS Image Server 10.8.1 and higher.
@@ -11089,7 +11148,6 @@ def detect_change_using_change_analysis_raster(
     min_end_value: Optional[float] = None,
     max_end_value: Optional[float] = None,
 ):
-
     """
     Function generates a raster containing pixel change information using the
     output change analysis raster from the :meth:`~arcgis.raster.analytics.analyze_changes_using_ccdc` function
@@ -11456,7 +11514,6 @@ def detect_change_using_change_analysis_raster(
 
 
 def trend_to_rgb(raster: Union[Raster, ImageryLayer], model_type: str = 0):
-
     """
     Display the generate trend raster.
     Function available in ArcGIS Image Server 10.8.1 and higher.
@@ -11515,7 +11572,6 @@ def apparent_reflectance(
     scale_factor: Optional[int] = None,
     offset: Optional[int] = None,
 ):
-
     """
     Function calibrates the digital number (DN) values of imagery from some satellite
     sensors. The calibration uses sun elevation, acquisition date, sensor gain and
@@ -11660,7 +11716,6 @@ def apparent_reflectance(
 
 
 def buffered(raster: Union[Raster, ImageryLayer]):
-
     """
     The Buffered function is used to optimize the performance of complex function chains.
     It stores the output from the part of the function chain that comes before it in memory.
@@ -11978,7 +12033,6 @@ def wind_chill(
     wind_speed_units: str = "mph",
     wind_chill_units: str = "Fahrenheit",
 ):
-
     """
     The Wind Chill function is useful for identifying dangerous winter conditions that, depending on exposure times to
     the elements, can result in frostbite or even hypothermia. Wind chill is a way to measure how cold an individual
@@ -12187,7 +12241,6 @@ def ccdc_analysis(
     min_anomaly_observations: int = 6,
     update_frequency: float = 1,
 ):
-
     """
     Function evaluates changes in pixel values over time using the Continuous Change Detection and Classification (CCDC)
     method and generates a change analysis raster containing the model results.
@@ -12312,7 +12365,6 @@ def landtrendr_analysis(
     pvalue_threshold: float = 0.01,
     output_other_bands: bool = False,
 ):
-
     """
     Function evaluates changes in pixel values over time using the Landsat-based detection of trends
     in disturbance and recovery (LandTrendr) method and generates a change analysis raster containing the model results.
@@ -12804,7 +12856,6 @@ def interpolate_raster_by_dimension(
     target_raster: Optional[Union[Raster, ImageryLayer]] = None,
     ignore_nodata: bool = True,
 ):
-
     """
 
     Interpolates a multidimensional raster at a specified dimension value using adjacent values.
@@ -13006,6 +13057,272 @@ def interpolate_raster_by_dimension(
     return _clone_layer(layer1, template_dict, raster_ra1)
 
 
+def surface_parameters(
+    raster: Union[Raster, ImageryLayer],
+    parameter_type: Optional[str] = "SLOPE",
+    local_surface_type: Optional[str] = "QUADRATIC",
+    neighborhood_distance_with_units: Optional[str] = None,
+    use_adaptive_neighborhood: Optional[bool] = False,
+    z_unit: Optional[str] = None,
+    slope_type: Optional[str] = "DEGREE",
+    project_geodesic_azimuths: Optional[str] = "GEODESIC_AZIMUTHS",
+    use_equatorial_aspect: Optional[str] = "NORTH_POLE_ASPECT",
+):
+    """
+    Determines parameters of a surface raster such as aspect, slope, and several types of curvatures using geodesic methods. 
+    
+    The arguments for this function are as follows:
+    
+    ================================     ====================================================================
+    **Argument**                         **Description**
+    --------------------------------     --------------------------------------------------------------------
+    raster                               Required :class:`Raster <arcgis.raster.Raster>`/ :class:`ImageryLayer <arcgis.raster.ImageryLayer>` object. The input surface raster. This can be an integer or a floating-point raster.
+    --------------------------------     --------------------------------------------------------------------
+    parameter_type                       Optional string. Specifies the output surface parameter type that will be computed.
+
+                                            - SLOPE - The rate of change in elevation will be computed. This is the default.
+                                            
+                                            - ASPECT - The downslope direction of the maximum rate of change for\
+                                            each cell will be computed.
+                                            
+                                            - MEAN_CURVATURE - The overall curvature of the surface will be measured.\
+                                            It is computed as the average of the minimum and maximum curvature.\
+                                            This curvature describes the intrinsic convexity or concavity of\
+                                            the surface, independent of direction or gravity influence.
+                                            
+                                            - TANGENTIAL_CURVATURE - The geometric normal curvature perpendicular\
+                                            to the slope line, tangent to the contour line will be measured. This\
+                                            curvature is typically applied to characterize the convergence or divergence\
+                                            of flow across the surface.
+                                            
+                                            - PROFILE_CURVATURE - The geometric normal curvature along the slope\
+                                            line will be measured. This curvature is typically applied to characterize\
+                                            the acceleration and deceleration of flow down the surface.
+                                            
+                                            - CONTOUR_CURVATURE - The curvature along contour lines will be measured.
+                                            
+                                            - CONTOUR_GEODESIC_TORSION - The rate of change in slope angle along\
+                                            contour lines will be measured.
+                                            
+                                            - GAUSSIAN_CURVATURE - The overall curvature of the surface will be\
+                                            measured. It is computed as the product of the minimum and maximum curvature.
+                                            
+                                            - CASORATI_CURVATURE - The general curvature of the surface will be measured.\
+                                            It can be zero or any other positive number.
+    --------------------------------     --------------------------------------------------------------------
+    local_surface_type                   Optional string. Specifies the type of surface function that will be fitted\
+                                         around the target cell. 
+    
+                                            - QUADRATIC - A quadratic surface function will be fitted to the\
+                                            neighborhood cells. This is the default. 
+                                            
+                                            - BIQUADRATIC - A biquadratic surface function will be fitted to\
+                                            the neighborhood cells.
+    --------------------------------     --------------------------------------------------------------------
+    neighborhood_distance_with_units     Optional string. The output will be calculated over this distance from the target cell center. 
+    
+                                         If this parameter is not specified, the neighborhood distance is the\
+                                         input raster cell size, resulting in a 3 by 3 neighborhood size.
+    --------------------------------     --------------------------------------------------------------------
+    use_adaptive_neighborhood            Optional boolean. Specifies whether neighborhood distance will vary with landscape\
+                                         changes (adaptive). The maximum distance is determined by the neighborhood\
+                                         scale. The minimum distance is the input raster cell size. 
+                                        
+                                            - False - A single (fixed) neighborhood distance will be used at all locations.\
+                                            This is the default. 
+                                            
+                                            - True - An adaptive neighborhood distance will be used at all locations.
+    --------------------------------     --------------------------------------------------------------------
+    z_unit                               Optional string. The linear unit of vertical z-values. It is defined by a vertical\
+                                         coordinate system if it exists. 
+                                         
+                                         If a vertical coordinate system does not exist, the z-unit should be defined\
+                                         from the unit list to ensure correct geodesic computation. 
+                                         
+                                         If the input raster has a defined VCS its unit will be the default.
+                                        
+                                            - INCH - The linear unit will be inches. 
+                                            
+                                            - FOOT - The linear unit will be feet.
+                                            
+                                            - YARD - The linear unit will be yards.
+                                            
+                                            - MILE_US - The linear unit will be miles.
+                                            
+                                            - NAUTICAL_MILE - The linear unit will be nautical miles.
+                                            
+                                            - MILLIMETER - The linear unit will be millimeters.
+                                            
+                                            - CENTIMETER - The linear unit will be centimeters.
+                                            
+                                            - METER - The linear unit will be meters.
+                                            
+                                            - KILOMETER - The linear unit will be kilometers.
+                                            
+                                            - DECIMETER - The linear unit will be decimeters.
+    --------------------------------     --------------------------------------------------------------------
+    slope_type                           Optional string. The measurement units (degrees or percentages) that will be\
+                                         used for the output slope raster.
+                                         
+                                         This parameter is only applicable when ``parameter_type`` = "SLOPE". 
+                                        
+                                            - DEGREE - The inclination of slope will be calculated in degrees. This is the default.
+                                             
+                                            - PERCENT_RISE - The inclination of slope will be calculated as percent\
+                                            rise, also referred to as the percent slope.
+    --------------------------------     --------------------------------------------------------------------
+    project_geogeodesic_azimuths         Optional string. Specifies whether geodesic azimuths will be projected to correct\
+                                         the angle distortion caused by the output spatial reference.
+                                         
+                                         This parameter is only applicable when ``parameter_type`` = "ASPECT". 
+                                         
+                                            - GEODESIC_AZIMUTHS - Geodesic azimuths will not be projected. This is the default.
+                                            
+                                            - PROJECT_GEODESIC_AZIMUTHS - Geodesic azimuths will be projected.
+    --------------------------------     --------------------------------------------------------------------
+    use_equatorial_aspect                Optional string. Specifies whether aspect will be measured from a point on the\
+                                         equator or from the north pole. 
+                                         
+                                         This parameter is only applicable when ``parameter_type`` = "ASPECT"
+                                         
+                                            - NORTH_POLE_ASPECT - Aspect will be measured from the north pole. This is the default. 
+                                            
+                                            - EQUATORIAL_ASPECT - Aspect will be measured from a point on the equator.
+    ================================     ====================================================================     
+
+    :return: The output raster with the function applied.
+
+    .. code-block:: python
+
+        # Usage Example: 
+
+        surface_parameters_output = surface_parameters(raster, parameter_type="SLOPE", slope_type="PERCENT_RISE")
+    """
+
+    layer, raster, raster_ra = _raster_input(raster)
+
+    template_dict = {
+        "rasterFunction": "SurfaceParam",
+        "rasterFunctionArguments": {"Raster": raster},
+    }
+
+    parameter_types = {
+        "SLOPE": 4,
+        "ASPECT": 5,
+        "MEAN_CURVATURE": 1,
+        "PROFILE_CURVATURE": 2,
+        "TANGENTIAL_CURVATURE": 3,
+        "CONTOUR_CURVATURE": 6,
+        "CONTOUR_GEODESIC_TORSION": 7,
+        "GAUSSIAN_CURVATURE": 8,
+        "CASORATI_CURVATURE": 9,
+    }
+
+    if parameter_type is not None:
+        if parameter_type.upper() not in parameter_types.keys():
+            raise RuntimeError(
+                "parameter_type should be one of the following "
+                + str(parameter_types.keys())
+            )
+        template_dict["rasterFunctionArguments"][
+            "SurfaceCalculation"
+        ] = parameter_types[parameter_type.upper()]
+
+    surface_types = {
+        "QUADRATIC": 1,
+        "BIQUADRATIC": 2,
+    }
+
+    if local_surface_type is not None:
+        if local_surface_type.upper() not in surface_types.keys():
+            raise RuntimeError(
+                "local_surface_type should be one of the following "
+                + str(surface_types.keys())
+            )
+        template_dict["rasterFunctionArguments"]["LocalSurface"] = surface_types[
+            local_surface_type.upper()
+        ]
+
+    if neighborhood_distance_with_units is not None:
+        template_dict["rasterFunctionArguments"][
+            "AnalysisScaleWithUnits"
+        ] = neighborhood_distance_with_units
+
+    if use_adaptive_neighborhood is not None:
+        if isinstance(use_adaptive_neighborhood, bool):
+            template_dict["rasterFunctionArguments"][
+                "UseAdaptiveScale"
+            ] = use_adaptive_neighborhood
+        else:
+            raise RuntimeError("use_adaptive_neighborhood should be of type: boolean")
+
+    z_unit_types = [
+        "METER",
+        "INCH",
+        "FOOT",
+        "YARD",
+        "MILE_US",
+        "NAUTICAL_MILE",
+        "MILLIMETER",
+        "CENTIMETER",
+        "KILOMETER",
+        "DECIMETER",
+    ]
+
+    if z_unit is not None:
+        if z_unit.upper() not in z_unit_types:
+            raise RuntimeError(
+                "z_unit should be one of the following " + str(z_unit_types)
+            )
+        template_dict["rasterFunctionArguments"]["ZUnit"] = z_unit.upper()
+
+    slope_types = {
+        "DEGREE": 1,
+        "PERCENT_RISE": 2,
+    }
+
+    if slope_type is not None:
+        if slope_type.upper() not in slope_types.keys():
+            raise RuntimeError(
+                "slope_type should be one of the following " + str(slope_types.keys())
+            )
+        template_dict["rasterFunctionArguments"]["SlopeType"] = slope_types[
+            slope_type.upper()
+        ]
+
+    azimuth_types = {
+        "GEODESIC_AZIMUTHS": False,
+        "PROJECT_GEODESIC_AZIMUTHS": True,
+    }
+
+    if project_geodesic_azimuths is not None:
+        if project_geodesic_azimuths.upper() not in azimuth_types.keys():
+            raise RuntimeError(
+                "project_geodesic_azimuths should be one of the following "
+                + str(azimuth_types.keys())
+            )
+        template_dict["rasterFunctionArguments"]["ProjectAzimuths"] = azimuth_types[
+            project_geodesic_azimuths.upper()
+        ]
+
+    eq_aspect_types = {
+        "NORTH_POLE_ASPECT": False,
+        "EQUATORIAL_ASPECT": True,
+    }
+
+    if use_equatorial_aspect is not None:
+        if use_equatorial_aspect.upper() not in eq_aspect_types.keys():
+            raise RuntimeError(
+                "use_equatorial_aspect should be one of the following "
+                + str(eq_aspect_types.keys())
+            )
+        template_dict["rasterFunctionArguments"][
+            "UseEquatorialAspect"
+        ] = eq_aspect_types[use_equatorial_aspect.upper()]
+
+    return _clone_layer(layer, template_dict, raster_ra)
+
+
 def geometric_median(
     rasters,
     epsilon=0.001,
@@ -13091,6 +13408,243 @@ def geometric_median(
         template_dict["rasterFunctionArguments"]["CellsizeType"] = in_cellsize_type
 
     return _clone_layer(layer, template_dict, raster_ra, variable_name="Rasters")
+
+
+def merge_rasters(
+    rasters: Union[Raster, ImageryLayer], resolve_overlap_method: str = "FIRST"
+):
+    """
+    The merge_rasters function groups or merges a collection of rasters.
+
+    The arguments for the function are as follows:
+
+    ================================     ====================================================================
+    **Parameter**                         **Description**
+    --------------------------------     --------------------------------------------------------------------
+    rasters                              Required list of :class:`Raster <arcgis.raster.Raster>` /  :class:`ImageryLayer <arcgis.raster.ImageryLayer>` objects.
+    --------------------------------     --------------------------------------------------------------------
+    resolve_overlap_method               Optional string. Specifies the method that will be used to resolve overlapping pixels in the
+                                         combined datasets. The options include the following:
+
+                                         - "FIRST" - The pixel value in the overlapping areas is the value from the first raster in the list of input rasters. This is the default.
+
+                                         - "LAST" - The pixel value in the overlapping areas is the value from the last raster in the list of input rasters.
+
+                                         - "MIN" - The pixel value in the overlapping areas is the minimum value of the overlapping pixels.
+
+                                         - "MAX" - The pixel value in the overlapping areas is the maximum value of the overlapping pixels.
+
+                                         - "MEAN" - The pixel value in the overlapping areas is the average of the overlapping pixels.
+
+                                         - "SUM" - The pixel value in the overlapping areas is the total sum of the overlapping pixels.
+    ================================     ====================================================================
+
+    :return: The output raster with the function applied.
+
+    .. code-block:: python
+
+        # Usage Example 1: merges two rasters and display the pixels from the first raster in the list of rasters overlapping a given area.
+
+        merged_op = merge_rasters([ras1, ras2], resolve_overlap_method="FIRST")
+    """
+    raster = rasters
+
+    layer, raster, raster_ra = _raster_input(raster)
+
+    mosaic_types = {
+        "FIRST": "MT_FIRST",
+        "LAST": "MT_LAST",
+        "MIN": "MT_MIN",
+        "MAX": "MT_MAX",
+        "MEAN": "MT_MEAN",
+        "SUM": "MT_SUM",
+    }
+
+    in_mosaic_type = mosaic_types[resolve_overlap_method.upper()]
+
+    template_dict = {
+        "rasterFunction": "MergeRasters",
+        "rasterFunctionArguments": {"Rasters": raster},
+        "variableName": "Rasters",
+    }
+
+    if resolve_overlap_method is not None:
+        template_dict["rasterFunctionArguments"]["MosaicOperator"] = in_mosaic_type
+
+    return _clone_layer(layer, template_dict, raster_ra, variable_name="Rasters")
+
+
+def region_pixel_count(raster, max_region_size=100, pixel_neighborhood=4):
+    """
+    The region_pixel_count function returns an image where each pixel contains the number of pixels within a connected region.
+    This function is available from 11.2 onwards.
+
+    The arguments for this function are as follows:
+
+    ================================     ====================================================================
+    **Parameter**                         **Description**
+    --------------------------------     --------------------------------------------------------------------
+    raster                               Required :class:`Raster <arcgis.raster.Raster>` /  :class:`ImageryLayer <arcgis.raster.ImageryLayer>` object.
+    --------------------------------     --------------------------------------------------------------------
+    max_region_size                      Optional integer. The maximum number of pixels a region can contain. The default is 100.
+    --------------------------------     --------------------------------------------------------------------
+    pixel_neighborhood                   Optional integer. The number of neighborhoods to be used (4 or 8) when assessing pixel connectivity. The default is 4.
+    ================================     ====================================================================
+
+    :return: The output raster with the function applied.
+
+    .. code-block:: python
+
+        # Usage Example 1: Generate the raster where each pixel contains the number of pixels within a connected region of the input raster.
+
+        op_lyr = region_pixel_count(raster=img_lyr, max_region_size=100, pixel_neighborhood=4)
+    """
+    layer, raster, raster_ra = _raster_input(raster)
+
+    template_dict = {
+        "rasterFunction": "RegionPixelCount",
+        "rasterFunctionArguments": {
+            "Raster": raster,
+        },
+    }
+
+    pixel_neighborhood_types = {4: 0, 8: 1}
+
+    if (
+        isinstance(pixel_neighborhood, int)
+        and pixel_neighborhood in pixel_neighborhood_types
+    ):
+        in_pixel_neighborhood = pixel_neighborhood_types[pixel_neighborhood]
+    else:
+        raise ValueError(
+            "Invalid pixel_neighborhood. pixel_neighborhood should be 4 or 8"
+        )
+
+    if max_region_size is not None:
+        template_dict["rasterFunctionArguments"]["MaxRegionSize"] = max_region_size
+
+    if pixel_neighborhood is not None:
+        template_dict["rasterFunctionArguments"][
+            "PixelNeighborhood"
+        ] = in_pixel_neighborhood
+
+    return _clone_layer(layer, template_dict, raster_ra)
+
+
+def gradient(raster, gradient_dimension="X", denominator_unit="DEFAULT"):
+    """
+    Compute gradient along a specified dimension.
+    This function is available from 11.2 onwards.
+
+    The arguments for this function are as follows:
+
+    ================================     ====================================================================
+    **Parameter**                         **Description**
+    --------------------------------     --------------------------------------------------------------------
+    raster                               Required :class:`Raster <arcgis.raster.Raster>` /  :class:`ImageryLayer <arcgis.raster.ImageryLayer>` object.
+    --------------------------------     --------------------------------------------------------------------
+    gradient_dimension                   | Optional string. The gradient dimension. The default is 'X'.
+                                           The dimensions that are available to calculate gradient on.
+                                         
+                                         | For non-multidimensional input, X, Y and XY are available.
+                                         
+                                         | For multidimensional input, X, Y and XY and all dimensions in the data are available.
+                                           If there are two or more dimensions, gradient will be calculated on the gradient dimension
+                                           for all slices in other dimensions.
+                                         
+                                         | XY option outputs a 3-band raster where band 1 represents the gradient along X dimension
+                                           and bands 2 and 3 represents the gradient along Y dimension.
+    --------------------------------     --------------------------------------------------------------------
+    denominator_unit                     Optional string. The default is "DEFAULT".
+                                         The unit of the denominator. Depends on the selected Gradient Dimension.
+
+                                         For X, Y, XY, the options are:
+
+                                         - DEFAULT : Output is the difference between adjacent cells. This is the default.
+                                         - CELLSIZE : Output is the difference between adjacent cells divided by the cellsize\
+                                                      of the input. The output unit is the same as the unit of the X/Y coordinates\
+                                                      of the input. If the data is in a geographic coordinate system,\
+                                                      it will be converted to meters.
+
+                                         For StdTime, the options are:
+
+                                         - DEFAULT : Output is the difference between adjacent slices. This is the default.
+                                         - PER_HOUR : Output is the difference between adjacent slices divided by the difference\
+                                                      between their time values and converted to per hour rate.
+                                         - PER_DAY : Output is the difference between adjacent slices divided by the difference\
+                                                     between their time values and converted to per day rate.
+                                         - PER_MONTH : Output is the difference between adjacent slices divided by the\
+                                                       difference between their time values and converted to per month rate.
+                                         - PER_YEAR : Output is the difference between adjacent slices divided by the\
+                                                      difference between their time values and converted to per year rate.
+                                         - PER_DECADE : Output is the difference between adjacent slices divided by the difference\
+                                                        between their time values and converted to per decade rate.
+
+                                         For non-time dimension, the options are:
+
+                                         - DEFAULT : Output is the difference between adjacent slices. This is the default.
+                                         - DIMENSION_INTERVAL : Output is the difference between adjacent slices divided by\
+                                                                the difference between their dimension values.
+    ================================     ====================================================================
+
+    :return: The output raster with the function applied.
+
+    .. code-block:: python
+
+        # Usage Example 1: This example calculates the gradient along X and Y dimensions of a raster.
+
+        gradient_raster = gradient(raster=img_lyr, gradient_dimension="XY", denominator_unit="CELLSIZE")
+    """
+    layer, raster, raster_ra = _raster_input(raster)
+
+    template_dict = {
+        "rasterFunction": "Gradient",
+        "rasterFunctionArguments": {
+            "Raster": raster,
+        },
+    }
+
+    if gradient_dimension is not None:
+        complete_dim_list = None
+        try:
+            from .utility import _get_dimension_names
+
+            dim_list = _get_dimension_names(layer)
+            complete_dim_list = ["X", "Y", "XY"]
+            complete_dim_list.extend(dim_list)
+        except:
+            pass
+        if complete_dim_list:
+            if gradient_dimension not in complete_dim_list:
+                raise RuntimeError(
+                    "gradient_dimension should be one of the following "
+                    + str(complete_dim_list)
+                )
+        template_dict["rasterFunctionArguments"][
+            "GradientDimension"
+        ] = gradient_dimension
+
+    denominator_unit_list = [
+        "DEFAULT",
+        "CELLSIZE",
+        "PER_HOUR",
+        "PER_DAY",
+        "PER_MONTH",
+        "PER_YEAR",
+        "PER_DECADE",
+        "DIMENSION_INTERVAL",
+    ]
+    if denominator_unit is not None:
+        if denominator_unit.upper() not in denominator_unit_list:
+            raise RuntimeError(
+                "denominator_unit should be one of the following "
+                + str(denominator_unit_list)
+            )
+        template_dict["rasterFunctionArguments"][
+            "DenominatorUnit"
+        ] = denominator_unit.upper()
+
+    return _clone_layer(layer, template_dict, raster_ra)
 
 
 class RFT:
@@ -14014,7 +14568,6 @@ class RFT:
     def draw_graph(
         self, show_attributes: bool = False, graph_size: str = "14.25, 15.25"
     ):
-
         """
         Displays a structural representation of the function chain and it's raster input values. If
         show_attributes is set to True, then the draw_graph function also displays the attributes
