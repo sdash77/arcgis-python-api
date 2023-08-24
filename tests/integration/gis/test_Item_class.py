@@ -1340,7 +1340,7 @@ class Test_Item_arcgis_online(unittest.TestCase):
         Get class test asset location
         :return:
         """
-        cls.gis = GIS(profile="your_online_profile", verify_cert=False)
+        cls.gis = GIS(profile="your_online_admin_profile", verify_cert=False)
         if cls.gis is None:
             cls.class_skip = True
         _conf_reader2 = ConfigParser()
@@ -1843,7 +1843,7 @@ class Test_Item_arcgis_online(unittest.TestCase):
         :return:
         """
         try:
-            chicago_csv_item = self.gis.content.search("set1_Chicago", "CSV")[0]
+            chicago_csv_item = self.gis.content.get("88048ba287c844928d1bf4b98dfe72f0")
             with tempfile.TemporaryDirectory() as temp_dir:
                 chicago_data = chicago_csv_item.download()
                 chicago_data_size = os.stat(chicago_data).st_size
@@ -1996,7 +1996,7 @@ class Test_Item_arcgis_online(unittest.TestCase):
         """
         try:
             data_item = self.gis.content.search(
-                "set1_shifting_opportunity.png", "Image"
+                "set1_shifting_opportunity", "Image"
             )[0]
             with tempfile.TemporaryDirectory() as temp_dir:
                 item_data = data_item.download()
@@ -2228,8 +2228,9 @@ class Test_Item_arcgis_online(unittest.TestCase):
             )[0]
             item_data = item.get_data(try_json=True)
 
-            self.assertIsNone(
-                item_data,
+            self.assertEqual(
+                len(item_data),
+                0,
                 "Calling get_data() on empty item with tryjson False does not return None",
             )
         except AssertionError as assertErrorException:
@@ -2252,7 +2253,7 @@ class Test_Item_arcgis_online(unittest.TestCase):
         :return:
         """
         try:
-            item = self.gis.content.search("set1_Chicago", "Feature Layer")[0]
+            item = self.gis.content.get("6e39ae0904a8484786a0121a01fcedf1")
             self.assertGreater(
                 item.size,
                 0,
@@ -2261,8 +2262,9 @@ class Test_Item_arcgis_online(unittest.TestCase):
 
             item_data = item.get_data(try_json=True)
 
-            self.assertIsNone(
-                item_data,
+            self.assertEqual(
+                len(item_data),
+                0,
                 "Calling get_data() on empty item with tryjson False does not return None",
             )
         except AssertionError as assertErrorException:
@@ -2855,7 +2857,7 @@ class Test_Item_arcgis_online(unittest.TestCase):
             import time
 
             time.sleep(
-                10
+                30
             )  # should find a way around waiting like this for cache is update
 
             interested_item = [i for i in group3_content if i.id == data_item.id]
@@ -2902,6 +2904,7 @@ class Test_Item_arcgis_online(unittest.TestCase):
         # get an item
         chicago_csv_item = self.gis.content.search("set1_Chicago", "CSV")[0]
         wm = self.gis.content.search("set1_cities_webmap", "Web Map")[0]
+        print(wm)
         try:
             chicago_deps = chicago_csv_item.dependent_upon()
             wm_deps = wm.dependent_upon()
@@ -2911,7 +2914,7 @@ class Test_Item_arcgis_online(unittest.TestCase):
                 chicago_deps, "Unable to get dependencies for CSV item"
             )
             self.assertEqual(
-                chicago_deps["fullCount"],
+                chicago_deps["total"],
                 0,
                 "A default CSV item should have 0 dependencies",
             )
