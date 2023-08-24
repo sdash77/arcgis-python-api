@@ -4,16 +4,21 @@ sys.path.insert(0, r"C:\ipython_workfolder\geosaurus\src")
 import unittest
 from arcgis.features._topographic import TopographicProductionManager
 from arcgis.gis.server.catalog import ServicesDirectory
-import arcpy
 
-# Prepare the service definition
 sd = ServicesDirectory(
-    url="https://rpubs22202.ags.esri.com/server",
-    username="naubry",
-    password="97Jenniferst",
+    url="https://rextapilnxsvr01.esri.com/server",
+    username="siteadmin",
+    password="esri.agp2",
     verify_cert=False,
 )
-topo = TopographicProductionManager("", sd)
+
+# If data missing in server: \\qalab_server\pydata\v109\geosaurus\topographic_data
+# Go to folder and use server manager to publish the SD file
+# Create Topographic Service
+topo = TopographicProductionManager(
+    "https://rextapilnxsvr01.esri.com/server/rest/services/TMServer_Fortlewis/TopographicProductionServer",
+    sd,
+)
 
 
 class TestTopographicProductionManager(unittest.TestCase):
@@ -24,9 +29,9 @@ class TestTopographicProductionManager(unittest.TestCase):
         assert products
 
     def test_get_product(self):
-        product = topo.product("MTM50")
+        product = topo.product("ExampleProduct")
         assert product
-        assert product.name == "MTM50"
+        assert product["name"] == "ExampleProduct"
 
     def test_add_product(self):
         """Test the add_product method"""
@@ -38,7 +43,7 @@ class TestTopographicProductionManager(unittest.TestCase):
         product["name"] = "Python API Test"
         new_product = topo.add_product(product)
 
-        assert new_product["success"] is True
+        assert new_product["success"] == True
         assert new_product["productName"] == "Python API Test"
 
         # Get all the products again to compare
@@ -52,7 +57,7 @@ class TestTopographicProductionManager(unittest.TestCase):
         number_products = len(products["products"])
         # Remove the product added in the add_product test
         removed_product = topo.remove_product("Python API Test")
-        assert removed_product["sucess"] is True
+        assert removed_product["success"] == True
         assert removed_product["productName"] == "Python API Test"
 
         # Get all the products again to compare
@@ -66,15 +71,15 @@ class TestTopographicProductionManager(unittest.TestCase):
         product = products["products"][0]
         generated = topo.generate_product(
             product["name"],
-            "Test",
-            "https://rextapilnxsvr01.esri.com/server/rest/services/MPS_AOI/MapServer/1",
+            "TRD_4_5",
+            "https://rextapilnxsvr01.esri.com/server/rest/services/TMServer_Fortlewis/MapServer/0",
             "234",
             "aprx",
         )
 
         assert generated["jobId"]
         assert generated["statusUrl"]
-        assert generated["success"] is True
+        assert generated["success"] == True
 
 
 if __name__ == "__main__":
