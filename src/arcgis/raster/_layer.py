@@ -4933,7 +4933,7 @@ class ImageryLayer(Layer):
     def image_to_map(
         self,
         raster_id: int,
-        geometry: Union[dict[str, Any], Polygon, Point, MultiPoint, Envelope],
+        geometry: Union[dict[str, Any], Polygon, Point, MultiPoint, Polyline],
         out_sr: Optional[dict] = None,
         options=None,
     ):
@@ -4951,7 +4951,7 @@ class ImageryLayer(Layer):
                                         The raster_id value identifies which raster of the mosaic dataset
                                         will be used.
         ----------------------------    --------------------------------------------------------------------
-        geometry                        Required dictionary/Point/Polygon/MultiPoint/Envelope. A :class:`~arcgis.geometry.Geometry` that
+        geometry                        Required dictionary/Point/Polygon/MultiPoint/Polyline. A :class:`~arcgis.geometry.Geometry` that
                                         needs to be converted from image space to map space.
         ----------------------------    --------------------------------------------------------------------
         out_sr                          Optional string, dictionary, :class:`~arcgis.geometry.SpatialReference`. The ``out_sr``
@@ -4994,17 +4994,16 @@ class ImageryLayer(Layer):
         from arcgis.geometry._types import (
             Point,
             Polygon,
-            Envelope,
+            Polyline,
             MultiPoint,
         )
-        from arcgis._impl.common._mixins import PropertyMap
 
         if isinstance(geometry, Point):
             params["geometryType"] = "esriGeometryPoint"
         elif isinstance(geometry, Polygon):
             params["geometryType"] = "esriGeometryPolygon"
-        elif isinstance(geometry, (Envelope, PropertyMap)):
-            params["geometryType"] = "esriGeometryEnvelope"
+        elif isinstance(geometry, Polyline):
+            params["geometryType"] = "esriGeometryPolyline"
         elif isinstance(geometry, MultiPoint):
             params["geometryType"] = "esriGeometryMultipoint"
         elif isinstance(geometry, dict):
@@ -5012,8 +5011,8 @@ class ImageryLayer(Layer):
                 params["geometryType"] = "esriGeometryPoint"
             elif "points" in geometry:
                 params["geometryType"] = "esriGeometryMultipoint"
-            elif "xmin" in geometry:
-                params["geometryType"] = "esriGeometryEnvelope"
+            elif "paths" in geometry:
+                params["geometryType"] = "esriGeometryPolyline"
             else:
                 params["geometryType"] = "esriGeometryPolygon"
 
@@ -5033,7 +5032,7 @@ class ImageryLayer(Layer):
     def map_to_image(
         self,
         raster_id: int,
-        geometry: Union[dict[str, Any], Polygon, Point, MultiPoint, Envelope],
+        geometry: Union[dict[str, Any], Polygon, Point, MultiPoint, Polyline],
         in_sr: Optional[dict] = None,
         options=None,
     ):
@@ -5051,7 +5050,7 @@ class ImageryLayer(Layer):
                                         The raster_id value identifies which raster of the mosaic dataset
                                         will be used as part of the calculation.
         ----------------------------    --------------------------------------------------------------------
-        geometry                        Required dictionary/Point/Polygon/MultiPoint/Envelope. A :class:`~arcgis.geometry.Geometry` that
+        geometry                        Required dictionary/Point/Polygon/MultiPoint/Polyline. A :class:`~arcgis.geometry.Geometry` that
                                         defines the location to be identified.
         ----------------------------    --------------------------------------------------------------------
         in_sr                           Optional string, dictionary, :class:`~arcgis.geometry.SpatialReference`. The ``in_sr``
@@ -5094,7 +5093,7 @@ class ImageryLayer(Layer):
             Point,
             Polygon,
             Envelope,
-            MultiPoint,
+            Polyline,
         )
         from arcgis._impl.common._mixins import PropertyMap
 
@@ -5104,15 +5103,15 @@ class ImageryLayer(Layer):
             params["geometryType"] = "esriGeometryPolygon"
         elif isinstance(geometry, (Envelope, PropertyMap)):
             params["geometryType"] = "esriGeometryEnvelope"
-        elif isinstance(geometry, MultiPoint):
-            params["geometryType"] = "esriGeometryMultipoint"
+        elif isinstance(geometry, Polyline):
+            params["geometryType"] = "esriGeometryPolyline"
         elif isinstance(geometry, dict):
             if "x" in geometry:
                 params["geometryType"] = "esriGeometryPoint"
             elif "points" in geometry:
                 params["geometryType"] = "esriGeometryMultipoint"
-            elif "xmin" in geometry:
-                params["geometryType"] = "esriGeometryEnvelope"
+            elif "paths" in geometry:
+                params["geometryType"] = "esriGeometryPolyline"
             else:
                 params["geometryType"] = "esriGeometryPolygon"
 
