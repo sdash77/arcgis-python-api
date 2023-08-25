@@ -1355,13 +1355,13 @@ class Test_Item_arcgis_online(unittest.TestCase):
         )
 
         # region publish necessary web layers
-        cls.one_to_many_csv_item = PortalUtils.search_portal_item(
-            cls.gis, "set1_overwrite_manyHFS_csv", "CSV"
+        cls.one_to_many_csv_item = cls.gis.content.search(
+            f"title:set1_overwrite_manyHFS_csv AND owner:{cls.gis.users.me.username}", "CSV"
         )
         if not cls.one_to_many_csv_item:
             # upload csv item
             csv_path = os.path.join(
-                cls.qalab_cls_path, "set1_overwrite_manyHFS_csv.csv"
+                cls.qalab_cls_path, "set1_overwrite_manyHFS_csv"
             )
             cls.one_to_many_csv_item = cls.gis.content.add({}, data=csv_path)
             print("CSV item added")
@@ -1462,7 +1462,7 @@ class Test_Item_arcgis_online(unittest.TestCase):
         try:
             # search for vtpk item
             sr = self.gis.content.search(
-                vtpk_package_name, item_type="Vector Tile Package", max_items=1
+                f"title:{vtpk_package_name}", item_type="Vector Tile Package", max_items=1
             )
             if sr is not None and len(sr) > 0:
                 vtpk_item = sr[0]
@@ -2435,16 +2435,15 @@ class Test_Item_arcgis_online(unittest.TestCase):
             new_csv_path = os.path.join(
                 self.qalab_cls_path, "overwrite_wfl", "set1_overwrite_manyHFS_csv.csv"
             )
-            item_update_result = self.one_to_many_csv_item.update({}, data=new_csv_path)
+            item_update_result = self.one_to_many_csv_item[0].update({}, data=new_csv_path)
             self.assertTrue(
                 item_update_result, "Calling update on csv item does not return True"
             )
             print("CSV item updated")
 
             # overwrite the feature layer
-            self.assertRaises(
-                RuntimeError, self.one_to_many_csv_item.publish(overwrite=True)
-            )
+            with self.assertRaises(RuntimeError):
+                self.one_to_many_csv_item[0].publish(overwrite=True)
 
         except AssertionError as assertErrorException:
             test_skip = True
@@ -2857,7 +2856,7 @@ class Test_Item_arcgis_online(unittest.TestCase):
             import time
 
             time.sleep(
-                30
+                50
             )  # should find a way around waiting like this for cache is update
 
             interested_item = [i for i in group3_content if i.id == data_item.id]
@@ -2872,10 +2871,12 @@ class Test_Item_arcgis_online(unittest.TestCase):
 
             import time
 
-            time.sleep(10)
+            time.sleep(50)
 
             # get contents of group3 to verify
             group3_content = group3.content()
+
+            time.sleep(50)
 
             interested_item = [i for i in group3_content if i.id == data_item.id]
             self.assertEqual(
@@ -2902,7 +2903,7 @@ class Test_Item_arcgis_online(unittest.TestCase):
         """
 
         # get an item
-        chicago_csv_item = self.gis.content.search("set1_Chicago", "CSV")[0]
+        chicago_csv_item = self.gis.content.search("title:set1_Chicago", "CSV")[0]
         wm = self.gis.content.search("set1_cities_webmap", "Web Map")[0]
         print(wm)
         try:
