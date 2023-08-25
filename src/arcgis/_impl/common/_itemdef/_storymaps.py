@@ -262,6 +262,10 @@ class _StoryMapDefinition(CloneNode):
                             webmap_to_copy.id
                         ][0]
                 # if nothing was cloned, means item exists. grab it
+                elif (
+                    getattr(webmap_to_copy, "groupDesignations", None) == "livingatlas"
+                ):
+                    continue
                 else:
                     exist_item = _search_org_for_existing_item(
                         self.target, webmap_to_copy
