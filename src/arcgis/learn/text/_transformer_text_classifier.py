@@ -325,7 +325,9 @@ class TransformerForTextClassification(ArcGISTransformer):
                 )
         else:
             results = torch.softmax(logits, dim=1).cpu()
-            res_class = [self._config.id2label[i] for i in torch.argmax(results, dim=1).numpy()]
+            res_class = [
+                self._config.id2label[i] for i in torch.argmax(results, dim=1).numpy()
+            ]
             res_score = torch.max(results, dim=1).values.numpy()
             return list(zip(res_class, res_score))
 
