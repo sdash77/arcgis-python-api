@@ -3367,10 +3367,10 @@ class UserManager(object):
                     "clientId": client_id,
                 }
                 return self._portal.con.post(url, params)["success"]
-            else:
-                raise NotImplementedError(
-                    "The current version of the enterprise does not support `send_notification`"
-                )
+        else:
+            raise NotImplementedError(
+                "The current version of the enterprise does not support `send_notification`"
+            )
         return False
 
     # ----------------------------------------------------------------------
