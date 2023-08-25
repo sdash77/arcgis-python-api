@@ -744,24 +744,21 @@ class JobManager:
             # USAGE EXAMPLE: Updating a Job's properties
 
             # create a WorkflowManager object from the workflow item
-            >>> workflow_manager = WorkflowManager(wf_item)
+            workflow_manager = WorkflowManager(wf_item)
 
-            >>> job = workflow_manager.jobs.get(job_id)
-            >>> job.priority = 'Updated'
+            updates = { 'priority': 'High' }
+            updates['extended_properties']: [
+                {
+                    "identifier": "table_name.prop1",
+                    "value": "updated_123"
+                },
+                {
+                    "identifier": "table_name.prop2",
+                    "value": "updated_456"
+                },
+            ]
 
-            >>> table_name = job.extended_properties[0]["tableName"]
-            >>> job.extended_properties = [
-                    {
-                        "identifier": table_name + ".prop1",
-                        "value": "updated_123"
-                    },
-                    {
-                        "identifier": table_name + ".prop2",
-                        "value": "updated_456"
-                    },
-                ]
-
-            >>> workflow_manager.jobs.update(job_id, vars(job))
+            workflow_manager.jobs.update(job_id, updates)
 
         """
         try:
@@ -2166,30 +2163,30 @@ class SavedSearchesManager:
 
         .. code-block:: python
 
-            # USAGE EXAMPLE: Updating a Job's properties
+            # USAGE EXAMPLE: Updating a search's properties
 
             # create a WorkflowManager object from the workflow item
-            >>> workflow_manager = WorkflowManager(wf_item)
+            workflow_manager = WorkflowManager(wf_item)
 
-            >>> workflow_manager.create_saved_search(name="name",
-                                                    definition={
-                                                        "start": 0,
-                                                        "fields": ["job_status"],
-                                                        "displayNames": ["Status"  ],
-                                                        "sortFields": [{"field": "job_status",
-                                                                        "sortOrder": "Asc:}]
-                                                                },
-                                                    search_type='Chart',
-                                                    color_ramp='Flower Field Inverse',
-                                                    sort_index=2000)
+            workflow_manager.create_saved_search(name="name",
+                                                 definition={
+                                                     "start": 0,
+                                                     "fields": ["job_status"],
+                                                     "displayNames": ["Status"  ],
+                                                     "sortFields": [{"field": "job_status",
+                                                                     "sortOrder": "Asc:}]
+                                                             },
+                                                 search_type='Chart',
+                                                 color_ramp='Flower Field Inverse',
+                                                 sort_index=2000)
 
-            >>> search_lst = workflow_manager.searches("All")
-            >>> search = [x for x in search_lst if x["searchId"] == searchid][0]
+            search_lst = workflow_manager.searches("All")
+            search = [x for x in search_lst if x["searchId"] == searchid][0]
 
-            >>> search["colorRamp"] = "Default"
-            >>> search["name"] = "Updated search"
+            search["colorRamp"] = "Default"
+            search["name"] = "Updated search"
 
-            >>> actual = workflow_manager.update_saved_search(search)
+            actual = workflow_manager.update_saved_search(search)
 
         """
         try:
@@ -3091,7 +3088,7 @@ class JobTemplate(object):
 
         .. code-block:: python
 
-            # USAGE EXAMPLE: Creating a automated creation for a job template
+            # USAGE EXAMPLE: Creating an automated creation for a job template
 
             # create a WorkflowManager object from the workflow item
             wm = WorkflowManager(wf_item)

@@ -532,6 +532,7 @@ class UnetClassifier(ArcGISModel):
             plt.show()
 
     def accuracy(self):
+        """Computes per pixel accuracy on validation set."""
         try:
             return self.learn.validate()[1].tolist()
         except Exception as e:

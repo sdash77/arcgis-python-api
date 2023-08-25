@@ -42,19 +42,10 @@ def is_supported(gis: Optional[GIS] = None):
     checks if :attr:`~arcgis.env.active_gis` supports raster analytics
     """
     gis = _arcgis.env.active_gis if gis is None else gis
-    if (
-        gis is not None
-        and hasattr(gis.properties, "helperServices")
-        and "rasterAnalytics" in gis.properties.helperServices
-    ):
-        user = gis.users.me
-        if user is not None and "premium:publisher:rasteranalysis" in user.privileges:
-            if (
-                "portal:publisher:publishDynamicImagery" in user.privileges
-                or "portal:publisher:publishTiledImagery" in user.privileges
-            ):
-                return True
-    return False
+    if "rasterAnalytics" in gis.properties.helperServices:
+        return True
+    else:
+        return False
 
 
 def _id_generator(size=6, chars=_string.ascii_uppercase + _string.digits):
@@ -2818,7 +2809,7 @@ def classify(
     --------------------------------     --------------------------------------------------------------------
     input_raster                         Required :class:`~arcgis.raster.ImageryLayer` object.
     --------------------------------     --------------------------------------------------------------------
-    input_classifier_definition          Required dict.
+    input_classifier_definition          Required dict or ECD Portal item.
 
                                          The classifier definition dictionary generated from the train_classifier function.
 
@@ -3162,6 +3153,7 @@ def train_classifier(
     segmented_raster=None,
     segment_attributes="COLOR;MEAN",
     dimension_value_field=None,
+    output_ecd_item_name=None,
     *,
     gis: Optional[GIS] = None,
     future: bool = False,
@@ -3236,6 +3228,9 @@ def train_classifier(
 
                                          Parameter available in ArcGIS Image Server 10.9 and higher.
     --------------------------------     --------------------------------------------------------------------
+    output_ecd_item_name                 Optional String or Item. The output ECD Portal item to be created.
+                                         If an Item is provided, the given item will be overwritten with the ECD instead.
+    --------------------------------     --------------------------------------------------------------------
     gis                                  Keyword only parameter. Optional :class:`~arcgis.gis.GIS` object. If not specified, the currently active connection
                                          is used.
     --------------------------------     --------------------------------------------------------------------
@@ -3244,7 +3239,7 @@ def train_classifier(
     ================================     ====================================================================
 
     :return:
-       Returns .ecs file in dictionary format
+       Named Tuple
 
     .. code-block:: python
 
@@ -3268,6 +3263,7 @@ def train_classifier(
         segment_attributes=segment_attributes,
         dimension_value_field=dimension_value_field,
         future=future,
+        output_ecd_item_name=output_ecd_item_name,
         **kwargs,
     )
 
@@ -3328,6 +3324,8 @@ def create_image_collection(
                                          - Shared data path (this path must be accessible by the server)
                                          - Name of a folder on the portal
                                          - Path to local raster dataset(s)
+                                         - :class:`~arcgis.raster.RasterCollection` object created from a list of datastore\
+                                            rasters or using the :meth:`~arcgis.raster.RasterCollection.from_stac_api` method.
 
                                          The function can create hosted imagery layers on enterprise and AGOL from 
                                          local raster datasets by uploading the data to the server.
@@ -6520,7 +6518,7 @@ def linear_spectral_unmixing(
     input_raster                             Required :class:`~arcgis.raster.ImageryLayer` object. The input raster.
                                              Portal Item can be passed.
     ------------------------------------     --------------------------------------------------------------------
-    input_spectral_profile                   Required Dict or String. The class spectral profile information.
+    input_spectral_profile                   Required Dict, String or ECD Portal item. The class spectral profile information.
     ------------------------------------     --------------------------------------------------------------------
     value_option                             Optional List of string(s). Specifies the options to define the output pixel values.
 
@@ -9455,6 +9453,7 @@ def train_random_trees_regression_model(
     percent_samples_for_testing=10,
     output_importance_table_name=None,
     context=None,
+    output_ecd_item_name=None,
     *,
     gis=None,
     future=False,
@@ -9463,7 +9462,6 @@ def train_random_trees_regression_model(
     """
     Models the relationship between explanatory variables (independent variables) and a target dataset (dependent variable).
     Function available in ArcGIS Image Server 10.9.1 and higher (not available in ArcGIS Online).
-
 
     ====================================     =============================================================================================================================================
     **Parameter**                             **Description**
@@ -9549,14 +9547,14 @@ def train_random_trees_regression_model(
 
                                                Example:
 
+                                                    {"parallelProcessingFactor": "2"}
+
                                                Syntax example with a specified number of processing instances:
 
-                                                {"parallelProcessingFactor": "2"}
-
-                                               Syntax example with a specified percentage of total
-                                               processing instances:
-
-                                                {"parallelProcessingFactor": "60%"}
+                                                    {"parallelProcessingFactor": "60%"}
+    ------------------------------------     ---------------------------------------------------------------------------------------------------------------------------------------------
+    output_ecd_item_name                     Optional String or Item. The output ECD Portal item to be created.
+                                             If an Item is provided, the given item will be overwritten with the ECD instead.
     ------------------------------------     ---------------------------------------------------------------------------------------------------------------------------------------------
     gis                                      Optional GIS. The :class:`~arcgis.gis.GIS` on which this tool runs. If not specified, the active GIS is used.
     ------------------------------------     ---------------------------------------------------------------------------------------------------------------------------------------------
@@ -9574,8 +9572,7 @@ def train_random_trees_regression_model(
                                                 | 'title': 'trial'}
     ====================================     =============================================================================================================================================
 
-
-    :return: Dictionary
+    :return: Named Tuple
 
     .. code-block:: python
 
@@ -9616,6 +9613,7 @@ def train_random_trees_regression_model(
         output_importance_table_name=output_importance_table_name,
         context=context,
         future=future,
+        output_ecd_item_name=output_ecd_item_name,
         **kwargs,
     )
 
@@ -9901,4 +9899,283 @@ def mosaic_image(
         context=context,
         gis=gis,
         future=future,
+    )
+
+
+def multidimensional_principal_components(
+    input_multidimensional_raster,
+    mode="DIMENSION_REDUCTION",
+    dimension=None,
+    output_principal_components_name: Optional[str] = None,
+    output_loadings_name: Optional[str] = None,
+    output_eigen_values_table_name: Optional[str] = None,
+    variable: Optional[str] = None,
+    number_of_principal_components: Optional[str] = "95%",
+    context: Optional[dict[str, Any]] = None,
+    *,
+    gis: Optional[GIS] = None,
+    future: bool = False,
+    **kwargs,
+):
+    """
+    Transforms multidimensional rasters into their principal components, loadings, and eigenvalues. It transforms
+    the data into a reduced number of components that account for the variance of the data, so that spatial and
+    temporal patterns can be readily identified.
+
+    .. note::
+           Function available in ArcGIS Image Server 11.1 and higher.
+
+    ====================================     ====================================================================
+    **Argument**                             **Description**
+    ------------------------------------     --------------------------------------------------------------------
+    input_multidimensional_raster            Required ImageryLayer object. The input multidimensional raster.
+    ------------------------------------     --------------------------------------------------------------------
+    mode                                     Required String. Specifies the method that will be used to
+                                             perform principal component analysis.
+
+                                             - DIMENSION_REDUCTION : The input time series data will be treated as a set of images. Principal components that extract prevalent patterns over time will be computed. This is the default.
+
+                                             - SPATIAL_REDUCTION : The input time series data will be treated as a set of pixels. Principal components that extract prevalent patterns and locations over time will be computed as a set of one-dimensional arrays stored in a table.
+    ------------------------------------     --------------------------------------------------------------------
+    dimension                                Required String. The dimension name used to process the principal components.
+    ------------------------------------     --------------------------------------------------------------------
+    output_principal_components_name         | Optional String. If not provided, a service is created by the method and used as the output.
+
+                                             | When the mode parameter is specified as DIMENSION_REDUCTION, the output will be a multiband raster with the components as bands. The first band is the first principal component with the largest eigenvalue, the second band has the principal component with the second largest eigenvalue, and so on.
+
+                                             | When the mode parameter is specified as SPATIAL_REDUCTION, the output is a table
+                                             | containing a set of time series data representing the principal components.
+
+                                             | You can pass in an existing Item from your GIS to use that instead.
+                                             | Alternatively, you can pass in the name of the output that should be created by this method to be used as the output for the tool.
+                                             | A RuntimeError is raised if a service by that name already exists.
+    ------------------------------------     --------------------------------------------------------------------
+    output_loadings_name                     | Optional String. If not provided, a service is created by the method and used as the output.
+
+                                             | When the mode parameter is specified as DIMENSION_REDUCTION, the output will be a table containing the weights that each input raster contributed to the principal components. These weights define the correlations of the input data and the output principal components.
+
+                                             | When the mode parameter is specified as SPATIAL_REDUCTION, the output is a raster where pixel values are the weights contributing to the principal components. Pixels with larger values are more corelated to the principal components. This output may have a larger cell size than the input raster because a random reprojection is applied to reduce the computation complexity.
+
+                                             | You can pass in an existing Item from your GIS to use that instead.
+                                             | Alternatively, you can pass in the name of the output that should be created by this method to be used as the output for the tool.
+                                             | A RuntimeError is raised if a service by that name already exists.
+    ------------------------------------     --------------------------------------------------------------------
+    output_eigen_values_table_name           Optional String. The name for the output eigen values table.
+
+                                             You can pass in an existing Item from your GIS to use
+                                             that instead.
+
+                                             Alternatively, you can pass in the name of the output
+                                             that should be created by this method to be used as the output for
+                                             the tool.
+                                             A RuntimeError is raised if a service by that name already exists.
+    ------------------------------------     --------------------------------------------------------------------
+    variable                                 Optional String. The variable of the input multidimensional raster
+                                             used in computation. If the input raster is multidimensional and no
+                                             variable is specified, only the first variable will be analyzed, by default.
+    ------------------------------------     --------------------------------------------------------------------
+    number_of_principal_components           Optional String. The number of principal components to compute, usually
+                                             fewer than the number of input rasters. This parameter also takes the
+                                             form of percentage (%). For example, 90% means the number of components
+                                             that can explain 90% of variance in the data will be computed.
+                                             The default is "95%".
+    ------------------------------------     --------------------------------------------------------------------
+    context                                  Context contains additional settings that affect task execution.
+
+                                             context parameter overwrites values set through arcgis.env parameter
+
+                                             This function has the following settings:
+
+                                              - Extent (extent): A bounding box that defines the analysis area.
+
+                                                Example:
+                                                    {"extent": {"xmin": -122.68,
+                                                    "ymin": 45.53,
+                                                    "xmax": -122.45,
+                                                    "ymax": 45.6,
+                                                    "spatialReference": {"wkid": 4326}}}
+
+                                              - Output Spatial Reference (outSR): The output raster will be
+                                                projected into the output spatial reference.
+
+                                                Example:
+                                                    {"outSR": {spatial reference}}
+
+                                              - Snap Raster (snapRaster): The output raster will have its
+                                                cells aligned with the specified snap raster.
+
+                                                Example:
+                                                    {'snapRaster': {'url': '<image_service_url>'}}
+
+                                              - Parallel Processing Factor (parallelProcessingFactor): controls
+                                                Raster Processing (CPU) service instances.
+
+                                                Example:
+                                                    Syntax example with a specified number of processing instances:
+
+                                                    {"parallelProcessingFactor": "2"}
+
+                                                    Syntax example with a specified percentage of total
+                                                    processing instances:
+
+                                                    {"parallelProcessingFactor": "60%"}
+
+                                              - Resampling Method (resamplingMethod): The output raster will be
+                                                resampled to method specified.
+                                                The supported values are: BILINEAR, NEAREST, CUBIC.
+
+                                                Example:
+                                                    {'resamplingMethod': "NEAREST"}
+    ------------------------------------     --------------------------------------------------------------------
+    gis                                      Optional GIS. The GIS on which this tool runs. If not specified, the
+                                             active GIS is used.
+    ------------------------------------     --------------------------------------------------------------------
+    future                                   Optional Boolean. If True, the result will be a GPJob object and
+                                             results will be returned asynchronously.
+    ====================================     ====================================================================
+
+    :return: Named Tuple
+
+    .. code-block:: python
+
+        # Usage Example
+
+        input_mdim_raster = gis.content.search("my_multidimensional_raster", item_type="Imagery Layer")[0].layers[0]
+        mdim_pc_op = multidimensional_principal_components(input_multidimensional_raster=input_mdim_raster,
+                                                           mode="DIMENSION_REDUCTION",
+                                                           output_principal_components_name="op_principal_components",
+                                                           output_loadings_name="op_loadings")
+
+    """
+
+    gis = _arcgis.env.active_gis if gis is None else gis
+    return gis._tools.rasteranalysis.multidimensional_principal_components(
+        input_multidimensional_raster=input_multidimensional_raster,
+        mode=mode,
+        dimension=dimension,
+        output_principal_components_name=output_principal_components_name,
+        output_loadings_name=output_loadings_name,
+        output_eigen_values_table_name=output_eigen_values_table_name,
+        variable=variable,
+        number_of_principal_components=number_of_principal_components,
+        context=context,
+        future=future,
+        **kwargs,
+    )
+
+
+def predict_using_regression_model(
+    input_rasters,
+    input_regression_definition,
+    output_predicted_raster_name=None,
+    context=None,
+    *,
+    gis=None,
+    future=False,
+    **kwargs,
+):
+    """
+    Predicts data values using the regression model which is output from the TrainRandomTreesRegressionModel tool.
+    Function available in ArcGIS Image Server 10.9.1 and higher.
+
+    ====================================     ====================================================================
+    **Argument**                             **Description**
+    ------------------------------------     --------------------------------------------------------------------
+    input_rasters                            Required ImageryLayer object. The single-band, multidimensional, or
+                                             multiband rasters, or mosaic datasets, containing explanatory variables.
+    ------------------------------------     --------------------------------------------------------------------
+    input_regression_definition              Required String or ECD Item. The JSON string or ECD portal item
+                                             that contains the attribute information, statistics or other information
+                                             from the regression model. This JSON is the output of the Train Random
+                                             Trees Regression model tool.
+    ------------------------------------     --------------------------------------------------------------------
+    output_predicted_raster_name             Optional String. If not provided, an Image Service is created by the method and used as the output raster.
+                                             You can pass in an existing Image Service Item from your GIS to use that instead.
+
+                                             Alternatively, you can pass in the name of the output Image Service that should be created by this method to be
+                                             used as the output for the tool.
+
+                                             A RuntimeError is raised if a service by that name already exists.
+    ------------------------------------     --------------------------------------------------------------------
+    context                                  Context contains additional settings that affect task execution.
+
+                                                context parameter overwrites values set through arcgis.env parameter
+
+                                                This function has the following settings:
+
+                                                - Cell size (cellSize) - Set the output raster cell size, or resolution
+
+                                                - Output Spatial Reference (outSR): The output raster will be
+                                                  projected into the output spatial reference.
+
+                                                Example:
+                                                    {"outSR": {spatial reference}}
+
+                                                - Snap Raster (snapRaster): The output raster will have its
+                                                  cells aligned with the specified snap raster.
+
+                                                Example:
+                                                    {'snapRaster': {'url': '<image_service_url>'}}
+
+                                                - Extent (extent): A bounding box that defines the analysis area.
+
+                                                Example:
+                                                    {"extent": {"xmin": -122.68,
+                                                    "ymin": 45.53,
+                                                    "xmax": -122.45,
+                                                    "ymax": 45.6,
+                                                    "spatialReference": {"wkid": 4326}}}
+
+                                                - Cell Alignment (cellAlignment): Adjusts the cell alignent of the output to match
+                                                  that of the specified processing extent.
+                                                  The supported values are: "Default", "Align with input", "Align with Processing Extent"
+
+                                                - Parallel Processing Factor (parallelProcessingFactor): controls
+                                                Raster Processing (CPU) service instances.
+
+                                                Example:
+                                                    Syntax example with a specified number of processing instances:
+
+                                                    {"parallelProcessingFactor": "2"}
+
+                                                    Syntax example with a specified percentage of total
+                                                    processing instances:
+
+                                                    {"parallelProcessingFactor": "60%"}
+
+                                                - Resampling Method (resamplingMethod): The output raster will be
+                                                  resampled to method specified.
+                                                  The supported values are: BILINEAR, NEAREST, CUBIC.
+
+                                                Example:
+                                                    {'resamplingMethod': "NEAREST"}
+    ====================================     ====================================================================
+
+    :return: The imagery layer item
+
+    .. code-block:: python
+
+        # Usage Example
+
+        my_raster_1 = gis.content.search("raster_1", item_type="Imagery Layer")[0].layers[0]
+        my_raster_2 = gis.content.search("raster_2", item_type="Imagery Layer")[0].layers[0]
+        input_rasters = [my_raster_1, my_raster_2]
+
+        # Use an ECD portal item
+        input_regression_definition = gis.content.search("regression_definiton_ecd")[0]
+
+        predict_using_regression_model_op = predict_using_regression_model(input_rasters=input_rasters,
+                                                                           input_regression_definition=input_regression_definition,
+                                                                           gis=gis)
+
+    """
+
+    gis = _arcgis.env.active_gis if gis is None else gis
+    return gis._tools.rasteranalysis.predict_using_regression_model(
+        input_rasters=input_rasters,
+        input_regression_definition=input_regression_definition,
+        output_predicted_raster_name=output_predicted_raster_name,
+        context=context,
+        future=future,
+        **kwargs,
     )

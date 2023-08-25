@@ -453,6 +453,7 @@ class PSPNetClassifier(ArcGISModel):
             param.requires_grad = True
 
     def accuracy(self, input=None, target=None, void_code=0, class_mapping=None):
+        """Computes per pixel accuracy."""
         if input is not None or target is not None:
             accuracy(input, target)
         else:

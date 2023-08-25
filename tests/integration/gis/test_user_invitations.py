@@ -62,6 +62,8 @@ class TestUserInvitationManager(unittest.TestCase):
                 print(e)
                 raise e
             finally:
+                if group:
+                    group.delete()
                 if test_user:
                     test_user.delete()
 
@@ -99,6 +101,8 @@ class TestUserInvitationManager(unittest.TestCase):
                 print(e)
                 raise e
             finally:
+                if group:
+                    group.delete()
                 if test_user:
                     test_user.delete()
 
@@ -136,6 +140,8 @@ class TestUserInvitationManager(unittest.TestCase):
                 print(e)
                 raise e
             finally:
+                if group:
+                    group.delete()
                 if test_user:
                     test_user.delete()
 

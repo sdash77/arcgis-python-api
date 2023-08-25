@@ -1219,7 +1219,7 @@ def prepare_tabulardata(
                     for step in transform[1].steps:
                         column_transforms_mapping[column].append(step[1])
                 else:
-                    column_transforms_mapping[column].append(transform[1])
+                    column_transforms_mapping[column].append(transform[1].__class__())
 
     data = TabularDataObject.prepare_data_for_layer_learner(
         input_features,
@@ -1276,12 +1276,6 @@ def prepare_data(
     training and validation data sets with the specified transformations,
     chip size, batch size, split percentage, etc.
 
-    - For object detection, use Pascal_VOC_rectangles or KITTI_rectangles format.
-    - For feature categorization use Labelled Tiles or Imagenet format.
-    - For pixel classification, use Classified Tiles format.
-    - For DeepSort, use Imagenet format.
-    - For panoptic segmentation, use Panoptic_Segmentation format.
-
     =====================   ===========================================
     **Parameter**           **Description**
     ---------------------   -------------------------------------------
@@ -1327,16 +1321,14 @@ def prepare_data(
                             function will infer the `dataset_type` on its own if
                             it contains a map.txt file. If the path does not contain
                             the map.txt file pass one of 'PASCAL_VOC_rectangles',
-                            'KITTI_rectangles', 'RCNN_Masks', 'Classified_Tiles',
-                            'Labeled_Tiles', 'MultiLabeled_Tiles', 'Imagenet',
-                            'PointCloud', 'PointCloudOD', 'ImageCaptioning',
-                            'ChangeDetection', 'superres', 'CycleGAN', 'Pix2Pix',
-                            'WNet_cGAN', 'Panoptic_Segmentation', and 'ObjectTracking'.
+                            'KITTI_rectangles', 'Imagenet'.
                             This parameter is mandatory for data which are not
                             exported by ArcGIS Pro / Enterprise which includes
-                            'PointCloud', 'PointCloudOD','ImageCaptioning',
-                            'ChangeDetection', 'CycleGAN', 'Pix2Pix', 'WNet_cGAN'
-                            and 'ObjectTracking'.
+                            'PointCloud', 'ImageCaptioning', 'ChangeDetection',
+                            'CycleGAN', 'Pix2Pix', 'WNet_cGAN' and 'ObjectTracking'.
+                            Note:
+                            For details on dataset_type please refer to this link
+                            https://pro.arcgis.com/en/pro-app/3.0/tool-reference/image-analyst/export-training-data-for-deep-learning.htm
     ---------------------   -------------------------------------------
     resize_to               Optional integer or tuple of integers.
                             A tuple should be of the form (height, width).
