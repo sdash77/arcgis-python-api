@@ -23,7 +23,6 @@ from uuid import uuid4
 import configparser
 from contextlib import contextmanager
 import functools
-from arcgis._impl.common._deprecate import deprecated
 from datetime import datetime, timedelta
 import logging
 from typing import Any, Optional, Union
@@ -3303,12 +3302,6 @@ class UserManager(object):
         return results
 
     # ----------------------------------------------------------------------
-    @deprecated(
-        deprecated_in="2.2.0",
-        removed_in="3.0.0",
-        current_version="2.2.0",
-        details="This was deprecated at Enterprise 10.9",
-    )
     def send_notification(
         self,
         users: Union[list[str], list[User]],
@@ -3320,6 +3313,8 @@ class UserManager(object):
         """
         The ``send_notification`` method creates a user notifcation for a list of users.
 
+        .. note::
+            This has been deprecated at Enterprise 10.9 and can only be used with ArcGIS Online.
 
         ================  ===============================================================================
         **Parameter**      **Description**
@@ -3351,30 +3346,31 @@ class UserManager(object):
 
 
         """
-        if self._gis.version >= [6, 4]:
-            susers = []
-            for u in users:
-                if isinstance(u, str):
-                    susers.append(u)
-                elif isinstance(u, User):
-                    susers.append(u.username)
-                del u
-            url = "{base}portals/self/createNotification".format(
-                base=self._gis._portal.resturl
-            )
-            params = {
-                "f": "json",
-                "notificationChannelType": type,
-                "subject": subject,
-                "message": message,
-                "users": ",".join(susers),
-                "clientId": client_id,
-            }
-            return self._portal.con.post(url, params)["success"]
-        else:
-            raise NotImplementedError(
-                "The current version of the enterprise does not support `send_notification`"
-            )
+        if self._gis._is_agol:
+            if self._gis.version >= [6, 4]:
+                susers = []
+                for u in users:
+                    if isinstance(u, str):
+                        susers.append(u)
+                    elif isinstance(u, User):
+                        susers.append(u.username)
+                    del u
+                url = "{base}portals/self/createNotification".format(
+                    base=self._gis._portal.resturl
+                )
+                params = {
+                    "f": "json",
+                    "notificationChannelType": type,
+                    "subject": subject,
+                    "message": message,
+                    "users": ",".join(susers),
+                    "clientId": client_id,
+                }
+                return self._portal.con.post(url, params)["success"]
+            else:
+                raise NotImplementedError(
+                    "The current version of the enterprise does not support `send_notification`"
+                )
         return False
 
     # ----------------------------------------------------------------------
