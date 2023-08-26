@@ -482,6 +482,9 @@ class KnowledgeGraph:
         dictionaries for each of these operations should be structured, please refer to the samples
         further below.
 
+        .. note::
+            objectid values are not supported in dictionaries for apply_edits
+
         =========================   ===============================================================
         **Parameter**                **Description**
         -------------------------   ---------------------------------------------------------------
