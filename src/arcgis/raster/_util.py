@@ -1196,7 +1196,7 @@ def _upload_imagery_agol(
     except:
         _LOGGER.warning(
             "Install Azure library packages for Python."
-            + "(Azure SDK for Python - azure-storage-blob: 12.1<= version <=12.9)"
+            + "(Azure SDK for Python - azure-storage-blob: 12.1<= version <=12.17)"
             + "\n(https://docs.microsoft.com/en-us/azure/storage/blobs/storage-quickstart-blobs-python#install-the-package)"
         )
     gis = _arcgis.env.active_gis if gis is None else gis
