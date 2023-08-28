@@ -39,91 +39,102 @@ except ImportError:
 
 
 def _create_file_item(gis, df, file_type, **kwargs):
-    # File Type Dictionary
-    ftypes = {"File Geodatabase": "gdb", "Shapefile": "shp", "CSV": "csv"}
+    try:
+        # File Type Dictionary
+        ftypes = {"File Geodatabase": "gdb", "Shapefile": "shp", "CSV": "csv"}
 
-    # Pop out kwargs, establish params to be used throughout
-    service_name = kwargs.pop("service_name", None)
-    if service_name is None:
-        service_name = "a" + uuid4().hex[:7]
-    temp_dir = os.path.join(tempfile.gettempdir(), service_name)
-    title = kwargs.pop("title", uuid4().hex)
-    capabilities = kwargs.pop("capabilities", "Query")
-    item_id = kwargs.pop("item_id", None)
-    tags = kwargs.pop("tags", file_type)
-    folder = kwargs.pop("folder", None)
-    name = "%s%s.%s" % (
-        random.choice(string.ascii_lowercase),
-        uuid4().hex[:5],
-        ftypes[file_type],
-    )
-
-    # Create the file to be added as an item
-    if file_type in ["File Geodatabase", "Shapefile"]:
-        # Working with feature layers
-        # set up temporary zip to be used in directory
-        os.makedirs(temp_dir)
-        temp_zip = os.path.join(temp_dir, "%s.zip" % ("a" + uuid4().hex[:5]))
-
-        # Create filegdb or shapefile
-        if file_type == "File Geodatabase":
-            # create empty filegdb
-            emtpy_fgdb = _tool_utils.run_and_hide(
-                fn=arcpy.CreateFileGDB_management,
-                **{"out_folder_path": temp_dir, "out_name": name},
-            )
-            fgdb = emtpy_fgdb[0]
-            location = os.path.join(fgdb, os.path.basename(temp_dir))
-            zip_loc = os.path.join(temp_dir, name)
-        else:
-            location = os.path.join(temp_dir, name)
-            zip_loc = temp_dir
-
-        # Writes the df to file as features
-        sanitize_columns = kwargs.pop("sanitize_columns", False)
-        df.spatial.to_featureclass(location=location, sanitize_columns=sanitize_columns)
-
-        # zip it
-        file = _common_utils.zipws(path=zip_loc, outfile=temp_zip, keep=True)
-
-    elif file_type == "CSV":
-        # Table Workflow
-        file = tempfile.gettempdir() + "\\%s%s.csv" % (
+        # Pop out kwargs, establish params to be used throughout
+        service_name = kwargs.pop("service_name", None)
+        if service_name is None:
+            service_name = "a" + uuid4().hex[:7]
+        temp_dir = os.path.join(tempfile.gettempdir(), service_name)
+        title = kwargs.pop("title", uuid4().hex)
+        capabilities = kwargs.pop("capabilities", "Query")
+        item_id = kwargs.pop("item_id", None)
+        tags = kwargs.pop("tags", file_type)
+        folder = kwargs.pop("folder", None)
+        name = "%s%s.%s" % (
             random.choice(string.ascii_lowercase),
             uuid4().hex[:5],
+            ftypes[file_type],
         )
-        with open(file, "w") as my_csv:
-            df.to_csv(my_csv)
-            my_csv.close()
 
-    # add item to portal
-    file_item = gis.content.add(
-        item_properties={
-            "title": title,
-            "type": file_type,
-            "tags": tags,
-        },
-        data=file,
-        folder=folder,
-    )
-    shutil.rmtree(temp_dir, ignore_errors=True)
+        # Create the file to be added as an item
+        if file_type in ["File Geodatabase", "Shapefile"]:
+            # Working with feature layers
+            # set up temporary zip to be used in directory
+            os.makedirs(temp_dir)
+            temp_zip = os.path.join(temp_dir, "%s.zip" % ("a" + uuid4().hex[:5]))
 
-    if file_type == "CSV":
-        # analyze the csv for publish params
-        publish_parameters = gis.content.analyze(item=file_item, file_type="csv")
-        publish_parameters["name"] = service_name
-        publish_parameters["locationType"] = None
-    else:
-        # start creating publish params from new file item
-        publish_parameters = {
-            "hasStaticData": True,
-            "name": os.path.splitext(file_item["name"])[0],
-            "maxRecordCount": 2000,
-            "layerInfo": {"capabilities": capabilities},
-            "targetSR": kwargs.pop("target_sr", 102100),
-        }
+            # Create filegdb or shapefile
+            if file_type == "File Geodatabase":
+                # create empty filegdb
+                emtpy_fgdb = _tool_utils.run_and_hide(
+                    fn=arcpy.CreateFileGDB_management,
+                    **{"out_folder_path": temp_dir, "out_name": name},
+                )
+                fgdb = emtpy_fgdb[0]
+                location = os.path.join(fgdb, os.path.basename(temp_dir))
+                zip_loc = os.path.join(temp_dir, name)
+            else:
+                location = os.path.join(temp_dir, name)
+                zip_loc = temp_dir
 
-    new_item = file_item.publish(publish_parameters=publish_parameters, item_id=item_id)
+            # Writes the df to file as features
+            sanitize_columns = kwargs.pop("sanitize_columns", False)
+            df.spatial.to_featureclass(
+                location=location, sanitize_columns=sanitize_columns
+            )
+
+            # zip it
+            file = _common_utils.zipws(path=zip_loc, outfile=temp_zip, keep=True)
+
+        elif file_type == "CSV":
+            # Table Workflow
+            file = tempfile.gettempdir() + "\\%s%s.csv" % (
+                random.choice(string.ascii_lowercase),
+                uuid4().hex[:5],
+            )
+            with open(file, "w") as my_csv:
+                df.to_csv(my_csv)
+                my_csv.close()
+
+        # add item to portal
+        file_item = gis.content.add(
+            item_properties={
+                "title": title,
+                "type": file_type,
+                "tags": tags,
+            },
+            data=file,
+            folder=folder,
+        )
+
+        if file_type == "CSV":
+            # analyze the csv for publish params
+            publish_parameters = gis.content.analyze(item=file_item, file_type="csv")
+            publish_parameters["name"] = service_name
+            publish_parameters["locationType"] = None
+        else:
+            # start creating publish params from new file item
+            publish_parameters = {
+                "hasStaticData": True,
+                "name": os.path.splitext(file_item["name"])[0],
+                "maxRecordCount": 2000,
+                "layerInfo": {"capabilities": capabilities},
+                "targetSR": kwargs.pop("target_sr", 102100),
+            }
+
+        new_item = file_item.publish(
+            publish_parameters=publish_parameters, item_id=item_id
+        )
+    finally:
+        # Clean up temporary files and directories
+        if os.path.exists(temp_dir):
+            shutil.rmtree(temp_dir, ignore_errors=True)
+
+        if os.path.exists(file):
+            os.remove(file)
     return file_item, new_item
 
 

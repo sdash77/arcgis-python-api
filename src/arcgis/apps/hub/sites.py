@@ -1237,12 +1237,12 @@ class SiteManager(object):
                     except:
                         pass
                     new_page = new_site.pages.clone(page)
-                    #Replacing references to this page with cloned page in site's layout
+                    # Replacing references to this page with cloned page in site's layout
                     replaced = re.sub(page.itemid, new_page.itemid, replaced)
                     replaced = re.sub(page.title, new_page.title, replaced)
                     replaced = re.sub(page.slug, new_page.slug, replaced)
                 new_data = json.loads(replaced)
-                new_site.item.update(item_properties={"text":new_data})
+                new_site.item.update(item_properties={"text": new_data})
         return new_site
 
     def get(self, site_id: str) -> Site:
