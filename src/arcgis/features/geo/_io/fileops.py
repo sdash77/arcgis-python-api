@@ -1109,7 +1109,7 @@ def to_featureclass(
                                 dtypes.append((col, type(df[col][idx])))
                         except:
                             dtypes.append((col, "<U254"))
-                elif df[col].dtype.name == "int64":
+                elif df[col].dtype.name in ["int64", "Int64"]:
                     dtypes.append((col, np.float64))
                 elif df[col].dtype.name == "bool":
                     dtypes.append((col, np.int32))
