@@ -85,13 +85,14 @@ class ContainerManager:
         """Gets an instance of a container"""
         return Container(url=f"{self._url}/{id}", gis=self._gis)
 
-    def start(self, runtime: str, instance_type: str) -> dict[K, V]:
+    def start(self, runtime: str, instance_type: str | None = None) -> dict[K, V]:
         """starts a container"""
         url = f"{self._url}/startContainer"
         params = {
             "f": "json",
             "notebookRuntimeId": runtime,
-            "instanceTypeName": instance_type,
         }
+        if instance_type:
+            params["instanceTypeName"] = instance_type
         res = self._gis._con.post(url, params)
         return res

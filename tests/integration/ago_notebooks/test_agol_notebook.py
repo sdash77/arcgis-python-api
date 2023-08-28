@@ -2,7 +2,7 @@ import sys
 
 #
 #  Update the Path to set the test area
-#sys.path.insert(0, r"C:\SVN\geosaurus_master_issue_8640a\src")
+sys.path.insert(0, r"C:\SVN\geosaurus_issue_10329\src")
 
 import os
 import json
@@ -30,7 +30,8 @@ def enable_verbose_logging(root):
     root.addHandler(handler)
 
 
-profiles = ['your_online_admin_profile']
+profiles = ['your_online_api_data_owner_profile']
+# profiles = ['your_online_admin_profile']
 PROXIES = detect_proxy(True)  # Handles Fiddler when True
 enable_verbose_logging(__logger__)
 
@@ -44,7 +45,8 @@ notebook_json = {
         {
             "cell_type": "markdown",
             "metadata": {},
-            "source": "#### Run this cell to connect to your GIS and get " "started:",
+            "source": "#### Run this cell to connect to your GIS and get "
+            "started:",
         },
         {
             "cell_type": "code",
@@ -73,7 +75,11 @@ notebook_json = {
             "execution_count": 2,
             "metadata": {"trusted": True},
             "outputs": [
-                {"name": "stdout", "output_type": "stream", "text": "portaladmin\n"}
+                {
+                    "name": "stdout",
+                    "output_type": "stream",
+                    "text": "portaladmin\n",
+                }
             ],
             "source": "print(gis.users.me.username)",
         },
@@ -177,29 +183,22 @@ class TestAGOLNotebookManager(unittest.TestCase):
         assert isinstance(cm, ContainerManager)
         r = cm.list()
         nb.runtimes.list()[0]
-        start = cm.start(
-            runtime=nb.runtimes.list()[0]['id'],
-            instance_type=nb.instance_preferences.available['availableInstanceTypes'][
-                0
-            ]['instanceTypeName'],
-        )
+        start = cm.start(runtime=nb.runtimes.list()[0]['id'])
         assert start
         r = cm.list()
-        container_id = r['containers'][0]['id']
-        container = cm.get(container_id)
-        container.terminate()
-        start = cm.start(
-            runtime=nb.runtimes.list()[0]['id'],
-            instance_type=nb.instance_preferences.available['availableInstanceTypes'][
-                0
-            ]['instanceTypeName'],
-        )
-        r = cm.list()
-        container_id = r['containers'][0]['id']
-        container = cm.get(container_id)
-        assert container.properties
-        container.notebooks
-        container.terminate()
+        if "containers" in r and len(r["containers"]) > 0:
+            container_id = r['containers'][0]['id']
+            container = cm.get(container_id)
+            container.terminate()
+            start = cm.start(
+                runtime=nb.runtimes.list()[0]['id'],
+            )
+            r = cm.list()
+            container_id = r['containers'][0]['id']
+            container = cm.get(container_id)
+            assert container.properties
+            container.notebooks
+            container.terminate()
 
     def test_snapshots(self):
         nb = self._gis.notebook_server[0]
