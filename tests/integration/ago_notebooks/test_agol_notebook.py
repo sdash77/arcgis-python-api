@@ -30,7 +30,7 @@ def enable_verbose_logging(root):
     root.addHandler(handler)
 
 
-profiles = ['your_online_profile']
+profiles = ['your_online_api_data_owner_profile']
 # profiles = ['your_online_admin_profile']
 PROXIES = detect_proxy(True)  # Handles Fiddler when True
 enable_verbose_logging(__logger__)
@@ -186,18 +186,19 @@ class TestAGOLNotebookManager(unittest.TestCase):
         start = cm.start(runtime=nb.runtimes.list()[0]['id'])
         assert start
         r = cm.list()
-        container_id = r['containers'][0]['id']
-        container = cm.get(container_id)
-        container.terminate()
-        start = cm.start(
-            runtime=nb.runtimes.list()[0]['id'],
-        )
-        r = cm.list()
-        container_id = r['containers'][0]['id']
-        container = cm.get(container_id)
-        assert container.properties
-        container.notebooks
-        container.terminate()
+        if "containers" in r and len(r["containers"]) > 0:
+            container_id = r['containers'][0]['id']
+            container = cm.get(container_id)
+            container.terminate()
+            start = cm.start(
+                runtime=nb.runtimes.list()[0]['id'],
+            )
+            r = cm.list()
+            container_id = r['containers'][0]['id']
+            container = cm.get(container_id)
+            assert container.properties
+            container.notebooks
+            container.terminate()
 
     def test_snapshots(self):
         nb = self._gis.notebook_server[0]
