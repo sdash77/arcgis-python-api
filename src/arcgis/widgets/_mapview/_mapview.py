@@ -1544,6 +1544,11 @@ class MapView(widgets.DOMWidget):
         ):
             item = item.spatial.to_feature_collection()
         self._add_layer_to_widget(item, options)
+        if "opacity" in options:
+            # Extra steps because the layer opacity will only update after renderering on
+            # the widget. Weird behavior with no other solution found.
+            wm_layer = dict(self.webmap.layers[-1])  # last layer added
+            self.update_layer(wm_layer)
 
     def _add_layer_to_webmap(self, item, options):
         webmap_options = dict(options)

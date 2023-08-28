@@ -504,7 +504,7 @@ def _add_mission(
             else:
                 try:
                     lyr = output_collection.layers[0]
-                    cam_info = lyr._query_gps_info()
+                    cam_info = lyr.query_gps_info()
                     cam_props = cam_info["cameras"][0]
                 except:
                     # older servers may not have query gps info rest end point
@@ -524,7 +524,7 @@ def _add_mission(
         if not gps_data:
             try:
                 lyr = output_collection.layers[0]
-                gps_info = lyr._query_gps_info()["images"]
+                gps_info = lyr.query_gps_info()["images"]
                 for img_info in gps_info:
                     from arcgis.raster._util import _to_datetime
 

@@ -75,8 +75,8 @@ _common_utils = LazyLoader("arcgis._impl.common._utils")
 _common_deprecated = LazyLoader("arcgis._impl.common._deprecate")
 _portalpy = LazyLoader("arcgis.gis._impl._portalpy")
 _jb = LazyLoader("arcgis.gis._impl._jb")
-_tool_utils = LazyLoader("arcgis.features.geo._tools._utils")
 _cloner = LazyLoader("arcgis.gis.clone")
+_cm_helper = LazyLoader("arcgis.gis._impl._content_manager._import_data")
 _log = logging.getLogger(__name__)
 
 
@@ -363,7 +363,7 @@ class GIS(object):
     _pds = None
     _validate_item_url = None
     _properties = None
-    session: EsriSession
+    _session: EsriSession
     """If 'True', the GIS instance is a GIS('home') from hosted nbs"""
 
     # admin = None
@@ -828,7 +828,7 @@ class GIS(object):
             self._product_version = [
                 int(i) for i in self._portal.get_version().split(".")
             ]
-        self.session: EsriSession = self._con._session
+        self._session: EsriSession = self._con._session
 
     # ----------------------------------------------------------------------
     @property
@@ -838,6 +838,44 @@ class GIS(object):
 
             self._toolgp = _Tools(self)
         return self._toolgp
+
+    # ----------------------------------------------------------------------
+    @property
+    @functools.lru_cache(maxsize=100)
+    def _is_arcgisonline(self):
+        """Returns true if this portal is ArcGIS Online."""
+        return self.properties["portalName"] == "ArcGIS Online" and self._is_multitenant
+
+    # ----------------------------------------------------------------------
+    @property
+    def session(self) -> EsriSession:
+        """
+        Provides the raw Esri Session object
+
+        :returns: EsriSession
+
+        """
+        if self._session is None:
+            self._session = self._con._session
+        return self._session
+
+    # ----------------------------------------------------------------------
+    @property
+    @functools.lru_cache(maxsize=100)
+    def _is_multitenant(self) -> bool:
+        """Returns true if this portal is multitenant."""
+        return self.properties["portalMode"] == "multitenant"
+
+    # ----------------------------------------------------------------------
+    @property
+    @functools.lru_cache(maxsize=100)
+    def _is_kubernetes(self) -> bool:
+        """Returns true if this portal is kubernetes."""
+        return (
+            "portalDeploymentType" in self.properties
+            and self._properties["portalDeploymentType"]
+            == "ArcGISEnterpriseOnKubernetes"
+        )
 
     # ----------------------------------------------------------------------
     @property
@@ -1518,9 +1556,9 @@ class GIS(object):
         mode                   Optional string of either '2D' or '3D' to specify map mode. Defaults to '2D'.
         ------------------     --------------------------------------------------------------------
         geocoder               Optional Geocoder. Allows users to specify a geocoder to find a given location.
-                               See the `Understanding geocoders
-                               <https://developers.arcgis.com/python/guide/understanding-geocoders/>`_
-                               page in the ArcGIS API for Python guide for more information.
+                               See the `What is geocoding?
+                               <https://developers.arcgis.com/python/guide/part1-what-is-geocoding/>`_
+                               guide for more information.
         ==================     ====================================================================
 
 
@@ -1532,7 +1570,7 @@ class GIS(object):
             This can be accomplished by signing into your ArcGIS Enterprise portal or ArcGIS Online organization in a
             browser, then navigating to:
 
-            `Organization` > `Settings` > `Security` > `Allow origins` > `Add` > http://localhost:8888
+            `Organization` > `Settings` > `Security` > `Allow origins` > `Add` > `http://localhost:8888`
             (replace with the host/port you are running on)
 
         .. code-block:: python
@@ -3342,8 +3380,8 @@ class UserManager(object):
         firstname: str,
         lastname: str,
         email: str,
+        role: str,
         description: Optional[str] = None,
-        role: Optional[str] = None,
         provider: str = "arcgis",
         idp_username: Optional[str] = None,
         level: int = 2,
@@ -3423,11 +3461,7 @@ class UserManager(object):
         ----------------  -------------------------------------------------------------------------------
         email             Required string. The email address for the user. This is important!
         ----------------  -------------------------------------------------------------------------------
-        description       Optional string. The description of the user account.
-        ----------------  -------------------------------------------------------------------------------
-        thumbnail         Optional string. The URL to an image to represent the user.
-        ----------------  -------------------------------------------------------------------------------
-        role              Optional string. The :class:`role <arcgis.gis.Role>` name or `role_id` value to
+        role              Required string. The :class:`role <arcgis.gis.Role>` name or `role_id` value to
                           assign the new member. To assign one of the `default Administrator, Publisher,
                           or User roles <https://enterprise.arcgis.com/en/portal/latest/administer/windows/member-roles.htm#ESRI_SECTION1_C30D73392D964D51A8B606128A8A6E8F>`_
                           enter ``org_admin``, ``org_publisher``, or ``org_user``, respectively.
@@ -3443,6 +3477,11 @@ class UserManager(object):
 
                               >>> for org_role in gis.users.roles.all():
                                       print(f"{org_role.name:25}{org_role.role_id}")
+        ----------------  -------------------------------------------------------------------------------
+        description       Optional string. The description of the user account.
+        ----------------  -------------------------------------------------------------------------------
+        thumbnail         Optional string. The URL to an image to represent the user.
+
         ----------------  -------------------------------------------------------------------------------
         provider          Optional string. The identity provider for the account. The default value is
                           `arcgis`. Possible values:
@@ -3945,8 +3984,10 @@ class UserManager(object):
 
         if isinstance(role, Role):
             role = role.role_id
-        elif role.lower() in role_lookup:
+        elif role and role.lower() in role_lookup:
             role = role_lookup[role.lower()]
+        else:
+            role = ""
 
         if self._gis._portal.is_arcgisonline or (
             self._gis._portal.is_kubernetes and provider != "enterprise"
@@ -5784,6 +5825,9 @@ class GroupManager(object):
                               will have access. `None` is the default.
 
                               Values: `org`, `collaboration`, or `none`
+
+                              .. note::
+                                For Enterprise only "org" is accepted.
         --------------------  ---------------------------------------------------------
         autojoin              Optional Boolean. The default is `False`. Only applies to
                               org accounts. If `True`, this group will allow joined
@@ -5844,7 +5888,10 @@ class GroupManager(object):
         if hidden_members in [True, False]:
             params["hiddenMembers"] = hidden_members
         if membership_access in ["org", "collaboration", None, "none"]:
-            if membership_access is None:
+            if self._gis._is_agol is False:
+                # Only value for Enterprise is org
+                params["membershipAccess"] = "org"
+            elif self._gis._is_agol and membership_access is None:
                 membership_access = "none"
             params["membershipAccess"] = membership_access
         if autojoin in [True, False]:
@@ -6930,7 +6977,11 @@ class ContentManager(object):
 
         :returns: Item
         """
-
+        regex = r"^[-a-zA-Z0-9_]*$"
+        if len(re.findall(regex, parameters.name)) == 0:
+            raise ValueError(
+                "The service `name` cannot contain any spaces or special characters except underscores."
+            )
         if owner:
             username = owner.username
         else:
@@ -7080,6 +7131,11 @@ class ContentManager(object):
             # Usage Example
             >>> gis.content.create_service("Hurricane Collection")
         """
+        regex = r"^[-a-zA-Z0-9_]*$"
+        if len(re.findall(regex, name)) == 0:
+            raise ValueError(
+                "The service `name` cannot contain any spaces or special characters except underscores."
+            )
         if capabilities is None:
             if service_type == "imageService":
                 capabilities = "Image,Catalog,Metadata,Download,Pixels"
@@ -8269,449 +8325,27 @@ class ContentManager(object):
            that can be used for analysis, visualization, or published to the GIS as an :class:`~arcgis.gis.Item`.
            If geoenabled DataFrame is passed in then an :class:`~arcgis.gis.Item` is directly returned.
         """
-        # Housekeeping steps
-        from arcgis.features import (
-            FeatureCollection,
-            FeatureSet,
-        )
-
+        # Get parameters right
         if item_id and self._gis.version <= [7, 1]:
-            item_id = None
+            kwargs["item_id"] = None
 
             warnings.warn(
                 "`item_id` is not allowed at this version of Portal, please use Enterprise 10.8.1+"
             )
-
-        if isinstance(df, FeatureSet):
-            df = df.sdf
-
-        # Check that a layer can be created
-        if has_arcpy == False and has_pyshp == False and _is_geoenabled(df):
-            raise Exception(
-                "Spatially enabled DataFrame's must have either pyshp or"
-                + " arcpy available to use import_data"
-            )
-
-        # Pop out kwargs, establish params to be used throughout
-        service_name = kwargs.pop("service_name", None)
-        if service_name is None:
-            service_name = "a" + uuid4().hex[:7]
-
-        title = kwargs.pop("title", uuid4().hex)
-        target_sr = kwargs.pop("target_sr", 102100)
-        capabilities = kwargs.pop("capabilities", "Query")
-
-        # If overwrite or append specified, set up necessary params
-        overwrite = kwargs.pop("overwrite", False)
-        append = kwargs.pop("append", False)
-        if overwrite or append:
-            # Get user defined parameters
-            fs_dict = kwargs.pop("service", None)
-            if fs_dict is None:
-                raise ValueError(
-                    "If overwite or append is True, then the feature service id needs to be specified in the `service` parameter."
-                )
-            fs_id = fs_dict["featureServiceId"]
-            if isinstance(fs_id, Item):
-                fs_id = fs_id.itemid
-
-            fl_index = fs_dict["layer"]
-
-            # Create the feature layer manager for the existing feature service
-            if fs_id is None:
-                raise ValueError(
-                    "The provided feature service id cannot be found. Please check it is correct and try again."
-                )
-            fs_item = self._gis.content.get(fs_id)
-
-            flc_manager = features.FeatureLayerCollection.fromitem(fs_item).manager
-
-        if _is_geoenabled(df):
-            # Working with feature layers
-
-            if has_arcpy:
-                # publish the file item and create publish params
-                fgdb_item, publish_parameters = self._create_file_item(
-                    df,
-                    "File Geodatabase",
-                    title,
-                    folder,
-                    target_sr,
-                    service_name,
-                    capabilities,
-                    **kwargs,
-                )
-
-                # publish as new layer
-                new_item = fgdb_item.publish(
-                    publish_parameters=publish_parameters, item_id=item_id
-                )
-
-                if overwrite or append:
-                    # Get properties from the newly created feature layer
-                    new_fl = new_item.layers[0]
-                    publish_parameters = new_fl.properties
-
-                    # Overwrite or Append Steps
-                    if overwrite:
-                        self._perform_overwrite(
-                            fl_index, flc_manager, publish_parameters
-                        )
-                    elif append:
-                        fl_index = self._perform_insert(flc_manager, publish_parameters)
-
-                    # Add new item dependency and append the features
-                    self._add_item_dependency(
-                        "filegdb", fl_index, fgdb_item, fs_item, new_item
-                    )
-
-                    # Feature layer was added to existing feature service so can delete the item
-                    new_item.delete()
-
-                    # return the updated feature service
-                    return self._gis.content.get(fs_id)
-                else:
-                    return new_item
-            elif has_pyshp:
-                shpfl_item, publish_parameters = self._create_file_item(
-                    df,
-                    "Shapefile",
-                    title,
-                    folder,
-                    target_sr,
-                    service_name,
-                    capabilities,
-                    **kwargs,
-                )
-                if overwrite or append:
-                    # Analyze the shapefile item to get definition for new feature layer
-                    publish_parameters = self._gis.content.analyze(
-                        item=shpfl_item, file_type="shapefile"
-                    )["publishParameters"]["layers"][0]
-                    if fl_index:
-                        publish_parameters_orig = flc_manager.properties["layers"][
-                            fl_index
-                        ]
-                        publish_parameters.update(publish_parameters_orig)
-                    if overwrite:
-                        self._perform_overwrite(
-                            fl_index, flc_manager, publish_parameters
-                        )
-                    elif append:
-                        fl_index = self._perform_insert(flc_manager, publish_parameters)
-
-                    self._add_item_dependency(
-                        "shapefile", fl_index, shpfl_item, fs_item, None
-                    )
-
-                    return self._gis.content.get(fs_id)
-                # Publish as new Feature Layer
-                publish_parameters = {
-                    "hasStaticData": True,
-                    "name": os.path.splitext(shpfl_item["name"])[0],
-                    "maxRecordCount": 2000,
-                    "layerInfo": {"capabilities": capabilities},
-                }
-                if target_sr is not None:
-                    publish_parameters["targetSR"] = {"wkid": target_sr}
-                return shpfl_item.publish(
-                    publish_parameters=publish_parameters, item_id=item_id
-                )
-            return
-        elif (
-            isinstance(df, pd.DataFrame)
-            and "location_type" not in kwargs
-            and (overwrite or append)
-        ):
-            # Table Workflow
-            tags = kwargs.pop("tags", "CSV")
-
-            # Step 1: Add the csv as an item
-            temp_file = tempfile.gettempdir() + "\\%s%s.csv" % (
-                random.choice(string.ascii_lowercase),
-                uuid4().hex[:5],
-            )
-            with open(temp_file, "w") as my_csv:
-                df.to_csv(my_csv)
-                my_csv.close()
-            csv_item = self.add(
-                item_properties={
-                    "title": title,
-                    "type": "CSV",
-                    "tags": tags,
-                },
-                data=temp_file,
-            )
-
-            # # Step 2: Analyze the data
-            res = self._gis.content.analyze(item=csv_item, file_type="csv")
-
-            # Step 3: Publish the CSV as a Table
-            # publish the csv using the params from analyze
-            publish_parameters = res["publishParameters"]
-            publish_parameters["name"] = service_name
-            # This makes it a hosted table
-            publish_parameters["locationType"] = None
-
-            # publish as new layer
-            new_item = csv_item.publish(publish_parameters)
-
-            # Get properties from the newly created feature layer
-            new_tbl = new_item.tables[0]
-            publish_parameters = new_tbl.properties
-            if overwrite:
-                self._perform_overwrite(fl_index, flc_manager, publish_parameters)
-            elif append:
-                fl_index = self._perform_insert(flc_manager, publish_parameters)
-
-            self._add_item_dependency("csv", fl_index, csv_item, fs_item, new_item)
-
-            # Table layer was added to existing feature service so can delete the item
-            new_item.delete()
-            return self._gis.content.get(fs_id)
-
-        elif isinstance(df, pd.DataFrame) and "location_type" not in kwargs:
-            # To not break backwards compatibility
-            # TODO: At 3.0.0 return an item not a Feature Set anymore: remove this elif block and keep one above
-            # CSV WORKFLOW
-            path = "content/features/analyze"
-            if kwargs.get("geocode_url", None):
-                geocode_url = kwargs.get("geocode_url")
-            else:
-                locators = [
-                    gc["url"]
-                    for gc in self._gis.properties.helperServices.geocode
-                    if gc.get("batch", False)
-                ]
-                if len(locators) == 0:
-                    raise Exception("No batch geocoding service found.")
-                geocode_url = locators[0]
-            postdata = {
-                "f": "pjson",
-                "text": df.to_csv(),
-                "filetype": "csv",
-                "analyzeParameters": {
-                    "enableGlobalGeocoding": "true",
-                    "sourceLocale": "en-us",
-                    "sourceCountry": "",
-                    "sourceCountryHint": "",
-                    "geocodeServiceUrl": geocode_url,
-                },
-            }
-
-            if address_fields is not None:
-                postdata["analyzeParameters"]["locationType"] = "address"
-
-            res = self._portal.con.post(path, postdata)
-            if address_fields is not None:
-                res["publishParameters"].update({"addressFields": address_fields})
-            path = "content/features/generate"
-            postdata = {
-                "f": "pjson",
-                "text": df.to_csv(),
-                "filetype": "csv",
-                "publishParameters": json.dumps(res["publishParameters"]),
-            }
-            if item_id:
-                postdata["itemIdToCreate"] = item_id
-            res = self._portal.con.post_multipart(path, postdata)
-
-            fc = FeatureCollection(res["featureCollection"]["layers"][0])
-            return fc
-        elif (isinstance(df, pd.DataFrame) and "location_type" in kwargs) or (
-            isinstance(df, pd.DataFrame) and address_fields
-        ):
-            if kwargs.get("geocode_url", None):
-                geocode_url = kwargs.get("geocode_url")
-            else:
-                locators = [
-                    gc["url"]
-                    for gc in self._gis.properties.helperServices.geocode
-                    if gc.get("batch", False)
-                ]
-                if len(locators) == 0:
-                    raise Exception("No batch geocoding service found.")
-                geocode_url = locators[0]
-
-            path = "content/features/analyze"
-
-            postdata = {
-                "f": "pjson",
-                "text": df.to_csv(),
-                "filetype": "csv",
-                "analyzeParameters": {
-                    "enableGlobalGeocoding": "true",
-                    "sourceLocale": kwargs.pop("source_locale", "us-en"),
-                    "sourceCountry": kwargs.pop("source_country", ""),
-                    "sourceCountryHint": kwargs.pop("country_hint", ""),
-                    "geocodeServiceUrl": geocode_url,
-                },
-            }
-            update_dict = {}
-            update_dict["locationType"] = kwargs.pop("location_type", "")
-            update_dict["latitudeFieldName"] = kwargs.pop("latitude_field", "")
-            update_dict["longitudeFieldName"] = kwargs.pop("longitude_field", "")
-            update_dict["coordinateFieldName"] = kwargs.pop("coordinate_field_name", "")
-            update_dict["coordinateFieldType"] = kwargs.pop("coordinate_field_type", "")
-            rk = []
-            for k, v in update_dict.items():
-                if v == "":
-                    rk.append(k)
-            for k in rk:
-                del update_dict[k]
-
-            if address_fields is not None:
-                postdata["analyzeParameters"]["locationType"] = "address"
-
-            res = self._portal.con.post(path, postdata)
-            if address_fields is not None:
-                res["publishParameters"].update({"addressFields": address_fields})
-            res["publishParameters"].update(update_dict)
-            path = "content/features/generate"
-            postdata = {
-                "f": "pjson",
-                "text": df.to_csv(),
-                "filetype": "csv",
-                "publishParameters": json.dumps(res["publishParameters"]),
-            }
-            if item_id:
-                postdata["itemIdToCreate"] = item_id
-            res = self._portal.con.post(
-                path, postdata
-            )  # , use_ordered_dict=True) - OrderedDict >36< _mixins.PropertyMap
-
-            fc = features.FeatureCollection(res["featureCollection"]["layers"][0])
-            return fc
-            # return
-        return None
-
-    def _create_file_item(
-        self,
-        df,
-        file_type,
-        title,
-        folder,
-        target_sr,
-        service_name,
-        capabilities,
-        **kwargs,
-    ):
-        temp_dir = os.path.join(tempfile.gettempdir(), service_name)
-        # set up temporary zip to be used in directory
-        os.makedirs(temp_dir)
-        temp_zip = os.path.join(temp_dir, "%s.zip" % ("a" + uuid4().hex[:5]))
-        ftypes = {
-            "File Geodatabase": "gdb",
-            "Shapefile": "shp",
-        }
-        tags = kwargs.pop("tags", file_type)
-        if tags is None:
-            tags = file_type
-        name = "%s%s.%s" % (
-            random.choice(string.ascii_lowercase),
-            uuid4().hex[:5],
-            ftypes[file_type],
-        )
-        if file_type == "File Geodatabase":
-            # create empty filegdb
-            emtpy_fgdb = _tool_utils.run_and_hide(
-                fn=arcpy.CreateFileGDB_management,
-                **{"out_folder_path": temp_dir, "out_name": name},
-            )
-            fgdb = emtpy_fgdb[0]
-            location = os.path.join(fgdb, os.path.basename(temp_dir))
-            zip_loc = os.path.join(temp_dir, name)
         else:
-            location = os.path.join(temp_dir, name)
-            zip_loc = temp_dir
+            kwargs["item_id"] = item_id
+        kwargs["folder"] = folder
+        kwargs["address_fields"] = address_fields
 
-        # writes the df to file as features
-        sanitize_columns = kwargs.pop("sanitize_columns", False)
-        df.spatial.to_featureclass(location=location, sanitize_columns=sanitize_columns)
-
-        # zip it
-        zip_file = _common_utils.zipws(path=zip_loc, outfile=temp_zip, keep=True)
-        # add item to portal
-        file_item = self.add(
-            item_properties={
-                "title": title,
-                "type": file_type,
-                "tags": tags,
-            },
-            data=zip_file,
-            folder=folder,
-        )
-        shutil.rmtree(temp_dir, ignore_errors=True)
-
-        # start creating publish params from new file item
-        publish_parameters = {
-            "hasStaticData": True,
-            "name": os.path.splitext(file_item["name"])[0],
-            "maxRecordCount": 2000,
-            "layerInfo": {"capabilities": capabilities},
-        }
-
-        if target_sr is not None:
-            publish_parameters["targetSR"] = {"wkid": target_sr}
-
-        return file_item, publish_parameters
-
-    def _perform_overwrite(self, fl_index, flc_manager, publish_parameters):
-        # update the name and id to represent correct values
-        publish_parameters["id"] = fl_index
-        publish_parameters["name"] = flc_manager.properties.layers[fl_index]["name"]
-
-        # Perform edit on the flc
-        # Step 1: Preserve layer ids
-        revert = False
-        if (
-            "preserveLayerIds" not in flc_manager.properties
-            or flc_manager.properties["preserveLayerIds"] is not True
-        ):
-            flc_manager.update_definition({"preserveLayerIds": True})
-            revert = True
-        # Step 2: Delete layer from definition
-        flc_manager.delete_from_definition({"layers": [{"id": fl_index}]})
-        # Step 3: Add new layer to definition
-        flc_manager.add_to_definition({"layers": [dict(publish_parameters)]})
-        # Step 4: Cleanup
-        if revert:
-            flc_manager.update_definition({"preserveLayerIds": False})
-
-    def _perform_insert(self, flc_manager, publish_parameters):
-        # Add new layer to definition
-        flc_manager.add_to_definition({"layers": [dict(publish_parameters)]})
-        # Find the index at which the layer was added
-        for layer in flc_manager.properties.layers:
-            if layer["name"] == publish_parameters["name"]:
-                fl_index = layer["id"]
-        return fl_index
-
-    def _add_item_dependency(
-        self, file_type, fl_index, file_item, fs_item, new_item=None
-    ):
-        if file_type == "csv":
-            source_info = self._gis.content.analyze(item=file_item)["publishParameters"]
-            ItemDependency(fs_item).add("itemid", file_item.id)
-            fs_item.tables[fl_index].append(
-                item_id=file_item.id,
-                upload_format=file_type,
-                source_info=source_info,
-            )
-        elif (
-            file_type == "shapefile"
-            or "filegdb" in fs_item.layers[fl_index].properties.supportedAppendFormats
-        ):
-            ItemDependency(fs_item).add("itemid", file_item.id)
-            fs_item.layers[fl_index].append(
-                item_id=file_item.id, upload_format=file_type
-            )
+        # Check which workflow to do
+        overwrite = kwargs.get("overwrite", False)
+        insert = kwargs.get("append", False)
+        if _is_geoenabled(df) or (overwrite or insert):
+            # Item Workflow
+            return _cm_helper.import_as_item(self._gis, df, **kwargs)
         else:
-            # When filegdb not supported through append, use featureCollection
-            features = new_item.layers[0].query().features
-            fs_item.layers[fl_index].edit_features(adds=features)
-
-        fs_item.add_relationship(rel_item=file_item, rel_type="Service2Data")
+            # Feature Collection Workflow
+            return _cm_helper.import_as_fc(self._gis, df, **kwargs)
 
     # ----------------------------------------------------------------------
     def is_service_name_available(self, service_name: str, service_type: str):
@@ -8866,6 +8500,7 @@ class ContentManager(object):
             owner_name,
             preserve_item_id=preserve_item_id,
             from_dash=kwargs.pop("from_dash", False),
+            wab_code_attach=kwargs.pop("copy_code_attachment", True),
         )
         return deep_cloner.clone()
 
@@ -11305,6 +10940,15 @@ class User(dict):
     def __repr__(self):
         return "<%s username:%s>" % (type(self).__name__, self.username)
 
+    # ----------------------------------------------------------------------
+    @property
+    def recyclebin(self) -> "RecycleBin":
+        """returns access to the user's recyclebin"""
+        from ._impl._content_manager._recyclebin import RecycleBin
+
+        return RecycleBin(gis=self._gis, user=self.username)
+
+    # ----------------------------------------------------------------------
     def user_types(self):
         """
         The ``user_types`` method is used to retrieve the user type and any assigned applications of the user.
@@ -13178,6 +12822,51 @@ class Item(dict):
 
     # ----------------------------------------------------------------------
     @property
+    def favorite(self) -> bool:
+        """
+        Gets/Sets if the Item is in the user's favorites
+        """
+        try:
+            user: User = self._gis.users.get(self.owner)
+            query = f'(group:"{user.favGroupId}" AND id:"{self.itemid}")'
+            if len(self._gis.content.search(query)) > 0:
+                return True
+            return False
+        except Exception as ex:
+            raise Exception(f"Could not get the user's favorites. {str(ex)}")
+
+    # ----------------------------------------------------------------------
+    @favorite.setter
+    def favorite(self, value: bool):
+        """
+        Gets/Sets if the Item is in the user's favorites
+        """
+        user: User = self._gis.users.get(self.owner)
+        if value == True:
+            url: str = f"{self._gis._portal.resturl}content/items/{self.itemid}/share"
+        elif value == False:
+            url: str = f"{self._gis._portal.resturl}content/items/{self.itemid}/unshare"
+        else:
+            raise ValueError("'value' must be a boolean.")
+
+        params = {
+            "f": "json",
+            "everyone": self.shared_with["everyone"],
+            "org": self.shared_with["org"],
+            "items": self.itemid,
+            "groups": user.favGroupId,
+        }
+
+        res = self._gis._con.post(url, params=params)
+        assert self.shared_with
+        if "error" in res:
+            raise Exception(f"An error has occurred: {str(res)}")
+        else:
+            self._hydrated = False
+            self._hydrate()
+
+    # ----------------------------------------------------------------------
+    @property
     def snapshots(self) -> list:
         """
         The ``snapshots`` property provides access to the Notebook Item's Snapshots. If the user is not
@@ -13913,6 +13602,8 @@ class Item(dict):
                 res = self._portal.con.post(data_path, params)
             else:
                 raise
+        if res["success"] == False:
+            raise Exception("Could not export item.")
         export_item = Item(gis=self._gis, itemid=res["exportItemId"])
         if wait == True:
             status = "partial"
@@ -14314,25 +14005,26 @@ class Item(dict):
         """
         See main ``metadata`` property docstring
         """
-        xml_file = os.path.join(tempfile.gettempdir(), "metadata.xml")
-        if os.path.isfile(xml_file) == True:
-            os.remove(xml_file)
-        if (
-            str(value).lower().endswith(".xml")
-            and len(value) <= 32767
-            and os.path.isfile(value) == True
-        ):
-            if os.path.basename(value).lower() != "metadata.xml":
-                shutil.copy(value, xml_file)
+        with tempfile.TemporaryDirectory(suffix="metadata") as tempdir:
+            xml_file = os.path.join(tempdir, "metadata.xml")
+            if os.path.isfile(xml_file) == True:
+                os.remove(xml_file)
+            if (
+                str(value).lower().endswith(".xml")
+                and len(value) <= 32767
+                and os.path.isfile(value) == True
+            ):
+                if os.path.basename(value).lower() != "metadata.xml":
+                    shutil.copy(value, xml_file)
+                else:
+                    xml_file = value
+            elif isinstance(value, str):
+                with open(xml_file, mode="w") as writer:
+                    writer.write(value)
+                    writer.close()
             else:
-                xml_file = value
-        elif isinstance(value, str):
-            with open(xml_file, mode="w") as writer:
-                writer.write(value)
-                writer.close()
-        else:
-            raise ValueError("Input must be XML path file or XML Text")
-        return self.update(metadata=xml_file)
+                raise ValueError("Input must be XML path file or XML Text")
+            self.update(metadata=xml_file)
 
     # ----------------------------------------------------------------------
     def download_metadata(self, save_folder: Optional[str] = None):
@@ -14353,7 +14045,19 @@ class Item(dict):
         """
         metadataurlpath = "content/items/" + self.itemid + "/info/metadata/metadata.xml"
         if not save_folder:
-            save_folder = self._workdir
+            with tempfile.TemporaryDirectory(
+                suffix=f"meta{uuid.uuid4().hex[:2]}",
+                dir=tempfile.gettempdir(),
+            ) as save_folder:
+                file_name = "metadata.xml"
+                file_path = os.path.join(save_folder, file_name)
+                self._portal.con.get(
+                    path=metadataurlpath,
+                    out_folder=save_folder,
+                    file_name=file_name,
+                    try_json=False,
+                )
+                return file_path
         try:
             file_name = "metadata.xml"
             file_path = os.path.join(save_folder, file_name)
@@ -14716,28 +14420,34 @@ class Item(dict):
         allow_members_to_edit: bool = False,
     ):
         """
-        The ``share`` method shares an item with the specified list of groups.
+        The ``share`` method allows you to set the list of groups the Item will be shared with.
+        You can also set the Item to be shared with your org or with everyone(public including org).
 
-        ======================  ========================================================
-        **Parameter**            **Description**
-        ----------------------  --------------------------------------------------------
-        everyone                Optional boolean. Default is False, don't share with
-                                everyone.
-        ----------------------  --------------------------------------------------------
-        org                     Optional boolean. Default is False, don't share with
-                                the organization.
-        ----------------------  --------------------------------------------------------
-        groups                  Optional list of group ids as strings, or a list of
-                                arcgis.gis.Group objects, or a comma-separated list of
-                                group IDs.
-        ----------------------  --------------------------------------------------------
-        allow_members_to_edit   Optional boolean. Default is False, to allow item to be
-                                shared with groups that allow shared update
-        ======================  ========================================================
+        ======================      ========================================================
+        **Parameter**               **Description**
+        ----------------------      --------------------------------------------------------
+        everyone                    Optional boolean. If True, this item will be shared with
+                                    everyone, meaning that it will be publicly accessible and
+                                    available to users outside of the organization.
+                                    If set to False (default), the item will not be shared
+                                    with the public.
+        ----------------------      --------------------------------------------------------
+        org                         Optional boolean. If True, this item will be shared with
+                                    the organization. If set to False (default),
+                                    the item will not be shared with the organization.
+        ----------------------      --------------------------------------------------------
+        groups                      Optional list of group ids as strings, or a list of
+                                    arcgis.gis.Group objects. Default is None, don't share
+                                    with any specific groups.
+        ----------------------      --------------------------------------------------------
+        allow_members_to_edit       Optional boolean. Set to True when the item will be shared
+                                    with groups with item update capability so that any member
+                                    of such groups can update the item that is shared with them.
+        ======================      ========================================================
 
         :return:
             A dictionary with a key titled "`notSharedWith`",containing array of groups with which the item could not be
-            shared.
+            shared as well as "itemId" key containing the item id.
 
         .. code-block:: python
 
@@ -14747,51 +14457,68 @@ class Item(dict):
 
 
         """
-        if everyone:
-            org = True
-        try:
-            folder = self.ownerFolder
-        except:
-            folder = None
-
-        # get list of group IDs
-        group_ids = ""
-        if isinstance(groups, list):
-            for group in groups:
-                if isinstance(group, Group):
-                    group_ids = group_ids + "," + group.id
-
-                elif isinstance(group, str):
-                    # search for group using id
-                    search_result = self._gis.groups.search(
-                        query="id:" + group, max_groups=1
-                    )
-                    if len(search_result) > 0:
-                        group_ids = group_ids + "," + search_result[0].id
-                    else:
-                        raise Exception("Cannot find group with id: " + group)
-                else:
-                    raise Exception("Invalid group(s)")
-        elif isinstance(groups, Group):
-            group_ids = groups.id
-        elif isinstance(groups, str):
-            # old API - groups sent as comma separated group ids
-            group_ids = groups
-        if self.owner == self._gis.users.me.username:
-            url = "{resturl}content/users/{owner}/shareItems".format(
-                resturl=self._gis._portal.resturl, owner=self.owner
+        # Check that the values passed in are valid, groups is checked later if passed in
+        if (
+            not isinstance(everyone, bool)
+            or not isinstance(org, bool)
+            or not isinstance(allow_members_to_edit, bool)
+        ):
+            raise ValueError(
+                "everyone, org, and allow_members_to_edit must be boolean values"
             )
-            params = {
-                "f": "json",
-                "items": self.id,
-                "groups": group_ids,
-                "everyone": everyone,
-                "account": org,
-                "confirmItemControl": allow_members_to_edit,
-            }
-            if allow_members_to_edit:
-                params["confirmItemControl"] = allow_members_to_edit  # True
+
+        # If everyone is True, set org to True
+        if everyone is True:
+            org = True
+
+        # If group is passed in, handle it
+        group_ids = ""
+        if groups is not None:
+            if isinstance(groups, list):
+                for group in groups:
+                    if isinstance(group, Group):
+                        # create string list of group ids
+                        if len(group_ids) == 0:
+                            group_ids = group.id
+                        else:
+                            group_ids = group_ids + "," + group.id
+
+                    elif isinstance(group, str):
+                        # search for group using id to make sure exists
+                        search_result = self._gis.groups.search(
+                            query="id:" + group, max_groups=1
+                        )
+                        if len(search_result) > 0:
+                            group_ids = group_ids + "," + search_result[0].id
+                        else:
+                            raise Exception("Cannot find group with id: " + group)
+                    else:
+                        raise Exception(
+                            "Invalid group(s). Must be a list of group ids or group objects."
+                        )
+            elif isinstance(groups, Group):
+                # Only one group provided
+                group_ids = groups.id
+            elif isinstance(groups, str):
+                # old API - groups sent as comma separated group ids
+                # could be one group or already made string list of many group ids
+                group_ids = groups
+
+        # Check privileges for sharing:
+        can_share = False
+        if self.owner == self._gis.users.me.username:
+            can_share = True
         else:
+            privileges = self._gis.users.me.privileges
+            if len(group_ids) > 0 and "portal:admin:shareToGroup" in privileges:
+                can_share = True
+            if everyone is True and "portal:admin:shareToPublic" in privileges:
+                can_share = True
+            if org is True and "portal:admin:shareToOrg" in privileges:
+                can_share = True
+
+        # Create url and params
+        if can_share:
             url = "{resturl}content/items/{itemid}/share".format(
                 resturl=self._gis._portal.resturl, itemid=self.itemid
             )
@@ -14799,20 +14526,17 @@ class Item(dict):
                 "f": "json",
                 "groups": group_ids,
                 "everyone": everyone,
-                "account": org,
+                "org": org,
+                "confirmItemControl": allow_members_to_edit,
             }
-
-            if allow_members_to_edit:
-                if (
-                    "portal:admin:createUpdateCapableGroup"
-                    in self._gis.users.me.privileges
-                ):
-                    params["confirmItemControl"] = allow_members_to_edit  # True
-
-        res = self._portal.con.post(url, params)
-        self._hydrated = False
-        self._hydrate()
-        return res
+            res = self._portal.con.post(url, params)
+            self._hydrated = False
+            self._hydrate()
+            return res
+        else:
+            raise Exception(
+                "User does not own the item or have the privileges to share this item."
+            )
 
     # ----------------------------------------------------------------------
     def unshare(self, groups: Union[list[str], list[Group]]):

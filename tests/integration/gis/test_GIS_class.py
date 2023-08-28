@@ -146,12 +146,13 @@ class Test_GIS_portal(unittest.TestCase):
         Check if portal can be reached
         :return:
         """
+
         _conf_reader = ConfigParser()
         _conf_reader.read(DinoConfigs.portal_list_file, "UTF-8")
 
         cls.portal_url = _conf_reader["teamportal"]["url"]
-        cls.portal_username = _conf_reader["teamportal"]["publisher1"]
-        cls.portal_password = _conf_reader["teamportal"]["publisher1_password"]
+        cls.portal_username = _conf_reader["teamportal"]["publisher2"]
+        cls.portal_password = _conf_reader["teamportal"]["publisher2_password"]
 
         r1 = PreconditionChecks.can_ping_portal(cls.portal_url)
         if not r1:

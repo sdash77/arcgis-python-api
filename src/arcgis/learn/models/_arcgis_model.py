@@ -607,7 +607,8 @@ class ArcGISModel(object):
         self._model_metrics_cache = None
         self._slice_lr = True
         self._pretrained_path = kwargs.get("pretrained_path", None)
-        self._check_data_support_with_pretrained_path()
+        if hasattr(self._data, 'arcgis_init_kwargs'):
+            self._check_data_support_with_pretrained_path()
         self._model_kwargs = kwargs
         if self.__class__.__name__ not in unsupported_models:
             if not getattr(data, "_is_empty", False) and hasattr(
