@@ -2848,7 +2848,7 @@ class Project:
         try:
             self._project_name = self._project_item.title
         except:
-            self._project_name = ""
+            self._project_name = self._project_item.name
 
         self._mission_list = []
         gis = arcgis.env.active_gis if gis is None else gis
