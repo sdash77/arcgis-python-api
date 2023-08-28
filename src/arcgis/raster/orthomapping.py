@@ -2845,7 +2845,7 @@ class Project:
                 raise RuntimeError("Creation of orthompping project failed.")
 
         self._project_item = project
-        self._project_name = self._project_item.name
+        self._project_name = self._project_item.title
         self._mission_list = []
         gis = arcgis.env.active_gis if gis is None else gis
         self._gis = gis
