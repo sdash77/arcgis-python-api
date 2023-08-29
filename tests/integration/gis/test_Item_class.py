@@ -2904,8 +2904,8 @@ class Test_Item_arcgis_online(unittest.TestCase):
         except Exception as testException:
             self.fail("Error during test: " + str(testException))
 
-    @unittest.skipIf(
-        test_skip, "Test condition not met. Check if old outputs are present"
+    @unittest.skip(
+        "According to doc, dependent_upon() only works for Enterprise"
     )
     def test_dependent_upon_ownItems(self):
         """
