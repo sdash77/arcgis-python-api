@@ -37,7 +37,7 @@ class SuperResolution(ArcGISModel):
 
     """
     Creates a model object which increases the resolution and improves the quality of images.
-    Based on Fast.ai MOOC Lesson 7.
+    Based on Fast.ai MOOC Lesson 7 and https://github.com/Janspiry/Image-Super-Resolution-via-Iterative-Refinement.
 
     =====================   ===========================================
     **Parameter**            **Description**
@@ -45,25 +45,26 @@ class SuperResolution(ArcGISModel):
     data                    Required fastai Databunch. Returned data object from
                             :meth:`~arcgis.learn.prepare_data` function.
     ---------------------   -------------------------------------------
-    model_type              Optional string. 'SR3', 'UNet'.
-                            Default is set to 'UNet'.
-    ---------------------   -------------------------------------------
-    backbone                Optional function. Backbone CNN model to be used for
-                            creating the base of the :class:`~arcgis.learn.SuperResolution`, which
+    backbone                Optional string. Backbone CNN model to be used for
+                            creating the base of the
+                            :class:`~arcgis.learn.SuperResolution`, which
                             is `resnet34` by default.
-                            Compatible backbones: 'resnet18', 'resnet34', 'resnet50', 'resnet101', 'resnet152'.
-                            Not applicable in case of SR3 model type.
+                            Compatible backbones: 'SR3', 'resnet18', 'resnet34',
+                            'resnet50', 'resnet101', 'resnet152'.
     ---------------------   -------------------------------------------
     pretrained_path         Optional string. Path where pre-trained model is
                             saved.
     =====================   ===========================================
 
+    In addition to explicitly named parameters, the SuperResolution model with 'SR3' backbone supports the optional key word arguments:
+
     **kwargs**
 
     =====================   ===========================================
+    **Parameter**            **Description**
+    ---------------------   -------------------------------------------
     inner_channel           Optional int. Channel dimension.
-                            Default: 64. keyword arguments applicable for
-                            SR3 model type only.
+                            Default: 64.
     ---------------------   -------------------------------------------
     norm_groups             Optional int. Group normalization.
                             Default: 32
@@ -77,7 +78,7 @@ class SuperResolution(ArcGISModel):
     res_blocks              Optional int. Number of resnet block.
                             Default: 3
     ---------------------   -------------------------------------------
-    dropout                 Optional bool. dropout.
+    dropout                 Optional bool. Dropout.
                             Default: 0
     ---------------------   -------------------------------------------
     schedule                Optional int. Type of noise schedule. available types
@@ -87,26 +88,18 @@ class SuperResolution(ArcGISModel):
     n_timestep              Optional int. Number of time-steps.
                             Default: 1000
     ---------------------   -------------------------------------------
-    linear_start            Optional bool. schedule start.
+    linear_start            Optional bool. Schedule start.
                             Default: 1e-06
     ---------------------   -------------------------------------------
-    linear_end              Optional bool. schedule end.
+    linear_end              Optional bool. Schedule end.
                             Default: 1e-02
     =====================   ===========================================
 
     :return: :class:`~arcgis.learn.SuperResolution` Object
     """
 
-    def __init__(
-        self,
-        data,
-        model_type="UNet",
-        backbone=None,
-        pretrained_path=None,
-        *args,
-        **kwargs
-    ):
-        if model_type == "SR3":
+    def __init__(self, data, backbone=None, pretrained_path=None, *args, **kwargs):
+        if backbone == "SR3":
             data_bunch = None
             if data.train_ds.__class__.__name__ == "Pix2PixHDDataset":
                 downsampling_factor = data._downsampling_factor
@@ -150,6 +143,7 @@ class SuperResolution(ArcGISModel):
                 loss_func=l1Loss(self._device.type),
                 opt_func=optim.Adam,
             )
+            self.model_type = "SR3"
         else:
             data_bunch = None
             if data.train_ds.__class__.__name__ == "Pix2PixHDDataset":
@@ -192,9 +186,9 @@ class SuperResolution(ArcGISModel):
                     self_attention=True,
                     norm_type=NormType.Weight,
                 )
+            self.model_type = "UNet"
         self.learn.data = self._data
         self.learn.model = self.learn.model.to(self._device)
-        self.model_type = model_type
         if pretrained_path is not None:
             self.load(pretrained_path)
 
@@ -215,14 +209,11 @@ class SuperResolution(ArcGISModel):
         """
         Supported torchvision backbones for this model.
         """
-        if self.model_type == "UNet":
-            return SuperResolution._supported_backbones()
-        else:
-            pass
+        return SuperResolution._supported_backbones()
 
     @staticmethod
     def _supported_backbones():
-        return [*_resnet_family]
+        return ["SR3", *_resnet_family]
 
     @classmethod
     def from_model(cls, emd_path, data=None):
@@ -308,15 +299,10 @@ class SuperResolution(ArcGISModel):
             data._extract_bands = emd.get("extract_bands", None)
             data._bands = emd.get("bands", None)
             data.device = _get_device()
+        backbone = "SR3" if modtype == "SR3" else model_params.get("backbone")
         data.resize_to = resize_to
 
-        return cls(
-            data,
-            model_type=modtype,
-            backbone=model_params.get("backbone"),
-            pretrained_path=str(model_file),
-            **kwargs
-        )
+        return cls(data, backbone=backbone, pretrained_path=str(model_file), **kwargs)
 
     @property
     def _model_metrics(self):
