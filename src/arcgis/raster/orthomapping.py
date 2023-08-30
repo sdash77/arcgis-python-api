@@ -2818,6 +2818,8 @@ class Project:
                                                 | om_item = gis.content.get("85a54236c6364a88a7c7c2b1a31fd901")
                                                 | project = om_item
     ------------------------------------     --------------------------------------------------------------------
+    definition                               Optional dictionary. Custom project definition.
+    ------------------------------------     --------------------------------------------------------------------
     gis                                      Optional  :class:`~arcgis.gis.GIS` . Repesents the GIS object of the Orthomapping
                                              Project item.
     ====================================     ====================================================================
@@ -2845,7 +2847,11 @@ class Project:
                 raise RuntimeError("Creation of orthompping project failed.")
 
         self._project_item = project
-        self._project_name = self._project_item.name
+        try:
+            self._project_name = self._project_item.title
+        except:
+            self._project_name = self._project_item.name
+
         self._mission_list = []
         gis = arcgis.env.active_gis if gis is None else gis
         self._gis = gis
