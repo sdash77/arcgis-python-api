@@ -607,7 +607,7 @@ class ArcGISModel(object):
         self._model_metrics_cache = None
         self._slice_lr = True
         self._pretrained_path = kwargs.get("pretrained_path", None)
-        if hasattr(self._data, 'arcgis_init_kwargs'):
+        if hasattr(self._data, "arcgis_init_kwargs"):
             self._check_data_support_with_pretrained_path()
         self._model_kwargs = kwargs
         if self.__class__.__name__ not in unsupported_models:
@@ -1162,6 +1162,8 @@ class ArcGISModel(object):
                 "model_name": self._kwargs["model"],
                 "backend": self._backend,
             }
+        elif getattr(self, "model_type", False) == "SR3":
+            model_params = {"backbone": "SR3", "backend": self._backend}
         else:
             model_params = {"backbone": backbone, "backend": self._backend}
         if _emd_template.get("ModelParameters", None) is None:

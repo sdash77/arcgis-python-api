@@ -1,6 +1,7 @@
 import numpy as np
 from math import exp, log10, ceil
 import torch
+from tqdm import tqdm
 import torch.nn.functional as F
 from torch.autograd import Variable
 from fastai.vision import ImageImageList, Tuple, subplots, plt, random
@@ -142,6 +143,16 @@ class ImageImageListSR(ImageImageList):
 
 
 def show_batch(self, rows=4, **kwargs):
+    """
+    This function randomly picks a few training chips and visualizes them.
+
+    =====================   ===========================================
+    **Parameter**            **Description**
+    ---------------------   -------------------------------------------
+    rows                    Optional int. Number of rows of results
+                            to be displayed.
+    =====================   ===========================================
+    """
     xs, ys = [], []
     for n, imgs in enumerate(self.train_ds):
         if n != rows:
@@ -160,32 +171,80 @@ def show_batch(self, rows=4, **kwargs):
 
 
 def show_results(self, rows, **kwargs):
-    from .._data_utils.pix2pix_data import display_row
+    from .._data_utils.pix2pix_data import display_row, denormalize
+
+    sampling = kwargs.get("sampling_type", "ddim")
+    ntimestep = kwargs.get("n_timestep")
+    device = next(self.learn.model.parameters()).device.type
 
     self.learn.model.eval()
-    x_batch, y_batch = get_nbatches(
-        self._data.valid_dl, ceil(rows / self._data.batch_size)
-    )
-
-    x_A, x_B = torch.cat(x_batch), torch.cat(y_batch)
-
-    top = get_top_padding(title_font_size=16, nrows=rows, imsize=5)
     activ = []
+    top = get_top_padding(title_font_size=16, nrows=rows, imsize=5)
+    denormfunc = lambda img, max, min: (img + 1) * (max - min) / 2 + min
 
-    for i in range(0, x_A.shape[0], self._data.batch_size):
-        with torch.no_grad():
+    if self.model_type == "UNet":
+        x_batch, y_batch = get_nbatches(
+            self._data.valid_dl, ceil(rows / self._data.batch_size)
+        )
+        if isinstance(x_batch[0], list):
+            x_batch = x_batch[0]
+
+        x_A, x_B = torch.cat(x_batch), torch.cat(y_batch)
+
+        for i in range(0, x_A.shape[0], self._data.batch_size):
             preds = self.learn.model(x_A[i : i + self._data.batch_size].detach())
-        activ.append(preds)
+            activ.append(preds)
+        activations = torch.cat(activ)
 
-    activations = torch.cat(activ)
+        x_A = denormalize(x_A.cpu(), *self._data._image_stats)
+        x_B = denormalize(x_B.cpu(), *self._data._image_stats)
+        activations = denormalize(activations.cpu(), *self._data._image_stats)
+        rows = min(rows, x_A.shape[0])
+    else:
+        x_A = torch.cat([i[0] for i, _ in self.learn.data.valid_dl])[:rows]
+        x_B = torch.cat([j for _, j in self.learn.data.valid_dl])[:rows]
 
-    from .._data_utils.pix2pix_data import denormalize
+        x_A_batch = x_A.detach()
 
-    x_A = denormalize(x_A.cpu(), *self._data._image_stats)
-    x_B = denormalize(x_B.cpu(), *self._data._image_stats)
-    activations = denormalize(activations.cpu(), *self._data._image_stats)
+        if sampling == "ddim":
+            n_timestep = ntimestep if ntimestep else 200
+            nstp = {"n_timestep": self.kwargs.get("n_timestep", 1000)}
+        else:
+            n_timestep = ntimestep if ntimestep else self.kwargs.get("n_timestep", 1000)
+            nstp = {"n_timestep": n_timestep}
+        combkwargs = {**kwargs, **self.kwargs, **nstp}
 
-    rows = min(rows, x_A.shape[0])
+        self.learn.model.set_new_noise_schedule(device, **combkwargs)
+
+        preds = []
+        for k in tqdm(
+            range(x_A_batch.shape[0]), desc="sampling loop time step per image"
+        ):
+            if sampling == "ddim":
+                preds.append(
+                    self.learn.model.super_resolution(
+                        x_A_batch[k, None],
+                        continous=False,
+                        sampling_timesteps=n_timestep,
+                        ddim_sampling_eta=1,
+                        sampling="ddim",
+                    )
+                )
+            else:
+                preds.append(
+                    self.learn.model.super_resolution(
+                        x_A_batch[k, None], continous=False
+                    )
+                )
+        activations = torch.cat(preds)
+
+        maxvals_a = self._data.batch_stats_a["band_max_values"][..., None, None]
+        minvals_a = self._data.batch_stats_a["band_min_values"][..., None, None]
+        maxvals_b = self._data.batch_stats_b["band_max_values"][..., None, None]
+        minvals_b = self._data.batch_stats_b["band_min_values"][..., None, None]
+        x_A = denormfunc(x_A.cpu(), maxvals_a, minvals_a)
+        x_B = denormfunc(x_B.cpu(), maxvals_b, minvals_b)
+        activations = denormfunc(activations.cpu(), maxvals_b, minvals_b)
 
     fig, axs = plt.subplots(
         nrows=rows, ncols=3, figsize=(4 * 5, rows * 5), squeeze=False
@@ -200,7 +259,7 @@ def show_results(self, rows, **kwargs):
             (
                 ArcGISMSImage(x_A[r].cpu()),
                 ArcGISMSImage(x_B[r].cpu()),
-                ArcGISMSImage(activations[r].cpu()),
+                ArcGISMSImage(activations[r].detach().cpu()),
             ),
             kwargs.get("rgb_bands", None),
         )
