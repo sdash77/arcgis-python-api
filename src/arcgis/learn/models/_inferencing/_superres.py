@@ -155,6 +155,7 @@ class ChildImageClassifier:
         self.model.eval()
 
     def getParameterInfo(self, required_parameters):
+        modelarch = self.json_info.get("ModelArch", None)
         required_parameters.extend(
             [
                 {
@@ -175,6 +176,46 @@ class ChildImageClassifier:
                 },
             ]
         )
+        if modelarch:
+            if modelarch == "SR3":
+                required_parameters.extend(
+                    [
+                        {
+                            "name": "sampling_type",
+                            "dataType": "string",
+                            "required": False,
+                            "domain": ("ddim", "ddpm"),
+                            "value": "ddim",
+                            "displayName": "Sampling_type",
+                            "description": "Type of sampling",
+                        },
+                        {
+                            "name": "schedule",
+                            "dataType": "string",
+                            "required": False,
+                            "domain": (
+                                "linear",
+                                "warmup10",
+                                "warmup50",
+                                "const",
+                                "jsd",
+                                "cosine",
+                            ),
+                            "value": self.json_info["Kwargs"].get("schedule", "linear"),
+                            "displayName": "schedule",
+                            "description": "Type of scheduler",
+                        },
+                        {
+                            "name": "n_timestep",
+                            "dataType": "numeric",
+                            "required": False,
+                            "value": 200,
+                            "displayName": "n_timestep",
+                            "description": "Number of timesteps",
+                        },
+                    ]
+                )
+
         return required_parameters
 
     def getConfiguration(self, **scalars):
@@ -196,6 +237,9 @@ class ChildImageClassifier:
             self.rectangle_height,
             self.rectangle_width,
         )
+        self.sampling = scalars.get("sampling_type", None)
+        nstp = scalars.get("n_timestep", None)
+        self.n_timestep = int(nstp) if nstp else nstp
 
         return {"padding": self.padding, "tx": tx, "ty": ty, "fixedTileSize": 1}
 
@@ -213,7 +257,10 @@ class ChildImageClassifier:
         )
 
         superres_prediction = util.pixel_classify_superres_image(
-            self.model, batch, self.device, model_info=self.json_info
+            self.model,
+            batch,
+            self.device,
+            model_info=self.json_info,
         )
         superres_prediction = batch_to_tile(
             superres_prediction.unsqueeze(dim=1).detach().cpu().numpy(),
