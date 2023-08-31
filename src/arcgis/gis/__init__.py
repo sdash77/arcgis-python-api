@@ -13125,6 +13125,40 @@ class Item(dict):
             return dict.__getitem__(self, k)
 
     # ----------------------------------------------------------------------
+    def can_reassign(self, target_user: str | User) -> tuple[bool, dict[str, Any]]:
+        """
+        Checks if the Item can be reassigned to a new user. Users assigned
+        the default `administrator role`, or a custom role with
+        `administrative privileges`, can perform this operation. The item
+        owner can also use this operation; if the item owner that performs
+        this operation is not a default administrator, or assigned a custom
+        role with administrative privileges, they must have the
+        `portal:user:reassignItems` privilege assigned to them to transfer
+        content to another user.
+
+        ================  ========================================================
+        **Parameter**      **Description**
+        ----------------  --------------------------------------------------------
+        target_user       Required string or :class:`~arcgis.gis.User`. The string
+                          must be a *username* value. This will be the user
+                          receiving the item.
+        ================  ========================================================
+
+        :return: tuple[bool, dict[str,Any]
+        """
+        if not isinstance(target_user, (str, User)):
+            raise ValueError("`user` must be a string or User object.")
+        elif isinstance(target_user, User):
+            target_user: str = target_user.username
+        url: str = f"{self._portal.resturl}content/users/{self.owner}/items/{self.itemid}/canReassign"
+        params: dict[str, Any] = {"f": "json", "targetUsername": target_user}
+        session: EsriSession = self._gis._con._session
+        resp: requests.Response = session.post(url=url, data=params)
+        resp.raise_for_status()
+        data: dict[str, Any] = resp.json()
+        return data.get("success", False) == True, data
+
+    # ----------------------------------------------------------------------
     @property
     def can_delete(self) -> bool:
         """
