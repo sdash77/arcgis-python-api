@@ -2932,6 +2932,7 @@ class GeoAccessor(object):
         the GIS to which the geocoder belongs.
 
         """
+        orig_df = df.copy()
         import arcgis
         from arcgis.geocoding import get_geocoders, geocode, batch_geocode
         from arcgis.geometry import Geometry
@@ -2995,17 +2996,19 @@ class GeoAccessor(object):
                     piece_df["ResultID"] = df.index.tolist()
                     data.append(piece_df)
                 if len(data) == 1:
-                    merged = df.merge(data[0], left_index=True, right_on="ResultID")
+                    merged = orig_df.merge(
+                        data[0], left_index=True, right_on="ResultID"
+                    )
                 else:
-                    merged = df.merge(
+                    merged = orig_df.merge(
                         pd.concat(data), left_index=True, right_on="ResultID"
                     )
             else:
                 raise ValueError("Address column not found in dataframe")
             with warnings.catch_warnings():
                 warnings.simplefilter("ignore")
-
-                merged.spatial.set_geometry("SHAPE")
+                if "SHAPE" in merged.columns:
+                    merged.spatial.set_geometry("SHAPE")
             return merged
 
     # ----------------------------------------------------------------------
