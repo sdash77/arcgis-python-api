@@ -8350,14 +8350,29 @@ class Raster:
             except Exception:
                 raise RuntimeError(f"Invalid/Unsupported STAC Item-\n{stac_item}")
 
+        zarr_datasets = [
+            "daymet-annual-pr",
+            "daymet-daily-hi",
+            "gridmet",
+            "daymet-annual-na",
+            "daymet-monthly-na",
+            "daymet-annual-hi",
+            "daymet-monthly-hi",
+            "daymet-monthly-pr",
+            "terraclimate",
+            "daymet-daily-pr",
+            "daymet-daily-na",
+        ]
+
         if "type" not in json_data or (
             json_data["type"] != "Feature"
             and (
                 json_data["type"] == "Collection"
-                and not json_data["id"].startswith("daymet")
+                and json_data["id"] not in zarr_datasets
             )
         ):
             raise RuntimeError(f"Invalid STAC Item-\n{json_data}")
+
         item = json_data
 
         from ._util import _get_stac_metadata_file
@@ -12730,6 +12745,9 @@ class RasterCollection:
                                                 gis=gis)
 
         """
+
+        from ._util import _get_stac_metadata_file, _get_stac_api_search_items
+
         if not isinstance(stac_api, str):
             raise RuntimeError(f"Invalid STAC API URL-\n{stac_api}")
         api_search_endpoint = (
@@ -12792,29 +12810,34 @@ class RasterCollection:
                     else:
                         new_query["bbox"] = bbox_list
 
-        if request_method.upper() == "GET":
-            data = _requests.get(
-                api_search_endpoint, params=new_query, **request_params
-            )
-        else:
-            data = _requests.post(api_search_endpoint, json=new_query, **request_params)
+        max_limit_map = {
+            "planetarycomputer.microsoft.com/api/stac": 1000,
+            "earth-search.aws.element84.com": 200,
+            "services.sentinel-hub.com/api": 100,
+        }
 
-        if data.status_code != 200 or data.headers.get("content-type") not in [
-            "application/json",
-            "application/geo+json",
-            "application/json;charset=utf-8",
-            "application/geo+json; charset=utf-8",
-        ]:
-            raise RuntimeError(
-                f"Invalid Response: Please verify that the STAC API URL and the specified query are correct-\n{data.text}"
-            )
+        stacs = list(max_limit_map.keys())
 
-        json_data = data.json()
-        if "type" not in json_data or json_data["type"] != "FeatureCollection":
-            raise RuntimeError(
-                f"Invalid JSON Response from the STAC API: Please verify that the STAC API URL and the specified query are correct-\n{json_data}"
-            )
-        items = json_data["features"]
+        search_stac = next(
+            (stac for stac in stacs if stac in api_search_endpoint), None
+        )
+
+        if search_stac is None:
+            raise RuntimeError("STAC API not supported")
+
+        get_all_items = False
+
+        if "limit" in new_query and new_query["limit"] is None:
+            new_query["limit"] = max_limit_map[search_stac]
+            get_all_items = True
+
+        items = _get_stac_api_search_items(
+            api_search_endpoint,
+            new_query,
+            request_method,
+            request_params,
+            get_all_items,
+        )
 
         if len(items) < 1:
             raise RuntimeError(f"No STAC items found. Please specify a better query")
@@ -12834,7 +12857,6 @@ class RasterCollection:
                     for item in items
                 ]
 
-        from ._util import _get_stac_metadata_file
         from arcgis.raster.functions import composite_band
 
         raster_list = []
