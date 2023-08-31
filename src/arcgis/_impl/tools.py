@@ -7901,10 +7901,10 @@ class _OrthoRealityMappingTools(BaseAnalytics):
         if self._is_ortho:
             job._is_ortho = True
             final_job = OMJob(job)
-            final_job._flight_details = flight_json_details
         else:
             job._is_reality = True
             final_job = RMJob(job)
+        final_job._flight_details = flight_json_details
         if future:
             return final_job
         return final_job.result()
@@ -8004,10 +8004,10 @@ class _OrthoRealityMappingTools(BaseAnalytics):
         if self._is_ortho:
             job._is_ortho = True
             final_job = OMJob(job)
-            final_job._flight_details = flight_json_details
         else:
             job._is_reality = True
             final_job = RMJob(job)
+        final_job._flight_details = flight_json_details
         if future:
             return final_job
         return final_job.result()
@@ -8106,10 +8106,10 @@ class _OrthoRealityMappingTools(BaseAnalytics):
         if self._is_ortho:
             job._is_ortho = True
             final_job = OMJob(job)
-            final_job._flight_details = flight_json_details
         else:
             job._is_reality = True
             final_job = RMJob(job)
+        final_job._flight_details = flight_json_details
         if future:
             return final_job
         return final_job.result()
@@ -8209,10 +8209,10 @@ class _OrthoRealityMappingTools(BaseAnalytics):
         if self._is_ortho:
             job._is_ortho = True
             final_job = OMJob(job)
-            final_job._flight_details = flight_json_details
         else:
             job._is_reality = True
             final_job = RMJob(job)
+        final_job._flight_details = flight_json_details
         if future:
             return final_job
         return final_job.result()
@@ -8290,10 +8290,10 @@ class _OrthoRealityMappingTools(BaseAnalytics):
         if self._is_ortho:
             job._is_ortho = True
             final_job = OMJob(job)
-            final_job._flight_details = flight_json_details
         else:
             job._is_reality = True
             final_job = RMJob(job)
+        final_job._flight_details = flight_json_details
         if future:
             return final_job
         return final_job.result()
@@ -8451,10 +8451,10 @@ class _OrthoRealityMappingTools(BaseAnalytics):
             if output_dem:
                 item = output_dem
             final_job = OMJob(job, item=item)
-            final_job._flight_details = flight_json_details
         else:
             job._is_reality = True
             final_job = RMJob(job)
+        final_job._flight_details = flight_json_details
         if future:
             return final_job
         return final_job.result()
@@ -8584,10 +8584,10 @@ class _OrthoRealityMappingTools(BaseAnalytics):
             if output_ortho_image:
                 item = output_ortho_image
             final_job = OMJob(job, item=item)
-            final_job._flight_details = flight_json_details
         else:
             job._is_reality = True
             final_job = RMJob(job)
+        final_job._flight_details = flight_json_details
         if future:
             return final_job
         return final_job.result()
@@ -8783,10 +8783,10 @@ class _OrthoRealityMappingTools(BaseAnalytics):
         if self._is_ortho:
             job._is_ortho = True
             final_job = OMJob(job)
-            final_job._flight_details = flight_json_details
         else:
             job._is_reality = True
             final_job = RMJob(job)
+        final_job._flight_details = flight_json_details
         if future:
             return final_job
         return final_job.result()
@@ -8876,10 +8876,10 @@ class _OrthoRealityMappingTools(BaseAnalytics):
         if self._is_ortho:
             job._is_ortho = True
             final_job = OMJob(job)
-            final_job._flight_details = flight_json_details
         else:
             job._is_reality = True
             final_job = RMJob(job)
+        final_job._flight_details = flight_json_details
         if future:
             return final_job
         return final_job.result()
