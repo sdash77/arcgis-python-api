@@ -13144,7 +13144,7 @@ class Item(dict):
                           receiving the item.
         ================  ========================================================
 
-        :return: tuple[bool, dict[str,Any]
+        :return: tuple[bool, dict[str,Any]]
         """
         if not isinstance(target_user, (str, User)):
             raise ValueError("`user` must be a string or User object.")
