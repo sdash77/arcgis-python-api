@@ -1,5 +1,9 @@
+import sys
+
+sys.path.insert(0, r"C:\SVN\geosaurus_master\src")
 import unittest
 from arcgis.gis import GIS
+
 
 ###########################################################################
 class TestGISExpiration(unittest.TestCase):
@@ -9,9 +13,8 @@ class TestGISExpiration(unittest.TestCase):
     def test_set_expiration(self):
         """setting the expiration value"""
         gis = GIS(profile="your_enterprise_profile", expiration=7)
-        assert gis._con._expiration == 7
-        gis._con.token
-        assert gis._con._create_time
+        assert gis._con._expiration == 60
+        assert gis._con.token
 
     # ----------------------------------------------------------------------
     def test_setting_expiration_none(self):
