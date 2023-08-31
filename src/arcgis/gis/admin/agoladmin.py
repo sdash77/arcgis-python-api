@@ -1,6 +1,10 @@
 """
 Entry point to working with local enterprise GIS functions
 """
+from __future__ import annotations
+import json
+import tempfile
+
 from datetime import datetime
 from typing import Optional
 from .._impl._con import Connection
@@ -9,6 +13,11 @@ from ._resources import PortalResourceManager
 from ._base import BasePortalAdmin
 from ...apps.tracker._location_tracking import LocationTrackingManager
 from ._dsmgr import DataStoreMetricsManager
+from arcgis.auth.tools import LazyLoader
+
+_pd = LazyLoader("pandas")
+
+_utils = LazyLoader("arcgis._impl.common._utils")
 
 
 ########################################################################
@@ -431,9 +440,7 @@ class AGOLAdminManager(object):
         :return: string or pd.DataFrame or dict
 
         """
-        import tempfile, json
-        from arcgis._impl.common._utils import _date_handler
-
+        _date_handler = _utils._date_handler
         if save_folder is None:
             save_folder = tempfile.gettempdir()
         if num == 0:
@@ -443,7 +450,7 @@ class AGOLAdminManager(object):
             "f": data_format,
             "num": num,
             #'start' : "",
-            "all": all_events,
+            "all": json.dumps(all_events),
             "id": event_ids,
             "types": event_types,
             "actors": actors,
@@ -472,8 +479,6 @@ class AGOLAdminManager(object):
                 try_json=False,
             )
         elif data_format in ["df"]:
-            import pandas as _pd
-
             if event_ids or event_types or actors or owners or actions:
                 params["all"] = "true"
             params["f"] = "json"
@@ -495,11 +500,11 @@ class AGOLAdminManager(object):
             params["f"] = "json"
             data = []
 
-            res = self._gis._con.post(url, params)
+            res = self._gis._con.get(url, params)
             data.extend(res["items"])
             while len(res["items"]) > 0 and "nextKey" in res:
                 params["start"] = res["nextKey"]
-                res = self._gis._con.post(url, params)
+                res = self._gis._con.get(url, params)
                 new_data = res["items"]
                 if len(new_data) == 0:
                     break
