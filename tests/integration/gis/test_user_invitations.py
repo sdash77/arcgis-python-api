@@ -1,10 +1,15 @@
+import sys
+
+sys.path.insert(0, r"C:\SVN\geosaurus_master\src")
 import unittest
 import uuid
 from arcgis.gis import GIS, User, UserManager, Group, GroupManager
 from arcgis.auth.tools._util import detect_proxy
 from arcgis.gis.sharing import UserInvitationManager
 
-PROFILES = ["your_online_admin_profile", "your_ent_admin_profile"]
+PROFILES = [
+    'your_online_profile',
+]  # ["your_online_admin_profile", "your_ent_admin_profile"]
 
 proxies = detect_proxy(True)
 
@@ -38,13 +43,13 @@ class TestUserInvitationManager(unittest.TestCase):
             um = gis.users
             test_user = None
             try:
-
                 test_user = um.create(
                     username=f"user_{uuid.uuid4().hex[:5]}bc",
                     password="VeryS3cur3!",
                     firstname="delete",
                     lastname="thisaccount",
                     email="support@esri.com",
+                    role='org_publisher',
                 )
                 assert isinstance(test_user, User)
                 gm = gis.groups
@@ -77,13 +82,13 @@ class TestUserInvitationManager(unittest.TestCase):
             um = gis.users
             test_user = None
             try:
-
                 test_user = um.create(
                     username=f"user_{uuid.uuid4().hex[:5]}bc",
                     password="VeryS3cur3!",
                     firstname="delete",
                     lastname="thisaccount",
                     email="support@esri.com",
+                    role='org_publisher',
                 )
                 assert isinstance(test_user, User)
                 gm = gis.groups
@@ -116,13 +121,13 @@ class TestUserInvitationManager(unittest.TestCase):
             um = gis.users
             test_user = None
             try:
-
                 test_user = um.create(
                     username=f"user_{uuid.uuid4().hex[:5]}bc",
                     password="VeryS3cur3!",
                     firstname="delete",
                     lastname="thisaccount",
                     email="support@esri.com",
+                    role='org_publisher',
                 )
                 assert isinstance(test_user, User)
                 gm = gis.groups
