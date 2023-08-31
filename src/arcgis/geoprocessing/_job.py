@@ -1240,6 +1240,7 @@ class RMJob(GPJob):
         """
         try:
             op = self._gpjob.result()
+            self._update_flight_info()
             return op
         except Exception as e:
             from arcgis.gis import Item
@@ -1292,3 +1293,97 @@ class RMJob(GPJob):
         :return: boolean
         """
         return self._gpjob.done()
+
+    # ----------------------------------------------------------------------
+    def _update_flight_info(self):
+        flight_json_details = self._flight_details
+        update_flight_json = False
+        if isinstance(flight_json_details, dict):
+            # project_item = flight_json_details.get("project_item", None)
+            item_name = flight_json_details.get("item_name", None)
+            mission = flight_json_details.get("mission", None)
+            update_flight_json = flight_json_details.get("update_flight_json", None)
+            processing_states = flight_json_details.get("processing_states", None)
+            adjust_settings = flight_json_details.get("adjust_settings", None)
+
+        if update_flight_json:
+            import json
+
+            job_messages = self.messages
+            rm = mission._project_item.resources
+            mission_json = mission._mission_json
+            resource = mission._resource_info
+            resource_name = resource["resource"]
+
+            start_time = (
+                self._gpjob._start_time.isoformat(timespec="milliseconds") + "Z"
+            )
+            end_time = self._gpjob._end_time.isoformat(timespec="milliseconds") + "Z"
+
+            mission_json["jobs"].update(
+                {
+                    item_name: {
+                        "messages": job_messages,
+                        "checked": True,
+                        "progress": 100,
+                        "success": True,
+                        "startTime": start_time,
+                        "completionTime": end_time,
+                    }
+                }
+            )
+            if processing_states is not None:
+                mission_json["processingSettings"].update(
+                    {item_name: processing_states}
+                )
+            if adjust_settings is not None:
+                mode = adjust_settings.pop("mode", None)
+                mission_json["jobs"][item_name].update({"mode": mode})
+                mission_json["adjustSettings"].update(adjust_settings)
+
+            properties = json.loads(resource["properties"])
+
+            if self._item:
+                url = json.loads(self._item)["serviceProperties"]["serviceUrl"]
+                itemid = json.loads(self._item)["itemProperties"]["itemId"]
+                mission_json["items"].update(
+                    {item_name: {"itemId": itemid, "url": url}}
+                )
+
+                properties = json.loads(resource["properties"])
+                properties_items = properties["items"]
+                products = []
+                for dict_item in properties_items:
+                    products.append(dict_item["product"])
+                if item_name not in products:
+                    properties_items.append(
+                        {"product": item_name, "id": itemid, "created": True}
+                    )
+                else:
+                    index = products.index(item_name)
+                    properties_items[index] = {
+                        "product": item_name,
+                        "id": itemid,
+                        "created": True,
+                    }
+                properties.update({"items": properties_items})
+
+            import tempfile, uuid, os
+
+            fname = resource_name.split("/")[1]
+            temp_dir = tempfile.gettempdir()
+            temp_file = os.path.join(temp_dir, fname)
+            with open(temp_file, "w") as writer:
+                json.dump(mission_json, writer)
+            del writer
+
+            try:
+                rm.update(
+                    file=temp_file,
+                    text=mission_json,
+                    folder_name="flights",
+                    file_name=fname,
+                    properties=properties,
+                )
+            except:
+                raise RuntimeError("Error updating the mission resource")
