@@ -27,7 +27,7 @@ class TestFeedsApiMethods(unittest.TestCase):
     velocity = gis.velocity
     feeds = velocity.feeds
 
-    @unittest.skipIf(SKIP_SOME_TESTS, "test_get_all_feeds skipping")
+    # @unittest.skipIf(SKIP_SOME_TESTS, "test_get_all_feeds skipping")
     def test_get_all_feeds(self):
         print("\n ---- test_get_all_feeds ----")
 
@@ -50,7 +50,7 @@ class TestFeedsApiMethods(unittest.TestCase):
     def test_get_feed(self):
         print("\n ---- test_get_feed ----")
         try:
-            feed = self.feeds.get("7392333e5ab0406abaa67cc75a214b98")
+            feed = self.feeds.get("9b346d664c244adea79ee11942de38c5")
             assert isinstance(feed, Feed)
 
         except AssertionError as assertErrorException:
