@@ -1237,6 +1237,7 @@ def prepare_tabulardata(
         index_field=index_field,
         column_transforms_mapping=column_transforms_mapping,
         random_split=random_split,
+        **kwargs,
     )
 
     if working_dir is None:
