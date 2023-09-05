@@ -4,6 +4,64 @@ from arcgis.gis import GIS
 from typing import Dict
 
 
+class ExtenernalContentManager(_BaseKube):
+    """
+    Provides management of the external content resources.
+    """
+
+    _gis = None
+    _con = None
+    _properties = None
+    _url = None
+
+    def __init__(self, url: str, gis: GIS):
+        super()
+        if url.lower().endswith("/content") == False:
+            url += "/content"
+        self._url = url
+        self._gis = gis
+        self._con = gis._con
+
+    @property
+    def external_content(self) -> dict[str, Any]:
+        """
+        The external_content resource returns whether access to external
+        content has been enabled or disabled for an organization. If the
+        resource returns true, an organization's Esri content will contain
+        external URLs that reference sites and resources hosted outside of
+        the organization. If the resource returns false, Esri content
+        containing external URLs will be removed from the organization. Any
+        Esri content remaining after external content is disabled will not
+        contain external URLs. If you are configuring ArcGIS Enterprise on
+        Kubernetes in an environment in which no internet connection is
+        available, or internet access is prohibited, access to external
+        content should be disabled to avoid discovering content containing
+        inaccessible URLs to external sites.
+
+        :return: dict[str,Any]
+        """
+        url: str = f"{self._url}/externalcontent"
+        params: dict[str, Any] = {
+            "f": "json",
+        }
+        return self._con.get(url, params)
+
+    def update(self, value: bool) -> dict[str, Any]:
+        """
+        The update operation enables and disables access to Esri-provided
+        content containing external URLs that reference sites and resources
+        hosted outside of the organization.
+
+        :returns: dict[str,Any]
+        """
+        url: str = f"{self._url}/externalcontent/update"
+        params: dict[str, Any] = {
+            "f": "json",
+            "externalContentEnabled": value,
+        }
+        return self._con.post(url, params)
+
+
 ###########################################################################
 class LanguageManager(_BaseKube):
     """
