@@ -1,7 +1,6 @@
 import sys
+#sys.path.insert(0, r"<path_to_local>\geosaurus\src")
 
-sys.path.insert(0, r"C:\Job\repos\geosaurus\src")
-import os
 import unittest
 
 from arcgis.features.layer import FeatureLayer
@@ -17,7 +16,6 @@ try:
     assert isinstance(item, Item)
 except:
     fp = r"//qalab_server/pydata/v109/geosaurus/mapping_mod_MapImageLayer_cls/south_asia_region.sd"
-    #fp = r"/Volumes/pydata/v109/geosaurus/mapping_mod_MapImageLayer_cls/south_asia_region.sd"
     host_server = gis.admin.servers.get(role="HOSTING_SERVER")[0]
     res = host_server.publish_sd(sd_file=fp, folder="South_Asia", future=False)
     item = gis.content.search("South_Asia_Region", "Map Image Layer")[0]
