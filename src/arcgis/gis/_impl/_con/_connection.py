@@ -928,7 +928,6 @@ class Connection(object):
             file_name = (
                 _filename_from_url(url) or _filename_from_headers(resp.headers) or None
             )
-
         if force_bytes:
             try:
                 return bytes(resp.content)
@@ -975,7 +974,12 @@ class Connection(object):
                         data = it
                     else:
                         data += it
-                data = json.loads(data)
+                if data.find("xml") != -1:
+                    import xmltodict
+                    xml_dict = xmltodict.parse(data)
+                    data = json.dumps(xml_dict)
+                else:
+                    data = json.loads(data)
                 if "error" in data and ignore_error_key == False:
                     raise Exception(data["error"])
             else:
