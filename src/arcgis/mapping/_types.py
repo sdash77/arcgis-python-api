@@ -6966,13 +6966,13 @@ class MapImageLayer(arcgis.gis.Layer):
             params = {"f": "json"}
             job_response = self._con.post(path, params)
 
-            if "jobStatus" in job_response:
-                status = job_response.get("jobStatus")
+            if "status" in job_response or "jobStatus" in job_response:
+                status = job_response.get("status") or job_response.get("jobStatus")
                 while not status == "esriJobSucceeded":
                     time.sleep(5)
 
                     job_response = self._con.post(path, params)
-                    status = job_response.get("jobStatus")
+                    status = job_responsde.get("status") or job_response.get("jobStatus")
                     if status in [
                         "esriJobFailed",
                         "esriJobCancelling",
