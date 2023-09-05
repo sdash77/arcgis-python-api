@@ -116,8 +116,9 @@ class TestQueryFeatureLayer(unittest.TestCase):
         """
         Test generate_kml method
         """
+        import tempfile
         generate = layer.generate_kml(
-            save_location=r"/Users/john3092/Job/data_formats/kmz", #C:\Job\Data_Formats\kmz
+            save_location=tempfile.gettempdir(), 
             name="map_service_generate_kml_test",
             layers="0",
             options="composite",
