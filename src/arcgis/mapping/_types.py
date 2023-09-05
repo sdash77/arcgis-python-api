@@ -7186,7 +7186,7 @@ class MapImageLayer(arcgis.gis.Layer):
                                 )
                             return files
                         else:
-                            return self._con.get(path=gpRes["value"])                            
+                            return self._con.get(path=gpRes["value"])["folders"]                            
                     else:
                         return None
             elif "output" in job_response:
