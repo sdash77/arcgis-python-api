@@ -356,6 +356,7 @@ class AutoML(object):
             return "auto"
 
     def _impute_missing_values(self, data=None):
+        original_dtype = data.dtypes
         numerical_transformer = make_pipeline(SimpleImputer(strategy="median"))
 
         categorical_transformer = make_pipeline(SimpleImputer(strategy="constant"))
@@ -372,6 +373,7 @@ class AutoML(object):
             processed_data_df = pd.DataFrame(
                 processed_data, columns=data.columns.values.tolist()
             )
+            processed_data_df = processed_data_df.astype(original_dtype)
         except:
             processed_data_df = data
         return processed_data_df
