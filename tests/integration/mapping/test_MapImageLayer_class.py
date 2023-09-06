@@ -45,7 +45,7 @@ class TestQueryFeatureLayer(unittest.TestCase):
         layer_to_add = {
             "id": 101, 
             "source": {"type": "mapLayer",
-                       "mapLayerId": 4},
+                            "mapLayerId": 4},
             "definitionExpression": "\"CNTRY_NAME\" is 'Iran'",
             "drawingInfo": {
                 "renderer": "simple",
@@ -75,7 +75,7 @@ class TestQueryFeatureLayer(unittest.TestCase):
         assert "layers" in legend
 
         metadata = layer.metadata
-        assert isinstance(metadata, dict)
+        assert isinstance(metadata, str)
 
         thumbnail = layer.thumbnail()
         assert thumbnail
@@ -86,24 +86,27 @@ class TestQueryFeatureLayer(unittest.TestCase):
         Test identify method with various parameters
         """
         identify = layer.identify(
-            geometry={"x": -104, "y": 35.6},
-            geometry_type="Point",
+            geometry={"xmin": 52, "ymin": 27.1, "xmax": 65.8, "ymax": 36},
+            geometry_type="Envelope",
             tolerance=2,
-            map_extent="-104,35.6,-94.32,41",
+            map_extent="59,-2,75,25",
+            layers="all",
+            sr=4326, 
             image_display="600,550,96",
         )
         assert isinstance(identify, dict)
         assert "results" in identify
+        assert len(identify["results"]) > 0
 
     def test_find(self):
         """
         Test find method
         """
         find = layer.find(
-            search_text="United",
+            search_text="Iran",
             contains=True,
             search_fields="CNTRY_NAME", 
-            layers="0",
+            layers="4",
             return_geometry=False,
             max_offset=100,
             return_z=True,
@@ -111,6 +114,7 @@ class TestQueryFeatureLayer(unittest.TestCase):
         )
         assert isinstance(find, dict)
         assert "results" in find
+        assert len(find["results"]) > 0
 
     def test_generate_kml(self):
         """
@@ -130,13 +134,13 @@ class TestQueryFeatureLayer(unittest.TestCase):
         Test export_map method
         """
         export = layer.export_map(
-            bbox="-104,35.6,-94.32,41",
+            bbox="52.5,18.9,53.4,20.0",
             bbox_sr=4326,
             image_format="png",
-            layers="include",
+            layers="show:4,6,7",
             transparent=True,
-            scale=40.0,
-            rotation=-45.0,
+            scale=220000000,
+            rotation=0,
         )
         assert isinstance(export, dict)
         assert "href" in export
