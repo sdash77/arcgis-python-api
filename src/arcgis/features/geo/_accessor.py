@@ -2517,14 +2517,22 @@ class GeoAccessor(object):
             service = feature_service
             fs_id = feature_service.id
 
-        if service.owner != user:
-            raise AssertionError("You must own the service to insert data to it.")
+        if (
+            gis.users.me.username != service.owner
+            and "portal:admin:updateItems" not in self._gis.users.me.privileges
+        ):
+            raise AssertionError(
+                "You must own the service to insert data to it or have administrative privileges."
+            )
         # Get the data related
         related_items = service.related_items(rel_type="Service2Data")
         for item in related_items:
-            if item.owner != user:
+            if (
+                item.owner != user
+                and "portal:admin:updateItems" not in self._gis.users.me.privileges
+            ):
                 raise AssertionError(
-                    "You must own the service data to insert data to it."
+                    "You must own the service data to insert data to it or have administrative privileges."
                 )
 
         origin_columns = self._data.columns.tolist()
@@ -2924,6 +2932,7 @@ class GeoAccessor(object):
         the GIS to which the geocoder belongs.
 
         """
+        orig_df = df.copy()
         import arcgis
         from arcgis.geocoding import get_geocoders, geocode, batch_geocode
         from arcgis.geometry import Geometry
@@ -2987,17 +2996,19 @@ class GeoAccessor(object):
                     piece_df["ResultID"] = df.index.tolist()
                     data.append(piece_df)
                 if len(data) == 1:
-                    merged = df.merge(data[0], left_index=True, right_on="ResultID")
+                    merged = orig_df.merge(
+                        data[0], left_index=True, right_on="ResultID"
+                    )
                 else:
-                    merged = df.merge(
+                    merged = orig_df.merge(
                         pd.concat(data), left_index=True, right_on="ResultID"
                     )
             else:
                 raise ValueError("Address column not found in dataframe")
             with warnings.catch_warnings():
                 warnings.simplefilter("ignore")
-
-                merged.spatial.set_geometry("SHAPE")
+                if "SHAPE" in merged.columns:
+                    merged.spatial.set_geometry("SHAPE")
             return merged
 
     # ----------------------------------------------------------------------
@@ -3423,8 +3434,8 @@ class GeoAccessor(object):
             _dtype(np.int16): "esriFieldTypeInteger",
             np.int32: "esriFieldTypeInteger",
             _dtype(np.int32): "esriFieldTypeInteger",
-            np.int64: "esriFieldTypeDouble",
-            _dtype(np.int64): "esriFieldTypeOID",
+            np.int64: "esriFieldTypeBigInteger",
+            _dtype(np.int64): "esriFieldTypeBigInteger",
             pd.Int64Dtype(): "esriFieldTypeBigInteger",
             pd.Int32Dtype(): "esriFieldTypeInteger",
             int: "esriFieldTypeInteger",
@@ -3445,6 +3456,9 @@ class GeoAccessor(object):
             pd.StringDtype(): "esriFieldTypeString",
             "<m8[ns]": "esriFieldTypeDouble",
             _dtype("<m8[ns]"): "esriFieldTypeDouble",
+            _dtype("<M8[s]"): "esriFieldTypeDateOnly",
+            _dtype("<m8[us]"): "esriFieldTypeTimeOnly",
+            _dtype("<M8[us]"): "esriFieldTypeTimestampOffset",
             "<M8[us]": "esriFieldTypeDate",
             np.dtype("<M8[ns]"): "esriFieldTypeDate",
             datetime: "esriFieldTypeDate",
@@ -3464,8 +3478,8 @@ class GeoAccessor(object):
             pd.UInt16Dtype(): "esriFieldTypeInteger",
             pd.UInt32Dtype: "esriFieldTypeInteger",
             pd.UInt32Dtype(): "esriFieldTypeInteger",
-            pd.UInt64Dtype: "esriFieldTypeInteger",
-            pd.UInt64Dtype(): "esriFieldTypeInteger",
+            pd.UInt64Dtype: "esriFieldTypeBigInteger",
+            pd.UInt64Dtype(): "esriFieldTypeBigInteger",
         }
         fields = []
         for idx, dtype in enumerate(self._data.dtypes):

@@ -11,6 +11,7 @@ import os
 import base64
 import configparser
 from functools import lru_cache
+from integration.config import QALAB_ROOT_PATH
 
 __logger__ = logging.getLogger()
 
@@ -30,17 +31,20 @@ def get_config_parser() -> dict:
     """
     configs = [
         os.path.join(
-            r"\\qalab_server\pydata\v109\geosaurus\esri_requests",
+            QALAB_ROOT_PATH,
+            "esri_requests",
             "config.ini",
         ),
         os.path.join(os.path.dirname(__file__), "config.ini.txt"),
         os.path.join(os.path.dirname(__file__), "config.ini"),
         os.path.join(
-            r"\\qalab_server\pydata\v109\geosaurus\esri_requests",
+            QALAB_ROOT_PATH,
+            "esri_requests",
             "config.ini",
         ),
         os.path.join(
-            r"\\qalab_server\pydata\v109\geosaurus\esri_requests",
+            QALAB_ROOT_PATH,
+            "esri_requests",
             "config.ini.txt",
         ),
     ]

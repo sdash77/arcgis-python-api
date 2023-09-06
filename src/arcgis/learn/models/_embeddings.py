@@ -183,7 +183,7 @@ class Embeddings:
         else:
             self.working_dir = Path.cwd()
 
-        _make_folder(os.path.join(os.path.abspath(self.working_dir), "embeddings"))
+        # _make_folder(os.path.join(os.path.abspath(self.working_dir), "embeddings"))
 
         self._file_path = None
         self.backbone = None

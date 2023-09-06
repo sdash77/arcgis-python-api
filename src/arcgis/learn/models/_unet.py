@@ -532,6 +532,7 @@ class UnetClassifier(ArcGISModel):
             plt.show()
 
     def accuracy(self):
+        """Computes per pixel accuracy on validation set."""
         try:
             return self.learn.validate()[1].tolist()
         except Exception as e:
@@ -693,6 +694,7 @@ class UnetClassifier(ArcGISModel):
 
         Returns per class precision, recall and f1 scores
         """
+        ignore_classes = np.unique(self._ignore_classes + ignore_classes).tolist()
         try:
             self._check_requisites()
             ## Calling imported function `per_class_metrics`

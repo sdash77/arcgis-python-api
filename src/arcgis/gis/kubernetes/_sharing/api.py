@@ -2546,7 +2546,8 @@ class KbertnetesPy(object):
             numViews          number of views of the item.
             ================  ========================================================
         """
-        return self.con.post("content/items/" + itemid, self._postdata())
+        item = self.con.post("content/items/" + itemid, self._postdata())
+        return item
 
     # ----------------------------------------------------------------------
     def get_item_data(

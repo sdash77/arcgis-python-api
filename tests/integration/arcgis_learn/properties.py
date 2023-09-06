@@ -33,7 +33,8 @@ from arcgis.learn import (
     DETReg,
     PSETAE,
     RandLANet,
-    SQNSeg
+    SQNSeg,
+    MMDetection3D
 )
 import json
 from arcgis.learn.text import EntityRecognizer, SequenceToSequence, TextClassifier
@@ -49,6 +50,7 @@ data_folder_ms = (
     r"/root/data_for_testing/test_automation/data/train_model_ms"
 )
 authorization_path = r"/root/data_for_testing/test_automation/data/properties/properties.json"
+
 
 colormap = {
     "0": [0, 0, 0],
@@ -777,24 +779,6 @@ data = {
         "inferencing_parameter": {"model_type": "prediction_layer"},
         "inferencing_image_server": {"input_raster": "pass", "model_package": "pass"},
     },
-    "ml": {
-        "model_name": "machine_learning",
-        "model": MLModel,
-        "datapath": "ml_data",
-        "model_test": "ml_test",
-        "prepare_tabular_data": {"explanatory_variables": X, "preprocessors": True},
-        "gis_content_search": {
-            "query": "calgary_no_southland_solar owner:api_data_owner",
-            "item_type": "feature layer",
-        },
-        "should_test": True,
-        "test_feature_layer": True,
-        "regression_parameter": "score",
-        "regression_test_score": 0.40,
-        "regression_epochs": 15,
-        "inferencing_parameter": {"model_type": "prediction_layer"},
-        "inferencing_image_server": {"input_raster": "pass", "model_package": "pass"},
-    },
     "pix2pix": {
         "model_name": "pix2pix",
         "datapath": "pix2pix_data",
@@ -803,8 +787,7 @@ data = {
         "model_test": "pix2pix_test",
         "prepare_data": {
             "path": os.path.join(data_folder, "pix2pix_data"),
-            "batch_size": None,
-            "dataset_type": "Pix2Pix",
+            "batch_size": None
         },
         "prepare_data_ms": False,
         "should_test": True,
@@ -1417,6 +1400,28 @@ data = {
         "test_feature_layer": False,
         "regression_parameter": "compute_precision_recall",
         "regression_test_score": 0.20,
+        "regression_epochs": 10,
+        "inferencing_parameter": {
+            "model_type": "pass",
+            "sample_input": "pass",
+        },
+        "inferencing_image_server": {"input_raster": "pass", "model_package": "pass"},
+    },
+    "mm3d": {
+        "model_name": "mm3d",
+        "datapath": "mm3d_data",
+        "model": MMDetection3D,
+        "model_test": "mm3d_test",
+        "prepare_data": {
+            "path": os.path.join(data_folder, "mm3d_data", "Chairs001.pctd"),
+            "batch_size": None,
+            "dataset_type": "PointCloudOD"
+        },
+        "prepare_data_ms": False,
+        "should_test": True,
+        "test_feature_layer": False,
+        "regression_parameter": "average_precision_score",
+        "regression_test_score": 0.10,
         "regression_epochs": 10,
         "inferencing_parameter": {
             "model_type": "pass",

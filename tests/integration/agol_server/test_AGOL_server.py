@@ -33,7 +33,7 @@ class TestAgolServer(unittest.TestCase):
             for server in gis.hosting_servers:
                 assert isinstance(server, agoserver.AGOLServicesDirectory)
                 assert server.properties
-                assert isinstance(server.services, list)
+                assert isinstance(server.properties["services"], list)
                 assert len(server.folders) == 0
 
 
@@ -137,6 +137,7 @@ class TestHostingServerProperty(unittest.TestCase):
                 username="admin",
                 password="esri.agp",
                 url="https://gpportal.esri.com/portal",
+                verify_cert=False
             )
 
     def test_enterprise_hosting_servers(self):

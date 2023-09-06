@@ -453,6 +453,7 @@ class PSPNetClassifier(ArcGISModel):
             param.requires_grad = True
 
     def accuracy(self, input=None, target=None, void_code=0, class_mapping=None):
+        """Computes per pixel accuracy."""
         if input is not None or target is not None:
             accuracy(input, target)
         else:
@@ -634,6 +635,7 @@ class PSPNetClassifier(ArcGISModel):
 
         Returns per class precision, recall and f1 scores
         """
+        ignore_classes = np.unique(self._ignore_classes + ignore_classes).tolist()
         try:
             self._check_requisites()
             ## Calling imported function `per_class_metrics`

@@ -1,8 +1,4 @@
 import sys
-
-#
-#  Update the Path to set the test area
-sys.path.insert(0, r"C:\SVN\geosaurus_issue_10036\src")
 import logging
 import unittest
 import uuid
@@ -15,6 +11,7 @@ from arcgis.gis import (
     Item,
     ItemProperties,
 )
+from integration.config import QALAB_ROOT_PATH
 
 __logger__ = logging.getLogger()
 
@@ -29,7 +26,7 @@ def enable_verbose_logging(root):
     root.addHandler(handler)
 
 
-profiles = ['your_online_profile', 'your_enterprise_profile']
+profiles = ['your_online_admin_profile', 'your_ent_admin_profile']
 PROXIES = detect_proxy(True)  # Handles Fiddler when True
 enable_verbose_logging(__logger__)
 
@@ -50,7 +47,7 @@ class TestContentManagerReassignTo(unittest.TestCase):
             lastname=f"a{uuid.uuid4().hex[:3]}z",
             email="testaccount@esri.com",
         )
-        fp = r"\\qalab_server\pydata\v109\geosaurus\esri_requests\raster_data\Clip_090160.tif"
+        fp = QALAB_ROOT_PATH + r"\esri_requests\raster_data\Clip_090160.tif"
         try:
             ip: ItemProperties = ItemProperties(
                 **{
@@ -86,7 +83,7 @@ class TestContentManagerReassignTo(unittest.TestCase):
             lastname=f"a{uuid.uuid4().hex[:3]}z",
             email="testaccount@esri.com",
         )
-        fp = r"\\qalab_server\pydata\v109\geosaurus\esri_requests\raster_data\Clip_090160.tif"
+        fp = QALAB_ROOT_PATH + r"\esri_requests\raster_data\Clip_090160.tif"
         try:
             ip: ItemProperties = ItemProperties(
                 **{

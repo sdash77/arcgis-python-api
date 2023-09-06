@@ -94,6 +94,7 @@ class UtilityNetworkManager(object):
         result_types: list[dict] | None = None,
         trace_config_global_id: str | None = None,
         out_sr: int | None = None,
+        pbf: bool = False,
     ) -> dict:
         """
         A trace refers to a pre-configured algorithm that systematically
@@ -182,6 +183,9 @@ class UtilityNetworkManager(object):
                                    trace type parameter is ignored.
         -----------------------    --------------------------------------------------
         out_sr                     Optional Integer. The output spatial reference.
+        -----------------------    --------------------------------------------------
+        pbf                        Optional Boolean. If True, the results are returned in
+                                   the PBF format. The default is False.
         =======================    ==================================================
 
         :return:
@@ -204,7 +208,7 @@ class UtilityNetworkManager(object):
         if isinstance(configuration, TraceConfiguration):
             configuration = configuration.to_dict()
         params = {
-            "f": "json",
+            "f": "pbf" if pbf is True else "json",
             "gdbVersion": self._version_name,
             "sessionId": self._version_guid,
             "traceType": trace_type,
@@ -220,7 +224,10 @@ class UtilityNetworkManager(object):
             params["resultTypes"] = result_types
         if out_sr:
             params["outSR"] = out_sr
-        return self._con.post(url, params)
+        if pbf is True:
+            return self._con.post(url, params, force_bytes=True)
+        else:
+            return self._con.post(url, params)
 
     # ----------------------------------------------------------------------
     def disable_topology(self) -> dict:
@@ -415,6 +422,7 @@ class UtilityNetworkManager(object):
         moment: int | None = None,
         run_async: bool = False,
         out_sr: int | None = None,
+        pbf: bool = False,
     ) -> dict:
         """
         The `export_subnetwork` operation is used to export information
@@ -462,6 +470,8 @@ class UtilityNetworkManager(object):
                                                     the current moment.
         ------------------------------------        --------------------------------------------------------------------
         out_sr                                      Optional Integer. Optional parameter specifying the output spatial reference.
+        ------------------------------------        --------------------------------------------------------------------
+        pbf                                         Optional Boolean. If true, the response will be in PBF format.
         ====================================        ====================================================================
 
         :return:
@@ -497,7 +507,11 @@ class UtilityNetworkManager(object):
             params["resultTypes"] = result_types
         if out_sr:
             params["outSR"] = out_sr
-        return self._con.post(url, params)
+        if pbf:
+            params["f"] = "pbf"
+            return self._con.post(url, params, force_bytes=True)
+        else:
+            return self._con.post(url, params)
 
     # ----------------------------------------------------------------------
     def query_network_moments(

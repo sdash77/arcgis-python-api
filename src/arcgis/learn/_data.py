@@ -1151,6 +1151,16 @@ def prepare_tabulardata(
 
                             .. note::
                                 Applies to classification problems.
+    ---------------------   -------------------------------------------
+    random_split            Optional boolean. sets the behaviour of train and validation
+                            split to random or last n steps. If set to True then random
+                            sampling will be performed. Otherwise, last n steps will be
+                            used as validation. val_split_pct will determine the number
+                            the records for validation.
+                            Default value is True
+
+                            .. note::
+                                Applies to timeseries
     =====================   ===========================================
 
     :return: `TabularData` object
@@ -1172,6 +1182,10 @@ def prepare_tabulardata(
     stratify = False
     if kwargs.get("stratify") == True:
         stratify = True
+
+    random_split = True
+    if kwargs.get("random_split") == False:
+        random_split = False
 
     HAS_COLUMN_TRANSFORMS = False
 
@@ -1205,7 +1219,7 @@ def prepare_tabulardata(
                     for step in transform[1].steps:
                         column_transforms_mapping[column].append(step[1])
                 else:
-                    column_transforms_mapping[column].append(transform[1])
+                    column_transforms_mapping[column].append(transform[1].__class__())
 
     data = TabularDataObject.prepare_data_for_layer_learner(
         input_features,
@@ -1222,6 +1236,8 @@ def prepare_tabulardata(
         batch_size=batch_size,
         index_field=index_field,
         column_transforms_mapping=column_transforms_mapping,
+        random_split=random_split,
+        **kwargs,
     )
 
     if working_dir is None:
@@ -1260,12 +1276,6 @@ def prepare_data(
     samples in the supported dataset formats. This data object consists of
     training and validation data sets with the specified transformations,
     chip size, batch size, split percentage, etc.
-
-    - For object detection, use Pascal_VOC_rectangles or KITTI_rectangles format.
-    - For feature categorization use Labelled Tiles or Imagenet format.
-    - For pixel classification, use Classified Tiles format.
-    - For DeepSort, use Imagenet format.
-    - For panoptic segmentation, use Panoptic_Segmentation format.
 
     =====================   ===========================================
     **Parameter**           **Description**
@@ -1312,16 +1322,14 @@ def prepare_data(
                             function will infer the `dataset_type` on its own if
                             it contains a map.txt file. If the path does not contain
                             the map.txt file pass one of 'PASCAL_VOC_rectangles',
-                            'KITTI_rectangles', 'RCNN_Masks', 'Classified_Tiles',
-                            'Labeled_Tiles', 'MultiLabeled_Tiles', 'Imagenet',
-                            'PointCloud', 'PointCloudOD', 'ImageCaptioning',
-                            'ChangeDetection', 'superres', 'CycleGAN', 'Pix2Pix',
-                            'WNet_cGAN', 'Panoptic_Segmentation', and 'ObjectTracking'.
+                            'KITTI_rectangles', 'Imagenet'.
                             This parameter is mandatory for data which are not
                             exported by ArcGIS Pro / Enterprise which includes
-                            'PointCloud', 'PointCloudOD','ImageCaptioning',
-                            'ChangeDetection', 'CycleGAN', 'Pix2Pix', 'WNet_cGAN'
-                            and 'ObjectTracking'.
+                            'PointCloud', 'ImageCaptioning', 'ChangeDetection',
+                            'CycleGAN', 'Pix2Pix', 'WNet_cGAN' and 'ObjectTracking'.
+                            Note:
+                            For details on dataset_type please refer to this link
+                            https://pro.arcgis.com/en/pro-app/3.0/tool-reference/image-analyst/export-training-data-for-deep-learning.htm
     ---------------------   -------------------------------------------
     resize_to               Optional integer or tuple of integers.
                             A tuple should be of the form (height, width).
@@ -1356,13 +1364,15 @@ def prepare_data(
                             it will create label images of size 128x128.
                             Default is 4
     ---------------------   -------------------------------------------
-    min_points              Optional int. Filtering based on minimum number
+    min_points              For dataset_type='PointCloud' and 'PointCloudOD':
+                            Optional int. Filtering based on minimum number
                             of points in a block. Set `min_points=1000` to
                             filter out blocks with less than 1000 points.
+
+                            For dataset_type='PSETAE':
                             Optional int. Number of pixels equal to or multiples
                             of 64 to sample from the each masked region of training
-                            data i.e. 64, 128 etc. Applicable only for
-                            dataset_type='PointCloud', 'PointCloudOD', and 'PSETAE'.
+                            data i.e. 64, 128 etc.
     ---------------------   -------------------------------------------
     extra_features          Optional List. Contains a list of strings
                             which mentions extra features to be used for
@@ -1373,17 +1383,23 @@ def prepare_data(
                             For example: ['intensity', 'numberOfReturns', 'returnNumber',
                             'red', 'green', 'blue', 'nearInfrared'].
     ---------------------   -------------------------------------------
-    remap_classes           Optional dictionary {int:int}. Mapping from
-                            class values to user defined values.
-                            Applicable with dataset_type='PointCloud'
-                            for remapping LAS classcode structure.
-                            And with dataset_type='PointCloudOD' for
-                            remapping object class structure.
-                            When this parameter is set as `remap_classes={5:3}`,
-                            then '5' class value will be considered as '3',
-                            in both training and validation blocks.
+    remap_classes           Optional dictionary {int:int}.
+                            Mapping from class values to user defined values,
+                            in both training and validation data.
+
+                            For dataset_type='PointCloud':
+                            It will remap LAS classcode structure.
+                            For example: {1:3, 2:4} will remap LAS classcode 1 to 3
+                            and classcode 2 to 4.
+
+                            For dataset_type='PointCloudOD':
+                            It will remap  object class ids. When this
+                            parameter is set as `remap_classes={5:3, 2:4}`,
+                            then '5' and 2 class values will be considered as '3', and
+                            '4', respectively.
     ---------------------   -------------------------------------------
     classes_of_interest     Optional list of int.
+
                             For dataset_type='PointCloud':
                             This will filter training blocks based on
                             `classes_of_interest`. If we have "1, 3, 5, 7"
@@ -1432,9 +1448,9 @@ def prepare_data(
                             Default value feature classification is True.
                             Default value pixel classification is False.
 
-                            .. note::
-                                Applies to single label feature classification,
-                                object detection and pixel classification.
+                            Note:
+                            Applies to single label feature classification,
+                            object detection and pixel classification.
     ---------------------   -------------------------------------------
     bands_of_interest       Optional list. List of spectral bands of interest.
                             This will filter bands based on `bands_of_interest`.
@@ -1710,6 +1726,7 @@ def prepare_data(
             "ChangeDetection",
             "ObjectTracking",
             "PSETAE",
+            "SR3",
         ]
         and has_esri_files
     ):
@@ -1737,6 +1754,8 @@ def prepare_data(
             chip_size = img_size
         if dataset_type != "Imagenet":
             right = line.split()[1].split(".")[-1].lower()
+        if dataset_type == "RCNN_Masks":
+            right = line.split()[-1].split(".")[-1].lower()
 
         json_file = path / "esri_model_definition.emd"
         if data_folders is None:
@@ -2638,7 +2657,11 @@ def prepare_data(
 
             transforms = (train_tfms, val_tfms)
 
-    elif dataset_type == "superres" or dataset_type == "Export_Tiles":
+    elif (
+        dataset_type == "superres"
+        or dataset_type == "Export_Tiles"
+        or dataset_type == "SR3"
+    ):
         path_hr = path / "images"
         path_lr = path / "labels"
         path_addras_lr = path / "images2"
@@ -2725,6 +2748,36 @@ def prepare_data(
             il2 = ArcGISImageList.from_folder(path_lr)
             imagery_type, _is_multispec = check_ms(il, il2)
 
+        if dataset_type == "SR3":
+            from ._data_utils.pix2pix_data import prepare_pix2pix_data
+
+            kwargs["path_hr"], kwargs["path_lr"], kwargs["imagery_type"] = (
+                path_hr,
+                path_lr,
+                imagery_type,
+            )
+            data = prepare_pix2pix_data(
+                path=path,
+                batch_size=batch_size,
+                val_split_pct=val_split_pct,
+                transforms=transforms,
+                resize_to=resize_to,
+                norm_pct=norm_pct,
+                _is_multispectral=_is_multispec,
+                working_dir=working_dir,
+                seed=seed,
+                dataset_type=dataset_type,
+                **kwargs,
+            )
+            if data._is_multispectral:
+                # data._imagery_type = _imagery_type
+                data._bands = _bands
+                # data._norm_pct = norm_pct
+                data._extract_bands = None
+                data._do_normalize = False
+            data.downsample_factor = downsample_factor
+            return data
+
         data = (
             ImageImageListSR.from_folders(path, path_lr, image_stats, _is_multispec)
             .split_by_rand_pct(val_split_pct, seed=seed)
@@ -2792,10 +2845,15 @@ def prepare_data(
         return data
 
     elif dataset_type == "PointCloudOD":
-        from ._utils.pointcloud_od import pointcloud_od
+        from ._utils.pointcloud_od import pointcloud_od, ODTransform3D
+
+        if transforms is None:
+            transform_fn = ODTransform3D()
+        else:
+            transform_fn = transforms
 
         data = pointcloud_od(
-            path, class_mapping, batch_size, databunch_kwargs, **kwargs
+            path, class_mapping, batch_size, transform_fn, databunch_kwargs, **kwargs
         )
         data._data_path = data.path
         if working_dir is not None:
@@ -2887,6 +2945,7 @@ def prepare_data(
             _is_multispectral=_is_multispectral,
             working_dir=working_dir,
             seed=seed,
+            dataset_type=dataset_type,
             **kwargs,
         )
         data._imagery_type_a = imagery_type_a
@@ -3192,6 +3251,7 @@ def prepare_data(
             .normalize(**ms_kwargs_norm)
         )
         data._image_stats = imagenet_stats
+        data.seed = seed
         data._is_multispec = _is_multispec
         data._n_channel = il[0].shape[0]
         data._image_stats2 = ms_kwargs_norm["stats"]
@@ -3280,13 +3340,21 @@ def prepare_data(
         "ChangeDetection",
         "superres",
         "Imagenet",
+        "SR3",
     ]:
         data._dataset_type = stats["MetaDataMode"]
     else:
         data._dataset_type = dataset_type
 
-    if dataset_type == "superres" or dataset_type == "Export_Tiles":
-        data._dataset_type = "SuperResolution"
+    if (
+        dataset_type == "superres"
+        or dataset_type == "Export_Tiles"
+        or dataset_type == "SR3"
+    ):
+        if dataset_type == "SR3":
+            data._dataset_type = "SR3"
+        else:
+            data._dataset_type = "SuperResolution"
 
     if alter_class_mapping:
         new_mapping = {}

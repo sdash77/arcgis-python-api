@@ -43,6 +43,7 @@ dependencies:
 - lxml
 - dask >=2023.3.2
 - matplotlib-inline
+- azure-storage-blob <=12.9
 - pip:
   - unittest-xml-reporting
   - setuptools >=38.6

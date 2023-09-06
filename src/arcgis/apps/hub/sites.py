@@ -7,6 +7,7 @@ from collections import OrderedDict
 from urllib.parse import urlparse
 import json
 import os
+import re
 from arcgis.gis import Item
 from functools import wraps
 
@@ -455,7 +456,7 @@ class Site(OrderedDict):
         =====================     ====================================================================
 
         To find the list of applicable options for argument site_properties -
-        https://esri.github.io/arcgis-python-api/apidoc/html/arcgis.gis.toc.html#arcgis.gis.Item.update
+        https://developers.arcgis.com/python/api-reference/arcgis.gis.toc.html#arcgis.gis.Item.update
 
         :return:
            A boolean indicating success (True) or failure (False).
@@ -508,7 +509,6 @@ class Site(OrderedDict):
                         + ".hub.arcgis.com",
                         "siteId": self.item.id,
                         "siteTitle": self.title,
-                        "clientKey": client_key,
                         "orgId": self._gis.properties.id,
                         "orgKey": self._gis.properties["urlKey"],
                         "orgTitle": self._gis.properties["name"],
@@ -523,7 +523,7 @@ class Site(OrderedDict):
                         headers=headers,
                     )
                     if _new_domain.status_code == 200:
-                        # define new domain and hostname
+                        # define new domain, hostname and client_key
                         hostname = (
                             subdomain
                             + "-"
@@ -531,6 +531,7 @@ class Site(OrderedDict):
                             + ".hub.arcgis.com"
                         )
                         domain = self._gis.url[:8] + hostname
+                        _client_key = _new_domain.json()["clientKey"]
                         # update initiative item
                         if self._gis.hub._hub_enabled:
                             self.initiative.item.update(item_properties={"url": domain})
@@ -539,6 +540,7 @@ class Site(OrderedDict):
                         data["values"]["defaultHostname"] = hostname
                         data["values"]["subdomain"] = subdomain
                         data["values"]["internalUrl"] = hostname
+                        data["values"]["clientId"] = _client_key
                         if self.item.update(
                             item_properties={"url": domain, "text": data}
                         ):
@@ -781,9 +783,6 @@ class SiteManager(object):
                 ]["settings"]["initiativeId"] = self.initiative.itemid
             except:
                 pass
-        site_data["values"]["layout"]["header"]["component"]["settings"][
-            "title"
-        ] = title
         site_data["values"]["map"] = self._gis.properties["defaultBasemap"]
         site_data["values"]["defaultExtent"] = self._gis.properties["defaultExtent"]
 
@@ -1231,13 +1230,19 @@ class SiteManager(object):
         if len(site_pages) > 0:
             # Check the value of param
             if pages:
+                replaced = str(new_site.definition)
                 for page in site_pages:
                     try:
                         new_site.pages.unlink(page)
                     except:
                         pass
-                    new_site.pages.clone(page)
-
+                    new_page = new_site.pages.clone(page)
+                    # Replacing references to this page with cloned page in site's layout
+                    replaced = re.sub(page.itemid, new_page.itemid, replaced)
+                    replaced = re.sub(page.title, new_page.title, replaced)
+                    replaced = re.sub(page.slug, new_page.slug, replaced)
+                new_data = json.loads(replaced)
+                new_site.item.update(item_properties={"text": new_data})
         return new_site
 
     def get(self, site_id: str) -> Site:

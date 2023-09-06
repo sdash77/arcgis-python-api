@@ -683,7 +683,12 @@ def _get_emd_path(emd_path):
 
     if emd_path.suffix != ".emd":
         list_files = get_files(emd_path, extensions=[".emd"])
-        assert len(list_files) == 1
+        try:
+            assert len(list_files) == 1
+        except AssertionError as e:
+            raise Exception(
+                f"There are multiple emd files in the saved path.Save the model in a different path."
+            )
         # return cls.from_model(list_files[0])
         emd_path = list_files[0]
     return emd_path

@@ -497,7 +497,21 @@ def _add_mission(
             }
             return cam_dict
 
-        cam_props = get_camera_props(raster_type_params["cameraProperties"])
+        cam_props = {}
+        try:
+            if "cameraProperties" in raster_type_params:
+                cam_props = get_camera_props(raster_type_params["cameraProperties"])
+            else:
+                try:
+                    lyr = output_collection.layers[0]
+                    cam_info = lyr.query_gps_info()
+                    cam_props = cam_info["cameras"][0]
+                except:
+                    # older servers may not have query gps info rest end point
+                    pass
+        except:
+            pass
+
         mission_json.update({"cameraInfo": cam_props})
 
         gps_data = []
@@ -510,7 +524,7 @@ def _add_mission(
         if not gps_data:
             try:
                 lyr = output_collection.layers[0]
-                gps_info = lyr._query_gps_info()
+                gps_info = lyr.query_gps_info()["images"]
                 for img_info in gps_info:
                     from arcgis.raster._util import _to_datetime
 
@@ -2804,6 +2818,8 @@ class Project:
                                                 | om_item = gis.content.get("85a54236c6364a88a7c7c2b1a31fd901")
                                                 | project = om_item
     ------------------------------------     --------------------------------------------------------------------
+    definition                               Optional dictionary. Custom project definition.
+    ------------------------------------     --------------------------------------------------------------------
     gis                                      Optional  :class:`~arcgis.gis.GIS` . Repesents the GIS object of the Orthomapping
                                              Project item.
     ====================================     ====================================================================
@@ -2831,7 +2847,11 @@ class Project:
                 raise RuntimeError("Creation of orthompping project failed.")
 
         self._project_item = project
-        self._project_name = self._project_item.name
+        try:
+            self._project_name = self._project_item.title
+        except:
+            self._project_name = self._project_item.name
+
         self._mission_list = []
         gis = arcgis.env.active_gis if gis is None else gis
         self._gis = gis
@@ -3005,7 +3025,7 @@ class Project:
                                                 | {"name": "cloud_shadow_count", "type": "Long"}]}
         ======================               ====================================================================
 
-        :return: The imagery layer item
+        :return: Mission object
 
         """
 
@@ -3037,7 +3057,7 @@ class Project:
         name                                 Required string. The name of the Mission.
         ==================                   ====================================================================
 
-        :return: The imagery layer url
+        :return: Mission object
 
 
         """
