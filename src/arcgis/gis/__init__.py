@@ -13602,7 +13602,9 @@ class Item(dict):
                 res = self._portal.con.post(data_path, params)
             else:
                 raise
-        if res["success"] == False:
+        if "success" in res and res["success"] == False:
+            raise Exception("Could not export item.")
+        elif not "exportItemId" in res:
             raise Exception("Could not export item.")
         export_item = Item(gis=self._gis, itemid=res["exportItemId"])
         if wait == True:
