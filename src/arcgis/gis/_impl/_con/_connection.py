@@ -977,12 +977,6 @@ class Connection(object):
                         data = it
                     else:
                         data += it
-                if data.find("xml") != -1:
-                    import xmltodict
-                    xml_dict = xmltodict.parse(data)
-                    data = json.dumps(xml_dict)
-                else:
-                    data = json.loads(data)
                 if "error" in data and ignore_error_key == False:
                     raise Exception(data["error"])
             else:

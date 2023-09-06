@@ -6118,8 +6118,8 @@ class MapImageLayer(arcgis.gis.Layer):
         """
         url = "{url}/info/metadata".format(url=self._url)
         params = {"f": "json"}
-        resp = self._con.get(url, params)
-        return json.loads(resp)
+        resp = self._con.get(url, params, return_raw_response=True)
+        return resp.text
 
     # ----------------------------------------------------------------------
     def thumbnail(self, out_path: Optional[str] = None):
@@ -6397,7 +6397,8 @@ class MapImageLayer(arcgis.gis.Layer):
         if layer_parameters:
             params["layerParameterValues"] = layer_parameters
         identifyURL = "{url}/identify".format(url=self._url)
-        return self._con.post(identifyURL, params)
+        resp = self._con.post(identifyURL, params, return_raw_response=True)
+        return resp.json()
 
     # ----------------------------------------------------------------------
     def find(
