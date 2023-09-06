@@ -4,7 +4,7 @@ from arcgis.gis.kubernetes._admin._base import _BaseKube
 from ._deployment import DeploymentManager
 from ._upgrades import UpgradeManager
 from ._recovery import RecoveryManager
-from ._content import LanguageManager
+from ._content import LanguageManager, ExtenernalContentManager
 from ._architecture import ArchitectureManager
 from ._tasks import TaskManager
 from ._adaptors import WebAdaptorManager
@@ -336,7 +336,13 @@ class SystemManager(_BaseKube):
 
     # ----------------------------------------------------------------------
     @property
-    def content(self) -> LanguageManager:
+    def exteneral_content(self) -> ExtenernalContentManager:
+        """ """
+        return ExtenernalContentManager(url=f"{self._url}/content", gis=self._gis)
+
+    # ----------------------------------------------------------------------
+    @property
+    def language(self) -> LanguageManager:
         """
         The content resource provides access to the languages resource.
         The languages resource provides a list of current languages for an
