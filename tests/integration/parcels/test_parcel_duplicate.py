@@ -41,7 +41,13 @@ class TestDuplicateParcels(unittest.TestCase):
 
     def test_duplicate_one_parcel_into_condiv_increment_field(self):
         fq_version_name = pfutils.create_version(self.vms)
-        existing_record_guid = "{4B753DC5-AEDD-4703-AE56-B236EBB5DEFB}"
+        existing_record = pfutils.get_record_guid_by_name(
+            self.gis,
+            f"{self.service_urls['FeatureServer']}/1",
+            "Record001",
+            fq_version_name,
+        )
+        existing_record_guid = existing_record[0]["attributes"].get("globalid")
         parcel_feature = [
             {"id": "{F736D9F3-DFD9-4FEE-A2E8-07352E74EBDF}", "layerId": "15"}
         ]
@@ -87,7 +93,13 @@ class TestDuplicateParcels(unittest.TestCase):
 
     def test_duplicate_two_parcels_into_condiv_increment_field_async(self):
         fq_version_name = pfutils.create_version(self.vms)
-        existing_record_guid = "{4B753DC5-AEDD-4703-AE56-B236EBB5DEFB}"
+        existing_record = pfutils.get_record_guid_by_name(
+            self.gis,
+            f"{self.service_urls['FeatureServer']}/1",
+            "Record001",
+            fq_version_name,
+        )
+        existing_record_guid = existing_record[0]["attributes"].get("globalid")
         parcel_features = self.load_feature_json()
 
         with self.vms.get(fq_version_name, "read") as version:
