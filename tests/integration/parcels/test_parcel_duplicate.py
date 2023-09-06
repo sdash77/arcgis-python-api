@@ -41,7 +41,7 @@ class TestDuplicateParcels(unittest.TestCase):
 
     def test_duplicate_one_parcel_into_condiv_increment_field(self):
         fq_version_name = pfutils.create_version(self.vms)
-        existing_record_guid = "{ABBBA98B-953F-48B2-A907-EBF5E2E9DA03}"
+        existing_record_guid = "{4B753DC5-AEDD-4703-AE56-B236EBB5DEFB}"
         parcel_feature = [
             {"id": "{F736D9F3-DFD9-4FEE-A2E8-07352E74EBDF}", "layerId": "15"}
         ]
@@ -87,7 +87,7 @@ class TestDuplicateParcels(unittest.TestCase):
 
     def test_duplicate_two_parcels_into_condiv_increment_field_async(self):
         fq_version_name = pfutils.create_version(self.vms)
-        existing_record_guid = "{ABBBA98B-953F-48B2-A907-EBF5E2E9DA03}"
+        existing_record_guid = "{4B753DC5-AEDD-4703-AE56-B236EBB5DEFB}"
         parcel_features = self.load_feature_json()
 
         with self.vms.get(fq_version_name, "read") as version:
