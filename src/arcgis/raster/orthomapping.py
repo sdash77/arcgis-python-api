@@ -3025,7 +3025,7 @@ class Project:
                                                 | {"name": "cloud_shadow_count", "type": "Long"}]}
         ======================               ====================================================================
 
-        :return: The imagery layer item
+        :return: Mission object
 
         """
 
@@ -3057,7 +3057,7 @@ class Project:
         name                                 Required string. The name of the Mission.
         ==================                   ====================================================================
 
-        :return: The imagery layer url
+        :return: Mission object
 
 
         """
