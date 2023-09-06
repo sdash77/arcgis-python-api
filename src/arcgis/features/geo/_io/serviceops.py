@@ -54,7 +54,7 @@ else:
         "esriFieldTypeBigInteger": pd.Int64Dtype(),  #  added 11.2
         "esriFieldTypeTimeOnly": pd.StringDtype(),  #  added 11.2
         "esriFieldTypeDateOnly": "<M8[us]",  #  added 11.2
-        "esriFieldTypeTimestampOffset": object,  #  added 11.2
+        "esriFieldTypeTimestampOffset": "<M8[us]",  #  added 11.2
     }
 
 

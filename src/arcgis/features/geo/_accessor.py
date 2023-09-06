@@ -3434,8 +3434,8 @@ class GeoAccessor(object):
             _dtype(np.int16): "esriFieldTypeInteger",
             np.int32: "esriFieldTypeInteger",
             _dtype(np.int32): "esriFieldTypeInteger",
-            np.int64: "esriFieldTypeDouble",
-            _dtype(np.int64): "esriFieldTypeOID",
+            np.int64: "esriFieldTypeBigInteger",
+            _dtype(np.int64): "esriFieldTypeBigInteger",
             pd.Int64Dtype(): "esriFieldTypeBigInteger",
             pd.Int32Dtype(): "esriFieldTypeInteger",
             int: "esriFieldTypeInteger",
@@ -3456,6 +3456,9 @@ class GeoAccessor(object):
             pd.StringDtype(): "esriFieldTypeString",
             "<m8[ns]": "esriFieldTypeDouble",
             _dtype("<m8[ns]"): "esriFieldTypeDouble",
+            _dtype("<M8[s]"): "esriFieldTypeDateOnly",
+            _dtype("<m8[us]"): "esriFieldTypeTimeOnly",
+            _dtype("<M8[us]"): "esriFieldTypeTimestampOffset",
             "<M8[us]": "esriFieldTypeDate",
             np.dtype("<M8[ns]"): "esriFieldTypeDate",
             datetime: "esriFieldTypeDate",
@@ -3475,8 +3478,8 @@ class GeoAccessor(object):
             pd.UInt16Dtype(): "esriFieldTypeInteger",
             pd.UInt32Dtype: "esriFieldTypeInteger",
             pd.UInt32Dtype(): "esriFieldTypeInteger",
-            pd.UInt64Dtype: "esriFieldTypeInteger",
-            pd.UInt64Dtype(): "esriFieldTypeInteger",
+            pd.UInt64Dtype: "esriFieldTypeBigInteger",
+            pd.UInt64Dtype(): "esriFieldTypeBigInteger",
         }
         fields = []
         for idx, dtype in enumerate(self._data.dtypes):

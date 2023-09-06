@@ -58,7 +58,7 @@ unsupported_models = [
 ]
 
 
-def estimate_batch_size(model, mode="train"):
+def estimate_batch_size(model, mode="train", **kwargs):
     """
     Function to calculate estimated batch size based on GPU capacity, size of model and data.
 
@@ -87,6 +87,7 @@ def estimate_batch_size(model, mode="train"):
     mode = mode.lower()
     exception = None
     channel = 3
+    verbose = kwargs.get("verbose", True)
 
     if model.__class__.__name__ in unsupported_models:
         raise Exception("unsupported model {}".format(model.__class__.__name__))
@@ -176,7 +177,7 @@ def estimate_batch_size(model, mode="train"):
                 elif mode == "eval":
                     if model.__class__.__name__ in point_cloud_models:
                         height = model.sample_point_num
-                        channel = model._data.train_ds.total_dim
+                        channel = model._data.extra_dim + 3
                         blank_img = np.ones(
                             (
                                 max_batchsize,
@@ -287,7 +288,8 @@ def estimate_batch_size(model, mode="train"):
                     or "non-contiguous" in str(E)
                     or "INTERNAL ASSERT FAILED" in str(E)
                 ):
-                    print("Out of memory with batch size:", max_batchsize)
+                    if verbose:
+                        print("Out of memory with batch size:", max_batchsize)
 
                     gc.collect()
                     torch.cuda.empty_cache()
@@ -315,6 +317,7 @@ def estimate_batch_size(model, mode="train"):
         if (
             model.__class__.__name__ == "MaXDeepLab"
             or model.__class__.__name__ == "Pix2PixHD"
+            or model.__class__.__name__ == "ChangeDetector"
         ):
             max_batchsize = max_batchsize // 2
 
