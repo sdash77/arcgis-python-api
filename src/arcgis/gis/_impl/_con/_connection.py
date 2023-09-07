@@ -931,7 +931,6 @@ class Connection(object):
             file_name = (
                 _filename_from_url(url) or _filename_from_headers(resp.headers) or None
             )
-
         if force_bytes:
             try:
                 return bytes(resp.content)
