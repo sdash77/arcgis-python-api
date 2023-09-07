@@ -2875,8 +2875,6 @@ class Project:
         ======================               ====================================================================
         **Parameter**                        **Description**
         ----------------------               --------------------------------------------------------------------
-        project_item                         Required Item. The orthomapping project item to which the flight has to be added
-        ----------------------               --------------------------------------------------------------------
         image_list                           Required, the list of input images to be added to
                                              the image collection being created. This parameter can
                                              be a list of image paths or a path to a folder containing the images
@@ -2903,7 +2901,7 @@ class Project:
                                              by the create_project method
         ----------------------               --------------------------------------------------------------------
         raster_type_name                     Optional string. The name of the raster type to use for adding data to \
-                                             the image collection. Default is "UAV/UAS"
+                                             the image collection.
 
                                              Example:
 

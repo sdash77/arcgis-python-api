@@ -48,7 +48,7 @@ class Mission:
 
     """
 
-    def __init__(self, mission_name, project=None):
+    def __init__(self, mission_name, project):
         self._mission_name = mission_name
         if isinstance(project, Project):
             self._project = project
