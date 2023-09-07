@@ -3986,6 +3986,13 @@ class UserManager(object):
             role = role.role_id
         elif role and role.lower() in role_lookup:
             role = role_lookup[role.lower()]
+        elif isinstance(role, str):
+            # lookup the role id to see if it exists, else set to ""
+            try:
+                role = self._gis.users.roles.get_role(role)
+                role = role.role_id
+            except:
+                role = ""
         else:
             role = ""
 
