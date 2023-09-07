@@ -704,7 +704,7 @@ def compute_sensor_model(
     ------------------     --------------------------------------------------------------------
     image_collection       Required, the input image collection on which to compute
                            the sensor model.
-                           The image_collection can be a portal Item, Mission object or an image service URL or a URI.
+                           The image_collection can be a Mission object, an image service URL or portal Item or a datastore URI.
 
                            The image_collection must exist.
     ------------------     --------------------------------------------------------------------
@@ -854,7 +854,7 @@ def alter_processing_states(
     ------------------     --------------------------------------------------------------------
     image_collection       Required, This is the image collection that will be adjusted.
 
-                           The image_collection can be a portal Item, Mission object or an image service URL or a URI.
+                           The image_collection can be a Mission object, an image service URL or portal Item or a datastore URI.
 
                            The image_collection must exist.
     ------------------     --------------------------------------------------------------------
@@ -933,7 +933,7 @@ def get_processing_states(
     ------------------     --------------------------------------------------------------------
     image_collection       Required, This is the image collection that will be adjusted.
 
-                           The image_collection can be a portal Item, Mission object or an image service URL or a URI.
+                           The image_collection can be a Mission object, an image service URL or portal Item or a datastore URI.
 
                            The image_collection must exist.
     ------------------     --------------------------------------------------------------------
@@ -1070,7 +1070,7 @@ def match_control_points(
     ------------------     --------------------------------------------------------------------
     image_collection       Required, the input image collection that will be adjusted.
 
-                           The image_collection can be a portal Item, Mission object or an image service URL or a URI.
+                           The image_collection can be a Mission object, an image service URL or portal Item or a datastore URI.
                             
                            The image_collection must exist.
     ------------------     --------------------------------------------------------------------
@@ -1260,7 +1260,7 @@ def color_correction(
     ------------------------------------     --------------------------------------------------------------------
     image_collection                         Required. This is the image collection that will be adjusted.
 
-                                             The image_collection can be a portal Item, Mission object or an image service URL or a URI.
+                                             The image_collection can be a Mission object, an image service URL or portal Item or a datastore URI.
                             
                                              The image_collection must exist.
     ------------------------------------     --------------------------------------------------------------------
@@ -1441,7 +1441,7 @@ def compute_control_points(
     ------------------------------------    --------------------------------------------------------------------
     image_collection                        Required. This is the image collection that will be adjusted.
 
-                                            The image_collection can be a portal Item, Mission object or an image service URL or a URI.
+                                            The image_collection can be a Mission object, an image service URL or portal Item or a datastore URI.
                             
                                             The image_collection must exist.
     ------------------------------------    --------------------------------------------------------------------
@@ -1600,7 +1600,7 @@ def compute_seamlines(
     **Parameter**           **Description**
     ------------------     --------------------------------------------------------------------
     image_collection       Required, the input image collection that will be adjusted.
-                           The image_collection can be a portal Item, Mission object or an image service URL or a URI.
+                           The image_collection can be a Mission object, an image service URL or portal Item or a datastore URI.
 
                            The image_collection must exist.
     ------------------     --------------------------------------------------------------------
@@ -1724,7 +1724,7 @@ def edit_control_points(
     **Parameter**           **Description**
     ------------------     --------------------------------------------------------------------
     image_collection       Required.
-                           The image_collection can be a portal Item, Mission object or an image service URL or a URI.
+                           The image_collection can be a Mission object, an image service URL or portal Item or a datastore URI.
 
                            The image_collection must exist.
     ------------------     --------------------------------------------------------------------
@@ -1871,7 +1871,7 @@ def generate_dem(
     ------------------     --------------------------------------------------------------------
     image_collection       Required. The input image collection that will be used
                            to generate the DEM from.
-                           The image_collection can be a portal Item, Mission object or an image service URL or a URI.
+                           The image_collection can be a Mission object, an image service URL or portal Item or a datastore URI.
 
                            The image_collection must exist.
     ------------------     --------------------------------------------------------------------
@@ -2138,7 +2138,7 @@ def generate_orthomosaic(
     -----------------------------------    --------------------------------------------------------------------
     image_collection                       Required. The input image collection that will be used
                                            to generate the ortho-mosaic from.
-                                           The image_collection can be a portal Item, Mission object or an image service URL or a URI.
+                                           The image_collection can be a Mission object, an image service URL or portal Item or a datastore URI.
 
                                            The image_collection must exist.
     -----------------------------------    --------------------------------------------------------------------
@@ -2441,7 +2441,7 @@ def generate_report(
     image_collection       Required. The input image collection that should be
                            used to generate a report from.
 
-                           The image_collection can be a portal Item, Mission object or an image service URL or a URI.
+                           The image_collection can be a Mission object, an image service URL or portal Item or a datastore URI.
 
                            The image_collection must exist.
     -------------------    --------------------------------------------------------------------
@@ -2584,7 +2584,7 @@ def query_control_points(
     image_collection       Required, the input image collection on which to query
                            the the control points.
 
-                           The image_collection can be a portal Item, Mission object or an image service URL or a URI.
+                           The image_collection can be a Mission object, an image service URL or portal Item or a datastore URI.
 
                            The image_collection must exist.
     ------------------     --------------------------------------------------------------------
@@ -2670,7 +2670,7 @@ def reset_image_collection(
     **Parameter**           **Description**
     ------------------     --------------------------------------------------------------------
     image_collection       Required, the input image collection to reset
-                           The image_collection can be a portal Item, Mission object or an image service URL or a URI.
+                           The image_collection can be a Mission object, an image service URL or portal Item or a datastore URI.
 
                            The image_collection must exist.
     ------------------     --------------------------------------------------------------------
