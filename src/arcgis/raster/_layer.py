@@ -7216,7 +7216,10 @@ class ImageryLayer(Layer):
 
         mosaic_rule = {}
         if type(self) == ImageryLayer:
-            if str(self.properties["capabilities"]).lower().find("catalog") == -1:
+            if (
+                "capabilities" in self.properties
+                and str(self.properties["capabilities"]).lower().find("catalog") == -1
+            ):
                 return None
             if ("defaultMosaicMethod" in self.properties.keys()) and self.properties[
                 "defaultMosaicMethod"
