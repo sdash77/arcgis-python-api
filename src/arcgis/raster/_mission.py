@@ -103,7 +103,7 @@ class Mission:
         """
         The ``image_count`` property returns the number of images in the mission
 
-        :return: An integer representing the number of images
+        :return: A datetime object representing the flight date
         """
         if "sourceData" in self._mission_json.keys():
             source_data = self._mission_json["sourceData"]
