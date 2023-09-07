@@ -101,7 +101,7 @@ class Mission:
     @property
     def flight_date(self):
         """
-        The ``image_count`` property returns the number of images in the mission
+        The ``flight_date`` property returns the flight date of the mission.
 
         :return: A datetime object representing the flight date
         """
