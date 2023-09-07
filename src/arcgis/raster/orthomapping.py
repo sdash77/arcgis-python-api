@@ -2882,7 +2882,7 @@ class Project:
                                              The function can create hosted imagery layers on enterprise from 
                                              local raster datasets by uploading the data to the server.    
         ----------------------               --------------------------------------------------------------------
-        mission_name                         Optional string. The name of the flight.
+        mission_name                         Optional string. The name of the mission.
         ----------------------               --------------------------------------------------------------------
         image_collection                     Optional string, the name of the image collection to create.
                   
