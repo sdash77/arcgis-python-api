@@ -8980,7 +8980,7 @@ class _OrthoRealityMappingTools(BaseAnalytics):
     def reconstruct_surface(
         self,
         image_collection,
-        scenario="DEFAULT",
+        scenario="DRONE",
         forward_overlap=None,
         sideward_overlap=None,
         quality="ULTRA",
@@ -9009,9 +9009,10 @@ class _OrthoRealityMappingTools(BaseAnalytics):
         -------------------------------------------------------------------------   ---------------------------------------------------------------------------
         scenario                                                                    Optional String. Specifies the type of imagery that will be used to generate the output products.
 
-                                                                                    - DEFAULT: The input imagery will be defined as having been acquired with drones or terrestrial cameras.
+                                                                                    - DRONE: The input imagery will be defined as having been acquired with drones or terrestrial cameras.
                                                                                     - AERIAL_NADIR: The input imagery will be defined as having been acquired with large, photogrammetric camera systems.
                                                                                     - AERIAL_OBLIQUE: The input imagery will be defined as having been acquired with oblique camera systems.
+                                                                                    - SATELLITE: The input imagery will be defined as having been acquired with a satellite.
         -------------------------------------------------------------------------   ---------------------------------------------------------------------------
         forward_overlap                                                             Optional Integer. The forward (in-strip) overlap percentage that will be used between the images.
                                                                                     The default is 60.

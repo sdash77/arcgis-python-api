@@ -2192,7 +2192,7 @@ def query_exif_info(
 ###################################################################################################
 def reconstruct_surface(
     mission,
-    scenario: Optional[str] = "DEFAULT",
+    scenario: Optional[str] = "DRONE",
     forward_overlap: Optional[int] = None,
     sideward_overlap: Optional[int] = None,
     quality: Optional[str] = "ULTRA",
@@ -2224,9 +2224,10 @@ def reconstruct_surface(
     -------------------------------------------------------------------------   ---------------------------------------------------------------------------
     scenario                                                                    Optional String. Specifies the type of imagery that will be used to generate the output products.
 
-                                                                                - DEFAULT: The input imagery will be defined as having been acquired with drones or terrestrial cameras.
+                                                                                - DRONE: The input imagery will be defined as having been acquired with drones or terrestrial cameras.
                                                                                 - AERIAL_NADIR: The input imagery will be defined as having been acquired with large, photogrammetric camera systems.
                                                                                 - AERIAL_OBLIQUE: The input imagery will be defined as having been acquired with oblique camera systems.
+                                                                                - SATELLITE: The input imagery will be defined as having been acquired with a satellite.
     -------------------------------------------------------------------------   ---------------------------------------------------------------------------
     forward_overlap                                                             Optional Integer. The forward (in-strip) overlap percentage that will be used between the images.
                                                                                 The default is 60.
