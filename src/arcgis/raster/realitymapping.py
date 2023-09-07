@@ -55,7 +55,7 @@ def _execute_task(gis, taskname, params):
 
 
 def _id_generator(size=6, chars=_string.ascii_uppercase + _string.digits):
-    return ''.join(_random.choice(chars) for _ in range(size))
+    return "".join(_random.choice(chars) for _ in range(size))
 
 
 ###################################################################################################
@@ -2079,7 +2079,10 @@ def reset_image_collection(
         }
 
     return gis._tools.realitymapping.reset_image_collection(
-        image_collection=mission, future=future, **kwargs
+        image_collection=mission,
+        future=future,
+        flight_json_details=flight_json_details,
+        **kwargs,
     )
     """
     gis = arcgis.env.active_gis if gis is None else gis

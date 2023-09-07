@@ -8886,7 +8886,12 @@ class _OrthoRealityMappingTools(BaseAnalytics):
 
     # ----------------------------------------------------------------------
     def reset_image_collection(
-        self, image_collection, gis=None, future=False, **kwargs
+        self,
+        image_collection,
+        gis=None,
+        future=False,
+        flight_json_details=None,
+        **kwargs,
     ):
         """
         The `reset_image_collection` resets the image collection to its original state.
@@ -8924,6 +8929,7 @@ class _OrthoRealityMappingTools(BaseAnalytics):
         else:
             job._is_reality = True
             final_job = RMJob(job)
+        final_job._flight_details = flight_json_details
         if future:
             return final_job
         return final_job.result()
