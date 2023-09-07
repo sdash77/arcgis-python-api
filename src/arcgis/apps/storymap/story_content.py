@@ -3,12 +3,12 @@ from enum import Enum
 from typing import Optional, Union
 import uuid
 from arcgis.auth.tools import LazyLoader
-from PIL import Image as PImage
 
 arcgis = LazyLoader("arcgis")
 urllib3 = LazyLoader("urllib3")
 requests = LazyLoader("requests")
 mimetypes = LazyLoader("mimetypes")
+pil_image = LazyLoader("PIL.Image")
 os = LazyLoader("os")
 _io = LazyLoader("io")
 _parse = LazyLoader("urllib.parse")
@@ -315,7 +315,7 @@ class Image:
         # Create resource node. Different if file path or url
         if self._url is False:
             # Get image properties and create the resourceId that corresponds to the resource added
-            im = PImage.open(self._path)
+            im = pil_image.open(self._path)
             w, h = im.size
             self._story._properties["resources"][self.resource_node] = {
                 "type": "image",
@@ -329,7 +329,7 @@ class Image:
         else:
             # Get image properties and assign the image src
             data = requests.get(self._path).content
-            im = PImage.open(_io.BytesIO(data))
+            im = pil_image.open(_io.BytesIO(data))
             w, h = im.size
             self._story._properties["resources"][self.resource_node] = {
                 "type": "image",
@@ -349,7 +349,7 @@ class Image:
             self._url = True
             # Update the height and width for the image
             data = requests.get(new_image).content
-            im = PImage.open(_io.BytesIO(data))
+            im = pil_image.open(_io.BytesIO(data))
             w, h = im.size
             self._story._properties["resources"][self.resource_node]["data"][
                 "height"
@@ -378,7 +378,7 @@ class Image:
         else:
             # Update the height and width for the image
             self._url = False
-            im = PImage.open(new_image)
+            im = pil_image.open(new_image)
             w, h = im.size
             self._story._properties["resources"][self.resource_node]["data"][
                 "height"
