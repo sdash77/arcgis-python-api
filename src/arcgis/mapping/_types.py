@@ -6972,7 +6972,7 @@ class MapImageLayer(arcgis.gis.Layer):
                     time.sleep(5)
 
                     job_response = self._con.post(path, params)
-                    status = job_responsde.get("status") or job_response.get("jobStatus")
+                    status = job_response.get("status") or job_response.get("jobStatus")
                     if status in [
                         "esriJobFailed",
                         "esriJobCancelling",
