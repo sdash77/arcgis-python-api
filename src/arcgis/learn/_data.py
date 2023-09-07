@@ -1237,6 +1237,7 @@ def prepare_tabulardata(
         index_field=index_field,
         column_transforms_mapping=column_transforms_mapping,
         random_split=random_split,
+        **kwargs,
     )
 
     if working_dir is None:
@@ -1725,6 +1726,7 @@ def prepare_data(
             "ChangeDetection",
             "ObjectTracking",
             "PSETAE",
+            "SR3",
         ]
         and has_esri_files
     ):
@@ -2655,7 +2657,11 @@ def prepare_data(
 
             transforms = (train_tfms, val_tfms)
 
-    elif dataset_type == "superres" or dataset_type == "Export_Tiles":
+    elif (
+        dataset_type == "superres"
+        or dataset_type == "Export_Tiles"
+        or dataset_type == "SR3"
+    ):
         path_hr = path / "images"
         path_lr = path / "labels"
         path_addras_lr = path / "images2"
@@ -2741,6 +2747,36 @@ def prepare_data(
                     f.write(str(downsample_factor))
             il2 = ArcGISImageList.from_folder(path_lr)
             imagery_type, _is_multispec = check_ms(il, il2)
+
+        if dataset_type == "SR3":
+            from ._data_utils.pix2pix_data import prepare_pix2pix_data
+
+            kwargs["path_hr"], kwargs["path_lr"], kwargs["imagery_type"] = (
+                path_hr,
+                path_lr,
+                imagery_type,
+            )
+            data = prepare_pix2pix_data(
+                path=path,
+                batch_size=batch_size,
+                val_split_pct=val_split_pct,
+                transforms=transforms,
+                resize_to=resize_to,
+                norm_pct=norm_pct,
+                _is_multispectral=_is_multispec,
+                working_dir=working_dir,
+                seed=seed,
+                dataset_type=dataset_type,
+                **kwargs,
+            )
+            if data._is_multispectral:
+                # data._imagery_type = _imagery_type
+                data._bands = _bands
+                # data._norm_pct = norm_pct
+                data._extract_bands = None
+                data._do_normalize = False
+            data.downsample_factor = downsample_factor
+            return data
 
         data = (
             ImageImageListSR.from_folders(path, path_lr, image_stats, _is_multispec)
@@ -2909,6 +2945,7 @@ def prepare_data(
             _is_multispectral=_is_multispectral,
             working_dir=working_dir,
             seed=seed,
+            dataset_type=dataset_type,
             **kwargs,
         )
         data._imagery_type_a = imagery_type_a
@@ -3214,6 +3251,7 @@ def prepare_data(
             .normalize(**ms_kwargs_norm)
         )
         data._image_stats = imagenet_stats
+        data.seed = seed
         data._is_multispec = _is_multispec
         data._n_channel = il[0].shape[0]
         data._image_stats2 = ms_kwargs_norm["stats"]
@@ -3302,13 +3340,21 @@ def prepare_data(
         "ChangeDetection",
         "superres",
         "Imagenet",
+        "SR3",
     ]:
         data._dataset_type = stats["MetaDataMode"]
     else:
         data._dataset_type = dataset_type
 
-    if dataset_type == "superres" or dataset_type == "Export_Tiles":
-        data._dataset_type = "SuperResolution"
+    if (
+        dataset_type == "superres"
+        or dataset_type == "Export_Tiles"
+        or dataset_type == "SR3"
+    ):
+        if dataset_type == "SR3":
+            data._dataset_type = "SR3"
+        else:
+            data._dataset_type = "SuperResolution"
 
     if alter_class_mapping:
         new_mapping = {}

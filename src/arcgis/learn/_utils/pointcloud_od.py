@@ -565,6 +565,9 @@ def pointcloud_od(
     **kwargs,
 ):
     del databunch_kwargs["bs"]
+    env_device_type = str(databunch_kwargs.get("device"))
+    if env_device_type == "cpu" or not torch.cuda.is_available():
+        raise Exception(f"CPU is not supported for 'dataset_type':'PointCloudOD'.")
 
     train_dataset = PointCloudOD(
         path,

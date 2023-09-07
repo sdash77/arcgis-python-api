@@ -127,7 +127,7 @@ def _date_handler(obj):
     if type(obj) is datetime.date:
         import datetime as _dt
 
-        obj = _dt.datetime.combine(obj.today(), _dt.datetime.min.time())
+        obj = _dt.datetime.combine(obj, _dt.datetime.min.time())
     if isinstance(obj, datetime.datetime) or isinstance(obj, date):
         try:
             return local_time_to_online(obj)

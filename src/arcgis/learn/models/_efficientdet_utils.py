@@ -102,7 +102,7 @@ def _get_ann_files(data):
     else:
         tot_files = len(os.listdir(labels_path))
         files = sorted(os.listdir(labels_path))
-        files = [f[:-4] for f in files]
+        files = [f[:-4] for f in files if os.path.isfile(os.path.join(labels_path, f))]
         num_val_files = min(
             max(math.floor((val_split_pct * tot_files)), 1), tot_files - 1
         )
