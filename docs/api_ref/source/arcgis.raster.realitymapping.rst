@@ -92,3 +92,16 @@ reconstruct_surface
 ------------
 .. autofunction:: arcgis.raster.realitymapping.reconstruct_surface
 
+Project
+-------
+.. autoclass:: arcgis.raster.realitymapping.Project
+    :inherited-members:
+    :members:
+    :undoc-members:
+
+Mission
+-------
+.. autoclass:: arcgis.raster._realitymapping_mission.Mission
+    :inherited-members:
+    :members:
+    :undoc-members:

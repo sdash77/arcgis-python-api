@@ -674,9 +674,9 @@ def compute_sensor_model(
     ------------------     --------------------------------------------------------------------
     mission                Required, the input image collection on which to compute
                            the sensor model.
-                           The image_collection can be a portal Item or an image service URL or a URI
+                           The mission can be a Mission object, an image service URL or portal Item or a datastore URI.
 
-                           The image_collection must exist.
+                           The mission must exist.
     ------------------     --------------------------------------------------------------------
     mode                   Optional string.  the mode to be used for bundle block adjustment
                            Only the following modes are supported:
@@ -824,9 +824,9 @@ def alter_processing_states(
     ------------------     --------------------------------------------------------------------
     mission                Required, This is the image collection that will be adjusted.
 
-                           The image_collection can be a portal Item or an image service URL or URI
+                           The mission can be a Mission object, an image service URL or portal Item or a datastore URI.
 
-                           The image_collection must exist.
+                           The mission must exist.
     ------------------     --------------------------------------------------------------------
     new_states             Required dictionary. The state to set on the image_collection
 
@@ -903,9 +903,9 @@ def get_processing_states(
     ------------------     --------------------------------------------------------------------
     mission                Required, This is the image collection that will be adjusted.
 
-                           The image_collection can be a portal Item or an image service URL or URI
+                           The mission can be a Mission object, an image service URL or portal Item or a datastore URI.
 
-                           The image_collection must exist.
+                           The mission must exist.
     ------------------     --------------------------------------------------------------------
     gis                    Optional :class:`~arcgis.gis.GIS` . The GIS on which this tool runs. If not specified, the active GIS is used.
     ==================     ====================================================================
@@ -1040,9 +1040,9 @@ def match_control_points(
     ------------------     --------------------------------------------------------------------
     mission                Required, the input image collection that will be adjusted.
 
-                           The image_collection can be a portal Item or an image service URL or a URI
+                           The mission can be a Mission object, an image service URL or portal Item or a datastore URI.
                             
-                           The image_collection must exist.
+                           The mission must exist.
     ------------------     --------------------------------------------------------------------
     control_points         Required, a list of control point sets objects.
 
@@ -1229,9 +1229,9 @@ def compute_control_points(
     ------------------------------------    --------------------------------------------------------------------
     mission                                 Required. This is the image collection that will be adjusted.
 
-                                            The image_collection can be a portal Item or an image service URL or a URI
+                                            The mission can be a Mission object, an image service URL or portal Item or a datastore URI.
                             
-                                            The image_collection must exist.
+                                            The mission must exist.
     ------------------------------------    --------------------------------------------------------------------
     reference_image                         This is the reference image service that can be used to generate ground control 
                                             points set with the image service. 
@@ -1384,8 +1384,8 @@ def edit_control_points(
     **Parameter**           **Description**
     ------------------     --------------------------------------------------------------------
     mission                Required.
-                           The image_collection can be a portal Item or an image service URL or a URI
-                           The image_collection must exist.
+                           The mission can be a Mission object, an image service URL or portal Item or a datastore URI.
+                           The mission must exist.
     ------------------     --------------------------------------------------------------------
     control_points         Required, a list of control point sets objects.
 
@@ -1528,8 +1528,8 @@ def generate_orthomosaic(
     -----------------------------------    --------------------------------------------------------------------
     mission                                Required. The input image collection that will be used
                                            to generate the ortho-mosaic from.
-                                           The image_collection can be a portal Item or an image service URL or a URI
-                                           The image_collection must exist.
+                                           The mission can be a Mission object, an image service URL or portal Item or a datastore URI.
+                                           The mission must exist.
     -----------------------------------    --------------------------------------------------------------------
     out_ortho                               Required. This is the ortho-mosaicked image converted from the image
                                             collection after the block adjustment.
@@ -1827,8 +1827,8 @@ def generate_report(
     -------------------    --------------------------------------------------------------------
     mission                Required. The input image collection that should be
                            used to generate a report from.
-                           The image_collection can be a portal Item or an image service URL or a URI
-                           The image_collection must exist.
+                           The mission can be a Mission object, an image service URL or portal Item or a datastore URI.
+                           The mission must exist.
     -------------------    --------------------------------------------------------------------
     report_format          Type of the format to be generated. Possible PDF, HTML. Default - PDF
     -------------------    --------------------------------------------------------------------
@@ -1968,9 +1968,9 @@ def query_control_points(
     mission                Required, the input image collection on which to query
                            the the control points.
 
-                           The image_collection can be a portal Item or an image service URL or a URI.
+                           The mission can be a Mission object, an image service URL or portal Item or a datastore URI.
 
-                           The image_collection must exist.
+                           The mission must exist.
     ------------------     --------------------------------------------------------------------
     query                  Required string. a SQL statement used for querying the point;
 
@@ -2053,9 +2053,9 @@ def reset_image_collection(
     **Parameter**           **Description**
     ------------------     --------------------------------------------------------------------
     mission                Required, the input image collection to reset
-                           The image_collection can be a portal Item or an image service URL or a URI.
+                           The mission can be a Mission object, an image service URL or portal Item or a datastore URI.
 
-                           The image_collection must exist.
+                           The mission must exist.
     ------------------     --------------------------------------------------------------------
     gis                    Optional :class:`~arcgis.gis.GIS` . The GIS on which this tool runs. If not specified, the active GIS is used.
     ==================     ====================================================================
@@ -2216,6 +2216,8 @@ def reconstruct_surface(
     **Parameter**                                                                **Description**
     -------------------------------------------------------------------------   ---------------------------------------------------------------------------
     mission                                                                     Required String/Item. The adjusted input image collection.
+                                                                                The mission can be a Mission object, an image service URL or portal Item or a datastore URI.
+                                                                                The mission must exist.
     -------------------------------------------------------------------------   ---------------------------------------------------------------------------
     scenario                                                                    Optional String. Specifies the type of imagery that will be used to generate the output products.
 
@@ -2330,6 +2332,12 @@ def reconstruct_surface(
 
     """
     gis = arcgis.env.active_gis if gis is None else gis
+    from ._realitymapping_mission import Mission
+
+    if isinstance(image_collection, Mission):
+        mission = image_collection
+        image_collection = image_collection.image_collection
+        # update_flight_json = True
 
     return gis._tools.realitymapping.reconstruct_surface(
         image_collection=mission,
