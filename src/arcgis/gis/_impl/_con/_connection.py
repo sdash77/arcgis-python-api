@@ -977,6 +977,7 @@ class Connection(object):
                         data = it
                     else:
                         data += it
+                data = json.loads(data)
                 if "error" in data and ignore_error_key == False:
                     raise Exception(data["error"])
             else:

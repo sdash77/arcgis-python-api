@@ -6397,8 +6397,7 @@ class MapImageLayer(arcgis.gis.Layer):
         if layer_parameters:
             params["layerParameterValues"] = layer_parameters
         identifyURL = "{url}/identify".format(url=self._url)
-        resp = self._con.post(identifyURL, params, return_raw_response=True)
-        return resp.json()
+        return self._con.post(identifyURL, params)
 
     # ----------------------------------------------------------------------
     def find(
