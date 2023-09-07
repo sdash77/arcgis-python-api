@@ -726,6 +726,40 @@ def compute_sensor_model(
     """
 
     gis = arcgis.env.active_gis if gis is None else gis
+    update_flight_json = False
+    flight_json_details = {}
+    from ._realitymapping_mission import Mission
+
+    if isinstance(image_collection, Mission):
+        mission = image_collection
+        image_collection = image_collection.image_collection
+        update_flight_json = True
+
+        adj_dict = {}
+        if isinstance(context, dict):
+            context_new = {k.lower(): v for k, v in context.items()}
+            adj_keys = [
+                "computeCandidate",
+                "maxOverlap",
+                "maxLoss",
+                "maxResidual",
+                "initPointResolution",
+                "k",
+                "p",
+                "principalPoint",
+                "focalLength",
+            ]
+            adj_dict = {
+                k: context_new[k.lower()] for k in adj_keys if k.lower() in context_new
+            }
+            adj_dict.update({"locationAccuracy": location_accuracy})
+        adj_dict.update({"mode": mode})
+        flight_json_details = {
+            "update_flight_json": update_flight_json,
+            "mission": mission,
+            "item_name": "adjustment",
+            "adjust_settings": adj_dict,
+        }
 
     return gis._tools.realitymapping.compute_sensor_model(
         image_collection=mission,
@@ -733,6 +767,7 @@ def compute_sensor_model(
         location_accuracy=location_accuracy,
         context=context,
         future=future,
+        flight_json_details=flight_json_details,
         **kwargs,
     )
 
@@ -816,6 +851,11 @@ def alter_processing_states(
 
     """
     gis = arcgis.env.active_gis if gis is None else gis
+    from ._realitymapping_mission import Mission
+
+    if isinstance(image_collection, Mission):
+        mission = image_collection
+        image_collection = image_collection.image_collection
 
     return gis._tools.realitymapping.alter_processing_states(
         image_collection=mission,
@@ -876,6 +916,11 @@ def get_processing_states(
     """
 
     gis = arcgis.env.active_gis if gis is None else gis
+    from ._realitymapping_mission import Mission
+
+    if isinstance(image_collection, Mission):
+        mission = image_collection
+        image_collection = image_collection.image_collection
 
     return gis._tools.realitymapping.get_processing_states(
         image_collection=mission, future=future, **kwargs
@@ -1102,6 +1147,20 @@ def match_control_points(
 
     """
     gis = arcgis.env.active_gis if gis is None else gis
+    update_flight_json = False
+    flight_json_details = {}
+    from ._realitymapping_mission import Mission
+
+    if isinstance(image_collection, Mission):
+        mission = image_collection
+        image_collection = image_collection.image_collection
+        update_flight_json = True
+
+        flight_json_details = {
+            "update_flight_json": update_flight_json,
+            "mission": mission,
+            "item_name": "matchControlPoint",
+        }
 
     return gis._tools.realitymapping.match_control_points(
         image_collection=mission,
@@ -1109,6 +1168,7 @@ def match_control_points(
         similarity=similarity,
         context=context,
         future=future,
+        flight_json_details=flight_json_details,
         **kwargs,
     )
 
@@ -1242,6 +1302,20 @@ def compute_control_points(
 
     """
     gis = arcgis.env.active_gis if gis is None else gis
+    update_flight_json = False
+    flight_json_details = {}
+    from ._realitymapping_mission import Mission
+
+    if isinstance(image_collection, Mission):
+        mission = image_collection
+        image_collection = image_collection.image_collection
+        update_flight_json = True
+
+        flight_json_details = {
+            "update_flight_json": update_flight_json,
+            "mission": mission,
+            "item_name": "computeControlPoints",
+        }
 
     return gis._tools.realitymapping.compute_control_points(
         image_collection=mission,
@@ -1249,6 +1323,7 @@ def compute_control_points(
         image_location_accuracy=image_location_accuracy,
         context=context,
         future=future,
+        flight_json_details=flight_json_details,
         **kwargs,
     )
 
@@ -1391,11 +1466,26 @@ def edit_control_points(
     """
 
     gis = arcgis.env.active_gis if gis is None else gis
+    update_flight_json = False
+    flight_json_details = {}
+    from ._realitymapping_mission import Mission
+
+    if isinstance(image_collection, Mission):
+        mission = image_collection
+        image_collection = image_collection.image_collection
+        update_flight_json = True
+
+        flight_json_details = {
+            "update_flight_json": update_flight_json,
+            "mission": mission,
+            "item_name": "appendControlPoints",
+        }
 
     return gis._tools.realitymapping.edit_control_points(
         image_collection=mission,
         input_control_points=control_points,
         future=future,
+        flight_json_details=flight_json_details,
         **kwargs,
     )
 
@@ -1519,6 +1609,123 @@ def generate_orthomosaic(
     """
     gis = arcgis.env.active_gis if gis is None else gis
 
+    update_flight_json = False
+    from ._realitymapping_mission import Mission
+
+    if isinstance(image_collection, Mission):
+        mission = image_collection
+        image_collection = image_collection.image_collection
+        update_flight_json = True
+
+        if kwargs is not None:
+            if "folder" in kwargs:
+                folder = kwargs["folder"]
+            else:
+                for f in gis.users.me.folders:
+                    if f["id"] == image_collection.ownerFolder:
+                        folder = f
+                        break
+            kwargs.update({"folder": folder})
+
+        color_balance_keys = [
+            "targetRaster",
+            "skipX",
+            "skipY",
+            "overwriteStats",
+            "dodgingSurface",
+            "colorCorrectionMethod",
+        ]
+        color_balance_dict = {}
+        color_balance_dict.update(
+            {
+                "colorBalance": {
+                    "skipX": 0,
+                    "skipY": 0,
+                    "overwriteStats": "SKIP_EXISTING",
+                    "colorCorrectionMethod": "DODGING",
+                    "dodgingSurface": "SINGLE_COLOR",
+                    "targetImage": "",
+                }
+            }
+        )
+
+        ortho_dict = {}
+        if isinstance(context, dict):
+            context_new = {k.lower(): v for k, v in context.items()}
+            color_balance_dict["colorBalance"].update(
+                {
+                    k: context_new[k.lower()]
+                    for k in color_balance_keys
+                    if k.lower() in context_new
+                }
+            )
+            if "colorCorrectionMethod" in color_balance_dict["colorBalance"]:
+                color_balance_dict["colorBalance"]["method"] = color_balance_dict[
+                    "colorBalance"
+                ].pop("colorCorrectionMethod")
+            if "dodgingSurface" in color_balance_dict["colorBalance"]:
+                color_balance_dict["colorBalance"]["surfaceType"] = color_balance_dict[
+                    "colorBalance"
+                ].pop("dodgingSurface")
+
+            seamline_keys = [
+                "computeCandidate",
+                "maxOverlap",
+                "maxLoss",
+                "pixelSize",
+                "blendType",
+                "blendUnit",
+                "requestSizeType",
+                "requestSize",
+                "minThinnessRatio",
+                "maxSliverSize",
+                "seamlinesMethod",
+            ]
+            seamline_dict = {}
+            seamline_dict.update(
+                {
+                    "seamline": {
+                        "seamlinesMethod": "DISPARITY",
+                        "minRegionSize": 100,
+                        "pixelSize": "",
+                        "blendType": "Both",
+                        "blendWidth": None,
+                        "blendUnit": "Pixels",
+                        "requestSizeType": "Pixels",
+                        "requestSize": 1000,
+                        "minThinnessRatio": 0.05,
+                        "maxSliverSize": 20,
+                    }
+                }
+            )
+
+            seamline_dict["seamline"].update(
+                {
+                    k: context_new[k.lower()]
+                    for k in seamline_keys
+                    if k.lower() in context_new
+                }
+            )
+            if "seamlinesMethod" in seamline_dict["seamline"]:
+                seamline_dict["seamline"]["method"] = seamline_dict["seamline"].pop(
+                    "seamlinesMethod"
+                )
+
+            ortho_mosaic_as_ovr = context.get("orthoMosaicAsOvr", False)
+            ortho_dict = {"ortho": {"orthoMosaicAsOvr": ortho_mosaic_as_ovr}}
+
+            if regen_seamlines:
+                ortho_dict.update(seamline_dict)
+            if recompute_color_correction:
+                ortho_dict.update(color_balance_dict)
+
+        flight_json_details = {
+            "update_flight_json": update_flight_json,
+            "mission": mission,
+            "item_name": "ortho",
+            "processing_states": ortho_dict,
+        }
+
     return gis._tools.realitymapping.generate_orthomosaic(
         image_collection=mission,
         output_ortho_image=out_ortho,
@@ -1526,6 +1733,7 @@ def generate_orthomosaic(
         recompute_color_correction=recompute_color_correction,
         context=context,
         future=future,
+        flight_json_details=flight_json_details,
         **kwargs,
     )
     """
@@ -1632,11 +1840,26 @@ def generate_report(
 
     """
     gis = arcgis.env.active_gis if gis is None else gis
+    update_flight_json = False
+    flight_json_details = {}
+    from ._realitymapping_mission import Mission
+
+    if isinstance(image_collection, Mission):
+        mission = image_collection
+        image_collection = image_collection.image_collection
+        update_flight_json = True
+
+        flight_json_details = {
+            "update_flight_json": update_flight_json,
+            "mission": mission,
+            "item_name": "report",
+        }
 
     return gis._tools.realitymapping.generate_report(
         image_collection=mission,
         report_format=report_format,
         future=future,
+        flight_json_details=flight_json_details,
         **kwargs,
     )
     """
@@ -1764,9 +1987,27 @@ def query_control_points(
 
     """
     gis = arcgis.env.active_gis if gis is None else gis
+    update_flight_json = False
+    flight_json_details = {}
+    from ._realitymapping_mission import Mission
+
+    if isinstance(image_collection, Mission):
+        mission = image_collection
+        image_collection = image_collection.image_collection
+        update_flight_json = True
+
+        flight_json_details = {
+            "update_flight_json": update_flight_json,
+            "mission": mission,
+            "item_name": "queryControlPoints",
+        }
 
     return gis._tools.realitymapping.query_control_points(
-        image_collection=mission, where=query, future=future, **kwargs
+        image_collection=mission,
+        where=query,
+        future=future,
+        flight_json_details=flight_json_details,
+        **kwargs,
     )
 
     """
@@ -1824,6 +2065,18 @@ def reset_image_collection(
 
     """
     gis = arcgis.env.active_gis if gis is None else gis
+    from ._realitymapping_mission import Mission
+
+    if isinstance(image_collection, Mission):
+        mission = image_collection
+        image_collection = image_collection.image_collection
+        update_flight_json = True
+
+        flight_json_details = {
+            "update_flight_json": update_flight_json,
+            "mission": mission,
+            "item_name": "reset",
+        }
 
     return gis._tools.realitymapping.reset_image_collection(
         image_collection=mission, future=future, **kwargs
