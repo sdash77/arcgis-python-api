@@ -1183,10 +1183,6 @@ def prepare_tabulardata(
     if kwargs.get("stratify") == True:
         stratify = True
 
-    random_split = True
-    if kwargs.get("random_split") == False:
-        random_split = False
-
     HAS_COLUMN_TRANSFORMS = False
 
     column_transforms_mapping = {}
@@ -1236,7 +1232,7 @@ def prepare_tabulardata(
         batch_size=batch_size,
         index_field=index_field,
         column_transforms_mapping=column_transforms_mapping,
-        random_split=random_split,
+        **kwargs,
     )
 
     if working_dir is None:

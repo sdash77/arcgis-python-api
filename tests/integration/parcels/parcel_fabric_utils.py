@@ -181,3 +181,25 @@ def get_record_by_guid(gis, records_url, guid, gdb_version):
         out_fields=["NAME", "GLOBALID"],
     ).to_dict()
     return record_attributes["features"]
+
+
+def get_record_guid_by_name(gis, records_url, record_name, gdb_version):
+    """Query the records feature class to get back some specic attributes.
+
+    Args:
+      gis (arcgis.GIS): GIS of the service
+      records_url: URL of records feature layer
+      guid: GlobalID value of desired record
+      gdb_version: branch version
+
+    Returns:
+      str (GUID)
+    """
+    where = "NAME = '{}'".format(record_name)
+    records_fl = FeatureLayer(records_url, gis)
+    record_attributes = records_fl.query(
+        where=where,
+        gdb_version=gdb_version,
+        out_fields=["NAME", "GLOBALID"],
+    ).to_dict()
+    return record_attributes["features"]

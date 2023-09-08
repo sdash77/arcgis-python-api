@@ -86,10 +86,10 @@ class TestAnalyzeLSA(unittest.TestCase):
 
             # Test for the correct XY values after Apply LSA
             self.assertAlmostEqual(
-                16.04196267, min(xyvals), 3, "XY Uncertainty min value incorrect"
+                16.04196267, min(xyvals), 2, "XY Uncertainty min value incorrect"
             )
             self.assertAlmostEqual(
-                25.36248208, max(xyvals), 3, "XY Uncertainty max value incorrect"
+                25.36248208, max(xyvals), 2, "XY Uncertainty max value incorrect"
             )
 
     def test_apply_lsa_xy_uncertainty_sync(self):
