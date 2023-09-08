@@ -771,35 +771,6 @@ def compute_sensor_model(
         **kwargs,
     )
 
-    """
-    gis = arcgis.env.active_gis if gis is None else gis
-
-    params = {}
-
-    _set_image_collection_param(gis, params, image_collection)
-
-    mode_allowed_values = ["Full","Quick","Refine"]
-    if [element.lower() for element in mode_allowed_values].count(mode.lower()) <= 0 :
-        raise RuntimeError("mode can only be one of the following: "+ str(mode_allowed_values))
-    for element in mode_allowed_values:
-        if mode.lower() == element.lower():
-            params['mode'] = element
-
-    location_accuracy_allowed_values = ['High', 'Medium', 'Low', 'VeryLow']
-    if [element.lower() for element in location_accuracy_allowed_values].count(location_accuracy.lower()) <= 0 :
-        raise RuntimeError('location_accuracy can only be one of the following: '+ str(location_accuracy_allowed_values))
-    for element in location_accuracy_allowed_values:
-        if location_accuracy.lower() == element.lower():
-            params['locationAccuracy'] = element
-
-    _set_context(params, context)
-
-    task = 'ComputeSensorModel'
-    job_values = _execute_task(gis, task, params)
-    
-    return job_values["result"]["url"]
-    """
-
 
 ###################################################################################################
 ## Alter processing states
@@ -863,30 +834,6 @@ def alter_processing_states(
         future=future,
         **kwargs,
     )
-    """
-    gis = arcgis.env.active_gis if gis is None else gis
-        
-    params = {}
-
-    _set_image_collection_param(gis, params, image_collection)
-
-    newStatesAllowedValues = ['blockadjustment', 'dem', 'gcp', 'seamlines', 'colorcorrection', 'adjust_index', 'imagetype']
-
-    for key in new_states:
-        if not key in newStatesAllowedValues:
-            raise RuntimeError('new_states can only be one of the following: ' + str(newStatesAllowedValues))
-
-    params['newStates'] = json.dumps(new_states)
-    task = 'AlterProcessingStates'
-    job_values = _execute_task(gis, task, params)
-    if "processingStates" in job_values:
-        if isinstance(job_values["processingStates"], dict):
-            return job_values["processingStates"]
-        elif isinstance(job_values["processingStates"], str):
-            processing_states = job_values['processingStates'].replace("'",'"')
-            processing_states=json.loads( processing_states.replace('u"','"'))
-            return processing_states
- """
 
 
 ###################################################################################################
@@ -925,95 +872,6 @@ def get_processing_states(
     return gis._tools.realitymapping.get_processing_states(
         image_collection=mission, future=future, **kwargs
     )
-    """
-
-    gis = arcgis.env.active_gis if gis is None else gis
-
-    params = {}
-
-    _set_image_collection_param(gis, params, image_collection)
-
-    task = 'GetProcessingStates'
-    job_values = _execute_task(gis, task, params)
-    return job_values["processingStates"]
-    """
-
-
-"""
-###################################################################################################
-## Append control points
-###################################################################################################
-def append_control_points(image_collection, control_points, gis = None):
-    '''
-    Append additional ground control point sets to the image collection's control points. 
-    A complete ground control point (GCP) set should have one ground control point 
-    and multiple (more than 3) tie points.
-
-    See http://desktop.arcgis.com/en/arcmap/10.3/manage-data/raster-and-images/block-adjustment-for-mosaic-datasets.htm#ESRI_SECTION1_6676F2BB9A6B453E9EE1E00B42C4A5C1
-    for more information about preparing control points and tie points for realitymapping
-
-    Parameters
-    ----------
-    image_collection    :   Required, the input image collection on which to compute
-                            the sensor model.
-
-                            The image_collection can be a portal Item or an image service URL
-                            
-                            The image_collection must exist.
-
-    control_points      :   Required, a list of control point objects.
-
-                            A control point object is a dictionary with key-value
-                            pairs as described below:
-
-                            The schema of control points follows the schema 
-                            of the mosaic dataset control point table. The following are
-                            required when defining control points:
-                            - The control points must contain a Point geometry object 
-
-                            - There must be one attribute set, describing the attributes of the control point. 
-
-                              The control point attributes is a dictionary that must contain the following 
-                              key-value pairs:
-
-                              -- imageID (int) - Image identification using the ObjectID from the mosaic dataset footprint table.
-
-                              -- pointID (int) - The ID of the point within the control point table
-
-                              -- type (int)    - The type of the control point as determined by its numeric value
-                                                 1: Tie Point 
-                                                 2: Ground Control Point.
-                                                 3: Check Point
-
-                              -- status (int)  - The status of the point. A value of 0 indicates that the point will
-                                                 not be used in computation. A non-zero value indicates otherwise.
-
-                            Example:
-           
-                                {"geometry": {
-                                    "x":-118.15,"y":33.80,"z":10.0,
-                                    "spatialReference":{"wkid":4326}},  
-                                    "attributes": {
-                                       "imageID": 22,
-                                       "pointID": 2, 
-                                       "type": 2,
-                                       "status": 1, 
-                                     },
-                                <more points>
-                                }
-
-    '''
-    gis = arcgis.env.active_gis if gis is None else gis
-
-    params = {}
-
-    _set_image_collection_param(params, image_collection)
-
-    params['controlPoints'] = json.dumps(control_points)
-    task = 'AppendControlPoints'
-    _execute_task(gis, task, None)
-    return
-"""
 
 
 ###################################################################################################
@@ -1172,38 +1030,6 @@ def match_control_points(
         **kwargs,
     )
 
-    """
-
-    gis = arcgis.env.active_gis if gis is None else gis
-
-    params = {}
-
-    _set_image_collection_param(gis, params, image_collection)
-
-    params['inputControlPoints'] = json.dumps(control_points)
-
-    similarity_allowed_values = ['Low', 'Medium', 'High']
-    if [element.lower() for element in similarity_allowed_values].count(similarity.lower()) <= 0 :
-        raise RuntimeError('similarity can only be one of the following: '+str(similarity_allowed_values))
-    for element in similarity_allowed_values:
-        if similarity.lower() == element.lower():
-            params['similarity'] = element
-
-    _set_context(params, context)
-
-    task = 'MatchControlPoints'
-    job_values = _execute_task(gis, task, params)
-
-    if job_values["result"] is not None:
-        gptool_url = gis.properties.helperServices.orthoMapping.url
-        gptool = arcgis.gis._GISResource(gptool_url, gis)
-        result = gptool._con.post(job_values["result"]["url"],{},token=gptool._token)
-    else:
-        return job_values["result"]
-
-    return result
-    """
-
 
 ###################################################################################################
 ## Compute Control Points
@@ -1326,39 +1152,6 @@ def compute_control_points(
         flight_json_details=flight_json_details,
         **kwargs,
     )
-
-    """
-    gis = arcgis.env.active_gis if gis is None else gis
-
-    params = {}
-    _set_image_collection_param(gis, params, image_collection)
-
-    if reference_image is not None:
-        if isinstance(reference_image, str):
-            if 'http:' in reference_image or 'https' in reference_image:
-                params['referenceImage'] = json.dumps({ 'url' : reference_image })
-            else:
-                params['referenceImage'] = json.dumps({ 'uri' : reference_image })
-        elif isinstance(reference_image, Item):
-                params['referenceImage'] = json.dumps({ "itemId" : reference_image.itemid })
-        else:
-            raise TypeError("reference_image should be a string (url or uri) or Item")
-
-
-    image_location_accuracy_allowed_values = ['Low', 'Medium', 'High']
-    if [element.lower() for element in image_location_accuracy_allowed_values].count(image_location_accuracy.lower()) <= 0 :
-        raise RuntimeError('location_accuracy can only be one of the following:' +str(image_location_accuracy_allowed_values))
-    for element in image_location_accuracy_allowed_values:
-        if image_location_accuracy.lower() == element.lower():
-            params["imageLocationAccuracy"]=element
-
-    _set_context(params, context)  
-
-    task = 'ComputeControlPoints'
-    job_values = _execute_task(gis, task, params)
-
-    return job_values["result"]
-    """
 
 
 ###################################################################################################
@@ -1488,21 +1281,6 @@ def edit_control_points(
         flight_json_details=flight_json_details,
         **kwargs,
     )
-
-    """
-    gis = arcgis.env.active_gis if gis is None else gis
-
-    params = {}
-
-    _set_image_collection_param(gis, params, image_collection)
-
-    params['inputControlPoints'] = json.dumps(control_points)
-
-    task = 'EditControlPoints'
-    job_values = _execute_task(gis, task, params)
-
-    return job_values["result"]["url"]
-    """
 
 
 ###################################################################################################
@@ -1736,73 +1514,6 @@ def generate_orthomosaic(
         flight_json_details=flight_json_details,
         **kwargs,
     )
-    """
-    gis = arcgis.env.active_gis if gis is None else gis
-
-    task = 'GenerateOrthomosaic'
-
-    params = {}
-    folder = None
-    folderId = None
-    _set_image_collection_param(gis, params, image_collection)
-        
-    if isinstance(out_ortho, Item):
-        params["outputOrthoImage"] = json.dumps({"itemId": out_ortho.itemid})
-    elif isinstance(out_ortho, str):
-        if ("/") in out_ortho or ("\\") in out_ortho:
-            if 'http:' in out_ortho or 'https:' in out_ortho:
-                params['outputOrthoImage'] = json.dumps({ 'url' : out_ortho })
-            else:
-                params['outputOrthoImage'] = json.dumps({ 'uri' : out_ortho })
-        else:
-            result = gis.content.search("title:"+str(out_ortho), item_type = "Imagery Layer")
-            out_ortho_result = None
-            for element in result:
-                if str(out_ortho) == element.title:
-                    out_ortho_result = element
-            if out_ortho_result is not None:
-                params["outputOrthoImage"]= json.dumps({"itemId": out_ortho_result.itemid})
-            else:
-                doesnotexist = gis.content.is_service_name_available(out_ortho, "Image Service") 
-                if doesnotexist:
-                    if kwargs is not None:
-                        if "folder" in kwargs:
-                            folder = kwargs["folder"]
-                    if folder is not None:
-                        if isinstance(folder, dict):
-                            if "id" in folder:
-                                folderId = folder["id"]
-                                folder=folder["title"]
-                        else:
-                            owner = gis.properties.user.username
-                            folderId = gis._portal.get_folder_id(owner, folder)
-                        if folderId is None:
-                            folder_dict = gis.content.create_folder(folder, owner)
-                            folder = folder_dict["title"]
-                            folderId = folder_dict["id"]
-                        params["outputOrthoImage"] = json.dumps({"serviceProperties": {"name" : out_ortho}, "itemProperties": {"folderId" : folderId}})
-                    else:
-                        params["outputOrthoImage"] = json.dumps({"serviceProperties": {"name" : out_ortho}})
-            
-
-    if regen_seamlines is not None:
-        if not isinstance(regen_seamlines, bool):
-            raise TypeError("The 'regen_seamlines' parameter must be a boolean")
-        params['regenSeamlines'] = regen_seamlines
-
-    if recompute_color_correction is not None:
-        if not isinstance(recompute_color_correction, bool):
-            raise TypeError("The 'recompute_color_correction' parameter must be a boolean")
-        params['recomputeColorCorrection'] = recompute_color_correction    
-
-    _set_context(params, context)   
-    
-    job_values = _execute_task(gis, task, params)
-
-    output_service= gis.content.get(job_values["result"]["itemId"])
-
-    return  output_service 
-    """
 
 
 ###################################################################################################
@@ -1862,25 +1573,6 @@ def generate_report(
         flight_json_details=flight_json_details,
         **kwargs,
     )
-    """
-    gis = arcgis.env.active_gis if gis is None else gis
-
-    params = {}
-
-    _set_image_collection_param(gis, params, image_collection)
-
-    report_format_allowed_values = ['PDF', 'HTML']
-    if [element.lower() for element in report_format_allowed_values].count(report_format.lower()) <= 0 :
-        raise RuntimeError('report_format can only be one of the following: '+ str(report_format_allowed_values))
-    for element in report_format_allowed_values:
-        if report_format.lower() == element.lower():
-            params["reportFormat"]=element
-
-    task = 'GenerateReport'
-    job_values = _execute_task(gis, task, params)
-
-    return job_values["outReport"]["url"]
-    """
 
 
 ###################################################################################################
@@ -1924,27 +1616,6 @@ def query_camera_info(
     return gis._tools.realitymapping.query_camera_info(
         camera_query=camera_query, future=future, **kwargs
     )
-
-    """
-    import pandas as pd
-    import numpy as np
-
-    gis = arcgis.env.active_gis if gis is None else gis
-
-    params = {}
-
-    if camera_query is not None:
-        if not isinstance(camera_query, str):
-            raise TypeError("The 'camera_query' parameter must be a string")
-        params['query'] = camera_query
-   
-    task = 'QueryCameraInfo'
-    job_values = _execute_task(gis, task, params)
-    pd.set_option('display.max_rows', None)
-    df = pd.DataFrame(np.array(job_values["outputCameraInfo"]["content"]),columns = job_values["outputCameraInfo"]["schema"])
-    return df
-
-    """
 
 
 ###################################################################################################
@@ -2010,31 +1681,6 @@ def query_control_points(
         **kwargs,
     )
 
-    """
-    gis = arcgis.env.active_gis if gis is None else gis
-
-    params = {}
-
-    _set_image_collection_param(gis, params, image_collection)
-
-    if not isinstance(query, str):
-        raise TypeError("The 'query' parameter must be a string")
-
-    params['where'] = query
-
-    task = 'QueryControlPoints'
-    job_values = _execute_task(gis, task, params)
-
-    if job_values["outControlPoints"] is not None:
-        gptool_url = gis.properties.helperServices.orthoMapping.url
-        gptool = arcgis.gis._GISResource(gptool_url, gis)
-        result = gptool._con.post(job_values["outControlPoints"]["url"],{},token=gptool._token)
-    else:
-        return job_values["outControlPoints"]
-
-    return result
-    """
-
 
 ###################################################################################################
 ## Reset image collection
@@ -2084,17 +1730,6 @@ def reset_image_collection(
         flight_json_details=flight_json_details,
         **kwargs,
     )
-    """
-    gis = arcgis.env.active_gis if gis is None else gis
-
-    params = {}
-
-    _set_image_collection_param(gis, params, image_collection)
-
-    task = 'ResetImageCollection'
-    job_values = _execute_task(gis, task, params)
-    return job_values["result"]
-    """
 
 
 def compute_spatial_reference_factory_code(latitude: float, longitude: float):
