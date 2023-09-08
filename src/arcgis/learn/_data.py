@@ -1183,7 +1183,6 @@ def prepare_tabulardata(
     if kwargs.get("stratify") == True:
         stratify = True
 
-
     HAS_COLUMN_TRANSFORMS = False
 
     column_transforms_mapping = {}

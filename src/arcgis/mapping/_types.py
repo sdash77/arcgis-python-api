@@ -6982,10 +6982,12 @@ class MapImageLayer(arcgis.gis.Layer):
                         print(str(job_response["messages"]))
                         raise Exception("Job Failed with status " + status)
                     else:
-                        path +="/" + job_response["results"]["out_service_url"]["paramUrl"]
+                        path += (
+                            "/" + job_response["results"]["out_service_url"]["paramUrl"]
+                        )
                         out_service_resp = self._con.post(path)["value"]
                         return out_service_resp
-                path +="/" + job_response["results"]["out_service_url"]["paramUrl"]
+                path += "/" + job_response["results"]["out_service_url"]["paramUrl"]
                 out_service_resp = self._con.post(path)["value"]
                 return out_service_resp
             else:
@@ -7171,7 +7173,7 @@ class MapImageLayer(arcgis.gis.Layer):
                         params = {"f": "json"}
                         gpRes = self._con.get(path=path + "/" + value, params=params)
                         if tile_package == True:
-                            gpOutput = self._con.get(gpRes['value'])
+                            gpOutput = self._con.get(gpRes["value"])
                             files = []
                             for f in gpOutput["files"]:
                                 name = f["name"]
@@ -7186,7 +7188,7 @@ class MapImageLayer(arcgis.gis.Layer):
                                 )
                             return files
                         else:
-                            return self._con.get(path=gpRes["value"])["folders"]                            
+                            return self._con.get(path=gpRes["value"])["folders"]
                     else:
                         return None
             elif "output" in job_response:
