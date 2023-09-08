@@ -952,9 +952,11 @@ class OMJob(GPJob):
                 url = ""
                 item_props = json.loads(self._item)
                 if "serviceProperties" in item_props.keys():
-                    url = json.loads(self._item)["serviceProperties"]["serviceUrl"]
+                    if "serviceUrl" in item_props["serviceProperties"].keys():
+                        url = item_props["serviceProperties"]["serviceUrl"]
                     if "itemProperties" in item_props.keys():
-                        itemid = json.loads(self._item)["itemProperties"]["itemId"]
+                        if "itemId" in item_props["itemProperties"].keys():
+                            itemid = item_props["itemProperties"]["itemId"]
                 elif "itemId" in item_props.keys():
                     itemid = item_props["itemId"]
                     portal_item = mission._gis.content.get(itemid)
