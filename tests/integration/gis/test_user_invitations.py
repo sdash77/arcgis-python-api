@@ -1,6 +1,6 @@
 import sys
 
-sys.path.insert(0, r"C:\SVN\geosaurus_master\src")
+# sys.path.insert(0, r"C:\SVN\geosaurus_master\src")
 import unittest
 import uuid
 from arcgis.gis import GIS, User, UserManager, Group, GroupManager
@@ -33,6 +33,7 @@ class TestUserInvitationManager(unittest.TestCase):
 
     def test_accept(self):
         """tests the accept function"""
+        group = None
         for profile in PROFILES:
             gis = GIS(profile=profile, verify_cert=False, proxy=proxies)
             me = gis.users.me
@@ -47,7 +48,7 @@ class TestUserInvitationManager(unittest.TestCase):
                     firstname="delete",
                     lastname="thisaccount",
                     email="support@esri.com",
-                    role='org_publisher',
+                    role='publisher',
                 )
                 assert isinstance(test_user, User)
                 gm = gis.groups
@@ -72,6 +73,8 @@ class TestUserInvitationManager(unittest.TestCase):
 
     def test_properties(self):
         """tests the properties on the invitation"""
+        group = None
+        user = None
         for profile in PROFILES:
             gis = GIS(profile=profile, verify_cert=False, proxy=proxies)
             me = gis.users.me
@@ -86,7 +89,7 @@ class TestUserInvitationManager(unittest.TestCase):
                     firstname="delete",
                     lastname="thisaccount",
                     email="support@esri.com",
-                    role='org_publisher',
+                    role='publisher',
                 )
                 assert isinstance(test_user, User)
                 gm = gis.groups
@@ -111,6 +114,7 @@ class TestUserInvitationManager(unittest.TestCase):
 
     def test_decline(self):
         """tests the decline operation"""
+        group = None
         for profile in PROFILES:
             gis = GIS(profile=profile, verify_cert=False, proxy=proxies)
             me = gis.users.me
@@ -125,7 +129,7 @@ class TestUserInvitationManager(unittest.TestCase):
                     firstname="delete",
                     lastname="thisaccount",
                     email="support@esri.com",
-                    role='org_publisher',
+                    role='publisher',
                 )
                 assert isinstance(test_user, User)
                 gm = gis.groups
