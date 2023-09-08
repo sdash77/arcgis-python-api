@@ -2848,6 +2848,17 @@ class Project:
         res_list = self._project_item.resources.list()
         return len(res_list)
 
+    @property
+    def item(self):
+        """
+        The ``item`` property returns the portal item associated with the Project.
+
+        :return: A portal item
+        """
+        from ._mission import Mission
+
+        return self._project_item
+
     # def create_project(self, name, definition: Optional[dict[str, Any]] = None):
     #    try:
     #        project_item = _create_project(name=name,
