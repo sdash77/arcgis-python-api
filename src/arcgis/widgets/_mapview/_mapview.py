@@ -1583,8 +1583,6 @@ class MapView(widgets.DOMWidget):
             except KeyError:
                 log.warning("No 'layers' in Item: will not be added to map")
         elif isinstance(item, Layer):
-            if isinstance(item, FeatureCollection):
-                pass
             self._add_layer_to_webmap(item, options)
             _lyr = _make_jsonable_dict(item._lyr_json)
             if ("type" in _lyr and _lyr["type"] == "MapImageLayer") and (
