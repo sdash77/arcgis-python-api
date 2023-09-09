@@ -1398,8 +1398,8 @@ class GeoAccessor(object):
                                DataFrame.  If no geometry columns are present, a ``ValueError``
                                will be raised.
         ------------------     --------------------------------------------------------------------
-        **kwargs               Optional dict. Any additional kwargs that can be given to the
-                               `pyarrow.parquet.read_table` method.
+        **kwargs**             Optional dict. Any additional kwargs that can be given to the
+                               `pyarrow.parquet.read_table <https://arrow.apache.org/docs/python/generated/pyarrow.parquet.read_table.html#pyarrow-parquet-read-table>`_ method.
         ==================     ====================================================================
 
 
