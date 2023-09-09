@@ -735,7 +735,7 @@ class PortalDataStore(object):
         ==================     ====================================================================
 
         :return:
-            Boolean when `future=False` else a :class:`~arcgis.gis._impl._jb.StatusJob` object
+            Boolean object.
 
         .. code-block:: python
 
