@@ -1,11 +1,17 @@
-import sys
-
-# sys.path.insert(0, r"/Users/cowboy/GitHub/np_geo/src")
 import requests
 import platform
 import lxml
 from arcgis.gis import GIS
 from arcgis.gis import ProfileManager
+
+# add config path for featureanalysis tests
+import os
+import sys
+fa_path = os.getcwd()
+for path in sys.path:
+    if not fa_path:
+        sys.path.insert(0, fa_path)
+
 
 test_items = [
     "1ac6896bcafc4dccb29c70f45c442b00",  # Polygon Zips
@@ -22,7 +28,7 @@ test_items = [
 ]
 
 # scrape server page for a Kubernetes URL
-def get_kube_server(site="https://rpublicservers.esri.com/AEoK1100.php", row=3):
+def get_kube_server(site="https://rpublicservers.esri.com/AEoK1120.php", row=3):
 
     # Important note: code is based off of current rpublicservers page. If
     # page format or data gets changed, row parameter may have to be altered.
@@ -32,13 +38,13 @@ def get_kube_server(site="https://rpublicservers.esri.com/AEoK1100.php", row=3):
     html = lxml.html.fromstring(page.content)
     table = html.xpath("//table")[0]
     links = list(table[row].iterlinks())
-    server_url = links[0][2]
+    server_url = links[1][2]
     return server_url
 
 
 # scrape credentials page for Kubernetes credentials
 def get_kube_credentials(
-    site="https://ragsreports.ags.esri.com/information/11.0_users.htm", row=11
+    site="http://geosaurus.esri.com/testing/ragsreports/11.2_users.htm", row=11
 ):
 
     # for non-Windows users, you will either have to set environment
@@ -108,6 +114,7 @@ def setup_profiles(
             username="arcgis_python",
             password="amazing_arcgis_123",
         )
+        print(pm.get(online_name))
 
     if not ent_name in updated_list:
         print("Creating ent profile")
@@ -117,15 +124,27 @@ def setup_profiles(
             username="playground_test",
             password="i_love_testing123",
         )
+        print(pm.get(ent_name))
 
     if not kube_name in updated_list:
         print("Creating kube profile")
+        """
         pm.create(
             kube_name,
             url=get_kube_server(),
             username=get_kube_credentials()[0],
             password=get_kube_credentials()[1],
         )
+        """
+
+        # username and password based on the new 11.2 enterprise maintained servers page
+        pm.create(
+            kube_name,
+            url="https://1120pubbi-1120pubbi.apps.openshift410release.esri.com/web/home/",
+            username="creator2",
+            password="portalaccount1",
+        )
+        print(pm.get(kube_name))
 
 
 # stage data from list of AGOL items into ent & kube

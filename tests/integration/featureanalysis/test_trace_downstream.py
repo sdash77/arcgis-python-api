@@ -6,7 +6,7 @@ import unittest
 from arcgis.gis import GIS, Item
 from arcgis.features import FeatureLayer
 from arcgis.features.find_locations import trace_downstream
-from config_tests import setup_profiles, stage_data
+from .config_tests import setup_profiles, stage_data
 
 test_items = ["435fcf6cff1f4f34989e151c1f25d64a"]  # Esri Offices
 profiles = ["online_test", "ent_test", "kube_test"]
