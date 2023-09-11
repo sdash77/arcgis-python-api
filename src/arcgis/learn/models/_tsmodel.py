@@ -1103,7 +1103,7 @@ class TimeSeriesModel(ArcGISModel):
                 orig_dataframe=orig_dataframe,
                 match_field_names=match_field_names,
                 number_of_predictions=number_of_predictions,
-                fields_needed= fields_needed
+                fields_needed=fields_needed,
             )
         return orig_dataframe, single_swap_pred, number_of_predictions
 

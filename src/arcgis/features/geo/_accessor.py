@@ -3527,7 +3527,10 @@ class GeoAccessor(object):
                 }
             if column["type"] == "esriFieldTypeString":
                 try:
-                    column["length"] = int(self._data[col].str.len().max())
+                    max_length = int(self._data[col].str.len().max())
+                    if max_length == 0:
+                        max_length = 256
+                    column["length"] = max_length
                 except:
                     column["length"] = 256
             if column and isinstance(dtype, pd.CategoricalDtype):
