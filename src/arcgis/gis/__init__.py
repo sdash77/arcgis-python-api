@@ -12467,7 +12467,7 @@ class User(dict):
         if passed:
             self._hydrated = False
             self._hydrate()
-            self.role = role
+
         return passed
 
     def delete(self, reassign_to: Optional[str] = None):
