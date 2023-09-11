@@ -12833,7 +12833,11 @@ class RasterCollection:
 
         get_all_items = False
 
-        if "limit" in new_query and new_query["limit"] is None:
+        if (
+            new_query is not None
+            and "limit" in new_query
+            and new_query["limit"] is None
+        ):
             new_query["limit"] = max_limit_map[search_stac]
             get_all_items = True
 
