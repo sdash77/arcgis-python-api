@@ -12,7 +12,7 @@ from arcgis.geometry import Geometry as _Geometry
 import numbers
 import time
 import os
-from urllib.parse import urljoin, quote, unquote
+from urllib.parse import urljoin, quote, unquote, urlparse
 import sys
 
 
@@ -1527,6 +1527,70 @@ def _get_extent(extdict=None):
         return outext, extsr
     except:
         return outext, extsr
+
+
+def _get_stac_api_search_items(
+    api_search_endpoint, query, request_method, request_params, get_all_items
+):
+    """
+    This method is used to retrieve all the STAC Items from a search query.
+    :param api_search_endpoint: URL of the STAC API (/search) endpoint. The STAC API where
+                                the search needs to be performed.
+    :param query: The GET/POST request query dictionary that can be used to query a
+                  STAC API's search endpoint.
+    :param request_method: The HTTP request method used with the STAC API for
+                           making the search ("GET" or "POST").
+    :param request params: requests.get()/post() method parameters used for
+                           the STAC API search request (specified in dictionary format).
+    :param get_all_items: Boolean speciying whether to return all the items (retrieving
+                          them from all the pages) or just the items from the first
+                          page of matches.
+    :return list (of STAC Item dictionaries)
+    """
+
+    all_items = []
+    more_items = True
+
+    while more_items:
+        if request_method.upper() == "GET":
+            data = _requests.get(api_search_endpoint, params=query, **request_params)
+        else:
+            data = _requests.post(api_search_endpoint, json=query, **request_params)
+
+        if data.status_code != 200 or data.headers.get("content-type") not in [
+            "application/json",
+            "application/geo+json",
+            "application/json;charset=utf-8",
+            "application/geo+json; charset=utf-8",
+        ]:
+            raise RuntimeError(
+                f"Invalid Response: Please verify that the specified query is correct-\n{data.text}"
+            )
+
+        json_data = data.json()
+        if "type" not in json_data or json_data["type"] != "FeatureCollection":
+            raise RuntimeError(
+                f"Invalid JSON Response from the STAC API: Please verify that the specified query is correct-\n{json_data}"
+            )
+
+        json_data = data.json()
+        items = json_data["features"]
+        if not get_all_items:
+            return items
+        all_items.extend(items)
+        next_request = next(
+            (link for link in json_data["links"] if link["rel"] == "next"), None
+        )
+        if next_request:
+            query = (
+                urlparse(next_request["href"]).query
+                if request_method.upper() == "GET"
+                else dict(query, **next_request["body"])
+            )
+        else:
+            more_items = False
+
+    return all_items
 
 
 def _get_stac_metadata_file(item):
