@@ -2697,7 +2697,10 @@ def reset_image_collection(
         }
 
     return gis._tools.orthomapping.reset_image_collection(
-        image_collection=image_collection, future=future, **kwargs
+        image_collection=image_collection,
+        future=future,
+        flight_json_details=flight_json_details,
+        **kwargs,
     )
     """
     gis = arcgis.env.active_gis if gis is None else gis
