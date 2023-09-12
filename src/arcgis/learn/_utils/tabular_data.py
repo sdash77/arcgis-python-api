@@ -634,7 +634,9 @@ class TabularDataObject(object):
             scaled_features_df = pd.DataFrame(
                 processed_data,
                 index=dataframe.index,
-                columns=self._continuous_variables + self._categorical_variables,
+                columns=self._continuous_variables
+                + self._embedding_variables
+                + self._categorical_variables,
             )
             scaled_labels_df = pd.DataFrame(labels, index=dataframe.index)
 

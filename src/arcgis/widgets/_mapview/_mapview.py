@@ -1596,6 +1596,7 @@ class MapView(widgets.DOMWidget):
                 _lyr["options"] = lyr_options
             else:
                 _lyr["options"] = options
+
             _lyr["_hashFromPython"] = self._get_hash(item)
             self._add_notype_layer(item, _lyr, True)
         elif isinstance(item, pd.DataFrame):
@@ -1607,6 +1608,11 @@ class MapView(widgets.DOMWidget):
                 )
         elif isinstance(item, FeatureSet):
             fset_symbol = options["symbol"] if options and "symbol" in options else None
+            for feature in item.features:
+                try:
+                    feature.geometry = dict(feature.geometry)
+                except:
+                    pass
             fc = FeatureCollection.from_featureset(item, symbol=fset_symbol)
             self._add_layer_to_widget(fc, options)
 
@@ -1708,6 +1714,8 @@ class MapView(widgets.DOMWidget):
             wm_properties= {"title": "Test Update", "tags":["update_layer"], "snippet":"Updated a layer and now save"}
             map1.save(wm_properties)
         """
+        if isinstance(layer, dict):
+            layer = json.loads(json.dumps(layer))
         # Update the webmap part
         self.webmap.update_layer(layer)
 
