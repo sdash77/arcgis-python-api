@@ -149,16 +149,17 @@ class MLModel(object):
 
                             `lightgbm.LGBMRegressor <https://lightgbm.readthedocs.io/en/latest/pythonapi/lightgbm.LGBMRegressor.html>`_ or `lightgbm.LGBMClassifier <https://lightgbm.readthedocs.io/en/latest/pythonapi/lightgbm.LGBMClassifier.html>`_
     ---------------------   -------------------------------------------
-    Args:fairness_args(dict of str: str)        A dictionary to provide fairness args. Following are allowed keys and values
+    Args:fairness_args(dict of str: str)        As of now we support only binary classification and Regression in fairness evaluation.
+
+                                                A dictionary to provide fairness args. Following are allowed keys and values
                                                 Keyword Args:                   Value Args:
                                                 <sensitive_feature> str:        Protected class column or feature name
-                                                <mitigation_type> str:          `reweighing`, `threshold_optimizer` , `exponentiated_gradient`
-                                                <mitigation_constraint> str:    'demographic_parity' or
-                                                                                    'equalized_odds' or
-                                                                                    'selection_rate_parity' or
-                                                                                    'false_positive_rate_parity' or
-                                                                                    'true_negative_rate_parity' or
-                                                                                    'equalized_odds'
+                                                <mitigation_type> str:          `reweighing` or `threshold_optimizer` or `exponentiated_gradient` (For Classification)
+                                                                                `grid_search` or `exponentiated_gradient` (For Regression)
+                                                <mitigation_constraint> str:    'demographic_parity' or'equalized_odds' or 'selection_rate_parity'
+                                                                                or `false_positive_rate_parity` or `true_negative_rate_parity` or `equalized_odds` (For Classification)
+                                                                                and `ZeroOneLoss` or `SquareLoss` (For Regression)
+
 
                             For example:
                                                 For classification :
@@ -174,7 +175,7 @@ class MLModel(object):
                                                 fairness_args = {
                                                             'sensitive_feature': 'Gender',
                                                             'mitigation_type': "grid_search",
-                                                            'mitigation_constraint':'demographic_parity'
+                                                            'mitigation_constraint':'ZeroOneLoss'
 
                                                             }
     ---------------------   -------------------------------------------
@@ -449,7 +450,7 @@ class MLModel(object):
         :return: dataframe
         """
 
-        self.group_validation = self._validation_df.loc[:, sensitive_feature]
+        self.group_validation = self._validation_df.loc[:, [sensitive_feature]]
         if not self._fairness and self._data._is_classification:
             labelEncoder = LabelEncoder()
             train_labels = labelEncoder.fit_transform(self._training_labels)
@@ -1316,9 +1317,13 @@ class MLModel(object):
             fit=False,
         )
         if self._fairness and self.mitigation_method == "threshold_optimizer":
-            group_data = processed_numpy.loc[:, self.protected_class]
-            predictions = self._predict(processed_numpy, group_data)
-
+            processed_df = processed_numpy[self._validation_df.columns]
+            group_data = processed_df.loc[:, self.protected_class]
+            predictions = self._predict(processed_df, group_data)
+        elif self._fairness:
+            processed_df = processed_numpy[self._validation_df.columns]
+            group_data = processed_df.loc[:, self.protected_class]
+            predictions = self._predict(processed_df, group_data)
         else:
             predictions = self._predict(processed_numpy)
 
