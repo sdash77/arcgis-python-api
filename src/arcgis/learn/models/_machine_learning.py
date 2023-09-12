@@ -150,13 +150,13 @@ class MLModel(object):
                             `lightgbm.LGBMRegressor <https://lightgbm.readthedocs.io/en/latest/pythonapi/lightgbm.LGBMRegressor.html>`_ or `lightgbm.LGBMClassifier <https://lightgbm.readthedocs.io/en/latest/pythonapi/lightgbm.LGBMClassifier.html>`_
     ---------------------   -------------------------------------------
     Args:fairness_args(dict of str: str)        As of now we support only binary classification and Regression in fairness evaluation.
-                                            
+
                                                 A dictionary to provide fairness args. Following are allowed keys and values
                                                 Keyword Args:                   Value Args:
                                                 <sensitive_feature> str:        Protected class column or feature name
                                                 <mitigation_type> str:          `reweighing` or `threshold_optimizer` or `exponentiated_gradient` (For Classification)
                                                                                 `grid_search` or `exponentiated_gradient` (For Regression)
-                                                <mitigation_constraint> str:    'demographic_parity' or'equalized_odds' or 'selection_rate_parity' 
+                                                <mitigation_constraint> str:    'demographic_parity' or'equalized_odds' or 'selection_rate_parity'
                                                                                 or `false_positive_rate_parity` or `true_negative_rate_parity` or `equalized_odds` (For Classification)
                                                                                 and `ZeroOneLoss` or `SquareLoss` (For Regression)
 
@@ -1317,11 +1317,11 @@ class MLModel(object):
             fit=False,
         )
         if self._fairness and self.mitigation_method == "threshold_optimizer":
-            processed_df= processed_numpy[self._validation_df.columns]
+            processed_df = processed_numpy[self._validation_df.columns]
             group_data = processed_df.loc[:, self.protected_class]
             predictions = self._predict(processed_df, group_data)
         elif self._fairness:
-            processed_df= processed_numpy[self._validation_df.columns]
+            processed_df = processed_numpy[self._validation_df.columns]
             group_data = processed_df.loc[:, self.protected_class]
             predictions = self._predict(processed_df, group_data)
         else:

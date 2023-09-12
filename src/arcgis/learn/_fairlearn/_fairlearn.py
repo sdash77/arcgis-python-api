@@ -43,7 +43,9 @@ import warnings
 
 
 def score(
-    _is_classification, y_true, y_pred,
+    _is_classification,
+    y_true,
+    y_pred,
 ):
     if _is_classification:
         return accuracy_score(y_true, y_pred)
@@ -100,10 +102,14 @@ def get_regression_metrics(
     fairness_ratio_threshold=0.7,
     fairness_diff_threshold=0.01,
 ):
-
     for col in df_sensitive_feature.columns:
-
-        mdf = get_mdf(_data, df_sensitive_feature, col, y_test, y_pred,)
+        mdf = get_mdf(
+            _data,
+            df_sensitive_feature,
+            col,
+            y_test,
+            y_pred,
+        )
 
         metric_name = metric_name.upper()
 
@@ -161,7 +167,6 @@ def get_regression_metrics(
 
 
 def get_mdf(_data, sensitive_features, col, y_test, y_pred):
-
     regression_metrics = {
         "MAE": mean_absolute_error,
         "MSE": mean_squared_error,
