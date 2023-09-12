@@ -26,7 +26,7 @@ class TestFindExistingLocation(unittest.TestCase):
                 stream_lyr = cougar_item.layers[6]
             else:
                 cougar_item = gis.content.get("d3cb37b9636d47888268ca086810bd9b")
-                stream_lyr = cougar_item.layers[1]
+                stream_lyr = cougar_item.layers[6]
             assert isinstance(stream_lyr, FeatureLayer)
 
             # create layer that will be overwritten
