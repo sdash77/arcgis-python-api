@@ -26,8 +26,8 @@ class TestOverlayLayers(unittest.TestCase):
                 watershed = cougar_item.layers[6]
             else:
                 cougar_item = gis.content.get("d3cb37b9636d47888268ca086810bd9b")
-                park = cougar_item.layers[0]
-                watershed = cougar_item.layers[1]
+                park = cougar_item.layers[4]
+                watershed = cougar_item.layers[6]
             # create layer that will be overwritten
             test_id = str(datetime.datetime.now().microsecond)
             output_name = "test_overlay_layers_" + test_id
