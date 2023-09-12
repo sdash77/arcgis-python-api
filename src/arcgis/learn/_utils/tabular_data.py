@@ -91,7 +91,6 @@ class TabularDataObject(object):
         batch_size=64,
         index_field=None,
         column_transforms_mapping=None,
-        random_split=True,
         **kwargs,
     ):
         if not HAS_FASTAI:
@@ -99,6 +98,10 @@ class TabularDataObject(object):
 
         feature_variables = feature_variables if feature_variables else []
         raster_variables = raster_variables if raster_variables else []
+
+        random_split = True
+        if kwargs.get("random_split") == False:
+            random_split = False
 
         tabular_data = cls()
         (
@@ -631,7 +634,7 @@ class TabularDataObject(object):
             scaled_features_df = pd.DataFrame(
                 processed_data,
                 index=dataframe.index,
-                columns=self._continuous_variables + self._categorical_variables,
+                columns=self._continuous_variables + self._embedding_variables + self._categorical_variables,
             )
             scaled_labels_df = pd.DataFrame(labels, index=dataframe.index)
 

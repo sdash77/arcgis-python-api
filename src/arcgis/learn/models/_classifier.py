@@ -397,7 +397,7 @@ class FeatureClassifier(ArcGISModel):
     def _supported_backbones():
         timm_models = filter_timm_models(["*repvgg*", "*tresnet*"])
         timm_backbones = list(map(lambda m: "timm:" + m, timm_models))
-        transformer_backbones = FeatureClassifier._transformer_backbone_original_names()
+        transformer_backbones = FeatureClassifier.transformer_backbones()
         return [*_resnet_family, models.mobilenet_v2.__name__] + sorted(
             timm_backbones + transformer_backbones
         )
