@@ -10949,11 +10949,21 @@ class User(dict):
 
     # ----------------------------------------------------------------------
     @property
-    def recyclebin(self) -> "RecycleBin":
-        """returns access to the user's recyclebin"""
-        from ._impl._content_manager._recyclebin import RecycleBin
+    def recyclebin(self) -> "RecycleBin" | None:
+        """
+        Returns the recycling bin operations if the Enterprise or ArcGIS
+        Online organization supports it.
 
-        return RecycleBin(gis=self._gis, user=self.username)
+        returns access to the user's recyclebin
+        """
+        gis: GIS = self._gis
+        if gis._is_arcgisonline or (
+            gis._is_arcgisonline == False and gis.version > [11, 2]
+        ):
+            from ._impl._content_manager._recyclebin import RecycleBin
+
+            return RecycleBin(gis=self._gis, user=self.username)
+        return None
 
     # ----------------------------------------------------------------------
     def user_types(self):
