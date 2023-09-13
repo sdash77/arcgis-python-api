@@ -6,7 +6,6 @@ import numpy as np
 from pandas.core.arrays.arrow.dtype import ArrowDtype
 
 
-# Define a custom dtype for datetime.time objects using Arrow
 class ArrowTimeDtype(pd.api.extensions.ExtensionDtype):
     name = "arrow[time]"
     type = datetime.time
@@ -17,10 +16,6 @@ class ArrowTimeDtype(pd.api.extensions.ExtensionDtype):
         return ArrowTimeArray
 
 
-# Define a custom extension array using Arrow
-
-
-# ArrowExtensionArray
 class ArrowTimeArray(pd.core.arrays.ArrowExtensionArray):
     def __init__(self, values: pa.Array | pa.ChunkedArray):
         if isinstance(values, pa.Array):
@@ -41,15 +36,8 @@ class ArrowTimeArray(pd.core.arrays.ArrowExtensionArray):
     def dtype(self) -> ArrowTimeDtype:
         return ArrowTimeDtype()
 
-    # def copy(self, *args, **kwargs) -> "ArrowTimeArray":
-    #    """copies the array"""
-    #    return ArrowTimeArray(self.data)
-
     def __len__(self):
         return len(self._data)
-
-    # def __getitem__(self, index):
-    #    return self._data[index]
 
     def isna(self):
         return pd.isna(self._data)
