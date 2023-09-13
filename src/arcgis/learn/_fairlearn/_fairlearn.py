@@ -1,4 +1,17 @@
-from sklearn.metrics import accuracy_score, mean_absolute_error, mean_squared_error
+from sklearn.metrics import (
+    f1_score,
+    accuracy_score,
+    precision_score,
+    recall_score,
+    matthews_corrcoef,
+    roc_auc_score,
+    confusion_matrix,
+    classification_report,
+    r2_score,
+    mean_squared_error,
+    mean_absolute_error,
+    mean_absolute_percentage_error,
+)
 
 from fairlearn.metrics import (
     MetricFrame,
@@ -51,15 +64,22 @@ def calculate_metrics(
     visualize,
 ):
     if not is_classification:
-        return show_regression_score(
-            data,
-            y_true,
-            y_pred,
-            group_test,
-            sensitive_feature,
-            fairness_metrics,
-            visualize,
-        )
+        if not is_classification:
+            if fairness_metrics is None:
+                fairness_metrics = "RMSE"
+                fairness_ratio_threshold = 0.7
+                fairness_diff_threshold = 0.01
+
+            return get_regression_metrics(
+                data,
+                y_true,
+                y_pred,
+                group_test,
+                fairness_metrics,
+                visualize,
+                fairness_ratio_threshold,
+                fairness_diff_threshold,
+            )
     else:
         return show_classification_score(
             data,
@@ -70,6 +90,116 @@ def calculate_metrics(
             fairness_metrics,
             visualize,
         )
+
+
+def get_regression_metrics(
+    _data,
+    y_test,
+    y_pred,
+    df_sensitive_feature,
+    metric_name,
+    visualize=True,
+    fairness_ratio_threshold=0.7,
+    fairness_diff_threshold=0.01,
+):
+    for col in df_sensitive_feature.columns:
+        mdf = get_mdf(
+            _data,
+            df_sensitive_feature,
+            col,
+            y_test,
+            y_pred,
+        )
+
+        metric_name = metric_name.upper()
+
+        privileged_value = mdf.index[mdf[metric_name][1:].argmax() + 1]
+        underprivileged_value = mdf.index[mdf[metric_name][1:].argmin() + 1]
+
+        metric_min = mdf[metric_name].loc[privileged_value]
+        metric_max = mdf[metric_name].loc[underprivileged_value]
+
+        ratio = np.round(metric_min / metric_max, 4)
+        diff = np.round(metric_max - metric_min, 4)
+
+        is_ratio_fair = False
+        is_diff_fair = False
+
+        fairness_metric_ratio = ratio
+        if ratio > fairness_ratio_threshold:
+            is_ratio_fair = True
+
+        fairness_metric_diff = diff
+        if diff < fairness_diff_threshold:
+            is_diff_fair = True
+
+        try:
+            if visualize:
+                fig, ax = plt.subplots()
+
+                xlabels = mdf.index.to_list()
+                yy = mdf.loc[:, metric_name]
+                ax.bar(xlabels, yy, align="center", tick_label=xlabels)
+
+                ax.set_facecolor("blanchedalmond")
+                ax.set_alpha(0.7)
+                plt.xticks(rotation=45)
+
+                ax.set_xlabel(col)
+                ax.set_ylabel(metric_name)
+
+                plt.show()
+
+        except Exception as ex:
+            print(f"Exception occured : {ex}")
+
+        fairness_metrics = {}
+
+        fairness_metrics[col] = {
+            "fairness_metric_name": metric_name,
+            "fairness_metric_diff": fairness_metric_diff,
+            "fairness_metric_ratio": fairness_metric_ratio,
+            "is_ratio_fair": is_ratio_fair,
+            "is_diff_fair": is_diff_fair,
+        }
+
+        return pd.DataFrame(fairness_metrics).T
+
+
+def get_mdf(_data, sensitive_features, col, y_test, y_pred):
+    regression_metrics = {
+        "MAE": mean_absolute_error,
+        "MSE": mean_squared_error,
+        "RMSE": lambda t, p, sample_weight=None: np.sqrt(
+            mean_squared_error(t, p, sample_weight=sample_weight)
+        ),
+        "R2": r2_score,
+        "MAPE": mean_absolute_percentage_error,
+    }
+
+    overall = {}
+
+    for k, v in regression_metrics.items():
+        overall[k] = v(y_test, y_pred)
+
+    values = sensitive_features[col].unique()
+    _encoder = _data._encoder_mapping[col]
+    ix = np.asarray(values.astype(int).tolist()).reshape(-1, 1)
+    labels = np.unique(_encoder.inverse_transform(ix)).tolist()
+
+    all_metrics = [overall]
+
+    for value in values:
+        metrics = {}
+        for k, v in regression_metrics.items():
+            metrics[k] = v(
+                y_test[sensitive_features[col] == value],
+                y_pred[sensitive_features[col] == value],
+            )
+        all_metrics += [metrics]
+
+    mdf = pd.DataFrame(all_metrics, index=["Overall"] + labels)
+    return mdf
 
 
 def show_classification_score(

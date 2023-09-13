@@ -64,7 +64,7 @@ if conda_install_mode:
 else:
     dependencies = [
         "pillow",
-        "urllib3>=1.21.1,<2",
+        "urllib3>=1.21.1,<3",
         "cachetools",
         "lxml",
         "notebook",
@@ -72,7 +72,7 @@ else:
         "ipywidgets >=7,<8",
         "widgetsnbextension >=3",
         "jupyter-client <=6.1.12",
-        "pandas >=2.0.0",
+        "pandas >=2.0.0,<3",
         "numpy >=1.21.6",
         "matplotlib",
         "keyring >=23.3.0",
@@ -84,7 +84,7 @@ else:
         'pywin32 >=223;platform_system=="Windows"',
         "pyshp >=2",
         "geomet",
-        "requests >=2.27.1",
+        "requests >=2.27.1,<3",
         "requests-oauthlib",
         "requests_toolbelt",
         "pyspnego >=0.8.0",

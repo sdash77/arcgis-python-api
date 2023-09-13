@@ -73,7 +73,7 @@ class Mission:
         import copy
 
         mission_product = copy.deepcopy(items_prods)
-        for key, val in mission_product.items():
+        for key, val in items_prods.items():
             if "itemId" in val.keys():
                 if key == "imageCollection":
                     key = "image_collection"
