@@ -2197,7 +2197,7 @@ class FeatureLayer(Layer):
             datum_transformation=datum_transformation,
             kwargs=kwargs,
         )
-    
+
     # ----------------------------------------------------------------------
     def validate_sql(self, sql: str, sql_type: str = "where"):
         """
@@ -3826,26 +3826,30 @@ class Table(FeatureLayer):
             <149>
 
         """
-        return _query._common_query(layer=self, is_layer=False, where=where, 
-                                    out_fields=out_fields,
-                                     time_filter= time_filter,
-                                     return_count_only=return_count_only,
-                                     return_ids_only=return_ids_only,
-                                     return_distinct_values=return_distinct_values,
-                                     group_by_fields_for_statistics=group_by_fields_for_statistics,
-                                     statistic_filter=statistic_filter,
-                                     result_offset=result_offset,
-                                     result_record_count=result_record_count,
-                                     object_ids=object_ids,
-                                     gdb_version=gdb_version,
-                                     order_by_fields=order_by_fields,
-                                     out_statistics=out_statistics,
-                                     return_all_records=return_all_records,
-                                     historic_moment=historic_moment,
-                                     sql_format=sql_format,
-                                     return_exceeded_limit_features=return_exceeded_limit_features,
-                                     as_df=as_df,
-                                     kwargs=kwargs)
+        return _query._common_query(
+            layer=self,
+            is_layer=False,
+            where=where,
+            out_fields=out_fields,
+            time_filter=time_filter,
+            return_count_only=return_count_only,
+            return_ids_only=return_ids_only,
+            return_distinct_values=return_distinct_values,
+            group_by_fields_for_statistics=group_by_fields_for_statistics,
+            statistic_filter=statistic_filter,
+            result_offset=result_offset,
+            result_record_count=result_record_count,
+            object_ids=object_ids,
+            gdb_version=gdb_version,
+            order_by_fields=order_by_fields,
+            out_statistics=out_statistics,
+            return_all_records=return_all_records,
+            historic_moment=historic_moment,
+            sql_format=sql_format,
+            return_exceeded_limit_features=return_exceeded_limit_features,
+            as_df=as_df,
+            kwargs=kwargs,
+        )
 
 
 class FeatureLayerCollection(_GISResource):

@@ -12,6 +12,7 @@ def _common_query(
     layer,
     is_layer: bool = False,
     where: str = "1=1",
+    text: Optional[str] = None,
     out_fields: Union[str, list[str]] = "*",
     time_filter: Optional[list[datetime]] = None,
     geometry_filter: Optional[GeometryFilter] = None,
@@ -46,6 +47,8 @@ def _common_query(
     return_exceeded_limit_features: Optional[bool] = None,
     as_df: bool = False,
     datum_transformation: Optional[Union[int, dict[str, Any]]] = None,
+    range_values: Optional[dict[str, Any]] = None,
+    parameter_values: Optional[dict[str, Any]] = None,
     **kwargs,
 ):
     # get url
@@ -58,6 +61,7 @@ def _common_query(
         layer,
         is_layer,
         where,
+        text,
         out_fields,
         time_filter,
         geometry_filter,
@@ -91,6 +95,8 @@ def _common_query(
         return_true_curves,
         return_exceeded_limit_features,
         datum_transformation,
+        range_values,
+        parameter_values,
         kwargs,
     )
 
@@ -115,6 +121,7 @@ def _create_parameters(
     layer,
     is_layer,
     where,
+    text,
     out_fields,
     time_filter,
     geometry_filter,
@@ -148,6 +155,8 @@ def _create_parameters(
     return_true_curves,
     return_exceeded_limit_features,
     datum_transformation,
+    range_values,
+    parameter_values,
     kwargs,
 ):
     # create parameters dictionary
@@ -168,6 +177,14 @@ def _create_parameters(
         params["returnExceededLimitFeatures"] = return_exceeded_limit_features
     if datum_transformation is not None:
         params["datumTransformation"] = datum_transformation
+
+    # Will only be present for map feature layer
+    if text:
+        params["text"] = text
+    if parameter_values:
+        params["parameterValues"] = parameter_values
+    if range_values:
+        params["rangeValues"] = range_values
 
     # add required parameters
     params["where"] = where
@@ -301,7 +318,9 @@ def _query(layer, url, params, raw=False):
             return result
         elif _is_true(raw):
             return result
-        elif "resultRecordCount" in params and params["resultRecordCount"] == len(result["features"]):
+        elif "resultRecordCount" in params and params["resultRecordCount"] == len(
+            result["features"]
+        ):
             return arcgis_features.FeatureSet.from_dict(result)
         else:
             # we have features to return
@@ -378,13 +397,16 @@ def _query(layer, url, params, raw=False):
 
     return arcgis_features.FeatureSet.from_dict(result)
 
+
 def _is_true(x):
-        if isinstance(x, bool) and x:
-            return True
-        elif isinstance(x, str) and x.lower() == "true":
-            return True
-        else:
-            return False
+    if isinstance(x, bool) and x:
+        return True
+    elif isinstance(x, str) and x.lower() == "true":
+        return True
+    else:
+        return False
+
+
 # ----------------------------------------------------------------------
 def _query_df(layer, url, params, **kwargs):
     """returns results of a query as a pd.DataFrame"""
