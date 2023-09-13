@@ -23,6 +23,8 @@ from uuid import uuid4
 import configparser
 from contextlib import contextmanager
 import functools
+import random
+import string
 from datetime import datetime, timedelta
 import logging
 from typing import Any, Optional, Union
@@ -3313,8 +3315,6 @@ class UserManager(object):
         """
         The ``send_notification`` method creates a user notifcation for a list of users.
 
-        .. note::
-            This has been deprecated at Enterprise 10.9 and can only be used with ArcGIS Online.
 
         ================  ===============================================================================
         **Parameter**      **Description**
@@ -3346,27 +3346,26 @@ class UserManager(object):
 
 
         """
-        if self._gis._is_agol:
-            if self._gis.version >= [6, 4]:
-                susers = []
-                for u in users:
-                    if isinstance(u, str):
-                        susers.append(u)
-                    elif isinstance(u, User):
-                        susers.append(u.username)
-                    del u
-                url = "{base}portals/self/createNotification".format(
-                    base=self._gis._portal.resturl
-                )
-                params = {
-                    "f": "json",
-                    "notificationChannelType": type,
-                    "subject": subject,
-                    "message": message,
-                    "users": ",".join(susers),
-                    "clientId": client_id,
-                }
-                return self._portal.con.post(url, params)["success"]
+        if self._gis.version >= [6, 4]:
+            susers = []
+            for u in users:
+                if isinstance(u, str):
+                    susers.append(u)
+                elif isinstance(u, User):
+                    susers.append(u.username)
+                del u
+            url = "{base}portals/self/createNotification".format(
+                base=self._gis._portal.resturl
+            )
+            params = {
+                "f": "json",
+                "notificationChannelType": type,
+                "subject": subject,
+                "message": message,
+                "users": ",".join(susers),
+                "clientId": client_id,
+            }
+            return self._portal.con.post(url, params)["success"]
         else:
             raise NotImplementedError(
                 "The current version of the enterprise does not support `send_notification`"
@@ -10950,21 +10949,28 @@ class User(dict):
 
     # ----------------------------------------------------------------------
     @property
-    def recyclebin(self) -> "RecycleBin" | None:
+    def recyclebin(self) -> "RecycleBin":
+        """Provides access to the user's recyclebin.
+        
+        .. note::
+            This functionality is only available for ArcGIS Online.
+        
+        :Returns: :class:`~arcgis.gis._impl._content_manager.RecycleBin` object
+        
+        .. code-block:: python
+        
+            # Usage Example:
+            >>> gis = GIS(profile="your_online_user")
+            
+            >>> my_user_obj = gis.users.me
+            >>> my_recy_bin = my_user_obj.recyclebin
+            >>> type(my_recy_bin)
+            
+            <class 'arcgis.gis._impl._content_manager._recyclebin.RecycleBin'>      
         """
-        Returns the recycling bin operations if the Enterprise or ArcGIS
-        Online organization supports it.
+        from ._impl._content_manager._recyclebin import RecycleBin
 
-        returns access to the user's recyclebin
-        """
-        gis: GIS = self._gis
-        if gis._is_arcgisonline or (
-            gis._is_arcgisonline == False and gis.version > [11, 2]
-        ):
-            from ._impl._content_manager._recyclebin import RecycleBin
-
-            return RecycleBin(gis=self._gis, user=self.username)
-        return None
+        return RecycleBin(gis=self._gis, user=self.username)
 
     # ----------------------------------------------------------------------
     def user_types(self):
@@ -12478,7 +12484,7 @@ class User(dict):
         if passed:
             self._hydrated = False
             self._hydrate()
-
+            self.role = role
         return passed
 
     def delete(self, reassign_to: Optional[str] = None):
