@@ -520,9 +520,7 @@ class FeatureSet(object):
 
             # region - build fields into a dict
             if self._fields is None or len(self._fields) == 0:
-                self._fields = (
-                    feature.fields
-                )  # get fields from first feature if not set
+                self._fields = feature.fields  # get fields from the feature if not set
 
             if self._fields and isinstance(
                 self._fields[0], str
