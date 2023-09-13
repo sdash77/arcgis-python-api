@@ -1020,7 +1020,8 @@ def prepare_tabulardata(
     variable_predict        Optional String or List, denoting the field_names of
                             the variable to predict.
                             Keep none for unsupervised training using ML Model. For timeseries it
-                            will work for continuous variable
+                            will work for continuous variable.
+                            As of now we support only binary classification in fairness evaluation.
     ---------------------   -------------------------------------------
     explanatory_variables   Optional list containing field names from input_features
                             By default the field type is continuous.

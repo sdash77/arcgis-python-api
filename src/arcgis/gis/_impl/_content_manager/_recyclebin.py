@@ -145,6 +145,7 @@ class RecycleBin:
         url: str = f"{self._gis._public_rest_url}content/users/{self._user.username}"
         params = {
             "f": "json",
+            "foldersContent": json.dumps(True),
             "inRecycleBin": json.dumps(True),
             "start": 1,
             "num": 20,
