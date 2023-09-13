@@ -105,7 +105,7 @@ def _common_query(
 
     # Two workflows: Return as FeatureSet or return as DataFrame
     if as_df:
-        return _query_df(layer, url)
+        return _query_df(layer, url, params)
     else:
         return _query(layer, url, params)
 
@@ -280,9 +280,33 @@ def _create_parameters(
 
 def _query(layer, url, params, raw=False):
     """returns results of query"""
+    result = {}
     try:
+        # Layer query call
         result = layer._con.post(path=url, postdata=params, token=layer._token)
-        features = result["features"]
+
+        # Figure out what to return
+        if "error" in result:
+            raise ValueError(result)
+        elif "returnCountOnly" in params and _is_true(params["returnCountOnly"]):
+            # returns an int
+            return result["count"]
+        elif "returnIdsOnly" in params and _is_true(params["returnIdsOnly"]):
+            # returns a dict with keys: 'objectIdFieldName' and 'objectIds'
+            return result
+        elif "returnExtentOnly" in params and _is_true(params["returnExtentOnly"]):
+            # returns extent dictionary with key: 'extent'
+            return result
+        elif "returnAllRecords" in params and not _is_true(params["returnAllRecords"]):
+            return arcgis_features.FeatureSet.from_dict(result)
+        elif _is_true(raw):
+            return result
+        else:
+            # we have features to return
+            features = result["features"]
+
+        # If none of the ifs above worked then keep going to find more features
+        # Make sure we have all features
         if "exceededTransferLimit" in result:
             while (
                 "exceededTransferLimit" in result
@@ -292,6 +316,7 @@ def _query(layer, url, params, raw=False):
                     # assign initial value after first query
                     params["resultRecordCount"] = 2000
                 if "resultOffset" in params:
+                    # add the number we found to the offset so we don't have doubles
                     params["resultOffset"] = params["resultOffset"] + len(
                         result["features"]
                     )
@@ -349,28 +374,15 @@ def _query(layer, url, params, raw=False):
         else:
             raise queryException
 
-    def is_true(x):
+    return arcgis_features.FeatureSet.from_dict(result)
+
+def _is_true(x):
         if isinstance(x, bool) and x:
             return True
         elif isinstance(x, str) and x.lower() == "true":
             return True
         else:
             return False
-
-    if "error" in result:
-        raise ValueError(result)
-    if "returnCountOnly" in params and is_true(params["returnCountOnly"]):
-        return result["count"]
-    elif "returnIdsOnly" in params and is_true(params["returnIdsOnly"]):
-        return result
-    elif "extent" in result:
-        return result
-    elif is_true(raw):
-        return result
-    else:
-        return arcgis_features.FeatureSet.from_dict(result)
-
-
 # ----------------------------------------------------------------------
 def _query_df(layer, url, params, **kwargs):
     """returns results of a query as a pd.DataFrame"""
@@ -440,7 +452,29 @@ def _query_df(layer, url, params, **kwargs):
         return attribs
 
     try:
-        featureset_dict = layer._con.post(url, params)
+        result = layer._con.post(path=url, postdata=params, token=layer._token)
+        features = result["features"]
+        if "exceededTransferLimit" in result:
+            while (
+                "exceededTransferLimit" in result
+                and result["exceededTransferLimit"] == True
+            ):
+                if "resultRecordCount" not in params:
+                    # assign initial value after first query
+                    params["resultRecordCount"] = 2000
+                if "resultOffset" in params:
+                    params["resultOffset"] = params["resultOffset"] + len(
+                        result["features"]
+                    )
+                else:
+                    # initial offset after first query (result record count set by user or up above)
+                    params["resultOffset"] = params["resultRecordCount"]
+
+                result = layer._con.post(path=url, postdata=params, token=layer._token)
+                # add new features to the list
+                features = features + result["features"]
+        # assign complete list
+        result["features"] = features
     except Exception as queryException:
         error_list = [
             "Error performing query operation",
@@ -464,7 +498,7 @@ def _query_df(layer, url, params, **kwargs):
             else:
                 max_rec = int((max_record + 1) / 2)
                 i = 0
-                featureset_dict = None
+                result = None
                 while max_rec * i < max_record:
                     params["resultRecordCount"] = (
                         max_rec
@@ -474,11 +508,11 @@ def _query_df(layer, url, params, **kwargs):
                     params["resultOffset"] = offset + max_rec * i
                     try:
                         records = _query(layer, url, params, raw=True)
-                        if featureset_dict is not None:
+                        if result is not None:
                             for feature in records["features"]:
-                                featureset_dict["features"].append(feature)
+                                result["features"].append(feature)
                         else:
-                            featureset_dict = records
+                            result = records
                         i += 1
                     except Exception as queryException2:
                         raise queryException2
@@ -486,26 +520,26 @@ def _query_df(layer, url, params, **kwargs):
         else:
             raise queryException
 
-    if len(featureset_dict["features"]) == 0:
+    if len(result["features"]) == 0:
         return pd.DataFrame([])
     sr = None
-    if "spatialReference" in featureset_dict:
-        sr = featureset_dict["spatialReference"]
+    if "spatialReference" in result:
+        sr = result["spatialReference"]
 
     df = None
     dtypes = None
     names = None
     dfields = []
-    rows = [feature_to_row(row, sr) for row in featureset_dict["features"]]
+    rows = [feature_to_row(row, sr) for row in result["features"]]
     if len(rows) == 0:
         return None
     df = pd.DataFrame.from_records(data=rows)
     if "SHAPE" in df.columns:
         df.loc[df.SHAPE.isna(), "SHAPE"] = None
-    if "fields" in featureset_dict:
+    if "fields" in result:
         dtypes = {}
         names = []
-        fields = featureset_dict["fields"]
+        fields = result["fields"]
         for fld in fields:
             if fld["type"] != "esriFieldTypeGeometry":
                 dtypes[fld["name"]] = _fld_lu[fld["type"]]
@@ -520,7 +554,7 @@ def _query_df(layer, url, params, **kwargs):
     if dtypes:
         df = df.astype(dtypes)
 
-    if "SHAPE" in featureset_dict:
+    if "SHAPE" in result:
         df.spatial.set_geometry("SHAPE")
     if len(dfields) > 0:
         for fld in [fld for fld in dfields if fld in df.columns]:

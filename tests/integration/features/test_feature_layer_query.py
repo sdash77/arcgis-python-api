@@ -1,6 +1,6 @@
 import sys
 
-# sys.path.insert(0, r"C:\\ipython_workfolder\\geosaurus\\src")
+sys.path.insert(0, r"C:\\ipython_workfolder\\geosaurus\\src")
 import os
 import unittest
 
@@ -16,7 +16,7 @@ try:
     )[0]
     assert pitem
 except:
-    fp = "./major_cities"
+    fp = "C:\ipython_workfolder\Data\FileGeoDatabase\major_cities.zip"
     if os.path.isfile(path=fp):
         item = gis.content.add(
             item_properties={
@@ -141,7 +141,7 @@ class TestQueryFeatureLayer(unittest.TestCase):
         Test query with historic_moments parameter
         """
         try:
-            pitem = gis.content.search("Traffic Collisions")[0]
+            pitem = gis.content.search("Traffic Collisions owner:{username}".format(username=gis.users.me.username))[0]
         except:
             fp = "./traffic_collisions"
             if os.path.isfile(path=fp):
