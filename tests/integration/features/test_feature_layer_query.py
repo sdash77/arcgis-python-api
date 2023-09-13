@@ -130,7 +130,7 @@ class TestQueryFeatureLayer(unittest.TestCase):
         """ "
         Test query with return_all_records=False
         """
-        limit_records = layer.query(return_all_records=False)
+        limit_records = layer.query(return_all_records=False, result_record_count=2000)
         all_records = layer.query()
 
         assert len(limit_records) < len(all_records)

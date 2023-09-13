@@ -84,6 +84,7 @@ def _common_query(
         multipatch_option,
         quantization_parameters,
         return_centroid,
+        return_all_records,
         result_type,
         historic_moment,
         sql_format,
@@ -140,6 +141,7 @@ def _create_parameters(
     multipatch_option,
     quantization_parameters,
     return_centroid,
+    return_all_records,
     result_type,
     historic_moment,
     sql_format,
@@ -297,10 +299,10 @@ def _query(layer, url, params, raw=False):
         elif "returnExtentOnly" in params and _is_true(params["returnExtentOnly"]):
             # returns extent dictionary with key: 'extent'
             return result
-        elif "returnAllRecords" in params and not _is_true(params["returnAllRecords"]):
-            return arcgis_features.FeatureSet.from_dict(result)
         elif _is_true(raw):
             return result
+        elif "resultRecordCount" in params and params["resultRecordCount"] == len(result["features"]):
+            return arcgis_features.FeatureSet.from_dict(result)
         else:
             # we have features to return
             features = result["features"]
