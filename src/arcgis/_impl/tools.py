@@ -13170,6 +13170,7 @@ class _RasterAnalysisTools(BaseAnalytics):
         raster_type_name=None,
         raster_type_params=None,
         md_to_upload=None,
+        estimate_credits=False,
         **kwargs,
     ):
         """
@@ -13310,6 +13311,7 @@ class _RasterAnalysisTools(BaseAnalytics):
             context=context,
             gis=self._gis,
             future=True,
+            estimate_credits=estimate_credits,
         )
         gpjob._is_ra = True
         gpjob._item_properties = True

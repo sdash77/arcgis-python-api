@@ -374,6 +374,7 @@ def _execute_gp_tool(
     add_token=True,
     return_messages=False,
     future=False,
+    estimate_credits=False,
 ):
     if gis is None:
         gis = arcgis.env.active_gis
@@ -464,6 +465,13 @@ def _execute_gp_tool(
     #     print(param_name + " = " + str(param_value))
 
     gptool = arcgis.gis._GISResource(url, gis)
+
+    if estimate_credits:
+        del gp_params["f"]
+        gp_new_params = {"f":"json", "context": gp_params.get("context", {})}
+        gp_new_params.update({"inputAnalysisTask": {"name":task_name, "parameters":gp_params}})
+        gp_params = gp_new_params
+        task_name="EstimateRasterAnalysisCost"
 
     if use_async:
         task_url = "{}/{}".format(url, task_name)
