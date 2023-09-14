@@ -1,7 +1,7 @@
 from typing import Union, Optional, Any
 from datetime import datetime
 from arcgis._impl.common._filters import GeometryFilter, StatisticFilter
-from arcgis._impl.common._utils import _date_handler, chunks
+from arcgis._impl.common._utils import _date_handler
 from arcgis.geometry import Geometry
 from arcgis.auth.tools import LazyLoader
 

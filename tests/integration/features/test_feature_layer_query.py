@@ -61,6 +61,54 @@ class TestQueryFeatureLayer(unittest.TestCase):
         geometry_false = layer.query(return_geometry=False)
         assert geometry_false.features[0].geometry is None
 
+    def test_query_time_filter(self):
+        """
+        Test query with time_filter
+        """
+        pass
+
+    def test_query_statistic_filter(self):
+        """
+        Test query statistic filter
+        """
+        pass
+
+    def test_query_result_offset(self):
+        """
+        Test query result_offset
+        """
+        pass
+
+    def test_query_object_ids(self):
+        """
+        Test query object_ids
+        """
+        pass
+
+    def test_query_return_centroid(self):
+        """
+        Test query return_centroid
+        """
+        pass
+
+    def test_query_result_type(self):
+        """
+        Test query result_type
+        """
+        pass
+
+    def test_query_return_exceeded_limit_features(self):
+        """
+        Test query return_exceeded_limit_features
+        """
+        pass
+
+    def test_query_as_df(self):
+        """
+        Test query as_df
+        """
+        pass
+    
     def test_query_out_fields(self):
         """ "
         Test query with limited out_fields indicated
