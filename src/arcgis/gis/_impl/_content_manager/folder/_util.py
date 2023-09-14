@@ -129,10 +129,7 @@ def create_upload_tuple(file: str, **kwargs) -> tuple:
             file,
             None,
         )
-    elif (
-        isinstance(file, (io.StringIO, io.BytesIO))
-        and not "file_name" in kwargs
-    ):
+    elif isinstance(file, (io.StringIO, io.BytesIO)) and not "file_name" in kwargs:
         raise ValueError(
             "The `file_name` is required when using io.BytesIO or io.StringIO."
         )

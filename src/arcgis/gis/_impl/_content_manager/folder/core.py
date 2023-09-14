@@ -122,9 +122,7 @@ class Folder:
                 break
             else:
                 params["start"] = data.get("nextStart")
-            resp: requests.Response = self._session.get(
-                url=url, params=params
-            )
+            resp: requests.Response = self._session.get(url=url, params=params)
             resp.raise_for_status()
             data: dict[str, Any] = resp.json()
 
@@ -170,19 +168,13 @@ class Folder:
             )
 
             if folderid is None:
-                raise FolderException(
-                    "Folder: %s does not exist." % self.name
-                )
-            url: str = (
-                "{base}content/users/{user}/{folderid}/updateFolder".format(
-                    base=self._gis._portal.resturl,
-                    user=owner_name,
-                    folderid=self._folder_id,
-                )
+                raise FolderException("Folder: %s does not exist." % self.name)
+            url: str = "{base}content/users/{user}/{folderid}/updateFolder".format(
+                base=self._gis._portal.resturl,
+                user=owner_name,
+                folderid=self._folder_id,
             )
-            resp: requests.Response = self._session.post(
-                url=url, params=params
-            )
+            resp: requests.Response = self._session.post(url=url, params=params)
             resp.raise_for_status()
             res: dict[str, Any] = resp.json()
             if "success" in res:
@@ -210,9 +202,7 @@ class Folder:
             return False
 
     # ---------------------------------------------------------------------
-    def _chunk_file(
-        io: io.BytesIO | io.StringIO, size: int
-    ) -> Iterator[tuple]:
+    def _chunk_file(io: io.BytesIO | io.StringIO, size: int) -> Iterator[tuple]:
         """chunks the file"""
         for chunk in chunk_by_file_size(
             fp=io, size=size, parameter_name="file", upload_format=True
@@ -247,9 +237,7 @@ class Folder:
         futures = {}
         with concurrent.futures.ThreadPoolExecutor(max_workers=5) as tp:
             for idx, chunk in enumerate(
-                chunk_by_file_size(
-                    ftuple[1], size=upload_size, upload_format=False
-                )
+                chunk_by_file_size(ftuple[1], size=upload_size, upload_format=False)
             ):
                 part_name: str = f"split{idx}.split"
                 part_params: dict[str, Any] = {
@@ -261,7 +249,7 @@ class Folder:
                     **{
                         "url": parts_url,
                         "params": part_params,
-                        "files": {'file': (part_name, chunk, None)},
+                        "files": {"file": (part_name, chunk, None)},
                     },
                 )
                 futures[future] = part_name
@@ -304,7 +292,7 @@ class Folder:
             "processing",
             "failed",
             "completed",
-            'null',
+            "null",
         ]
         status_msg: dict[str, Any] = status(
             resturl=self._gis._portal.resturl,
@@ -313,7 +301,7 @@ class Folder:
             itemid=itemid,
         )
         status_code: str | None = status_msg.get("status")
-        while status_code in ['processing']:
+        while status_code in ["processing"]:
             time.sleep(i)
             if i >= 10:
                 i = 10
@@ -329,20 +317,18 @@ class Folder:
             if not status_code in status_messages:
                 break
         if "id" in status_msg:
-            return Item(gis=self._gis, itemid=status_msg['id'])
+            return Item(gis=self._gis, itemid=status_msg["id"])
         elif "itemId" in status_msg:
             count = 5
             while True:
                 time.sleep(1)
                 try:
-                    item = Item(gis=self._gis, itemid=status_msg['itemId'])
+                    item = Item(gis=self._gis, itemid=status_msg["itemId"])
                     return item
                 except:
                     count -= 1
                     if count <= 0:
-                        raise FolderException(
-                            f"Could not locate the Item: {itemid}"
-                        )
+                        raise FolderException(f"Could not locate the Item: {itemid}")
         return status_msg
 
     # ---------------------------------------------------------------------
@@ -395,9 +381,7 @@ class Folder:
 
         if thumbnail and isinstance(thumbnail, tuple):
             fn, thumbnail = thumbnail
-            file_list["thumbnail"] = create_upload_tuple(
-                thumbnail, file_name=fn
-            )
+            file_list["thumbnail"] = create_upload_tuple(thumbnail, file_name=fn)
 
         elif thumbnail and os.path.isfile(thumbnail):
             file_list["thumbnail"] = create_upload_tuple(thumbnail)
@@ -411,9 +395,7 @@ class Folder:
                 if isinstance(item_properties[k], str) and os.path.isfile(
                     item_properties[k]
                 ):
-                    file_list[k] = create_upload_tuple(
-                        item_properties.pop(k)
-                    )
+                    file_list[k] = create_upload_tuple(item_properties.pop(k))
             except:
                 ...
         params.update(item_properties)
@@ -428,34 +410,34 @@ class Folder:
         elif isinstance(owner, str) == False:
             raise ValueError("Owner must be a string or User object.")
 
-        if folder and folder != 'Root Folder':
-            curl: str = f"{self._gis._portal.resturl}content/users/{owner}/{folder}/addItem"
-        else:
+        if folder and folder != "Root Folder":
             curl: str = (
-                f"{self._gis._portal.resturl}content/users/{owner}/addItem"
+                f"{self._gis._portal.resturl}content/users/{owner}/{folder}/addItem"
             )
+        else:
+            curl: str = f"{self._gis._portal.resturl}content/users/{owner}/addItem"
 
         with concurrent.futures.ThreadPoolExecutor(max_workers=1) as tp:
             if text and file is None and url is None and data_url is None:
                 #  text workflow
-                params['async'] = False
+                params["async"] = False
                 if not isinstance(text, str):
                     text: str = json.dumps(text)
-                params['text'] = text
+                params["text"] = text
                 future = tp.submit(
                     self._add_async_text,
                     **{
                         "url": curl,
                         "params": params,
                         "file_list": file_list,
-                        "check_status": params['async'],
+                        "check_status": params["async"],
                     },
                 )
                 tp.shutdown(wait=True)
                 return future
             elif file and text is None and url is None and data_url is None:
                 #  file workflow
-                params['async'] = True
+                params["async"] = True
                 file_list["file"] = create_upload_tuple(file)
                 upload_size = calculate_upload_size(file)
                 if upload_size <= 5242880:  # 5mb
@@ -463,23 +445,21 @@ class Folder:
                         "Adding Item via synchronous operation because it's under 5 MBs."
                     )
                     #  perform basic upload.
-                    params['multipart'] = False
+                    params["multipart"] = False
                     future = tp.submit(
                         self._add_async_text,
                         **{
                             "url": curl,
                             "params": params,
                             "file_list": file_list,
-                            "check_status": params['async'],
+                            "check_status": params["async"],
                         },
                     )
                     tp.shutdown(wait=True)
                     return future
                 else:
-                    logger.info(
-                        "Adding Item by parts because it's over 5 MBs."
-                    )
-                    params['multipart'] = True
+                    logger.info("Adding Item by parts because it's over 5 MBs.")
+                    params["multipart"] = True
                     params["fileName"] = params.get(
                         "fileName", None
                     ) or os.path.basename(file)
@@ -496,29 +476,29 @@ class Folder:
                     tp.shutdown(wait=True)
                     return future
             elif file is None and text is None and url and data_url is None:
-                params['async'] = False
-                params['url'] = url
+                params["async"] = False
+                params["url"] = url
                 future = tp.submit(
                     self._add_async_text,
                     **{
                         "url": curl,
                         "params": params,
                         "file_list": file_list,
-                        "check_status": params['async'],
+                        "check_status": params["async"],
                     },
                 )
                 tp.shutdown(wait=True)
                 return future
             elif file is None and text is None and url is None and data_url:
-                params['async'] = True
-                params['dataUrl'] = data_url
+                params["async"] = True
+                params["dataUrl"] = data_url
                 future = tp.submit(
                     self._add_async_text,
                     **{
                         "url": curl,
                         "params": params,
                         "file_list": file_list,
-                        "check_status": params['async'],
+                        "check_status": params["async"],
                     },
                 )
                 tp.shutdown(wait=True)
@@ -566,7 +546,7 @@ class Folders:
         owner             required string, the name of the user
         ================  ========================================================
         """
-        if folder in ["/", "root", None, 'Root Folder']:
+        if folder in ["/", "root", None, "Root Folder"]:
             folder = "Root Folder"
         for fld in self.list(owner=owner):
             if (
@@ -604,9 +584,7 @@ class Folders:
 
         """
         if folder in ["/", None, ""]:  # we don't create root folder
-            logger.warning(
-                "Cannot create the root folder, just returning the root."
-            )
+            logger.warning("Cannot create the root folder, just returning the root.")
             return Folder(gis=self._gis)
         params: dict[str, Any] = {
             "f": "json",
@@ -663,8 +641,8 @@ class Folders:
         resp.raise_for_status()
         data: dict[str, Any] = resp.json()
         folder = {
-            "id": 'Root Folder',
-            "name": 'Root Folder',
+            "id": "Root Folder",
+            "name": "Root Folder",
         }
         yield Folder(gis=self._gis, owner=owner, properties=folder)  #  root
         for folder in data.get("folders", []):
