@@ -16,7 +16,7 @@ try:
     )[0]
     assert pitem
 except:
-    fp = "C:\ipython_workfolder\Data\FileGeoDatabase\major_cities.zip"
+    fp = "./major_cities.zip"
     if os.path.isfile(path=fp):
         item = gis.content.add(
             item_properties={
