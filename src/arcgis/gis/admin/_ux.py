@@ -749,7 +749,7 @@ class UX(object):
         """
         Get an instance of the :class:`~arcgis.gis.admin.ItemSettings` class to make edits to the org's default
         map settings such as comments, metadata, etc.
-            
+
         """
         return ItemSettings(gis=self._gis)
 
@@ -1685,7 +1685,7 @@ class HomePageSettings(object):
 
     # ----------------------------------------------------------------------
     def get_base_color(self):
-        """ Gets the base color of the home page."""
+        """Gets the base color of the home page."""
         if self._new_hp:
             hp = self._reader_hp()
             return hp["baseColor"]

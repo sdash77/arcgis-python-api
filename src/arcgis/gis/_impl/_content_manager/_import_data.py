@@ -308,7 +308,7 @@ def import_as_fc(gis, df, **kwargs):
     if address_fields is not None:
         postdata["analyzeParameters"]["locationType"] = "address"
 
-    res = gis._con._session.post(path, postdata)
+    res = gis._con.post(path, postdata)
 
     # Step 2: Prep parameters to generate features
     if address_fields is not None:
@@ -325,7 +325,7 @@ def import_as_fc(gis, df, **kwargs):
 
     if isinstance(df, pd.DataFrame) and "location_type" not in kwargs:
         # Step 2: Generate features
-        res_generate = gis._con._session.post(path, postdata)
+        res_generate = gis._con.post(path, postdata)
     elif (isinstance(df, pd.DataFrame) and "location_type" in kwargs) or (
         isinstance(df, pd.DataFrame) and address_fields
     ):
@@ -347,7 +347,7 @@ def import_as_fc(gis, df, **kwargs):
             del update_dict[k]
         res["publishParameters"].update(update_dict)
 
-        res_generate = gis._con._session.post(
+        res_generate = gis._con.post(
             path, postdata
         )  # , use_ordered_dict=True) - OrderedDict >36< _mixins.PropertyMap
 
