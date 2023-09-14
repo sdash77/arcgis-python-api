@@ -937,18 +937,32 @@ class OMJob(GPJob):
                 }
             )
             if item_name == "reset":
-                keys = ["adjustment", "matchControlPoint", "colorCorrection", "computeControlPoints", "seamline", "appendControlPoints", "report", "queryControlPoints"]
+                keys = [
+                    "adjustment",
+                    "matchControlPoint",
+                    "colorCorrection",
+                    "computeControlPoints",
+                    "seamline",
+                    "appendControlPoints",
+                    "report",
+                    "queryControlPoints",
+                    "ortho",
+                    "dsm",
+                    "dtm",
+                ]
                 for key in keys:
                     if key in mission_json["jobs"].keys():
-                        if key!="adjustment":
-                            mission_json["jobs"].update({key:{"checked": False}})
+                        if key != "adjustment":
+                            mission_json["jobs"].update({key: {"checked": False}})
                         else:
-                            mission_json["jobs"].update({key:{"checked": False, "mode": "Quick"}})
+                            mission_json["jobs"].update(
+                                {key: {"checked": False, "mode": "Quick"}}
+                            )
 
                 item_keys = ["ortho", "dsm", "dtm"]
                 for key in item_keys:
                     if key in mission_json["items"].keys():
-                        mission_json["items"].update({key:{}})
+                        mission_json["items"].update({key: {}})
 
             if processing_states is not None:
                 mission_json["processingSettings"].update(
@@ -974,10 +988,9 @@ class OMJob(GPJob):
                 elif "itemId" in item_props.keys():
                     itemid = item_props["itemId"]
                     portal_item = mission._gis.content.get(itemid)
-                    url=portal_item.url
+                    url = portal_item.url
                 elif "url" in item_props.keys():
-                     url=item_props["url"]
-
+                    url = item_props["url"]
 
                 mission_json["items"].update(
                     {item_name: {"itemId": itemid, "url": url}}
