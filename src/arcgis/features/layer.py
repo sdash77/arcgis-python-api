@@ -2015,7 +2015,8 @@ class FeatureLayer(Layer):
         -------------------------------     --------------------------------------------------------------------
         return_centroid                     Optional boolean. Used to return the geometry centroid associated
                                             with each feature returned. If true, the result includes the geometry
-                                            centroid. The default is false.
+                                            centroid. The default is false. Only supported on layer with
+                                            polygon geometry type.
         -------------------------------     --------------------------------------------------------------------
         return_all_records                  Optional boolean. When True, the query operation will call the
                                             service until all records that satisfy the where_clause are
