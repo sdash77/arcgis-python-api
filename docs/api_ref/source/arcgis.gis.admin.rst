@@ -114,6 +114,34 @@ UX
     :undoc-members:
     :show-inheritance:
 
+HomePageSettings
+----------------
+.. autoclass:: arcgis.gis.admin.HomePageSettings
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+ItemSettings
+----------------
+.. autoclass:: arcgis.gis.admin.ItemSettings
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+MapSettings
+----------------
+.. autoclass:: arcgis.gis.admin.MapSettings
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+SecuritySettings
+----------------
+.. autoclass:: arcgis.gis.admin.SecuritySettings
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
 EmailManager
 ------------
 .. autoclass:: arcgis.gis.admin.EmailManager
