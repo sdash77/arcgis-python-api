@@ -467,6 +467,12 @@ def _execute_gp_tool(
     gptool = arcgis.gis._GISResource(url, gis)
 
     if estimate_credits:
+        return_values = [{"name":"out_cost", "display_name":"outCost", "type":str}]
+        param_db = { 
+               "input_analysis_task": (str, "inputAnalysisTask"),
+               "context": (str, "context"),
+               "out_cost": (str, "outCost"),
+               }
         del gp_params["f"]
         gp_new_params = {"f":"json", "context": gp_params.get("context", {})}
         gp_new_params.update({"inputAnalysisTask": {"name":task_name, "parameters":gp_params}})
