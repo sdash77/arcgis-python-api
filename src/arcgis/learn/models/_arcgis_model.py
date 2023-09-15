@@ -933,6 +933,9 @@ class ArcGISModel(object):
         if os.environ.get("BLOCK_MODEL_TRAINING", 0) == "1":
             raise Exception(f"This model cannot be trained in ArcGIS Online Notebooks")
 
+        if getattr(self, "_is_mm3d", False):
+            self.learn.model.prediction = False
+
         with warnings.catch_warnings():
             warnings.simplefilter("ignore", UserWarning)
             self._check_requisites()

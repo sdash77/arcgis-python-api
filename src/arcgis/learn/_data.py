@@ -1305,7 +1305,7 @@ def prepare_data(
                             for satellite imagery well). If transforms is set
                             to `False` no transformation will take place and
                             `chip_size` parameter will also not take effect.
-                            If the dataset_type is 'PointCloud', use
+                            If the dataset_type is 'PointCloud' and 'PointCloudOD', use
                             :class:`~arcgis.learn.Transform3d`.
     ---------------------   -------------------------------------------
     collate_fn              Optional function. Passed to PyTorch to collate data
