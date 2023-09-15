@@ -1020,7 +1020,8 @@ def prepare_tabulardata(
     variable_predict        Optional String or List, denoting the field_names of
                             the variable to predict.
                             Keep none for unsupervised training using ML Model. For timeseries it
-                            will work for continuous variable
+                            will work for continuous variable.
+                            As of now we support only binary classification in fairness evaluation.
     ---------------------   -------------------------------------------
     explanatory_variables   Optional list containing field names from input_features
                             By default the field type is continuous.
@@ -1183,10 +1184,6 @@ def prepare_tabulardata(
     if kwargs.get("stratify") == True:
         stratify = True
 
-    random_split = True
-    if kwargs.get("random_split") == False:
-        random_split = False
-
     HAS_COLUMN_TRANSFORMS = False
 
     column_transforms_mapping = {}
@@ -1236,7 +1233,6 @@ def prepare_tabulardata(
         batch_size=batch_size,
         index_field=index_field,
         column_transforms_mapping=column_transforms_mapping,
-        random_split=random_split,
         **kwargs,
     )
 
@@ -1309,7 +1305,7 @@ def prepare_data(
                             for satellite imagery well). If transforms is set
                             to `False` no transformation will take place and
                             `chip_size` parameter will also not take effect.
-                            If the dataset_type is 'PointCloud', use
+                            If the dataset_type is 'PointCloud' and 'PointCloudOD', use
                             :class:`~arcgis.learn.Transform3d`.
     ---------------------   -------------------------------------------
     collate_fn              Optional function. Passed to PyTorch to collate data

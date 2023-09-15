@@ -1,32 +1,29 @@
 import sys
+#sys.path.insert(0, r"<path_to_local>\geosaurus\src")
 
-sys.path.insert(0, r"C:\\ipython_workfolder\\geosaurus\src")
-import os
 import unittest
 
 from arcgis.features.layer import FeatureLayer
-from arcgis.mapping import MapImageLayer, MapImageLayerManager
-from arcgis.gis import GIS
+from arcgis.mapping import MapImageLayer, MapImageLayerManager, EnterpriseMapImageLayerManager
+from arcgis.gis import GIS, Item
 
-gis = GIS(profile="your_online_profile", verify_cert=False)
+gis = GIS("https://dev0015021.esri.com/portal", verify_cert=False)
 
 # MapImageLayer
 try:
-    item = gis.content.get("74c98b4c65c545f59a31573a7e4a7749")
+    item = gis.content.search("South_Asia_Region", "Map Image Layer")[0]
+    layer = MapImageLayer.fromitem(item)
+    assert isinstance(item, Item)
 except:
-    fp = "./demographics_and_boundaries"
-    if os.path.isfile(path=fp):
-        item = gis.content.add(
-            item_properties={
-                "title": "USA_Demographics_and_Boundaries",
-                "type": "File Geodatabase",
-            },
-            data=fp,
-        )
-        pitem = item.publish()
-
-layer = MapImageLayer.fromitem(item)
-print(layer)
+    fp = r"//qalab_server/pydata/v109/geosaurus/mapping_mod_MapImageLayer_cls/south_asia_region.sd"
+    host_server = gis.admin.servers.get(role="HOSTING_SERVER")[0]
+    res = host_server.publish_sd(sd_file=fp, folder="South_Asia", future=False)
+    item = gis.content.search("South_Asia_Region", "Map Image Layer")[0]
+    if not(item):
+        raise("Test data not published. Please configure Map Service for tests to pass.")
+    else:
+        layer = MapImageLayer.fromitem(item)
+        print(layer)
 
 
 class TestQueryFeatureLayer(unittest.TestCase):
@@ -35,51 +32,29 @@ class TestQueryFeatureLayer(unittest.TestCase):
         Test manager property
         """
         manager = layer.manager
-        assert isinstance(manager, MapImageLayerManager)
+        assert isinstance(manager, EnterpriseMapImageLayerManager)
         assert "admin" in manager.url
 
     def test_create_dynamic_layer(self):
         """
         Test create_dynamic_layer
         """
-        # Must chech that supportDynamicLayers = True in layer properties
-        # Layer is
-        try:
-            item_online = gis.content.get("8fdd810d7bbc4c64b1676a5130cbf90d")
-            layer_to_add = {
-                "id": item_online.id,
-                "source": item_online.layers[0].url,
-                "definitionExpression": "",
-                "drawingInfo": {
-                    "renderer": "Simple Renderer",
-                    "transparency": "0",
-                    "scaleSymbols": True,
-                    "showLabels": False,
-                },
-            }
-        except:
-            fp = "./USA_Map_Server"
-            if os.path.isfile(path=fp):
-                item = gis.content.add(
-                    item_properties={
-                        "title": "USA_Map_Server",
-                        "type": "File Geodatabase",
-                    },
-                    data=fp,
-                )
-                pitem = item.publish()
+        # Must check that supportDynamicLayers = True in layer properties
+        if not layer.properties.supportsDynamicLayers == True:
+            raise ("test_create_dynamic_layer failed. Layer does not support dynamic layers.")
+        layer_to_add = {
+            "id": 101, 
+            "source": {"type": "mapLayer",
+                            "mapLayerId": 4},
+            "definitionExpression": "\"CNTRY_NAME\" is 'Iran'",
+            "drawingInfo": {
+                "renderer": "simple",
+                "transparency": "0",
+                "scaleSymbols": True,
+                "showLabels": False,
+            },
+        }
 
-            layer_to_add = {
-                "id": item.id,
-                "source": pitem.url,
-                "definitionExpression": "",
-                "drawingInfo": {
-                    "renderer": "Simple Renderer",
-                    "transparency": "0",
-                    "scaleSymbols": True,
-                    "showLabels": False,
-                },
-            }
         dynamic = layer.create_dynamic_layer(layer=layer_to_add)
         assert isinstance(dynamic, FeatureLayer)
 
@@ -100,7 +75,7 @@ class TestQueryFeatureLayer(unittest.TestCase):
         assert "layers" in legend
 
         metadata = layer.metadata
-        assert isinstance(metadata, dict)
+        assert isinstance(metadata, str)
 
         thumbnail = layer.thumbnail()
         assert thumbnail
@@ -111,23 +86,27 @@ class TestQueryFeatureLayer(unittest.TestCase):
         Test identify method with various parameters
         """
         identify = layer.identify(
-            geometry={"x": -104, "y": 35.6},
-            geometry_type="Point",
+            geometry={"xmin": 52, "ymin": 27.1, "xmax": 65.8, "ymax": 36},
+            geometry_type="Envelope",
             tolerance=2,
-            map_extent="-104,35.6,-94.32,41",
+            map_extent="59,-2,75,25",
+            layers="all",
+            sr=4326, 
             image_display="600,550,96",
         )
         assert isinstance(identify, dict)
         assert "results" in identify
+        assert len(identify["results"]) > 0
 
     def test_find(self):
         """
         Test find method
         """
         find = layer.find(
-            search_text="State",
+            search_text="Iran",
             contains=True,
-            layers="top",
+            search_fields="CNTRY_NAME", 
+            layers="4",
             return_geometry=False,
             max_offset=100,
             return_z=True,
@@ -135,19 +114,17 @@ class TestQueryFeatureLayer(unittest.TestCase):
         )
         assert isinstance(find, dict)
         assert "results" in find
+        assert len(find["results"]) > 0
 
     def test_generate_kml(self):
         """
         Test generate_kml method
         """
-        layer = MapImageLayer(
-            "https://sampleserver1.arcgisonline.com/ArcGIS/rest/services/Specialty/ESRI_StatesCitiesRivers_USA/MapServer/",
-            gis,
-        )
+        import tempfile
         generate = layer.generate_kml(
-            save_location=r"./",
-            name="Map Service Test",
-            layers="0,1",
+            save_location=tempfile.gettempdir(), 
+            name="map_service_generate_kml_test",
+            layers="0",
             options="composite",
         )
         assert isinstance(generate, str)
@@ -157,34 +134,36 @@ class TestQueryFeatureLayer(unittest.TestCase):
         Test export_map method
         """
         export = layer.export_map(
-            bbox="-104,35.6,-94.32,41",
+            bbox="52.5,18.9,53.4,20.0",
             bbox_sr=4326,
             image_format="png",
-            layers="include",
+            layers="show:4,6,7",
             transparent=True,
-            scale=40.0,
-            rotation=-45.0,
+            scale=220000000,
+            rotation=0,
         )
         assert isinstance(export, dict)
         assert "href" in export
 
-    def test_export_tiles(self):
+    def test_estimate_size_and_export_tiles(self):
         """
         Test estimate_export_tile_size and export_tiles methods
         Export tiles must be True in layer properties
         """
         try:
             size = layer.estimate_export_tiles_size(
-                export_by="LevelID", levels="0-3", asynchronous=False
+                export_by="levelId", levels="5-6", asynchronous=False
             )
-            assert isinstance(size, str)
+            assert isinstance(size, dict)
+            assert isinstance(size["totalSize"], int)
+            assert isinstance(size["totalTilesToExport"], int)
 
-            export = layer.export_tiles(levels="0-3", export_by="LevelID")
-            assert isinstance(export, str)
+            export = layer.export_tiles(levels="18489297.737236-9244648.868618", export_by="scale")
+            assert isinstance(export, list)
+            assert len(export) > 0
         except:
             # Export tiles not supported for this layer
             return
-
 
 if __name__ == "__main__":
     unittest.main()

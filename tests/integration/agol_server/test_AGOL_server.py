@@ -1,6 +1,3 @@
-import sys
-
-sys.path.insert(0, r"C:\SVN\geosaurus_master_issue_7557\src")
 from arcgis.auth.tools import LazyLoader
 
 logging = LazyLoader("logging")
@@ -10,7 +7,6 @@ from arcgis.gis import GIS, agoserver, server
 import unittest
 
 PROFILES = ["your_online_admin_profile"]  # "your_dev_online_profile",
-
 
 class TestAgolServer(unittest.TestCase):
     def test_get_hosting_servers(self):
@@ -157,7 +153,6 @@ class TestHostingServerProperty(unittest.TestCase):
         assert isinstance(gis.hosting_servers, list)
         if len(gis.hosting_servers) > 0:
             assert isinstance(gis.hosting_servers[0], agoserver.AGOLServicesDirectory)
-
 
 if __name__ == "__main__":
     unittest.main()

@@ -733,21 +733,21 @@ class TimeSeriesModel(ArcGISModel):
 
         if match_field_names is None:
             match_field_names = {}
+        fields_needed = (
+            self._data._categorical_variables
+            + self._data._continuous_variables
+            + self._data._dependent_variable
+        )
 
         (
             orig_dataframe,
             single_swap_pred,
             number_of_predictions,
         ) = self._infer_number_of_pred(
-            orig_dataframe, number_of_predictions, match_field_names
+            orig_dataframe, number_of_predictions, match_field_names, fields_needed
         )
 
         dataframe = orig_dataframe.copy()
-        fields_needed = (
-            self._data._categorical_variables
-            + self._data._continuous_variables
-            + self._data._dependent_variable
-        )
         distance_feature_layers = distance_features if distance_features else []
 
         continuous_variables = (
@@ -785,6 +785,7 @@ class TimeSeriesModel(ArcGISModel):
                     continue
 
                 raster_columns.append((raster, categorical))
+
         with warnings.catch_warnings():
             warnings.simplefilter("ignore", UserWarning)
             (
@@ -915,6 +916,7 @@ class TimeSeriesModel(ArcGISModel):
                         )
         transformed_results = prediction_sequence_list
         transformed_results_col = self._apply_inverse_transform(transformed_results)
+
         for idx, col in enumerate(self._data._dependent_variable):
             orig_dataframe[col + "_results"] = transformed_results_col[:, idx]
 
@@ -948,7 +950,7 @@ class TimeSeriesModel(ArcGISModel):
         return np.stack(transformed_results_ret, axis=1)
 
     def _add_predict_rows(
-        self, number_of_predictions, orig_dataframe, match_field_names
+        self, number_of_predictions, orig_dataframe, match_field_names, fields_needed
     ):
         # Changed to make code future ready as the previous method of adding
         # pandas series will be deprecated.
@@ -999,7 +1001,7 @@ class TimeSeriesModel(ArcGISModel):
                     if new_delta is not None:
                         datetime_dict[i] = tuple([new_delta, end_value_temp])
                 else:
-                    if orig_dataframe[i].dtype == "object":
+                    if orig_dataframe[i].dtype == "object" and i in fields_needed:
                         # check whether it is time
                         orig_dataframe[i], sample = self._convert_datetime(
                             orig_dataframe[i]
@@ -1043,7 +1045,7 @@ class TimeSeriesModel(ArcGISModel):
         return orig_dataframe
 
     def _infer_number_of_pred(
-        self, orig_dataframe, number_of_predictions, match_field_names
+        self, orig_dataframe, number_of_predictions, match_field_names, fields_needed
     ):
         # Type of inference
         #     ├── Multivariate
@@ -1101,6 +1103,7 @@ class TimeSeriesModel(ArcGISModel):
                 orig_dataframe=orig_dataframe,
                 match_field_names=match_field_names,
                 number_of_predictions=number_of_predictions,
+                fields_needed=fields_needed,
             )
         return orig_dataframe, single_swap_pred, number_of_predictions
 

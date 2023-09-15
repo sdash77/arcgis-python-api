@@ -1398,8 +1398,8 @@ class GeoAccessor(object):
                                DataFrame.  If no geometry columns are present, a ``ValueError``
                                will be raised.
         ------------------     --------------------------------------------------------------------
-        **kwargs               Optional dict. Any additional kwargs that can be given to the
-                               `pyarrow.parquet.read_table` method.
+        **kwargs**             Optional dict. Any additional kwargs that can be given to the
+                               `pyarrow.parquet.read_table <https://arrow.apache.org/docs/python/generated/pyarrow.parquet.read_table.html#pyarrow-parquet-read-table>`_ method.
         ==================     ====================================================================
 
 
@@ -3527,7 +3527,10 @@ class GeoAccessor(object):
                 }
             if column["type"] == "esriFieldTypeString":
                 try:
-                    column["length"] = int(self._data[col].str.len().max())
+                    max_length = int(self._data[col].str.len().max())
+                    if max_length == 0:
+                        max_length = 256
+                    column["length"] = max_length
                 except:
                     column["length"] = 256
             if column and isinstance(dtype, pd.CategoricalDtype):
