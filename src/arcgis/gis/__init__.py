@@ -4005,10 +4005,9 @@ class UserManager(object):
                     + "portals/self/userDefaultSettings?f=json"
                 )
             else:
-                portal_url = self._gis.url.replace("portal", "")
                 url = (
-                    portal_url
-                    + "webadaptor/sharing/portals/self/userDefaultSettings?f=json"
+                    self._gis._portal.resturl
+                    + "sharing/portals/self/userDefaultSettings?f=json"
                 )
             params = {"f": "json"}
             resp = self._gis._con._session.get(url).json()
