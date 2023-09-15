@@ -6,6 +6,7 @@ from arcgis.gis import GIS
 ###########################################################################
 class LicenseManager(_BaseKube):
     """The license manager for the Kubernetes deployment."""
+
     _gis = None
     _con = None
     _properties = None

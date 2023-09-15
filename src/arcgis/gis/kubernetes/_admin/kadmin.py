@@ -20,15 +20,15 @@ class KubernetesAdmin(_BaseKube):
     Kubernetes Administration Class. This class is not meant to be initialized
     directly, but instead is returned by the _admin_ property on the
     :class:`gis <arcgis.gis.GIS>` object when logged in as an administrator.
-    
+
     .. code-block:: python
-    
+
         #Usage Example:
-        
+
         >>> gis = GIS(profile="your_kubernetes_admin_profile")
         >>> kube_admin = gis.admin
         >>> kube_admin
-        
+
         <KubernetesAdmin at https://kubenetes.example.com/arcgis/admin>
     """
 
@@ -123,10 +123,12 @@ class KubernetesAdmin(_BaseKube):
     @property
     def mode(self) -> Mode:
         """Provides access to a :class:`~arcgis.gis.kubernetes.Mode` object
-        to help manage `service deployment modes <https://enterprise-k8s.arcgis.com/en/latest/administer/service-modes.htm>`_."""
+        to help manage `service deployment modes <https://enterprise-k8s.arcgis.com/en/latest/administer/service-modes.htm>`_.
+        """
         if self._mode is None:
             self._mode = Mode(url=f"{self._url}/mode", gis=self._gis)
         return self._mode
+
     # ----------------------------------------------------------------------
     @property
     def datastores(self) -> DataStores:
@@ -190,7 +192,7 @@ class KubernetesAdmin(_BaseKube):
     @property
     def category_schema(self):
         """This resource allows for the setting and manipulating of catagory schemas.
-        
+
         :returns:
             :class:`~arcgis.gis.admin.CategoryManager` object
         """
@@ -234,7 +236,7 @@ class KubernetesAdmin(_BaseKube):
         user              Optional User. Search for tasks for a single user.
         ----------------  -------------------------------------------------------------------------------
         types             Optional String. The type of notebook execution for the item:
-                          
+
                           * `ExecuteNotebook`
                           * `UpdateInsightsWorkbook`
         ================  ===============================================================================

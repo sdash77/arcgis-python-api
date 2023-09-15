@@ -16,18 +16,18 @@ _log = logging.getLogger(__name__)
 class RecycleItem:
     """
     This represents a recycled item from the recycling bin.
-    
+
     .. code-block:: python
-    
+
         # Usage Example:
-        
+
         >>> gis = GIS(profile="your_online_profile")
-        
+
         >>> org_user = gis.users.search("gis_user1")[0]
         >>> for r_item in org_user.recyclebin.content:
                 print(f"{r_item.properties['title']:15}{r_item.properties['type']:22}{type(r_item)}")
-        
-        trees_item1    Service Definition   <class 'arcgis.gis._impl._content_manager._recyclebin.RecycleItem'> 
+
+        trees_item1    Service Definition   <class 'arcgis.gis._impl._content_manager._recyclebin.RecycleItem'>
         trees_item1    Feature Service      <class 'arcgis.gis._impl._content_manager._recyclebin.RecycleItem'>
         AR_Counties    Feature Service      <class 'arcgis.gis._impl._content_manager._recyclebin.RecycleItem'>
     """
@@ -63,13 +63,13 @@ class RecycleItem:
         Restores the Item from the recycling bin.
 
         :return: :class:`~arcgis.gis.Item` | None
-        
+
         .. code-block:: python
-        
+
             # Usage Example:
-            
+
             >>> gis = GIS(profile="your_online_profile")
-            
+
             >>> gis_user = gis.users.me
             >>> deleted_item = list(gis_user.recyclebin.content)[0]
             >>> restored_item = deleted_item.restore()
@@ -112,21 +112,21 @@ class RecycleBin:
     deleted.  Users can :meth:`~arcgis.gis._impl._content_manager.RecycleItem.restore`
     or permanently :meth:`~arcgis.gis._impl._content_manager.RecycleItem.delete`
     items from the recycle bin.
-    
+
     This class is not meant to be initialized directly, but an instance
     is returned by the :attr:`~arcgis.gis.User.recyclebin` property of the
     :class:`~arcgis.gis.User` class. Users can iterate over the
     :attr:`~arcgis.gis._impl._content_manager.RecycleBin.content`.
-    
+
     .. note::
         This functionality is only available for ArcGIS Online.
-    
+
     .. code-block:: python
-    
+
         # Usage Example:
-        
+
         >>> gis = GIS(profile="your_online_profile")
-        
+
         >>> my_recycle_bin = gis.users.me.recyclebin
     """
 
@@ -178,25 +178,25 @@ class RecycleBin:
         Lists the content inside the recycling bin.
 
         :return: Iterator[RecycleItem]
-        
+
         .. code-block:: python
-        
+
             # Usage Example:
-            
+
             >>> gis = GIS(profile="your_online_profile")
-            
+
             >>> my_user = gis.users.me
             >>> r_bin_content = my_user.recyclebin.content
             >>> type(r_bin_content)
-            
+
             <class 'generator'>
-            
+
             >>> for r_item in r_bin_content:
                     print(f"{r_item.properties['title']":15}{r_item.properties['type']}")
-                    
+
             trees_sd        Service Definition
             trees_flc       Feature Service
-                    
+
         """
         if self._supported() == False:
             _log.info("The recyclebin is not supported on this organization.")

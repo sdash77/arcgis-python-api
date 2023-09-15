@@ -3315,7 +3315,7 @@ class UserManager(object):
 
         .. note::
             This has been deprecated at Enterprise 10.9 and can only be used with ArcGIS Online.
-            
+
         ================  ===============================================================================
         **Parameter**      **Description**
         ----------------  -------------------------------------------------------------------------------
@@ -10952,22 +10952,22 @@ class User(dict):
     @property
     def recyclebin(self) -> "RecycleBin":
         """Provides access to the user's recyclebin.
-        
+
         .. note::
             This functionality is only available for ArcGIS Online.
-        
+
         :Returns: :class:`~arcgis.gis._impl._content_manager.RecycleBin` object
-        
+
         .. code-block:: python
-        
+
             # Usage Example:
             >>> gis = GIS(profile="your_online_user")
-            
+
             >>> my_user_obj = gis.users.me
             >>> my_recy_bin = my_user_obj.recyclebin
             >>> type(my_recy_bin)
-            
-            <class 'arcgis.gis._impl._content_manager._recyclebin.RecycleBin'>      
+
+            <class 'arcgis.gis._impl._content_manager._recyclebin.RecycleBin'>
         """
         gis: GIS = self._gis
         if gis._is_arcgisonline or (
