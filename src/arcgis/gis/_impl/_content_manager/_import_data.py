@@ -5,8 +5,10 @@ import os
 import pandas as pd
 import tempfile
 import shutil
-
+from arcgis._impl.common._utils import _date_handler
 from arcgis.gis import Item, ItemDependency
+from arcgis._impl.common._mixins import PropertyMap
+from arcgis._impl.common._isd import InsensitiveDict
 from arcgis.auth.tools import LazyLoader
 
 _tool_utils = LazyLoader("arcgis.features.geo._tools._utils")
@@ -36,6 +38,18 @@ try:
     has_pyshp = True
 except ImportError:
     has_pyshp = False
+
+
+def _json_encode_params(postdata):
+    for k, v in postdata.items():
+        if isinstance(v, (dict, list, tuple, bool)):
+            postdata[k] = json.dumps(v, default=_date_handler)
+        elif isinstance(v, PropertyMap):
+            postdata[k] = json.dumps(dict(v), default=_date_handler)
+        elif isinstance(v, InsensitiveDict):
+            postdata[k] = v.json
+
+    return postdata
 
 
 def _create_file_item(gis, df, file_type, **kwargs):
@@ -291,11 +305,11 @@ def import_as_fc(gis, df, **kwargs):
             raise Exception("No batch geocoding service found.")
         geocode_url = locators[0]
 
-    path = "content/features/analyze"
+    path = gis._public_rest_url + "content/features/analyze"
 
     postdata = {
-        "f": "pjson",
-        "text": df.to_csv(),
+        "f": "json",
+        "text": df.to_csv(index=False),
         "filetype": "csv",
         "analyzeParameters": {
             "enableGlobalGeocoding": "true",
@@ -308,14 +322,16 @@ def import_as_fc(gis, df, **kwargs):
     if address_fields is not None:
         postdata["analyzeParameters"]["locationType"] = "address"
 
-    res = gis._con.post(path, postdata)
+    postdata = _json_encode_params(postdata)
+    resp = gis._con._session.post(url=path, data=postdata, timeout=600)
+    res = resp.json()
 
     # Step 2: Prep parameters to generate features
     if address_fields is not None:
         res["publishParameters"].update({"addressFields": address_fields})
-    path = "content/features/generate"
+    path = gis._public_rest_url + "content/features/generate"
     postdata = {
-        "f": "pjson",
+        "f": "json",
         "text": df.to_csv(),
         "filetype": "csv",
         "publishParameters": json.dumps(res["publishParameters"]),
@@ -325,7 +341,9 @@ def import_as_fc(gis, df, **kwargs):
 
     if isinstance(df, pd.DataFrame) and "location_type" not in kwargs:
         # Step 2: Generate features
-        res_generate = gis._con.post(path, postdata)
+        postdata = _json_encode_params(postdata)
+        resp = gis._con._session.post(path, postdata)
+        res_generate = resp.json()
     elif (isinstance(df, pd.DataFrame) and "location_type" in kwargs) or (
         isinstance(df, pd.DataFrame) and address_fields
     ):
@@ -347,9 +365,12 @@ def import_as_fc(gis, df, **kwargs):
             del update_dict[k]
         res["publishParameters"].update(update_dict)
 
-        res_generate = gis._con.post(
+        postdata = _json_encode_params(postdata)
+        resp = gis._con._session.post(
             path, postdata
         )  # , use_ordered_dict=True) - OrderedDict >36< _mixins.PropertyMap
+
+        res_generate = resp.json()
 
     # Step 3: Return
     if res_generate:
