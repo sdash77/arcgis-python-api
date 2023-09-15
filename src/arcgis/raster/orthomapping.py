@@ -2858,8 +2858,6 @@ class Project:
 
         :return: A portal item
         """
-        from ._mission import Mission
-
         return self._project_item
 
     # def create_project(self, name, definition: Optional[dict[str, Any]] = None):
