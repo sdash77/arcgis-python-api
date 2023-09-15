@@ -119,6 +119,20 @@ ResourceManager
     :undoc-members:
     :show-inheritance:
 
+RecycleBin
+---------------------------
+.. autoclass:: arcgis.gis._impl._content_manager.RecycleBin
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+RecycleItem
+---------------------------
+.. autoclass:: arcgis.gis._impl._content_manager.RecycleItem
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
 APIKeyManager
 ---------------------------
 .. autoclass:: arcgis.gis._impl.APIKeyManager
