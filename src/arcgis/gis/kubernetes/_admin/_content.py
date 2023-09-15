@@ -4,7 +4,7 @@ from arcgis.gis import GIS
 from typing import Dict, Any
 
 
-class ExtenernalContentManager(_BaseKube):
+class ExternalContentManager(_BaseKube):
     """
     Provides management of the external content resources.
     """
