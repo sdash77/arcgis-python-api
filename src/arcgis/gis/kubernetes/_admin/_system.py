@@ -336,7 +336,7 @@ class SystemManager(_BaseKube):
 
     # ----------------------------------------------------------------------
     @property
-    def exteneral_content(self) -> ExternalContentManager:
+    def external_content(self) -> ExternalContentManager:
         """ """
         return ExternalContentManager(url=f"{self._url}/content", gis=self._gis)
 
