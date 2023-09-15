@@ -3993,9 +3993,19 @@ class UserManager(object):
                 role = self._gis.users.roles.get_role(role)
                 role = role.role_id
             except:
-                raise ValueError("Invalid role passed in.")
+                role = ""
         else:
             role = ""
+
+        # Check if default role provided by org if none given
+        if role in ["", None]:
+            url = self._gis._public_rest_url + "portals/self/userDefaultSettings"
+            params = {"f": "json"}
+            resp = self._gis._con._session.post(url, params).json()
+            if "role" not in resp or resp["role"] == None:
+                raise ValueError(
+                    "Role cannot be None since no default role is provided in the org settings. Please provide a valid role."
+                )
 
         if self._gis._portal.is_arcgisonline or (
             self._gis._portal.is_kubernetes and provider != "enterprise"
