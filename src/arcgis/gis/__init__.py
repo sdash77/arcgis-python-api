@@ -3992,7 +3992,7 @@ class UserManager(object):
                 role = self._gis.users.roles.get_role(role)
                 role = role.role_id
             except:
-                role = ""
+                raise ValueError("Invalid role passed in.")
         else:
             role = ""
 
