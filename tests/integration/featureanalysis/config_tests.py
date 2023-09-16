@@ -28,7 +28,7 @@ test_items = [
 ]
 
 # scrape server page for a Kubernetes URL
-def get_kube_server(site="https://rpublicservers.esri.com/AEoK1120.php", row=3):
+def get_kube_server(site="https://rpublicservers.esri.com/AEoK1120.php", row=1):
 
     # Important note: code is based off of current rpublicservers page. If
     # page format or data gets changed, row parameter may have to be altered.
@@ -38,13 +38,13 @@ def get_kube_server(site="https://rpublicservers.esri.com/AEoK1120.php", row=3):
     html = lxml.html.fromstring(page.content)
     table = html.xpath("//table")[0]
     links = list(table[row].iterlinks())
-    server_url = links[1][2]
+    server_url = links[0][2]
     return server_url
 
 
 # scrape credentials page for Kubernetes credentials
 def get_kube_credentials(
-    site="http://geosaurus.esri.com/testing/ragsreports/11.2_users.htm", row=11
+    site='https://ragsreports.ags.esri.com/information/11.2_Users_files/sheet001.htm', username_row=8, password_row=9
 ):
 
     # for non-Windows users, you will either have to set environment
@@ -81,10 +81,11 @@ def get_kube_credentials(
 
     html = lxml.html.fromstring(page.content)
     table = html.xpath("//table")[0]
-    row_list = table.xpath("//tr")[row]
-    text_list = str(row_list.text_content()).split()
-    username = text_list[0]
-    password = text_list[1]
+    username_row_element = table.xpath("//tr")[username_row]
+    username = username_row_element.getchildren()[3].text_content()
+    password_row_element = table.xpath("//tr")[password_row]
+    password_string = password_row_element.getchildren()[1].text_content()
+    password = password_string.split(" ")[-1]
     return (username, password)
 
 
@@ -128,22 +129,21 @@ def setup_profiles(
 
     if not kube_name in updated_list:
         print("Creating kube profile")
-        """
-        pm.create(
-            kube_name,
-            url=get_kube_server(),
-            username=get_kube_credentials()[0],
-            password=get_kube_credentials()[1],
-        )
-        """
-
-        # username and password based on the new 11.2 enterprise maintained servers page
-        pm.create(
-            kube_name,
-            url="https://1120pubbi-1120pubbi.apps.openshift410release.esri.com/web/home/",
-            username="creator2",
-            password="portalaccount1",
-        )
+        try:
+            pm.create(
+                kube_name,
+                url=get_kube_server(),
+                username=get_kube_credentials()[0],
+                password=get_kube_credentials()[1],
+            )
+        except:
+            # hard-coded as backup
+            pm.create(
+                kube_name,
+                url="https://1120pubbi-1120pubbi.apps.openshift410release.esri.com/web/home/",
+                username="creator2",
+                password="portalaccount1",
+            )
         print(pm.get(kube_name))
 
 
