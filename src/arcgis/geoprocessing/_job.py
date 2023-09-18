@@ -295,7 +295,7 @@ class GPJob(object):
                     processing_states = json.loads(processing_states.replace('u"', '"'))
                     return processing_states
 
-            if isinstance(value, DataFile):
+            if isinstance(value, DataFile) and self.task != "GenerateReport":
                 return self._gis._con.post(value.to_dict()["url"], {})
             if isinstance(value, (RasterData, LinearUnit)):
                 return value
