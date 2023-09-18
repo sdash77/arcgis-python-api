@@ -322,7 +322,7 @@ class WebMap(HasTraits, collections.OrderedDict):
             return super().__repr__()
 
     def __str__(self):
-        return json.dumps(self, default=_utils._date_handler)
+        return json.dumps(self._webmapdict, default=_utils._date_handler)
 
     def add_table(
         self,
