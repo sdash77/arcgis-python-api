@@ -4,6 +4,7 @@ import os
 import requests
 import mimetypes
 from functools import lru_cache
+from typing import Optional, Any, Iterator, Tuple, Union
 from arcgis.auth import EsriSession
 from arcgis.auth.tools import LazyLoader
 
