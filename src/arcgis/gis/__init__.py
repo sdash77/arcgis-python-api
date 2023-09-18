@@ -4007,7 +4007,7 @@ class UserManager(object):
             else:
                 url = (
                     self._gis._portal.resturl
-                    + "sharing/portals/self/userDefaultSettings?f=json"
+                    + "portals/self/userDefaultSettings?f=json"
                 )
             params = {"f": "json"}
             resp = self._gis._con._session.get(url).json()
