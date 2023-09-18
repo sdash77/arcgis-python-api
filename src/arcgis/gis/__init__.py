@@ -8479,6 +8479,15 @@ class ContentManager(object):
                                   items if available.  ArcGIS Enterprise must be 10.9+.
         =====================     ====================================================================
 
+        **keyword arguments**
+        
+        =====================     ====================================================================
+        wab_code_attach           Option Boolean.  Determines whether a *code_attachment* item should
+                                  be created when cloning a Web App Builder item. Default values is
+                                  *True*. Set to *False* to prevent item from being created.
+        =====================     ====================================================================
+
+
         :return:
            A list of :class:`~arcgis.gis.Item` objects created during the clone.
 
