@@ -7,6 +7,7 @@ import logging
 import requests
 import concurrent.futures
 from functools import lru_cache
+from typing import Any, Iterator
 from ._exceptions import FolderException
 from ._util import (
     _get_folder_id,
