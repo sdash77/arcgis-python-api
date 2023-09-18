@@ -334,7 +334,7 @@ DataStores
     :undoc-members:
     :show-inheritance:
 
-Datastore
+DataStore
 ---------
 .. autoclass:: arcgis.gis.kubernetes.DataStore
     :members:
