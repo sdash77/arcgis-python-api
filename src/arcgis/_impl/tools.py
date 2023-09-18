@@ -8817,7 +8817,12 @@ class _OrthoMappingTools:
 
     # ----------------------------------------------------------------------
     def reset_image_collection(
-        self, image_collection, gis=None, future=False, **kwargs
+        self,
+        image_collection,
+        gis=None,
+        future=False,
+        flight_json_details=None,
+        **kwargs,
     ):
         """
         The `reset_image_collection` resets the image collection to its original state.
@@ -8849,6 +8854,7 @@ class _OrthoMappingTools:
         )
         job._is_ortho = True
         omjob = OMJob(job)
+        omjob._flight_details = flight_json_details
         if future:
             return omjob
         return omjob.result()
