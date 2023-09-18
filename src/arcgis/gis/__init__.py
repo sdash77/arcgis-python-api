@@ -3999,9 +3999,18 @@ class UserManager(object):
 
         # Check if default role provided by org if none given
         if role in ["", None]:
-            url = self._gis._public_rest_url + "portals/self/userDefaultSettings"
+            if self._gis._is_arcgisonline:
+                url = (
+                    self._gis._public_rest_url
+                    + "portals/self/userDefaultSettings?f=json"
+                )
+            else:
+                url = (
+                    self._gis._portal.resturl
+                    + "portals/self/userDefaultSettings?f=json"
+                )
             params = {"f": "json"}
-            resp = self._gis._con._session.post(url, params).json()
+            resp = self._gis._con._session.get(url).json()
             if "role" not in resp or resp["role"] == None:
                 raise ValueError(
                     "Role cannot be None since no default role is provided in the org settings. Please provide a valid role."
