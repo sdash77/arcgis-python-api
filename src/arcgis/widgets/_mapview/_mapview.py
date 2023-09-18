@@ -923,7 +923,7 @@ class MapView(widgets.DOMWidget):
         30. ArcGIS Human Geography Dark
 
         """
-        if self._gis._is_authenticated:
+        if self._gis is not None and self._gis._is_authenticated:
             return [
                 "dark-gray-vector",
                 "gray-vector",
