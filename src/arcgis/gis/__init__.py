@@ -8482,7 +8482,7 @@ class ContentManager(object):
         **keyword arguments**
         
         =====================     ====================================================================
-        wab_code_attach           Option Boolean.  Determines whether a *code_attachment* item should
+        copy_code_attachment      Option Boolean.  Determines whether a *code_attachment* item should
                                   be created when cloning a Web App Builder item. Default values is
                                   *True*. Set to *False* to prevent item from being created.
         =====================     ====================================================================
