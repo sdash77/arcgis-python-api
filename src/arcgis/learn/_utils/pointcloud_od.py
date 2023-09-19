@@ -18,7 +18,10 @@ try:
     import torch
     import numpy as np
     import types
-    from mmdet3d.core import LiDARInstance3DBoxes, Box3DMode
+    import warnings
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore")
+        from mmdet3d.core import LiDARInstance3DBoxes, Box3DMode
     from mmdet3d.core.points.lidar_points import LiDARPoints
     from mmdet3d.datasets.pipelines import Compose
     import plotly
