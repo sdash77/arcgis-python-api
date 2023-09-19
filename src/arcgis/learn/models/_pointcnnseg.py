@@ -348,6 +348,7 @@ class PointCNN(ArcGISModel):
         import random
 
         _emd_template = {"DataAttributes": {}, "ModelParameters": {}}
+        _emd_template["ModelType"] = "PointCloudClassification"
         _emd_template["Framework"] = "N/A"
         _emd_template["ModelConfiguration"] = "N/A"
         _emd_template["ExtractBands"] = "N/A"
