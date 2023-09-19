@@ -2744,7 +2744,7 @@ class SecuritySettings(object):
                     "Cannot set empty list as Administrative contacts. You must have at least two administrators in the list."
                 )
             for ad in admins:
-                role = self._gis.users.search(ad)[0].role
+                role = self._gis.users.get(ad).role
                 if role == "org_admin":
                     admins_ok.append(ad)
             if len(admins_ok) < 2:

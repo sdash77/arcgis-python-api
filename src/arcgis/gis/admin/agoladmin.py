@@ -97,7 +97,7 @@ class AGOLAdminManager(object):
         Provides administrators information about the datastore on ArcGIS Online.
 
          :return:
-            :class:`~arcgis.gis.admin._dsmgr.DataStoreMetricsManager` object
+            :class:`~arcgis.gis.admin.DataStoreMetricsManager` object
         """
         if self._dmm is None:
             self._dmm = DataStoreMetricsManager(gis=self._gis)

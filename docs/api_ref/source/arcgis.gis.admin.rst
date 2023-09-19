@@ -10,8 +10,36 @@ AGOLAdminManager
     :undoc-members:
     :show-inheritance:
 
+DataStoreMetricsManager
+-----------------------
+.. autoclass:: arcgis.gis.admin.DataStoreMetricsManager
+    :members:
+    :undoc-members:
+    :show-inheritance:
+ 
+DataStoreAggregation
+-----------------------
+.. autoclass:: arcgis.gis.admin.DataStoreAggregation
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+DataStoreTimeUnit
+-----------------------
+.. autoclass:: arcgis.gis.admin.DataStoreTimeUnit
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+DataStoreMetric
+-----------------------
+.. autoclass:: arcgis.gis.admin.DataStoreMetric
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
 PortalAdminManager
----------------
+------------------
 .. autoclass:: arcgis.gis.admin.PortalAdminManager
     :members:
     :undoc-members:
@@ -334,7 +362,7 @@ DataStores
     :undoc-members:
     :show-inheritance:
 
-Datastore
+DataStore
 ---------
 .. autoclass:: arcgis.gis.kubernetes.DataStore
     :members:

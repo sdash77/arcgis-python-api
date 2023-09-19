@@ -69,7 +69,17 @@ class DataStoreAggregation(Enum):
 class DataStoreMetricsManager:
     """
     This class allows for ArcGIS Online administrators to query statistics about the
-    managed datastore.
+    managed datastore. It is not meant to be initialized directly, but instead an
+    instance is returned from the :attr:`~arcgis.gis.admin.AGOLAdminManager.datastore_metrics`
+    property.
+    
+    .. code-block:: python
+    
+        # Usage Example;
+        >>> gis = GIS(profile="your_online_admin_profile")
+        
+        >>> ago_mgr = gis.admin
+        >>> ds_mgr = ago_mgr.datastore_metrics
     """
 
     _gis: _arcgis.gis.GIS | None = None
