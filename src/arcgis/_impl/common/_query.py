@@ -546,7 +546,9 @@ def _query_df(layer, url, params, **kwargs):
 
     if len(result["features"]) == 0:
         # create columns even if empty dataframe
-        columns = [field["name"] for field in result["fields"]]
+        columns = []
+        if "fields" in result:
+            columns = [field["name"] for field in result["fields"]]
         return pd.DataFrame([], columns=columns)
     sr = None
     if "spatialReference" in result:
