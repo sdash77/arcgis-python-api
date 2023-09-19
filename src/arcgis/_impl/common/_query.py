@@ -476,7 +476,7 @@ def _query_df(layer, url, params, **kwargs):
         return attribs
 
     try:
-        result = layer._con.post(path=url, postdata=params, token=layer._token)
+        result = layer._con._session.post(url, params).json()
         features = result["features"]
         if "exceededTransferLimit" in result:
             while (
@@ -545,7 +545,9 @@ def _query_df(layer, url, params, **kwargs):
             raise queryException
 
     if len(result["features"]) == 0:
-        return pd.DataFrame([])
+        # create columns even if empty dataframe
+        columns = [field["name"] for field in result["fields"]]
+        return pd.DataFrame([], columns=columns)
     sr = None
     if "spatialReference" in result:
         sr = result["spatialReference"]
