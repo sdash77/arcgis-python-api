@@ -18,7 +18,10 @@ try:
     import torch
     import numpy as np
     import types
-    from mmdet3d.core import LiDARInstance3DBoxes, Box3DMode
+    import warnings
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore")
+        from mmdet3d.core import LiDARInstance3DBoxes, Box3DMode
     from mmdet3d.core.points.lidar_points import LiDARPoints
     from mmdet3d.datasets.pipelines import Compose
     import plotly
@@ -113,6 +116,12 @@ class PointCloudOD(Dataset):
             ), f"min_points({self.min_points}) cannot be greater than max_points({self.max_point}) set during export"
 
         if "classification" in self.statistics["tileStatistics"]:
+            # check if there is not any ground truth boxes in train/val folder
+            if self.statistics["numberOfStoredOrientedBoundingBoxes"] == 0:
+                raise Exception(
+                    "Multipatch labels not found, data is not exported correctly."
+                )
+
             class_info = self.statistics["tileStatistics"]["classification"]["table"]
             full_class_mapping = {
                 int(c["classCode"]): str(c["classCode"]) for c in class_info
@@ -252,6 +261,9 @@ class PointCloudOD(Dataset):
             if folder == "val":
                 self._filter_box_point_percentage = 0.3
             if self.transform:
+                if getattr(transform_fn, "_is_Transform3d", False):
+                    self.transform = self.transform._detection_transforms()
+
                 point_cloud_range = (
                     np.array([-1, -1, self.z_range["min"], 1, 1, self.z_range["max"]])
                     * self.scale_factor
@@ -322,9 +334,9 @@ class PointCloudOD(Dataset):
             )
             data["points"][:, :3] *= self.scale_factor
 
-            if "orientedBoundingBox" in read_file.keys():
+            if "orientedBoundingBox" in read_file.keys() and self.folder != "":
                 data = self._get_bbox(data, read_file, tile)
-                if self.transform:
+                if self.transform and random.random() > 0.5:
                     data["points"] = LiDARPoints(
                         data["points"], points_dim=data["points"].shape[-1]
                     )
@@ -700,7 +712,7 @@ def plot_results(
         display(fig2)
 
 
-def confusion_matrix3d(pred, target, n_gts, classes, iou_thresh=0.01):
+def confusion_matrix3d(pred, target, n_gts, classes, iou_thresh=0.1):
     tps, p_clas, p_scores = [], [], []
     for idx in range(len(pred)):
         pred_bboxes, pred_labels, pred_scores = (
@@ -735,12 +747,13 @@ def confusion_matrix3d(pred, target, n_gts, classes, iou_thresh=0.01):
 
 
 def predict_h5(self, path, output_path, **kwargs):
+    self._free_memory()
     path = Path(path)
     if output_path is None:
         output_path = path.parent / "results"
     else:
         output_path = Path(output_path)
-    progressor = kwargs.get("progressor", None)
+    progressor = kwargs.pop("progressor", None)
     batch_size = kwargs.get("batch_size", 1)
 
     extra_features = self._data.features_to_keep.copy()
@@ -761,17 +774,20 @@ def predict_h5(self, path, output_path, **kwargs):
         batch_size=batch_size,
         sampler=sampler,
     )
-    predict_batch_h5(self, dataloader, output_path, progressor)
+    predict_batch_h5(self, dataloader, output_path, progressor, **kwargs)
+    self._reset_thresh()
 
     return output_path
 
 
-def predict_batch_h5(self, dl, output_path, progressor):
+def predict_batch_h5(self, dl, output_path, progressor, **kwargs):
+    detect_thresh = kwargs.get("detect_thresh", 0.1)
+    nms_overlap = kwargs.get("nms_overlap", 0.6)
     current_file_name = ""
     for data in progress_bar(dl):
         tile_index = data.pop("tile_index")
         data = to_device(data)
-        pred = self._pred_batch(data)
+        pred = self._pred_batch(data, detect_thresh, nms_overlap)
 
         tile = dl.dataset.tiles[tile_index]
         if len(tile.shape) < 2:

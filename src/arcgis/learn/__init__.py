@@ -257,7 +257,7 @@ def detect_objects(
     *,
     gis=None,
     future=False,
-    **kwargs
+    **kwargs,
 ):
     """
     Function can be used to generate feature service that contains polygons on detected objects
@@ -350,7 +350,7 @@ def detect_objects(
         context=context,
         process_all_raster_items=process_all_raster_items,
         future=future,
-        **kwargs
+        **kwargs,
     )
 
     """
@@ -448,7 +448,7 @@ def classify_pixels(
     *,
     gis=None,
     future=False,
-    **kwargs
+    **kwargs,
 ):
     """
     Function to classify input imagery data using a deep learning model.
@@ -531,7 +531,7 @@ def classify_pixels(
         context=context,
         process_all_raster_items=process_all_raster_items,
         future=future,
-        **kwargs
+        **kwargs,
     )
 
     """
@@ -599,7 +599,7 @@ def export_training_data(
     *,
     gis=None,
     future=False,
-    **kwargs
+    **kwargs,
 ):
     """
     Function is designed to generate training sample image chips from the input imagery data with
@@ -850,7 +850,7 @@ def export_training_data(
         min_polygon_overlap_ratio=min_polygon_overlap_ratio,
         context=context,
         future=future,
-        **kwargs
+        **kwargs,
     )
 
     """
@@ -988,7 +988,7 @@ def classify_objects(
     *,
     gis=None,
     future=False,
-    **kwargs
+    **kwargs,
 ):
     """
     Function can be used to output feature service with assigned class label for each feature based on
@@ -1072,7 +1072,7 @@ def classify_objects(
         process_all_raster_items=process_all_raster_items,
         context=context,
         future=future,
-        **kwargs
+        **kwargs,
     )
 
 
@@ -1089,7 +1089,7 @@ def compute_accuracy_for_object_detection(
     *,
     gis=None,
     future=False,
-    **kwargs
+    **kwargs,
 ):
     """
     Function can be used to calculate the accuracy of a deep learning model by comparing the detected objects from
@@ -1215,7 +1215,7 @@ def compute_accuracy_for_object_detection(
         out_accuracy_report_name=out_accuracy_report_name,
         context=context,
         future=future,
-        **kwargs
+        **kwargs,
     )
 
 
@@ -1237,7 +1237,7 @@ def train_model(
     *,
     gis=None,
     future=False,
-    **kwargs
+    **kwargs,
 ):
     """
     Function can be used to train a deep learning model using the output from the
@@ -1461,7 +1461,126 @@ def train_model(
         overwrite_model=overwrite_model,
         context=context,
         future=future,
-        **kwargs
+        **kwargs,
+    )
+
+
+def detect_change_using_deep_learning(
+    from_raster,
+    to_raster,
+    model,
+    output_classified_raster=None,
+    model_arguments=None,
+    context=None,
+    *,
+    gis=None,
+    future=False,
+    **kwargs,
+):
+    """
+    Runs a trained deep learning model to detect change between two rasters.
+    Function available in ArcGIS Image Server 11.1 and higher.
+
+    ====================================     ====================================================================
+    **Argument**                             **Description**
+    ------------------------------------     --------------------------------------------------------------------
+    from_raster                              Required ImageryLayer object. The previous raster to use for change detection.
+    ------------------------------------     --------------------------------------------------------------------
+    to_raster                                Required ImageryLayer object. The recent raster to use for change detection.
+    ------------------------------------     --------------------------------------------------------------------
+    model                                    Required. The deep learning model to be used for the change detection.
+                                             It can be passed as a dlpk portal item, datastore path to the Esri Model Definition (EMD)
+                                             file or the EMD JSON string.
+    ------------------------------------     --------------------------------------------------------------------
+    output_classified_raster                 Optional String. If not provided, an Image Service is created by the method and used as the output raster.
+                                             You can pass in an existing Image Service Item from your GIS to use that instead.
+
+                                             Alternatively, you can pass in the name of the output Image Service that should be created by this method to be
+                                             used as the output for the tool.
+
+                                             A RuntimeError is raised if a service by that name already exists.
+    ------------------------------------     --------------------------------------------------------------------
+    model_arguments                          Optional dictionary. Name-value pairs of arguments and their values that can be customized by the clients.
+
+                                             eg: {"name1":"value1", "name2": "value2"}
+    ------------------------------------     --------------------------------------------------------------------
+    context                                  Context contains additional settings that affect task execution.
+
+                                                context parameter overwrites values set through arcgis.env parameter
+
+                                                This function has the following settings:
+
+                                                - Cell size (cellSize) - Set the output raster cell size, or resolution
+
+                                                - Output Spatial Reference (outSR): The output raster will be
+                                                projected into the output spatial reference.
+
+                                                Example:
+                                                    {"outSR": {spatial reference}}
+
+                                                - Extent (extent): A bounding box that defines the analysis area.
+
+                                                Example:
+                                                    {"extent": {"xmin": -122.68,
+                                                    "ymin": 45.53,
+                                                    "xmax": -122.45,
+                                                    "ymax": 45.6,
+                                                    "spatialReference": {"wkid": 4326}}}
+
+                                                - Parallel Processing Factor (parallelProcessingFactor): controls
+                                                Raster Processing (CPU) service instances.
+
+                                                Example:
+                                                    Syntax example with a specified number of processing instances:
+
+                                                    {"parallelProcessingFactor": "2"}
+
+                                                    Syntax example with a specified percentage of total
+                                                    processing instances:
+
+                                                    {"parallelProcessingFactor": "60%"}
+    ------------------------------------     --------------------------------------------------------------------
+    gis                                      Optional GIS. The GIS on which this tool runs. If not specified, the active GIS is used.
+    ------------------------------------     --------------------------------------------------------------------
+    future                                   Keyword only parameter. Optional Boolean. If True, the result will be a GPJob object and
+                                             results will be returned asynchronously.
+    ------------------------------------     --------------------------------------------------------------------
+    folder                                   Keyword only parameter. Optional str or dict. Creates a folder in the portal, if it does
+                                             not exist, with the given folder name and persists the output in this folder.
+                                             The dictionary returned by the gis.content.create_folder() can also be passed in as input.
+
+                                             Example:
+                                                {'username': 'user1', 'id': '6a3b77c187514ef7873ba73338cf1af8', 'title': 'trial'}
+    ====================================     ====================================================================
+
+    :return: The output imagery layer item
+
+    .. code-block:: python
+
+        # Usage Example 1:
+
+        from_raster = gis.content.search("from_raster", item_type="Imagery Layer")[0].layers[0]
+        to_raster = gis.content.search("to_raster", item_type="Imagery Layer")[0].layers[0]
+        change_detection_model = gis.content.search("my_detection_model")[0]
+
+        detect_change_op = detect_change_using_deep_learning(from_raster=from_raster,
+                                                             to_raster=to_raster,
+                                                             model=change_detection_model,
+                                                             gis=gis)
+
+    """
+
+    gis = _arcgis.env.active_gis if gis is None else gis
+
+    return gis._tools.rasteranalysis.detect_change_using_deep_learning(
+        from_raster=from_raster,
+        to_raster=to_raster,
+        model=model,
+        output_classified_raster=output_classified_raster,
+        model_arguments=model_arguments,
+        context=context,
+        future=future,
+        **kwargs,
     )
 
 
@@ -1741,7 +1860,7 @@ def export_point_dataset(
     block_size=50.0,
     max_points=8192,
     extra_features=[],
-    **kwargs
+    **kwargs,
 ):
     """
     Note:

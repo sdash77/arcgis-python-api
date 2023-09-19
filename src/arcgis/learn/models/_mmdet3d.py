@@ -61,20 +61,25 @@ class MMDetection3D(ArcGISModel):
                                     `voxel_size`, `voxel_points`, and `max_voxels`. The
                                     default value of `voxel_size`,`voxel_points`, and
                                     `max_voxels` are automatically calculated based on
-                                    the 'block size', 'object size' and
-                                    'average no. of points per block' of the exported data.
+                                    the 'block size', 'object size' and 'average no.
+                                    of points per block' of the exported data.
 
                                     Example:
                                         |    {'voxel_size': [0.05, 0.05, 0.1],
                                         |    'voxel_points': 10,
-                                        |    'max_voxels':(16000, 40000),
+                                        |    'max_voxels':[20000, 40000],
                                         |    }
 
                                     Parameter Explanation:
 
-                                    - 'voxel_size': The size of voxel in meter [x,y,z],
-                                    - 'voxel_points': Maximum number of points per voxel,
-                                    - 'max_voxels': Maximum number of voxels in (training, validation).
+                                    - 'voxel_size': List of voxel dimensions in meter
+                                      [x,y,z],
+                                    - 'voxel_points': An Int, that decides the maximum
+                                      number of points per voxel,
+                                    - 'max_voxels': List of maximum number of voxels in
+                                      [training, validation].
+
+                                    Default: None.
     =============================   =============================================
 
     :return: :class:`~arcgis.learn.MMDetection3D` Object
@@ -109,17 +114,35 @@ class MMDetection3D(ArcGISModel):
     List of models supported by this class.
     """
 
+    def lr_find(self, allow_plot=True):
+        """
+        Runs the Learning Rate Finder. Helps in choosing the
+        optimum learning rate for training the model.
+
+        =====================   ===========================================
+        **Parameter**            **Description**
+        ---------------------   -------------------------------------------
+        allow_plot              Optional boolean. Display the plot of losses
+                                against the learning rates and mark the optimal
+                                value of the learning rate on the plot.
+                                The default value is 'True'.
+        =====================   ===========================================
+        """
+        lr = super().lr_find(allow_plot)
+        lr = min(max(lr, 5e-05), 3e-03)
+        return lr
+
     def _free_memory(self):
         gc.collect()
         torch.cuda.empty_cache()
 
-    def _reset_thresh(self, detect_thresh=0.3, nms_overlap=0.01):
+    def _reset_thresh(self, detect_thresh=0.2, nms_overlap=0.2):
         self.learn.model.bbox_head.test_cfg.score_thr = detect_thresh
         self.learn.model.bbox_head.test_cfg.nms_thr = nms_overlap
         self._config.model.test_cfg.score_thr = detect_thresh
         self._config.model.test_cfg.nms_thr = nms_overlap
 
-    def _pred_batch(self, data, detect_thresh=0.3, nms_overlap=0.01):
+    def _pred_batch(self, data, detect_thresh=0.2, nms_overlap=0.5):
         self.learn.model.bbox_head.test_cfg.score_thr = detect_thresh
         self.learn.model.bbox_head.test_cfg.nms_thr = nms_overlap
         self.learn.model.eval()
@@ -233,7 +256,7 @@ class MMDetection3D(ArcGISModel):
         self._reset_thresh()
 
     def average_precision_score(
-        self, detect_thresh=0.3, nms_overlap=0.01, mean=False, **kwargs
+        self, detect_thresh=0.3, iou_thresh=0.1, nms_overlap=0.01, mean=False, **kwargs
     ):
         """
         Computes average precision on the validation/train set for each class.
@@ -246,10 +269,16 @@ class MMDetection3D(ArcGISModel):
                                 average precision.
                                 Default: 0.3.
         ---------------------   -------------------------------------------
-        nms_overlap             Optional float. The intersection over union
+        iou_thresh              Optional float. The intersection over union
                                 threshold with the ground truth labels, above
                                 which a predicted bounding box will be
                                 considered a true positive.
+                                Default: 0.1.
+        ---------------------   -------------------------------------------
+        nms_overlap             Optional float. The intersection over union
+                                threshold with other predicted bounding
+                                boxes, above which the box with the highest
+                                score will be considered a true positive.
                                 Default: 0.01.
         ---------------------   -------------------------------------------
         mean                    Optional bool. If False returns class-wise
@@ -287,7 +316,7 @@ class MMDetection3D(ArcGISModel):
             for input, target in progress_bar(dl, display=show_progress):
                 pred = self._pred_batch(input, detect_thresh, nms_overlap)
                 batch_tps, batch_score, batch_clas, n_gts = confusion_matrix3d(
-                    pred, target, n_gts, classes, nms_overlap
+                    pred, target, n_gts, classes, iou_thresh
                 )
                 tps.extend(batch_tps)
                 pred_scores.extend(batch_score)
@@ -327,8 +356,13 @@ class MMDetection3D(ArcGISModel):
     def _is_mmsegdet(self):
         return True
 
+    @property
+    def _is_mm3d(self):
+        return True
+
     def _get_emd_params(self, save_inference_file):
         emd_template = {"DataAttributes": {}, "ModelParameters": {}}
+        emd_template["ModelType"] = "PointCloudDetection"
         emd_template["ModelParameters"]["kwargs"] = self._kwargs
         emd_template["DataAttributes"]["block_size"] = self._data.block_size
         emd_template["DataAttributes"]["max_point"] = self._data.max_point
@@ -447,6 +481,16 @@ class MMDetection3D(ArcGISModel):
         ---------------------   -------------------------------------------
         batch_size              Optional integer. The number of blocks to process
                                 in one batch. Default is set to 1.
+        ---------------------   -------------------------------------------
+        detect_thresh           Optional float. The probability above which
+                                a detection will be considered valid.
+                                Default: 0.1.
+        ---------------------   -------------------------------------------
+        nms_overlap             Optional float. The intersection over union
+                                threshold with other predicted bounding
+                                boxes, above which the box with the highest
+                                score will be considered a true positive.
+                                Default: 0.6.
         =====================   ===========================================
 
         :return: Path where files are dumped.
