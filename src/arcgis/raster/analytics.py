@@ -10396,7 +10396,7 @@ def locate_regions(
                                              The available options are the following:
 
                                              - AUTO - The number of seeds will be based on the number of cells in the input raster. When the input raster has 100,000 cells or fewer, the default is MAXIMUM.
-                                             When the input raster has more than 100,000 cells, the default is SMALL. This is the default.
+                                               When the input raster has more than 100,000 cells, the default is SMALL. This is the default.
 
                                              - SMALL - The number of seeds will be equal to 10 percent of the number of cells in the input raster, after NoData cells are excluded, but not to exceed 1,600 seeds.
 
@@ -10411,7 +10411,7 @@ def locate_regions(
                                              The available options are the following:
 
                                              - AUTO - The resolution will be based on the number of cells in the input raster. When the input raster has 500,000 cells or fewer, the default is MAXIMUM.
-                                             When the input raster has more than 500,000 cells, the default is LOW. This is the default.
+                                               When the input raster has more than 500,000 cells, the default is LOW. This is the default.
 
                                              - LOW - The analysis will be performed on an intermediate raster containing 147,356 (384 x 384) cells distributed in the same x and y ratio as the input raster.
 
@@ -10426,10 +10426,10 @@ def locate_regions(
                                              The available options are the following:
 
                                              - AUTO - The selection method is based on the Number of regions parameter. If the Number of regions is eight or less, the COMBINATORIAL selection method is used.
-                                             If the Number of regions parameter is greater than eight, the SEQUENTIAL selection method is used. This is the default.
+                                               If the Number of regions parameter is greater than eight, the SEQUENTIAL selection method is used. This is the default.
 
                                              - COMBINATORIAL - Selects the best regions based on the specified evaluation method, while honoring the spatial constraints, by testing all
-                                             combinations of the desired number of regions within the candidate regions from the parameterized region-growing (PRG) algorithm.
+                                               combinations of the desired number of regions within the candidate regions from the parameterized region-growing (PRG) algorithm.
 
                                              - SEQUENTIAL - Sequentially selects the best regions based on the evaluation method and that meets the spatial constraints until the desired number of regions is reached.
     ------------------------------------     --------------------------------------------------------------------
