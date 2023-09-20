@@ -302,7 +302,7 @@ def _query(layer, url, params, raw=False):
     result = {}
     try:
         # Layer query call
-        result = layer._con.post(path=url, postdata=params, token=layer._token)
+        result = layer._con.post(url, params, token=layer._token)
 
         # Figure out what to return
         if "error" in result:
@@ -355,7 +355,10 @@ def _query(layer, url, params, raw=False):
             "Error performing query operation",
             "HTTP Error 504: GATEWAY_TIMEOUT",
         ]
-        if queryException.args[0].lower().find("invalid token") > -1:
+        if (
+            isinstance(queryException.args[0], str)
+            and queryException.args[0].lower().find("invalid token") > -1
+        ):
             params.pop("token", None)
             return _query(layer, url, params, raw=False)
         elif any(ele in queryException.__str__() for ele in error_list):
@@ -476,7 +479,7 @@ def _query_df(layer, url, params, **kwargs):
         return attribs
 
     try:
-        result = layer._con._session.post(url, params).json()
+        result = layer._con.post(url, params, token=layer._token)
         features = result["features"]
         if "exceededTransferLimit" in result:
             while (
