@@ -549,9 +549,27 @@ def _query_df(layer, url, params, **kwargs):
 
     if len(result["features"]) == 0:
         # create columns even if empty dataframe
-        columns = []
-        if "fields" in result:
-            columns = [field["name"] for field in result["fields"]]
+        columns = {}
+        for fld in layer.properties.fields:
+            fld = dict(fld)
+            columns[fld["name"]] = _fld_lu[fld["type"]]
+        if (
+            "geometryType" in layer.properties
+            and not layer.properties.geometryType is None
+        ):
+            columns["SHAPE"] = object
+        if "return_geometry" in params and params["return_geometry"] == False:
+            columns.pop("SHAPE", None)
+        df = pd.DataFrame([], columns=columns.keys()).astype(columns, True)
+        if "out_fields" in params and params["out_fields"] != "*":
+            df = df[params["out_fields"].split(",")].copy()
+
+        if "SHAPE" in df.columns:
+            df["SHAPE"] = arcgis_features.GeoArray([])
+            df.spatial.set_geometry("SHAPE")
+            df.spatial.renderer = layer.renderer
+            df.spatial._meta.source = layer
+
         return pd.DataFrame([], columns=columns)
     sr = None
     if "spatialReference" in result:
