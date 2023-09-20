@@ -8480,7 +8480,7 @@ class ContentManager(object):
         =====================     ====================================================================
 
         **keyword arguments**
-        
+
         =====================     ====================================================================
         copy_code_attachment      Option Boolean.  Determines whether a *code_attachment* item should
                                   be created when cloning a Web App Builder item. Default values is
