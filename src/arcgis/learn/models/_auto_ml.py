@@ -123,40 +123,39 @@ class AutoML(object):
 
     **kwargs**
 
-    =====================   ===========================================
-    sensitive_variables     Optional. List of strings.
-                            Variables in the feature class/dataframe which are sensitive and prone to model bias.
-                            Ex - ['sex','race'] or ['nationality']
-    ---------------------   -------------------------------------------
-    fairness_metric         Optional. String.
-                            Name of fairness metric based on which fairness optimization should be done on the evaluated models.
-                            Available metrics for binary classification are 'demographic_parity_difference' , 'demographic_parity_ratio',
-                            'equalized_odds_difference', 'equalized_odds_ratio'.
-                            'demographic_parity_ratio' is the default.
-                            Available metrics for regression are 'group_loss_ratio' (Default) and 'group_loss_difference'.
-    ---------------------   -------------------------------------------
-    fairness_threshold      Optional. Float.
-                            Required when the chosen metric is group_loss_difference
-                            The threshold value for fairness metric. Default values are as follows:
-                            - for `demographic_parity_difference` the metric value should be below 0.25,
-                            - for `demographic_parity_ratio` the metric value should be above 0.8,
-                            - for `equalized_odds_difference` the metric value should be below 0.25,
-                            - for `equalized_odds_ratio` the metric value should be above 0.8.
-                            - for `group_loss_ratio` the metric value should be above 0.8.
-                            - for `group_loss_difference` the metric value should be below 0.25,
-    ---------------------   -------------------------------------------
-    privileged_groups       Optional. List.
-                            List of previleged groups in the sensitive attribute.
-                            For example, in binary classification task, a privileged group is the one with the highest selection rate.
-                            Example value: [{"sex": "Male"}]
-    ---------------------   -------------------------------------------
-    underprivileged_groups  Optional. List.
-                            List of underprivileged groups in the sensitive attribute.
-                            For example, in binary classification task, an underprivileged group
-                            is the one with the lowest selection rate.
-                            Example value: [{"sex": "Female"}]
-
-    =====================   ===========================================
+    =======================   ===========================================
+    sensitive_variables       Optional. List of strings.
+                              Variables in the feature class/dataframe which are sensitive and prone to model bias.
+                              Ex - ['sex','race'] or ['nationality']
+    -----------------------   -------------------------------------------
+    fairness_metric           Optional. String.
+                              Name of fairness metric based on which fairness optimization should be done on the evaluated models.
+                              Available metrics for binary classification are 'demographic_parity_difference' , 'demographic_parity_ratio',
+                              'equalized_odds_difference', 'equalized_odds_ratio'.
+                              'demographic_parity_ratio' is the default.
+                              Available metrics for regression are 'group_loss_ratio' (Default) and 'group_loss_difference'.
+    -----------------------   -------------------------------------------
+    fairness_threshold        Optional. Float.
+                              Required when the chosen metric is group_loss_difference
+                              The threshold value for fairness metric. Default values are as follows:
+                              - for `demographic_parity_difference` the metric value should be below 0.25,
+                              - for `demographic_parity_ratio` the metric value should be above 0.8,
+                              - for `equalized_odds_difference` the metric value should be below 0.25,
+                              - for `equalized_odds_ratio` the metric value should be above 0.8.
+                              - for `group_loss_ratio` the metric value should be above 0.8.
+                              - for `group_loss_difference` the metric value should be below 0.25,
+    -----------------------   -------------------------------------------
+    privileged_groups         Optional. List.
+                              List of previleged groups in the sensitive attribute.
+                              For example, in binary classification task, a privileged group is the one with the highest selection rate.
+                              Example value: [{"sex": "Male"}]
+    -----------------------   -------------------------------------------
+    underprivileged_groups    Optional. List.
+                              List of underprivileged groups in the sensitive attribute.
+                              For example, in binary classification task, an underprivileged group
+                              is the one with the lowest selection rate.
+                              Example value: [{"sex": "Female"}]
+    =======================   ===========================================
 
     :return: :class:`~arcgis.learn.AutoML` Object
     """
