@@ -3913,6 +3913,9 @@ class UserManager(object):
         ----------------  -------------------------------------------------------------------------------
         provider          Optional string. The provider for the account. The default value is arcgis.
                           The other possible value is enterprise.
+
+                          .. note::
+                            If you are using Kubernetes, make sure to specify if 'arcgis' or 'enterprise'
         ----------------  -------------------------------------------------------------------------------
         idp_username      Optional string. The name of the user as stored by the enterprise user store.
                           This parameter is only required if the provider parameter is enterprise.
@@ -3968,8 +3971,11 @@ class UserManager(object):
         levels = {"creator": "creatorUT", "viewer": "viewerUT"}
         role_lookup = {
             "admin": "org_admin",
+            "org_admin": "org_admin",
             "user": "org_user",
+            "org_user": "org_user",
             "publisher": "org_publisher",
+            "org_publisher": "org_publisher",
             "creator": "org_publisher",
             "view_only": "tLST9emLCNfFcejK",
             "org_viewer": "iAAAAAAAAAAAAAAA",
@@ -3993,15 +3999,7 @@ class UserManager(object):
                 role = self._gis.users.roles.get_role(role)
                 role = role.role_id
             except:
-                # maybe user passed in role name instead of id
-                if self._gis.users.roles.exists(role):
-                    all_roles = self._gis.users.roles.all()
-                    for r in all_roles:
-                        if r.name.lower() == role.lower():
-                            role = r.role_id
-                            break
-                else:
-                    role = ""
+                role = ""
         else:
             role = ""
 
