@@ -3854,3 +3854,204 @@ class MapAction:
 
 
 ###############################################################################################################
+class Code:
+    """
+    Class representing a `code block`.
+    Code will show as a block of code in your Storymap.
+
+    .. note::
+        Once you create an Code instance you must add it to the story to be able to edit it further.
+
+    ==================      ====================================================================
+    **Parameter**            **Description**
+    ------------------      --------------------------------------------------------------------
+    content                 Required String. The code content to have in the block.
+    ------------------      --------------------------------------------------------------------
+    language                Required String. The coding language of the content provided.
+                            Values:
+                                'txt',
+                                'arcade',
+                                'cs',
+                                'css',
+                                'diff',
+                                'html',
+                                'js',
+                                'java',
+                                'json',
+                                'jsx',
+                                'kt',
+                                'py',
+                                'r',
+                                'sql',
+                                'svg',
+                                'swift',
+                                'tsx',
+                                'ts'
+    ==================      ====================================================================
+    """
+
+    def __init__(
+        self, content: Optional[str] = None, language: Optional[str] = None, **kwargs
+    ):
+        # Can be created from scratch or already exist in story
+        # Code is not an immersive node
+        self._story = kwargs.pop("story", None)
+        self._type = "code"
+        self.node = kwargs.pop("node_id", None)
+        # If node doesn't already exist, create new instance
+        self._existing = self._check_node()
+        if self._existing is True:
+            # Get the content and language
+            self.content = self._story._properties["nodes"][self.node]["data"][
+                "content"
+            ]
+            self.language = self._story._properties["nodes"][self.node]["data"]["lang"]
+        else:
+            # Create new instance, notice no resource node is needed for code
+            self.content = content
+
+            accepted_languages = [
+                "txt",
+                "arcade",
+                "cs",
+                "css",
+                "diff",
+                "html",
+                "js",
+                "java",
+                "json",
+                "jsx",
+                "kt",
+                "py",
+                "r",
+                "sql",
+                "svg",
+                "swift",
+                "tsx",
+                "ts",
+            ]
+            if language in accepted_languages:
+                self.language = language
+            else:
+                raise ValueError(
+                    "Language provided is not part of the accepted languages. Please make sure to provide one from the list."
+                )
+            self.node = "n-" + uuid.uuid4().hex[0:6]
+
+    # ----------------------------------------------------------------------
+    @property
+    def properties(self):
+        """
+        Get properties for the Code.
+
+        .. note::
+            To change various properties of the Code use the other property setters.
+
+        :return:
+            A dictionary depicting the node dictionary for the code.
+            If nothing is returned, make sure the content is part of the story.
+        """
+        if self._existing is True:
+            return {
+                "node_dict": self._story._properties["nodes"][self.node],
+            }
+
+    # ----------------------------------------------------------------------
+    def __str__(self) -> str:
+        return "Code"
+
+    # ----------------------------------------------------------------------
+    def __repr__(self) -> str:
+        return "Code"
+
+    # ----------------------------------------------------------------------
+    @property
+    def content(self):
+        """
+        Get/Set the content property.
+
+        ==================  ========================================
+        **Parameter**        **Description**
+        ------------------  ----------------------------------------
+        content             String. The new content for the code block.
+        ==================  ========================================
+
+        :return:
+            The content that is being used.
+        """
+        if self._existing is True:
+            return self._story._properties["nodes"][self.node]["data"]["content"]
+
+    # ----------------------------------------------------------------------
+    @content.setter
+    def content(self, content):
+        if self._existing is True:
+            self._update_content(content)
+
+    # ----------------------------------------------------------------------
+    @property
+    def language(self):
+        """
+        Get/Set the language property.
+
+        ==================  ========================================
+        **Parameter**        **Description**
+        ------------------  ----------------------------------------
+        language            String. The new language for the code block.
+        ==================  ========================================
+
+        :return:
+            The language that is being used.
+        """
+        if self._existing is True:
+            return self._story._properties["nodes"][self.node]["data"]["lang"]
+
+    # ----------------------------------------------------------------------
+    @language.setter
+    def content(self, language):
+        if self._existing is True:
+            self._story._properties["nodes"][self.node]["data"]["lang"] = language
+
+    # ----------------------------------------------------------------------
+    def delete(self):
+        """
+        Delete the node
+
+        :return: True if successful.
+        """
+        return self._story._delete(self.node)
+
+    # ----------------------------------------------------------------------
+    def _add_code(self, story=None):
+        self._story = story
+        self._existing = True
+        # Create embed node, no resource node needed
+        self._story._properties["nodes"][self.node] = {
+            "type": "code",
+            "data": {
+                "lineNumbers": True,
+                "content": self.content,
+                "lang": self.language,
+                "isEncoded": True,
+            },
+        }
+
+    # ----------------------------------------------------------------------
+    def _update_content(self, content):
+        # TODO: check if need to encode html
+        # set new content
+        self.content = content
+        # update dictionary properties
+        self._story._properties["nodes"][self.node]["data"]["content"] = content
+
+    # ----------------------------------------------------------------------
+    def _check_node(self):
+        if self._story is None:
+            return False
+        elif self.node is None:
+            return False
+        else:
+            return True
+
+
+###############################################################################################################
