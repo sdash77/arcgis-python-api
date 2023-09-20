@@ -10221,9 +10221,9 @@ def locate_regions(
                                              The higher the value in the input raster, the greater the utility.
     ------------------------------------     --------------------------------------------------------------------
     input_existing_regions                   Optional ImageryLayer object. A dataset identifying where regions already exist.
-                                             The input can be a raster or a feature layer. If the input is a raster, any location in the raster with a valid value is considered already allocated. All other locations are set to NoData.
+                                             | The input can be a raster or a feature layer. If the input is a raster, any location in the raster with a valid value is considered already allocated. All other locations are set to NoData.
 
-                                             | In the parameterized region-growing algorithm, no region will grow from any location containing an existing region.
+                                             In the parameterized region-growing algorithm, no region will grow from any location containing an existing region.
                                              Existing regions will be used in the growth and evaluation of the minimum_distance and maximum_distance as described
                                              in the corresponding parameter descriptions above.
     ------------------------------------     --------------------------------------------------------------------
@@ -10232,7 +10232,7 @@ def locate_regions(
     ------------------------------------     --------------------------------------------------------------------
     area_units                               Optional string. Defines the area units used for the ``total_area``, ``minimum_area``, and ``maximum_area parameters``.
 
-                                             The available options and their corresponding units are the following:
+                                             | The available options and their corresponding units are the following:
 
                                              - SQUARE_MAP_UNITS - For the square of the linear units of the output spatial reference.
 
@@ -10259,7 +10259,7 @@ def locate_regions(
     ------------------------------------     --------------------------------------------------------------------
     region_shape                             Optional string. Defines the shape characteristics for the output regions.
 
-                                             The regions start out from seed cell locations and grow outward with preference given to the cells that maintain the desired shape.
+                                             | The regions start out from seed cell locations and grow outward with preference given to the cells that maintain the desired shape.
 
                                              The available shape options are the following:
 
@@ -10280,7 +10280,7 @@ def locate_regions(
     region_orientation                       Optional float. Defines the orientation of the defined shape. Regions are grown out from the seed locations with preference
                                              given to the cells that maintain the desired orientation of the region shapes.
 
-                                             The orientation values are in compass degrees ranging from 0 to 360, increasing clockwise starting from north. The default is 0.
+                                             | The orientation values are in compass degrees ranging from 0 to 360, increasing clockwise starting from north. The default is 0.
 
                                              The default of 0 orients the shapes in the following manner:
 
@@ -10300,17 +10300,17 @@ def locate_regions(
     ------------------------------------     --------------------------------------------------------------------
     shape_tradeoff                           Optional float. Identifies the weight for the cells when growing the candidate regions in the parameterized
                                              region-growing algorithm. The weighting is a tradeoff between a cell's contribution for maintaining the region
-                                             shape relative to the utility contribution of the cell's attribute value.
+                                             | shape relative to the utility contribution of the cell's attribute value.
 
-                                             | Higher values indicates maintaining the shape of the region is more important than selecting higher utility values.
-                                             The acceptable percent values are 0 to 100, inclusively. The default is 50.
+                                             Higher values indicates maintaining the shape of the region is more important than selecting higher utility values.
+                                             | The acceptable percent values are 0 to 100, inclusively. The default is 50.
 
-                                             | This parameter is used to identify the feasible candidate regions. The candidate regions that will be selected are
+                                             This parameter is used to identify the feasible candidate regions. The candidate regions that will be selected are
                                              controlled by the ``evaluation_method`` parameter.
     ------------------------------------     --------------------------------------------------------------------
     evaluation_method                        Optional string. The evaluation criteria to be used for determining which of the candidate regions identified in the
                                              parameterized region-growing algorithm are most preferred. The preference can be specified based on a particular statistic
-                                             of the utility values, or spatial arrangement of the cells within the regions.
+                                             | of the utility values, or spatial arrangement of the cells within the regions.
 
                                              The available options are the following:
 
@@ -10325,7 +10325,7 @@ def locate_regions(
                                              - LOWEST_VALUE - Selects regions based on the highest lowest individual cell value contained within the region. This option ensures the selected regions contain cells with really low utility.
 
                                              - GREATEST_CORE_AREA - Selects regions based on the greatest core area.Any cell that is farther than one cell from the edge of a region is considered to be part of the core.
-                                                                    The edge distance can be controlled by the analysis cell size. Setting a smaller cell size can increase the core area.
+                                               The edge distance can be controlled by the analysis cell size. Setting a smaller cell size can increase the core area.
 
                                              - HIGHEST_CORE_SUM - Selects regions based on the highest cumulative sum of the utility values for the core area. The edge distance can be controlled by the analysis cell size.
 
@@ -10339,26 +10339,26 @@ def locate_regions(
 
                                              The units specified by ``area_units`` will be used.
     ------------------------------------     --------------------------------------------------------------------
-    minimum_distance                         Optional float. Define the minimum distance allowed between regions. No two regions can be within this distance.
+    minimum_distance                         | Optional float. Define the minimum distance allowed between regions. No two regions can be within this distance.
 
                                              This parameter influences the parameterized region-growing (PRG) algorithm. If a cell has the potential of being
                                              added to a candidate region, but it is within this distance from any individual region in the ``input_existing_regions``,
                                              it will not be considered for the candidate region. The minimum distance setting is not applied to
-                                             excluded locations (NoData cells).
+                                             | excluded locations (NoData cells).
 
                                              The units specified by ``distance_units`` will be used.
     ------------------------------------     --------------------------------------------------------------------
     maximum_distance                         Optional float. Define the maximum distance allowed between regions. No region can be farther apart than this distance from at least one other region.
 
                                              When sequentially selecting regions, if the next best region is farther than this distance from any of the already selected regions,
-                                             it will not be considered at this time, but it may be selected later when more regions are selected.
+                                             | it will not be considered at this time, but it may be selected later when more regions are selected.
 
                                              The maximum distance is applied to ``input_existing_regions``; that is, at least one of the selected regions must be within the maximum distance from existing regions.
-                                             The maximum distance setting is not applied to excluded areas (NoData cells), and has no effect on the PRG algorithm.
+                                             | The maximum distance setting is not applied to excluded areas (NoData cells), and has no effect on the PRG algorithm.
 
                                              The units specified by ``distance_units`` will be used.
     ------------------------------------     --------------------------------------------------------------------
-    distance_units                           Optional string. Defines the distance units that will be used for the ``minimum_distance`` and ``maximum_distance`` parameters.
+    distance_units                           | Optional string. Defines the distance units that will be used for the ``minimum_distance`` and ``maximum_distance`` parameters.
 
                                              The available options and their corresponding units are the following:
 
@@ -10383,11 +10383,11 @@ def locate_regions(
     no_islands                               Optional boolean. Defines whether or not islands will be allowed within the potential regions.
 
                                              - True - A value of True specifies that there will be no islands within a region. A flood field algorithm is implemented as a
-                                                      postprocess once the regions are created but before the regions are selected. If there are islands within a region,
-                                                      they will be filled in and the cells will join the region. Since the fill process occurs before the selection process,
-                                                      the utility of the island cells will be added to the region, and their values will be included in the selection process
-                                                      of the regions and in the statistics of the output regions. As a result of the fill process, it is likely that the total
-                                                      area allocated will exceed the target specified by the ``total_area`` parameter.
+                                               postprocess once the regions are created but before the regions are selected. If there are islands within a region,
+                                               they will be filled in and the cells will join the region. Since the fill process occurs before the selection process,
+                                               the utility of the island cells will be added to the region, and their values will be included in the selection process
+                                               of the regions and in the statistics of the output regions. As a result of the fill process, it is likely that the total
+                                               area allocated will exceed the target specified by the ``total_area`` parameter.
 
                                              - False - A value of False specifies that there will be islands within a region.
     ------------------------------------     --------------------------------------------------------------------
@@ -10396,7 +10396,7 @@ def locate_regions(
                                              The available options are the following:
 
                                              - AUTO - The number of seeds will be based on the number of cells in the input raster. When the input raster has 100,000 cells or fewer, the default is MAXIMUM.
-                                                      When the input raster has more than 100,000 cells, the default is SMALL. This is the default.
+                                             When the input raster has more than 100,000 cells, the default is SMALL. This is the default.
 
                                              - SMALL - The number of seeds will be equal to 10 percent of the number of cells in the input raster, after NoData cells are excluded, but not to exceed 1,600 seeds.
 
@@ -10411,7 +10411,7 @@ def locate_regions(
                                              The available options are the following:
 
                                              - AUTO - The resolution will be based on the number of cells in the input raster. When the input raster has 500,000 cells or fewer, the default is MAXIMUM.
-                                                      When the input raster has more than 500,000 cells, the default is LOW. This is the default.
+                                             When the input raster has more than 500,000 cells, the default is LOW. This is the default.
 
                                              - LOW - The analysis will be performed on an intermediate raster containing 147,356 (384 x 384) cells distributed in the same x and y ratio as the input raster.
 
@@ -10426,10 +10426,10 @@ def locate_regions(
                                              The available options are the following:
 
                                              - AUTO - The selection method is based on the Number of regions parameter. If the Number of regions is eight or less, the COMBINATORIAL selection method is used.
-                                                      If the Number of regions parameter is greater than eight, the SEQUENTIAL selection method is used. This is the default.
+                                             If the Number of regions parameter is greater than eight, the SEQUENTIAL selection method is used. This is the default.
 
                                              - COMBINATORIAL - Selects the best regions based on the specified evaluation method, while honoring the spatial constraints, by testing all
-                                                               combinations of the desired number of regions within the candidate regions from the parameterized region-growing (PRG) algorithm.
+                                             combinations of the desired number of regions within the candidate regions from the parameterized region-growing (PRG) algorithm.
 
                                              - SEQUENTIAL - Sequentially selects the best regions based on the evaluation method and that meets the spatial constraints until the desired number of regions is reached.
     ------------------------------------     --------------------------------------------------------------------
