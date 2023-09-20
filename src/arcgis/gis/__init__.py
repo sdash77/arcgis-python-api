@@ -3993,7 +3993,15 @@ class UserManager(object):
                 role = self._gis.users.roles.get_role(role)
                 role = role.role_id
             except:
-                role = ""
+                # maybe user passed in role name instead of id
+                if self._gis.users.roles.exists(role):
+                    all_roles = self._gis.users.roles.all()
+                    for r in all_roles:
+                        if r.name.lower() == role.lower():
+                            role = r.role_id
+                            break
+                else:
+                    role = ""
         else:
             role = ""
 
@@ -8480,7 +8488,7 @@ class ContentManager(object):
         =====================     ====================================================================
 
         **keyword arguments**
-        
+
         =====================     ====================================================================
         copy_code_attachment      Option Boolean.  Determines whether a *code_attachment* item should
                                   be created when cloning a Web App Builder item. Default values is

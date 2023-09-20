@@ -19,6 +19,7 @@ try:
     import numpy as np
     import types
     import warnings
+
     with warnings.catch_warnings():
         warnings.simplefilter("ignore")
         from mmdet3d.core import LiDARInstance3DBoxes, Box3DMode
