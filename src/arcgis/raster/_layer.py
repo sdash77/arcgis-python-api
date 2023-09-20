@@ -4935,7 +4935,7 @@ class ImageryLayer(Layer):
         raster_id: int,
         geometry: Union[dict[str, Any], Polygon, Point, MultiPoint, Polyline],
         out_sr: Optional[dict] = None,
-        options=None,
+        options: Optional[dict] = None,
     ):
         """
 
@@ -5034,7 +5034,7 @@ class ImageryLayer(Layer):
         raster_id: int,
         geometry: Union[dict[str, Any], Polygon, Point, MultiPoint, Polyline],
         in_sr: Optional[dict] = None,
-        options=None,
+        options: Optional[dict] = None,
     ):
         """
 
@@ -5151,6 +5151,10 @@ class ImageryLayer(Layer):
             op = img_layer.get_image_url(image_uri="/vsis3/t-agu/Hosted_om20230601105400/data/YUN_0040.JPG")
 
         """
+
+        if self.properties["capabilities"].lower().find("download") == -1:
+            return
+
         if self.tiles_only:
             raise RuntimeError(
                 "This operation cannot be performed on a TilesOnly Service"
