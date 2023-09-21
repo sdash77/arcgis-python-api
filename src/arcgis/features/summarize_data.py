@@ -607,7 +607,8 @@ def summarize_center_and_dispersion(
         "future": future,
     }
     params = inspect_function_inputs(
-        fn=gis._tools.featureanalysis._tbx.summarize_center_and_dispersion, **kwargs,
+        fn=gis._tools.featureanalysis._tbx.summarize_center_and_dispersion,
+        **kwargs,
     )
     return gis._tools.featureanalysis.summarize_center_and_dispersion(**params)
 
@@ -947,7 +948,7 @@ def join_features(
                                                       spatial_relationship='intersects',
                                                       summary_fields = [{"statisticType":"COUNT","onStatisticField":None}],
                                                       output_name='return join features in count')
-                                                      
+
     """
     kwargs = {
         "target_layer": target_layer,
