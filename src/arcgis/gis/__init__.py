@@ -3910,6 +3910,11 @@ class UserManager(object):
         role              Optional string. The role for the user account. The default value is org_user.
                           Other possible values are org_user, org_publisher, org_admin, viewer,
                           view_only, viewplusedit or a custom role object (from gis.users.roles).
+
+                          .. note::
+                            It is recommended to pass in role_id when assigning a custome role to a user. The
+                            role name can be used for multiple roles and can lead to issues if more than one
+                            custom role has the same role name. Access the role_id through property on the Role class.
         ----------------  -------------------------------------------------------------------------------
         provider          Optional string. The provider for the account. The default value is arcgis.
                           The other possible value is enterprise.
