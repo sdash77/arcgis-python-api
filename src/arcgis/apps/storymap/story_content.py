@@ -9,6 +9,7 @@ urllib3 = LazyLoader("urllib3")
 requests = LazyLoader("requests")
 mimetypes = LazyLoader("mimetypes")
 pil_image = LazyLoader("PIL.Image")
+html = LazyLoader("html")
 os = LazyLoader("os")
 _io = LazyLoader("io")
 _parse = LazyLoader("urllib.parse")
@@ -4021,6 +4022,10 @@ class Code:
             self._story._properties["nodes"][self.node]["data"]["lang"] = language
             if language in ["html", "json"]:
                 self._story._properties["nodes"][self.node]["data"]["isEncoded"] = True
+                # reassign content so it gets encoded correctly
+                # known limit: if the content was already encoded and it gets re-encoded there will be issue
+                # user should not re-set language if it is already encoded language so should be able to avoid the issue
+                self.content = self._content
             else:
                 self._story._properties["nodes"][self.node]["data"]["isEncoded"] = False
             self._language = language
@@ -4075,7 +4080,13 @@ class Code:
 
     # ----------------------------------------------------------------------
     def _update_content(self, content):
-        # TODO: check if need to encode html
+        if self._language in ["html", "json"]:
+            # need to encode
+            if self._language == "html":
+                content = html.ecape(content)
+            else:
+                # TODO: Encode json
+                content
         # set new content
         self._content = content
         # update dictionary properties
