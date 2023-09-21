@@ -3902,10 +3902,10 @@ class Code:
         self._existing = self._check_node()
         if self._existing is True:
             # Get the content and language
-            self.content = self._story._properties["nodes"][self.node]["data"][
+            self._content = self._story._properties["nodes"][self.node]["data"][
                 "content"
             ]
-            self.language = self._story._properties["nodes"][self.node]["data"]["lang"]
+            self._language = self._story._properties["nodes"][self.node]["data"]["lang"]
         else:
             # Create new instance, notice no resource node is needed for code
             self.content = content
@@ -4008,9 +4008,33 @@ class Code:
 
     # ----------------------------------------------------------------------
     @language.setter
-    def content(self, language):
+    def language(self, language):
         if self._existing is True:
             self._story._properties["nodes"][self.node]["data"]["lang"] = language
+
+    # ----------------------------------------------------------------------
+    @property
+    def line_number(self):
+        """
+        Get/Set whether line number property is set.
+
+        ==================  ========================================
+        **Parameter**        **Description**
+        ------------------  ----------------------------------------
+        enabled             Bool. Set to True if you want line numbers, False otherwise.
+        ==================  ========================================
+
+        :return:
+            True if line numbers are enabled and False if not.
+        """
+        if self._existing is True:
+            return self._story._properties["nodes"][self.node]["data"]["lineNumbers"]
+
+    # ----------------------------------------------------------------------
+    @line_number.setter
+    def line_number(self, enabled):
+        if self._existing is True:
+            self._story._properties["nodes"][self.node]["data"]["lineNumbers"] = enabled
 
     # ----------------------------------------------------------------------
     def delete(self):
@@ -4029,9 +4053,9 @@ class Code:
         self._story._properties["nodes"][self.node] = {
             "type": "code",
             "data": {
-                "lineNumbers": True,
-                "content": self.content,
-                "lang": self.language,
+                "lineNumbers": False,
+                "content": self._content,
+                "lang": self._language,
                 "isEncoded": True,
             },
         }
@@ -4040,7 +4064,7 @@ class Code:
     def _update_content(self, content):
         # TODO: check if need to encode html
         # set new content
-        self.content = content
+        self._content = content
         # update dictionary properties
         self._story._properties["nodes"][self.node]["data"]["content"] = content
 
