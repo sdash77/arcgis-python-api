@@ -607,8 +607,7 @@ def summarize_center_and_dispersion(
         "future": future,
     }
     params = inspect_function_inputs(
-        fn=gis._tools.featureanalysis._tbx.summarize_center_and_dispersion,
-        **kwargs,
+        fn=gis._tools.featureanalysis._tbx.summarize_center_and_dispersion, **kwargs,
     )
     return gis._tools.featureanalysis.summarize_center_and_dispersion(**params)
 
