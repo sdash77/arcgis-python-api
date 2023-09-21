@@ -1,7 +1,7 @@
 pipeline {
     agent {
         docker {
-            image "harbor-west.esri.com/python-api/arcgis-learn-pr-docs:2.1.0.3"
+            image "harbor-west.esri.com/python-api/arcgis-learn-pr-docs:2.2.0-pre"
             registryUrl 'https://harbor-west.esri.com'
             registryCredentialsId 'avworld_geosaurusaccnt'
             alwaysPull true

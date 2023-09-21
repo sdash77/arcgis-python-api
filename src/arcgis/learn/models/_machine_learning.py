@@ -441,9 +441,13 @@ class MLModel(object):
                                     ]
                                  2. for Regression
                                     [
-                                    "mean_absolute_error",
-                                    "mean_squared_error",
+                                    "MAE",
+                                    "MSE",
+                                    "RMSE",
+                                    "MAPE"
                                     ]
+                                 Metric should be one of the values mentioned in
+                                 the list.
 
         visualize                A boolean value to visualize plot of metrics
         =====================   ===========================================
