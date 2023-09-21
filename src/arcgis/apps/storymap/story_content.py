@@ -4104,12 +4104,8 @@ class Code:
     # ----------------------------------------------------------------------
     def _update_content(self, content):
         if self._language in ["html", "json"]:
-            # need to encode
-            if self._language == "html":
-                content = html.ecape(content)
-            else:
-                # TODO: Encode json
-                content
+            # same encoding for html and json
+            content = html.ecape(content)
         # set new content
         self._content = content
         # update dictionary properties
