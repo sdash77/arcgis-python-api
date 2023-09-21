@@ -64,22 +64,21 @@ def calculate_metrics(
     visualize,
 ):
     if not is_classification:
-        if not is_classification:
-            if fairness_metrics is None:
-                fairness_metrics = "RMSE"
-                fairness_ratio_threshold = 0.7
-                fairness_diff_threshold = 0.01
+        fairness_ratio_threshold = 0.7
+        fairness_diff_threshold = 0.01
+        if fairness_metrics is None:
+            fairness_metrics = "RMSE"
 
-            return get_regression_metrics(
-                data,
-                y_true,
-                y_pred,
-                group_test,
-                fairness_metrics,
-                visualize,
-                fairness_ratio_threshold,
-                fairness_diff_threshold,
-            )
+        return get_regression_metrics(
+            data,
+            y_true,
+            y_pred,
+            group_test,
+            fairness_metrics,
+            visualize,
+            fairness_ratio_threshold,
+            fairness_diff_threshold,
+        )
     else:
         return show_classification_score(
             data,
