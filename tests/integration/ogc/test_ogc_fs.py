@@ -6,7 +6,7 @@ from arcgis.gis import GIS
 from arcgis.mapping.ogc import OGCCollection, OGCFeatureService
 from collections.abc import Iterable as _Iterable
 
-ogc_url = "https://servicesdev.arcgis.com/01ClFLufh9nZafWR/ArcGIS/rest/services/TRAN_Alaska_State_Shape/OGCFeatureServer"
+ogc_url = "https://services2.arcgis.com/FiaPA4ga0iQKduv3/arcgis/rest/services/structures_medical_emergency_response_ogc/OGCFeatureServer"
 
 
 class TestOGCFS(unittest.TestCase):
