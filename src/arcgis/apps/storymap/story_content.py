@@ -4019,16 +4019,39 @@ class Code:
     @language.setter
     def language(self, language):
         if self._existing is True:
-            self._story._properties["nodes"][self.node]["data"]["lang"] = language
-            if language in ["html", "json"]:
-                self._story._properties["nodes"][self.node]["data"]["isEncoded"] = True
-                # reassign content so it gets encoded correctly
-                # known limit: if the content was already encoded and it gets re-encoded there will be issue
-                # user should not re-set language if it is already encoded language so should be able to avoid the issue
-                self.content = self._content
-            else:
-                self._story._properties["nodes"][self.node]["data"]["isEncoded"] = False
-            self._language = language
+            if language != self._language and language in [
+                "txt",
+                "arcade",
+                "cs",
+                "css",
+                "diff",
+                "html",
+                "js",
+                "java",
+                "json",
+                "jsx",
+                "kt",
+                "py",
+                "r",
+                "sql",
+                "svg",
+                "swift",
+                "tsx",
+                "ts",
+            ]:
+                self._story._properties["nodes"][self.node]["data"]["lang"] = language
+                if language in ["html", "json"]:
+                    self._story._properties["nodes"][self.node]["data"][
+                        "isEncoded"
+                    ] = True
+                    # reassign content so it gets encoded correctly
+                    # known limit: this will cause an issue if a user goes from html to json or vise versa
+                    self.content = self._content
+                else:
+                    self._story._properties["nodes"][self.node]["data"][
+                        "isEncoded"
+                    ] = False
+                self._language = language
 
     # ----------------------------------------------------------------------
     @property
