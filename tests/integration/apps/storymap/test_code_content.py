@@ -18,9 +18,7 @@ class TestEmbedContent(unittest.TestCase):
                 # establish gis connection
                 gis = GIS(profile=profile, verify_cert=False)
                 story = StoryMap()
-                code = Code(
-                    'from arcgis.gis imoprt GIS\ngis = GIS()', "py"
-                )
+                code = Code("from arcgis.gis imoprt GIS\ngis = GIS()", "py")
                 code_block = story.add(code)
 
                 assert code_block
@@ -38,9 +36,7 @@ class TestEmbedContent(unittest.TestCase):
                 gis = GIS(profile=profile, verify_cert=False)
                 story = StoryMap()
 
-                code = Code(
-                    'from arcgis.gis imoprt GIS\ngis = GIS()', "py"
-                )
+                code = Code("from arcgis.gis imoprt GIS\ngis = GIS()", "py")
                 code_block = story.add(code)
 
                 deleted = code_block.delete()
@@ -55,9 +51,7 @@ class TestEmbedContent(unittest.TestCase):
                 # establish gis connection
                 gis = GIS(profile=profile, verify_cert=False)
                 story = StoryMap()
-                code = Code(
-                    'from arcgis.gis imoprt GIS\ngis = GIS()', "py"
-                )
+                code = Code("from arcgis.gis imoprt GIS\ngis = GIS()", "py")
                 code_block = story.add(code)
 
                 new_content = "Hello, this is plain text"

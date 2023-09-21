@@ -3905,7 +3905,12 @@ class Code:
             self._content = self._story._properties["nodes"][self.node]["data"][
                 "content"
             ]
-            self._language = self._story._properties["nodes"][self.node]["data"]["lang"]
+            if "lang" in self._story._properties["nodes"][self.node]["data"]:
+                self._language = self._story._properties["nodes"][self.node]["data"][
+                    "lang"
+                ]
+            else:
+                self._language = "txt"
         else:
             # Create new instance, notice no resource node is needed for code
             self.content = content
@@ -4004,13 +4009,21 @@ class Code:
             The language that is being used.
         """
         if self._existing is True:
-            return self._story._properties["nodes"][self.node]["data"]["lang"]
+            if "lang" in self._story._properties["nodes"][self.node]["data"]:
+                return self._story._properties["nodes"][self.node]["data"]["lang"]
+            else:
+                return "txt"
 
     # ----------------------------------------------------------------------
     @language.setter
     def language(self, language):
         if self._existing is True:
             self._story._properties["nodes"][self.node]["data"]["lang"] = language
+            if language in ["html", "json"]:
+                self._story._properties["nodes"][self.node]["data"]["isEncoded"] = True
+            else:
+                self._story._properties["nodes"][self.node]["data"]["isEncoded"] = False
+            self._language = language
 
     # ----------------------------------------------------------------------
     @property
@@ -4056,7 +4069,7 @@ class Code:
                 "lineNumbers": False,
                 "content": self._content,
                 "lang": self._language,
-                "isEncoded": True,
+                "isEncoded": True if self._language in ["html", "json"] else False,
             },
         }
 
