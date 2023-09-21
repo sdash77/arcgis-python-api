@@ -1544,7 +1544,9 @@ class MapView(widgets.DOMWidget):
         ):
             item = item.spatial.to_feature_collection()
         self._add_layer_to_widget(item, options)
-        if "opacity" in options:
+
+        # Only for imagery layers
+        if isinstance(item, ImageryLayer) and "opacity" in options:
             # Extra steps because the layer opacity will only update after renderering on
             # the widget. Weird behavior with no other solution found.
             wm_layer = dict(self.webmap.layers[-1])  # last layer added
@@ -1608,11 +1610,6 @@ class MapView(widgets.DOMWidget):
                 )
         elif isinstance(item, FeatureSet):
             fset_symbol = options["symbol"] if options and "symbol" in options else None
-            for feature in item.features:
-                try:
-                    feature.geometry = dict(feature.geometry)
-                except:
-                    pass
             fc = FeatureCollection.from_featureset(item, symbol=fset_symbol)
             self._add_layer_to_widget(fc, options)
 
