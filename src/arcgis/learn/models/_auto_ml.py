@@ -474,11 +474,21 @@ class AutoML(object):
         :return:
             output from AutoML's model.score(), R2 score in case of regression and Accuracy in case of classification.
         """
+        col_type = str(self._validation_labels.dtype)
+        val_labels = self._validation_labels
+        if col_type == "object":
+            if isinstance(val_labels[0], float):
+                val_labels = val_labels.astype(float)
+            elif isinstance(val_labels[0], int):
+                val_labels = val_labels.astype(int)
+            else:
+                val_labels = self._validation_labels
+        val_labels = self._validation_labels.astype(int)
         if getattr(self._data, "_is_not_empty", True):
             with warnings.catch_warnings():
                 warnings.simplefilter("ignore", UserWarning)
                 return self._model.score(
-                    self._validation_data_df, self._validation_labels
+                    self._validation_data_df, val_labels
                 )
         else:
             raise Exception(
