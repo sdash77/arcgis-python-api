@@ -1862,7 +1862,9 @@ def prepare_data(
             from osgeo import gdal
 
             _im_path = str(path / (line.split()[0]).replace("\\", os.sep))
-            ds = gdal.Open(_im_path)
+            with warnings.catch_warnings():
+                warnings.simplefilter("ignore")
+                ds = gdal.Open(_im_path)
             if ds.RasterCount != 3 or ds.GetRasterBand(1).DataType != gdal.GDT_Byte:
                 imagery_type = sensor_name
             _infered = True
@@ -2665,9 +2667,11 @@ def prepare_data(
         _is_multispec = False
 
         def check_ms(il, il2):
-            samp_img, samp_img2 = gdal.Open(il.items[0].__str__()), gdal.Open(
-                il2.items[0].__str__()
-            )
+            with warnings.catch_warnings():
+                warnings.simplefilter("ignore")
+                samp_img, samp_img2 = gdal.Open(il.items[0].__str__()), gdal.Open(
+                    il2.items[0].__str__()
+                )
             if (
                 il[0].shape[0] != 3
                 or samp_img.GetRasterBand(1).DataType != gdal.GDT_Byte
@@ -2993,7 +2997,9 @@ def prepare_data(
         )
         img_type = "RGB"
         _im_path1, _im_path2 = (str(files_list_a[0]), str(files_list_b[0]))
-        ds1, ds2 = gdal.Open(_im_path1), gdal.Open(_im_path2)
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            ds1, ds2 = gdal.Open(_im_path1), gdal.Open(_im_path2)
         if (
             msimage_list_a[0].shape[0] > 3
             or msimage_list_b[0].shape[0] > 3

@@ -28,6 +28,7 @@ from .._data import _prepare_working_dir
 from .._utils.cyclegan import image_extensions
 from .._data import _tensor_scaler
 from .._utils.superres import show_batch
+import warnings
 
 stats = [[0.5, 0.5, 0.5], [0.5, 0.5, 0.5]]
 
@@ -939,7 +940,9 @@ def rgb_or_ms(im_path):
     try:
         from osgeo import gdal
 
-        ds = gdal.Open(im_path)
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            ds = gdal.Open(im_path)
         if ds.RasterCount != 3 or ds.GetRasterBand(1).DataType != gdal.GDT_Byte:
             return "ms"
         else:
