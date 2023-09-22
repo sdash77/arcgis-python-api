@@ -1196,13 +1196,15 @@ class TimeSeriesModel(ArcGISModel):
 
     def _convert_datetime(self, index_data_copy):
         sample_ticks = False
-        if not pd.core.dtypes.common.is_datetime_or_timedelta_dtype(index_data_copy):
-            try:
-                index_data_copy = pd.to_datetime(
-                    index_data_copy, infer_datetime_format=True
-                )
-            except:
-                sample_ticks = True
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", UserWarning)
+            if not pd.core.dtypes.common.is_datetime_or_timedelta_dtype(
+                index_data_copy
+            ):
+                try:
+                    index_data_copy = pd.to_datetime(index_data_copy)
+                except:
+                    sample_ticks = True
         return index_data_copy, sample_ticks
 
     def show_results(self, rows=5):
@@ -1270,16 +1272,17 @@ class TimeSeriesModel(ArcGISModel):
                             transformed_data = transform.inverse_transform(
                                 np.array(transformed_data, dtype=int)
                             )
-                        else:
-                            transformed_data = transform.inverse_transform(
-                                np.array(transformed_data).reshape(-1, 1)
-                            )
-                            transformed_data = transformed_data.squeeze(1)
+                        # else: # Commenting it out. Because inverse transform tends to change the scale
+                        #     transformed_data = transform.inverse_transform(
+                        #         np.array(transformed_data).reshape(-1, 1)
+                        #     )
+                        #     transformed_data = transformed_data.squeeze(1)
 
                 seq_inverse.append(transformed_data)
                 index = index + 1
 
             sequence_inversed.append(seq_inverse)
+
         if self._data._index_seq is not None:
             validation_index_seq = self._data._index_seq.take(
                 self._data._validation_indexes_ts, axis=0

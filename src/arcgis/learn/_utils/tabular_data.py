@@ -1279,9 +1279,7 @@ class TabularDataObject(object):
             # Try to convert the datatype to timestamp
             warnings.warn("Index field is not timestamp. Converting it to timestamp.")
             try:
-                index_data_copy = pd.to_datetime(
-                    index_data_copy, infer_datetime_format=True
-                )
+                index_data_copy = pd.to_datetime(index_data_copy)
             except:
                 sample_ticks = True
 
