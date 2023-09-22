@@ -420,7 +420,8 @@ class YOLOv3(ArcGISModel):
     ):
         """
         Predicts and displays the results of a trained model on a single image.
-        This method is only supported for RGB images.
+        This method is only supported for RGB images. The image size should at
+        least be 416x416px if using COCO pretrained weights.
 
         =====================   ===========================================
         **Parameter**            **Description**
