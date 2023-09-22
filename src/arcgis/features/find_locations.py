@@ -756,7 +756,7 @@ def find_similar_locations(
                                                     "overwrite": True}
      ----------------------    ---------------------------------------------------------
     gis                         Optional. The :class:`~arcgis.gis.GIS`  on which this tool runs. If not specified, the active GIS is used.
-    -----------------------    --------------------------------------------------------------------------------  
+    -----------------------    --------------------------------------------------------------------------------
     estimate                    Optional boolean. If True, the number of credits to run the operation will be returned.
     -----------------------     -------------------------------------------------------------------------------------------
     future                      Optional boolean. If True, a future object will be returned and the process
