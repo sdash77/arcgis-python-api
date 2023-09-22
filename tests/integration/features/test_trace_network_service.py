@@ -9,7 +9,7 @@ gis = GIS(
     verify_cert=False,
 )
 
-# Create Topographic Service
+# Get Trace Network Service
 try:
     # Server gets updated at 2:30PM PST Everyday. Do not test around then.
     trace_nm = TraceNetworkManager(

@@ -482,14 +482,21 @@ class FeatureSet(object):
         if len(features) > 0:
             feat_geom = None
             feature = features[0]
-
-            if (
-                "geometry" in feature.as_dict
-            ):  # can construct features out of tables with just attributes, no geometry
-                feat_geom = feature.geometry
-            elif isinstance(feature, dict):
-                if "geometry" in feature:
-                    feat_geom = feature["geometry"]
+            i = 1
+            while feat_geom is None and i < len(features):
+                # while feat_geom is none and we haven't gone through all features, keep going
+                if (
+                    "geometry" in feature.as_dict
+                ):  # can construct features out of tables with just attributes, no geometry
+                    feat_geom = feature.geometry
+                elif isinstance(feature, dict):
+                    if "geometry" in feature:
+                        feat_geom = feature["geometry"]
+                if feat_geom is None:
+                    # get next feature and continue while loop
+                    feature = features[i]
+                    # get next i
+                    i = i + 1
 
             if feat_geom is not None:
                 if spatial_reference is None:
@@ -513,9 +520,7 @@ class FeatureSet(object):
 
             # region - build fields into a dict
             if self._fields is None or len(self._fields) == 0:
-                self._fields = (
-                    feature.fields
-                )  # get fields from first feature if not set
+                self._fields = feature.fields  # get fields from the feature if not set
 
             if self._fields and isinstance(
                 self._fields[0], str

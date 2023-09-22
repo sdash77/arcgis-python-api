@@ -27,7 +27,7 @@ def get_config_parser() -> dict:
         os.path.join(os.path.dirname(__file__), "config.ini.txt"),
         os.path.join(os.path.dirname(__file__), "config.ini"),
         os.path.join(
-            QALAB_ROOT_PATH
+            QALAB_ROOT_PATH,
             "esri_requests",
             "config.ini",
         ),

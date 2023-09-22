@@ -322,7 +322,7 @@ class WebMap(HasTraits, collections.OrderedDict):
             return super().__repr__()
 
     def __str__(self):
-        return json.dumps(self, default=_utils._date_handler)
+        return json.dumps(self._webmapdict, default=_utils._date_handler)
 
     def add_table(
         self,
@@ -1946,7 +1946,7 @@ class WebMap(HasTraits, collections.OrderedDict):
         Gets a list of possible base maps to set as the
         :attr:`~arcgis.mapping.WebMap.basemap` for the ``WebMap``.
         """
-        if self._gis._is_authenticated:
+        if self._gis is not None and self._gis._is_authenticated:
             return [
                 "dark-gray-vector",
                 "gray-vector",
@@ -5193,7 +5193,7 @@ class VectorTileLayer(arcgis.gis.Layer):
         =====================       =======================================================
         **Parameter**                **Description**
         ---------------------       -------------------------------------------------------
-        levels                      Required string.Specifies the tiled service levels to export.
+        levels                      Optional string.Specifies the tiled service levels to export.
                                     The values should correspond to Level IDs. The values
                                     can be comma-separated values or a range of values.
                                     Ensure that the tiles are present at each specified level.
@@ -5248,21 +5248,22 @@ class VectorTileLayer(arcgis.gis.Layer):
         =====================       =======================================================
 
         :returns:
-            A path to downloaded file
+            A list of exported item dictionaries or a single path
         """
         if not self.properties.exportTilesAllowed:
             raise arcgis.gis.Error(
                 "Export Tiles operation is not allowed for this service. Enable offline mode."
             )
-        if not levels:
-            raise ValueError("Parameter levels is mandatory for this operation.")
+
         params = {
             "f": "json",
             "exportBy": "levelId",
-            "levels": levels,
+            "storageFormatType": "Compact",
+            "tilePackage": False,
+            "optimizeTilesForSize": False,
         }
-        if export_extent:
-            params["exportExtent"] = export_extent
+        params["levels"] = levels if levels else None
+        params["exportExtent"] = export_extent if export_extent else "DEFAULT"
         # parameter introduced at 10.7
         if polygon and self.gis.version >= [7, 1]:
             params["polygon"] = polygon
@@ -5274,7 +5275,7 @@ class VectorTileLayer(arcgis.gis.Layer):
         exportJob = self._con.get(path=url, params=params)
 
         # get the job information
-        path = "%s/jobs/%s" % (url, exportJob["jobId"])
+        path = "%s/jobs/%s" % (self._url, exportJob["jobId"])
 
         resp_params = {"f": "json"}
         job_response = self._con.post(path, resp_params)
@@ -5283,10 +5284,11 @@ class VectorTileLayer(arcgis.gis.Layer):
             status = job_response.get("status") or job_response.get("jobStatus")
             i = 0
             while not status == "esriJobSucceeded":
-                i = i + 1
+                if i < 10:
+                    i = i + 1
                 time.sleep(i)
 
-                job_response = self._con.post(path, params)
+                job_response = self._con.post(path, resp_params)
                 status = job_response.get("status") or job_response.get("jobStatus")
                 if status in [
                     "esriJobFailed",
@@ -5300,16 +5302,18 @@ class VectorTileLayer(arcgis.gis.Layer):
             raise Exception("No job results.")
 
         if "results" in job_response:
-            allResults = job_response["results"]
+            value = job_response["results"]["out_service_url"]["paramUrl"]
+            result_path = path + "/" + value
+            params = {"f": "json"}
+            allResults = self._con.get(path=result_path, params=params)
 
-            for k, v in allResults.items():
-                if k == "out_service_url":
-                    value = v.value
-                    params = {"f": "json"}
-                    gpRes = self._con.get(path=value, params=params)
-                    return gpRes["folders"]
-                else:
-                    return None
+            if "value" in allResults:
+                value = allResults["value"]
+                params = {"f": "json"}
+                gpRes = self._con.get(path=value, params=params)
+                return gpRes["files"]
+            else:
+                return None
         elif "output" in job_response:
             allResults = job_response["output"]
             if allResults["itemId"]:
@@ -6118,7 +6122,8 @@ class MapImageLayer(arcgis.gis.Layer):
         """
         url = "{url}/info/metadata".format(url=self._url)
         params = {"f": "json"}
-        return self._con.get(url, params)
+        resp = self._con.get(url, params, return_raw_response=True)
+        return resp.text
 
     # ----------------------------------------------------------------------
     def thumbnail(self, out_path: Optional[str] = None):
@@ -6870,7 +6875,7 @@ class MapImageLayer(arcgis.gis.Layer):
         export_by: str,
         levels: str,
         tile_package: bool = False,
-        export_extent: str = "DEFAULTEXTENT",
+        export_extent: str = "DEFAULT",
         area_of_interest: Optional[Union[dict[str, Any], _geometry.Polygon]] = None,
         asynchronous: bool = True,
         **kwargs,
@@ -6894,7 +6899,7 @@ class MapImageLayer(arcgis.gis.Layer):
                                service levels to export. The values can be Level IDs, cache scales
                                or the Resolution (in the case of image services).
                                Values:
-                                    "LevelID" | "Resolution" | "Scale"
+                                    "levelId" | "resolution" | "scale"
         ------------------     --------------------------------------------------------------------
         levels                 Required string. Specify the tiled service levels for which you want
                                to get the estimates. The values should correspond to Level IDs,
@@ -6965,13 +6970,13 @@ class MapImageLayer(arcgis.gis.Layer):
             params = {"f": "json"}
             job_response = self._con.post(path, params)
 
-            if "status" in job_response:
-                status = job_response.get("status")
+            if "status" in job_response or "jobStatus" in job_response:
+                status = job_response.get("status") or job_response.get("jobStatus")
                 while not status == "esriJobSucceeded":
                     time.sleep(5)
 
                     job_response = self._con.post(path, params)
-                    status = job_response.get("status")
+                    status = job_response.get("status") or job_response.get("jobStatus")
                     if status in [
                         "esriJobFailed",
                         "esriJobCancelling",
@@ -6980,10 +6985,17 @@ class MapImageLayer(arcgis.gis.Layer):
                     ]:
                         print(str(job_response["messages"]))
                         raise Exception("Job Failed with status " + status)
+                    else:
+                        path += (
+                            "/" + job_response["results"]["out_service_url"]["paramUrl"]
+                        )
+                        out_service_resp = self._con.post(path)["value"]
+                        return out_service_resp
+                path += "/" + job_response["results"]["out_service_url"]["paramUrl"]
+                out_service_resp = self._con.post(path)["value"]
+                return out_service_resp
             else:
                 raise Exception("No job results.")
-
-            return job_response["results"]
 
     # ----------------------------------------------------------------------
     def export_tiles(
@@ -7042,7 +7054,7 @@ class MapImageLayer(arcgis.gis.Layer):
                                service levels to export. The values can be Level IDs, cache scales.
                                or the resolution.  The default is 'LevelID'.
                                Values:
-                                    `LevelID | Resolution | Scale`
+                                    `levelId | resolution | scale`
         ------------------     --------------------------------------------------------------------
         tile_package           Optional boolean. Allows exporting either a tile package or a cache
                                raster data set. If the value is true, output will be in tile
@@ -7161,12 +7173,13 @@ class MapImageLayer(arcgis.gis.Layer):
 
                 for k, v in allResults.items():
                     if k == "out_service_url":
-                        value = v.value
+                        value = list(v.values())[0]
                         params = {"f": "json"}
-                        gpRes = self._con.get(path=value, params=params)
+                        gpRes = self._con.get(path=path + "/" + value, params=params)
                         if tile_package == True:
+                            gpOutput = self._con.get(gpRes["value"])
                             files = []
-                            for f in gpRes["files"]:
+                            for f in gpOutput["files"]:
                                 name = f["name"]
                                 dlURL = f["url"]
                                 files.append(
@@ -7179,7 +7192,7 @@ class MapImageLayer(arcgis.gis.Layer):
                                 )
                             return files
                         else:
-                            return gpRes["folders"]
+                            return self._con.get(path=gpRes["value"])["folders"]
                     else:
                         return None
             elif "output" in job_response:

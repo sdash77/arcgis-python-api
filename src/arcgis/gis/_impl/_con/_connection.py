@@ -189,6 +189,9 @@ class Connection(object):
         self._password = password
 
         self._expiration = kwargs.pop("expiration", 60) or 60
+        if self._expiration < 60:
+            _log.warning("Expiration is less than 60 seconds, changing value to 60")
+            self._expiration = 60
         self._portal_connection = kwargs.pop(
             "portal_connection", None
         )  # For Federated Objects (Portal Connection)
@@ -928,7 +931,6 @@ class Connection(object):
             file_name = (
                 _filename_from_url(url) or _filename_from_headers(resp.headers) or None
             )
-
         if force_bytes:
             try:
                 return bytes(resp.content)

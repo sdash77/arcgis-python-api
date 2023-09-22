@@ -23,8 +23,6 @@ from uuid import uuid4
 import configparser
 from contextlib import contextmanager
 import functools
-import random
-import string
 from datetime import datetime, timedelta
 import logging
 from typing import Any, Optional, Union
@@ -3315,6 +3313,8 @@ class UserManager(object):
         """
         The ``send_notification`` method creates a user notifcation for a list of users.
 
+        .. note::
+            This has been deprecated at Enterprise 10.9 and can only be used with ArcGIS Online.
 
         ================  ===============================================================================
         **Parameter**      **Description**
@@ -3346,26 +3346,27 @@ class UserManager(object):
 
 
         """
-        if self._gis.version >= [6, 4]:
-            susers = []
-            for u in users:
-                if isinstance(u, str):
-                    susers.append(u)
-                elif isinstance(u, User):
-                    susers.append(u.username)
-                del u
-            url = "{base}portals/self/createNotification".format(
-                base=self._gis._portal.resturl
-            )
-            params = {
-                "f": "json",
-                "notificationChannelType": type,
-                "subject": subject,
-                "message": message,
-                "users": ",".join(susers),
-                "clientId": client_id,
-            }
-            return self._portal.con.post(url, params)["success"]
+        if self._gis._is_agol:
+            if self._gis.version >= [6, 4]:
+                susers = []
+                for u in users:
+                    if isinstance(u, str):
+                        susers.append(u)
+                    elif isinstance(u, User):
+                        susers.append(u.username)
+                    del u
+                url = "{base}portals/self/createNotification".format(
+                    base=self._gis._portal.resturl
+                )
+                params = {
+                    "f": "json",
+                    "notificationChannelType": type,
+                    "subject": subject,
+                    "message": message,
+                    "users": ",".join(susers),
+                    "clientId": client_id,
+                }
+                return self._portal.con.post(url, params)["success"]
         else:
             raise NotImplementedError(
                 "The current version of the enterprise does not support `send_notification`"
@@ -3909,6 +3910,11 @@ class UserManager(object):
         role              Optional string. The role for the user account. The default value is org_user.
                           Other possible values are org_user, org_publisher, org_admin, viewer,
                           view_only, viewplusedit or a custom role object (from gis.users.roles).
+
+                          .. note::
+                            It is recommended to pass in role_id when assigning a custome role to a user. The
+                            role name can be used for multiple roles and can lead to issues if more than one
+                            custom role has the same role name. Access the role_id through property on the Role class.
         ----------------  -------------------------------------------------------------------------------
         provider          Optional string. The provider for the account. The default value is arcgis.
                           The other possible value is enterprise.
@@ -3967,8 +3973,11 @@ class UserManager(object):
         levels = {"creator": "creatorUT", "viewer": "viewerUT"}
         role_lookup = {
             "admin": "org_admin",
+            "org_admin": "org_admin",
             "user": "org_user",
+            "org_user": "org_user",
             "publisher": "org_publisher",
+            "org_publisher": "org_publisher",
             "creator": "org_publisher",
             "view_only": "tLST9emLCNfFcejK",
             "org_viewer": "iAAAAAAAAAAAAAAA",
@@ -3986,11 +3995,47 @@ class UserManager(object):
             role = role.role_id
         elif role and role.lower() in role_lookup:
             role = role_lookup[role.lower()]
+        elif isinstance(role, str):
+            # lookup the role id to see if it exists, else set to ""
+            try:
+                role = self._gis.users.roles.get_role(role)
+                role = role.role_id
+            except:
+                # maybe user passed in role name instead of id
+                if self._gis.users.roles.exists(role):
+                    all_roles = self._gis.users.roles.all()
+                    for r in all_roles:
+                        if r.name.lower() == role.lower():
+                            role = r.role_id
+                            break
+                else:
+                    role = ""
         else:
             role = ""
 
+        # Check if default role provided by org if none given
+        if role in ["", None]:
+            if self._gis._is_arcgisonline:
+                url = (
+                    self._gis._public_rest_url
+                    + "portals/self/userDefaultSettings?f=json"
+                )
+            else:
+                url = (
+                    self._gis._portal.resturl
+                    + "portals/self/userDefaultSettings?f=json"
+                )
+            params = {"f": "json"}
+            resp = self._gis._con._session.get(url).json()
+            if "role" not in resp or resp["role"] == None:
+                raise ValueError(
+                    "Role cannot be None since no default role is provided in the org settings. Please provide a valid role."
+                )
+
         if self._gis._portal.is_arcgisonline or (
-            self._gis._portal.is_kubernetes and provider != "enterprise"
+            self._gis._portal.is_kubernetes
+            and provider != "enterprise"
+            and self._gis._portal._version != "10.3"
         ):
             if (
                 credits == -1
@@ -4061,7 +4106,10 @@ class UserManager(object):
                         return new_user
                     else:
                         return new_user
-        elif self._gis._portal.is_kubernetes and provider == "enterprise":
+        # If kubernets is 11.1 then need to use the second method, even if provider is arcgis
+        elif self._gis._portal.is_kubernetes and (
+            provider == "enterprise" or self._gis._portal._version == "10.3"
+        ):
             createuser_url = (
                 self._portal.url
                 + "/admin/orgs/0123456789ABCDEF/security/users/createUser"
@@ -8452,6 +8500,15 @@ class ContentManager(object):
                                   items if available.  ArcGIS Enterprise must be 10.9+.
         =====================     ====================================================================
 
+        **keyword arguments**
+
+        =====================     ====================================================================
+        copy_code_attachment      Option Boolean.  Determines whether a *code_attachment* item should
+                                  be created when cloning a Web App Builder item. Default values is
+                                  *True*. Set to *False* to prevent item from being created.
+        =====================     ====================================================================
+
+
         :return:
            A list of :class:`~arcgis.gis.Item` objects created during the clone.
 
@@ -10943,10 +11000,32 @@ class User(dict):
     # ----------------------------------------------------------------------
     @property
     def recyclebin(self) -> "RecycleBin":
-        """returns access to the user's recyclebin"""
-        from ._impl._content_manager._recyclebin import RecycleBin
+        """Provides access to the user's recyclebin.
 
-        return RecycleBin(gis=self._gis, user=self.username)
+        .. note::
+            This functionality is only available for ArcGIS Online.
+
+        :Returns: :class:`~arcgis.gis._impl._content_manager.RecycleBin` object
+
+        .. code-block:: python
+
+            # Usage Example:
+            >>> gis = GIS(profile="your_online_user")
+
+            >>> my_user_obj = gis.users.me
+            >>> my_recy_bin = my_user_obj.recyclebin
+            >>> type(my_recy_bin)
+
+            <class 'arcgis.gis._impl._content_manager._recyclebin.RecycleBin'>
+        """
+        gis: GIS = self._gis
+        if gis._is_arcgisonline or (
+            gis._is_arcgisonline == False and gis.version > [11, 2]
+        ):
+            from ._impl._content_manager._recyclebin import RecycleBin
+
+            return RecycleBin(gis=self._gis, user=self.username)
+        return None
 
     # ----------------------------------------------------------------------
     def user_types(self):
@@ -12460,7 +12539,7 @@ class User(dict):
         if passed:
             self._hydrated = False
             self._hydrate()
-            self.role = role
+
         return passed
 
     def delete(self, reassign_to: Optional[str] = None):
@@ -13602,7 +13681,9 @@ class Item(dict):
                 res = self._portal.con.post(data_path, params)
             else:
                 raise
-        if res["success"] == False:
+        if "success" in res and res["success"] == False:
+            raise Exception("Could not export item.")
+        elif not "exportItemId" in res:
             raise Exception("Could not export item.")
         export_item = Item(gis=self._gis, itemid=res["exportItemId"])
         if wait == True:

@@ -728,8 +728,9 @@ class UX(object):
     @property
     def homepage_settings(self):
         """
-        Get an instance of the HomePageSettings class to make edits to the org's
-        homepage such as the background, title, logo, etc.
+        Get an instance of the :class:`~arcgis.gis.admin.HomePageSettings` class
+        to make edits to the organization's  homepage such as the background,
+        title, logo, etc.
         """
         return HomePageSettings(gis=self._gis)
 
@@ -737,8 +738,8 @@ class UX(object):
     @property
     def map_settings(self):
         """
-        Get an instance of the MapSettings class to make edits to the org's default
-        map settings such as extent, basemap, etc.
+        Get an instance of the :class:`~arcgis.gis.admin.MapSettings` class to
+        make edits to the org's default map settings such as extent, basemap, etc.
         """
         return MapSettings(gis=self._gis)
 
@@ -746,8 +747,9 @@ class UX(object):
     @property
     def item_settings(self):
         """
-        Get an instance of the ItemSettings class to make edits to the org's default
+        Get an instance of the :class:`~arcgis.gis.admin.ItemSettings` class to make edits to the org's default
         map settings such as comments, metadata, etc.
+
         """
         return ItemSettings(gis=self._gis)
 
@@ -755,8 +757,9 @@ class UX(object):
     @property
     def security_settings(self):
         """
-        Get an instance of the SecuritySettings class to make edits to the org's default
-        map settings such as informational banner, password policy, etc.
+        Get an instance of the :class:`~arcgis.gis.admin.SecuritySettings` class
+        to make edits to the organization's default map settings such as
+        the informational banner, password policy, etc.
         """
         return SecuritySettings(gis=self._gis)
 
@@ -1682,6 +1685,7 @@ class HomePageSettings(object):
 
     # ----------------------------------------------------------------------
     def get_base_color(self):
+        """Gets the base color of the home page."""
         if self._new_hp:
             hp = self._reader_hp()
             return hp["baseColor"]
@@ -2740,7 +2744,7 @@ class SecuritySettings(object):
                     "Cannot set empty list as Administrative contacts. You must have at least two administrators in the list."
                 )
             for ad in admins:
-                role = self._gis.users.search(ad)[0].role
+                role = self._gis.users.get(ad).role
                 if role == "org_admin":
                     admins_ok.append(ad)
             if len(admins_ok) < 2:

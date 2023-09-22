@@ -363,6 +363,10 @@ compute_accuracy_for_object_detection
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 .. autofunction:: arcgis.learn.compute_accuracy_for_object_detection
 
+detect_change_using_deep_learning
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.. autofunction:: arcgis.learn.detect_change_using_deep_learning
+
 Embeddings
 ^^^^^^^^^^
 .. autoclass:: arcgis.learn.Embeddings
