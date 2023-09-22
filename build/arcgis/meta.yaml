@@ -32,7 +32,7 @@ requirements:
   - requests-kerberos
   - requests-oauthlib
   - pywin32-security [win]
-  - lerc
+  - pylerc
   - python-certifi-win32 [win and py<310]
   - truststore [py>=310]
   - cryptography
