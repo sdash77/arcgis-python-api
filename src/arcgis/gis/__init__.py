@@ -205,7 +205,8 @@ class GIS(object):
     ======================    ===============================================================
     **kwargs**                **Description**
     ----------------------    ---------------------------------------------------------------
-    proxy_host                Optional string. The host name of the proxy server used to allow HTTP/S
+    proxy_host                (Deprecated, use proxy)
+                              Optional string. The host name of the proxy server used to allow HTTP/S
                               access in the network where the script is run.
 
                               ex: 127.0.0.1
@@ -213,7 +214,9 @@ class GIS(object):
     use_gen_token             Optional Boolean. The default is `False`. Uses generateToken
                               login over OAuth2 login.
     ----------------------    ---------------------------------------------------------------
-    proxy_port                Optional integer. The proxy host port.  The default is 80.
+    proxy_port                (Deprecated, use proxy)
+                              Optional integer. The proxy host port.
+                              The default is 80.
     ----------------------    ---------------------------------------------------------------
     token                     Optional string. This is the Enterprise token for built-in
                               logins. This parameter is only honored if the username/password
@@ -319,7 +322,7 @@ class GIS(object):
 
         # Usage Example 5: Anonymous ArcGIS Online Login with Proxy
 
-        gis = GIS(proxy_host='127.0.0.1', proxy_port=8888)
+        gis = GIS(proxy={'http': 'http://127.0.0.1:8888', 'https': 'http://127.0.0.1:8887'})
 
     .. code-block:: python
 
@@ -405,6 +408,14 @@ class GIS(object):
         self._use_gen_token = kwargs.pop("use_gen_token", False)
         self._proxy_host = kwargs.pop("proxy_host", None)
         self._proxy_port = kwargs.pop("proxy_port", 80)
+        if self._proxy_host and self._proxy_port:
+            _log.warning(
+                (
+                    "proxy_host and proxy_post are deprecated, use "
+                    "`proxy` instead.  These parameters will stop w"
+                    "orking in a future release."
+                )
+            )
         self._referer = kwargs.pop("referer", None)
         self._timeout = kwargs.pop("timeout", 600)  # default timeout is 600 seconds
         custom_auth = kwargs.pop("custom_auth", None)
@@ -523,10 +534,12 @@ class GIS(object):
         client_secret = kwargs.pop("client_secret", None)
         self._api_key = None
         if verify_cert == False:
-            log = logging.getLogger()
-            log.warning(
+            _log.warning(
                 "Setting `verify_cert` to False is a security risk, use at your own risk."
             )
+        elif isinstance(verify_cert, str) and os.path.isfile(verify_cert) == False:
+            _log.warning("Could not load the certificate provided to `verify_cert`")
+            verify_cert = True
         if self._username is None:
             if "ESRI_API_KEY" in os.environ and self._utoken is None:
                 self._utoken = os.environ.get("ESRI_API_KEY", None)
