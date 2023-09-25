@@ -547,7 +547,7 @@ class GIS(object):
             _log.warning(
                 "Setting `verify_cert` to False is a security risk, use at your own risk."
             )
-        elif isinstance(verify_cert, str) and os.path.isfile(verify_cert) == False:
+        elif isinstance(verify_cert, str) and os.path.exists(verify_cert) == False:
             _log.warning("Could not load the certificate provided to `verify_cert`")
             verify_cert = True
             self._verify_cert = verify_cert
