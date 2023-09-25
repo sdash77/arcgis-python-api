@@ -15559,14 +15559,42 @@ class Item(dict):
 
         related_items = []
 
-        postdata = {"f": "json"}
+        postdata = {
+            "f": "json",
+            "num": 100,
+        }
         postdata["relationshipType"] = rel_type
         postdata["direction"] = direction
         resp = self._portal.con.post(
             "content/items/" + self.itemid + "/relatedItems", postdata
         )
-        for related_item in resp["relatedItems"]:
-            related_items.append(Item(self._gis, related_item["id"], related_item))
+        if ("nextkey" in resp or "nextKey" in resp) and (
+            resp.get("nextKey", None) or resp.get("nextkey", None)
+        ):
+            related_items = [
+                Item(self._gis, related_item["id"], related_item)
+                for related_item in resp["relatedItems"]
+            ]
+            next_key = resp.get("nextKey", None) or resp.get("nextkey", None)
+            postdata["start"] = next_key
+            while next_key:
+                resp = self._portal.con.post(
+                    "content/items/" + self.itemid + "/relatedItems",
+                    postdata,
+                )
+                if len(resp["relatedItems"]) == 0:
+                    break
+                for related_item in resp["relatedItems"]:
+                    related_items.append(
+                        Item(self._gis, related_item["id"], related_item)
+                    )
+                next_key = resp.get("nextKey")
+                postdata["start"] = next_key
+                if next_key is None:
+                    break
+        else:
+            for related_item in resp["relatedItems"]:
+                related_items.append(Item(self._gis, related_item["id"], related_item))
         return related_items
 
     # ----------------------------------------------------------------------
