@@ -178,10 +178,13 @@ class GIS(object):
                         authentication. If a PFX or P12 certificate is used, a password is required.
                         If a PEM file is used, the key_file is required.
     ----------------    ---------------------------------------------------------------
-    verify_cert         Optional boolean. If a site has an invalid SSL certificate or is
-                        being accessed via the IP or hostname instead of the name on the
-                        certificate, set this value to ``False``.  This will ensure that all
-                        SSL certificate issues are ignored.
+    verify_cert         Optional boolean or string. If a site has an invalid SSL
+                        certificate or is being accessed via the IP or hostname instead
+                        of the name on the certificate, set this value to ``False``.
+                        This will ensure that all SSL certificate issues are ignored.
+                        Users can pass verify_cert a path to a CA_BUNDLE file or directory
+                        with certificates of trusted CAs as well. This will use these
+                        certificates over the system's certificates.
                         The default is ``True``.
 
                         .. warning::
@@ -311,6 +314,7 @@ class GIS(object):
         gis = GIS(url="http://pythonplayground.esri.com/portal",
               username="user1", password="password1")
 
+
     .. code-block:: python
 
         # Usage Example 4: Built-in Login to ArcGIS Enterprise, ignoring SSL errors
@@ -353,6 +357,12 @@ class GIS(object):
             'https': 'http://10.10.1.10:1080',
         }
         gis = GIS(proxy=proxy)
+
+    .. code-block:: python
+
+        # Usage Exmaple 10: Using a CA_BUNDLE specifying SSL certificates
+        certs = r"./CA_CERTS/cacert.pem"
+        gis = GIS(profile="your_enterprise_admin_profile", verify_cert=certs)
 
     """
 
@@ -540,6 +550,7 @@ class GIS(object):
         elif isinstance(verify_cert, str) and os.path.isfile(verify_cert) == False:
             _log.warning("Could not load the certificate provided to `verify_cert`")
             verify_cert = True
+            self._verify_cert = verify_cert
         if self._username is None:
             if "ESRI_API_KEY" in os.environ and self._utoken is None:
                 self._utoken = os.environ.get("ESRI_API_KEY", None)
