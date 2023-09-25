@@ -3253,10 +3253,14 @@ class FeatureLayer(Layer):
         ---------------------   --------------------------------------------------------------------------------------
         asset_maps              Optional. For 3D feautre layers, a dictionary with keys: "adds" and "deletes" whose
                                 value's are lists of features to add or delete. Omit geometry.
+                                The "updates" array will also have a corresponding entry in `asset_maps` for each feature, 
+                                similar to those the "adds" array has. Attributes and asset_maps are each optional and will 
+                                result in a partial update of the feature (i.e., only attributes, only shape). 
+                                The existing geometry and the new asset_maps are mutually exclusive.
 
                                 .. code-block:: python
 
-                                    # Example of asset_maps parameter
+                                    # Example of asset_maps parameter with adds request
                                     adds=[
                                         {
                                             "attributes": {
@@ -3482,7 +3486,6 @@ class FeatureLayer(Layer):
             and "updates" not in params
             and "adds" not in params
             and "attachments" not in params
-            and "assetMaps" not in params
         ):
             print("Parameters not valid for edit_features")
             return None
