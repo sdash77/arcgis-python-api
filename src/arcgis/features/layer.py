@@ -3253,9 +3253,9 @@ class FeatureLayer(Layer):
         ---------------------   --------------------------------------------------------------------------------------
         asset_maps              Optional. For 3D feautre layers, a dictionary with keys: "adds" and "deletes" whose
                                 value's are lists of features to add or delete. Omit geometry.
-                                The "updates" array will also have a corresponding entry in `asset_maps` for each feature, 
-                                similar to those the "adds" array has. Attributes and asset_maps are each optional and will 
-                                result in a partial update of the feature (i.e., only attributes, only shape). 
+                                The "updates" array will also have a corresponding entry in `asset_maps` for each feature,
+                                similar to those the "adds" array has. Attributes and asset_maps are each optional and will
+                                result in a partial update of the feature (i.e., only attributes, only shape).
                                 The existing geometry and the new asset_maps are mutually exclusive.
 
                                 .. code-block:: python
@@ -3275,8 +3275,8 @@ class FeatureLayer(Layer):
                                     asset_maps={
                                     "adds":[
                                         {
-                                        "globalId": "{c9e887e9-c8bd-4014-be62-03e5b0f7b25f}"
-                                        "parentGlobalId": "{064185b3-d827-fa42-a9bb-aff1ccb9b6a1}"
+                                        "globalId": "{c9e887e9-c8bd-4014-be62-03e5b0f7b25f}",
+                                        "parentGlobalId": "{064185b3-d827-fa42-a9bb-aff1ccb9b6a1}",
                                         "assetName": "geometry.glb",
                                         "assetHash": "6486ee53c8faba18045ef29d382f1c8227bde3a25d37f7a62fe0d2259a3a14dd",
                                         "flags": ["PROJECT_VERTICES"]
