@@ -219,7 +219,7 @@ data_files = [
 def get_version():
     """gets the version from environment variable or sets via manually setting"""
     MAJOR = "2"
-    MINOR = "2"
+    MINOR = "3"
     try:
         import os
 
