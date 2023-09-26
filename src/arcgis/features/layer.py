@@ -3863,6 +3863,116 @@ class FeatureLayer(Layer):
                     )
         return df
 
+    # ----------------------------------------------------------------------
+    def query_3d(
+        self,
+        where: str | None = None,
+        object_ids: str | None = None,
+        time: str | int | None = None,
+        geometry: Geometry| dict | None = None,
+        geometry_type: str | None = None,
+        in_sr: dict | str | None = None,
+        spatial_rel: str | None = None,
+        distance: int | None = None,
+        units: str | None = None,
+        relation_param: str | None = None,
+        out_fields: str | None = None,
+        historic_moment: int | None = None,
+        return_distinct_values: bool | None = None,
+        order_by_fields: str | None = None,
+        group_by_fields_for_statistics: str | None = None,
+        out_statistics: list[dict] | None = None,
+        format_3d_objects: str | None = None,
+        result_offset: int | None = None,
+        result_record_count: int | None = None,
+        time_reference_unknown_client: bool | None = None,
+        sql_format: str | None = None,
+    ):
+        """ "
+        The query3D operation allows clients to query 3D object features and is
+        based on the feature service layer query operation. The 3D object feature
+        layer still supports layer and service level feature service query operations.
+        """
+        # set the url
+        url = self._url + "/query3D"
+        
+        # set required and default parameters
+        params = {"f": "json"}
+        params["where"] = where if where is not None else "1=1"
+        params["geometryType"] = geometry_type if geometry_type is not None else "esriGeometryEnvelope"
+        params["spatialRel"] = spatial_rel if spatial_rel is not None else "esriSpatialRelIntersects"
+
+        # set optional parameters
+        if object_ids:
+            if isinstance(object_ids, list):
+                object_ids = ",".join(object_ids)
+            params["objectIds"] = object_ids
+
+        if time:
+            if isinstance(time, list):
+                time = ",".join(time)
+            params["time"] = time
+        
+        if geometry:
+            params["geometry"] = geometry
+        
+        if in_sr:
+            params["inSR"] = in_sr
+
+        if distance:
+            params["distance"] = distance
+
+        if units:
+            params["units"] = units
+        
+        if relation_param:
+            params["relationParam"] = relation_param
+
+        if out_fields:
+            params["outFields"] = out_fields
+
+        if historic_moment:
+            params["historicMoment"] = historic_moment
+
+        if return_distinct_values in [True, False]:
+            params["returnDistinctValues"] = return_distinct_values
+        
+        if order_by_fields:
+            if isinstance(order_by_fields, list):
+                order_by_fields = ",".join(order_by_fields)
+            params["orderByFields"] = order_by_fields
+
+        if group_by_fields_for_statistics:
+            if isinstance(group_by_fields_for_statistics, list):
+                group_by_fields_for_statistics = ",".join(group_by_fields_for_statistics)
+            params["groupByFieldsForStatistics"] = group_by_fields_for_statistics
+
+        if out_statistics:
+            params["outStatistics"] = out_statistics
+
+        if format_3d_objects:
+            params["formatFor3DObjects"] = format_3d_objects
+        
+        if result_offset:
+            params["resultOffset"] = result_offset
+        
+        if result_record_count:
+            params["resultRecordCount"] = result_record_count
+        
+        if time_reference_unknown_client in [True, False]:
+            params["timeReferenceUnknownClient"] = time_reference_unknown_client
+
+        if sql_format in ["none", "standard", "native"]:
+            params["sqlFormat"] = sql_format
+
+        
+
+        
+
+        
+
+
+
 
 class Table(FeatureLayer):
     """
