@@ -9890,7 +9890,7 @@ class _RasterAnalysisTools(BaseAnalytics):
         return RAJob(gpjob, output_service).result()
 
     # ----------------------------------------------------------------------
-    @deprecated(deprecated_in="2.2.0", removed_in="3.0.0", current_version="2.2.0")
+    @deprecated(deprecated_in="2.2.0", removed_in="3.0.0", current_version="2.3.0")
     def calculate_distance(
         self,
         input_source_raster_or_features,  #
@@ -17633,7 +17633,10 @@ class _RasterAnalysisTools(BaseAnalytics):
             ):
                 input_regression_definition = {"uri": input_regression_definition}
 
-        output_predicted_raster_name, output_service = self._set_output_raster(
+        (
+            output_predicted_raster_name,
+            output_service,
+        ) = self._set_output_raster(
             output_name=output_predicted_raster_name,
             task=task,
             output_properties=kwargs,
@@ -18045,8 +18048,13 @@ class _RasterAnalysisTools(BaseAnalytics):
                 task=task,
                 output_properties=kwargs,
             )
-            output_loadings_name, output_feature_service = self._set_output_feature(
-                output_name=output_loadings_name, task=task, output_properties=kwargs
+            (
+                output_loadings_name,
+                output_feature_service,
+            ) = self._set_output_feature(
+                output_name=output_loadings_name,
+                task=task,
+                output_properties=kwargs,
             )
         # mode is "spatial_reduction" here
         else:
@@ -18058,8 +18066,13 @@ class _RasterAnalysisTools(BaseAnalytics):
                 task=task,
                 output_properties=kwargs,
             )
-            output_loadings_name, output_feature_service = self._set_output_raster(
-                output_name=output_loadings_name, task=task, output_properties=kwargs
+            (
+                output_loadings_name,
+                output_feature_service,
+            ) = self._set_output_raster(
+                output_name=output_loadings_name,
+                task=task,
+                output_properties=kwargs,
             )
 
         if output_eigen_values_table_name is not None:
@@ -18147,7 +18160,9 @@ class _RasterAnalysisTools(BaseAnalytics):
             context = context_param["context"]
 
         output_raster, output_service = self._set_output_raster(
-            output_name=output_classified_raster, task=task, output_properties=kwargs
+            output_name=output_classified_raster,
+            task=task,
+            output_properties=kwargs,
         )
 
         gpjob = self._tbx.detect_change_using_deep_learning(

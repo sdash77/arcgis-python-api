@@ -151,7 +151,7 @@ def _raise_conda_import_error(import_exception=import_exception):
         "-deep-learning-dependencies\n"
     )
     raise Exception(
-        f"{import_exception} \n\nThis module requires conda, python 3.7 "
+        f"{import_exception} \n\nThis module requires conda, python >=3.9 "
         f"and is currently supported on Windows.\n{installation_steps}\n"
     )
 
@@ -1319,13 +1319,11 @@ def prepare_data(
                             it contains a map.txt file. If the path does not contain
                             the map.txt file pass one of 'PASCAL_VOC_rectangles',
                             'KITTI_rectangles', 'Imagenet'.
-                            This parameter is mandatory for data which are not
-                            exported by ArcGIS Pro / Enterprise which includes
-                            'PointCloud', 'ImageCaptioning', 'ChangeDetection',
-                            'CycleGAN', 'Pix2Pix', 'WNet_cGAN' and 'ObjectTracking'.
+                            This parameter is mandatory for dataset
+                            'PointCloud', 'PointCloudOD', 'ImageCaptioning',
+                            'ChangeDetection', 'WNet_cGAN' and 'ObjectTracking'.
                             Note:
-                            For details on dataset_type please refer to this link
-                            https://pro.arcgis.com/en/pro-app/3.0/tool-reference/image-analyst/export-training-data-for-deep-learning.htm
+                            For details on dataset_type please refer to this `link <https://pro.arcgis.com/en/pro-app/latest/tool-reference/image-analyst/export-training-data-for-deep-learning.htm>`_.
     ---------------------   -------------------------------------------
     resize_to               Optional integer or tuple of integers.
                             A tuple should be of the form (height, width).
@@ -1862,7 +1860,9 @@ def prepare_data(
             from osgeo import gdal
 
             _im_path = str(path / (line.split()[0]).replace("\\", os.sep))
-            ds = gdal.Open(_im_path)
+            with warnings.catch_warnings():
+                warnings.simplefilter("ignore")
+                ds = gdal.Open(_im_path)
             if ds.RasterCount != 3 or ds.GetRasterBand(1).DataType != gdal.GDT_Byte:
                 imagery_type = sensor_name
             _infered = True
@@ -2665,9 +2665,11 @@ def prepare_data(
         _is_multispec = False
 
         def check_ms(il, il2):
-            samp_img, samp_img2 = gdal.Open(il.items[0].__str__()), gdal.Open(
-                il2.items[0].__str__()
-            )
+            with warnings.catch_warnings():
+                warnings.simplefilter("ignore")
+                samp_img, samp_img2 = gdal.Open(il.items[0].__str__()), gdal.Open(
+                    il2.items[0].__str__()
+                )
             if (
                 il[0].shape[0] != 3
                 or samp_img.GetRasterBand(1).DataType != gdal.GDT_Byte
@@ -2993,7 +2995,9 @@ def prepare_data(
         )
         img_type = "RGB"
         _im_path1, _im_path2 = (str(files_list_a[0]), str(files_list_b[0]))
-        ds1, ds2 = gdal.Open(_im_path1), gdal.Open(_im_path2)
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            ds1, ds2 = gdal.Open(_im_path1), gdal.Open(_im_path2)
         if (
             msimage_list_a[0].shape[0] > 3
             or msimage_list_b[0].shape[0] > 3

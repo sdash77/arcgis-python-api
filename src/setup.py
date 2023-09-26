@@ -76,7 +76,7 @@ else:
         "numpy >=1.21.6",
         "matplotlib",
         "keyring >=23.3.0",
-        "lerc",
+        "pylerc",
         "ujson >=3",
         "jupyterlab",
         "python-certifi-win32;python_version<'3.10'",
@@ -219,7 +219,7 @@ data_files = [
 def get_version():
     """gets the version from environment variable or sets via manually setting"""
     MAJOR = "2"
-    MINOR = "2"
+    MINOR = "3"
     try:
         import os
 

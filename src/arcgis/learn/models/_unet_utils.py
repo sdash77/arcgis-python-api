@@ -451,7 +451,9 @@ class ArcGISSegmentationMSLabelList(ArcGISSegmentationLabelList):
         from osgeo import gdal
 
         path = str(os.path.abspath(fn))
-        x = gdal.Open(path).ReadAsArray()
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            x = gdal.Open(path).ReadAsArray()
         x = torch.tensor(x.astype(np.float32))[None]
         if not self.is_contiguous:
             x = map_to_contiguous(x, self.pixel_mapping)

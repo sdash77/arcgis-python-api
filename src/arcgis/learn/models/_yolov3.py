@@ -420,7 +420,8 @@ class YOLOv3(ArcGISModel):
     ):
         """
         Predicts and displays the results of a trained model on a single image.
-        This method is only supported for RGB images.
+        This method is only supported for RGB images. The image size should at
+        least be 416x416px if using COCO pretrained weights.
 
         =====================   ===========================================
         **Parameter**            **Description**
@@ -467,13 +468,11 @@ class YOLOv3(ArcGISModel):
 
         if not HAS_OPENCV:
             raise Exception(
-                "This function requires opencv 4.0.1.24. Install it using pip install opencv-python==4.0.1.24"
+                "Could not find the required deep learning dependencies. Ensure you have installed the required dependent libraries(OpenCV). See https://developers.arcgis.com/python/guide/deep-learning/"
             )
 
         if not HAS_PIL:
-            raise Exception(
-                "This function requires PIL. Please install it via pip or conda"
-            )
+            raise Exception("This function requires PIL.")
 
         if isinstance(image_path, str):
             image = cv2.imread(image_path)

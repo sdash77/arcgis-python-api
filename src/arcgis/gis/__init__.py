@@ -3910,6 +3910,11 @@ class UserManager(object):
         role              Optional string. The role for the user account. The default value is org_user.
                           Other possible values are org_user, org_publisher, org_admin, viewer,
                           view_only, viewplusedit or a custom role object (from gis.users.roles).
+
+                          .. note::
+                            It is recommended to pass in role_id when assigning a custome role to a user. The
+                            role name can be used for multiple roles and can lead to issues if more than one
+                            custom role has the same role name. Access the role_id through property on the Role class.
         ----------------  -------------------------------------------------------------------------------
         provider          Optional string. The provider for the account. The default value is arcgis.
                           The other possible value is enterprise.
@@ -3968,8 +3973,11 @@ class UserManager(object):
         levels = {"creator": "creatorUT", "viewer": "viewerUT"}
         role_lookup = {
             "admin": "org_admin",
+            "org_admin": "org_admin",
             "user": "org_user",
+            "org_user": "org_user",
             "publisher": "org_publisher",
+            "org_publisher": "org_publisher",
             "creator": "org_publisher",
             "view_only": "tLST9emLCNfFcejK",
             "org_viewer": "iAAAAAAAAAAAAAAA",
@@ -3993,7 +4001,15 @@ class UserManager(object):
                 role = self._gis.users.roles.get_role(role)
                 role = role.role_id
             except:
-                role = ""
+                # maybe user passed in role name instead of id
+                if self._gis.users.roles.exists(role):
+                    all_roles = self._gis.users.roles.all()
+                    for r in all_roles:
+                        if r.name.lower() == role.lower():
+                            role = r.role_id
+                            break
+                else:
+                    role = ""
         else:
             role = ""
 
@@ -4017,7 +4033,9 @@ class UserManager(object):
                 )
 
         if self._gis._portal.is_arcgisonline or (
-            self._gis._portal.is_kubernetes and provider != "enterprise"
+            self._gis._portal.is_kubernetes
+            and provider != "enterprise"
+            and self._gis._portal._version != "10.3"
         ):
             if (
                 credits == -1
@@ -4088,7 +4106,10 @@ class UserManager(object):
                         return new_user
                     else:
                         return new_user
-        elif self._gis._portal.is_kubernetes and provider == "enterprise":
+        # If kubernets is 11.1 then need to use the second method, even if provider is arcgis
+        elif self._gis._portal.is_kubernetes and (
+            provider == "enterprise" or self._gis._portal._version == "10.3"
+        ):
             createuser_url = (
                 self._portal.url
                 + "/admin/orgs/0123456789ABCDEF/security/users/createUser"
@@ -8478,6 +8499,15 @@ class ContentManager(object):
                                   Online, the clone item will attempt to keep the same item ids for the
                                   items if available.  ArcGIS Enterprise must be 10.9+.
         =====================     ====================================================================
+
+        **keyword arguments**
+
+        =====================     ====================================================================
+        copy_code_attachment      Option Boolean.  Determines whether a *code_attachment* item should
+                                  be created when cloning a Web App Builder item. Default values is
+                                  *True*. Set to *False* to prevent item from being created.
+        =====================     ====================================================================
+
 
         :return:
            A list of :class:`~arcgis.gis.Item` objects created during the clone.
@@ -13174,6 +13204,40 @@ class Item(dict):
             return dict.__getitem__(self, k)
 
     # ----------------------------------------------------------------------
+    def can_reassign(self, target_user: str | User) -> tuple[bool, dict[str, Any]]:
+        """
+        Checks if the Item can be reassigned to a new user. Users assigned
+        the default `administrator role`, or a custom role with
+        `administrative privileges`, can perform this operation. The item
+        owner can also use this operation; if the item owner that performs
+        this operation is not a default administrator, or assigned a custom
+        role with administrative privileges, they must have the
+        `portal:user:reassignItems` privilege assigned to them to transfer
+        content to another user.
+
+        ================  ========================================================
+        **Parameter**      **Description**
+        ----------------  --------------------------------------------------------
+        target_user       Required string or :class:`~arcgis.gis.User`. The string
+                          must be a *username* value. This will be the user
+                          receiving the item.
+        ================  ========================================================
+
+        :return: tuple[bool, dict[str,Any]]
+        """
+        if not isinstance(target_user, (str, User)):
+            raise ValueError("`user` must be a string or User object.")
+        elif isinstance(target_user, User):
+            target_user: str = target_user.username
+        url: str = f"{self._portal.resturl}content/users/{self.owner}/items/{self.itemid}/canReassign"
+        params: dict[str, Any] = {"f": "json", "targetUsername": target_user}
+        session: EsriSession = self._gis._con._session
+        resp: requests.Response = session.post(url=url, data=params)
+        resp.raise_for_status()
+        data: dict[str, Any] = resp.json()
+        return data.get("success", False) == True, data
+
+    # ----------------------------------------------------------------------
     @property
     def can_delete(self) -> bool:
         """
@@ -15495,14 +15559,42 @@ class Item(dict):
 
         related_items = []
 
-        postdata = {"f": "json"}
+        postdata = {
+            "f": "json",
+            "num": 100,
+        }
         postdata["relationshipType"] = rel_type
         postdata["direction"] = direction
         resp = self._portal.con.post(
             "content/items/" + self.itemid + "/relatedItems", postdata
         )
-        for related_item in resp["relatedItems"]:
-            related_items.append(Item(self._gis, related_item["id"], related_item))
+        if ("nextkey" in resp or "nextKey" in resp) and (
+            resp.get("nextKey", None) or resp.get("nextkey", None)
+        ):
+            related_items = [
+                Item(self._gis, related_item["id"], related_item)
+                for related_item in resp["relatedItems"]
+            ]
+            next_key = resp.get("nextKey", None) or resp.get("nextkey", None)
+            postdata["start"] = next_key
+            while next_key:
+                resp = self._portal.con.post(
+                    "content/items/" + self.itemid + "/relatedItems",
+                    postdata,
+                )
+                if len(resp["relatedItems"]) == 0:
+                    break
+                for related_item in resp["relatedItems"]:
+                    related_items.append(
+                        Item(self._gis, related_item["id"], related_item)
+                    )
+                next_key = resp.get("nextKey")
+                postdata["start"] = next_key
+                if next_key is None:
+                    break
+        else:
+            for related_item in resp["relatedItems"]:
+                related_items.append(Item(self._gis, related_item["id"], related_item))
         return related_items
 
     # ----------------------------------------------------------------------
