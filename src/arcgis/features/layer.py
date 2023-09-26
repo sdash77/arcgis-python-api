@@ -3251,7 +3251,7 @@ class FeatureLayer(Layer):
                                 to `True`, then edits can be applied asynchronously. If True, a future object will be returned and the process
                                 will not wait for the task to complete. The default is False, which means wait for results.
         ---------------------   --------------------------------------------------------------------------------------
-        asset_maps              Optional. For 3D feautre layers, a dictionary with keys: "adds" and "deletes" whose
+        asset_maps              Optional. For 3D feature layers, a dictionary with keys: "adds" and "deletes" whose
                                 value's are lists of features to add or delete. Omit geometry.
                                 The "updates" array will also have a corresponding entry in `asset_maps` for each feature,
                                 similar to those the "adds" array has. Attributes and asset_maps are each optional and will
