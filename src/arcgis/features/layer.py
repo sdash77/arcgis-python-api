@@ -75,6 +75,13 @@ class FeatureLayer(Layer):
         self._time_filter = None
 
     @property
+    def _is_3d(self):
+        if "infoFor3D" in self.properties and self.properties.infoFor3D is not None:
+            return True
+        else:
+            return False
+
+    @property
     def field_groups(self) -> dict[str, Any]:
         """
         Returns the defined list of field groups for a given layer.
@@ -3862,6 +3869,203 @@ class FeatureLayer(Layer):
                         errors="coerce",
                     )
         return df
+
+    # ----------------------------------------------------------------------
+    def assets(self, asset_hash: str) -> dict:
+        """
+        For 3D Feature Services.
+
+        An individual asset resource returns the asset information for a feature layer.
+        An asset is a chunk of binary data such as a texture, image, or a 3D geometry.
+        Assets can be bulky. Their efficient exchange between a client and a service
+        is key to achieving low latency in editing workflows.
+
+        An asset is identified by its hash using a hash algorithm such as SHA-256.
+        The hash algorithm is a part of the layer description (assetHashAlgorithm).
+        The assets can be shared between layers depending on the settings of the
+        3D Object feature class, where assets can be shared within a feature class
+        or across feature classes in a workspace. However, assets are kept as part
+        of the layer not the service.
+
+        If a client already has an asset, it should not be requested again.
+        If the server already has an asset, the client should be able to find that
+        and not upload that asset again. To facilitate their efficient exchange, the
+        service has separate asset operations on the layer resource.
+
+        ========================    ====================================================================
+        **Parameter**               **Description**
+        ------------------------    --------------------------------------------------------------------
+        asset_hash                  Required string. An asset is identified by its hash using a hash algorithm such as SHA-256.
+        ========================    ====================================================================
+        """
+        if self._is_3d:
+            url = self._url + f"/assets/{asset_hash}".format(asset_hash=asset_hash)
+            resp = self._gis._con._session.post(url, {"f": "json"}).json()
+            return resp
+        else:
+            return None
+
+    # ----------------------------------------------------------------------
+    def cleanup_assets(
+        self,
+        retention_period: int,
+        retention_period_unit: str,
+        asynchronous: bool = False,
+    ) -> dict:
+        """
+        For 3D Feature Services.
+
+        Unused assets may also be purposefully created using the uploadAssets
+        operation. These assets would be added to the asset map at a later time
+        with an applyEdits request. To avoid deleting purposefully unused assets,
+        the cleanupAssets operation can be used to set a retention period.
+        The retention period limits asset deletion to assets that are older than
+        the specified period, preserving assets that do not exceed the retention period.
+
+        ========================    ====================================================================
+        **Parameter**               **Description**
+        ------------------------    --------------------------------------------------------------------
+        retention_period            Required int. A numerical value. Only unused assets older than the
+                                    retention_period are deleted.
+        ------------------------    --------------------------------------------------------------------
+        retention_period_unit       Required string. Values: "days" | "hours" | "minutes" | "seconds"
+        ------------------------    --------------------------------------------------------------------
+        asynchronous                Optional bool. Whether to cleanup assets asynchronously (True) or
+                                    synchronously (False). The default is False.
+        ========================    ====================================================================
+
+        """
+        if self._is_3d:
+            url = self._url + "/cleanupAssets"
+            params = {
+                "f": "json",
+                "retentionPeriod": retention_period,
+                "retentionPeriodUnits": retention_period_unit,
+                "async": asynchronous,
+            }
+            resp = self._gis._con._session.post(url, params).json()
+            return resp
+        else:
+            return None
+
+    # ----------------------------------------------------------------------
+    def has_assets(self, asset_hashes: list[str]):
+        """
+        The has_assets operation is performed on a feature service layer to
+        determine if an array of asset hashes is included in a service.
+        The response only returns the hashes for assets that are in the service.
+        The hashes returned in the response are a subset of the hashes submitted in the request.
+
+        ========================    ====================================================================
+        **Parameter**               **Description**
+        ------------------------    --------------------------------------------------------------------
+        asset_hashes                Required list. An array of SHA256 hashes associated with the assets
+                                    that the client is requesting information about.
+
+                                    Example: asset_hashes=["<assetHash1>","<assetHash2>"]
+        ========================    ====================================================================
+        """
+        if self._is_3d:
+            if isinstance(asset_hashes, str):
+                asset_hashes = [asset_hashes]
+
+            url = self._url + "/hasAssets"
+            params = {"f": "json", "assetHashes": asset_hashes}
+            resp = self._gis._con._session.post(url, params).json()
+            return resp
+        else:
+            return None
+
+    # ----------------------------------------------------------------------
+    def query_assets(
+        self, asset_hashes: list[str], transport_type: str | None = None
+    ) -> dict:
+        """
+        The query_assets operation is used to retrieve either multiple assets or
+        asset references. If the assets are small (that is, extruded footprints),
+        it may be more efficient for the client to request multiple assets to
+        be embedded in the response instead of requesting the asset resources individually.
+
+        ========================    ====================================================================
+        **Parameter**               **Description**
+        ------------------------    --------------------------------------------------------------------
+        asset_hashes                Required list. An array of SHA256 hashes associated with the assets
+                                    that the client is requesting information about.
+
+                                    Example: asset_hashes=["<assetHash1>","<assetHash2>"]
+        ------------------------    --------------------------------------------------------------------
+        transport_type              Optional string. Specifies how the assets will be retrieved.
+                                    When `transport_type` is set to "esriTransportTypeUrl", the response
+                                    will return asset references. When `transport_type` is set to
+                                    "esriTransportTypeEmbedded", the response will return multiple assets.
+                                    The default value is "esriTransportTypeUrl".
+        ========================    ====================================================================
+        """
+        if self._is_3d:
+            url = self._url + "/queryAssets"
+            if transport_type is None:
+                transport_type = "esriTransportTypeUrl"
+            if isinstance(asset_hashes, str):
+                asset_hashes = [asset_hashes]
+
+            params = {
+                "f": "json",
+                "assetHashes": asset_hashes,
+                "transportType": transport_type,
+            }
+            resp = self._gis._con._session.post(url, params).json()
+            return resp
+        else:
+            return None
+
+    # ----------------------------------------------------------------------
+    def upload_assets(self, assets: list):
+        """
+        The upload_assets operation uploads assets to a service either by referencing
+        the upload ID of an asset or having the asset embedded in the request. Assets
+        must be uploaded to a service before they can be referenced in applyEdits or convert3D requests.
+
+        If the operation is successful, the response will include the uploadResults property,
+        which will have a result object for each asset included in the request.
+        If an asset is uploaded successfully, the result object will return success as
+        true and the computed hash for the asset. If an asset was not uploaded
+        successfully, the result object will return success as false and an error
+        object that includes an error code and description of the error.
+        If the operation is not successful, the response will return an error.
+
+        ========================    ====================================================================
+        **Parameter**               **Description**
+        ------------------------    --------------------------------------------------------------------
+        assets                      Required list. An array of asset objects. Each asset object contains
+                                    the assetType property and either the assetData or assetUploadId properties,
+                                    which specify the asset data to be uploaded. For the assetData property,
+                                    the value is base64 encoded asset data. For the assetUploadId property,
+                                    the value references an upload ID that's returned after using the
+                                    upload operation to upload an asset to the server. The list of
+                                    possible assetType values is configured per feature service and can
+                                    be obtained from a feature layer resource's JSON format, in the
+                                    "infoFor3D": {"editFormats":[]} JSON object.
+
+                                    Example:
+                                    //General syntax example
+                                    assets=[<asset1>, <asset2>]
+
+                                    //assetData syntax example
+                                    assets=[{"assetType": "<assetType>","assetData": "<base64EncodedAssetBytes>"}]
+
+                                    //assetUploadId syntax example
+                                    assets=[{"assetType": "<assetType>","assetUploadId": "<uploadId>"}]
+        ========================    ====================================================================
+
+        """
+        if self._is_3d:
+            url = self._url + "/uploadAssets"
+            params = {"f": "json", "assets": assets}
+
+            resp = self._gis._con._session.post(url, params).json()
+            return resp
+        else:
+            return None
 
 
 class Table(FeatureLayer):
