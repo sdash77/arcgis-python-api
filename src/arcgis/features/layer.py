@@ -75,6 +75,13 @@ class FeatureLayer(Layer):
         self._time_filter = None
 
     @property
+    def _is_3d(self):
+        if "infoFor3D" in self.properties and self.properties.infoFor3D is not None:
+            return True
+        else:
+            return False
+
+    @property
     def field_groups(self) -> dict[str, Any]:
         """
         Returns the defined list of field groups for a given layer.
@@ -1831,6 +1838,7 @@ class FeatureLayer(Layer):
         return_exceeded_limit_features: Optional[bool] = None,
         as_df: bool = False,
         datum_transformation: Optional[Union[int, dict[str, Any]]] = None,
+        time_reference_unknown_client: Optional[bool] = None,
         **kwargs,
     ):
         """
@@ -2196,6 +2204,7 @@ class FeatureLayer(Layer):
             return_exceeded_limit_features=return_exceeded_limit_features,
             as_df=as_df,
             datum_transformation=datum_transformation,
+            time_reference_unknown_client=time_reference_unknown_client,
             kwargs=kwargs,
         )
 
@@ -3603,111 +3612,211 @@ class FeatureLayer(Layer):
     def query_3d(
         self,
         where: str | None = None,
+        out_fields: str | None = None,
         object_ids: str | None = None,
-        time: str | int | None = None,
-        geometry: Geometry| dict | None = None,
-        geometry_type: str | None = None,
-        in_sr: dict | str | None = None,
-        spatial_rel: str | None = None,
         distance: int | None = None,
         units: str | None = None,
-        relation_param: str | None = None,
-        out_fields: str | None = None,
-        historic_moment: int | None = None,
+        time_filter: str | int | None = None,
+        geometry_filter: Geometry | dict | None = None,
+        gdb_version=None,
         return_distinct_values: bool | None = None,
         order_by_fields: str | None = None,
         group_by_fields_for_statistics: str | None = None,
         out_statistics: list[dict] | None = None,
-        format_3d_objects: str | None = None,
         result_offset: int | None = None,
         result_record_count: int | None = None,
-        time_reference_unknown_client: bool | None = None,
+        historic_moment: int | None = None,
         sql_format: str | None = None,
+        format_3d_objects: str | None = None,
+        time_reference_unknown_client: bool | None = None,
+        as_df: bool = False,
     ):
-        """ "
+        """
         The query3D operation allows clients to query 3D object features and is
         based on the feature service layer query operation. The 3D object feature
         layer still supports layer and service level feature service query operations.
+
+
+        ===============================     ====================================================================
+        **Parameter**                        **Description**
+        -------------------------------     --------------------------------------------------------------------
+        where                               Optional string. SQL-92 WHERE clause syntax on the fields in the layer
+                                            is supported for most data sources. Some data sources have restrictions
+                                            on what is supported. Hosted feature services in ArcGIS Enterprise running
+                                            on a spatiotemporal data source only support a subset of SQL-92.
+                                            Below is a list of supported SQL-92 with spatiotemporal-based feature services:
+
+
+                                            ( '<=' | '>=' | '<' | '>' | '=' | '!=' | '<>' | LIKE )
+                                            (AND | OR)
+                                            (IS | IS_NOT)
+                                            (IN | NOT_IN) ( '(' ( expr ( ',' expr )* )? ')' )
+                                            COLUMN_NAME BETWEEN LITERAL_VALUE AND LITERAL_VALUE
+        -------------------------------     --------------------------------------------------------------------
+        out_fields                          Optional list of fields to be included in the returned result set.
+                                            This list is a comma-delimited list of field names. You can also specify
+                                            the wildcard "*" as the value of this parameter. In this case, the query
+                                            results include all the field values.
+
+                                            .. note::
+                                                If specifying `return_count_only`, `return_id_only`, or `return_extent_only`
+                                                as True, do not specify this parameter in order to avoid errors.
+        -------------------------------     --------------------------------------------------------------------
+        object_ids                          Optional string. The object IDs of this layer or table to be queried.
+                                            The object ID values should be a comma-separated string.
+
+                                            .. note::
+                                                There might be a drop in performance if the layer/table data
+                                                source resides in an enterprise geodatabase and more than
+                                                1,000 object_ids are specified.
+        -------------------------------     --------------------------------------------------------------------
+        distance                            Optional integer. The buffer distance for the input geometries.
+                                            The distance unit is specified by units. For example, if the
+                                            distance is 100, the query geometry is a point, units is set to
+                                            meters, and all points within 100 meters of the point are returned.
+        -------------------------------     --------------------------------------------------------------------
+        units                               Optional string. The unit for calculating the buffer distance. If
+                                            unit is not specified, the unit is derived from the geometry spatial
+                                            reference. If the geometry spatial reference is not specified, the
+                                            unit is derived from the feature service data spatial reference.
+                                            This parameter only applies if `supportsQueryWithDistance` is true.
+
+                                            Values: `esriSRUnit_Meter | esriSRUnit_StatuteMile |
+                                                    esriSRUnit_Foot | esriSRUnit_Kilometer |
+                                                    esriSRUnit_NauticalMile | esriSRUnit_USNauticalMile`
+        -------------------------------     --------------------------------------------------------------------
+        time_filter                         Optional list. The format is of [<startTime>, <endTime>] using
+                                            datetime.date, datetime.datetime or timestamp in milliseconds.
+                                            Syntax: time_filter=[<startTime>, <endTime>] ; specified as
+                                                    datetime.date, datetime.datetime or timestamp in
+                                                    milliseconds
+        -------------------------------     --------------------------------------------------------------------
+        geometry_filter                     Optional from :attr:`~arcgis.geometry.filters`. Allows for the information to
+                                            be filtered on spatial relationship with another geometry.
+        -------------------------------     --------------------------------------------------------------------
+        gdb_version                         Optional string. The geodatabase version to query. This parameter
+                                            applies only if the isDataVersioned property of the layer is true.
+                                            If this is not specified, the query will apply to the published
+                                            map's version.
+        -------------------------------     --------------------------------------------------------------------
+        return_distinct_values              Optional boolean.  If true, it returns distinct values based on the
+                                            fields specified in out_fields. This parameter applies only if the
+                                            `supportsAdvancedQueries` property of the layer is true. This parameter
+                                            can be used with return_count_only to return the count of distinct
+                                            values of subfields.
+
+                                            .. note::
+                                                Make sure to set return_geometry to False if this is set to True.
+                                                Otherwise, reliable results will not be returned.
+        -------------------------------     --------------------------------------------------------------------
+        order_by_fields                     Optional string. One or more field names on which the
+                                            features/records need to be ordered. Use ASC or DESC for ascending
+                                            or descending, respectively, following every field to control the
+                                            ordering.
+                                            example: STATE_NAME ASC, RACE DESC, GENDER
+
+                                            .. note::
+                                                If specifying `return_count_only`, `return_id_only`, or `return_extent_only`
+                                                as True, do not specify this parameter in order to avoid errors.
+        -------------------------------     --------------------------------------------------------------------
+        group_by_fields_for_statistics      Optional string. One or more field names on which the values need to
+                                            be grouped for calculating the statistics.
+                                            example: STATE_NAME, GENDER
+        -------------------------------     --------------------------------------------------------------------
+        out_statistics                      Optional list of dictionaries. The definitions for one or more field-based
+                                            statistics to be calculated.
+
+                                            Syntax:
+
+                                            [
+                                                {
+                                                  "statisticType": "<count | sum | min | max | avg | stddev | var>",
+                                                  "onStatisticField": "Field1",
+                                                  "outStatisticFieldName": "Out_Field_Name1"
+                                                },
+                                                {
+                                                  "statisticType": "<count | sum | min | max | avg | stddev | var>",
+                                                  "onStatisticField": "Field2",
+                                                  "outStatisticFieldName": "Out_Field_Name2"
+                                                }
+                                            ]
+        -------------------------------     --------------------------------------------------------------------
+        result_offset                       Optional integer. This option can be used for fetching query results
+                                            by skipping the specified number of records and starting from the
+                                            next record (that is, resultOffset + 1th). This option is ignored
+                                            if return_all_records is True (i.e. by default).
+        -------------------------------     --------------------------------------------------------------------
+        result_record_count                 Optional integer. This option can be used for fetching query results
+                                            up to the result_record_count specified. When result_offset is
+                                            specified but this parameter is not, the map service defaults it to
+                                            max_record_count. The maximum value for this parameter is the value
+                                            of the layer's max_record_count property. This option is ignored if
+                                            return_all_records is True (i.e. by default).
+        -------------------------------     --------------------------------------------------------------------
+        historic_moment                     Optional integer. The historic moment to query. This parameter
+                                            applies only if the layer is archiving enabled and the
+                                            supportsQueryWithHistoricMoment property is set to true. This
+                                            property is provided in the layer resource.
+
+                                            If historic_moment is not specified, the query will apply to the
+                                            current features.
+        -------------------------------     --------------------------------------------------------------------
+        sql_format                          Optional string.  The sql_format parameter can be either standard
+                                            SQL92 standard or it can use the native SQL of the underlying
+                                            datastore native. The default is none which means the sql_format
+                                            depends on useStandardizedQuery parameter.
+                                            Values: none | standard | native
+        -------------------------------     --------------------------------------------------------------------
+        format_3d_objects                   Optional string.
+        -------------------------------     --------------------------------------------------------------------
+        time_reference_unknown_client       Optional boolean. Setting `time_reference_unknown_client` as True
+                                            indicates that the client is capable of working with data values that
+                                            are not in UTC. If its not set to true, and the service layer's
+                                            datesInUnknownTimeZone property is true, then an error is returned.
+                                            The default is False
+
+                                            Its possible to define a service's time zone of date fields as unknown.
+                                            Setting the time zone as unknown means that date values will be returned
+                                            as-is from the database, rather than as date values in UTC. Non-hosted
+                                            feature services can be set to use an unknown time zone using
+                                            ArcGIS Server Manager. Setting the time zones to unknown also
+                                            sets the datesInUnknownTimeZone layer property as true. Currently,
+                                            hosted feature services do not support this setting. This setting does
+                                            not apply to editor tracking date fields which are stored and returned
+                                            in UTC even when the time zone is set to unknown.
+
+                                            Most clients released prior to ArcGIS Enterprise 10.9 will not be able
+                                            to work with feature services that have an unknown time setting.
+        -------------------------------     --------------------------------------------------------------------
+        as_df                               Optional boolean.  If True, the results are returned as a DataFrame
+                                            instead of a FeatureSet.
+        ===============================     ====================================================================
         """
-        # set the url
-        url = self._url + "/query3D"
-        
-        # set required and default parameters
-        params = {"f": "json"}
-        params["where"] = where if where is not None else "1=1"
-        params["geometryType"] = geometry_type if geometry_type is not None else "esriGeometryEnvelope"
-        params["spatialRel"] = spatial_rel if spatial_rel is not None else "esriSpatialRelIntersects"
-
-        # set optional parameters
-        if object_ids:
-            if isinstance(object_ids, list):
-                object_ids = ",".join(object_ids)
-            params["objectIds"] = object_ids
-
-        if time:
-            if isinstance(time, list):
-                time = ",".join(time)
-            params["time"] = time
-        
-        if geometry:
-            params["geometry"] = geometry
-        
-        if in_sr:
-            params["inSR"] = in_sr
-
-        if distance:
-            params["distance"] = distance
-
-        if units:
-            params["units"] = units
-        
-        if relation_param:
-            params["relationParam"] = relation_param
-
-        if out_fields:
-            params["outFields"] = out_fields
-
-        if historic_moment:
-            params["historicMoment"] = historic_moment
-
-        if return_distinct_values in [True, False]:
-            params["returnDistinctValues"] = return_distinct_values
-        
-        if order_by_fields:
-            if isinstance(order_by_fields, list):
-                order_by_fields = ",".join(order_by_fields)
-            params["orderByFields"] = order_by_fields
-
-        if group_by_fields_for_statistics:
-            if isinstance(group_by_fields_for_statistics, list):
-                group_by_fields_for_statistics = ",".join(group_by_fields_for_statistics)
-            params["groupByFieldsForStatistics"] = group_by_fields_for_statistics
-
-        if out_statistics:
-            params["outStatistics"] = out_statistics
-
-        if format_3d_objects:
-            params["formatFor3DObjects"] = format_3d_objects
-        
-        if result_offset:
-            params["resultOffset"] = result_offset
-        
-        if result_record_count:
-            params["resultRecordCount"] = result_record_count
-        
-        if time_reference_unknown_client in [True, False]:
-            params["timeReferenceUnknownClient"] = time_reference_unknown_client
-
-        if sql_format in ["none", "standard", "native"]:
-            params["sqlFormat"] = sql_format
-
-        
-
-        
-
-        
-
-
+        if where is None:
+            where = "1=1"
+        return _query._common_query(
+            layer=self,
+            is_layer=True,
+            where=where,
+            out_fields=out_fields,
+            time_filter=time_filter,
+            geometry_filter=geometry_filter,
+            return_distinct_values=return_distinct_values,
+            group_by_fields_for_statistics=group_by_fields_for_statistics,
+            result_offset=result_offset,
+            result_record_count=result_record_count,
+            object_ids=object_ids,
+            distance=distance,
+            units=units,
+            gdb_version=gdb_version,
+            order_by_fields=order_by_fields,
+            out_statistics=out_statistics,
+            historic_moment=historic_moment,
+            sql_format=sql_format,
+            format_3d_objects=format_3d_objects,
+            time_reference_unknown_client=time_reference_unknown_client,
+            as_df=as_df,
+        )
 
 
 class Table(FeatureLayer):
@@ -3766,6 +3875,7 @@ class Table(FeatureLayer):
         return_exceeded_limit_features: Optional[bool] = None,
         as_df: bool = False,
         having: Optional[str] = None,
+        time_reference_unknown_client: Optional[bool] = None,
         **kwargs,
     ):
         """
@@ -3959,6 +4069,7 @@ class Table(FeatureLayer):
             sql_format=sql_format,
             return_exceeded_limit_features=return_exceeded_limit_features,
             as_df=as_df,
+            time_reference_unknown_client=time_reference_unknown_client,
             kwargs=kwargs,
         )
 

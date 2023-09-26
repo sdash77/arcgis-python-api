@@ -49,55 +49,61 @@ def _common_query(
     datum_transformation: Optional[Union[int, dict[str, Any]]] = None,
     range_values: Optional[dict[str, Any]] = None,
     parameter_values: Optional[dict[str, Any]] = None,
+    format_3d_objects: Optional[str] = None,
+    time_reference_unknown_client: Optional[bool] = None,
     **kwargs,
 ):
     # get url
-    if layer._dynamic_layer is None:
+    if layer._is_3d:
+        url = layer._url + "/query3D"
+    elif layer._dynamic_layer is None:
         url = layer._url + "/query"
     else:
         url = "%s/query" % layer._url.split("?")[0]
 
     params = _create_parameters(
-        layer,
-        is_layer,
-        where,
-        text,
-        out_fields,
-        time_filter,
-        geometry_filter,
-        return_geometry,
-        return_count_only,
-        return_ids_only,
-        return_distinct_values,
-        return_extent_only,
-        group_by_fields_for_statistics,
-        statistic_filter,
-        result_offset,
-        result_record_count,
-        object_ids,
-        distance,
-        units,
-        max_allowable_offset,
-        out_sr,
-        geometry_precision,
-        gdb_version,
-        order_by_fields,
-        out_statistics,
-        return_z,
-        return_m,
-        multipatch_option,
-        quantization_parameters,
-        return_centroid,
-        return_all_records,
-        result_type,
-        historic_moment,
-        sql_format,
-        return_true_curves,
-        return_exceeded_limit_features,
-        datum_transformation,
-        range_values,
-        parameter_values,
-        kwargs,
+        layer=layer,
+        is_layer=is_layer,
+        where=where,
+        text=text,
+        out_fields=out_fields,
+        time_filter=time_filter,
+        geometry_filter=geometry_filter,
+        return_geometry=return_geometry,
+        return_count_only=return_count_only,
+        return_ids_only=return_ids_only,
+        return_distinct_values=return_distinct_values,
+        return_extent_only=return_extent_only,
+        group_by_fields_for_statistics=group_by_fields_for_statistics,
+        statistic_filter=statistic_filter,
+        result_offset=result_offset,
+        result_record_count=result_record_count,
+        object_ids=object_ids,
+        distance=distance,
+        units=units,
+        max_allowable_offset=max_allowable_offset,
+        out_sr=out_sr,
+        geometry_precision=geometry_precision,
+        gdb_version=gdb_version,
+        order_by_fields=order_by_fields,
+        out_statistics=out_statistics,
+        return_z=return_z,
+        return_m=return_m,
+        multipatch_option=multipatch_option,
+        quantization_parameters=quantization_parameters,
+        return_centroid=return_centroid,
+        return_all_records=return_all_records,
+        result_type=result_type,
+        historic_moment=historic_moment,
+        sql_format=sql_format,
+        return_true_curves=return_true_curves,
+        return_exceeded_limit_features=return_exceeded_limit_features,
+        datum_transformation=datum_transformation,
+        range_values=range_values,
+        parameter_values=parameter_values,
+        format_3d_objects=format_3d_objects,
+        time_reference_unknown_client=time_reference_unknown_client,
+        kwargs=kwargs,
     )
 
     if not return_all_records or "outStatistics" in params:
@@ -157,7 +163,9 @@ def _create_parameters(
     datum_transformation,
     range_values,
     parameter_values,
-    kwargs,
+    format_3d_objects,
+    time_reference_unknown_client,
+    **kwargs,
 ):
     # create parameters dictionary
     params = {"f": "json"}
@@ -178,7 +186,7 @@ def _create_parameters(
     if datum_transformation is not None:
         params["datumTransformation"] = datum_transformation
 
-    # Will only be present for map feature layer
+    # Will only be present for Map Feature Layer
     if text:
         params["text"] = text
     if parameter_values:
@@ -188,15 +196,24 @@ def _create_parameters(
 
     # add required parameters
     params["where"] = where
-    params["returnDistinctValues"] = return_distinct_values
-    params["returnCountOnly"] = return_count_only
-    params["returnIdsOnly"] = return_ids_only
+
+    # Add parameters for non 3D layers and for Tables
+    if layer._is_3d is False or is_layer is False:
+        params["returnDistinctValues"] = return_distinct_values
+        params["returnCountOnly"] = return_count_only
+        params["returnIdsOnly"] = return_ids_only
+
+    # Add parameters for Layers only
     if is_layer:
         params["returnCentroid"] = return_centroid
         params["returnExtentOnly"] = return_extent_only
         params["returnGeometry"] = return_geometry
         params["returnZ"] = return_z
         params["returnM"] = return_m
+        if layer._is_3d:
+            # for 3D feature query
+            if format_3d_objects:
+                params["formatFor3DObjects"] = format_3d_objects
 
     # convert out_fields to a comma separated string
     if isinstance(out_fields, (list, tuple)):
@@ -268,6 +285,9 @@ def _create_parameters(
                 params[key] = val
         else:
             params["time"] = _date_handler(time_filter)
+
+    if time_reference_unknown_client in [True, False]:
+        params["timeReferenceUnknownClient"] = time_reference_unknown_client
 
     # handle geometry filter parameter
     if geometry_filter and isinstance(geometry_filter, GeometryFilter):
