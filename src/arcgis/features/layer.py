@@ -3863,6 +3863,19 @@ class FeatureLayer(Layer):
                     )
         return df
 
+    # ----------------------------------------------------------------------
+    def relationship_3d(self):
+        """
+        The relationships_3d resource returns information about the relationship
+        between the layer and the asset map and asset table of a 3D object feature layer.
+        """
+        if self._is_3d:
+            url = self._url + "/relationshipsfor3d?f=json"
+            resp = self._gis._con._session.post(url).json
+            return resp
+        else:
+            return None
+
 
 class Table(FeatureLayer):
     """
