@@ -643,7 +643,7 @@ class FeatureLayer(Layer):
             params["layer"] = self._dynamic_layer
         else:
             url = self._url + "/%s/deleteAttachments" % oid
-        return self._con.post(url, params)
+        return self._con.post_multipart(url, params)
 
     # ----------------------------------------------------------------------
     def _update_attachment(
@@ -686,7 +686,7 @@ class FeatureLayer(Layer):
             params["layer"] = self._dynamic_layer
         else:
             url = self._url + f"/{oid}/updateAttachment"
-        res = self._con.post(path=url, postdata=params, files=files)
+        res = self._con.post_multipart(path=url, postdata=params, files=files)
         return res
 
     # ----------------------------------------------------------------------
