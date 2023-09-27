@@ -75,6 +75,13 @@ class FeatureLayer(Layer):
         self._time_filter = None
 
     @property
+    def _is_3d(self):
+        if "infoFor3D" in self.properties and self.properties.infoFor3D is not None:
+            return True
+        else:
+            return False
+
+    @property
     def field_groups(self) -> dict[str, Any]:
         """
         Returns the defined list of field groups for a given layer.
@@ -3862,6 +3869,63 @@ class FeatureLayer(Layer):
                         errors="coerce",
                     )
         return df
+
+    # ----------------------------------------------------------------------
+    def convert_3d(
+        self, assets: list, target_format: str, transport_type: str | None = None
+    ):
+        """
+        The convert_3d operation is used to convert small assets from one format to another.
+        The assets must be uploaded previously by `upload_assets`. Similar to
+        `query_assets`, the converted assets can be retrieved from the
+        response (esriTransportTypeEmbedded) or as asset references (esriTransportTypeUrl).
+
+        ===============================     ====================================================================
+        **Parameter**                        **Description**
+        -------------------------------     --------------------------------------------------------------------
+        assets                              Required list of assets describing the 3D object that the client wants
+                                            to convert to the specified target_format.
+
+                                            Syntax:
+                                            [
+                                                {
+                                                "assetName": "<assetName1>",
+                                                "assetHash": "<assetHash1>"
+                                                },
+                                                {
+                                                "assetName": "<assetName2>",
+                                                "assetHash": "<assetHash2>"
+                                                }
+                                            ]
+        -------------------------------     --------------------------------------------------------------------
+        target_format                       Required string. The format in which the converted assets should be
+                                            returned in the response.
+
+                                            Values: "3D_dae" | "3D_dwg" | "3D_fbx" | "3D_glb" | "3D_gltf" | "3D_ifc" |
+                                            "3D_obj" | "3D_shapebufferg" | "3D_usdc" | "3D_usdz"
+        -------------------------------     --------------------------------------------------------------------
+        transport_type                      Optional string. Used to determine how the assets will be retrieved.
+
+                                            Values: "esriTransportTypeUrl"(default) | "esriTransportTypeEmbedded"
+        ===============================     ====================================================================
+        """
+        if self._is_3d:
+            if transport_type is None:
+                transport_type = "esriTransportTypeUrl"
+
+            url = self._url + "/convert3D"
+
+            params = {
+                "f": "json",
+                "assets": assets,
+                "targetFormat": target_format,
+                "transportType": transport_type,
+            }
+
+            resp = self._gis._con._session.post(url, params).json()
+            return resp
+        else:
+            return None
 
 
 class Table(FeatureLayer):
