@@ -15023,6 +15023,14 @@ class Item(dict):
                     fileName = self.name
                     item_properties["fileName"] = fileName
 
+            if data is not None:
+                # data was provided but was neither a str, StringIO, or BytesIO
+                # log a warning
+                log = logging.getLogger()
+                log.warning(
+                    "Data path was provided but was not a valid file path, stringIO or bytesIO. The data path was ignored in the Item update."
+                )
+
             ret = self._portal.update_item(
                 self.itemid,
                 item_properties,
