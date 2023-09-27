@@ -17,7 +17,6 @@ from arcgis.geometry import (
 import arcgis.env
 from arcgis.gis import GIS
 
-
 class AreaUnits(Enum):
     """
     Represents the Supported Geometry Service Area Units Enumerations.
@@ -121,65 +120,72 @@ def areas_and_lengths(
     future: bool = False,
 ):
     """
-    The ``areas_and_lengths`` function calculates areas and perimeter lengths
+    The *areas_and_lengths* function calculates areas and perimeter lengths
     for each :class:`~arcgis.geometry.Polygon` specified in the input array.
 
     ================  ===============================================================================
     **Keys**          **Description**
     ----------------  -------------------------------------------------------------------------------
-    polygons          The array of :class:`~arcgis.geometry.Polygon` whose areas and lengths are to be computed.
+    polygons          The list of :class:`~arcgis.geometry.Polygon` objects whose areas and lengths
+                      are to be computed.
     ----------------  -------------------------------------------------------------------------------
-    length_unit       The length unit in which the perimeters of
-                      polygons will be calculated. If ``calculation_type``
-                      is planar, then ``length_unit`` can be any esriUnits
-                      constant (string or integer). If ``calculationType`` is
-                      not planar, then ``length_unit`` must be a linear
-                      esriUnits constant, such as `esriSRUnit_Meter`(i.e. `9001`|`LengthUnits.METER`) or
-                      `esriSRUnit_SurveyMile`(i.e. `9035`|`LengthUnits.SURVEYMILE`). If ``length_unit`` is not
-                      specified, the units are derived from ``spatial_ref``. If ``spatial_ref`` is not
-                      specified as well, the units are in meters. For a list of
-                      valid units, see `esriSRUnitType Constants` and
-                      `esriSRUnit2Type Constants`.
+    length_unit       The length unit in which the perimeters of polygons will be calculated.
+                      
+                      * If *calculation_type* is *planar*, then this argument can be any 
+                        `esriUnits <https://developers.arcgis.com/enterprise-sdk/api-reference/net/esriUnits/>`_
+                        constant string or integer.
+                      * If *calculationType* is *not planar*, then *length_unit* must be a linear
+                        :class:`~arcgis.geometry.functions.LengthUnits` constant or string. For example:
+                          *  For *meters*, use `9001` or `LengthUnits.METER`
+                          *  For *survey miles*, use  `9035` or `LengthUnits.SURVEYMILE`
+                      * If *length_unit* is not specified, the units are derived from *spatial_ref*.
+                        If *spatial_ref* is not specified as well, the units are in *meters*.
     ----------------  -------------------------------------------------------------------------------
-    area_unit         The area unit in which areas of polygons will be
-                      calculated. If calculation_type is planar, then
-                      area_unit can be any `esriAreaUnits` constant (dict or enum). If ``calculation_type`` is
-                      not planar, then ``area_unit`` must be a `esriAreaUnits` constant such
-                      as `AreaUnits.SQUAREMETERS` (i.e. `{"areaUnit": "esriSquareMeters"}`) or
-                      `AreaUnits.SQUAREMILES` (i.e. `{"areaUnit": "esriSquareMiles"}`). If
-                      ``area_unit`` is not specified, the units are derived
-                      from ``spatial_ref``. If ``spatial_ref`` is not specified, then the units are in square
-                      meters. For a list of valid units, see
-                      `esriAreaUnits Constants`.
-                      The list of valid esriAreaUnits constants include,
-                      `esriSquareInches | esriSquareFeet |
-                      esriSquareYards | esriAcres | esriSquareMiles |
-                      esriSquareMillimeters | esriSquareCentimeters |
-                      esriSquareDecimeters | esriSquareMeters | esriAres
-                      | esriHectares | esriSquareKilometers.`
+    area_unit         The area unit in which areas of polygons will be calculated.
+    
+                      * If *calculation_type* is *planar*, then area_unit can be any
+                        `esriAreaUnits constant <https://developers.arcgis.com/enterprise-sdk/api-reference/net/esriAreaUnits/>`_.
+                      * If *calculation_type* is not planar, then *area_unit* must be an
+                        :class:`~arcgis.geometry.functions.AreaUnits` dictionary.
+                        For example, 
+                          * for *square meters* use - `{"areaUnit": "esriSquareMeters"}`
+                          * for *square miles* use  - `{"areaUnit": "esriSquareMiles"}`
+                      * If *area_unit* is not specified, the units are derived from the *spatial_ref*.
+                        If *spatial_ref* is not specified, then the units are in square meters.
     ----------------  -------------------------------------------------------------------------------
     calculation_type  The type defined for the area and length calculation of the input geometries. The type can be one
                       of the following values:
 
-                          1. planar - Planar measurements use 2D Euclidean distance to calculate area and length. This
-                          should only be used if the area or length needs to be calculated in the given
-                          :class:`~arcgis.geometry.SpatialReference`. Otherwise, use ``preserveShape``.
+                          * *planar* - Planar measurements use 2D Euclidean distance to calculate area and length. This
+                            should only be used if the area or length needs to be calculated in the given
+                            :class:`~arcgis.geometry.SpatialReference`. Otherwise, use *preserveShape*.
 
-                          2. geodesic - Use this type if you want to calculate an area or length using only the vertices
-                          of the :class:`~arcgis.geometry.Polygon` and define the lines between the points as geodesic
-                          segments independent of the actual shape of the :class:`~arcgis.geometry.Polygon`. A geodesic
-                          segment is the shortest path between two points on an ellipsoid.
+                          * *geodesic* - Use this type if you want to calculate an area or length using only the vertices
+                            of the :class:`~arcgis.geometry.Polygon` and define the lines between the points as geodesic
+                            segments independent of the actual shape of the :class:`~arcgis.geometry.Polygon`. A geodesic
+                            segment is the shortest path between two points on an ellipsoid.
 
-                          3. preserveShape - This type calculates the area or length of the geometry on the surface of
-                          the Earth ellipsoid. The shape of the geometry in its coordinate system is preserved.
+                          * *preserveShape* - This type calculates the area or length of the geometry on the surface of
+                            the Earth ellipsoid. The shape of the geometry in its coordinate system is preserved.
     ----------------  -------------------------------------------------------------------------------
-     future           Optional boolean. If True, a future object will be returned and the process
-                      will not wait for the task to complete. The default is False, which means wait for results.
+    spatial_ref       Optional integer. The desiried spatial reference of the output. Integer value
+                      is the *wkid* value of the spatial reference. Default `4326 <https://developers.arcgis.com/documentation/spatial-references/#4326---gps>`_.
+                      
+                      .. note::
+                          See `Using Spatial References <https://developers.arcgis.com/rest/services-reference/enterprise/using-spatial-references.htm>`_
+                          for links to comprehensive list of values.
+    ----------------  -------------------------------------------------------------------------------
+    gis               Optional :class:`~arcgis.gis.GIS` object. If no argument provided, the active
+                      *GIS* will be used.
+    ----------------  -------------------------------------------------------------------------------
+    future            Optional boolean. If `True`, a future object will be returned and the process
+                      will not wait for the task to complete. The default is False, which means wait
+                      for results returned as a dictionary.
     ================  ===============================================================================
 
     :returns:
-        A JSON as dictionary, or a `GeometryJob` object. If ``future = True``,
-        then the result is a :class:`~concurrent.futures.Future` object. Call ``result()`` to get the response.
+        A JSON as dictionary if *future=False*, or a :class:`~arcgis._impl._async.jobs.GeometryJob` object
+        if *future = True*.
 
     .. code-block:: python
 
