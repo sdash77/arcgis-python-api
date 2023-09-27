@@ -7877,7 +7877,9 @@ class ContentManager(object):
                 return res["success"]
         return False
 
-    def delete_items(self, items: Union[list[Item], list[str]]):
+    def delete_items(
+        self, items: Union[list[Item], list[str]], permanent: bool = False
+    ):
         """
         The ``delete_items`` method deletes a collection of :class:`~arcgis.gis.Item` objects from a users content.
         All items must belong to the same user to delete.
@@ -7887,6 +7889,9 @@ class ContentManager(object):
         ----------------  --------------------------------------------------------------------------
         items             list of :class:`~arcgis.gis.Item` objects or Item Ids.  This is an array
                           of items to be deleted from the current user's content
+        ----------------  --------------------------------------------------------------------------
+        permanent         optional boolean. Setting this to True will cause the items to be permanently
+                          deleted rather than placed in the recycle bin. ArcGIS Online Only.
         ================  ==========================================================================
 
         :return:
@@ -7900,6 +7905,10 @@ class ContentManager(object):
 
         """
         params = {"f": "json", "items": ""}
+
+        if permanent and self._gis._is_agol:
+            params["permanentDelete"] = permanent
+
         items_dict = {}  # key will be ownner and value is list of their items
         for item in items:
             if isinstance(item, str):
@@ -14706,7 +14715,9 @@ class Item(dict):
             return self._portal.unshare_item(self.itemid, owner, folder, group_ids)
 
     # ----------------------------------------------------------------------
-    def delete(self, force: bool = False, dry_run: bool = False):
+    def delete(
+        self, force: bool = False, dry_run: bool = False, permanent: bool = False
+    ):
         """
         The ``delete`` method deletes the item. If the item is unable to be deleted , a RuntimeException is raised.
         To know if you can safely delete the item, use the optional parameter 'dry_run' in order to test the operation
@@ -14725,6 +14736,9 @@ class Item(dict):
                             True, checks if the item can be safely deleted and gives you back
                             either a dictionary with details. If dependent items are preventing
                             deletion, a list of such Item objects are provided.
+        ---------------     --------------------------------------------------------------------
+        permanent           Optional boolean. Available in ArcGIS Online, setting to True will
+                            permanently delete the item rather than sending it to the recycle bin.
         ===============     ====================================================================
 
         :return:
