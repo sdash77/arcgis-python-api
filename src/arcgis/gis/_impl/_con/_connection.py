@@ -1132,7 +1132,7 @@ class Connection(object):
                         fields[k] = (
                             os.path.basename(v),
                             open(v, "rb"),
-                            mimetypes.guess_type(v)[0],
+                            mimetypes.guess_type(v)[0] or "application/octet-stream",
                         )
             elif isinstance(files, (list, tuple)):
                 for key, filePath, fileName in files:
@@ -1143,7 +1143,8 @@ class Connection(object):
                         fields[key] = (
                             fileName,
                             open(filePath, "rb"),
-                            mimetypes.guess_type(filePath)[0],
+                            mimetypes.guess_type(filePath)[0]
+                            or "application/octet-stream",
                         )
                     elif isinstance(fileName, str) and isinstance(
                         filePath, (io.StringIO, io.BytesIO)
