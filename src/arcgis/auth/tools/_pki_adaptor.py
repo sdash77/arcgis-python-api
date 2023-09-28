@@ -11,10 +11,8 @@ try:
 except ImportError:
     from ssl import PROTOCOL_SSLv23 as default_ssl_protocol
 
-try:
-    from .certificate import _handle_cert_context
-except:
-    from certificate import _handle_cert_context
+
+from .certificate import _handle_cert_context
 
 __all__ = ["PKIAdapter"]
 
@@ -28,13 +26,8 @@ class PKIAdapter(requests.adapters.HTTPAdapter):
         password = kwargs.pop("pki_password", None)
         ssl_protocol_or_none = kwargs.pop("ssl_protocol", None)
         if pki_data is None:
-            raise ValueError(
-                'Both arguments "pki_data" and "pkcs12_filename" are missing'
-            )
+            raise ValueError('"pki_data" is missing')
 
-        # if pki_data is not None:
-        #    with open(pki_data, 'rb') as pkcs12_file:
-        #        pki_data = pkcs12_file.read()
         if password is None:
             password_bytes = None
         elif isinstance(password, bytes):
