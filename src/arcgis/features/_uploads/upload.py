@@ -262,7 +262,7 @@ class UploadManager:
 
         :return: Upload, on error, a dictionary with the error information is returned.
         """
-        self.parent.properties["Capabilities"]
+
         url: str = f"{self._url}/upload"
         params: dict[str, Any] = {
             "f": "json",

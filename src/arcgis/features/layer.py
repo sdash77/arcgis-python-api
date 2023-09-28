@@ -80,7 +80,7 @@ class FeatureLayer(Layer):
         """Provides the upload endpoint for a feature layer"""
 
         if self._umgr is None:
-            if (
+            if self._gis._is_arcgisonline or (
                 "capabilities" in self.container.properties
                 and self.container.properties["capabilities"].find("Uploads") > -1
             ):
@@ -3478,10 +3478,14 @@ class FeatureLayer(Layer):
                 and future  #  checks if future==True
                 and session_id is None
                 and attachments is None
-                and dict(self.container.properties)
-                .get("capabilities", "")
-                .find("Uploads")
-                > -1
+                and (
+                    self._gis._is_arcgisonline
+                    or self._gis._is_arcgisonline == False
+                    and dict(self.container.properties)
+                    .get("capabilities", "")
+                    .find("Uploads")
+                    > -1
+                )
                 and (
                     "advancedEditingCapabilities" in self.properties
                     and self.properties["advancedEditingCapabilities"]

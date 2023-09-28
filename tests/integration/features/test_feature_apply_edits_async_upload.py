@@ -3,10 +3,12 @@ import sys
 #
 #  Update the Path to set the test area
 sys.path.insert(0, r"C:\SVN\geosaurus_issue_9705\src")
+import json
 import uuid
 import logging
 import concurrent.futures
 import unittest
+from arcgis.features import FeatureLayer
 from arcgis.auth.tools._util import detect_proxy
 from arcgis.gis import GIS
 
@@ -23,9 +25,16 @@ def enable_verbose_logging(root):
     root.addHandler(handler)
 
 
-profiles = ['your_online_profile', 'your_enterprise_profile']
+profiles = ['your_online_profile', 'your_enterprise_profile']  #
 PROXIES = detect_proxy(True)  # Handles Fiddler when True
 enable_verbose_logging(__logger__)
+
+
+def search_and_remove(gis):
+    for i in gis.content.search("test_new_edit_features.zip"):
+        [ii.delete() for ii in i.related_items("Service2Data", 'reverse')]
+
+        i.delete()
 
 
 class TestEditFeaturesUpload(unittest.TestCase):
@@ -36,6 +45,7 @@ class TestEditFeaturesUpload(unittest.TestCase):
             GIS(profile=p, verify_cert=False, proxy=PROXIES)
             for p in profiles
         ]
+        [search_and_remove(gis) for gis in cls.gis_objs]
         cls.items = []
         cls.pitems = []
         cls.deletes = [2]
@@ -84,6 +94,16 @@ class TestEditFeaturesUpload(unittest.TestCase):
             )
             cls.items.append(item)
             cls.pitems.append(item.publish())
+        for item in cls.pitems:
+            lyr: FeatureLayer = item.layers[0]
+            container = lyr.container
+            container.manager.update_definition(
+                json_dict=json.loads(
+                    """{"hasStaticData":false,"capabilities":"Query,Uploads,Editing,Create,Update,Delete","layerOverridesEnabled":true,"editorTrackingInfo":{"enableEditorTracking":false,"enableOwnershipAccessControl":false,"allowOthersToUpdate":true,"allowOthersToDelete":true,"allowOthersToQuery":true,"allowAnonymousToQuery":true,"allowAnonymousToUpdate":true,"allowAnonymousToDelete":true}}"""
+                )
+                # {"capabilities": "Query,Uploads"}
+            )
+            container.manager.refresh()
 
     def test_add_feature(self):
         for item in self.pitems:
@@ -95,7 +115,7 @@ class TestEditFeaturesUpload(unittest.TestCase):
             )
             if isinstance(result, concurrent.futures.Future):
                 assert isinstance(result, concurrent.futures.Future)
-                assert isinstance(result.result(), list)
+                assert isinstance(result.result(), (list, dict))
                 assert result.result()
 
     def test_adds_update_feature(self):
@@ -109,7 +129,7 @@ class TestEditFeaturesUpload(unittest.TestCase):
             )
             if isinstance(result, concurrent.futures.Future):
                 assert isinstance(result, concurrent.futures.Future)
-                assert isinstance(result.result(), list)
+                assert isinstance(result.result(), (list, dict))
                 assert result.result()
 
     def test_adds_update_deletes_feature(self):
@@ -124,7 +144,7 @@ class TestEditFeaturesUpload(unittest.TestCase):
             )
             if isinstance(result, concurrent.futures.Future):
                 assert isinstance(result, concurrent.futures.Future)
-                assert isinstance(result.result(), list)
+                assert isinstance(result.result(), (list, dict))
                 assert result.result()
 
     @classmethod

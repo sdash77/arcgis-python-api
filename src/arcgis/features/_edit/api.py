@@ -39,6 +39,7 @@ def _status(session: EsriSession, result: dict[str, Any]) -> dict[str, Any]:
                 )
                 resp.raise_for_status()
                 result: dict[str, Any] = resp.json()
+
                 if "resultUrl" in result:
                     # return the payload
                     return session.get(
@@ -48,6 +49,13 @@ def _status(session: EsriSession, result: dict[str, Any]) -> dict[str, Any]:
                         },
                     ).json()
                 elif "error" in result:
+                    return result
+                elif result.get("status", None) in [
+                    "FAILED",
+                    "failed",
+                    "completed",
+                    "COMPLETED",
+                ]:
                     return result
                 else:
                     status_url = result.get("statusUrl", None)
