@@ -1323,7 +1323,7 @@ def copy_raster(
     raster_type_name: Optional[str] = None,
     raster_type_params: Optional[dict[str, Any]] = None,
     source_mosaic_dataset: Optional[str] = None,
-    estimate_credits=False,
+    estimate=False,
     *,
     gis: Optional[GIS] = None,
     future: bool = False,
@@ -1646,7 +1646,7 @@ def copy_raster(
         raster_type_name=raster_type_name,
         raster_type_params=raster_type_params,
         md_to_upload=source_mosaic_dataset,
-        estimate_credits= estimate_credits,
+        estimate= estimate,
         **kwargs,
     )
 

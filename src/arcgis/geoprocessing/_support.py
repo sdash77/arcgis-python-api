@@ -374,7 +374,7 @@ def _execute_gp_tool(
     add_token=True,
     return_messages=False,
     future=False,
-    estimate_credits=False,
+    estimate=False,
 ):
     if gis is None:
         gis = arcgis.env.active_gis
@@ -466,7 +466,7 @@ def _execute_gp_tool(
 
     gptool = arcgis.gis._GISResource(url, gis)
 
-    if estimate_credits and "RasterAnalysisTools" in url:
+    if estimate and "RasterAnalysisTools" in url:
         gp_params = _prepare_params_for_estimate_credits_task(gp_params, task_name)
         return_values = [{"name":"out_cost", "display_name":"outCost", "type":str}]
         param_db = { 

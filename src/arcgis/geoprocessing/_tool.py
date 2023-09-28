@@ -233,7 +233,7 @@ def _generate_fn(task, tbx):
         src_code += ",\n"
     src_code += (
         " " * num_spaces
-        + "gis=None, future=False, estimate_credits=False) -> "
+        + "gis=None, future=False, estimate=False) -> "
         + name_type["return"].__name__
         + ":\n"
     )
@@ -288,7 +288,7 @@ def _generate_fn(task, tbx):
     src_code += (
         '\treturn _execute_gp_tool(gis, "'
         + task
-        + '", kwargs, param_db, return_values, _use_async, _url, future=future, estimate_credits=estimate_credits)'
+        + '", kwargs, param_db, return_values, _use_async, _url, future=future, estimate=estimate)'
     )
 
     src_code += "\n\n\n"
