@@ -6135,6 +6135,7 @@ class ContentManager(object):
 
     _depmgr = None
     _mrktplcmgr = None
+    _folders = None
 
     def __init__(self, gis):
         self._gis = gis
@@ -6154,6 +6155,20 @@ class ContentManager(object):
         curl = f"{self._gis._portal.resturl}portals/checkUrl"
         params = {"f": "json", "url": url}
         return self._gis._con.get(curl, params, ignore_error_key=True)
+
+    # ----------------------------------------------------------------------
+    @property
+    def folders(self):
+        """
+        A manager to work with `User` folders.
+
+        :return: Folders
+        """
+        if self._folders is None:
+            from ._impl._content_manager import Folders
+
+            self._folders = Folders(gis=self._gis)
+        return self._folders
 
     # ----------------------------------------------------------------------
     def can_reassign(self, items: list[Item], user: User) -> list[dict[str, Any]]:
@@ -7750,6 +7765,12 @@ class ContentManager(object):
         )["results"]
         return itemlist
 
+    @_common_deprecated.deprecated(
+        deprecated_in="2.3.0",
+        removed_in="3.0.0",
+        current_version=None,
+        details="Use `gis.content.folders.create` instead.",
+    )
     def create_folder(self, folder: str, owner: Optional[str] = None):
         """
         The ``create_folder`` method creates a folder with the given folder name, for the given owner.
@@ -7826,6 +7847,12 @@ class ContentManager(object):
                 return folder["title"]
         return None
 
+    @_common_deprecated.deprecated(
+        deprecated_in="2.3.0",
+        removed_in="3.0.0",
+        current_version=None,
+        details="Use `Folder.rename` instead.",
+    )
     def rename_folder(
         self, old_folder: str, new_folder: str, owner: Optional[str] = None
     ):
@@ -7951,6 +7978,12 @@ class ContentManager(object):
                 results.append(all([r["success"] for r in res["results"]]))
         return results
 
+    @_common_deprecated.deprecated(
+        deprecated_in="2.3.0",
+        removed_in="3.0.0",
+        current_version=None,
+        details="Use `Folder.delete()` instead.",
+    )
     def delete_folder(self, folder: str, owner: Optional[str] = None):
         """
         The ``delete_folder`` method deletes a folder for the given owner with
