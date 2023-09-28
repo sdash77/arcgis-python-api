@@ -61,3 +61,43 @@ storymap_2 = {
         }
     },
 }
+
+briefing = {
+    "root": "n-k23c2p",
+    "nodes": {
+        "n-k23c2p": {
+            "type": "briefing",
+            "data": {"storyTheme": "r-vlc4Kp"},
+            "config": {},
+            "children": ["n-XK0GeP"],
+        },
+        "n-XK0GeP": {
+            "type": "briefing-ui",
+            "children": ["n-11SuEF"]
+        },
+        "n-11SuEF": {
+            "type": "briefing-slide",
+            "data": {
+                "layout": "cover"
+            },
+            "children": ["n-3r3mhh"]
+        },
+        "n-3r3mhh": {
+            "type": "storycover",
+            "data": {
+                "type": "sidebyside",
+                "title": "",
+                "summary": "",
+                "byline": "",
+                "titlePanelPosition": "start",
+            },
+            "children": []
+        },
+    },
+    "resources": {
+        "r-vlc4Kp": {
+            "type": "story-theme",
+            "data": {"themeId": "summit", "themeBaseVariableOverrides": {}},
+        }
+    },
+}

@@ -3,6 +3,7 @@ StoryMap Implementation
 """
 from .storymap import JournalStoryMap
 from .story import StoryMap, Themes
+from .briefing import Briefing
 from .story_content import (
     Image,
     Video,
@@ -23,4 +24,5 @@ from .story_content import (
 __all__ = [
     "JournalStoryMap",
     "StoryMap",
+    "Briefing"
 ]

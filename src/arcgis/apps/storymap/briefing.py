@@ -1,57 +1,42 @@
 from __future__ import annotations
-import os
 from typing import Optional, Union
 import uuid
-from enum import Enum
 from arcgis.auth.tools import LazyLoader
 import re
 import copy
 
 arcgis = LazyLoader("arcgis")
 Content = LazyLoader("arcgis.apps.storymap.story_content")
+StoryMap = LazyLoader("arcgis.apps.storymap.story")
 json = LazyLoader("json")
 time = LazyLoader("time")
 
-
-class Themes(Enum):
-    """
-    Represents the Supported Theme Type Enumerations.
-    Example: story_map.theme(Theme.Slate)
-    """
-
-    SUMMIT = "summit"
-    OBSIDIAN = "obsidian"
-    RIDGELINE = "ridgeline"
-    MESA = "mesa"
-    TIDAL = "tidal"
-    SLATE = "slate"
-
-
 ###############################################################################################################
-class StoryMap(object):
+class Briefing(object):
     """
-    A Story Map is a web map that has been thoughtfully created, given context, and provided
-    with supporting information so it becomes a stand-alone resource. It integrates maps, legends,
-    text, photos, and video and provides functionality, such as swipe, pop-ups, and time sliders,
-    that helps users explore this content.
+    Synthesize critical information and maintain mission readiness with briefings, a new slide-based presentation 
+    style now available as a type of ArcGIS StoryMap. Make data-driven decisions and provide meaningful context to 
+    your audience by infusing your presentations with real-time data and dynamic maps. Briefings also allow you to 
+    unify images, videos, and other multimedia in your presentation to create a cohesive experience for both you 
+    and your viewers.
 
-    ArcGIS StoryMaps is the next-generation storytelling tool in ArcGIS, and story authors are
-    encouraged to use this tool to create stories. The Python API can help you create and edit
-    your stories.
+    Example use cases include on-the-ground disaster briefings, budget numbers presented in real-time, and daily 
+    leadership briefings. After the briefings mobile app launches in September, you'll be able to securely connect 
+    with your stakeholders wherever they are with a tablet app that works on- and offline.
 
-    Create a Story Map object to make edits to a story. Can be created from an item of type 'Story Map',
-    an item id for that type of item, or if .nothing is passed, a new story is created from a generic draft.
+    Create a StoryMap Briefing object to make edits to a story. Can be created from an item of type 'StoryMap Briefing',
+    an item id for that type of item, or if nothing is passed, a new story is created from a generic draft.
 
-    If an Item or item_id is passed in, only published changes or new drafts are taken from the Story Map.
+    If an Item or item_id is passed in, only published changes or new drafts are taken from the StoryMap Briefing.
     If you have a story with unpublished changes, they will not appear when you construct your story with the API.
-    If you start to work on your Story that has unpublished changes and save from the Python API, your
+    If you start to work on your Briefing that has unpublished changes and save from the Python API, your
     unpublished changes on the GUI will be overwritten with your work from the API.
 
     ===============     ====================================================================
     **Parameter**        **Description**
     ---------------     --------------------------------------------------------------------
     item                Optional String or Item. The string for an item id or an item of type
-                        'Story Map'. If no item is passed, a new story is created and saved to
+                        'StoryMap Briefing'. If no item is passed, a new story is created and saved to
                         your active portal.
     ---------------     --------------------------------------------------------------------
     gis                 Optional instance of :class:`~arcgis.gis.GIS` . If none provided the active gis is used.
@@ -87,30 +72,30 @@ class StoryMap(object):
             if item is None:
                 # Error with storymap in current gis
                 raise ValueError(
-                    "Cannot find storymap associated with this item id in your portal. Please check it is correct."
+                    "Cannot find storymap briefing associated with this item id in your portal. Please check it is correct."
                 )
-        if item and isinstance(item, arcgis.gis.Item) and item.type == "StoryMap":
+        if item and isinstance(item, arcgis.gis.Item) and item.type == "StoryMap" and "storymapbriefing" in item.typeKeywords:
             # Set item properties from existing item
             self._item = item
             self._itemid = self._item.itemid
             self._resources = self._item.resources.list()
             # Create existing story
-            self._create_existing_storymap()
+            self._create_existing_briefing()
         elif (
             item
             and isinstance(item, arcgis.gis.Item)
-            and "StoryMap" not in item.typeKeywords
+            and "storymapbriefing" not in item.typeKeywords
         ):
             # Throw error if item is not of type Story Map
-            raise ValueError("Item is not a Story Map")
+            raise ValueError("Item is not a StoryMap Briefing")
         else:
             # If no item was provided create a new story map
-            self._create_new_storymap()
+            self._create_new_briefing()
         # Get the story url
         self._url = self._get_url()
 
     # ----------------------------------------------------------------------
-    def _create_existing_storymap(self):
+    def _create_existing_briefing(self):
         # Get properties from most recent resource file.
         # Can have multiple drafts so need to account for this.
         # Draft file will be of form: draft_{13 digit timestamp}.json or draft.json
@@ -146,47 +131,47 @@ class StoryMap(object):
             data = self._item.resources.get(current, try_json=True)
             self._properties = data
         else:
-            # Storymap has no draft json so look for published json
+            # Briefing has no draft json so look for published json
             data = self._item.resources.get("published_data.json", try_json=True)
             self._properties = data
 
     # ----------------------------------------------------------------------
-    def _create_new_storymap(self):
+    def _create_new_briefing(self):
         # Get template from _ref folder
-        template = copy.deepcopy(arcgis.apps.storymap._ref.storymap_2)
+        template = copy.deepcopy(arcgis.apps.storymap._ref.briefing)
         # Add correct by-line and locale
-        template["nodes"]["n-aTn8ak"]["data"]["byline"] = self._gis._username
-        template["nodes"]["n-4xkUEe"]["config"]["storyLocale"] = (
+        template["nodes"]["n-3r3mhh"]["data"]["byline"] = self._gis._username
+        template["nodes"]["n-k23c2p"]["config"]["storyLocale"] = (
             self._gis.users.me.culture if self._gis.users.me.culture else "en-US"
         )
 
-        # Create unique story node id
-        story_node = "n-" + uuid.uuid4().hex[0:6]
-        template["root"] = story_node
-        template["nodes"][story_node] = template["nodes"]["n-4xkUEe"]
-        del template["nodes"]["n-4xkUEe"]
-        # Set properties for the story
+        # Create unique briefing node id
+        briefing_node = "n-" + uuid.uuid4().hex[0:6]
+        template["root"] = briefing_node
+        template["nodes"][briefing_node] = template["nodes"]["n-k23c2p"]
+        del template["nodes"]["n-k23c2p"]
+        # Set properties for the briefing
         self._properties = template
         # Create text for resource call
         text = json.dumps(template)
         # Create a temporary title
-        title = "StoryMap via Python %s" % uuid.uuid4().hex[:10]
+        title = "Briefing via Python %s" % uuid.uuid4().hex[:10]
         # Create draft resource name
         draft = "draft_" + str(int(time.time() * 1000)) + ".json"
         # Will be posted as a draft
-        sm_version = self._gis._con.get("https://storymaps.arcgis.com/version")[
+        br_version = self._gis._con.get("https://storymaps.arcgis.com/version")[
             "version"
         ]
         keywords = ",".join(
-            [
+            [   
+                "alphabriefing",
                 "arcgis-storymaps",
-                "StoryMap",
-                "Web Application",
-                "smstatusdraft",
-                "smversiondraft:" + sm_version,
-                "python-api",
-                "smeditorapp:python-api-" + arcgis.__version__,
                 "smdraftresourceid:" + draft,
+                "smversiondraft:" + br_version,
+                "StoryMap",
+                "storymapbriefing",
+                "Web Application",
+                "smpristine"
             ]
         )
         # Get default thumbnail for a new item
@@ -239,13 +224,13 @@ class StoryMap(object):
         """
         if self._gis._is_agol:
             # Online
-            self._url = "https://storymaps.arcgis.com/stories/{storyid}".format(
-                storyid=self._itemid
+            self._url = "https://storymaps.arcgis.com/briefings/{briefingid}".format(
+                briefingid=self._itemid
             )
         else:
             # Enterprise
-            self._url = "https://{portal}/apps/storymaps/stories/{storyid}".format(
-                portal=self._gis.url, storyid=self._itemid
+            self._url = "https://{portal}/apps/storymaps/briefings/{briefingid}".format(
+                portal=self._gis.url, briefingid=self._itemid
             )
         return self._url
 
@@ -677,7 +662,7 @@ class StoryMap(object):
         return self.navigation_list
 
     # ----------------------------------------------------------------------
-    def theme(self, theme: Union[Themes, str] = Themes.SUMMIT):
+    def theme(self, theme: Union[StoryMap.Themes, str] = StoryMap.Themes.SUMMIT):
         """
         Each story has a theme node in its resources. This method can be used to change the theme.
         To add a custom theme to your story, pass in the item_id for the item of type Story Map Theme.
@@ -702,7 +687,7 @@ class StoryMap(object):
         for node, node_info in self._properties["resources"].items():
             for key, val in node_info.items():
                 if key == "type" and val == "story-theme":
-                    if isinstance(theme, Themes):
+                    if isinstance(theme, StoryMap.Themes):
                         # theme comes from Themes class
                         self._properties["resources"][node]["data"][
                             "themeId"
