@@ -137,7 +137,7 @@ class ArrowTimeAccessor:
         Return a string representing the time in ISO 8601 format
         """
         return self._series.apply(
-            lambda x: x.isoformat() if not pd.isna(x) else None,
+            lambda x: x.isoformat(timespec=timespec) if not pd.isna(x) else None,
             convert_dtype=True,
         ).convert_dtypes()
 

@@ -3,6 +3,7 @@ import sys
 #
 #  Update the Path to set the test area
 # sys.path.insert(0, r"C:\SVN\geosaurus_issue_10518\src")
+
 import logging
 import unittest
 import datetime as _dt
@@ -56,6 +57,10 @@ class TestDtypeArray(unittest.TestCase):
         v = _dt.time(hour=1, minute=10, second=0, microsecond=0)
         self.data[1] = v
         assert self.data[1] == v
+
+    def test_isoformat_2(self):
+        s = self.data.time.isoformat("microseconds")
+        assert s[0] == '08:30:00.000000'
 
     def test_isoformat(self):
         s = self.data.time.isoformat()
