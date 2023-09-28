@@ -2725,12 +2725,23 @@ class FeatureLayerCollectionManager(_GISResource):
         ===============     ====================================================================
         **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
-        data                Required string. Path to the file used to overwrite the hosted
+        data_file           Required string. Path to the file used to overwrite the hosted
                             feature layer collection.
         ===============     ====================================================================
 
         :return: JSON message as dictionary such as {'success':True} or {'error':'error message'}
         """
+        if (
+            data_file
+            and isinstance(data_file, str)
+            and os.path.exists(data_file)
+            and os.path.isfile(data_file)
+            and os.stat(data_file).st_size > int(2.5e7)
+        ):
+            return {
+                "error": "The data file provided does not exist or is inaccessible."
+            }
+
         # check for outstanding replicas
         if hasattr(self._fs, "replicas") and bool(self._fs.replicas.get_list()):
             raise Exception(
