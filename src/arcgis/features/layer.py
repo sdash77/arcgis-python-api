@@ -53,6 +53,7 @@ class FeatureLayer(Layer):
 
     _metadatamanager = None
     _renderer = None
+    _umgr = None
 
     def __init__(self, url, gis=None, container=None, dynamic_layer=None):
         """
@@ -73,6 +74,22 @@ class FeatureLayer(Layer):
         self._dynamic_layer = dynamic_layer
         self.attachments = AttachmentManager(self)
         self._time_filter = None
+
+    @property
+    def _upload_manager(self) -> "UploadManager":
+        """Provides the upload endpoint for a feature layer"""
+
+        if self._umgr is None:
+            if (
+                "capabilities" in self.container.properties
+                and self.container.properties["capabilities"].find("Uploads") > -1
+            ):
+                from ._uploads.upload import UploadManager
+
+                self._umgr = UploadManager(layer=self)
+            else:
+                return None
+        return self._umgr
 
     @property
     def field_groups(self) -> dict[str, Any]:
@@ -3284,6 +3301,7 @@ class FeatureLayer(Layer):
             lyr.edit_features(deletes=[2542])
 
         """
+
         try:
             import pandas as pd
             from arcgis.features.geo import _is_geoenabled
@@ -3454,7 +3472,50 @@ class FeatureLayer(Layer):
             print("Parameters not valid for edit_features")
             return None
         try:
-            if future:
+            if (
+                self._gis.version
+                >= [10, 3]  #  Checks if the server is the correct version
+                and future  #  checks if future==True
+                and session_id is None
+                and attachments is None
+                and dict(self.container.properties)
+                .get("capabilities", "")
+                .find("Uploads")
+                > -1
+                and (
+                    "advancedEditingCapabilities" in self.properties
+                    and self.properties["advancedEditingCapabilities"]
+                    and "supportsApplyEditsbyUploadID"
+                    in self.properties["advancedEditingCapabilities"]
+                    and self.properties["advancedEditingCapabilities"][
+                        "supportsApplyEditsbyUploadID"
+                    ]
+                )
+            ):  #  checks if the service supports the advanced capabilities
+                from ._edit import apply_edits, VersionInfo
+
+                if gdb_version:
+                    vi = VersionInfo(
+                        version=gdb_version,
+                        session_id=session_id,
+                        use_previous_edit_moment=use_previous_moment,
+                    )
+                else:
+                    vi = None
+                return apply_edits(
+                    fl=self,
+                    adds=adds,
+                    updates=updates,
+                    deletes=deletes,
+                    attachments=None,
+                    version_info=vi,
+                    use_global_ids=use_global_ids,
+                    return_edit_moment=return_edit_moment,
+                    rollback=rollback_on_failure,
+                    true_curve_client=true_curve_client,
+                    datum_transformation=datum_transformation,
+                )
+            elif self._gis.version < [11, 1] and future:
                 params["async"] = True
                 executor = concurrent.futures.ThreadPoolExecutor(1)
                 res = self._con.post_multipart(path=edit_url, postdata=params)
