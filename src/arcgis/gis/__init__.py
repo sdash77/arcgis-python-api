@@ -7906,7 +7906,8 @@ class ContentManager(object):
         """
         params = {"f": "json", "items": ""}
 
-        if permanent and self._gis._is_agol:
+        # applicable to online and to enterprise 11.3 and higher
+        if permanent and (self._gis._is_agol or self._gis.version > [2023, 2]):
             params["permanentDelete"] = permanent
 
         items_dict = {}  # key will be ownner and value is list of their items
