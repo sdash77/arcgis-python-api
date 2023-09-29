@@ -183,7 +183,10 @@ class FeatureClassifier(ArcGISModel):
 
         self._free_memory()
         backbone = complete_transformer_backbone_name(backbone, data.chip_size)
-        if not self._check_backbone_support(backbone):
+        if not (
+            self._check_backbone_support(backbone)
+            or backbone in self._transformer_backbone_original_names()
+        ):
             raise Exception(
                 f"Enter only compatible backbones from {', '.join(self.supported_backbones)}"
             )

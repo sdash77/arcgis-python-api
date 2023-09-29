@@ -151,7 +151,7 @@ def _raise_conda_import_error(import_exception=import_exception):
         "-deep-learning-dependencies\n"
     )
     raise Exception(
-        f"{import_exception} \n\nThis module requires conda, python 3.7 "
+        f"{import_exception} \n\nThis module requires conda, python >=3.9 "
         f"and is currently supported on Windows.\n{installation_steps}\n"
     )
 
