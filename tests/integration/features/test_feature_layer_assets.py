@@ -6,7 +6,7 @@ from arcgis.features import FeatureLayer
 from arcgis.gis import GIS
 
 # Devext profile for now and enterprise
-profiles = ["your_dev_profile","your_"]
+profiles = ["your_dev_profile"]
 # 3D Object Feature Layer
 fl_3d_online = FeatureLayer(
     "https://servicesdev.arcgis.com/5xC5Wrapp1gUAl2r/ArcGIS/rest/services/CUBE_WGS84_APIforPython/FeatureServer/0"
