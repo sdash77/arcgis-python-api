@@ -3959,6 +3959,11 @@ class FeatureLayer(Layer):
                 "transportType": transport_type,
             }
 
+            resp = self._gis._con._session.post(url, params).json()
+            return resp
+        else:
+            return None
+
     # ----------------------------------------------------------------------
     def relationship_3d(self):
         """
@@ -3967,7 +3972,10 @@ class FeatureLayer(Layer):
         """
         if self._is_3d:
             url = self._url + "/relationshipsfor3d?f=json"
-            resp = self._gis._con._session.post(url).json
+            resp = self._gis._con._session.post(url).json()
+            return resp
+        else:
+            return None
 
     # ----------------------------------------------------------------------
     def query_3d(
