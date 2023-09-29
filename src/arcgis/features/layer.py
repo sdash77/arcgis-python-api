@@ -54,6 +54,7 @@ class FeatureLayer(Layer):
 
     _metadatamanager = None
     _renderer = None
+    _umgr = None
 
     def __init__(self, url, gis=None, container=None, dynamic_layer=None):
         """
@@ -82,6 +83,21 @@ class FeatureLayer(Layer):
             return True
         else:
             return False
+
+    def _upload_manager(self) -> "UploadManager":
+        """Provides the upload endpoint for a feature layer"""
+
+        if self._umgr is None:
+            if self._gis._is_arcgisonline or (
+                "capabilities" in self.container.properties
+                and self.container.properties["capabilities"].find("Uploads") > -1
+            ):
+                from ._uploads.upload import UploadManager
+
+                self._umgr = UploadManager(layer=self)
+            else:
+                return None
+        return self._umgr
 
     @property
     def field_groups(self) -> dict[str, Any]:
@@ -3149,6 +3165,7 @@ class FeatureLayer(Layer):
         use_previous_moment: bool = False,
         datum_transformation: Optional[Union[int, dict[str, Any]]] = None,
         future: bool = False,
+        asset_maps: Optional[dict[str, list[Any]]] = None,
     ):
         """
         Adds, updates, and deletes features to the
@@ -3258,6 +3275,39 @@ class FeatureLayer(Layer):
         future                  Optional Boolean.  If the `FeatureLayer` has `supportsAsyncApplyEdits` set
                                 to `True`, then edits can be applied asynchronously. If True, a future object will be returned and the process
                                 will not wait for the task to complete. The default is False, which means wait for results.
+        ---------------------   --------------------------------------------------------------------------------------
+        asset_maps              Optional. For 3D feature layers, a dictionary with keys: "adds" and "deletes" whose
+                                value's are lists of features to add or delete. Omit geometry.
+                                The "updates" array will also have a corresponding entry in `asset_maps` for each feature,
+                                similar to those the "adds" array has. Attributes and asset_maps are each optional and will
+                                result in a partial update of the feature (i.e., only attributes, only shape).
+                                The existing geometry and the new asset_maps are mutually exclusive.
+
+                                .. code-block:: python
+
+                                    # Example of asset_maps parameter with adds request
+                                    adds=[
+                                        {
+                                            "attributes": {
+                                            "OWNER": "Joe Smith",
+                                            "VALUE": 94820.37,
+                                            "APPROVED": true,
+                                            "LASTUPDATE": 1227663551096,
+                                            "GlobalID": "{064185b3-d827-fa42-a9bb-aff1ccb9b6a1}"
+                                            }
+                                        }
+                                    ]
+                                    asset_maps={
+                                    "adds":[
+                                        {
+                                        "globalId": "{c9e887e9-c8bd-4014-be62-03e5b0f7b25f}",
+                                        "parentGlobalId": "{064185b3-d827-fa42-a9bb-aff1ccb9b6a1}",
+                                        "assetName": "geometry.glb",
+                                        "assetHash": "6486ee53c8faba18045ef29d382f1c8227bde3a25d37f7a62fe0d2259a3a14dd",
+                                        "flags": ["PROJECT_VERTICES"]
+                                        }
+                                    ]
+                                    }
         =====================   ======================================================================================
 
         :return:
@@ -3293,6 +3343,7 @@ class FeatureLayer(Layer):
             lyr.edit_features(deletes=[2542])
 
         """
+
         try:
             import pandas as pd
             from arcgis.features.geo import _is_geoenabled
@@ -3442,11 +3493,13 @@ class FeatureLayer(Layer):
                 )
         elif isinstance(deletes, (list, tuple)):
             params["deletes"] = ",".join([str(d) for d in deletes])
-        if not return_edit_moment is None:
+        if return_edit_moment is not None:
             params["returnEditMoment"] = return_edit_moment
-        if not attachments is None and isinstance(attachments, dict):
+        if attachments and isinstance(attachments, dict):
             params["attachments"] = attachments
-        if not true_curve_client is None:
+        if asset_maps and isinstance(asset_maps, dict):
+            params["assetMaps"] = asset_maps
+        if true_curve_client is not None:
             params["trueCurveClient"] = true_curve_client
         if not use_previous_moment is None:
             params["usePreviousEditMoment"] = use_previous_moment
@@ -3463,7 +3516,54 @@ class FeatureLayer(Layer):
             print("Parameters not valid for edit_features")
             return None
         try:
-            if future:
+            if (
+                self._gis.version
+                >= [10, 3]  #  Checks if the server is the correct version
+                and future  #  checks if future==True
+                and session_id is None
+                and attachments is None
+                and (
+                    self._gis._is_arcgisonline
+                    or self._gis._is_arcgisonline == False
+                    and dict(self.container.properties)
+                    .get("capabilities", "")
+                    .find("Uploads")
+                    > -1
+                )
+                and (
+                    "advancedEditingCapabilities" in self.properties
+                    and self.properties["advancedEditingCapabilities"]
+                    and "supportsApplyEditsbyUploadID"
+                    in self.properties["advancedEditingCapabilities"]
+                    and self.properties["advancedEditingCapabilities"][
+                        "supportsApplyEditsbyUploadID"
+                    ]
+                )
+            ):  #  checks if the service supports the advanced capabilities
+                from ._edit import apply_edits, VersionInfo
+
+                if gdb_version:
+                    vi = VersionInfo(
+                        version=gdb_version,
+                        session_id=session_id,
+                        use_previous_edit_moment=use_previous_moment,
+                    )
+                else:
+                    vi = None
+                return apply_edits(
+                    fl=self,
+                    adds=adds,
+                    updates=updates,
+                    deletes=deletes,
+                    attachments=None,
+                    version_info=vi,
+                    use_global_ids=use_global_ids,
+                    return_edit_moment=return_edit_moment,
+                    rollback=rollback_on_failure,
+                    true_curve_client=true_curve_client,
+                    datum_transformation=datum_transformation,
+                )
+            elif self._gis.version < [11, 1] and future:
                 params["async"] = True
                 executor = concurrent.futures.ThreadPoolExecutor(1)
                 res = self._con.post_multipart(path=edit_url, postdata=params)
