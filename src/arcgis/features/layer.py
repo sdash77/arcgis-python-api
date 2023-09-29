@@ -22,6 +22,7 @@ from arcgis._impl.common._filters import (
 )
 from arcgis._impl.common._mixins import PropertyMap
 from arcgis._impl.common._utils import _date_handler, chunks
+from functools import lru_cache
 from arcgis.features._async import EditFeatureJob
 
 from .managers import (
@@ -75,6 +76,7 @@ class FeatureLayer(Layer):
         self._time_filter = None
 
     @property
+    @lru_cache(maxsize=255)
     def _is_3d(self):
         if "infoFor3D" in self.properties and self.properties.infoFor3D is not None:
             return True
