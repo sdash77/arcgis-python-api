@@ -7909,6 +7909,10 @@ class ContentManager(object):
         # applicable to online and to enterprise 11.3 and higher
         if permanent and (self._gis._is_agol or self._gis.version > [2023, 2]):
             params["permanentDelete"] = permanent
+        else:
+            _log.warning(
+                "Permanent delete parameter is not supported on this version of Enterprise."
+            )
 
         items_dict = {}  # key will be ownner and value is list of their items
         for item in items:
