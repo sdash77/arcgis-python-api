@@ -3157,6 +3157,7 @@ class FeatureLayer(Layer):
         use_previous_moment: bool = False,
         datum_transformation: Optional[Union[int, dict[str, Any]]] = None,
         future: bool = False,
+        asset_maps: Optional[dict[str, list[Any]]] = None,
     ):
         """
         Adds, updates, and deletes features to the
@@ -3266,6 +3267,39 @@ class FeatureLayer(Layer):
         future                  Optional Boolean.  If the `FeatureLayer` has `supportsAsyncApplyEdits` set
                                 to `True`, then edits can be applied asynchronously. If True, a future object will be returned and the process
                                 will not wait for the task to complete. The default is False, which means wait for results.
+        ---------------------   --------------------------------------------------------------------------------------
+        asset_maps              Optional. For 3D feature layers, a dictionary with keys: "adds" and "deletes" whose
+                                value's are lists of features to add or delete. Omit geometry.
+                                The "updates" array will also have a corresponding entry in `asset_maps` for each feature,
+                                similar to those the "adds" array has. Attributes and asset_maps are each optional and will
+                                result in a partial update of the feature (i.e., only attributes, only shape).
+                                The existing geometry and the new asset_maps are mutually exclusive.
+
+                                .. code-block:: python
+
+                                    # Example of asset_maps parameter with adds request
+                                    adds=[
+                                        {
+                                            "attributes": {
+                                            "OWNER": "Joe Smith",
+                                            "VALUE": 94820.37,
+                                            "APPROVED": true,
+                                            "LASTUPDATE": 1227663551096,
+                                            "GlobalID": "{064185b3-d827-fa42-a9bb-aff1ccb9b6a1}"
+                                            }
+                                        }
+                                    ]
+                                    asset_maps={
+                                    "adds":[
+                                        {
+                                        "globalId": "{c9e887e9-c8bd-4014-be62-03e5b0f7b25f}",
+                                        "parentGlobalId": "{064185b3-d827-fa42-a9bb-aff1ccb9b6a1}",
+                                        "assetName": "geometry.glb",
+                                        "assetHash": "6486ee53c8faba18045ef29d382f1c8227bde3a25d37f7a62fe0d2259a3a14dd",
+                                        "flags": ["PROJECT_VERTICES"]
+                                        }
+                                    ]
+                                    }
         =====================   ======================================================================================
 
         :return:
@@ -3451,11 +3485,13 @@ class FeatureLayer(Layer):
                 )
         elif isinstance(deletes, (list, tuple)):
             params["deletes"] = ",".join([str(d) for d in deletes])
-        if not return_edit_moment is None:
+        if return_edit_moment is not None:
             params["returnEditMoment"] = return_edit_moment
-        if not attachments is None and isinstance(attachments, dict):
+        if attachments and isinstance(attachments, dict):
             params["attachments"] = attachments
-        if not true_curve_client is None:
+        if asset_maps and isinstance(asset_maps, dict):
+            params["assetMaps"] = asset_maps
+        if true_curve_client is not None:
             params["trueCurveClient"] = true_curve_client
         if not use_previous_moment is None:
             params["usePreviousEditMoment"] = use_previous_moment
