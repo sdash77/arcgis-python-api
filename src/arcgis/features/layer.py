@@ -13,7 +13,7 @@ from re import S, search
 import time
 import concurrent.futures
 from typing import Any, Optional, Union
-from arcgis._impl.common import _utils
+from arcgis._impl.common import _query
 from arcgis._impl.common._filters import (
     StatisticFilter,
     GeometryFilter,
@@ -1864,11 +1864,23 @@ class FeatureLayer(Layer):
         ===============================     ====================================================================
         **Parameter**                        **Description**
         -------------------------------     --------------------------------------------------------------------
-        where                               Optional string. The default is 1=1. The selection sql statement.
+        where                               Optional string. SQL-92 WHERE clause syntax on the fields in the layer
+                                            is supported for most data sources. Some data sources have restrictions
+                                            on what is supported. Hosted feature services in ArcGIS Enterprise running
+                                            on a spatiotemporal data source only support a subset of SQL-92.
+                                            Below is a list of supported SQL-92 with spatiotemporal-based feature services:
+
+
+                                            ( '<=' | '>=' | '<' | '>' | '=' | '!=' | '<>' | LIKE )
+                                            (AND | OR)
+                                            (IS | IS_NOT)
+                                            (IN | NOT_IN) ( '(' ( expr ( ',' expr )* )? ')' )
+                                            COLUMN_NAME BETWEEN LITERAL_VALUE AND LITERAL_VALUE
         -------------------------------     --------------------------------------------------------------------
-        out_fields                          Optional List of field names to return. Field names can be specified
-                                            either as a List of field names or as a comma separated string.
-                                            The default is "*", which returns all the fields.
+        out_fields                          Optional list of fields to be included in the returned result set.
+                                            This list is a comma-delimited list of field names. You can also specify
+                                            the wildcard "*" as the value of this parameter. In this case, the query
+                                            results include all the field values.
 
                                             .. note::
                                                 If specifying `return_count_only`, `return_id_only`, or `return_extent_only`
@@ -1876,6 +1888,11 @@ class FeatureLayer(Layer):
         -------------------------------     --------------------------------------------------------------------
         object_ids                          Optional string. The object IDs of this layer or table to be queried.
                                             The object ID values should be a comma-separated string.
+
+                                            .. note::
+                                                There might be a drop in performance if the layer/table data
+                                                source resides in an enterprise geodatabase and more than
+                                                1,000 object_ids are specified.
         -------------------------------     --------------------------------------------------------------------
         distance                            Optional integer. The buffer distance for the input geometries.
                                             The distance unit is specified by units. For example, if the
@@ -1886,7 +1903,8 @@ class FeatureLayer(Layer):
                                             unit is not specified, the unit is derived from the geometry spatial
                                             reference. If the geometry spatial reference is not specified, the
                                             unit is derived from the feature service data spatial reference.
-                                            This parameter only applies if supportsQueryWithDistance is true.
+                                            This parameter only applies if `supportsQueryWithDistance` is true.
+
                                             Values: `esriSRUnit_Meter | esriSRUnit_StatuteMile |
                                                     esriSRUnit_Foot | esriSRUnit_Kilometer |
                                                     esriSRUnit_NauticalMile | esriSRUnit_USNauticalMile`
@@ -1925,11 +1943,18 @@ class FeatureLayer(Layer):
         -------------------------------     --------------------------------------------------------------------
         return_distinct_values              Optional boolean.  If true, it returns distinct values based on the
                                             fields specified in out_fields. This parameter applies only if the
-                                            supportsAdvancedQueries property of the layer is true.
+                                            `supportsAdvancedQueries` property of the layer is true. This parameter
+                                            can be used with return_count_only to return the count of distinct
+                                            values of subfields.
+
+                                            .. note::
+                                                Make sure to set return_geometry to False if this is set to True.
+                                                Otherwise, reliable results will not be returned.
         -------------------------------     --------------------------------------------------------------------
         return_ids_only                     Optional boolean. Default is False.  If true, the response only
                                             includes an array of object IDs. Otherwise, the response is a
-                                            feature set.
+                                            feature set. When object_ids are specified, setting this parameter to
+                                            true is invalid.
         -------------------------------     --------------------------------------------------------------------
         return_count_only                   Optional boolean. If true, the response only includes the count
                                             (number of features/records) that would be returned by a query.
@@ -1943,7 +1968,7 @@ class FeatureLayer(Layer):
                                             returnCountOnly=true, the response will return both the count and
                                             the extent.
                                             The default is false. This parameter applies only if the
-                                            supportsReturningQueryExtent property of the layer is true.
+                                            `supportsReturningQueryExtent` property of the layer is true.
         -------------------------------     --------------------------------------------------------------------
         order_by_fields                     Optional string. One or more field names on which the
                                             features/records need to be ordered. Use ASC or DESC for ascending
@@ -2015,7 +2040,8 @@ class FeatureLayer(Layer):
         -------------------------------     --------------------------------------------------------------------
         return_centroid                     Optional boolean. Used to return the geometry centroid associated
                                             with each feature returned. If true, the result includes the geometry
-                                            centroid. The default is false.
+                                            centroid. The default is false. Only supported on layer with
+                                            polygon geometry type.
         -------------------------------     --------------------------------------------------------------------
         return_all_records                  Optional boolean. When True, the query operation will call the
                                             service until all records that satisfy the where_clause are
@@ -2156,337 +2182,47 @@ class FeatureLayer(Layer):
 
 
         """
-        as_raw = as_df
-        if self._dynamic_layer is None:
-            url = self._url + "/query"
-        else:
-            url = "%s/query" % self._url.split("?")[0]
 
-        params = {"f": "json"}
-        if self._dynamic_layer is not None:
-            params["layer"] = self._dynamic_layer
-        if result_type is not None:
-            params["resultType"] = result_type
-        if historic_moment is not None:
-            params["historicMoment"] = historic_moment
-        if sql_format is not None:
-            params["sqlFormat"] = sql_format
-        if return_true_curves is not None:
-            params["returnTrueCurves"] = return_true_curves
-        if return_exceeded_limit_features is not None:
-            params["returnExceededLimitFeatures"] = return_exceeded_limit_features
-        params["where"] = where
-        params["returnGeometry"] = return_geometry
-        params["returnDistinctValues"] = return_distinct_values
-        params["returnCentroid"] = return_centroid
-        params["returnCountOnly"] = return_count_only
-        params["returnExtentOnly"] = return_extent_only
-        params["returnIdsOnly"] = return_ids_only
-        params["returnZ"] = return_z
-        params["returnM"] = return_m
-        if not datum_transformation is None:
-            params["datumTransformation"] = datum_transformation
-
-        # convert out_fields to a comma separated string
-        if isinstance(out_fields, (list, tuple)):
-            out_fields = ",".join(out_fields)
-
-        if out_fields != "*" and not return_distinct_values:
-            try:
-                # Check if object id field is in out_fields.
-                # If it isn't, add it
-                object_id_field = [
-                    x.name
-                    for x in self.properties.fields
-                    if x.type == "esriFieldTypeOID"
-                ][0]
-                if object_id_field not in out_fields.split(","):
-                    out_fields = object_id_field + "," + out_fields
-            except (IndexError, AttributeError):
-                pass
-        params["outFields"] = out_fields
-        if return_count_only or return_extent_only or return_ids_only:
-            return_all_records = False
-        if result_record_count and not return_all_records:
-            params["resultRecordCount"] = result_record_count
-        if result_offset and not return_all_records:
-            params["resultOffset"] = result_offset
-        if quantization_parameters:
-            params["quantizationParameters"] = quantization_parameters
-        if multipatch_option:
-            params["multipatchOption"] = multipatch_option
-        if order_by_fields:
-            params["orderByFields"] = order_by_fields
-        if group_by_fields_for_statistics:
-            params["groupByFieldsForStatistics"] = group_by_fields_for_statistics
-        if statistic_filter and isinstance(statistic_filter, StatisticFilter):
-            params["outStatistics"] = statistic_filter.filter
-        if out_statistics:
-            params["outStatistics"] = out_statistics
-        if out_sr:
-            params["outSR"] = out_sr
-        if max_allowable_offset:
-            params["maxAllowableOffset"] = max_allowable_offset
-        if gdb_version:
-            params["gdbVersion"] = gdb_version
-        if geometry_precision:
-            params["geometryPrecision"] = geometry_precision
-        if object_ids:
-            params["objectIds"] = object_ids
-        if distance:
-            params["distance"] = distance
-        if units:
-            params["units"] = units
-
-        if time_filter is None and self.time_filter:
-            params["time"] = self.time_filter
-        elif time_filter is not None:
-            if type(time_filter) is list:
-                starttime = _date_handler(time_filter[0])
-                endtime = _date_handler(time_filter[1])
-                if starttime is None:
-                    starttime = "null"
-                if endtime is None:
-                    endtime = "null"
-                params["time"] = "%s,%s" % (starttime, endtime)
-            elif isinstance(time_filter, dict):
-                for key, val in time_filter.items():
-                    params[key] = val
-            else:
-                params["time"] = _date_handler(time_filter)
-
-        if geometry_filter and isinstance(geometry_filter, GeometryFilter):
-            for key, val in geometry_filter.filter:
-                params[key] = val
-        elif geometry_filter and isinstance(geometry_filter, dict):
-            for key, val in geometry_filter.items():
-                params[key] = val
-        if len(kwargs) > 0:
-            for key, val in kwargs.items():
-                if (
-                    key
-                    in (
-                        "returnCountOnly",
-                        "returnExtentOnly",
-                        "returnIdsOnly",
-                    )
-                    and val
-                ):
-                    # If these keys are passed in as kwargs instead of parameters, set return_all_records
-                    return_all_records = False
-                params[key] = val
-                del key, val
-
-        if not return_all_records or "outStatistics" in params:
-            # we cannot assume that because return_all_records is False it means we specified something else
-            if return_count_only or return_extent_only or return_ids_only:
-                # Remove to avoid missing when wanting counts only
-                if "orderByFields" in params:
-                    del params["orderByFields"]
-            if as_df:
-                return self._query_df(url, params)
-            return self._query(url, params, raw=as_raw)
-
-        params["returnCountOnly"] = True
-        # need to make edits to out fields if more than one to avoid server error. Split and use only first
-        out_fields = params["outFields"]
-        params["outFields"] = params["outFields"].split(",")[0]
-        if where == "1=1":
-            if "objectIdField" in self.properties:
-                params["where"] = f"{self.properties.objectIdField} > 0"
-            record_count = self._query(url, params, raw=as_raw)
-            params["where"] = "1=1"
-        else:
-            record_count = self._query(url, params, raw=as_raw)
-        if "maxRecordCount" in self.properties:
-            max_records = self.properties["maxRecordCount"]
-        else:
-            max_records = 1000
-        # reassign to original
-        params["outFields"] = out_fields
-        supports_pagination = True
-        if (
-            "advancedQueryCapabilities" not in self.properties
-            or "supportsPagination" not in self.properties["advancedQueryCapabilities"]
-            or not self.properties["advancedQueryCapabilities"]["supportsPagination"]
-        ):
-            supports_pagination = False
-
-        params["returnCountOnly"] = False
-        if record_count == 0 and as_df:
-            from arcgis.features.geo._array import GeoArray
-            import numpy as np
-            import pandas as pd
-
-            _fld_lu = {
-                "esriFieldTypeSmallInteger": pd.Int32Dtype(),
-                "esriFieldTypeInteger": pd.Int32Dtype(),
-                "esriFieldTypeSingle": pd.Float64Dtype(),
-                "esriFieldTypeDouble": pd.Float64Dtype(),
-                "esriFieldTypeFloat": pd.Float64Dtype(),
-                "esriFieldTypeString": pd.StringDtype(),
-                "esriFieldTypeDate": "datetime64[ns]",  # np.datetime64,
-                "esriFieldTypeOID": pd.Int64Dtype(),
-                "esriFieldTypeGeometry": object,
-                "esriFieldTypeBlob": object,
-                "esriFieldTypeRaster": object,
-                "esriFieldTypeGUID": pd.StringDtype(),
-                "esriFieldTypeGlobalID": pd.StringDtype(),
-                "esriFieldTypeXML": object,
-                "esriFieldTypeTimeOnly": object,
-                "esriFieldTypeDateOnly": object,
-                "esriFieldTypeTimestampOffset": object,
-            }
-            columns = {}
-            for fld in self.properties.fields:
-                fld = dict(fld)
-                columns[fld["name"]] = _fld_lu[fld["type"]]
-            if (
-                "geometryType" in self.properties
-                and not self.properties.geometryType is None
-            ):
-                columns["SHAPE"] = object
-            if return_geometry == False:
-                columns.pop("SHAPE", None)
-            df = pd.DataFrame([], columns=columns.keys()).astype(columns, True)
-            if out_fields != "*":
-                df = df[out_fields.split(",")].copy()
-
-            if "SHAPE" in df.columns:
-                df["SHAPE"] = GeoArray([])
-                df.spatial.set_geometry("SHAPE")
-                df.spatial.renderer = self.renderer
-                df.spatial._meta.source = self
-            return df
-        elif record_count <= max_records:
-            if (
-                supports_pagination
-                and record_count > 0
-                and return_distinct_values == False
-            ):
-                params["resultRecordCount"] = record_count
-            if as_df:
-                import pandas as pd
-
-                df = self._query_df(url, params)
-                dt_fields = [
-                    fld["name"]
-                    for fld in self.properties.fields
-                    if fld["type"]
-                    in [
-                        "esriFieldTypeDate",
-                        "esriFieldTypeDateOnly",
-                        "esriFieldTypeTimestampOffset",
-                    ]
-                ]
-                if "SHAPE" in df.columns:
-                    df.spatial.set_geometry("SHAPE")
-                    df.spatial.renderer = self.renderer
-                    df.spatial._meta.source = self
-                for fld in dt_fields:
-                    try:
-                        if fld in df.columns:
-                            df[fld] = pd.to_datetime(
-                                df[fld] / 1000,
-                                unit="s",
-                            )
-                    except:
-                        if fld in df.columns:
-                            df[fld] = pd.to_datetime(
-                                df[fld],
-                            )
-                return df
-
-            return self._query(url, params, raw=as_raw)
-
-        result = None
-        i = 0
-        count = 0
-        df = None
-        dfs = []
-        if not supports_pagination:
-            params["returnIdsOnly"] = True
-            oid_info = self._query(url, params, raw=as_raw)
-            params["returnIdsOnly"] = False
-            for ids in chunks(oid_info["objectIds"], max_records):
-                ids = [str(i) for i in ids]
-                sql = "%s in (%s)" % (
-                    oid_info["objectIdFieldName"],
-                    ",".join(ids),
-                )
-                params["where"] = sql
-                if not as_df:
-                    records = self._query(url, params, raw=as_raw)
-                    if result:
-                        if "features" in result:
-                            result["features"].append(records["features"])
-                        else:
-                            result.features.extend(records.features)
-                    else:
-                        result = records
-                else:
-                    df = self._query_df(url, params)
-                    dfs.append(df)
-        else:
-            while True:
-                params["resultRecordCount"] = max_records
-                params["resultOffset"] = max_records * i
-                if not as_df:
-                    records = self._query(url, params, raw=as_raw)
-
-                    if result:
-                        if "features" in result:
-                            result["features"].append(records["features"])
-                        else:
-                            result.features.extend(records.features)
-                    else:
-                        result = records
-
-                    if len(records.features) < max_records:
-                        break
-                else:
-                    df = self._query_df(url, params)
-                    count += len(df)
-                    dfs.append(df)
-                    if count == record_count:
-                        break
-                i += 1
-        if as_df:
-            import pandas as pd
-
-            dt_fields = [
-                fld["name"]
-                for fld in self.properties.fields
-                if fld["type"]
-                in [
-                    "esriFieldTypeDate",
-                    "esriFieldTypeDateOnly",
-                    "esriFieldTypeTimestampOffset",
-                ]
-            ]
-            if len(dfs) == 1:
-                df = dfs[0]
-            else:
-                df = pd.concat(dfs, sort=True)
-                df.reset_index(drop=True, inplace=True)
-            if "SHAPE" in df.columns:
-                df.spatial.set_geometry("SHAPE")
-                df.spatial.renderer = self.renderer
-                df.spatial._meta.source = self
-            for fld in dt_fields:
-                if fld in df.columns:
-                    try:
-                        df[fld] = pd.to_datetime(
-                            df[fld] / 1000,
-                            unit="s",
-                        )
-                    except:
-                        df[fld] = pd.to_datetime(
-                            df[fld],
-                            errors="coerce",
-                        )
-            return df
-        return result
+        return _query._common_query(
+            layer=self,
+            is_layer=True,
+            where=where,
+            out_fields=out_fields,
+            time_filter=time_filter,
+            geometry_filter=geometry_filter,
+            return_geometry=return_geometry,
+            return_count_only=return_count_only,
+            return_ids_only=return_ids_only,
+            return_distinct_values=return_distinct_values,
+            return_extent_only=return_extent_only,
+            group_by_fields_for_statistics=group_by_fields_for_statistics,
+            statistic_filter=statistic_filter,
+            result_offset=result_offset,
+            result_record_count=result_record_count,
+            object_ids=object_ids,
+            distance=distance,
+            units=units,
+            max_allowable_offset=max_allowable_offset,
+            out_sr=out_sr,
+            geometry_precision=geometry_precision,
+            gdb_version=gdb_version,
+            order_by_fields=order_by_fields,
+            out_statistics=out_statistics,
+            return_z=return_z,
+            return_m=return_m,
+            multipatch_option=multipatch_option,
+            quantization_parameters=quantization_parameters,
+            return_centroid=return_centroid,
+            return_all_records=return_all_records,
+            result_type=result_type,
+            historic_moment=historic_moment,
+            sql_format=sql_format,
+            return_true_curves=return_true_curves,
+            return_exceeded_limit_features=return_exceeded_limit_features,
+            as_df=as_df,
+            datum_transformation=datum_transformation,
+            kwargs=kwargs,
+        )
 
     # ----------------------------------------------------------------------
     def validate_sql(self, sql: str, sql_type: str = "where"):
@@ -4458,286 +4194,30 @@ class Table(FeatureLayer):
             <149>
 
         """
-        as_raw = as_df
-        if self._dynamic_layer is None:
-            url = self._url + "/query"
-        else:
-            url = "%s/query" % self._url.split("?")[0]
-
-        params = {"f": "json"}
-        if self._dynamic_layer is not None:
-            params["layer"] = self._dynamic_layer
-        if historic_moment is not None:
-            params["historicMoment"] = historic_moment
-        if sql_format is not None:
-            params["sqlFormat"] = sql_format
-        if return_exceeded_limit_features is not None:
-            params["returnExceededLimitFeatures"] = return_exceeded_limit_features
-        params["where"] = where
-        params["returnDistinctValues"] = return_distinct_values
-        params["returnCountOnly"] = return_count_only
-        params["returnIdsOnly"] = return_ids_only
-
-        # convert out_fields to a comma separated string
-        if isinstance(out_fields, (list, tuple)):
-            out_fields = ",".join(out_fields)
-
-        if out_fields != "*" and not return_distinct_values:
-            try:
-                # Check if object id field is in out_fields.
-                # If it isn't, add it
-                object_id_field = [
-                    x.name
-                    for x in self.properties.fields
-                    if x.type == "esriFieldTypeOID"
-                ][0]
-                if object_id_field not in out_fields.split(","):
-                    out_fields = object_id_field + "," + out_fields
-            except (IndexError, AttributeError):
-                pass
-        params["outFields"] = out_fields
-        if return_count_only or return_ids_only:
-            return_all_records = False
-        if result_record_count and not return_all_records:
-            params["resultRecordCount"] = result_record_count
-        if result_offset and not return_all_records:
-            params["resultOffset"] = result_offset
-        if order_by_fields:
-            params["orderByFields"] = order_by_fields
-        if group_by_fields_for_statistics:
-            params["groupByFieldsForStatistics"] = group_by_fields_for_statistics
-        if statistic_filter and isinstance(statistic_filter, StatisticFilter):
-            params["outStatistics"] = statistic_filter.filter
-        if out_statistics:
-            params["outStatistics"] = out_statistics
-        if gdb_version:
-            params["gdbVersion"] = gdb_version
-        if object_ids:
-            params["objectIds"] = object_ids
-
-        if time_filter is None and self.time_filter:
-            params["time"] = self.time_filter
-        elif time_filter is not None:
-            if type(time_filter) is list:
-                starttime = _date_handler(time_filter[0])
-                endtime = _date_handler(time_filter[1])
-                if starttime is None:
-                    starttime = "null"
-                if endtime is None:
-                    endtime = "null"
-                params["time"] = "%s,%s" % (starttime, endtime)
-            elif isinstance(time_filter, dict):
-                for key, val in time_filter.items():
-                    params[key] = val
-            else:
-                params["time"] = _date_handler(time_filter)
-
-        if len(kwargs) > 0:
-            for key, val in kwargs.items():
-                if key in ("returnCountOnly", "returnIdsOnly") and val:
-                    # If these keys are passed in as kwargs instead of parameters, set return_all_records
-                    return_all_records = False
-                params[key] = val
-                del key, val
-
-        if not return_all_records or "outStatistics" in params:
-            if as_df:
-                return self._query_df(url, params)
-            return self._query(url, params, raw=as_raw)
-
-        params["returnCountOnly"] = True
-        if where == "1=1":
-            if "objectIdField" in self.properties:
-                params["where"] = f"{self.properties.objectIdField} > 0"
-            else:
-                fields = [
-                    field["name"]
-                    for field in self.properties.fields
-                    if field["type"] == "esriFieldTypeOID"
-                ]
-                params["where"] = f"{fields[0]} > 0"
-            record_count = self._query(url, params, raw=as_raw)
-            params["where"] = "1=1"
-        else:
-            record_count = self._query(url, params, raw=as_raw)
-        if "maxRecordCount" in self.properties:
-            max_records = self.properties["maxRecordCount"]
-        else:
-            max_records = 1000
-
-        supports_pagination = True
-        if (
-            "advancedQueryCapabilities" not in self.properties
-            or "supportsPagination" not in self.properties["advancedQueryCapabilities"]
-            or not self.properties["advancedQueryCapabilities"]["supportsPagination"]
-        ):
-            supports_pagination = False
-
-        params["returnCountOnly"] = False
-        if record_count == 0 and as_df:
-            from arcgis.features.geo._array import GeoArray
-            import numpy as np
-            import pandas as pd
-
-            _fld_lu = {
-                "esriFieldTypeSmallInteger": pd.Int32Dtype(),
-                "esriFieldTypeInteger": pd.Int32Dtype(),
-                "esriFieldTypeSingle": pd.Float64Dtype(),
-                "esriFieldTypeDouble": pd.Float64Dtype(),
-                "esriFieldTypeFloat": pd.Float64Dtype(),
-                "esriFieldTypeString": pd.StringDtype(),
-                "esriFieldTypeDate": np.datetime64,
-                "esriFieldTypeOID": pd.Int64Dtype(),
-                "esriFieldTypeGeometry": object,
-                "esriFieldTypeBlob": object,
-                "esriFieldTypeRaster": object,
-                "esriFieldTypeGUID": pd.StringDtype(),
-                "esriFieldTypeGlobalID": pd.StringDtype(),
-                "esriFieldTypeXML": object,
-                "esriFieldTypeTimeOnly": object,
-                "esriFieldTypeDateOnly": object,
-                "esriFieldTypeTimestampOffset": object,
-            }
-            columns = {}
-            for fld in self.properties.fields:
-                fld = dict(fld)
-                columns[fld["name"]] = _fld_lu[fld["type"]]
-            if (
-                "geometryType" in self.properties
-                and not self.properties.geometryType is None
-            ):
-                columns["SHAPE"] = object
-            df = pd.DataFrame([], columns=columns.keys()).astype(columns, True)
-            if "SHAPE" in df.columns:
-                df["SHAPE"] = GeoArray([])
-                df.spatial.set_geometry("SHAPE")
-                df.spatial.renderer = self.renderer
-                df.spatial._meta.source = self
-            return df
-        elif record_count <= max_records:
-            if (
-                supports_pagination
-                and record_count > 0
-                and return_distinct_values == False
-            ):
-                params["resultRecordCount"] = record_count
-            if as_df:
-                import pandas as pd
-
-                df = self._query_df(url, params)
-                dt_fields = [
-                    fld["name"]
-                    for fld in self.properties.fields
-                    if fld["type"]
-                    in [
-                        "esriFieldTypeDate",
-                        "esriFieldTypeDateOnly",
-                        "esriFieldTypeTimestampOffset",
-                    ]
-                ]
-                if "SHAPE" in df.columns:
-                    df.spatial.set_geometry("SHAPE")
-                    df.spatial.renderer = self.renderer
-                    df.spatial._meta.source = self
-                for fld in dt_fields:
-                    try:
-                        if fld in df.columns:
-                            df[fld] = pd.to_datetime(
-                                df[fld] / 1000,
-                                unit="s",
-                            )
-                    except:
-                        if fld in df.columns:
-                            df[fld] = pd.to_datetime(
-                                df[fld],
-                            )
-                return df
-
-            return self._query(url, params, raw=as_raw)
-
-        result = None
-        i = 0
-        count = 0
-        df = None
-        dfs = []
-        if not supports_pagination:
-            params["returnIdsOnly"] = True
-            oid_info = self._query(url, params, raw=as_raw)
-            params["returnIdsOnly"] = False
-            for ids in chunks(oid_info["objectIds"], max_records):
-                ids = [str(i) for i in ids]
-                sql = "%s in (%s)" % (
-                    oid_info["objectIdFieldName"],
-                    ",".join(ids),
-                )
-                params["where"] = sql
-                if not as_df:
-                    records = self._query(url, params, raw=as_raw)
-                    if result:
-                        if "features" in result:
-                            result["features"].append(records["features"])
-                        else:
-                            result.features.extend(records.features)
-                    else:
-                        result = records
-                else:
-                    df = self._query_df(url, params)
-                    dfs.append(df)
-        else:
-            while True:
-                params["resultRecordCount"] = max_records
-                params["resultOffset"] = max_records * i
-                if not as_df:
-                    records = self._query(url, params, raw=as_raw)
-
-                    if result:
-                        if "features" in result:
-                            result["features"].append(records["features"])
-                        else:
-                            result.features.extend(records.features)
-                    else:
-                        result = records
-
-                    if len(records.features) < max_records:
-                        break
-                else:
-                    df = self._query_df(url, params)
-                    count += len(df)
-                    dfs.append(df)
-                    if count == record_count:
-                        break
-                i += 1
-        if as_df:
-            import pandas as pd
-
-            dt_fields = [
-                fld["name"]
-                for fld in self.properties.fields
-                if fld["type"]
-                in [
-                    "esriFieldTypeDate",
-                    "esriFieldTypeDateOnly",
-                    "esriFieldTypeTimestampOffset",
-                ]
-            ]
-            if len(dfs) == 1:
-                df = dfs[0]
-            else:
-                df = pd.concat(dfs, sort=True)
-                df.reset_index(drop=True, inplace=True)
-            if "SHAPE" in df.columns:
-                df.spatial.set_geometry("SHAPE")
-                df.spatial.renderer = self.renderer
-                df.spatial._meta.source = self
-            for fld in dt_fields:
-                try:
-                    df[fld] = pd.to_datetime(df[fld] / 1000, unit="s")
-                except:
-                    df[fld] = pd.to_datetime(
-                        df[fld],
-                    )
-            return df
-        return result
+        return _query._common_query(
+            layer=self,
+            is_layer=False,
+            where=where,
+            out_fields=out_fields,
+            time_filter=time_filter,
+            return_count_only=return_count_only,
+            return_ids_only=return_ids_only,
+            return_distinct_values=return_distinct_values,
+            group_by_fields_for_statistics=group_by_fields_for_statistics,
+            statistic_filter=statistic_filter,
+            result_offset=result_offset,
+            result_record_count=result_record_count,
+            object_ids=object_ids,
+            gdb_version=gdb_version,
+            order_by_fields=order_by_fields,
+            out_statistics=out_statistics,
+            return_all_records=return_all_records,
+            historic_moment=historic_moment,
+            sql_format=sql_format,
+            return_exceeded_limit_features=return_exceeded_limit_features,
+            as_df=as_df,
+            kwargs=kwargs,
+        )
 
 
 class FeatureLayerCollection(_GISResource):
