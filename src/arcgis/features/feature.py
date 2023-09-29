@@ -483,7 +483,7 @@ class FeatureSet(object):
             feat_geom = None
             feature = features[0]
             i = 1
-            while feat_geom is None and i < len(features):
+            while feat_geom is None and i <= len(features):
                 # while feat_geom is none and we haven't gone through all features, keep going
                 if (
                     "geometry" in feature.as_dict
