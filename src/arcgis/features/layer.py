@@ -652,7 +652,7 @@ class FeatureLayer(Layer):
             params["layer"] = self._dynamic_layer
         else:
             url = self._url + "/%s/deleteAttachments" % oid
-        return self._con.post(url, params)
+        return self._con.post_multipart(url, params)
 
     # ----------------------------------------------------------------------
     def _update_attachment(
@@ -695,7 +695,7 @@ class FeatureLayer(Layer):
             params["layer"] = self._dynamic_layer
         else:
             url = self._url + f"/{oid}/updateAttachment"
-        res = self._con.post(path=url, postdata=params, files=files)
+        res = self._con.post_multipart(path=url, postdata=params, files=files)
         return res
 
     # ----------------------------------------------------------------------
@@ -3925,6 +3925,19 @@ class FeatureLayer(Layer):
             }
 
             resp = self._gis._con._session.post(url, params).json()
+            return resp
+        else:
+            return None
+
+    # ----------------------------------------------------------------------
+    def relationship_3d(self):
+        """
+        The relationships_3d resource returns information about the relationship
+        between the layer and the asset map and asset table of a 3D object feature layer.
+        """
+        if self._is_3d:
+            url = self._url + "/relationshipsfor3d?f=json"
+            resp = self._gis._con._session.post(url).json
             return resp
         else:
             return None
