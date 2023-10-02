@@ -81,3 +81,5 @@ geometry type and returns the correct type as the example below demonstrates:
 from ._types import *
 from .functions import *
 from . import filters
+
+from arcgis._impl._async.jobs import GeometryJob
