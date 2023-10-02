@@ -10142,17 +10142,17 @@ class Group(dict):
 
         :return:
             A dictionary with a key notRemoved whose value is a list of usernames not removed.
-        
+
         .. code-block:: python
 
             # Usage example
-        
+
             >>> from arcgis.gis import GIS
             >>> # initialize the gis object with profile which has the privilege to remove a user
             >>> gis = GIS(profile="your_online_admin_profile") or gis = GIS(profile="your_ent_admin_profile")
             >>> grp = gis.content.get('groupid')
             >>> grp.get_members()
-            
+
             {'owner': 'test_user',
              'admins': ['test_user', 'test_user2'],
              'users': ['test_user',
@@ -10163,16 +10163,16 @@ class Group(dict):
             >>> # in the dictionary above, the key "users" value is a list of usernames who are members of the group
 
             >>> grp.remove_users(['test_user3','test_user4'])
-            
+
             {notRemoved:[]}
-            
+
             >>> grp.get_members()
-            
+
             {'owner': 'test_user',
              'admins': ['test_user', 'test_user2'],
              'users': ['test_user',
                     'test_user2']}
-        
+
         """
         users = []
         if isinstance(usernames, (list, tuple)) == False:
