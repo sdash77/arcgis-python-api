@@ -208,13 +208,15 @@ def areas_and_lengths(
     gis               Optional :class:`~arcgis.gis.GIS` object. If no argument provided, the active
                       *GIS* will be used.
     ----------------  -------------------------------------------------------------------------------
-    future            Optional boolean. If `True`, a future object will be returned and the process
-                      will not wait for the task to complete. The default is False, which means wait
-                      for results returned as a dictionary.
+    future            Optional boolean.
+                      
+                      * If *True*, a :class:`~arcgis.geometry.GeometryJob` that can be queried
+                        will be returned and control returns to the user.
+                      * If *False*, a dictionary object with results after the function completes.
     ================  ===============================================================================
 
     :returns:
-        A JSON as dictionary if *future=False*, or a :class:`~arcgis.geometry.GeometryJob` object
+        A dictionary with result output if *future=False*, or a :class:`~arcgis.geometry.GeometryJob` object
         if *future = True*.
 
     .. code-block:: python
@@ -297,15 +299,18 @@ def auto_complete(
     spatial_ref       A :class:`~arcgis.geometry.SpatialReference` of the input geometries or the
                       integer WKID of the spatial reference.
     ----------------  -------------------------------------------------------------------------------
-    future            Optional boolean. If *True*, a :class:`~arcgis.geometry.GeometryJob` that can
-                      be queried will be returned and control returns to the user. If *False*, a
-                      :class:`~arcgis.geometry.Polygon` object once the function is completed.
+    future            Optional boolean.
+                      
+                      * If *True*, a :class:`~arcgis.geometry.GeometryJob` that can
+                        be queried will be returned and control returns to the user.
+                      * If *False*, a :class:`~arcgis.geometry.Polygon` object after the function
+                        completes.
     ================  ===============================================================================
 
     :returns:
         If *future=False*, a :class:`~arcgis.geometry.Polygon` object. If *future=True*, a
         :class:`~arcgis.geometry.GeometryJob` object. See code example in :attr:`~arcgis.geometry.functions.areas_and_lengths`
-        for code snippet.
+        for code snippet querying the job.
     """
     if gis is None:
         gis = arcgis.env.active_gis
