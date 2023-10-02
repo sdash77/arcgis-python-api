@@ -28,13 +28,6 @@ LengthUnits
 
 Functions
 ---------
-
-For further details and explanations on spatial references, see
-`Using Spatial References <https://developers.arcgis.com/rest/services-reference/enterprise/using-spatial-references.htm>`_
-
-For a complete list of well-known ID values, see
-`Coordinate System PDF <https://developers.arcgis.com/rest/services-reference/enterprise/using-spatial-references.htm#ESRI_SECTION2_2861129E93634E5394F9F256F7617EB1>`_
-
 areas_and_lengths
 ^^^^^^^^^^^^^^^^^
 .. autofunction:: arcgis.geometry.functions.areas_and_lengths
