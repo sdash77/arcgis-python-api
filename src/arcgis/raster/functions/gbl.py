@@ -4137,17 +4137,6 @@ def distance_accumulation(
             "PrimaryInputParameterName": "in_source_data",
             "OutputRasterParameterName": "out_distance_accumulation_raster",
             "in_source_data": input_source_data,
-            "RasterInfo": {
-                "blockWidth": 2048,
-                "blockHeight": 256,
-                "bandCount": 1,
-                "pixelType": 9,
-                "firstPyramidLevel": 1,
-                "maximumPyramidLevel": 30,
-                "pixelSizeX": 1,
-                "pixelSizeY": 1,
-                "type": "RasterInfo",
-            },
         },
     }
 
@@ -4421,17 +4410,6 @@ def distance_allocation(
             "PrimaryInputParameterName": "in_source_data",
             "OutputRasterParameterName": "out_distance_allocation_raster",
             "in_source_data": input_source_data,
-            "RasterInfo": {
-                "blockWidth": 2048,
-                "blockHeight": 256,
-                "bandCount": 1,
-                "pixelType": 8,
-                "firstPyramidLevel": 1,
-                "maximumPyramidLevel": 30,
-                "pixelSizeX": 1,
-                "pixelSizeY": 1,
-                "type": "RasterInfo",
-            },
         },
     }
 
