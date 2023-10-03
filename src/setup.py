@@ -231,7 +231,7 @@ def get_version():
             MICRO = open(__path("build.info")).read().strip()
     except:
         MICRO = "0"
-    return f"{MAJOR}.{MINOR}.{MICRO}"
+    return f"{MAJOR}.{MINOR}.{MICRO}.1"
 
 
 kwargs = {
