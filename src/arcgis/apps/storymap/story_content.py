@@ -3855,7 +3855,6 @@ class MapAction:
 
 
 ###############################################################################################################
-
 class Slide:
     """
     Create a Slide for a Briefing.
@@ -3871,7 +3870,7 @@ class Slide:
     ---------------     --------------------------------------------------------------------
     sublayout           Optional string, the sublayout type of the slide. Only applicable
                         when the layout is "double".
-                        Values: "3-7" | "7-3" | "5-5"
+                        Values: "3-7" | "7-3" | "1-1"
     ===============     ====================================================================
 
     .. code-block:: python
@@ -3915,7 +3914,61 @@ class Slide:
                 raise Exception("Layout must be one of the following: single, double")
             # if sublayout is 5-5 or None then leave as None. 5-5 is taken as None in json
             self._sublayout = sublayout if sublayout in ["3-7", "7-3"] else None
+        # For editing purposes, have children even if empty
+        self._fix_children()
 
+    # ----------------------------------------------------------------------
+    def _fix_children(self):
+        """
+        A slide can have multiple blocks of content. This method will ensure that the content
+        dictionary has these blocks even if they are empty.
+
+        We will set the values to be empty lists. This will be dealt with when user adds content.
+        """
+        if self._layout == "single":
+            # For a single slide make sure "0" key present in content. Check node data and then update _children
+            # If not missing, we don't need to do anything in this case
+            if "0" not in self._story._properties["nodes"][self.node]["data"]["contents"]:
+                self._story._properties["nodes"][self.node]["data"]["contents"]["0"] = []
+                self._children = self._story._properties["nodes"][self.node]["data"]["contents"]
+            self._delete_keys(1)
+        elif self._layout == "double":
+            # Double will have "0" and "1". If one is missing, add it in.
+            if "0" not in self._story._properties["nodes"][self.node]["data"]["contents"]:
+                self._story._properties["nodes"][self.node]["data"]["contents"]["0"] = []
+            if "1" not in self._story._properties["nodes"][self.node]["data"]["contents"]:
+                self._story._properties["nodes"][self.node]["data"]["contents"]["1"] = []
+            self._children = self._story._properties["nodes"][self.node]["data"]["contents"]
+            self._delete_keys(2)
+        elif self._layout in ["single-double", "double-single"]:
+            # These will have "0", "1", "2"
+            if "0" not in self._story._properties["nodes"][self.node]["data"]["contents"]:
+                self._story._properties["nodes"][self.node]["data"]["contents"]["0"] = []
+            if "1" not in self._story._properties["nodes"][self.node]["data"]["contents"]:
+                self._story._properties["nodes"][self.node]["data"]["contents"]["1"] = []
+            if "2" not in self._story._properties["nodes"][self.node]["data"]["contents"]:
+                self._story._properties["nodes"][self.node]["data"]["contents"]["2"] = []
+            self._children = self._story._properties["nodes"][self.node]["data"]["contents"]
+            self._delete_keys(3)
+        elif self._layout == "grid":
+            # This will have "0", "1", "2", "3"
+            if "0" not in self._story._properties["nodes"][self.node]["data"]["contents"]:
+                self._story._properties["nodes"][self.node]["data"]["contents"]["0"] = []
+            if "1" not in self._story._properties["nodes"][self.node]["data"]["contents"]:
+                self._story._properties["nodes"][self.node]["data"]["contents"]["1"] = []
+            if "2" not in self._story._properties["nodes"][self.node]["data"]["contents"]:
+                self._story._properties["nodes"][self.node]["data"]["contents"]["2"] = []
+            if "3" not in self._story._properties["nodes"][self.node]["data"]["contents"]:
+                self._story._properties["nodes"][self.node]["data"]["contents"]["3"] = []
+            self._children = self._story._properties["nodes"][self.node]["data"]["contents"]
+
+    # ----------------------------------------------------------------------
+    def _delete_keys(self, value):
+        """delete the keys starting at the value and upwards"""
+        for key in range(value, 4):
+            try:
+                del self._story._properties["nodes"][self.node]["data"]["contents"][str(key)]
+            except: pass
     # ----------------------------------------------------------------------
     def __str__(self) -> str:
         return "Briefing Slide"
@@ -3926,50 +3979,78 @@ class Slide:
 
     # ----------------------------------------------------------------------
     @property
-    def content(self):
+    def blocks(self):
         """
-        Get content of the Slide. 
+        Get blocks of the Slide. Blocks hold content of various types such as
+        Text, Image, Map, Swipe, etc. If you want to edit the content you can access
+        the `add_content`, `delete_content` method of the block.
 
         :return:
-            A list of content in the slide
+            A list of blocks in the slide
         """
         if self._existing is True:
             # If the slide is a cover slide, then the children are the contents
             if self._story._properties["nodes"][self.node]["data"]["layout"] == "cover":
                 # self._children is a list of node ids in this case
                 return [utils._assign_node_class(self._story, node_id) for node_id in self._children]
-            
-            # If the slide is not a cover slide, then self._children will be a dictionary
-            # values are either the node_id or a list of node_ids
-            if self._children == {}:
-                return []
 
+            # Slide is not a cover slide and has contents, even if empty
             contents = []
-            for _, value in self._children.items():
-                if isinstance(value, list):
-                    contents.extend([utils._assign_node_class(self._story, node_id) for node_id in value])
-                else:
-                    contents.append(utils._assign_node_class(self._story, value))
-
+            for key, _ in self._children.items():
+                # the key will be "0", "1", "2", "3" depending on the layout
+                contents.append(Block(key, self, self._story))
             return contents
         else:
             return None
 
     # ----------------------------------------------------------------------
     @property
-    def layout(self):
+    def title(self):
         """
-        Get/Set the layout of the slide.
+        Get/Set the title of the slide.
+        
+        .. note::
+            To get or change the title of the cover slide, use the `cover` method in the Briefing class.
 
         ===============     ====================================================================
         **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
-        layout              String depicting the layout type of the slide. The only slide that
-                            cannot be changed is the cover slide. See the `cover` method in the 
-                            Briefing class to edit the cover.
-                            Values: "single" | "double"
+        title               Text instance or string depicting the title of the slide.
         ===============     ====================================================================
+        """
+        if self._existing is True:
+            if self._story._properties["nodes"][self.node]["data"]["layout"] == "cover":
+                return None
+            else:
+                if "title" in self._story._properties["nodes"][self.node]["data"]:
+                    # Return the Text instance that represents the title of the slide
+                    title_node = self._story._properties["nodes"][self.node]["data"]["title"]
+                    return utils._assign_node_class(self._story, title_node)
+                else:
+                    return None
+        else:
+            return None
 
+    # ----------------------------------------------------------------------
+    @title.setter
+    def title(self, title: Union[Text, str]):
+        if self._existing is True:
+            # If string then need to create text node and add to story
+            if isinstance(title, str):
+                title = Text(title, TextStyles.SUBHEADING)
+                self._add_item_story(title)
+            elif isinstance(title, Text):
+                # If text created but not in story
+                if title._existing is False:
+                    self._add_item_story(title)
+            # Set the title node id in data of slide
+            self._story._properties["nodes"][self.node]["data"]["title"] = title.node
+
+    # ----------------------------------------------------------------------
+    @property
+    def layout(self):
+        """
+        Get/Set the layout of the slide.
         :return:
             A string of the layout type.
         """
@@ -3979,17 +4060,19 @@ class Slide:
             return None
 
     # ----------------------------------------------------------------------
-    @layout.setter
-    def layout(self, layout):
-        if self._existing is True:
-            # check if layout is cover, cannot change the layout
-            if self._story._properties["nodes"][self.node]["data"]["layout"] == "cover":
-                raise Exception("The cover slide layout cannot be changed.")
-            elif layout in ["single", "double"]:
-                self._story._properties["nodes"][self.node]["data"]["layout"] = layout
-                self._layout = layout
-        else:
-            raise Exception("The slide must be part of a briefing before editing.")        
+    # TODO: Keeping since will be used at later time
+    # @layout.setter
+    # def layout(self, layout):
+    #     if self._existing is True:
+    #         # check if layout is cover, cannot change the layout
+    #         if self._story._properties["nodes"][self.node]["data"]["layout"] == "cover":
+    #             raise Exception("The cover slide layout cannot be changed.")
+    #         elif layout in ["single", "double", "single-double", "double-single", "grid"]:
+    #             self._story._properties["nodes"][self.node]["data"]["layout"] = layout
+    #             self._layout = layout
+    #             self._fix_children()
+    #     else:
+    #         raise Exception("The slide must be part of a briefing before editing.")        
     
     # ----------------------------------------------------------------------
     @property
@@ -4002,8 +4085,11 @@ class Slide:
         **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         sublayout           String depicting the sublayout type of the slide. Only applicable
-                            when the layout is "double".
-                            Values: "3-7" | "7-3" | "5-5"
+                            when the layout is "double", "single-double", "double-single", or "grid.
+                            Values for "double": "3-7" | "7-3" | "1-1"
+                            Values for "single-double": "1-1" | "3-2"
+                            Values for "double-single": "1-1" | "2-3"
+                            Values for "grid": "2-2" | "3-2" | "2-3"
         ===============     ====================================================================
         """
         if self._existing is True:
@@ -4012,11 +4098,11 @@ class Slide:
             if "sublayout" in self._story._properties["nodes"][self.node]["data"]:
                 # sublayout is defined
                 return self._story._properties["nodes"][self.node]["data"]["sublayout"]
-            elif self._story._properties["nodes"][self.node]["data"]["layout"] == "double":
-                # layout is double but sublayout is not defined
-                return "5-5"
+            elif self._story._properties["nodes"][self.node]["data"]["layout"] != "single":
+                # layout is mroe than single but sublayout is not defined
+                return "1-1"
             else:
-                raise Exception("The layout is of type cover or single and does not have a sublayout.")
+                return None
         else:
             return None
 
@@ -4025,19 +4111,23 @@ class Slide:
     def sublayout(self, sublayout):
         if self._existing is True:
             if self._story._properties["nodes"][self.node]["data"]["layout"] == "double":
-                if sublayout in ["3-7", "7-3", "5-5"]:
-                    # for 3-7 and 7-3 set, for 5-5 remove sublayout property
-                    if sublayout == "5-5":
-                        if "sublayout" in self._story._properties["nodes"][self.node]["data"]:
-                            del self._story._properties["nodes"][self.node]["data"]["sublayout"]
-                            self._sublayout = None
-                    else:
-                        self._story._properties["nodes"][self.node]["data"]["sublayout"] = sublayout
-                        self._sublayout = sublayout
-                else:
-                    raise Exception("Sublayout must be one of the following: 3-7, 7-3, 5-5")
+                if sublayout in ["3-7", "7-3", "1-1"]:
+                    self._story._properties["nodes"][self.node]["data"]["sublayout"] = sublayout
+                    self._sublayout = sublayout
+            elif self._story._properties["nodes"][self.node]["data"]["layout"] == "single-double":
+                if sublayout in ["1-1", "3-2"]:
+                    self._story._properties["nodes"][self.node]["data"]["sublayout"] = sublayout
+                    self._sublayout = sublayout
+            elif self._story._properties["nodes"][self.node]["data"]["layout"] == "double-single":
+                if sublayout in ["1-1", "2-3"]:
+                    self._story._properties["nodes"][self.node]["data"]["sublayout"] = sublayout
+                    self._sublayout = sublayout
+            elif self._story._properties["nodes"][self.node]["data"]["layout"] == "grid":
+                if sublayout in ["2-2", "3-2", "2-3"]:
+                    self._story._properties["nodes"][self.node]["data"]["sublayout"] = sublayout
+                    self._sublayout = sublayout
             else:
-                raise Exception("The layout is not of type double.")
+                raise Exception("The layout is not of the correct value for the type of layout.")
         else:
             raise Exception("The slide must be part of a briefing before editing.")
 
@@ -4073,12 +4163,158 @@ class Slide:
     def _add_item_story(self, content):
         if content and content.node in self._story._properties["nodes"]:
             content.node = "n-" + uuid.uuid4().hex[0:6]
-        if isinstance(content, Image):
+        if isinstance(content, Text):
+            content._add_text(story=self._story)
+    # ----------------------------------------------------------------------
+    def _check_node(self):
+        if self._story is None:
+            return False
+        elif self.node is None:
+            return False
+        else:
+            return True
+
+###############################################################################################################
+class Block:
+    """
+    Represents a block in a slide.
+    This class can be accessed from the slide class and should not be created by a user.
+    """
+
+    def __init__(self, block_index, slide, story) -> None:
+        self._index = block_index
+        self._slide = slide
+        self._story = story
+        # list of strings or single node as string
+        self._content = self._story._properties["nodes"][self._slide_node]["data"]["contents"][str(self._index)]
+
+    # ----------------------------------------------------------------------
+    def __str__(self) -> str:
+        return "Block: " + str(self._index)
+    
+    # ----------------------------------------------------------------------
+    def __repr__(self) -> str:
+        return "Block: " + str(self._index)
+    
+    # ----------------------------------------------------------------------
+    @property
+    def content(self):
+        """
+        Get the contents of the block. This will return a list of the content
+        objects in the block. The content objects can be of type Text, Image, Map, etc.
+
+        :return:
+            A list of content objects in the block.
+        """
+        if isinstance(self._content, list) and len(self._content) > 0:
+            # This is a list of node ids
+            return [utils._assign_node_class(self._story, node_id) for node_id in self._content]
+        elif isinstance(self._content, list) and len(self._content) == 0:
+            # There are no contents in the block
+            return []
+        else:
+            # There is only one content in the block
+            return utils._assign_node_class(self._story, self._content)
+    
+    # ----------------------------------------------------------------------
+    def add_content(self, content):
+        """
+        Add content to the block.
+
+        ===============     ====================================================================
+        **Parameter**        **Description**
+        ---------------     --------------------------------------------------------------------
+        content             Required content object to be added to the block. The content
+                            object can be of type Text, Image, Video, Embed, Map, or Swipe. There
+                            can be more than one Text contents in the same block but only one of the
+                            other types of content.
+                            Setting an Image, Video, Embed, Map, or Swipe content will overwrite the
+                            current content. Setting a Text content will add the text to the block. 
+        ===============     ====================================================================
+
+        :return:
+            True if successful.
+        """
+        # check that the slide exists
+        if self._slide._exists is False:
+            raise Exception("The slide must be part of a briefing before editing.")
+        # check that the content is not None
+        if content is None:
+            raise Exception("The content cannot be None. To remove content use the delete_content method.")
+        # check that the content is of the correct type
+        if not isinstance(content, (Text, Image, Video, Embed, Map, Swipe)):
+            raise Exception("The content must be of type Text, Image, Video, Embed, Map, or Swipe.")
+        
+        # If content is text and the current content is a list, append to the list
+        if isinstance(content, Text) and isinstance(self._content, list):
+            self._add_item_story(self._story)
+            self._content.append(content.node)
+        # If content is text and the current content is not a list, create a list and append
+        elif isinstance(content, Text) and not isinstance(self._content, list):
+            self._add_item_story(self._story)
+            # check if current content is Text, if so add to the list if not create a list with just new content
+            if isinstance(self.content, Text):
+                self._content = [self._content, content.node]
+            else:
+                self._content = [content.node]
+            self._content = [content.node]
+        # If another type then assign to content's node id, this overwrites what is currently there
+        else:
+            self._add_item_story(content)
+            self._content = content.node
+
+        # add to the slide in the story
+        self._story._properties["nodes"][self._slide.node]["data"]["contents"][str(self._index)] = self._content
+        return True
+    
+    # ----------------------------------------------------------------------
+    def delete_content(self, index: Optional[int]=None):
+        """
+        Delete content from the block.
+
+        ===============     ====================================================================
+        **Parameter**        **Description**
+        ---------------     --------------------------------------------------------------------
+        index               Optional integer, the index of the content to be deleted. If not
+                            specified, all content will be deleted. This applies for Text only since
+                            it is the only content held within a list.
+        ===============     ====================================================================
+
+        :return: True if successful.
+        """
+        if self._slide._exists is False:
+            raise Exception("The slide must be part of a briefing before editing.")
+        if index is None:
+            # delete all content
+            self._content = []
+            self._story._properties["nodes"][self._slide.node]["data"]["contents"][str(self._index)] = self._content
+        elif isinstance(index, int):
+            # delete content at index
+            if isinstance(self._content, list) and len(self._content) > 0:
+                del self._content[index]
+                self._story._properties["nodes"][self._slide.node]["data"]["contents"][str(self._index)] = self._content
+            else:
+                raise Exception("There is no content at the specified index.")
+        else:
+            raise Exception("The index must be an integer.")
+        return True
+
+    # ----------------------------------------------------------------------
+    def _add_item_story(self, content):
+        if content and content.node in self._story._properties["nodes"]:
+            content.node = "n-" + uuid.uuid4().hex[0:6]
+        if isinstance(content, Text):
+            content._add_text(story=self._story)
+        elif isinstance(content, Image):
             content._add_image(story=self._story)
-            self._media_type = "image"
+        elif isinstance(content, Video):
+            content._add_video(story=self._story)
+        elif isinstance(content, Embed):
+            content._add_embed(story=self._story)
         elif isinstance(content, Map):
             content._add_map(story=self._story)
-            self._media_type = "webmap"
+        elif isinstance(content, Swipe):
+            content._add_swipe(story=self._story)
 
     # ----------------------------------------------------------------------
     def _check_node(self):
