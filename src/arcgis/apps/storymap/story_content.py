@@ -12,6 +12,7 @@ pil_image = LazyLoader("PIL.Image")
 os = LazyLoader("os")
 _io = LazyLoader("io")
 _parse = LazyLoader("urllib.parse")
+utils = LazyLoader("arcgis.apps.storymap._utils")
 
 
 class TextStyles(Enum):
@@ -3854,3 +3855,236 @@ class MapAction:
 
 
 ###############################################################################################################
+
+class Slide:
+    """
+    Create a Slide for a Briefing.
+
+    .. note::
+        Once you create a Slide instance you must add it to the briefing to be able to edit it further.
+
+    ===============     ====================================================================
+    **Parameter**        **Description**
+    ---------------     --------------------------------------------------------------------
+    layout              Required string, the layout type of the slide. 
+                        Values: "single" | "double"
+    ---------------     --------------------------------------------------------------------
+    sublayout           Optional string, the sublayout type of the slide. Only applicable
+                        when the layout is "double".
+                        Values: "3-7" | "7-3" | "5-5"
+    ===============     ====================================================================
+
+    .. code-block:: python
+
+        >>> my_briefing.slides #use to find slides
+
+        # Method 1: Use the Slide Class
+        >>> slide = Slide()
+
+    """
+
+    def __init__(self, layout: Optional[str]=None, sublayout: Optional[str] = None, **kwargs):
+        self._story = kwargs.pop("story", None)
+        self._type = "briefing-slide"
+        self.node = kwargs.pop("node_id", None)
+
+        # Check if node exists else create new instance
+        self._existing = self._check_node()
+        if self._existing is True:
+            if "data" in self._story._properties["nodes"][self.node]:
+                if self._story._properties["nodes"][self.node]["data"]["layout"] == "cover":
+                    self._children = self._story._properties["nodes"][self.node]["children"]
+                else:
+                    self._children = self._story._properties["nodes"][self.node]["data"]["contents"]
+            else:
+                # Empty slide node
+                self._children = []
+            
+            # set the layout and sublayout
+            self._layout = self._story._properties["nodes"][self.node]["data"]["layout"]
+            if "sublayout" in self._story._properties["nodes"][self.node]["data"]:
+                self._sublayout = self._story._properties["nodes"][self.node]["data"]["sublayout"]
+            else:
+                self._sublayout = None
+        else:
+            self.node = "n-" + uuid.uuid4().hex[0:6]
+            self._children = []
+            if layout in ["single", "double"]:
+                self._layout = layout
+            else:
+                raise Exception("Layout must be one of the following: single, double")
+            # if sublayout is 5-5 or None then leave as None. 5-5 is taken as None in json
+            self._sublayout = sublayout if sublayout in ["3-7", "7-3"] else None
+
+    # ----------------------------------------------------------------------
+    def __str__(self) -> str:
+        return "Briefing Slide"
+
+    # ----------------------------------------------------------------------
+    def __repr__(self) -> str:
+        return "Briefing Slide"
+
+    # ----------------------------------------------------------------------
+    @property
+    def content(self):
+        """
+        Get content of the Slide. 
+
+        :return:
+            A list of content in the slide
+        """
+        if self._existing is True:
+            # If the slide is a cover slide, then the children are the contents
+            if self._story._properties["nodes"][self.node]["data"]["layout"] == "cover":
+                # self._children is a list of node ids in this case
+                return [utils._assign_node_class(self._story, node_id) for node_id in self._children]
+            
+            # If the slide is not a cover slide, then self._children will be a dictionary
+            # values are either the node_id or a list of node_ids
+            if self._children == {}:
+                return []
+
+            contents = []
+            for _, value in self._children.items():
+                if isinstance(value, list):
+                    contents.extend([utils._assign_node_class(self._story, node_id) for node_id in value])
+                else:
+                    contents.append(utils._assign_node_class(self._story, value))
+
+            return contents
+        else:
+            return None
+
+    # ----------------------------------------------------------------------
+    @property
+    def layout(self):
+        """
+        Get/Set the layout of the slide.
+
+        ===============     ====================================================================
+        **Parameter**        **Description**
+        ---------------     --------------------------------------------------------------------
+        layout              String depicting the layout type of the slide. The only slide that
+                            cannot be changed is the cover slide. See the `cover` method in the 
+                            Briefing class to edit the cover.
+                            Values: "single" | "double"
+        ===============     ====================================================================
+
+        :return:
+            A string of the layout type.
+        """
+        if self._existing is True:
+            return self._story._properties["nodes"][self.node]["data"]["layout"]
+        else:
+            return None
+
+    # ----------------------------------------------------------------------
+    @layout.setter
+    def layout(self, layout):
+        if self._existing is True:
+            # check if layout is cover, cannot change the layout
+            if self._story._properties["nodes"][self.node]["data"]["layout"] == "cover":
+                raise Exception("The cover slide layout cannot be changed.")
+            elif layout in ["single", "double"]:
+                self._story._properties["nodes"][self.node]["data"]["layout"] = layout
+                self._layout = layout
+        else:
+            raise Exception("The slide must be part of a briefing before editing.")        
+    
+    # ----------------------------------------------------------------------
+    @property
+    def sublayout(self):
+        """
+        Get/Set the sublayout when the layout is "double". This determines
+        the proportion of the slide that the content takes up.
+
+        ===============     ====================================================================
+        **Parameter**        **Description**
+        ---------------     --------------------------------------------------------------------
+        sublayout           String depicting the sublayout type of the slide. Only applicable
+                            when the layout is "double".
+                            Values: "3-7" | "7-3" | "5-5"
+        ===============     ====================================================================
+        """
+        if self._existing is True:
+            if self._story._properties["nodes"][self.node]["data"]["layout"] == "cover":
+                return None
+            if "sublayout" in self._story._properties["nodes"][self.node]["data"]:
+                # sublayout is defined
+                return self._story._properties["nodes"][self.node]["data"]["sublayout"]
+            elif self._story._properties["nodes"][self.node]["data"]["layout"] == "double":
+                # layout is double but sublayout is not defined
+                return "5-5"
+            else:
+                raise Exception("The layout is of type cover or single and does not have a sublayout.")
+        else:
+            return None
+
+    # ----------------------------------------------------------------------
+    @sublayout.setter
+    def sublayout(self, sublayout):
+        if self._existing is True:
+            if self._story._properties["nodes"][self.node]["data"]["layout"] == "double":
+                if sublayout in ["3-7", "7-3", "5-5"]:
+                    # for 3-7 and 7-3 set, for 5-5 remove sublayout property
+                    if sublayout == "5-5":
+                        if "sublayout" in self._story._properties["nodes"][self.node]["data"]:
+                            del self._story._properties["nodes"][self.node]["data"]["sublayout"]
+                            self._sublayout = None
+                    else:
+                        self._story._properties["nodes"][self.node]["data"]["sublayout"] = sublayout
+                        self._sublayout = sublayout
+                else:
+                    raise Exception("Sublayout must be one of the following: 3-7, 7-3, 5-5")
+            else:
+                raise Exception("The layout is not of type double.")
+        else:
+            raise Exception("The slide must be part of a briefing before editing.")
+
+    # ----------------------------------------------------------------------
+    def delete(self):
+        """
+        Delete the node
+
+        :return: True if successful.
+        """
+        if self._existing is True:
+            return utils._delete(self._story, self.node)
+        else:
+            return False
+
+    # ----------------------------------------------------------------------
+    def _add_slide(self, story=None):
+        self._story = story
+        self._existing = True
+        # Create swipe node
+        self._story._properties["nodes"][self.node] = {
+            "type": "briefing-slide",
+            "data": {
+                "layout": self._layout,
+                "title": self._title,
+                "contents": self._children
+            }
+        }
+        if self._sublayout:
+            self._story._properties["nodes"][self.node]["data"]["sublayout"] = self._sublayout
+
+    # ----------------------------------------------------------------------
+    def _add_item_story(self, content):
+        if content and content.node in self._story._properties["nodes"]:
+            content.node = "n-" + uuid.uuid4().hex[0:6]
+        if isinstance(content, Image):
+            content._add_image(story=self._story)
+            self._media_type = "image"
+        elif isinstance(content, Map):
+            content._add_map(story=self._story)
+            self._media_type = "webmap"
+
+    # ----------------------------------------------------------------------
+    def _check_node(self):
+        if self._story is None:
+            return False
+        elif self.node is None:
+            return False
+        else:
+            return True
