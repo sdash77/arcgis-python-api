@@ -467,15 +467,17 @@ def _execute_gp_tool(
     gptool = arcgis.gis._GISResource(url, gis)
 
     if estimate and "RasterAnalysisTools" in url:
+        if gis._con._product != "AGOL":
+            raise RuntimeError("Estimate credits is only supported on ArcGIS Online")
         gp_params = _prepare_params_for_estimate_credits_task(gp_params, task_name)
-        return_values = [{"name":"out_cost", "display_name":"outCost", "type":str}]
-        param_db = { 
-               "input_analysis_task": (str, "inputAnalysisTask"),
-               "context": (str, "context"),
-               "out_cost": (str, "outCost"),
-               }
+        return_values = [{"name": "out_cost", "display_name": "outCost", "type": str}]
+        param_db = {
+            "input_analysis_task": (str, "inputAnalysisTask"),
+            "context": (str, "context"),
+            "out_cost": (str, "outCost"),
+        }
         del gp_params["f"]
-        task_name="EstimateRasterAnalysisCost"
+        task_name = "EstimateRasterAnalysisCost"
 
     if use_async:
         task_url = "{}/{}".format(url, task_name)
@@ -637,9 +639,12 @@ def _get_output_value(gptool, output_val, param_db, retParamName):
             ret_val = output_val
     return ret_param_name, ret_val
 
+
 def _prepare_params_for_estimate_credits_task(gp_params, task_name):
-        if "f" in gp_params:
-            del gp_params["f"]
-        gp_new_params = {"f":"json", "context": gp_params.get("context", {})}
-        gp_new_params.update({"inputAnalysisTask": {"name":task_name, "parameters":gp_params}})
-        return gp_new_params
+    if "f" in gp_params:
+        del gp_params["f"]
+    gp_new_params = {"f": "json", "context": gp_params.get("context", {})}
+    gp_new_params.update(
+        {"inputAnalysisTask": {"name": task_name, "parameters": gp_params}}
+    )
+    return gp_new_params

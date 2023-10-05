@@ -5048,6 +5048,7 @@ class ImageryLayer(Layer):
         process_as_multidimensional: Optional[bool] = None,
         build_transpose: Optional[bool] = None,
         context: Optional[dict] = None,
+        estimate: Optional[bool] = False,
         *,
         gis: Optional[GIS] = None,
         future: bool = False,
@@ -5245,7 +5246,7 @@ class ImageryLayer(Layer):
                             other_outputs=self._other_outputs,
                             gis=g,
                             future=future,
-                            **kwargs,
+                            estimate=estimate**kwargs,
                         )
                     else:
                         gr_output = generate_raster(
@@ -5256,6 +5257,7 @@ class ImageryLayer(Layer):
                             gis=g,
                             future=future,
                             context=context,
+                            estimate=estimate,
                             **kwargs,
                         )
                 except Exception:

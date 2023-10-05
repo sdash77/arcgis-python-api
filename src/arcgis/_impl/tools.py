@@ -9583,6 +9583,7 @@ class _RasterAnalysisTools(BaseAnalytics):
         raster_type_params=None,
         context=None,
         future=False,
+        estimate=False,
         **kwargs,
     ):
         """
@@ -9678,6 +9679,7 @@ class _RasterAnalysisTools(BaseAnalytics):
             context=context,
             gis=self._gis,
             future=True,
+            estimate=estimate,
         )
         gpjob._is_ra = True
         if future:
@@ -9692,6 +9694,7 @@ class _RasterAnalysisTools(BaseAnalytics):
         value_range=None,
         context=None,
         future=False,
+        estimate=False,
         **kwargs,
     ):
         """
@@ -9743,6 +9746,7 @@ class _RasterAnalysisTools(BaseAnalytics):
             context=context,
             gis=self._gis,
             future=True,
+            estimate=estimate,
         )
         gpjob._is_ra = True
         if future:
@@ -9756,6 +9760,7 @@ class _RasterAnalysisTools(BaseAnalytics):
         cell_size=None,
         context=None,
         future=False,
+        estimate=False,
         **kwargs,
     ):
         """
@@ -9792,6 +9797,7 @@ class _RasterAnalysisTools(BaseAnalytics):
             context=context,
             gis=self._gis,
             future=True,
+            estimate=estimate,
         )
         gpjob._is_ra = True
         if future:
@@ -9810,6 +9816,7 @@ class _RasterAnalysisTools(BaseAnalytics):
         context=None,
         input_barriers=None,
         future=False,
+        estimate=False,
         **kwargs,
     ):
         """
@@ -9863,6 +9870,7 @@ class _RasterAnalysisTools(BaseAnalytics):
                     context=context,
                     gis=self._gis,
                     future=True,
+                    estimate=estimate,
                 )
             elif (current_version is not None) and current_version >= 10.9:
                 gpjob = self._tbx.calculate_density(
@@ -9876,6 +9884,7 @@ class _RasterAnalysisTools(BaseAnalytics):
                     in_barriers=input_barriers,
                     gis=self._gis,
                     future=True,
+                    estimate=estimate,
                 )
         gpjob._is_ra = True
         gpjob._item_properties = True
@@ -10049,6 +10058,7 @@ class _RasterAnalysisTools(BaseAnalytics):
         skip_factors=None,
         context=None,
         future=False,
+        estimate=False,
         **kwargs,
     ):
         """
@@ -10082,6 +10092,7 @@ class _RasterAnalysisTools(BaseAnalytics):
             context=context,
             gis=self._gis,
             future=True,
+            estimate=estimate,
         )
         gpjob._is_ra = True
         if future:
@@ -10111,6 +10122,7 @@ class _RasterAnalysisTools(BaseAnalytics):
         allocation_field=None,
         context=None,
         future=False,
+        estimate=False,
         **kwargs,
     ):
         """ """
@@ -10185,6 +10197,7 @@ class _RasterAnalysisTools(BaseAnalytics):
             context=context,
             gis=self._gis,
             future=True,
+            estimate=estimate,
         )
         gpjob._is_ra = True
         gpjob._item_properties = True
@@ -10202,6 +10215,7 @@ class _RasterAnalysisTools(BaseAnalytics):
         additional_input_raster=None,
         context=None,
         future=False,
+        estimate=False,
         **kwargs,
     ):
         """
@@ -10256,6 +10270,7 @@ class _RasterAnalysisTools(BaseAnalytics):
             context=context,
             gis=self._gis,
             future=True,
+            estimate=estimate,
         )
         gpjob._is_ra = True
         gpjob._item_properties = True
@@ -10274,6 +10289,7 @@ class _RasterAnalysisTools(BaseAnalytics):
         process_all_raster_items=False,
         context=None,
         future=False,
+        estimate=False,
         **kwargs,
     ):
         """
@@ -10404,6 +10420,7 @@ class _RasterAnalysisTools(BaseAnalytics):
         value_field=None,
         context=None,
         future=False,
+        estimate=False,
         **kwargs,
     ):
         """
@@ -10452,6 +10469,7 @@ class _RasterAnalysisTools(BaseAnalytics):
             context=context,
             gis=self._gis,
             future=True,
+            estimate=estimate,
         )
         gpjob._is_ra = True
         gpjob._item_properties = True
@@ -10474,6 +10492,7 @@ class _RasterAnalysisTools(BaseAnalytics):
         create_multipart_features=False,
         max_vertices_per_feature=None,
         future=False,
+        estimate=False,
         **kwargs,
     ):
         """
@@ -10581,6 +10600,7 @@ class _RasterAnalysisTools(BaseAnalytics):
                 context=context,
                 gis=self._gis,
                 future=True,
+                estimate=estimate,
             )
 
         else:
@@ -10595,6 +10615,7 @@ class _RasterAnalysisTools(BaseAnalytics):
                 context=context,
                 gis=self._gis,
                 future=True,
+                estimate=estimate,
             )
         gpjob._is_ra = True
         gpjob._return_item = output_service
@@ -10616,6 +10637,7 @@ class _RasterAnalysisTools(BaseAnalytics):
         context=None,
         future=False,
         md_to_upload=None,
+        estimate=False,
         **kwargs,
     ):
         """
@@ -10846,6 +10868,7 @@ class _RasterAnalysisTools(BaseAnalytics):
             context=context,
             gis=self._gis,
             future=True,
+            estimate=estimate,
         )
         gpjob._is_ra = True
         gpjob._item_properties = True
@@ -10875,6 +10898,7 @@ class _RasterAnalysisTools(BaseAnalytics):
         above_ground_level_output_name=None,
         context=None,
         future=False,
+        estimate=False,
         **kwargs,
     ):
         """ """
@@ -10926,6 +10950,7 @@ class _RasterAnalysisTools(BaseAnalytics):
             context=context,
             gis=self._gis,
             future=True,
+            estimate=estimate,
         )
         gpjob._is_ra = True
         gpjob._item_properties = True
@@ -10934,7 +10959,9 @@ class _RasterAnalysisTools(BaseAnalytics):
         return RAJob(gpjob, output_layers).result()
 
     # ----------------------------------------------------------------------
-    def delete_image(self, image_collection, where, future=False, **kwargs):
+    def delete_image(
+        self, image_collection, where, future=False, estimate=False, **kwargs
+    ):
         """
         delete_image allows users to remove existing images from the image collection (mosaic dataset).
         The function will only delete the raster item in the mosaic dataset and will not remove the
@@ -10966,6 +10993,7 @@ class _RasterAnalysisTools(BaseAnalytics):
             where=where,
             gis=self._gis,
             future=True,
+            estimate=estimate,
         )
         gpjob._is_ra = True
         if future:
@@ -10974,7 +11002,9 @@ class _RasterAnalysisTools(BaseAnalytics):
 
     # ----------------------------------------------------------------------
     # Done: Format Inputs/ Outputs, doc
-    def delete_image_collection(self, image_collection, future=False, **kwargs):
+    def delete_image_collection(
+        self, image_collection, future=False, estimate=False, **kwargs
+    ):
         """
         Delete the image collection. This service tool will delete the image collection
         image service, that is, the portal-hosted image layer item. It will not delete
@@ -11001,7 +11031,10 @@ class _RasterAnalysisTools(BaseAnalytics):
         gis = self._gis
         image_collection = self._set_image_collection_param(image_collection)
         gpjob = self._tbx.delete_image_collection(
-            image_collection=image_collection, gis=self._gis, future=True
+            image_collection=image_collection,
+            gis=self._gis,
+            future=True,
+            estimate=estimate,
         )
         gpjob._is_ra = True
         gpjob._item_properties = False
@@ -11223,6 +11256,7 @@ class _RasterAnalysisTools(BaseAnalytics):
         output_neighbor_network_name=None,
         context=None,
         future=False,
+        estimate=False,
         **kwargs,
     ):
         """
@@ -11375,6 +11409,7 @@ class _RasterAnalysisTools(BaseAnalytics):
             context=context,
             gis=self._gis,
             future=True,
+            estimate=estimate,
         )
         gpjob._is_ra = True
         gpjob._item_properties = True
@@ -11394,6 +11429,7 @@ class _RasterAnalysisTools(BaseAnalytics):
         path_type=None,
         context=None,
         future=False,
+        estimate=False,
         **kwargs,
     ):
         """DetermineTravelCostPathsToDestinations GPtool"""
@@ -11412,6 +11448,7 @@ class _RasterAnalysisTools(BaseAnalytics):
             context=context,
             gis=self._gis,
             future=True,
+            estimate=estimate,
         )
         gpjob._is_ra = True
         gpjob._item_properties = True
@@ -11431,6 +11468,7 @@ class _RasterAnalysisTools(BaseAnalytics):
         destination_field=None,
         context=None,
         future=False,
+        estimate=False,
         **kwargs,
     ):
         """
@@ -11597,6 +11635,7 @@ class _RasterAnalysisTools(BaseAnalytics):
                 context=context,
                 gis=self._gis,
                 future=True,
+                estimate=estimate,
             )
         else:
             gpjob = self._tbx.determine_travel_cost_path_as_polyline(
@@ -11608,6 +11647,7 @@ class _RasterAnalysisTools(BaseAnalytics):
                 context=context,
                 gis=self._gis,
                 future=True,
+                estimate=estimate,
             )
         gpjob._is_ra = True
         gpjob._item_properties = True
@@ -11941,6 +11981,7 @@ class _RasterAnalysisTools(BaseAnalytics):
         context=None,
         gis=None,
         future=False,
+        estimate=False,
     ):
         """Fill GPtool"""
         task = "Fill"
@@ -11954,6 +11995,7 @@ class _RasterAnalysisTools(BaseAnalytics):
             context=context,
             gis=self._gis,
             future=True,
+            estimate=estimate,
         )
         gpjob._is_ra = True
         gpjob._item_properties = True
@@ -11973,6 +12015,7 @@ class _RasterAnalysisTools(BaseAnalytics):
         context=None,
         gis=None,
         future=False,
+        estimate=False,
     ):
         """flow accumulation GPtool"""
         task = "FlowAccumulation"
@@ -11988,6 +12031,7 @@ class _RasterAnalysisTools(BaseAnalytics):
             context=context,
             gis=self._gis,
             future=True,
+            estimate=estimate,
         )
         gpjob._is_ra = True
         gpjob._item_properties = True
@@ -12006,6 +12050,7 @@ class _RasterAnalysisTools(BaseAnalytics):
         output_drop_name=None,
         context=None,
         future=False,
+        estimate=False,
         **kwargs,
     ):
         """
@@ -12095,6 +12140,7 @@ class _RasterAnalysisTools(BaseAnalytics):
             context=context,
             gis=self._gis,
             future=True,
+            estimate=estimate,
         )
         gpjob._is_ra = True
         gpjob._item_properties = True
@@ -12125,6 +12171,7 @@ class _RasterAnalysisTools(BaseAnalytics):
         context=None,
         gis=None,
         future=False,
+        estimate=False,
     ):
         """flow distance GPtool"""
         task = "FlowDistance"
@@ -12142,6 +12189,7 @@ class _RasterAnalysisTools(BaseAnalytics):
             context=context,
             gis=self._gis,
             future=True,
+            estimate=estimate,
         )
         gpjob._is_ra = True
         gpjob._item_properties = True
@@ -12158,6 +12206,7 @@ class _RasterAnalysisTools(BaseAnalytics):
         output_name=None,
         context=None,
         future=False,
+        estimate=False,
         **kwargs,
     ):
         """
@@ -12215,6 +12264,7 @@ class _RasterAnalysisTools(BaseAnalytics):
             context=context,
             gis=self._gis,
             future=True,
+            estimate=estimate,
         )
         gpjob._is_ra = True
         gpjob._item_properties = True
@@ -12240,6 +12290,7 @@ class _RasterAnalysisTools(BaseAnalytics):
         output_basename=None,
         gis=None,
         future=False,
+        estimate=False,
     ):
         """Generate Raster Collection GPtool"""
         task = "GenerateRasterCollection"
@@ -12254,6 +12305,7 @@ class _RasterAnalysisTools(BaseAnalytics):
             output_basename=output_basename,
             gis=self._gis,
             future=True,
+            estimate=estimate,
         )
         gpjob._is_ra = True
         gpjob._item_properties = True
@@ -12271,6 +12323,7 @@ class _RasterAnalysisTools(BaseAnalytics):
         context=None,
         gis=None,
         future=False,
+        estimate=False,
     ):
         """Generate Raster Collection GPtool"""
         task = "GenerateTable"
@@ -12286,6 +12339,7 @@ class _RasterAnalysisTools(BaseAnalytics):
             context=context,
             gis=gis or self._gis,
             future=True,
+            estimate=estimate,
         )
         gpjob._is_ra = True
         gpjob._item_properties = True
@@ -12339,6 +12393,7 @@ class _RasterAnalysisTools(BaseAnalytics):
         output_prediction_error=False,
         context=None,
         future=False,
+        estimate=False,
         **kwargs,
     ):
         """
@@ -12446,6 +12501,7 @@ class _RasterAnalysisTools(BaseAnalytics):
             context=context,
             gis=gis,
             future=True,
+            estimate=estimate,
         )
         gpjob._is_ra = True
         gpjob._item_properties = True
@@ -12458,7 +12514,7 @@ class _RasterAnalysisTools(BaseAnalytics):
         return RAJob(gpjob, item=item).result()
 
     def list_datastore_content(
-        self, data_store_name=None, filter=None, future=False, **kwargs
+        self, data_store_name=None, filter=None, future=False, estimate=False, **kwargs
     ):
         """
         List the contents of the datastore registered with the server (fileShares, cloudStores, rasterStores).
@@ -12501,6 +12557,7 @@ class _RasterAnalysisTools(BaseAnalytics):
             filter=filter,
             gis=gis,
             future=True,
+            estimate=estimate,
         )
         gpjob._is_ra = True
         gpjob._item_properties = False
@@ -12538,6 +12595,7 @@ class _RasterAnalysisTools(BaseAnalytics):
         context=None,
         gis=None,
         future=False,
+        estimate=False,
     ):
         """Nibble GP Tool"""
         task = "Nibble"
@@ -12557,6 +12615,7 @@ class _RasterAnalysisTools(BaseAnalytics):
             context=context,
             gis=gis,
             future=True,
+            estimate=estimate,
         )
         gpjob._is_ra = True
         gpjob._item_properties = True
@@ -12607,6 +12666,7 @@ class _RasterAnalysisTools(BaseAnalytics):
         remove_tiling_artifacts=False,
         context=None,
         future=False,
+        estimate=False,
         **kwargs,
     ):
         """
@@ -12708,6 +12768,7 @@ class _RasterAnalysisTools(BaseAnalytics):
             context=context,
             gis=gis,
             future=True,
+            estimate=estimate,
         )
         gpjob._is_ra = True
         gpjob._item_properties = True
@@ -12729,6 +12790,7 @@ class _RasterAnalysisTools(BaseAnalytics):
         context=None,
         gis=None,
         future=False,
+        estimate=False,
     ):
         """Stream Link GP Tool"""
         task = "StreamLink"
@@ -12745,6 +12807,7 @@ class _RasterAnalysisTools(BaseAnalytics):
             context=context,
             gis=gis,
             future=True,
+            estimate=estimate,
         )
         gpjob._is_ra = True
         gpjob._item_properties = True
@@ -12768,6 +12831,7 @@ class _RasterAnalysisTools(BaseAnalytics):
         percentile_interpolation_type="AUTO_DETECT",
         circular_calculation=False,
         circular_wrap_value=360,
+        estimate=False,
         **kwargs,
     ):
         """
@@ -12879,6 +12943,7 @@ class _RasterAnalysisTools(BaseAnalytics):
                 context=context,
                 gis=gis,
                 future=True,
+                estimate=estimate,
             )
         elif (current_version is not None) and (
             current_version > 10.8 and current_version < 10.9
@@ -12895,6 +12960,7 @@ class _RasterAnalysisTools(BaseAnalytics):
                 percentile_value=percentile_value,
                 gis=gis,
                 future=True,
+                estimate=estimate,
             )
         elif (current_version is not None) and (
             current_version >= 10.9 and current_version < 11
@@ -12912,6 +12978,7 @@ class _RasterAnalysisTools(BaseAnalytics):
                 percentile_interpolation_type=percentile_interpolation_type,
                 gis=gis,
                 future=True,
+                estimate=estimate,
             )
         elif (current_version is not None) and current_version >= 11:
             gpjob = self._tbx.summarize_raster_within(
@@ -12929,6 +12996,7 @@ class _RasterAnalysisTools(BaseAnalytics):
                 circular_wrap_value=circular_wrap_value,
                 gis=gis,
                 future=True,
+                estimate=estimate,
             )
 
         gpjob._is_ra = True
@@ -12953,6 +13021,7 @@ class _RasterAnalysisTools(BaseAnalytics):
         dimension_value_field=None,
         future=False,
         output_ecd_item_name=None,
+        estimate=False,
         **kwargs,
     ):
         """
@@ -13007,6 +13076,7 @@ class _RasterAnalysisTools(BaseAnalytics):
                     output_ecd_item_name=output_ecd_item_name,
                     gis=gis,
                     future=True,
+                    estimate=estimate,
                 )
             elif (current_version is not None) and current_version >= 10.9:
                 gpjob = self._tbx.train_classifier(
@@ -13018,6 +13088,7 @@ class _RasterAnalysisTools(BaseAnalytics):
                     dimension_value_field=dimension_value_field,
                     gis=gis,
                     future=True,
+                    estimate=estimate,
                 )
             elif (current_version is not None) and current_version < 10.9:
                 gpjob = self._tbx.train_classifier(
@@ -13028,6 +13099,7 @@ class _RasterAnalysisTools(BaseAnalytics):
                     segment_attributes=segment_attributes,
                     gis=gis,
                     future=True,
+                    estimate=estimate,
                 )
         gpjob._is_ra = True
         gpjob._item_properties = False
@@ -13045,6 +13117,7 @@ class _RasterAnalysisTools(BaseAnalytics):
         return_first_file=False,
         context=None,
         future=False,
+        estimate=False,
         **kwargs,
     ):
         """
@@ -13085,6 +13158,7 @@ class _RasterAnalysisTools(BaseAnalytics):
             context=context,
             gis=gis,
             future=True,
+            estimate=estimate,
         )
         gpjob._is_ra = True
         gpjob._item_properties = False
@@ -13133,6 +13207,7 @@ class _RasterAnalysisTools(BaseAnalytics):
         context=None,
         gis=None,
         future=False,
+        estimate=False,
     ):
         """Watershed GP Tool"""
         task = "Watershed"
@@ -13150,6 +13225,7 @@ class _RasterAnalysisTools(BaseAnalytics):
             context=context,
             gis=gis,
             future=True,
+            estimate=estimate,
         )
         gpjob._is_ra = True
         gpjob._item_properties = True
@@ -13342,6 +13418,7 @@ class _RasterAnalysisTools(BaseAnalytics):
         dimensionless=False,
         percentile_value=90,
         percentile_interpolation_type="NEAREST",
+        estimate=False,
         **kwargs,
     ):
         """
@@ -13515,6 +13592,7 @@ class _RasterAnalysisTools(BaseAnalytics):
                     context=context,
                     gis=self._gis,
                     future=True,
+                    estimate=estimate,
                 )
             elif (current_version is not None) and current_version >= 10.91:
                 gpjob = self._tbx.aggregate_multidimensional_raster(
@@ -13536,6 +13614,7 @@ class _RasterAnalysisTools(BaseAnalytics):
                     context=context,
                     gis=self._gis,
                     future=True,
+                    estimate=estimate,
                 )
         gpjob._is_ra = True
         gpjob._item_properties = True
@@ -13558,6 +13637,7 @@ class _RasterAnalysisTools(BaseAnalytics):
         context=None,
         reference_mean_raster=None,
         future=False,
+        estimate=False,
         **kwargs,
     ):
         """
@@ -13663,6 +13743,7 @@ class _RasterAnalysisTools(BaseAnalytics):
                 context=context,
                 gis=self._gis,
                 future=True,
+                estimate=estimate,
             )
 
         else:
@@ -13677,6 +13758,7 @@ class _RasterAnalysisTools(BaseAnalytics):
                 context=context,
                 gis=self._gis,
                 future=True,
+                estimate=estimate,
             )
 
         gpjob._is_ra = True
@@ -13694,6 +13776,7 @@ class _RasterAnalysisTools(BaseAnalytics):
         context=None,
         future=False,
         delete_transpose=False,
+        estimate=False,
         **kwargs,
     ):
         """
@@ -13733,6 +13816,7 @@ class _RasterAnalysisTools(BaseAnalytics):
                 context=context,
                 gis=self._gis,
                 future=True,
+                estimate=estimate,
             )
         elif (current_version is not None) and current_version >= 10.9:
             if not isinstance(delete_transpose, bool):
@@ -13743,6 +13827,7 @@ class _RasterAnalysisTools(BaseAnalytics):
                 delete_transpose=delete_transpose,
                 gis=self._gis,
                 future=True,
+                estimate=estimate,
             )
 
         gpjob._is_ra = True
@@ -13767,6 +13852,7 @@ class _RasterAnalysisTools(BaseAnalytics):
         slope_p_value=False,
         seasonal_period="DAYS",
         future=False,
+        estimate=False,
         **kwargs,
     ):
         """
@@ -13882,6 +13968,7 @@ class _RasterAnalysisTools(BaseAnalytics):
                 context=context,
                 gis=self._gis,
                 future=True,
+                estimate=estimate,
             )
         elif (current_version is not None) and (
             current_version > 10.8 and current_version < 10.9
@@ -13902,6 +13989,7 @@ class _RasterAnalysisTools(BaseAnalytics):
                 context=context,
                 gis=self._gis,
                 future=True,
+                estimate=estimate,
             )
         elif (current_version is not None) and current_version >= 10.9:
             gpjob = self._tbx.generate_trend_raster(
@@ -13921,6 +14009,7 @@ class _RasterAnalysisTools(BaseAnalytics):
                 context=context,
                 gis=self._gis,
                 future=True,
+                estimate=estimate,
             )
 
         gpjob._is_ra = True
@@ -13947,6 +14036,7 @@ class _RasterAnalysisTools(BaseAnalytics):
         interval_unit=None,
         context=None,
         future=False,
+        estimate=False,
         **kwargs,
     ):
         """
@@ -14058,6 +14148,7 @@ class _RasterAnalysisTools(BaseAnalytics):
             context=context,
             gis=self._gis,
             future=True,
+            estimate=estimate,
         )
         gpjob._is_ra = True
         gpjob._item_properties = True
@@ -14089,6 +14180,7 @@ class _RasterAnalysisTools(BaseAnalytics):
         comparison="EQUAL_TO",
         occurrence="FIRST_OCCURRENCE",
         future=False,
+        estimate=False,
         **kwargs,
     ):
         """
@@ -14273,6 +14365,7 @@ class _RasterAnalysisTools(BaseAnalytics):
         }
         params = _inspect_function_inputs(self._tbx.find_argument_statistics, **params)
         params["future"] = True
+        params["estimate"] = estimate
         gpjob = self._tbx.find_argument_statistics(**params)
 
         gpjob._is_ra = True
@@ -14294,6 +14387,7 @@ class _RasterAnalysisTools(BaseAnalytics):
         value_option=[],
         context=None,
         future=False,
+        estimate=False,
         **kwargs,
     ):
         """
@@ -14351,6 +14445,7 @@ class _RasterAnalysisTools(BaseAnalytics):
             context=context,
             gis=self._gis,
             future=True,
+            estimate=estimate,
         )
         gpjob._is_ra = True
         gpjob._item_properties = True
@@ -14377,6 +14472,7 @@ class _RasterAnalysisTools(BaseAnalytics):
         iteration_unit=None,
         context=None,
         future=False,
+        estimate=False,
         **kwargs,
     ):
         """
@@ -14487,6 +14583,7 @@ class _RasterAnalysisTools(BaseAnalytics):
             context=context,
             gis=self._gis,
             future=True,
+            estimate=estimate,
         )
         gpjob._is_ra = True
         gpjob._item_properties = True
@@ -14508,6 +14605,7 @@ class _RasterAnalysisTools(BaseAnalytics):
         destination_field=None,
         context=None,
         future=False,
+        estimate=False,
         **kwargs,
     ):
         """
@@ -14639,6 +14737,7 @@ class _RasterAnalysisTools(BaseAnalytics):
             context=context,
             gis=self._gis,
             future=True,
+            estimate=estimate,
         )
         gpjob._is_ra = True
         gpjob._item_properties = True
@@ -14833,6 +14932,7 @@ class _RasterAnalysisTools(BaseAnalytics):
         num_of_bands=None,
         composite_value=None,
         future=False,
+        estimate=False,
         **kwargs,
     ):
         """
@@ -14872,6 +14972,7 @@ class _RasterAnalysisTools(BaseAnalytics):
             composite_value=composite_value,
             gis=self._gis,
             future=True,
+            estimate=estimate,
         )
         gpjob._is_ra = True
         if future:
@@ -14889,6 +14990,7 @@ class _RasterAnalysisTools(BaseAnalytics):
         context=None,
         future=False,
         create_network_paths="DESTINATIONS_TO_SOURCES",
+        estimate=False,
         **kwargs,
     ):
         """
@@ -15034,6 +15136,7 @@ class _RasterAnalysisTools(BaseAnalytics):
                     context=context,
                     gis=self._gis,
                     future=True,
+                    estimate=estimate,
                 )
             elif (current_version is not None) and current_version >= 10.9:
                 gpjob = self._tbx.optimal_path_as_line(
@@ -15047,6 +15150,7 @@ class _RasterAnalysisTools(BaseAnalytics):
                     context=context,
                     gis=self._gis,
                     future=True,
+                    estimate=estimate,
                 )
 
         gpjob._is_ra = True
@@ -15066,6 +15170,7 @@ class _RasterAnalysisTools(BaseAnalytics):
         output_neighbor_connections_name=None,
         context=None,
         future=False,
+        estimate=False,
         **kwargs,
     ):
         """
@@ -15275,6 +15380,7 @@ class _RasterAnalysisTools(BaseAnalytics):
             context=context,
             gis=self._gis,
             future=True,
+            estimate=estimate,
         )
         gpjob._is_ra = True
         gpjob._item_properties = True
@@ -15315,6 +15421,7 @@ class _RasterAnalysisTools(BaseAnalytics):
         output_source_location_raster_name=None,
         context=None,
         future=False,
+        estimate=False,
         **kwargs,
     ):
         """
@@ -15477,6 +15584,7 @@ class _RasterAnalysisTools(BaseAnalytics):
             context=context,
             gis=self._gis,
             future=True,
+            estimate=estimate,
         )
         gpjob._is_ra = True
         gpjob._item_properties = True
@@ -15507,6 +15615,7 @@ class _RasterAnalysisTools(BaseAnalytics):
         output_source_location_raster_name=None,
         context=None,
         future=False,
+        estimate=False,
         **kwargs,
     ):
         """
@@ -15683,6 +15792,7 @@ class _RasterAnalysisTools(BaseAnalytics):
             context=context,
             gis=self._gis,
             future=True,
+            estimate=estimate,
         )
         gpjob._is_ra = True
         gpjob._item_properties = True
@@ -15702,6 +15812,7 @@ class _RasterAnalysisTools(BaseAnalytics):
         output_name=None,
         context=None,
         future=False,
+        estimate=False,
         **kwargs,
     ):
         """
@@ -15756,6 +15867,7 @@ class _RasterAnalysisTools(BaseAnalytics):
             context=context,
             gis=self._gis,
             future=True,
+            estimate=estimate,
         )
         gpjob._is_ra = True
         gpjob._item_properties = True
@@ -15792,6 +15904,7 @@ class _RasterAnalysisTools(BaseAnalytics):
         output_name=None,
         context=None,
         future=False,
+        estimate=False,
         **kwargs,
     ):
         """
@@ -15924,6 +16037,7 @@ class _RasterAnalysisTools(BaseAnalytics):
                     context=context,
                     gis=self._gis,
                     future=True,
+                    estimate=estimate,
                 )
             elif (current_version is not None) and current_version >= 10.9:
                 gpjob = self._tbx.detect_change_using_change_analysis_raster(
@@ -15951,6 +16065,7 @@ class _RasterAnalysisTools(BaseAnalytics):
                     context=context,
                     gis=self._gis,
                     future=True,
+                    estimate=estimate,
                 )
 
         gpjob._is_ra = True
@@ -15974,6 +16089,7 @@ class _RasterAnalysisTools(BaseAnalytics):
         dimension_description=None,
         dimension_unit=None,
         future=False,
+        estimate=False,
         **kwargs,
     ):
         """
@@ -16039,6 +16155,7 @@ class _RasterAnalysisTools(BaseAnalytics):
             dimension_unit=dimension_unit,
             gis=self._gis,
             future=True,
+            estimate=estimate,
         )
         gpjob._is_ra = True
         if future:
@@ -16060,6 +16177,7 @@ class _RasterAnalysisTools(BaseAnalytics):
         generate_feature_class=None,
         context=None,
         future=False,
+        estimate=False,
         **kwargs,
     ):
         """
@@ -16180,6 +16298,7 @@ class _RasterAnalysisTools(BaseAnalytics):
             context=context,
             gis=self._gis,
             future=True,
+            estimate=estimate,
         )
 
         gpjob._is_ra = True
@@ -16313,6 +16432,7 @@ class _RasterAnalysisTools(BaseAnalytics):
         output_name=None,
         context=None,
         future=False,
+        estimate=False,
         **kwargs,
     ):
         """
@@ -16366,6 +16486,7 @@ class _RasterAnalysisTools(BaseAnalytics):
             context=context,
             gis=self._gis,
             future=True,
+            estimate=estimate,
         )
         gpjob._is_ra = True
         gpjob._item_properties = True
@@ -16395,6 +16516,7 @@ class _RasterAnalysisTools(BaseAnalytics):
         output_name=None,
         context=None,
         future=False,
+        estimate=False,
         **kwargs,
     ):
         """
@@ -16470,6 +16592,7 @@ class _RasterAnalysisTools(BaseAnalytics):
             context=context,
             gis=self._gis,
             future=True,
+            estimate=estimate,
         )
         gpjob._is_ra = True
         gpjob._item_properties = True
@@ -16496,6 +16619,7 @@ class _RasterAnalysisTools(BaseAnalytics):
         future=False,
         circular_calculation=False,
         circular_wrap_value=360,
+        estimate=False,
         **kwargs,
     ):
         """
@@ -16734,6 +16858,7 @@ class _RasterAnalysisTools(BaseAnalytics):
                 context=context,
                 gis=self._gis,
                 future=True,
+                estimate=estimate,
             )
         elif (current_version is not None) and current_version >= 11:
             gpjob = self._tbx.zonal_statistics_as_table(
@@ -16751,6 +16876,7 @@ class _RasterAnalysisTools(BaseAnalytics):
                 future=True,
                 circular_calculation=circular_calculation,
                 circular_wrap_value=circular_wrap_value,
+                estimate=estimate,
             )
 
         gpjob._is_ra = True
@@ -16773,6 +16899,7 @@ class _RasterAnalysisTools(BaseAnalytics):
         output_name=None,
         context=None,
         future=False,
+        estimate=False,
         **kwargs,
     ):
         """
@@ -16880,6 +17007,7 @@ class _RasterAnalysisTools(BaseAnalytics):
                     context=context,
                     gis=self._gis,
                     future=True,
+                    estimate=estimate,
                 )
             elif (current_version is not None) and current_version >= 10.91:
                 gpjob = self._tbx.compute_change_raster(
@@ -16896,6 +17024,7 @@ class _RasterAnalysisTools(BaseAnalytics):
                     context=context,
                     gis=self._gis,
                     future=True,
+                    estimate=estimate,
                 )
         gpjob._is_ra = True
         gpjob._item_properties = True
@@ -17143,6 +17272,7 @@ class _RasterAnalysisTools(BaseAnalytics):
         output_summary_table_name=None,
         context=None,
         future=False,
+        estimate=False,
         **kwargs,
     ):
         """
@@ -17277,6 +17407,7 @@ class _RasterAnalysisTools(BaseAnalytics):
             context=context,
             gis=self._gis,
             future=True,
+            estimate=estimate,
         )
         gpjob._is_ra = True
         gpjob._item_properties = True
@@ -17302,6 +17433,7 @@ class _RasterAnalysisTools(BaseAnalytics):
         context=None,
         future=False,
         output_ecd_item_name=None,
+        estimate=False,
         **kwargs,
     ):
         """
@@ -17482,6 +17614,7 @@ class _RasterAnalysisTools(BaseAnalytics):
                     output_ecd_item_name=output_ecd_item_name,
                     gis=self._gis,
                     future=True,
+                    estimate=estimate,
                 )
             else:
                 gpjob = self._tbx.train_random_trees_regression_model(
@@ -17501,6 +17634,7 @@ class _RasterAnalysisTools(BaseAnalytics):
                     context=context,
                     gis=self._gis,
                     future=True,
+                    estimate=estimate,
                 )
 
         gpjob._is_ra = (True,)
@@ -17515,6 +17649,7 @@ class _RasterAnalysisTools(BaseAnalytics):
         output_tile_package=None,
         context=None,
         future=False,
+        estimate=False,
         **kwargs,
     ):
         """
@@ -17576,6 +17711,7 @@ class _RasterAnalysisTools(BaseAnalytics):
             context=context,
             gis=self._gis,
             future=True,
+            estimate=estimate,
         )
         gpjob._is_ra = True
         if future:
@@ -17590,6 +17726,7 @@ class _RasterAnalysisTools(BaseAnalytics):
         output_predicted_raster_name=None,
         context=None,
         future=False,
+        estimate=False,
         **kwargs,
     ):
         """
@@ -17642,6 +17779,7 @@ class _RasterAnalysisTools(BaseAnalytics):
             context=context,
             gis=self._gis,
             future=True,
+            estimate=estimate,
         )
 
         gpjob._is_ra = (True,)
@@ -17661,6 +17799,7 @@ class _RasterAnalysisTools(BaseAnalytics):
         output_flow_direction_raster_name=None,
         context=None,
         future=False,
+        estimate=False,
         **kwargs,
     ):
         """
@@ -17852,6 +17991,7 @@ class _RasterAnalysisTools(BaseAnalytics):
             context=context,
             gis=self._gis,
             future=True,
+            estimate=estimate,
         )
 
         gpjob._is_ra = True
@@ -17890,6 +18030,7 @@ class _RasterAnalysisTools(BaseAnalytics):
         context=None,
         gis=None,
         future=False,
+        estimate=False,
     ):
         """
         input_rasters: inputRasters (str). Required parameter.
@@ -17959,6 +18100,7 @@ class _RasterAnalysisTools(BaseAnalytics):
             context=context,
             gis=gis,
             future=True,
+            estimate=estimate,
         )
 
         gpjob._is_ra = True
@@ -17979,6 +18121,7 @@ class _RasterAnalysisTools(BaseAnalytics):
         number_of_principal_components="95%",
         context=None,
         future=False,
+        estimate=False,
         **kwargs,
     ):
         """
@@ -18080,6 +18223,7 @@ class _RasterAnalysisTools(BaseAnalytics):
             context=context,
             gis=self._gis,
             future=True,
+            estimate=estimate,
         )
 
         gpjob._is_ra = (True,)

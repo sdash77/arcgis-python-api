@@ -492,7 +492,7 @@ class GPJob(object):
                     return value
             elif isinstance(value, dict) and "credits" in value:
                 try:
-                    return {"credits":value["credits"]}
+                    return float(value["credits"])
                 except:
                     return value
             elif isinstance(value, dict) and "result" in value:
