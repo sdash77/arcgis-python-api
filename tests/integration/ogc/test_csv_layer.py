@@ -14,6 +14,7 @@ class TestCSVLayer(unittest.TestCase):
     """Runs the tests for the CSV Layer"""
 
     def test_csv_layer_url(self):
+        gis = GIS()
         csv = CSVLayer(csv_url)
         assert isinstance(csv, CSVLayer)
         assert csv.fields
