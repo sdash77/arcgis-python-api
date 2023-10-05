@@ -2133,7 +2133,16 @@ class FeatureLayerCollectionManager(_GISResource):
         --------------------     --------------------------------------------------------------------
         snippet                  Optional String. A short description of the view item.
         --------------------     --------------------------------------------------------------------
-        overwrite                Optional Boolean.  If true, the view is overwritten, False is the default.
+        overwrite                Not supported.
+                                 
+                                 .. note::
+                                     To overwrite the data used in a hosted feature layer view, you
+                                     must overwrite the hosted feature layer from which it was
+                                     created. See the `ArcGIS Online Overwrite hosted feature layers <https://doc.arcgis.com/en/arcgis-online/manage-data/manage-hosted-feature-layers.htm#ESRI_SECTION1_1D3A87A80E3E4CD2A71744715F1522FE>`_
+                                     or the `ArcGIS Enterprise Overwrite hosted feature layers <https://enterprise.arcgis.com/en/portal/latest/use/manage-hosted-feature-layers.htm#ESRI_SECTION1_1D3A87A80E3E4CD2A71744715F1522FE>`_
+                                     documentation for requirements and considerations for
+                                     overwriting. See also `Considerations when creating hosted feature layer views <https://doc.arcgis.com/en/arcgis-online/manage-data/create-hosted-views.htm#GUID-E4F46139-1F6E-4036-8C4F-EF73C2C2CE72>`_
+                                     for additional criteria for overwriting.
         --------------------     --------------------------------------------------------------------
         set_item_id              Optional String. If set, the ItemId is defined by the user, not the system.
         --------------------     --------------------------------------------------------------------
