@@ -8,7 +8,6 @@ from arcgis.gis.workflowmanager import WorkflowManager, WorkflowManagerAdmin
 from arcgis.gis import GIS
 
 
-
 ###########################################################################
 # @unittest.SkipTest
 class TestWorkflowManager(unittest.TestCase):
@@ -815,7 +814,7 @@ class TestWorkflowManager(unittest.TestCase):
 
         # Assert
         self.assertIsInstance(actual, dict, "Incorrect return type")
-        self.assertEqual( expected, actual, "Incorrect search returned")
+        self.assertEqual(expected, actual, "Incorrect search returned")
         self.assertEqual(job_list, expected_job_list, "Incorrect search returned")
 
     def test_search_jobs_successfully_returns_with_selected_fields(self):
@@ -2387,7 +2386,6 @@ class TestWorkflowManager(unittest.TestCase):
                 "Expected error returned during test: " + testException.__str__()
             )
 
-
     # endregion
 
     # region Get Diagram Version
@@ -3175,7 +3173,7 @@ class TestWorkflowManager(unittest.TestCase):
         # Insert credentials for a portal > 11.2
         portal_url = "https://wmxpathway.esri.com/portal/"
         portal_username = "admin"
-        portal_password = "esri.agp"
+        portal_password = "..."
         workflow_item_id = "22636bf72fef4ab68db33e6fa0983b1f"
         gis = GIS(
             url=portal_url,
