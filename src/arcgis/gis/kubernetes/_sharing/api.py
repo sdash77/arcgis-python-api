@@ -25,7 +25,7 @@ from arcgis._impl.common._utils import _to_utf8
 from urllib import request
 from urllib.parse import urlparse
 
-__version__ = "2.2.0"
+__version__ = "2.3.0"
 
 _log = logging.getLogger(__name__)
 
@@ -2547,10 +2547,6 @@ class KbertnetesPy(object):
             ================  ========================================================
         """
         item = self.con.post("content/items/" + itemid, self._postdata())
-        # item is a dictionary and we need to fix the private url
-        # private url has "//rest" when it should be "/rest" in it
-        if item and "privateUrl" in item:
-            item["privateUrl"] = item["privateUrl"].replace("//rest", "/rest")
         return item
 
     # ----------------------------------------------------------------------

@@ -13,7 +13,7 @@ gis = GIS(
     verify_cert=False,
 )
 
-# Create Topographic Service
+# Get Utility Service
 try:
     # Server gets updated at 2:30PM PST Everyday. Do not test around then.
     utility_nm = UtilityNetworkManager(

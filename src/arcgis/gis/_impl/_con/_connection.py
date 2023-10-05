@@ -92,7 +92,7 @@ except ImportError:
 
 from arcgis.auth import EsriBasicAuth
 
-__version__ = "2.2.0"
+__version__ = "2.3.0"
 
 _DEFAULT_TOKEN = uuid.uuid4()
 _log = logging.getLogger(__name__)
@@ -189,6 +189,9 @@ class Connection(object):
         self._password = password
 
         self._expiration = kwargs.pop("expiration", 60) or 60
+        if self._expiration < 60:
+            _log.warning("Expiration is less than 60 seconds, changing value to 60")
+            self._expiration = 60
         self._portal_connection = kwargs.pop(
             "portal_connection", None
         )  # For Federated Objects (Portal Connection)
@@ -928,7 +931,6 @@ class Connection(object):
             file_name = (
                 _filename_from_url(url) or _filename_from_headers(resp.headers) or None
             )
-
         if force_bytes:
             try:
                 return bytes(resp.content)
@@ -1130,7 +1132,7 @@ class Connection(object):
                         fields[k] = (
                             os.path.basename(v),
                             open(v, "rb"),
-                            mimetypes.guess_type(v)[0],
+                            mimetypes.guess_type(v)[0] or "application/octet-stream",
                         )
             elif isinstance(files, (list, tuple)):
                 for key, filePath, fileName in files:
@@ -1141,7 +1143,8 @@ class Connection(object):
                         fields[key] = (
                             fileName,
                             open(filePath, "rb"),
-                            mimetypes.guess_type(filePath)[0],
+                            mimetypes.guess_type(filePath)[0]
+                            or "application/octet-stream",
                         )
                     elif isinstance(fileName, str) and isinstance(
                         filePath, (io.StringIO, io.BytesIO)

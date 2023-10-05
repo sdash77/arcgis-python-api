@@ -8817,7 +8817,12 @@ class _OrthoMappingTools:
 
     # ----------------------------------------------------------------------
     def reset_image_collection(
-        self, image_collection, gis=None, future=False, **kwargs
+        self,
+        image_collection,
+        gis=None,
+        future=False,
+        flight_json_details=None,
+        **kwargs,
     ):
         """
         The `reset_image_collection` resets the image collection to its original state.
@@ -8849,6 +8854,7 @@ class _OrthoMappingTools:
         )
         job._is_ortho = True
         omjob = OMJob(job)
+        omjob._flight_details = flight_json_details
         if future:
             return omjob
         return omjob.result()
@@ -9884,7 +9890,7 @@ class _RasterAnalysisTools(BaseAnalytics):
         return RAJob(gpjob, output_service).result()
 
     # ----------------------------------------------------------------------
-    @deprecated(deprecated_in="2.2.0", removed_in="3.0.0", current_version="2.2.0")
+    @deprecated(deprecated_in="2.2.0", removed_in="3.0.0", current_version="2.3.0")
     def calculate_distance(
         self,
         input_source_raster_or_features,  #
@@ -17627,7 +17633,10 @@ class _RasterAnalysisTools(BaseAnalytics):
             ):
                 input_regression_definition = {"uri": input_regression_definition}
 
-        output_predicted_raster_name, output_service = self._set_output_raster(
+        (
+            output_predicted_raster_name,
+            output_service,
+        ) = self._set_output_raster(
             output_name=output_predicted_raster_name,
             task=task,
             output_properties=kwargs,
@@ -18039,8 +18048,13 @@ class _RasterAnalysisTools(BaseAnalytics):
                 task=task,
                 output_properties=kwargs,
             )
-            output_loadings_name, output_feature_service = self._set_output_feature(
-                output_name=output_loadings_name, task=task, output_properties=kwargs
+            (
+                output_loadings_name,
+                output_feature_service,
+            ) = self._set_output_feature(
+                output_name=output_loadings_name,
+                task=task,
+                output_properties=kwargs,
             )
         # mode is "spatial_reduction" here
         else:
@@ -18052,8 +18066,13 @@ class _RasterAnalysisTools(BaseAnalytics):
                 task=task,
                 output_properties=kwargs,
             )
-            output_loadings_name, output_feature_service = self._set_output_raster(
-                output_name=output_loadings_name, task=task, output_properties=kwargs
+            (
+                output_loadings_name,
+                output_feature_service,
+            ) = self._set_output_raster(
+                output_name=output_loadings_name,
+                task=task,
+                output_properties=kwargs,
             )
 
         if output_eigen_values_table_name is not None:
@@ -18085,6 +18104,83 @@ class _RasterAnalysisTools(BaseAnalytics):
         if future:
             return RAJob(gpjob)
         return RAJob(gpjob).result()
+
+    def detect_change_using_deep_learning(
+        self,
+        from_raster,
+        to_raster,
+        model,
+        output_classified_raster=None,
+        model_arguments=None,
+        context=None,
+        future=False,
+        **kwargs,
+    ):
+        """
+        from_raster: input ImageryLayer (str). Required parameter.
+
+        to_raster: input ImageryLayer (str). Required parameter.
+
+        model: input model (str). Required parameter.
+
+        output_classified_raster: output ImageryLayer (str). Optional parameter.
+
+        model_arguments: Name-value pairs of arguments and their values that can be customized by the clients. Optional parameter.
+
+        context: context (str). Optional parameter.
+
+        gis: Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
+
+        future: Optional, If True, a future object will be returns and the process will not wait for the task to complete. The default is False, which means wait for results.
+        """
+
+        task = "DetectChangeUsingDeepLearning"
+        gis = self._gis
+
+        from_raster = self._layer_input(input_layer=from_raster)
+        to_raster = self._layer_input(input_layer=to_raster)
+
+        if model is None:
+            raise RuntimeError("model cannot be None")
+        else:
+            model_value = self._set_param(model)
+
+        model_arguments_value = None
+        if model_arguments:
+            try:
+                model_arguments_value = dict(
+                    (str(k), str(v)) for k, v in model_arguments.items()
+                )
+            except:
+                model_arguments_value = model_arguments
+
+        context_param = {}
+        _set_raster_context(context_param, context)
+        if "context" in context_param.keys():
+            context = context_param["context"]
+
+        output_raster, output_service = self._set_output_raster(
+            output_name=output_classified_raster,
+            task=task,
+            output_properties=kwargs,
+        )
+
+        gpjob = self._tbx.detect_change_using_deep_learning(
+            from_raster=from_raster,
+            to_raster=to_raster,
+            model_definition=model_value,
+            output_classified_raster_name=output_raster,
+            model_arguments=model_arguments_value,
+            context=context,
+            gis=self._gis,
+            future=True,
+        )
+
+        gpjob._is_ra = True
+        gpjob._item_properties = True
+        if future:
+            return RAJob(gpjob, output_service)
+        return RAJob(gpjob, output_service).result()
 
 
 ###########################################################################

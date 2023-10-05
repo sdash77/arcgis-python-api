@@ -607,7 +607,8 @@ class ArcGISModel(object):
         self._model_metrics_cache = None
         self._slice_lr = True
         self._pretrained_path = kwargs.get("pretrained_path", None)
-        self._check_data_support_with_pretrained_path()
+        if hasattr(self._data, "arcgis_init_kwargs"):
+            self._check_data_support_with_pretrained_path()
         self._model_kwargs = kwargs
         if self.__class__.__name__ not in unsupported_models:
             if not getattr(data, "_is_empty", False) and hasattr(
@@ -932,6 +933,9 @@ class ArcGISModel(object):
         if os.environ.get("BLOCK_MODEL_TRAINING", 0) == "1":
             raise Exception(f"This model cannot be trained in ArcGIS Online Notebooks")
 
+        if getattr(self, "_is_mm3d", False):
+            self.learn.model.prediction = False
+
         with warnings.catch_warnings():
             warnings.simplefilter("ignore", UserWarning)
             self._check_requisites()
@@ -1161,6 +1165,8 @@ class ArcGISModel(object):
                 "model_name": self._kwargs["model"],
                 "backend": self._backend,
             }
+        elif getattr(self, "model_type", False) == "SR3":
+            model_params = {"backbone": "SR3", "backend": self._backend}
         else:
             model_params = {"backbone": backbone, "backend": self._backend}
         if _emd_template.get("ModelParameters", None) is None:
@@ -1912,7 +1918,7 @@ class ArcGISModel(object):
                 from onnx_tf.backend import prepare
         except:
             raise Exception(
-                'Tensorflow(version 1.13.1 or above), Onnx(version 1.5.0) and Onnx_tf(version 1.3.0) libraries are not installed. Install Tensorflow using "conda install tensorflow-gpu=1.13.1". Install onnx and onnx_tf using "pip install onnx onnx_tf".'
+                "Could not find the required deep learning dependencies. Ensure you have installed the required dependent libraries. See https://developers.arcgis.com/python/guide/deep-learning/."
             )
 
         batch_size = int(math.sqrt(int(batch_size))) ** 2

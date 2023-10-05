@@ -50,6 +50,8 @@ class MMSegmentationConfig:
         config = kwargs.get("model", False)
         checkpoint = kwargs.get("model_weight", False)
         class_weight = kwargs.get("class_weight", None)
+        if config[-2:] != "py":
+            config += ".py"
         if self.os.path.exists(self.pathlib.Path(config)):
             cfg = mmcv.Config.fromfile(config)
             cfg.model.pretrained = None
@@ -70,7 +72,7 @@ class MMSegmentationConfig:
                 self.pathlib.Path(arcgis.__file__).parent
                 / "learn"
                 / "_mmseg_config"
-                / (config + ".{}".format("py"))
+                / config
             )
             cfg = mmcv.Config.fromfile(cfg_abs_path)
             checkpoint = cfg.get("checkpoint", False)
@@ -98,7 +100,11 @@ class MMSegmentationConfig:
         ):
             cfg.model.backbone.in_channels = len(data._extract_bands)
 
-        model = mmseg.models.build_segmentor(cfg.model)
+        import warnings
+
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            model = mmseg.models.build_segmentor(cfg.model)
 
         if checkpoint:
             mmcv.runner.load_checkpoint(
@@ -110,15 +116,19 @@ class MMSegmentationConfig:
 
         @auto_fp16(apply_to=("img",))
         def forward_modified(self, img, img_metas=None, gt_semantic_seg=None):
-            if self.training:
-                losses = self.forward_train(img, img_metas, gt_semantic_seg)
-                loss, log_vars = self._parse_losses(losses)
+            import warnings
 
-                outputs = dict(loss=loss, log_vars=log_vars)
+            with warnings.catch_warnings():
+                warnings.simplefilter("ignore")
+                if self.training:
+                    losses = self.forward_train(img, img_metas, gt_semantic_seg)
+                    loss, log_vars = self._parse_losses(losses)
 
-                return outputs
-            else:
-                return self.forward_test(img[0], img[1], rescale=True)
+                    outputs = dict(loss=loss, log_vars=log_vars)
+
+                    return outputs
+                else:
+                    return self.forward_test(img[0], img[1], rescale=True)
 
         # default simple_test of the model from the original API should be modified to correctly work in test time.
         def simple_test_modified(self, img, img_meta, rescale=True):

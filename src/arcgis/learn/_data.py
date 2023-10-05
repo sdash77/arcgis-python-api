@@ -151,7 +151,7 @@ def _raise_conda_import_error(import_exception=import_exception):
         "-deep-learning-dependencies\n"
     )
     raise Exception(
-        f"{import_exception} \n\nThis module requires conda, python 3.7 "
+        f"{import_exception} \n\nThis module requires conda, python >=3.9 "
         f"and is currently supported on Windows.\n{installation_steps}\n"
     )
 
@@ -1020,7 +1020,8 @@ def prepare_tabulardata(
     variable_predict        Optional String or List, denoting the field_names of
                             the variable to predict.
                             Keep none for unsupervised training using ML Model. For timeseries it
-                            will work for continuous variable
+                            will work for continuous variable.
+                            As of now we support only binary classification in fairness evaluation.
     ---------------------   -------------------------------------------
     explanatory_variables   Optional list containing field names from input_features
                             By default the field type is continuous.
@@ -1183,10 +1184,6 @@ def prepare_tabulardata(
     if kwargs.get("stratify") == True:
         stratify = True
 
-    random_split = True
-    if kwargs.get("random_split") == False:
-        random_split = False
-
     HAS_COLUMN_TRANSFORMS = False
 
     column_transforms_mapping = {}
@@ -1236,7 +1233,7 @@ def prepare_tabulardata(
         batch_size=batch_size,
         index_field=index_field,
         column_transforms_mapping=column_transforms_mapping,
-        random_split=random_split,
+        **kwargs,
     )
 
     if working_dir is None:
@@ -1308,7 +1305,7 @@ def prepare_data(
                             for satellite imagery well). If transforms is set
                             to `False` no transformation will take place and
                             `chip_size` parameter will also not take effect.
-                            If the dataset_type is 'PointCloud', use
+                            If the dataset_type is 'PointCloud' and 'PointCloudOD', use
                             :class:`~arcgis.learn.Transform3d`.
     ---------------------   -------------------------------------------
     collate_fn              Optional function. Passed to PyTorch to collate data
@@ -1322,13 +1319,11 @@ def prepare_data(
                             it contains a map.txt file. If the path does not contain
                             the map.txt file pass one of 'PASCAL_VOC_rectangles',
                             'KITTI_rectangles', 'Imagenet'.
-                            This parameter is mandatory for data which are not
-                            exported by ArcGIS Pro / Enterprise which includes
-                            'PointCloud', 'ImageCaptioning', 'ChangeDetection',
-                            'CycleGAN', 'Pix2Pix', 'WNet_cGAN' and 'ObjectTracking'.
+                            This parameter is mandatory for dataset
+                            'PointCloud', 'PointCloudOD', 'ImageCaptioning',
+                            'ChangeDetection', 'WNet_cGAN' and 'ObjectTracking'.
                             Note:
-                            For details on dataset_type please refer to this link
-                            https://pro.arcgis.com/en/pro-app/3.0/tool-reference/image-analyst/export-training-data-for-deep-learning.htm
+                            For details on dataset_type please refer to this `link <https://pro.arcgis.com/en/pro-app/latest/tool-reference/image-analyst/export-training-data-for-deep-learning.htm>`_.
     ---------------------   -------------------------------------------
     resize_to               Optional integer or tuple of integers.
                             A tuple should be of the form (height, width).
@@ -1725,6 +1720,7 @@ def prepare_data(
             "ChangeDetection",
             "ObjectTracking",
             "PSETAE",
+            "SR3",
         ]
         and has_esri_files
     ):
@@ -1864,7 +1860,9 @@ def prepare_data(
             from osgeo import gdal
 
             _im_path = str(path / (line.split()[0]).replace("\\", os.sep))
-            ds = gdal.Open(_im_path)
+            with warnings.catch_warnings():
+                warnings.simplefilter("ignore")
+                ds = gdal.Open(_im_path)
             if ds.RasterCount != 3 or ds.GetRasterBand(1).DataType != gdal.GDT_Byte:
                 imagery_type = sensor_name
             _infered = True
@@ -2655,7 +2653,11 @@ def prepare_data(
 
             transforms = (train_tfms, val_tfms)
 
-    elif dataset_type == "superres" or dataset_type == "Export_Tiles":
+    elif (
+        dataset_type == "superres"
+        or dataset_type == "Export_Tiles"
+        or dataset_type == "SR3"
+    ):
         path_hr = path / "images"
         path_lr = path / "labels"
         path_addras_lr = path / "images2"
@@ -2663,9 +2665,11 @@ def prepare_data(
         _is_multispec = False
 
         def check_ms(il, il2):
-            samp_img, samp_img2 = gdal.Open(il.items[0].__str__()), gdal.Open(
-                il2.items[0].__str__()
-            )
+            with warnings.catch_warnings():
+                warnings.simplefilter("ignore")
+                samp_img, samp_img2 = gdal.Open(il.items[0].__str__()), gdal.Open(
+                    il2.items[0].__str__()
+                )
             if (
                 il[0].shape[0] != 3
                 or samp_img.GetRasterBand(1).DataType != gdal.GDT_Byte
@@ -2741,6 +2745,36 @@ def prepare_data(
                     f.write(str(downsample_factor))
             il2 = ArcGISImageList.from_folder(path_lr)
             imagery_type, _is_multispec = check_ms(il, il2)
+
+        if dataset_type == "SR3":
+            from ._data_utils.pix2pix_data import prepare_pix2pix_data
+
+            kwargs["path_hr"], kwargs["path_lr"], kwargs["imagery_type"] = (
+                path_hr,
+                path_lr,
+                imagery_type,
+            )
+            data = prepare_pix2pix_data(
+                path=path,
+                batch_size=batch_size,
+                val_split_pct=val_split_pct,
+                transforms=transforms,
+                resize_to=resize_to,
+                norm_pct=norm_pct,
+                _is_multispectral=_is_multispec,
+                working_dir=working_dir,
+                seed=seed,
+                dataset_type=dataset_type,
+                **kwargs,
+            )
+            if data._is_multispectral:
+                # data._imagery_type = _imagery_type
+                data._bands = _bands
+                # data._norm_pct = norm_pct
+                data._extract_bands = None
+                data._do_normalize = False
+            data.downsample_factor = downsample_factor
+            return data
 
         data = (
             ImageImageListSR.from_folders(path, path_lr, image_stats, _is_multispec)
@@ -2909,6 +2943,7 @@ def prepare_data(
             _is_multispectral=_is_multispectral,
             working_dir=working_dir,
             seed=seed,
+            dataset_type=dataset_type,
             **kwargs,
         )
         data._imagery_type_a = imagery_type_a
@@ -2960,7 +2995,9 @@ def prepare_data(
         )
         img_type = "RGB"
         _im_path1, _im_path2 = (str(files_list_a[0]), str(files_list_b[0]))
-        ds1, ds2 = gdal.Open(_im_path1), gdal.Open(_im_path2)
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            ds1, ds2 = gdal.Open(_im_path1), gdal.Open(_im_path2)
         if (
             msimage_list_a[0].shape[0] > 3
             or msimage_list_b[0].shape[0] > 3
@@ -3214,6 +3251,7 @@ def prepare_data(
             .normalize(**ms_kwargs_norm)
         )
         data._image_stats = imagenet_stats
+        data.seed = seed
         data._is_multispec = _is_multispec
         data._n_channel = il[0].shape[0]
         data._image_stats2 = ms_kwargs_norm["stats"]
@@ -3302,13 +3340,21 @@ def prepare_data(
         "ChangeDetection",
         "superres",
         "Imagenet",
+        "SR3",
     ]:
         data._dataset_type = stats["MetaDataMode"]
     else:
         data._dataset_type = dataset_type
 
-    if dataset_type == "superres" or dataset_type == "Export_Tiles":
-        data._dataset_type = "SuperResolution"
+    if (
+        dataset_type == "superres"
+        or dataset_type == "Export_Tiles"
+        or dataset_type == "SR3"
+    ):
+        if dataset_type == "SR3":
+            data._dataset_type = "SR3"
+        else:
+            data._dataset_type = "SuperResolution"
 
     if alter_class_mapping:
         new_mapping = {}

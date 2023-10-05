@@ -18,7 +18,11 @@ try:
     import torch
     import numpy as np
     import types
-    from mmdet3d.core import LiDARInstance3DBoxes, Box3DMode
+    import warnings
+
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore")
+        from mmdet3d.core import LiDARInstance3DBoxes, Box3DMode
     from mmdet3d.core.points.lidar_points import LiDARPoints
     from mmdet3d.datasets.pipelines import Compose
     import plotly
@@ -113,6 +117,12 @@ class PointCloudOD(Dataset):
             ), f"min_points({self.min_points}) cannot be greater than max_points({self.max_point}) set during export"
 
         if "classification" in self.statistics["tileStatistics"]:
+            # check if there is not any ground truth boxes in train/val folder
+            if self.statistics["numberOfStoredOrientedBoundingBoxes"] == 0:
+                raise Exception(
+                    "Multipatch labels not found, data is not exported correctly."
+                )
+
             class_info = self.statistics["tileStatistics"]["classification"]["table"]
             full_class_mapping = {
                 int(c["classCode"]): str(c["classCode"]) for c in class_info
@@ -252,6 +262,9 @@ class PointCloudOD(Dataset):
             if folder == "val":
                 self._filter_box_point_percentage = 0.3
             if self.transform:
+                if getattr(transform_fn, "_is_Transform3d", False):
+                    self.transform = self.transform._detection_transforms()
+
                 point_cloud_range = (
                     np.array([-1, -1, self.z_range["min"], 1, 1, self.z_range["max"]])
                     * self.scale_factor
@@ -322,9 +335,9 @@ class PointCloudOD(Dataset):
             )
             data["points"][:, :3] *= self.scale_factor
 
-            if "orientedBoundingBox" in read_file.keys():
+            if "orientedBoundingBox" in read_file.keys() and self.folder != "":
                 data = self._get_bbox(data, read_file, tile)
-                if self.transform:
+                if self.transform and random.random() > 0.5:
                     data["points"] = LiDARPoints(
                         data["points"], points_dim=data["points"].shape[-1]
                     )
@@ -565,6 +578,9 @@ def pointcloud_od(
     **kwargs,
 ):
     del databunch_kwargs["bs"]
+    env_device_type = str(databunch_kwargs.get("device"))
+    if env_device_type == "cpu" or not torch.cuda.is_available():
+        raise Exception(f"CPU is not supported for 'dataset_type':'PointCloudOD'.")
 
     train_dataset = PointCloudOD(
         path,
@@ -697,7 +713,7 @@ def plot_results(
         display(fig2)
 
 
-def confusion_matrix3d(pred, target, n_gts, classes, iou_thresh=0.01):
+def confusion_matrix3d(pred, target, n_gts, classes, iou_thresh=0.1):
     tps, p_clas, p_scores = [], [], []
     for idx in range(len(pred)):
         pred_bboxes, pred_labels, pred_scores = (
@@ -732,12 +748,13 @@ def confusion_matrix3d(pred, target, n_gts, classes, iou_thresh=0.01):
 
 
 def predict_h5(self, path, output_path, **kwargs):
+    self._free_memory()
     path = Path(path)
     if output_path is None:
         output_path = path.parent / "results"
     else:
         output_path = Path(output_path)
-    progressor = kwargs.get("progressor", None)
+    progressor = kwargs.pop("progressor", None)
     batch_size = kwargs.get("batch_size", 1)
 
     extra_features = self._data.features_to_keep.copy()
@@ -758,17 +775,20 @@ def predict_h5(self, path, output_path, **kwargs):
         batch_size=batch_size,
         sampler=sampler,
     )
-    predict_batch_h5(self, dataloader, output_path, progressor)
+    predict_batch_h5(self, dataloader, output_path, progressor, **kwargs)
+    self._reset_thresh()
 
     return output_path
 
 
-def predict_batch_h5(self, dl, output_path, progressor):
+def predict_batch_h5(self, dl, output_path, progressor, **kwargs):
+    detect_thresh = kwargs.get("detect_thresh", 0.1)
+    nms_overlap = kwargs.get("nms_overlap", 0.6)
     current_file_name = ""
     for data in progress_bar(dl):
         tile_index = data.pop("tile_index")
         data = to_device(data)
-        pred = self._pred_batch(data)
+        pred = self._pred_batch(data, detect_thresh, nms_overlap)
 
         tile = dl.dataset.tiles[tile_index]
         if len(tile.shape) < 2:
@@ -784,39 +804,34 @@ def predict_batch_h5(self, dl, output_path, progressor):
             if ufname != current_file_name:
                 current_file_name = ufname
                 h5_file = h5py.File(current_file_name, "r")
-                batch_num, _ = h5_file["xyz"].shape
+                no_of_point, _ = h5_file["xyz"].shape
                 h5_file.close()
                 boxes_pred = []
                 labels_pred = []
                 confidence_pred = []
                 boxes_tile_no = []
-                point_box_ids = np.full(batch_num, 0, dtype=np.uint64)
                 low = high = 0
-                start_box_id = [1]
 
             predictions = split_prediction(
                 self,
                 pred[unique_index[i] : unique_index[i + 1]],
                 data["points"][unique_index[i] : unique_index[i + 1]],
-                start_box_id,
-                tile_index,
+                tile_index[unique_index[i] : unique_index[i + 1]],
             )
 
             boxes_pred.extend(predictions[0])
             labels_pred.extend(predictions[1])
             confidence_pred.extend(predictions[2])
             boxes_tile_no.extend(predictions[3])
-            high = low + predictions[4].shape[0]
-            point_box_ids[low:high] = predictions[4]
+            high = low + predictions[4]
 
-            if high == batch_num:
+            if high == no_of_point:
                 save_h5(
                     output_path / dl.dataset.filenames[int(tile[unique_index[i]][0])],
                     np.array(boxes_pred),
                     np.array(labels_pred, dtype=np.uint8),
                     np.array(confidence_pred),
                     np.array(boxes_tile_no, dtype=np.uint64),
-                    point_box_ids,
                 )
             low = high
 
@@ -841,23 +856,17 @@ def export_boxes(bboxes, scale_factor):
     ).tolist()
 
 
-def split_prediction(model, preds, points, start_box_id, tile_index):
+def split_prediction(model, preds, points, tile_index):
     batch_export_bboxs = []
     batch_labels = []
     batch_confidance = []
     batch_box_tiles = []
-    batch_point_box_ids = []
+    no_of_points_in_batch = 0
     for idx, pred in enumerate(preds):
         boxes = pred["boxes_3d"]
         labels = pred["labels_3d"]
         scores = pred["scores_3d"]
-
-        tile_box_ids = np.array(start_box_id * points[idx].shape[0], dtype=np.uint64)
-        point_box_ids = boxes.points_in_boxes_part(points[idx][:, :3]).detach().cpu()
-        tile_box_ids = np.add(tile_box_ids, point_box_ids)
-        no_of_detbox = labels.shape[0]
-        start_box_id[0] += no_of_detbox
-        tile_box_ids[point_box_ids == -1] = 0
+        no_of_points_in_batch += points[idx].shape[0]
 
         batch_export_bboxs.extend(export_boxes(boxes.tensor, model._data.scale_factor))
         batch_labels.extend(
@@ -865,20 +874,17 @@ def split_prediction(model, preds, points, start_box_id, tile_index):
         )
         batch_confidance.extend(scores.tolist())
         batch_box_tiles.extend([tile_index[idx]] * scores.shape[0])
-        batch_point_box_ids.extend(tile_box_ids.tolist())
 
     return (
         batch_export_bboxs,
         batch_labels,
         batch_confidance,
         batch_box_tiles,
-        np.array(batch_point_box_ids, dtype=np.uint64),
+        no_of_points_in_batch,
     )
 
 
-def save_h5(
-    filename, boxes_pred, labels_pred, confidences_pred, boxes_tile_no, box_ids
-):
+def save_h5(filename, boxes_pred, labels_pred, confidences_pred, boxes_tile_no):
     filename = Path(filename)
     if not filename.parent.exists():
         filename.parent.mkdir(parents=True, exist_ok=True)
@@ -889,4 +895,3 @@ def save_h5(
         file.create_dataset("pred_labels", data=labels_pred)
         file.create_dataset("pred_confidence", data=confidences_pred)
         file.create_dataset("pred_boxes_block", data=boxes_tile_no)
-        file.create_dataset("point_box_ids", data=box_ids)

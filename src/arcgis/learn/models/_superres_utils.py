@@ -54,7 +54,7 @@ def gram_matrix(x):
     return (x @ x.transpose(1, 2)) / (c * h * w)
 
 
-def UNet(data, arch, norm_type):
+def UNetSR(data, arch, norm_type):
     from ._arcgis_model import _change_tail
 
     body = create_body(arch, pretrained=True)
@@ -123,16 +123,64 @@ def create_loss(c, device_type="cuda"):
     return feat_loss
 
 
-def compute_metrics(model, dl, show_progress):
+def compute_metrics(model, dl, show_progress, **kwargs):
+    sampling = kwargs.get("sampling_type", "ddim")
+    ntimestep = kwargs.get("n_timestep")
+
     avg_psnr = 0
     avg_ssim = 0
     model.learn.model.eval()
     with torch.no_grad():
         for input, target in progress_bar(dl, display=False):
-            prediction = model.learn.model(input)
+            if model.model_type == "UNet":
+                prediction = model.learn.model(input)
+            else:
+                device = next(model.learn.model.parameters()).device.type
+
+                if sampling == "ddim":
+                    n_timestep = ntimestep if ntimestep else 200
+                    nstp = {"n_timestep": model.kwargs.get("n_timestep", 1000)}
+                else:
+                    n_timestep = (
+                        ntimestep if ntimestep else model.kwargs.get("n_timestep", 1000)
+                    )
+                    nstp = {"n_timestep": n_timestep}
+                combkwargs = {**kwargs, **model.kwargs, **nstp}
+                model.learn.model.set_new_noise_schedule(device, **combkwargs)
+
+                from tqdm import tqdm
+
+                preds = []
+                for k in tqdm(
+                    range(input[0].shape[0]), desc="sampling loop time step per image"
+                ):
+                    if sampling == "ddim":
+                        preds.append(
+                            model.learn.model.super_resolution(
+                                input[0][k, None],
+                                continous=False,
+                                sampling_timesteps=n_timestep,
+                                ddim_sampling_eta=1,
+                                sampling="ddim",
+                            )
+                        )
+                    else:
+                        preds.append(
+                            model.learn.model.super_resolution(
+                                input[0][k, None], continous=False
+                            )
+                        )
+                prediction = torch.cat(preds)
+
+                avg_psnr += psnr(prediction, target)
+                avg_ssim += ssim(prediction, target)
+                break
             avg_psnr += psnr(prediction, target)
             avg_ssim += ssim(prediction, target)
-    return avg_psnr / len(dl), avg_ssim.item() / len(dl)
+    if model.model_type == "UNet":
+        return avg_psnr / len(dl), avg_ssim.item() / len(dl)
+    else:
+        return avg_psnr, avg_ssim
 
 
 def get_resize(y, z, max_size, f):
