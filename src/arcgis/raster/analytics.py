@@ -183,6 +183,7 @@ def _calculate_travel_cost_analytics_converter(
     other_outputs=None,
     gis=None,
     future=False,
+    estimate=False,
     **kwargs,
 ):
     input_source = None
@@ -292,6 +293,7 @@ def _calculate_distance_analytics_converter(
     other_outputs=None,
     gis=None,
     future=False,
+    estimate=False,
     **kwargs,
 ):
     input_source = None
@@ -4684,7 +4686,6 @@ def optimum_travel_cost_network(
         output_neighbor_network_name=output_neighbor_network_name,
         context=context,
         future=future,
-        estimate=estimate,
         **kwargs,
     )
 
@@ -5101,7 +5102,6 @@ def determine_travel_costpath_as_polyline(
         destination_field=destination_field,
         context=context,
         future=future,
-        estimate=estimate,
         **kwargs,
     )
 
@@ -7081,7 +7081,6 @@ def costpath_as_polyline(
         destination_field=destination_field,
         context=context,
         future=future,
-        estimate=estimate,
         **kwargs,
     )
 
