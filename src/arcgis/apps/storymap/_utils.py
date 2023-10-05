@@ -124,11 +124,11 @@ def cover(
 
     # set the cover media
     if media is not None:
-        if not isinstance(media, Content.Image) or not isinstance(media, Content.Video):
+        if not isinstance(media, Content.Image) and not isinstance(media, Content.Video):
             raise ValueError("Media must be an image or video object. This was not updated")
         if media.node not in story._properties["nodes"]:
             # must be added to story resources
-            if media.type == "image":
+            if media._type == "image":
                 media._add_image(story=story)
             else:
                 media._add_video(story=story)
@@ -232,16 +232,18 @@ def save(
             _remove_resource(story, file=resource["resource"])
 
     # Add meta settings and change push meta so title doesn't get overwritten on publish at any point.
-    if title:
-        root = story._properties["root"]
-        if "metaSettings" not in story._properties["nodes"][root]["data"]:
-            story._properties["nodes"][root]["data"]["metaSettings"] = {
-                "title": None
-            }
-        story._properties["nodes"][root]["data"]["metaSettings"]["title"] = title
-        story._properties["nodes"][root]["config"][
-            "shouldPushMetaToAGOItemDetails"
-        ] = False
+    # if title:
+    #     root = story._properties["root"]
+    #     if "metaSettings" not in story._properties["nodes"][root]["data"]:
+    #         story._properties["nodes"][root]["data"]["metaSettings"] = {
+    #             "title": None
+    #         }
+    #     story._properties["nodes"][root]["data"]["metaSettings"]["title"] = title
+    #     if "config" not in story._properties["nodes"][root]:
+    #         story._properties["nodes"][root]["config"] = {}
+    #     story._properties["nodes"][root]["config"][
+    #         "shouldPushMetaToAGOItemDetails"
+    #     ] = False
 
     # Add new draft with time in milliseconds
     draft = "draft_" + str(int(time.time() * 1000)) + ".json"
@@ -597,18 +599,26 @@ def _add_child(story, node_id, position=None):
     """
     # Get list of children in story
     root_id = story._properties["root"]
-    last = len(story._properties["nodes"][root_id]["children"]) - 1
+
+    if isinstance(story, Briefing.Briefing):
+        # for briefings, the only child is the ui
+        # the ui node has the slides
+        principal_id = story._properties["nodes"][root_id]["children"][0]
+    else:
+        # for storymap the children are the root
+        principal_id = root_id
+    last = len(story._properties["nodes"][principal_id]["children"]) - 1
 
     if position and position < last and position != 0 and position != 1:
         # If the position adheres to rules then add node
-        story._properties["nodes"][root_id]["children"].insert(position, node_id)
+        story._properties["nodes"][principal_id]["children"].insert(position, node_id)
     elif position and (position == 0 or position == 1):
         # First and second node reserved for story cover and navigation
         # Add as third node if user specified position 0 or 1
-        story._properties["nodes"][root_id]["children"].insert(2, node_id)
+        story._properties["nodes"][principal_id]["children"].insert(2, node_id)
     else:
         # Last node is reserved for credits so add before this if user wanted last position
-        story._properties["nodes"][root_id]["children"].insert(last, node_id)
+        story._properties["nodes"][principal_id]["children"].insert(last, node_id)
 
 # ----------------------------------------------------------------------
 def _add_resource(story, file=None, resource_name=None, text=None, access="inherit"):

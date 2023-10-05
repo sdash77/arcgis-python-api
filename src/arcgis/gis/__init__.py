@@ -9264,8 +9264,8 @@ class ResourceManager(object):
         elif file and os.path.isfile(os.path.abspath(file)) == False:
             raise RuntimeError("File(" + file + ") not found.")
 
-        params = {}
-        params["f"] = "json"
+        params = {"f": "json"}
+
 
         if folder_name is not None:
             params["resourcesPrefix"] = folder_name

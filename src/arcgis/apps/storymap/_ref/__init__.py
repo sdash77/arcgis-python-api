@@ -65,12 +65,6 @@ storymap_2 = {
 briefing = {
     "root": "n-k23c2p",
     "nodes": {
-        "n-k23c2p": {
-            "type": "briefing",
-            "data": {"storyTheme": "r-vlc4Kp"},
-            "config": {},
-            "children": ["n-XK0GeP"],
-        },
         "n-XK0GeP": {
             "type": "briefing-ui",
             "children": ["n-11SuEF"]
@@ -92,6 +86,11 @@ briefing = {
                 "titlePanelPosition": "start",
             },
             "children": []
+        },
+        "n-k23c2p": {
+            "type": "briefing",
+            "data": {"storyTheme": "r-vlc4Kp"},
+            "children": ["n-XK0GeP"],
         },
     },
     "resources": {

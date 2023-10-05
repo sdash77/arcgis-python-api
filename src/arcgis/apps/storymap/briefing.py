@@ -142,9 +142,6 @@ class Briefing(object):
         template = copy.deepcopy(arcgis.apps.storymap._ref.briefing)
         # Add correct by-line and locale
         template["nodes"]["n-3r3mhh"]["data"]["byline"] = self._gis._username
-        template["nodes"]["n-k23c2p"]["config"]["storyLocale"] = (
-            self._gis.users.me.culture if self._gis.users.me.culture else "en-US"
-        )
 
         # Create unique briefing node id
         briefing_node = "n-" + uuid.uuid4().hex[0:6]
@@ -172,7 +169,7 @@ class Briefing(object):
                 "StoryMap",
                 "storymapbriefing",
                 "Web Application",
-                "smpristine"
+                "smstatusdraft"
             ]
         )
         # Get default thumbnail for a new item
@@ -264,29 +261,6 @@ class Briefing(object):
 
     # ----------------------------------------------------------------------
     @property
-    def story_locale(self):
-        """
-        Get/Set the locale and language of the story.
-
-        If your story was created with the Python API then the default is "en-US"
-        """
-        # story_locale is found in story node (i.e. root node id)
-        root = self._properties["root"]
-        return self._properties["nodes"][root]["config"]["storyLocale"]
-
-    # ----------------------------------------------------------------------
-    @story_locale.setter
-    def story_locale(self, locale):
-        """
-        See story_locale property above
-        """
-        # cover date is found in story node (i.e. root node id)
-        root = self._properties["root"]
-        self._properties["nodes"][root]["config"]["storyLocale"] = locale
-        return self.story_locale
-
-    # ----------------------------------------------------------------------
-    @property
     def slides(self):
         """
         Get a list of all the content instances in order of appearance in the story.
@@ -304,11 +278,14 @@ class Briefing(object):
     @property
     def actions(self):
         """
-        Get list of action nodes.
+        Get list of action nodes. These are nodes that trigger an action to occur, for 
+        example when text is linked to an image, map, etc. 
         """
         actions = []
         if "actions" in self._properties:
+            # actions are stored in the briefing properties as a list of dictionaries
             for action in self._properties["actions"]:
+                # create a class from the node id
                 node = utils._assign_node_class(self, action["origin"])
                 actions.append(node)
         return actions
@@ -324,9 +301,9 @@ class Briefing(object):
     ):
         """
         A briefing's cover is the first slide.
-        This method allows the cover to be edited by updating the title, byline, image, and more.
+        This method allows the cover to be edited by updating the title, byline, media, and more.
         Changing one part of the briefing cover will not change the rest of the cover. If just the
-        image is passed in then only the image will change.
+        media is passed in then only the media will change.
 
         ===============     ====================================================================
         **Parameter**        **Description**
@@ -354,6 +331,7 @@ class Briefing(object):
             briefing.save()
 
         """
+        # call method to update cover
         utils.cover(self, title, type, summary, by_line, media)
         return True
 
@@ -379,6 +357,7 @@ class Briefing(object):
             >>> briefing = Briefing()
             >>> briefing.theme(Themes.TIDAL)
         """
+        # call method to update theme
         utils.theme(self, theme)
         return True
 
@@ -404,13 +383,16 @@ class Briefing(object):
         :return: True if the slide was added successfully.
 
         """
-        # Node id included in all content except separator so create node id for that
-
+        # Check that slides is a list
         slides = slides if isinstance(slides, list) else [slides]
 
         for slide in slides:
+            if not isinstance(slide, Content.Slide):
+                raise ValueError("Only Slide objects can be added to a Briefing.")
+        
+        for slide in slides:
             # Add slide to story
-            self._add_slide(slide=slide, node_id=slide.node)
+            slide._add_slide(slide=slide, node_id=slide.node)
 
             # Add to story children
             utils._add_child(self, node_id=slide.node)
@@ -439,11 +421,31 @@ class Briefing(object):
                             be deleted instead of moved down one space. Default is False.
         ===============     ====================================================================
 
+        :return: True if the slide was moved successfully.
         """
         # Get list of slide children
         root_id = self._properties["root"]
-        children = self._properties["nodes"][root_id]["children"]
+        ui = self._properties["nodes"][root_id]["children"]
+        children = self._properties["nodes"][ui[0]]["children"]
 
+        # Check that slide is not cover
+        if slide == 0:
+            raise ValueError("Cannot move the cover slide.")
+        
+        # Get slide position if none is provided
+        if position is None:
+            # Move to end
+            position = len(children)
+        
+        # move the slide to correct position in the list
+        self._properties["nodes"][ui[0]]["children"].insert(position, children.pop(slide))
+
+        # Delete the slide that was at the position before if specified
+        if delete_current:
+            # do position+1 since the slide was moved up one space in insert 
+            self._properties["nodes"].pop(children[position+1])
+        
+        return True
 
     # ----------------------------------------------------------------------
     def save(
@@ -491,6 +493,7 @@ class Briefing(object):
         :return: The Item that was saved to your active GIS.
 
         """
+        # call the save method in common utils module
         return utils.save(self, title, tags, access, publish)
 
     # ----------------------------------------------------------------------
@@ -498,6 +501,7 @@ class Briefing(object):
         """
         Deletes the briefing item.
         """
+        # deletes the item
         return utils.delete_briefing(self)
 
     # ----------------------------------------------------------------------
@@ -531,6 +535,7 @@ class Briefing(object):
             >>> briefing = Briefing(<briefing item>)
             >>> briefing.duplicate("A Briefing Copy")
         """
+        # call the duplicate (clones the item)
         return utils.duplicate(self, title)
 
     # ----------------------------------------------------------------------
