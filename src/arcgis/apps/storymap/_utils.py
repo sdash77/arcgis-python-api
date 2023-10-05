@@ -232,18 +232,18 @@ def save(
             _remove_resource(story, file=resource["resource"])
 
     # Add meta settings and change push meta so title doesn't get overwritten on publish at any point.
-    # if title:
-    #     root = story._properties["root"]
-    #     if "metaSettings" not in story._properties["nodes"][root]["data"]:
-    #         story._properties["nodes"][root]["data"]["metaSettings"] = {
-    #             "title": None
-    #         }
-    #     story._properties["nodes"][root]["data"]["metaSettings"]["title"] = title
-    #     if "config" not in story._properties["nodes"][root]:
-    #         story._properties["nodes"][root]["config"] = {}
-    #     story._properties["nodes"][root]["config"][
-    #         "shouldPushMetaToAGOItemDetails"
-    #     ] = False
+    if title:
+        root = story._properties["root"]
+        if "metaSettings" not in story._properties["nodes"][root]["data"]:
+            story._properties["nodes"][root]["data"]["metaSettings"] = {
+                "title": None
+            }
+        story._properties["nodes"][root]["data"]["metaSettings"]["title"] = title
+        if "config" not in story._properties["nodes"][root]:
+            story._properties["nodes"][root]["config"] = {}
+        story._properties["nodes"][root]["config"][
+            "shouldPushMetaToAGOItemDetails"
+        ] = False
 
     # Add new draft with time in milliseconds
     draft = "draft_" + str(int(time.time() * 1000)) + ".json"
