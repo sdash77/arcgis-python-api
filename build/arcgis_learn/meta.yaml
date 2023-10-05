@@ -1,19 +1,19 @@
 {% set name = "arcgis_learn" %}
-{% set version = "2.2.0" %}
+{% set version = "2.2.0.1" %}
 
 package:
   name: {{ name | lower }}
   version: {{ version }}
 
 build:
-  number: 3
+  number: 1
 
 requirements:
   build:
     - python
 
   run:
-    - arcgis>=2.2.0
+    - arcgis>=2.2.0.1
     - boost=1.79 # [py>=39]
     - cairo 1.14.12
     - einops 0.3.2
