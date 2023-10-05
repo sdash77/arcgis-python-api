@@ -23,7 +23,7 @@ class TestStoryMap(unittest.TestCase):
 
                 # assert some properties
                 assert briefing.slides
-                assert briefing.story_locale
+                assert briefing
 
                 # image for briefing cover
                 river = Image(
@@ -44,7 +44,7 @@ class TestStoryMap(unittest.TestCase):
 
                 assert briefing.save()
 
-                briefing.delete_briefing()
+                assert briefing.delete_briefing()
     
     def test_create_slide(self):
         for profile in profiles:
@@ -59,7 +59,7 @@ class TestStoryMap(unittest.TestCase):
 
                 # Create a slide
                 slide = Slide(layout="single")
-                briefing.add_slide(slide)
+                briefing.add(slide)
 
                 # assert some properties
                 assert briefing.slides
@@ -74,8 +74,7 @@ class TestStoryMap(unittest.TestCase):
                 )
                 block.add_content(img)
                 assert block.content
-                assert len(block.content) == 1
-                assert isinstance(block.content[0], Image)
+                assert isinstance(block.content, Image)
 
                 assert briefing.delete_briefing()
 

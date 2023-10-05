@@ -392,7 +392,7 @@ class Briefing(object):
         
         for slide in slides:
             # Add slide to story
-            slide._add_slide(slide=slide, node_id=slide.node)
+            slide._add_slide(story=self)
 
             # Add to story children
             utils._add_child(self, node_id=slide.node)

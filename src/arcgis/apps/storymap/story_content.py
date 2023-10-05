@@ -3871,6 +3871,8 @@ class Slide:
     sublayout           Optional string, the sublayout type of the slide. Only applicable
                         when the layout is "double".
                         Values: "3-7" | "7-3" | "1-1"
+    ---------------     --------------------------------------------------------------------
+    title               Optional string or :class:`~arcgis.apps.storymap.story_content.Text` object, the title of the slide.
     ===============     ====================================================================
 
     .. code-block:: python
@@ -3882,7 +3884,7 @@ class Slide:
 
     """
 
-    def __init__(self, layout: Optional[str]=None, sublayout: Optional[str] = None, **kwargs):
+    def __init__(self, layout: Optional[str]=None, sublayout: Optional[str] = None, title: Optional[str] = None, **kwargs):
         self._story = kwargs.pop("story", None)
         self._type = "briefing-slide"
         self.node = kwargs.pop("node_id", None)
@@ -3897,7 +3899,7 @@ class Slide:
                     self._children = self._story._properties["nodes"][self.node]["data"]["contents"]
             else:
                 # Empty slide node
-                self._children = []
+                self._children = {}
             
             # set the layout and sublayout
             self._layout = self._story._properties["nodes"][self.node]["data"]["layout"]
@@ -3905,17 +3907,27 @@ class Slide:
                 self._sublayout = self._story._properties["nodes"][self.node]["data"]["sublayout"]
             else:
                 self._sublayout = None
+            # For editing purposes, have children even if empty
+            self._fix_children()
         else:
             self.node = "n-" + uuid.uuid4().hex[0:6]
-            self._children = []
+            self._children = {}
             if layout in ["single", "double"]:
                 self._layout = layout
             else:
                 raise Exception("Layout must be one of the following: single, double")
             # if sublayout is 5-5 or None then leave as None. 5-5 is taken as None in json
             self._sublayout = sublayout if sublayout in ["3-7", "7-3"] else None
-        # For editing purposes, have children even if empty
-        self._fix_children()
+            if title:
+                # If string then need to create text node and add to story
+                if isinstance(title, str):
+                    title = Text(title, TextStyles.SUBHEADING)
+                    self._add_item_story(title)
+                elif isinstance(title, Text):
+                    # If text created but not in story
+                    if title._existing is False:
+                        self._add_item_story(title)
+            self._title = title.node if title else None
 
     # ----------------------------------------------------------------------
     def _fix_children(self):
@@ -4045,6 +4057,7 @@ class Slide:
                     self._add_item_story(title)
             # Set the title node id in data of slide
             self._story._properties["nodes"][self.node]["data"]["title"] = title.node
+            self._title = title.node
 
     # ----------------------------------------------------------------------
     @property
@@ -4152,13 +4165,15 @@ class Slide:
             "type": "briefing-slide",
             "data": {
                 "layout": self._layout,
-                "title": self._title,
                 "contents": self._children
             }
         }
         if self._sublayout:
             self._story._properties["nodes"][self.node]["data"]["sublayout"] = self._sublayout
-
+        if self._title:
+            self._story._properties["nodes"][self.node]["data"]["title"] = self._title
+        # For editing purposes, have children even if empty
+        self._fix_children()
     # ----------------------------------------------------------------------
     def _add_item_story(self, content):
         if content and content.node in self._story._properties["nodes"]:
@@ -4186,7 +4201,7 @@ class Block:
         self._slide = slide
         self._story = story
         # list of strings or single node as string
-        self._content = self._story._properties["nodes"][self._slide_node]["data"]["contents"][str(self._index)]
+        self._content = self._story._properties["nodes"][self._slide.node]["data"]["contents"][str(self._index)]
 
     # ----------------------------------------------------------------------
     def __str__(self) -> str:
@@ -4236,7 +4251,7 @@ class Block:
             True if successful.
         """
         # check that the slide exists
-        if self._slide._exists is False:
+        if self._slide._check_node() is False:
             raise Exception("The slide must be part of a briefing before editing.")
         # check that the content is not None
         if content is None:
@@ -4282,7 +4297,7 @@ class Block:
 
         :return: True if successful.
         """
-        if self._slide._exists is False:
+        if self._slide._check_node() is False:
             raise Exception("The slide must be part of a briefing before editing.")
         if index is None:
             # delete all content
