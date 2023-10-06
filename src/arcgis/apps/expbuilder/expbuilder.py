@@ -8,9 +8,15 @@ from ._ref import templates
 from arcgis.gis import GIS
 import re
 from dataclasses import dataclass
+import tempfile
+
+try:
+    import ujson as json
+except ImportError:
+    import json
 
 arcgis = LazyLoader("arcgis")
-json = LazyLoader("json")
+# json = LazyLoader("json")
 time = LazyLoader("time")
 
 
@@ -380,8 +386,12 @@ class WebExperience(object):
             props["tags"] = tags
 
         self._expdict = self._draft
+        tfile = tempfile.NamedTemporaryFile(mode="w+", suffix=".json")
+        json.dump(self._expdict, tfile)
         self._item.resources.update(
-            folder_name="config", file_name="config.json", text=self._expdict
+            folder_name="config",
+            file_name="config.json",
+            file=tfile.name,
         )
         self._resources = self._item.resources.list()
         if publish:
@@ -416,8 +426,10 @@ class WebExperience(object):
         """
 
         self._draft = self._expdict
+        tfile = tempfile.NamedTemporaryFile(mode="w+", suffix=".json")
+        json.dump(self._expdict, tfile)
         return self._item.resources.update(
-            folder_name="config", file_name="config.json", text=self._expdict
+            folder_name="config", file_name="config.json", file=tfile.name
         )
 
     # ----------------------------------------------------------------------
@@ -776,8 +788,10 @@ class WebExperience(object):
             new_dict = _clone_dict(self._expdict, self._gis, target, owner, **kwargs)
             target_exp = WebExperience(exp_clone[0], gis=target)
             target_exp._expdict = new_dict
+            tfile = tempfile.NamedTemporaryFile(mode="w+", suffix=".json")
+            json.dump(target_exp._expdict, tfile)
             target_exp._item.resources.update(
-                folder_name="config", file_name="config.json", text=target_exp._expdict
+                folder_name="config", file_name="config.json", file=tfile.name
             )
             keywords = target_exp._item.typeKeywords
             for word in keywords:
