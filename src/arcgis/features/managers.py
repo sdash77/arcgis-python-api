@@ -2087,6 +2087,8 @@ class FeatureLayerCollectionManager(_GISResource):
         overwrite: bool | None = None,
         set_item_id: str | None = None,
         preserve_layer_ids: bool = False,
+        visible_fields: list[str] | None = None,
+        query: str | None = None,
     ):
         """
         Creates a view of an existing feature service. You can create a view, if you need a different view of the data
@@ -2138,6 +2140,10 @@ class FeatureLayerCollectionManager(_GISResource):
         set_item_id              Optional String. If set, the ItemId is defined by the user, not the system.
         --------------------     --------------------------------------------------------------------
         preserve_layer_ids       Optional Boolean. Preserves the layer's `id` on it's definition when `True`.  The default is `False`.
+        --------------------     --------------------------------------------------------------------
+        visible_fields           Optional list[str] or None. A list of visible fields to display.
+        --------------------     --------------------------------------------------------------------
+        query                    Optional String. A SQL statement that defines the view.
         ====================     ====================================================================
 
         .. code-block:: python  (optional)
@@ -2448,8 +2454,32 @@ class FeatureLayerCollectionManager(_GISResource):
                 view.update(data=item_upd_dict)
         else:
             view.update(data=item.get_data())
-
-        return content.get(res["itemId"])
+        item = content.get(res["itemId"])
+        if visible_fields or query:
+            values: dict[str, Any] = {}
+            if visible_fields:
+                values["fields"] = [
+                    {"name": fld["name"], "visible": True}
+                    for fld in self.layers[0].properties["fields"]
+                    if fld["name"] in visible_fields
+                ] + [
+                    {"name": fld["name"], "visible": False}
+                    for fld in self.layers[0].properties["fields"]
+                    if not fld["name"] in visible_fields
+                ]
+            else:
+                values["fields"] = [
+                    {"name": fld["name"], "visible": True}
+                    for fld in self.layers[0].properties["fields"]
+                ]
+            if query:
+                values["viewDefinitionQuery"] = query
+            if values:
+                flc = FeatureLayerCollection.fromitem(item)
+                lyr = flc.layers[0]
+                mgr = lyr.manager
+                mgr.update_definition(values)
+        return item
 
     # ----------------------------------------------------------------------
     def _check_status(self, url: str) -> dict:

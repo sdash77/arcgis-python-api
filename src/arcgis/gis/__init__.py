@@ -14754,7 +14754,10 @@ class Item(dict):
 
     # ----------------------------------------------------------------------
     def delete(
-        self, force: bool = False, dry_run: bool = False, permanent: bool = False
+        self,
+        force: bool = False,
+        dry_run: bool = False,
+        permanent: bool = False,
     ):
         """
         The ``delete`` method deletes the item. If the item is unable to be deleted , a RuntimeException is raised.
@@ -17491,6 +17494,8 @@ class ViewManager:
         overwrite: bool | None = None,
         set_item_id: str | None = None,
         preserve_layer_ids: bool = False,
+        visible_fields: list[str] | None = None,
+        query: str | None = None,
     ) -> Item:
         """
         Creates a view of an existing feature service Item. You can create a view if you need a different view of the data
@@ -17543,6 +17548,10 @@ class ViewManager:
         --------------------     --------------------------------------------------------------------
         preserve_layer_ids       Optional Boolean. Preserves the layer's `id` on it's definition when `True`.
                                  The default is `False`.
+        --------------------     --------------------------------------------------------------------
+        visible_fields           Optiona list[str]. A list of field you want to be visible.
+        --------------------     --------------------------------------------------------------------
+        query                    Optional String. The SQL statement used to reduce the data shared with the view.
         ====================     ====================================================================
 
         .. code-block:: python
@@ -17575,6 +17584,8 @@ class ViewManager:
             overwrite=overwrite,
             set_item_id=set_item_id,
             preserve_layer_ids=preserve_layer_ids,
+            visible_fields=visible_fields,
+            query=query,
         )
 
     # ----------------------------------------------------------------------
