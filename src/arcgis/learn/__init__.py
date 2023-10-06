@@ -257,6 +257,7 @@ def detect_objects(
     *,
     gis=None,
     future=False,
+    estimate=False,
     **kwargs
 ):
     """
@@ -350,6 +351,7 @@ def detect_objects(
         context=context,
         process_all_raster_items=process_all_raster_items,
         future=future,
+        estimate=estimate,
         **kwargs
     )
 
@@ -448,6 +450,7 @@ def classify_pixels(
     *,
     gis=None,
     future=False,
+    estimate=False,
     **kwargs
 ):
     """
@@ -531,6 +534,7 @@ def classify_pixels(
         context=context,
         process_all_raster_items=process_all_raster_items,
         future=future,
+        estimate=estimate,
         **kwargs
     )
 
@@ -988,6 +992,7 @@ def classify_objects(
     *,
     gis=None,
     future=False,
+    estimate=False,
     **kwargs
 ):
     """
@@ -1072,6 +1077,7 @@ def classify_objects(
         process_all_raster_items=process_all_raster_items,
         context=context,
         future=future,
+        estimate=estimate,
         **kwargs
     )
 

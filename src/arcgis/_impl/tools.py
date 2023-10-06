@@ -10393,6 +10393,7 @@ class _RasterAnalysisTools(BaseAnalytics):
                 context=context,
                 gis=self._gis,
                 future=True,
+                estimate=estimate,
             )
         else:
             gpjob = self._tbx.classify_pixels_using_deep_learning(
@@ -10403,6 +10404,7 @@ class _RasterAnalysisTools(BaseAnalytics):
                 context=context,
                 gis=self._gis,
                 future=True,
+                estimate=estimate,
             )
 
         gpjob._is_ra = True
@@ -11057,6 +11059,7 @@ class _RasterAnalysisTools(BaseAnalytics):
         process_all_raster_items=False,
         context=None,
         future=False,
+        estimate=False,
         **kwargs,
     ):
         """
@@ -11224,6 +11227,7 @@ class _RasterAnalysisTools(BaseAnalytics):
                 context=context,
                 gis=self._gis,
                 future=True,
+                estimate=estimate,
             )
         else:
             gpjob = self._tbx.detect_objects_using_deep_learning(
@@ -11238,6 +11242,7 @@ class _RasterAnalysisTools(BaseAnalytics):
                 context=context,
                 gis=self._gis,
                 future=True,
+                estimate=estimate,
             )
         gpjob._is_ra = True
         gpjob._item_properties = True
@@ -14756,6 +14761,7 @@ class _RasterAnalysisTools(BaseAnalytics):
         output_feature_class=None,
         context=None,
         future=False,
+        estimate=False,
         **kwargs,
     ):
         """
@@ -14916,6 +14922,7 @@ class _RasterAnalysisTools(BaseAnalytics):
             context=context,
             gis=self._gis,
             future=True,
+            estimate=estimate,
         )
         gpjob._is_ra = True
         gpjob._item_properties = True

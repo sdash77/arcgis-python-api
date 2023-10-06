@@ -5246,7 +5246,8 @@ class ImageryLayer(Layer):
                             other_outputs=self._other_outputs,
                             gis=g,
                             future=future,
-                            estimate=estimate**kwargs,
+                            estimate=estimate,
+                            **kwargs,
                         )
                     else:
                         gr_output = generate_raster(
@@ -5286,6 +5287,7 @@ class ImageryLayer(Layer):
         *,
         gis: Optional[GIS] = None,
         future: bool = False,
+        estimate: bool = False,
         **kwargs,
     ):
         """
@@ -5392,6 +5394,7 @@ class ImageryLayer(Layer):
             gis=g,
             future=future,
             context=context,
+            estimate=estimate,
             **kwargs,
         )
 
