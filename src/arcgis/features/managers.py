@@ -2461,11 +2461,11 @@ class FeatureLayerCollectionManager(_GISResource):
                 values["fields"] = [
                     {"name": fld["name"], "visible": True}
                     for fld in self.layers[0].properties["fields"]
-                    if fld["name"] in visible_fields
+                    if fld["name"].lower() in [f.lower() for f in visible_fields]
                 ] + [
                     {"name": fld["name"], "visible": False}
                     for fld in self.layers[0].properties["fields"]
-                    if not fld["name"] in visible_fields
+                    if not fld["name"].lower() in [f.lower() for f in visible_fields]
                 ]
             else:
                 values["fields"] = [

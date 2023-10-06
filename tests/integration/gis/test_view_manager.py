@@ -1,4 +1,6 @@
 import sys
+
+# sys.path.insert(0, r"C:\SVN\geosaurus_issue_10692\src")
 import logging, uuid
 import unittest
 from arcgis.auth.tools._util import detect_proxy
@@ -32,7 +34,11 @@ _fs_dict = {
     "geometryType": "esriGeometryPoint",
     "spatialReference": {"wkid": 102100, "latestWkid": 3857},
     "fields": [
-        {"name": "objectid", "alias": "OBJECTID", "type": "esriFieldTypeOID"},
+        {
+            "name": "objectid",
+            "alias": "OBJECTID",
+            "type": "esriFieldTypeOID",
+        },
         {
             "name": "requestid",
             "alias": "Service Request ID",
@@ -51,7 +57,12 @@ _fs_dict = {
             "type": "esriFieldTypeString",
             "length": 255,
         },
-        {"name": "name", "alias": "Name", "type": "esriFieldTypeString", "length": 150},
+        {
+            "name": "name",
+            "alias": "Name",
+            "type": "esriFieldTypeString",
+            "length": 150,
+        },
         {
             "name": "phone",
             "alias": "Phone Number",
@@ -140,7 +151,11 @@ class Test_ItemViewManagerAGOL(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         cls._gis = GIS(profile='your_online_profile', verify_cert=False)
-        from arcgis.features import FeatureSet, FeatureLayerCollection, FeatureLayer
+        from arcgis.features import (
+            FeatureSet,
+            FeatureLayerCollection,
+            FeatureLayer,
+        )
 
         fs = FeatureSet.from_dict(_fs_dict)
         sdf = fs.sdf
@@ -149,6 +164,23 @@ class Test_ItemViewManagerAGOL(unittest.TestCase):
         cls._view_item = flc.manager.create_view(
             name=f"test_view_{uuid.uuid4().hex[:5]}"
         )
+
+    def test_create_view_query_fields(self):
+        """ """
+        from arcgis.features import (
+            FeatureSet,
+            FeatureLayerCollection,
+            FeatureLayer,
+        )
+
+        flc = FeatureLayerCollection.fromitem(self._item)
+        mgr = flc.manager
+        view_item = mgr.create_view(
+            name=f"test_view_{uuid.uuid4().hex[:5]}",
+            query="OBJECTID > 0",
+            visible_fields=["phone", "building", "objectid"],
+        )
+        view_item.delete()
 
     def test_get_view_manager(self):
         """tests that the logic to get the ViewManger is correct"""
@@ -182,7 +214,11 @@ class Test_ItemViewManagerEnterprise(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         cls._gis = GIS(profile='your_enterprise_profile', verify_cert=False)
-        from arcgis.features import FeatureSet, FeatureLayerCollection, FeatureLayer
+        from arcgis.features import (
+            FeatureSet,
+            FeatureLayerCollection,
+            FeatureLayer,
+        )
 
         fs = FeatureSet.from_dict(_fs_dict)
         sdf = fs.sdf
