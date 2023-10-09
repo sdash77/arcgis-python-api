@@ -386,8 +386,13 @@ class WebExperience(object):
             props["tags"] = tags
 
         self._expdict = self._draft
-        tfile = tempfile.NamedTemporaryFile(mode="w+", suffix=".json")
-        json.dump(self._expdict, tfile)
+        # Create a temporary file and write data to it
+        with tempfile.NamedTemporaryFile(
+            mode="w+", suffix=".json", delete=False
+        ) as tfile:
+            json.dump(self._expdict, tfile)
+            # Close the file explicitly
+            tfile.close()
         self._item.resources.update(
             folder_name="config",
             file_name="config.json",
@@ -426,8 +431,13 @@ class WebExperience(object):
         """
 
         self._draft = self._expdict
-        tfile = tempfile.NamedTemporaryFile(mode="w+", suffix=".json")
-        json.dump(self._expdict, tfile)
+        # Create a temporary file and write data to it
+        with tempfile.NamedTemporaryFile(
+            mode="w+", suffix=".json", delete=False
+        ) as tfile:
+            json.dump(self._expdict, tfile)
+            # Close the file explicitly
+            tfile.close()
         return self._item.resources.update(
             folder_name="config", file_name="config.json", file=tfile.name
         )
@@ -773,6 +783,8 @@ class WebExperience(object):
             new_dict["attributes"]["portalUrl"] = target.url
             for k, v in new_dict["dataSources"].items():
                 v["portalUrl"] = target.url
+                if "itemId" not in v:
+                    continue
                 item = source.content.get(v["itemId"])
                 clone_result = target.content.clone_items([item], owner=owner, **kwargs)
                 if clone_result:
@@ -788,8 +800,13 @@ class WebExperience(object):
             new_dict = _clone_dict(self._expdict, self._gis, target, owner, **kwargs)
             target_exp = WebExperience(exp_clone[0], gis=target)
             target_exp._expdict = new_dict
-            tfile = tempfile.NamedTemporaryFile(mode="w+", suffix=".json")
-            json.dump(target_exp._expdict, tfile)
+            # Create a temporary file and write data to it
+            with tempfile.NamedTemporaryFile(
+                mode="w+", suffix=".json", delete=False
+            ) as tfile:
+                json.dump(self._expdict, tfile)
+                # Close the file explicitly
+                tfile.close()
             target_exp._item.resources.update(
                 folder_name="config", file_name="config.json", file=tfile.name
             )
