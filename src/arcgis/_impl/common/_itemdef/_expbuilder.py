@@ -107,6 +107,8 @@ class _WebExperience(_ItemDefinition):
             new_dict = data_dict
             new_dict["attributes"]["portalUrl"] = target.url
             for k, v in new_dict["dataSources"].items():
+                if "itemId" not in v:
+                    continue
                 v["portalUrl"] = target.url
                 orig_id = v["itemId"]
                 item = source.content.get(v["itemId"])
@@ -118,6 +120,8 @@ class _WebExperience(_ItemDefinition):
                     if targ_item:
                         if targ_item.type == item.type:
                             v["itemId"] = new_id
+                            if "url" in v:
+                                v["url"] = targ_item.url
                             continue
 
                 # if not, try cloning item

@@ -13,7 +13,7 @@ requirements:
     - python
 
   run:
-    - arcgis>=2.2.0
+    - arcgis>=2.3.0
     - boost=1.79 # [py>=39]
     - cairo 1.14.12
     - einops 0.3.2
