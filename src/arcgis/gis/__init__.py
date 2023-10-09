@@ -6135,6 +6135,7 @@ class ContentManager(object):
 
     _depmgr = None
     _mrktplcmgr = None
+    _folders = None
 
     def __init__(self, gis):
         self._gis = gis
@@ -6154,6 +6155,20 @@ class ContentManager(object):
         curl = f"{self._gis._portal.resturl}portals/checkUrl"
         params = {"f": "json", "url": url}
         return self._gis._con.get(curl, params, ignore_error_key=True)
+
+    # ----------------------------------------------------------------------
+    @property
+    def folders(self):
+        """
+        A manager to work with `User` folders.
+
+        :return: Folders
+        """
+        if self._folders is None:
+            from ._impl._content_manager import Folders
+
+            self._folders = Folders(gis=self._gis)
+        return self._folders
 
     # ----------------------------------------------------------------------
     def can_reassign(self, items: list[Item], user: User) -> list[dict[str, Any]]:
@@ -7750,6 +7765,12 @@ class ContentManager(object):
         )["results"]
         return itemlist
 
+    @_common_deprecated.deprecated(
+        deprecated_in="2.3.0",
+        removed_in="3.0.0",
+        current_version=None,
+        details="Use `gis.content.folders.create` instead.",
+    )
     def create_folder(self, folder: str, owner: Optional[str] = None):
         """
         The ``create_folder`` method creates a folder with the given folder name, for the given owner.
@@ -7826,6 +7847,12 @@ class ContentManager(object):
                 return folder["title"]
         return None
 
+    @_common_deprecated.deprecated(
+        deprecated_in="2.3.0",
+        removed_in="3.0.0",
+        current_version=None,
+        details="Use `Folder.rename` instead.",
+    )
     def rename_folder(
         self, old_folder: str, new_folder: str, owner: Optional[str] = None
     ):
@@ -7877,7 +7904,9 @@ class ContentManager(object):
                 return res["success"]
         return False
 
-    def delete_items(self, items: Union[list[Item], list[str]]):
+    def delete_items(
+        self, items: Union[list[Item], list[str]], permanent: bool = False
+    ):
         """
         The ``delete_items`` method deletes a collection of :class:`~arcgis.gis.Item` objects from a users content.
         All items must belong to the same user to delete.
@@ -7887,6 +7916,9 @@ class ContentManager(object):
         ----------------  --------------------------------------------------------------------------
         items             list of :class:`~arcgis.gis.Item` objects or Item Ids.  This is an array
                           of items to be deleted from the current user's content
+        ----------------  --------------------------------------------------------------------------
+        permanent         optional boolean. Setting this to True will cause the items to be permanently
+                          deleted rather than placed in the recycle bin. ArcGIS Online Only.
         ================  ==========================================================================
 
         :return:
@@ -7900,6 +7932,15 @@ class ContentManager(object):
 
         """
         params = {"f": "json", "items": ""}
+
+        # applicable to online and to enterprise 11.3 and higher
+        if permanent and (self._gis._is_agol or self._gis.version > [2023, 2]):
+            params["permanentDelete"] = permanent
+        else:
+            _log.warning(
+                "Permanent delete parameter is not supported on this version of Enterprise."
+            )
+
         items_dict = {}  # key will be ownner and value is list of their items
         for item in items:
             if isinstance(item, str):
@@ -7951,6 +7992,12 @@ class ContentManager(object):
                 results.append(all([r["success"] for r in res["results"]]))
         return results
 
+    @_common_deprecated.deprecated(
+        deprecated_in="2.3.0",
+        removed_in="3.0.0",
+        current_version=None,
+        details="Use `Folder.delete()` instead.",
+    )
     def delete_folder(self, folder: str, owner: Optional[str] = None):
         """
         The ``delete_folder`` method deletes a folder for the given owner with
@@ -13204,6 +13251,40 @@ class Item(dict):
             return dict.__getitem__(self, k)
 
     # ----------------------------------------------------------------------
+    def can_reassign(self, target_user: str | User) -> tuple[bool, dict[str, Any]]:
+        """
+        Checks if the Item can be reassigned to a new user. Users assigned
+        the default `administrator role`, or a custom role with
+        `administrative privileges`, can perform this operation. The item
+        owner can also use this operation; if the item owner that performs
+        this operation is not a default administrator, or assigned a custom
+        role with administrative privileges, they must have the
+        `portal:user:reassignItems` privilege assigned to them to transfer
+        content to another user.
+
+        ================  ========================================================
+        **Parameter**      **Description**
+        ----------------  --------------------------------------------------------
+        target_user       Required string or :class:`~arcgis.gis.User`. The string
+                          must be a *username* value. This will be the user
+                          receiving the item.
+        ================  ========================================================
+
+        :return: tuple[bool, dict[str,Any]]
+        """
+        if not isinstance(target_user, (str, User)):
+            raise ValueError("`user` must be a string or User object.")
+        elif isinstance(target_user, User):
+            target_user: str = target_user.username
+        url: str = f"{self._portal.resturl}content/users/{self.owner}/items/{self.itemid}/canReassign"
+        params: dict[str, Any] = {"f": "json", "targetUsername": target_user}
+        session: EsriSession = self._gis._con._session
+        resp: requests.Response = session.post(url=url, data=params)
+        resp.raise_for_status()
+        data: dict[str, Any] = resp.json()
+        return data.get("success", False) == True, data
+
+    # ----------------------------------------------------------------------
     @property
     def can_delete(self) -> bool:
         """
@@ -14672,7 +14753,9 @@ class Item(dict):
             return self._portal.unshare_item(self.itemid, owner, folder, group_ids)
 
     # ----------------------------------------------------------------------
-    def delete(self, force: bool = False, dry_run: bool = False):
+    def delete(
+        self, force: bool = False, dry_run: bool = False, permanent: bool = False
+    ):
         """
         The ``delete`` method deletes the item. If the item is unable to be deleted , a RuntimeException is raised.
         To know if you can safely delete the item, use the optional parameter 'dry_run' in order to test the operation
@@ -14691,6 +14774,9 @@ class Item(dict):
                             True, checks if the item can be safely deleted and gives you back
                             either a dictionary with details. If dependent items are preventing
                             deletion, a list of such Item objects are provided.
+        ---------------     --------------------------------------------------------------------
+        permanent           Optional boolean. Available in ArcGIS Online, setting to True will
+                            permanently delete the item rather than sending it to the recycle bin.
         ===============     ====================================================================
 
         :return:
@@ -15525,14 +15611,42 @@ class Item(dict):
 
         related_items = []
 
-        postdata = {"f": "json"}
+        postdata = {
+            "f": "json",
+            "num": 100,
+        }
         postdata["relationshipType"] = rel_type
         postdata["direction"] = direction
         resp = self._portal.con.post(
             "content/items/" + self.itemid + "/relatedItems", postdata
         )
-        for related_item in resp["relatedItems"]:
-            related_items.append(Item(self._gis, related_item["id"], related_item))
+        if ("nextkey" in resp or "nextKey" in resp) and (
+            resp.get("nextKey", None) or resp.get("nextkey", None)
+        ):
+            related_items = [
+                Item(self._gis, related_item["id"], related_item)
+                for related_item in resp["relatedItems"]
+            ]
+            next_key = resp.get("nextKey", None) or resp.get("nextkey", None)
+            postdata["start"] = next_key
+            while next_key:
+                resp = self._portal.con.post(
+                    "content/items/" + self.itemid + "/relatedItems",
+                    postdata,
+                )
+                if len(resp["relatedItems"]) == 0:
+                    break
+                for related_item in resp["relatedItems"]:
+                    related_items.append(
+                        Item(self._gis, related_item["id"], related_item)
+                    )
+                next_key = resp.get("nextKey")
+                postdata["start"] = next_key
+                if next_key is None:
+                    break
+        else:
+            for related_item in resp["relatedItems"]:
+                related_items.append(Item(self._gis, related_item["id"], related_item))
         return related_items
 
     # ----------------------------------------------------------------------

@@ -9,7 +9,7 @@ from arcgis.gis import GIS
 from arcgis.mapping.ogc import WMTSLayer
 
 wm_urls = [
-    "https://wayback.maptiles.arcgis.com/arcgis/rest/services/world_imagery/wmts",
+    "https://basemap.nationalmap.gov/arcgis/rest/services/USGSTopo/MapServer/wmts",
     "https://map.infogis2.ch/arcgis/rest/services/holderbank/holderbank_abwasser/MapServer/WMTS/",
 ]
 

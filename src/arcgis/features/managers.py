@@ -2717,7 +2717,7 @@ class FeatureLayerCollectionManager(_GISResource):
 
         3. The data file used to overwrite should be of the same format and filename as the original that was used to publish the layer
 
-        4. The schema (column names, column data types) of the data_file should be the same as original. You can have additional or fewer rows (features).
+        4. In older versions of Enterprise (pre-11.2), the schema (column names, column data types) of the data_file should be the same as original. You can have additional or fewer rows (features).
 
         In addition to overwriting the features, this operation also updates the data of the item used to published this
         layer.
@@ -2725,12 +2725,23 @@ class FeatureLayerCollectionManager(_GISResource):
         ===============     ====================================================================
         **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
-        data                Required string. Path to the file used to overwrite the hosted
+        data_file           Required string. Path to the file used to overwrite the hosted
                             feature layer collection.
         ===============     ====================================================================
 
         :return: JSON message as dictionary such as {'success':True} or {'error':'error message'}
         """
+        if (
+            data_file
+            and isinstance(data_file, str)
+            and os.path.exists(data_file)
+            and os.path.isfile(data_file)
+            and os.stat(data_file).st_size > int(2.5e7)
+        ):
+            raise ValueError(
+                "The data file provided does not exist or could not be accessed."
+            )
+
         # check for outstanding replicas
         if hasattr(self._fs, "replicas") and bool(self._fs.replicas.get_list()):
             raise Exception(
@@ -2754,6 +2765,12 @@ class FeatureLayerCollectionManager(_GISResource):
             return {
                 "Error": "Cannot find related data item used to publish this Feature Layer"
             }
+
+        # Check that file type and name are the same:
+        if os.path.basename(data_file) != related_data_item["name"]:
+            raise ValueError(
+                "The name and extension of the file must be the same as the original data."
+            )
 
         # find if we are overwritting only a hosted table
         hosted_table = False
