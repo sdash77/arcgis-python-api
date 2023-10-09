@@ -782,16 +782,20 @@ class WebExperience(object):
             new_dict = data_dict
             new_dict["attributes"]["portalUrl"] = target.url
             for k, v in new_dict["dataSources"].items():
-                v["portalUrl"] = target.url
                 if "itemId" not in v:
                     continue
+                v["portalUrl"] = target.url
                 item = source.content.get(v["itemId"])
                 clone_result = target.content.clone_items([item], owner=owner, **kwargs)
                 if clone_result:
                     v["itemId"] = clone_result[0].itemid
+                    if "url" in v:
+                        v["url"] = clone_result[0].url
                 else:
                     targ_item = target.content.search(item.title)[0]
                     v["itemId"] = targ_item.itemid
+                    if "url" in v:
+                        v["url"] = targ_item.url
 
             return new_dict
 
