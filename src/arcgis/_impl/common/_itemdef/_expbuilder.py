@@ -159,8 +159,11 @@ class _WebExperience(_ItemDefinition):
             new_dict = _clone_dict(
                 config_dict, self.portal_item._gis, self.target, self._search_existing
             )
-            tfile = tempfile.NamedTemporaryFile(mode="w+", suffix=".json")
-            json.dump(new_dict, tfile)
+            with tempfile.NamedTemporaryFile(
+                mode="w+", suffix=".json", delete=False
+            ) as tfile:
+                json.dump(new_dict, tfile)
+                tfile.close()
             new_item.resources.update(
                 folder_name="config",
                 file_name="config.json",
