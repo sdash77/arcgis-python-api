@@ -76,6 +76,7 @@ _jb = LazyLoader("arcgis.gis._impl._jb")
 _cloner = LazyLoader("arcgis.gis.clone")
 _cm_helper = LazyLoader("arcgis.gis._impl._content_manager._import_data")
 _log = logging.getLogger(__name__)
+from arcgis.gis._impl._dataclasses._viewdc import JoinType
 
 
 class Error(Exception):
@@ -14778,7 +14779,10 @@ class Item(dict):
 
     # ----------------------------------------------------------------------
     def delete(
-        self, force: bool = False, dry_run: bool = False, permanent: bool = False
+        self,
+        force: bool = False,
+        dry_run: bool = False,
+        permanent: bool = False,
     ):
         """
         The ``delete`` method deletes the item. If the item is unable to be deleted , a RuntimeException is raised.
@@ -17498,6 +17502,208 @@ class ViewManager:
         ]
 
     # ----------------------------------------------------------------------
+    def create_join_layer(
+        self,
+        join_name: str,  #  name of the view join
+        target_join_fields: list[str],  #  source field
+        join: Item | features.FeatureLayer,  # join with dataset
+        join_fields: list[str],  #  join field on join dataset
+        join_type: JoinType,  #  type of join
+        *,
+        include_geometry: bool = True,
+        owner: User | None = None,
+    ):
+        """
+        `create_join_layer` creates a table join on two different `FeatureLayer` services.
+
+        ====================     ====================================================================
+        **Parameter**             **Description**
+        --------------------     --------------------------------------------------------------------
+        name                     Required string. Name of the new view item
+        --------------------     --------------------------------------------------------------------
+        target_join_fields       Required list[str]. A list of fields to join on from the `target`.
+                                 The size of the join_fields and target_join_fields must match.
+        --------------------     --------------------------------------------------------------------
+        join                     Required FeatureLayer or Item. The child layer to perform the join on.
+        --------------------     --------------------------------------------------------------------
+        join_fields              Required list[str]. A list of fields to join on.  The size of the
+                                 join_fields and target_join_fields must match.
+        --------------------     --------------------------------------------------------------------
+        join_type                Required JoinType. The type of table join to perform.
+        --------------------     --------------------------------------------------------------------
+        include_geometry         Optional Boolean. If True (default) a geometry field will be
+                                 included in the view. For Tables, this should be set to False.
+        --------------------     --------------------------------------------------------------------
+        owner                    Optional User. If specified, the owner of the view will be this User
+                                 over yourself.  The owner must own all the service data.
+        ====================     ====================================================================
+        """
+        target: Item | features.FeatureLayer = self._item
+        if owner is None:
+            owner = self._gis.users.me.username
+        else:
+            owner = owner.username
+        gis: GIS = self._gis
+        join_name: str = join_name.replace(" ", "_")
+        if isinstance(join_type, JoinType):
+            join_type = join_type.value
+        else:
+            raise ValueError("`join_type` must be of enumeration type JoinType")
+        if isinstance(target, Item):
+            target: features.FeatureLayer = features.FeatureLayer.fromitem(target)
+        elif not isinstance(target, features.FeatureLayer):
+            raise ValueError("The input must be an item or Feature Layer.")
+
+        if isinstance(join, Item):
+            join: features.FeatureLayer = features.FeatureLayer.fromitem(join)
+        elif not isinstance(join, features.FeatureLayer):
+            raise ValueError("The input must be an item or Feature Layer Collection.")
+        # Create the Index on the Field to be Joined on
+        #
+        join_mgr = join.manager
+        for join_field in join_fields:
+            try:
+                join_mgr.add_to_definition(
+                    {
+                        "indexes": [
+                            {
+                                "name": f"{join_field}_Index",
+                                "fields": join_field,
+                                "isUnique": False,
+                                "isAscending": True,
+                                "description": f"{join_field}_Index",
+                            }
+                        ]
+                    }
+                )
+            except:
+                ...
+        #  Create a blank view
+        #
+        params: dict = {
+            "createParameters": {
+                "serviceDescription": "",
+                "hasVersionedData": False,
+                "supportsDisconnectedEditing": False,
+                "hasStaticData": True,
+                "maxRecordCount": 2000,
+                "supportedQueryFormats": "JSON",
+                "capabilities": "Query",
+                "description": "",
+                "copyrightText": "",
+                "allowGeometryUpdates": False,
+                "syncEnabled": False,
+                "editorTrackingInfo": {
+                    "enableEditorTracking": False,
+                    "enableOwnershipAccessControl": False,
+                    "allowOthersToUpdate": True,
+                    "allowOthersToDelete": True,
+                },
+                "xssPreventionInfo": {
+                    "xssPreventionEnabled": True,
+                    "xssPreventionRule": "InputOnly",
+                    "xssInputRule": "rejectInvalid",
+                },
+                "tables": [],
+                "name": join_name.replace(" ", "_"),
+            },
+            "outputType": "featureService",
+            "isView": True,
+            "f": "json",
+        }
+        url: str = f"{gis._portal.resturl}content/users/{owner}/createService"
+        resp: dict = gis._con.post(url, params=params)
+        if "serviceItemId" in resp:
+            view_item: Item = gis.content.get(resp["serviceItemId"])
+        else:
+            raise ValueError(f"Could not create the service: {resp}")
+        # Add additional Indexes
+        #
+        for join_field in join_fields:
+            try:
+                for lyr in view_item.layers:
+                    lyr.manager.add_to_definition(
+                        {
+                            "indexes": [
+                                {
+                                    "name": f"{join_field}_Index",
+                                    "fields": join_field,
+                                    "isUnique": False,
+                                    "isAscending": True,
+                                    "description": f"{join_field}_Index",
+                                }
+                            ]
+                        }
+                    )
+            except:
+                ...
+
+        #  Create the Join Layer
+        #
+        target_source_name: str = os.path.basename(
+            os.path.dirname(os.path.dirname(target._url))
+        )
+        join_source_name: str = os.path.basename(
+            os.path.dirname(os.path.dirname(join._url))
+        )
+        source_layer_id: int = int(os.path.basename(target._url))
+        join_source_id: int = int(os.path.basename(join._url))
+        join_definition: dict = {
+            "layers": [
+                {
+                    "name": join_name,
+                    "displayField": "",
+                    "description": "AttributeJoin",
+                    "adminLayerInfo": {
+                        "viewLayerDefinition": {
+                            "table": {
+                                "name": join_name + "_target",
+                                "sourceServiceName": target_source_name,  #  name of the service in the URL
+                                "sourceLayerId": source_layer_id,  #  the number at the end of the URL
+                                "sourceLayerFields": [
+                                    {
+                                        "name": fld["name"],
+                                        "alias": fld["alias"],
+                                        "source": fld["name"],
+                                    }
+                                    for fld in join.properties["fields"]
+                                ],  #  grabs all fields from the join feature layer
+                                "relatedTables": [
+                                    {
+                                        "name": f"{join.properties['name']}_join",  #  unique name of the join layer
+                                        "sourceServiceName": join_source_name,  # join service name on the URL
+                                        "sourceLayerId": join_source_id,  # join number at end of Feature Layer URL
+                                        "sourceLayerFields": [
+                                            {
+                                                "name": fld["name"],
+                                                "alias": fld["alias"],
+                                                "source": fld["name"],
+                                            }
+                                            for fld in join.properties["fields"]
+                                        ],  #  Join layer's fields
+                                        "type": join_type,  #  type of JOIN
+                                        "parentKeyFields": target_join_fields,  #  source matching field with key field of child joining with
+                                        "keyFields": join_fields,  #  child's join field.
+                                    }
+                                ],
+                                "materlized": False,
+                            },
+                        },
+                        "geometryField": {"name": f"{target_source_name}_target.Shape"},
+                    },
+                }
+            ]
+        }
+        if include_geometry == False:
+            del join_definition["layers"][0]["adminLayerInfo"]["geometryField"]
+        flc: features.FeatureLayerCollection = features.FeatureLayerCollection.fromitem(
+            view_item
+        )
+        mgr = flc.manager
+        mgr.add_to_definition(join_definition)
+        return view_item
+
+    # ----------------------------------------------------------------------
     def create(
         self,
         name: str,
@@ -17515,6 +17721,8 @@ class ViewManager:
         overwrite: bool | None = None,
         set_item_id: str | None = None,
         preserve_layer_ids: bool = False,
+        visible_fields: list[str] | None = None,
+        query: str | None = None,
     ) -> Item:
         """
         Creates a view of an existing feature service Item. You can create a view if you need a different view of the data
@@ -17567,6 +17775,10 @@ class ViewManager:
         --------------------     --------------------------------------------------------------------
         preserve_layer_ids       Optional Boolean. Preserves the layer's `id` on it's definition when `True`.
                                  The default is `False`.
+        --------------------     --------------------------------------------------------------------
+        visible_fields           Optiona list[str]. A list of field you want to be visible.
+        --------------------     --------------------------------------------------------------------
+        query                    Optional String. The SQL statement used to reduce the data shared with the view.
         ====================     ====================================================================
 
         .. code-block:: python
@@ -17599,6 +17811,8 @@ class ViewManager:
             overwrite=overwrite,
             set_item_id=set_item_id,
             preserve_layer_ids=preserve_layer_ids,
+            visible_fields=visible_fields,
+            query=query,
         )
 
     # ----------------------------------------------------------------------
