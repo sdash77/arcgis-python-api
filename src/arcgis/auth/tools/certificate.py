@@ -16,10 +16,10 @@ from cryptography.hazmat.primitives.serialization import (
 
 import os
 import ssl
-import requests
+
 import tempfile
 import cryptography
-import datetime as _dt
+
 
 try:
     from ssl import PROTOCOL_TLS_CLIENT as default_ssl_protocol

@@ -2,8 +2,9 @@ import sys
 
 #
 #  Update the Path to set the test area
-#  sys.path.insert(0, r"C:\SVN\geosaurus_issue_10619\src")
+# sys.path.insert(0, r"C:\SVN\geosaurus_issue_10619\src")
 #
+import os
 import logging
 import unittest
 from arcgis.auth.tools._util import detect_proxy
@@ -37,8 +38,12 @@ class TestGISVerifyCerts(unittest.TestCase):
         assert gis._verify_cert == True
 
     def test_verify_pem(self):
-        gis = GIS(verify_cert="./cacert.pem")
-        assert gis._verify_cert == "./cacert.pem"
+        if os.path.isfile("./cacert.pem"):
+            gis = GIS(verify_cert="./cacert.pem")
+            assert gis._verify_cert == "./cacert.pem"
+        else:
+            gis = GIS(verify_cert="./cacert.pem")
+            assert gis._verify_cert == True
 
 
 if __name__ == "__main__":

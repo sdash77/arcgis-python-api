@@ -1,10 +1,9 @@
 from __future__ import annotations
 import os
 import json
-import time
 import base64
 import logging
-import secrets
+
 
 import socket
 from hashlib import sha256
@@ -192,7 +191,7 @@ class AESCipher:
         value_str = _pad_string(value_str)
         value_bytes = bytes(value_str, "utf-8")
         encryptor = self.cipher.encryptor()
-        val = ct = encryptor.update(value_bytes) + encryptor.finalize()
+        val = encryptor.update(value_bytes) + encryptor.finalize()
         encstr = base64.b64encode(val).decode("utf-8")
         return _replace_chars(encstr)
 
