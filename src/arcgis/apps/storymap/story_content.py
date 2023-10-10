@@ -15,6 +15,31 @@ _io = LazyLoader("io")
 _parse = LazyLoader("urllib.parse")
 
 
+class Language(Enum):
+    """
+    Represents the supported Languages for the Code Block.
+    """
+
+    TEXT = "txt"
+    ARCADE = "arcade"
+    CSHARP = "cs"
+    CSS = "css"
+    DIFF = "diff"
+    HTML = "html"
+    JAVASCRIPT = "js"
+    JAVA = "java"
+    JSON = "json"
+    JSX = "jsx"
+    KOTLIN = "kt"
+    PYTHON = "py"
+    R = "r"
+    SQL = "sql"
+    SVG = "svg"
+    SWIFT = "swift"
+    TSX = "tsx"
+    TYPESCRIPT = "ts"
+
+
 class TextStyles(Enum):
     """
     Represents the Supported Text Styles Type Enumerations.
@@ -3868,31 +3893,16 @@ class Code:
     ------------------      --------------------------------------------------------------------
     content                 Required String. The code content to have in the block.
     ------------------      --------------------------------------------------------------------
-    language                Required String. The coding language of the content provided.
-                            Values:
-                                'txt',
-                                'arcade',
-                                'cs',
-                                'css',
-                                'diff',
-                                'html',
-                                'js',
-                                'java',
-                                'json',
-                                'jsx',
-                                'kt',
-                                'py',
-                                'r',
-                                'sql',
-                                'svg',
-                                'swift',
-                                'tsx',
-                                'ts'
+    language                Required Language or String. The coding language of the content provided.
+                            For values see Language Enum Class.
     ==================      ====================================================================
     """
 
     def __init__(
-        self, content: Optional[str] = None, language: Optional[str] = None, **kwargs
+        self,
+        content: Optional[str] = None,
+        language: Optional[Union[Language, str]] = None,
+        **kwargs,
     ):
         # Can be created from scratch or already exist in story
         # Code is not an immersive node
@@ -3916,27 +3926,9 @@ class Code:
             # Create new instance, notice no resource node is needed for code
             self.content = content
 
-            accepted_languages = [
-                "txt",
-                "arcade",
-                "cs",
-                "css",
-                "diff",
-                "html",
-                "js",
-                "java",
-                "json",
-                "jsx",
-                "kt",
-                "py",
-                "r",
-                "sql",
-                "svg",
-                "swift",
-                "tsx",
-                "ts",
-            ]
-            if language in accepted_languages:
+            if isinstance(language, Language):
+                self.language = language.value
+            elif isinstance(language, str) and language in Language:
                 self.language = language
             else:
                 raise ValueError(
@@ -4003,7 +3995,7 @@ class Code:
         ==================  ========================================
         **Parameter**        **Description**
         ------------------  ----------------------------------------
-        language            String. The new language for the code block.
+        language            Language value. The new language for the code block.
         ==================  ========================================
 
         :return:
@@ -4019,39 +4011,26 @@ class Code:
     @language.setter
     def language(self, language):
         if self._existing is True:
-            if language != self._language and language in [
-                "txt",
-                "arcade",
-                "cs",
-                "css",
-                "diff",
-                "html",
-                "js",
-                "java",
-                "json",
-                "jsx",
-                "kt",
-                "py",
-                "r",
-                "sql",
-                "svg",
-                "swift",
-                "tsx",
-                "ts",
-            ]:
-                self._story._properties["nodes"][self.node]["data"]["lang"] = language
-                if language in ["html", "json"]:
-                    self._story._properties["nodes"][self.node]["data"][
-                        "isEncoded"
-                    ] = True
-                    # reassign content so it gets encoded correctly
-                    # known limit: this will cause an issue if a user goes from html to json or vise versa
-                    self.content = self._content
-                else:
-                    self._story._properties["nodes"][self.node]["data"][
-                        "isEncoded"
-                    ] = False
-                self._language = language
+            # Figure out correct language
+            if isinstance(language, Language):
+                language = language.value
+            elif isinstance(language, str) and language in Language:
+                language = language
+            else:
+                raise ValueError(
+                    "The language provided is not a valid value. Please see the Language Enum class for valid values."
+                )
+
+            # Change the language
+            self._story._properties["nodes"][self.node]["data"]["lang"] = language
+            if language in ["html", "json"]:
+                self._story._properties["nodes"][self.node]["data"]["isEncoded"] = True
+                # reassign content so it gets encoded correctly
+                # known limit: this will cause an issue if a user goes from html to json or vise versa
+                self.content = self._content
+            else:
+                self._story._properties["nodes"][self.node]["data"]["isEncoded"] = False
+            self._language = language
 
     # ----------------------------------------------------------------------
     @property

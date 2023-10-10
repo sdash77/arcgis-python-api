@@ -19,6 +19,7 @@ from .story_content import (
     Scales,
     MapTour,
     Code,
+    Language
 )
 
 __all__ = [
