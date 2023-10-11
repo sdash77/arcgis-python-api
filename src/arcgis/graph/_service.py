@@ -466,6 +466,39 @@ class KnowledgeGraph:
         buffer_dm = r_dm.content
         dm = _kgparser.decode_data_model_from_protocol_buffer(buffer_dm)
         return dm.to_value_object()
+    
+    def sync_data_model(self):
+        """
+        Synchronizes the Knowledge Graph service's datamodel with any changes made 
+        in the database. Will return any errors from the sync.
+
+        .. code-block:: python
+
+            # Synchronize the datamodel
+            sync_result = knowledge_graph.sync_data_model()
+
+            
+        """
+        url = self._url + "/dataModel/syncDataModel"
+        session = self._gis._con._session
+        params = {
+            "f": "pbf",
+            "token": self._gis._con.token,
+        }
+        headers = {'Content-Type': 'application/octet-stream'}
+        response = session.post(
+            url = url,
+            params = params,
+            headers = headers,
+            stream = True
+        )
+
+        sync_response = response.content
+        dec = _kgparser.SyncDataModelResponseDecoder()
+        dec.decode(sync_response)
+        results = dec.get_results()
+        return results
+
 
     def apply_edits(
         self,
@@ -1036,4 +1069,127 @@ class KnowledgeGraph:
         r_dec.decode(r_response)
         results_dict = r_dec.get_results()
 
+        return results_dict
+    
+    def field_index_add(self, type_name: str, field_indexes: list[dict[str, any]]) -> dict:
+        """
+        Adds field indexes for a named type in the data model.
+
+        `Learn more about adding field indexes in a knowledge graph <https://developers.arcgis.com/rest/services-reference/enterprise/kgs-datamodel-edit-namedtypes-type-indexes-add.htm>`_
+
+        ================    ===============================================================
+        **Parameter**        **Description**
+        ----------------    ---------------------------------------------------------------
+        type_name           Required string. The entity or relationship type to add the
+                            field indexes to.
+        ----------------    ---------------------------------------------------------------
+        field_indexes       Required list of dicts. The field indexes to add for the type.
+                            See below for an example of the structure.
+        ================    ===============================================================
+
+        .. code-block:: python
+
+            # Add a list of field index dicts to a Knowledge Graph type
+            add_result = knowledge_graph.field_index_add(
+                "Project", [
+                    {
+                        "name" : "title", 
+                        "isAscending": True, 
+                        "isUnique": True, 
+                        "fields": ["title"]
+                    }
+                ]
+            )
+
+
+        :return: A `dict` showing the results of adding the field indexes.
+
+        """
+        self._validate_import()
+        url = self._url + "/dataModel/edit/namedTypes/" + type_name + "/indexes/add"
+        params = {
+            "f": "pbf",
+            "token": self._gis._con.token,
+        }
+        headers = {"Content-Type": "application/octet-stream"}
+
+        enc = _kgparser.GraphIndexAddsRequestEncoder()
+        enc.add_field_indexes(field_indexes)
+        enc.encode()
+        enc_result = enc.get_encoding_result()
+        error = enc_result.error
+        if error.error_code != 0:
+            raise Exception(error.error_message)
+
+        session = self._gis._con._session
+        response = session.post(
+            url=url,
+            params=params,
+            data=enc_result.byte_buffer,
+            stream=True,
+            headers=headers,
+        )
+
+        response_content = response.content
+        dec = _kgparser.GraphIndexAddsResponseDecoder()
+        dec.decode(response_content)
+
+        results_dict = dec.get_results()
+        return results_dict
+    
+    def field_index_delete(self, type_name: str, field_indexes: list[str]) -> dict:
+        """
+        Deletes field indexes for a named type in the data model.
+
+        `Learn more about deletes field indexes from a knowledge graph <https://developers.arcgis.com/rest/services-reference/enterprise/kgs-datamodel-edit-namedtypes-type-indexes-delete.htm>`_
+
+        ================    ===============================================================
+        **Parameter**        **Description**
+        ----------------    ---------------------------------------------------------------
+        type_name           Required string. The entity or relationship type to delete the
+                            field indexes from.
+        ----------------    ---------------------------------------------------------------
+        field_indexes       Required list of strings. The field indexes to delete from the
+                            type. See below for an example of the structure.
+        ================    ===============================================================
+
+        .. code-block:: python
+
+            # Delete a list of field index dicts from a Knowledge Graph type
+            delete_result = knowledge_graph.field_index_delete("Project", ["title"])
+
+
+        :return: A `dict` showing the results of deleting the field indexes.
+
+        """
+        self._validate_import()
+        url = self._url + "/dataModel/edit/namedTypes/" + type_name + "/indexes/delete"
+        params = {
+            "f": "pbf",
+            "token": self._gis._con.token,
+        }
+        headers = {"Content-Type": "application/octet-stream"}
+
+        enc = _kgparser.GraphIndexDeleteRequestEncoder()
+        enc.add_field_index_names(field_indexes)
+        enc.encode()
+        enc_result = enc.get_encoding_result()
+        error = enc_result.error
+        if error.error_code != 0:
+            raise Exception(error.error_message)
+        
+        session = self._gis._con._session
+        response = session.post(
+            url=url,
+            params=params,
+            data=enc_result.byte_buffer,
+            stream=True,
+            headers=headers,
+        )
+
+        response_content = response.content
+        dec = _kgparser.GraphIndexDeleteResponseDecoder()
+        dec.decode(response_content)
+
+        results_dict = dec.get_results()
         return results_dict

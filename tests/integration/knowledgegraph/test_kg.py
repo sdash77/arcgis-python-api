@@ -12,10 +12,10 @@ import requests
 
 # change these variables as needed
 # server_url should point to existent testing graph, if applicable
-domain = "dev0025246.esri.com"
+domain = "dev0025946.esri.com"
 # server_url = domain + "/server/rest/services/Hosted/python_testing/KnowledgeGraphServer"
-server_url = "https://dev0025246.esri.com/server/rest/services/Hosted/python_testing/KnowledgeGraphServer"
-portal_url = "https://dev0025246.esri.com/portal"
+server_url = "https://dev0025946.esri.com/server/rest/services/Hosted/python_unit_testing/KnowledgeGraphServer"
+portal_url = "https://dev0025946.esri.com/portal"
 username = "publisher2"
 password = "esri.agp123"
 
@@ -71,7 +71,7 @@ try:
         print("Accessed existent testing graph")
         SKIP = False
     except:
-        new_kg = create_new_kg(domain, username, password, "python_testing")
+        new_kg = create_new_kg(domain, username, password, "python_unit_testing")
         kg = KnowledgeGraph(new_kg, gis=gis)
         print("Created new testing graph")
         SKIP = False
@@ -261,6 +261,64 @@ class TestKGMethods(unittest.TestCase):
                 "Document"
             ]["property_names"]
         )
+
+    def test_update_field_index(self):
+        # setup
+        kg.named_object_type_adds(
+            entity_types=[
+                {
+                    "name": "PokeCenter",
+                    "alias": "PokeCenter",
+                    "role": "esriGraphNamedObjectRegular",
+                    "strict": False,
+                    "properties": {
+                        "name": {
+                            "name": "name",
+                            "role": "esriGraphPropertyRegular",
+                        },
+                        "shape": {
+                            "name": "shape",
+                            "fieldType": "esriFieldTypeGeometry",
+                            "geometryType": "esriGeometryPolygon",
+                            "role": "esriGraphPropertyRegular",
+                        },
+                        "city": {
+                            "name": "city",
+                            "role": "esriGraphPropertyRegular",
+                        }
+                    },
+                }
+            ]
+        )
+
+        assert "city" not in kg.datamodel['entity_types']['PokeCenter']['field_indexes']
+
+        with self.subTest(msg="Add test"):
+            res = kg.field_index_add(
+                "PokeCenter", 
+                [
+                    {
+                        "name" : "city", 
+                        "isAscending": True, 
+                        "isUnique": True, 
+                        "fields": ["city"]
+                    }
+                ]
+            )
+
+            assert res
+            assert res['indexAddResults '] == [{'name': 'city'}]
+            assert "city" in kg.datamodel['entity_types']['PokeCenter']['field_indexes']
+        
+        with self.subTest(msg="Delete test"):
+            res = kg.field_index_delete(
+                "PokeCenter",
+                ["city"],
+            )
+
+            assert res
+            assert res['indexDeleteResults '] == [{'name': 'city'}]
+            assert "city" not in kg.datamodel['entity_types']['PokeCenter']['field_indexes']
 
     def test_apply_edits(self):
         import time
