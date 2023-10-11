@@ -466,10 +466,10 @@ class KnowledgeGraph:
         buffer_dm = r_dm.content
         dm = _kgparser.decode_data_model_from_protocol_buffer(buffer_dm)
         return dm.to_value_object()
-    
+
     def sync_data_model(self):
         """
-        Synchronizes the Knowledge Graph service's datamodel with any changes made 
+        Synchronizes the Knowledge Graph service's datamodel with any changes made
         in the database. Will return any errors from the sync.
 
         .. code-block:: python
@@ -477,7 +477,7 @@ class KnowledgeGraph:
             # Synchronize the datamodel
             sync_result = knowledge_graph.sync_data_model()
 
-            
+
         """
         url = self._url + "/dataModel/syncDataModel"
         session = self._gis._con._session
@@ -485,20 +485,14 @@ class KnowledgeGraph:
             "f": "pbf",
             "token": self._gis._con.token,
         }
-        headers = {'Content-Type': 'application/octet-stream'}
-        response = session.post(
-            url = url,
-            params = params,
-            headers = headers,
-            stream = True
-        )
+        headers = {"Content-Type": "application/octet-stream"}
+        response = session.post(url=url, params=params, headers=headers, stream=True)
 
         sync_response = response.content
         dec = _kgparser.SyncDataModelResponseDecoder()
         dec.decode(sync_response)
         results = dec.get_results()
         return results
-
 
     def apply_edits(
         self,
@@ -1070,8 +1064,10 @@ class KnowledgeGraph:
         results_dict = r_dec.get_results()
 
         return results_dict
-    
-    def field_index_add(self, type_name: str, field_indexes: list[dict[str, any]]) -> dict:
+
+    def field_index_add(
+        self, type_name: str, field_indexes: list[dict[str, any]]
+    ) -> dict:
         """
         Adds field indexes for a named type in the data model.
 
@@ -1093,9 +1089,9 @@ class KnowledgeGraph:
             add_result = knowledge_graph.field_index_add(
                 "Project", [
                     {
-                        "name" : "title", 
-                        "isAscending": True, 
-                        "isUnique": True, 
+                        "name" : "title",
+                        "isAscending": True,
+                        "isUnique": True,
                         "fields": ["title"]
                     }
                 ]
@@ -1136,7 +1132,7 @@ class KnowledgeGraph:
 
         results_dict = dec.get_results()
         return results_dict
-    
+
     def field_index_delete(self, type_name: str, field_indexes: list[str]) -> dict:
         """
         Deletes field indexes for a named type in the data model.
@@ -1177,7 +1173,7 @@ class KnowledgeGraph:
         error = enc_result.error
         if error.error_code != 0:
             raise Exception(error.error_message)
-        
+
         session = self._gis._con._session
         response = session.post(
             url=url,

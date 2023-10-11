@@ -286,7 +286,7 @@ class Version(object):
             self._gis = env.active_gis
         self._gis = gis
         self._con = self._gis._portal.con
-        if session_guid is None: # convert to uppercase for Oracle and PG requirements
+        if session_guid is None:  # convert to uppercase for Oracle and PG requirements
             sg = "{%s-%s-%s-%s-%s}" % (
                 uuid.uuid4().hex[:8],
                 uuid.uuid4().hex[:4],
