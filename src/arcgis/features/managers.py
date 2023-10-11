@@ -2136,7 +2136,7 @@ class FeatureLayerCollectionManager(_GISResource):
         snippet                  Optional String. A short description of the view item.
         --------------------     --------------------------------------------------------------------
         overwrite                Not supported.
-                                 
+
                                  .. note::
                                      To overwrite the data used in a hosted feature layer view, you
                                      must overwrite the hosted feature layer from which it was
