@@ -6,6 +6,8 @@ from arcgis.geometry import Geometry
 import workflowmanager_setup
 from arcgis.gis.workflowmanager import WorkflowManager, WorkflowManagerAdmin
 from arcgis.gis import GIS
+from tests.integration.config import QALAB_ROOT_PATH
+from configparser import ConfigParser
 
 
 ###########################################################################
@@ -3171,10 +3173,15 @@ class TestWorkflowManager(unittest.TestCase):
     # must be run manually since a user must be added to test properly.
     def test_user_without_UTE_AT_11_2_can_use_workflow_manager(self):
         # Insert credentials for a portal > 11.2
-        portal_url = "https://wmxpathway.esri.com/portal/"
-        portal_username = "admin"
-        portal_password = "..."
-        workflow_item_id = "22636bf72fef4ab68db33e6fa0983b1f"
+        _conf_reader = ConfigParser()
+        credential_path = QALAB_ROOT_PATH + r"\wmx\config.ini"
+        _conf_reader.read(credential_path, "UTF-8")
+
+        portal_url = _conf_reader["credentials"]["url_11_2"]
+        portal_username = _conf_reader["credentials"]["username"]
+        portal_password = _conf_reader["credentials"]["password"]
+        workflow_item_id = _conf_reader["credentials"]["workflow_item"]
+
         gis = GIS(
             url=portal_url,
             username=portal_username,

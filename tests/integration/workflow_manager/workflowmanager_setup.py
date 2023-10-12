@@ -19,10 +19,14 @@ class WorkflowManagerSetup:
         """
         custom_testing = False
 
+        _conf_reader = ConfigParser()
+        credential_path = QALAB_ROOT_PATH + r"\wmx\config.ini"
+        _conf_reader.read(credential_path, "UTF-8")
+
         if custom_testing:
-            self.portal_url = "https://ps0020614.esri.com/portal"
-            self.portal_username = "admin"
-            self.portal_password = "..."
+            self.portal_url = _conf_reader["credentials"]["custom"]
+            self.portal_username = _conf_reader["credentials"]["username"]
+            self.portal_password = _conf_reader["credentials"]["password"]
             self.item_name = "Testing Item"
             self.workflow_item_id = "77f3d5c6ab9d46d3ba17967c32b9b00e"
 
@@ -38,10 +42,6 @@ class WorkflowManagerSetup:
             self.workflow_manager_admin = WorkflowManagerAdmin(self._gis)
 
         else:
-            _conf_reader = ConfigParser()
-            credential_path = QALAB_ROOT_PATH + r"\wmx\config.ini"
-            _conf_reader.read(credential_path, "UTF-8")
-
             self.portal_url = _conf_reader["credentials"]["url"]
             self.portal_username = _conf_reader["credentials"]["username"]
             self.portal_password = _conf_reader["credentials"]["password"]
