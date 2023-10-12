@@ -1,11 +1,9 @@
-import sys
-sys.path.insert(0, r"C:\ipython_workfolder\geosaurus\src")
+# import sys
+# sys.path.insert(0, r"C:\ipython_workfolder\geosaurus\src")
 import unittest
 from arcgis.gis import GIS, Item
 from arcgis.apps.storymap import Briefing, Themes
-from arcgis.apps.storymap import (
-    Image, Slide
-)
+from arcgis.apps.storymap import Image, Slide
 
 profiles = ["your_online_profile", "your_enterprise_profile"]
 
@@ -45,7 +43,7 @@ class TestStoryMap(unittest.TestCase):
                 assert briefing.save()
 
                 assert briefing.delete_briefing()
-    
+
     def test_create_slide(self):
         for profile in profiles:
             with self.subTest(msg=profile):
@@ -77,6 +75,7 @@ class TestStoryMap(unittest.TestCase):
                 assert isinstance(block.content, Image)
 
                 assert briefing.delete_briefing()
+
 
 if __name__ == "__main__":
     unittest.main()

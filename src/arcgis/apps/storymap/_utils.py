@@ -104,6 +104,10 @@ def cover(
     if isinstance(story, Briefing.Briefing):
         ui = story._properties["nodes"][story._properties["root"]]["children"][0]
         story_cover_node = story._properties["nodes"][ui]["children"][0]
+    else:
+        story_cover_node = story._properties["nodes"][story._properties["root"]][
+            "children"
+        ][0]
 
     # get original data of story cover
     orig_data = story._properties["nodes"][story_cover_node]["data"]
@@ -446,7 +450,7 @@ def duplicate(story, title: Optional[str] = None):
             include_private=True,
         )
     # save to update keywords
-    clone_story = Briefing(clone.id)
+    clone_story = Briefing.Briefing(clone.id)
     return clone_story.save()
 
 
@@ -534,7 +538,9 @@ def get(story, node: Optional[str] = None, type: Optional[str] = None):
 
 
 # ----------------------------------------------------------------------
-def copy_content(story, target_story: Union[Briefing, StoryMap], content: list):
+def copy_content(
+    story, target_story: Union[Briefing.Briefing, StoryMap.StoryMap], content: list
+):
     """
     Copy the content from one briefing to another. This will copy the content
     indicated to the target briefing in the order they are provided.
@@ -562,15 +568,17 @@ def copy_content(story, target_story: Union[Briefing, StoryMap], content: list):
         True if all content has been successfully copied over.
 
     """
-    if isinstance(content, list) and isinstance(list[0], Content):
+    if isinstance(content, list) and not isinstance(content[0], str):
         # get the node ids of the content
         node_list = []
         for item in content:
             node_list.append(item.node)
+    elif isinstance(content, list) and isinstance(content[0], str):
+        node_list = content
 
     # Step 1: Do Checks
     # Check that nodes exist in original story (children of source story contain all of node_list)
-    if isinstance(target_story, Briefing):
+    if isinstance(target_story, Briefing.Briefing):
         # children are in the children of the the root node. In the ui node
         ui = story._properties["nodes"][target_story._properties["root"]]["children"][0]
         story_children = story._properties["nodes"][ui]["children"]
@@ -727,7 +735,7 @@ def _has_children(story, node):
     elif isinstance(node_class, Content.Swipe):
         return list(story._properties["nodes"][node]["data"]["contents"].values())
     elif isinstance(node_class, Content.MapTour):
-        mt = get(node)
+        mt = get(story, node)
         return mt._children
     elif isinstance(node_class, str):
         if (

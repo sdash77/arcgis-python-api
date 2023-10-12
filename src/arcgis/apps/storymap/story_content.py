@@ -96,7 +96,7 @@ class Separator:
 
         :return: True if successful.
         """
-        return self._story._delete(self.node)
+        return utils._delete(self._story, self.node)
 
 
 ###############################################################################################################
@@ -291,7 +291,7 @@ class Image:
 
         :return: True if successful.
         """
-        return self._story._delete(self.node)
+        return utils._delete(self._story, self.node)
 
     # ----------------------------------------------------------------------
     def _add_image(self, caption=None, alt_text=None, display=None, story=None):
@@ -300,7 +300,7 @@ class Image:
         self._existing = True
         # Make an add resource call if not url
         if self._url is False:
-            self._story._add_resource(self._path)
+            utils._add_resource(self._story, self._path)
 
         # Create image nodes. This is similar for file path and url
         self._story._properties["nodes"][self.node] = {
@@ -415,8 +415,8 @@ class Image:
             ] = "item-resource"
             # Update the resource by removing old and adding new
             if resource_id:
-                self._story._remove_resource(resource_id)
-            self._story._add_resource(new_image)
+                utils._remove_resource(self._story, resource_id)
+            utils._add_resource(self._story, new_image)
         # Set new path
         self._path = new_image
 
@@ -634,7 +634,7 @@ class Video:
 
         :return: True if successful
         """
-        return self._story._delete(self.node)
+        return utils._delete(self._story, self.node)
 
     # ----------------------------------------------------------------------
     def _add_video(
@@ -657,7 +657,7 @@ class Video:
             self.resource_node = resource_node
         if self._url is False:
             # Make an add resource call since it is a file path
-            self._story._add_resource(self._path)
+            utils._add_resource(self._story, self._path)
 
             # Create video nodes for file path
             self._story._properties["nodes"][self.node] = {
@@ -706,7 +706,7 @@ class Video:
             resource_id = self._story._properties["resources"][self.resource_node][
                 "data"
             ]["resourceId"]
-            self._story._remove_resource(resource_id)
+            utils._remove_resource(self._story, resource_id)
             # Remove the resource node since should not exist for url. Will be added back if file path
             del self._story._properties["resources"][self.resource_node]
         if _parse.urlparse(new_video).scheme == "https":
@@ -929,7 +929,7 @@ class Audio:
 
         :return: True if successful
         """
-        return self._story._delete(self.node)
+        return utils._delete(self._story, self.node)
 
     # ----------------------------------------------------------------------
     def _add_audio(
@@ -942,7 +942,7 @@ class Audio:
         self._story = story
         self._existing = True
         # Make an add resource call
-        self._story._add_resource(self._path)
+        utils._add_resource(self._story, self._path)
         # Create image nodes
         self._story._properties["nodes"][self.node] = {
             "type": "audio",
@@ -977,8 +977,8 @@ class Audio:
         ] = os.path.basename(os.path.normpath(self._path))
 
         # Add new resource and remove old one
-        self._story._add_resource(self._path)
-        self._story._remove_resource(resource_id)
+        utils._add_resource(self._story, self._path)
+        utils._remove_resource(self._story, resource_id)
 
     # ----------------------------------------------------------------------
     def _check_node(self):
@@ -1150,7 +1150,7 @@ class Embed:
 
         :return: True if successful.
         """
-        return self._story._delete(self.node)
+        return utils._delete(self._story, self.node)
 
     # ----------------------------------------------------------------------
     def _add_link(self, caption=None, alt_text=None, display="card", story=None):
@@ -1692,7 +1692,7 @@ class Map:
         """
         Delete the node
         """
-        return self._story._delete(self.node)
+        return utils._delete(self._story, self.node)
 
     # ----------------------------------------------------------------------
     def _add_map(self, caption=None, alt_text=None, display=None, story=None):
@@ -1973,7 +1973,7 @@ class Text:
 
         :return: True if successful.
         """
-        return self._story._delete(self.node)
+        return utils._delete(self._story, self.node)
 
     # ----------------------------------------------------------------------
     def _add_text(self, story=None):
@@ -2117,7 +2117,7 @@ class Button:
         """
         Delete the node
         """
-        return self._story._delete(self.node)
+        return utils._delete(self._story, self.node)
 
     # ----------------------------------------------------------------------
     def _add_button(self, story):
@@ -2359,7 +2359,7 @@ class Gallery:
         if image in self.images:
             # Remove from the gallery list
             self._story._properties["nodes"][self.node]["children"].remove(image)
-            self._story._delete(image)
+            utils._delete(self._story, image)
         return self.images
 
     # ----------------------------------------------------------------------
@@ -2385,7 +2385,7 @@ class Gallery:
         :return: True if successful.
         """
         if self._existing is True:
-            return self._story._delete(self.node)
+            return utils._delete(self._story, self.node)
         else:
             return False
 
@@ -2620,7 +2620,7 @@ class Swipe:
         :return: True if successful.
         """
         if self._existing is True:
-            return self._story._delete(self.node)
+            return utils._delete(self._story, self.node)
         else:
             return False
 
@@ -2884,7 +2884,7 @@ class Sidecar:
         self._add_item_story(content)
 
         if media_node:
-            self._story._delete(media_node)
+            utils._delete(self._story, media_node)
         self._story._properties["nodes"][slide_node]["children"].insert(1, content.node)
 
     # ----------------------------------------------------------------------
@@ -2916,7 +2916,7 @@ class Sidecar:
             story.save()
 
         """
-        return self._story._assign_node_class(node_id)
+        return utils._assign_node_class(self._story, node_id)
 
     # ----------------------------------------------------------------------
     def add_action(
@@ -3110,8 +3110,8 @@ class Sidecar:
 
             # For reference on some styles, grab first slide to go off of
             if len(self._slides) > 0:
-                first_slide = self._story.properties["nodes"][self._slides[0]]
-                first_np = self._story.properties["nodes"][first_slide["children"][0]]
+                first_slide = self._story._properties["nodes"][self._slides[0]]
+                first_np = self._story._properties["nodes"][first_slide["children"][0]]
                 data = first_np["data"]  # keep same settings as other slide
             else:
                 if self._style == "slideshow":
@@ -3178,7 +3178,7 @@ class Sidecar:
         # Remove slide and all associated children.
         self._remove_associated(slide)
         self._story._properties["nodes"][self.node]["children"].remove(slide)
-        self._story._delete(slide)
+        utils._delete(self._story, slide)
         self._slides = self._story._properties["nodes"][self.node]["children"]
         return True
 
@@ -3189,7 +3189,7 @@ class Sidecar:
 
         :return: True if successful.
         """
-        return self._story._delete(self.node)
+        return utils._delete(self._story, self.node)
 
     # ----------------------------------------------------------------------
     def _remove_associated(self, slide):
@@ -3199,14 +3199,14 @@ class Sidecar:
         if "children" in self._story._properties["nodes"][narrative_panel]:
             children = self._story._properties["nodes"][narrative_panel]["children"]
             for child in children:
-                self._story._delete(child)
+                utils._delete(self._story, child)
         # Delete the narrative panel itself
-        self._story._delete(narrative_panel)
+        utils._delete(self._story, narrative_panel)
 
         # Remove media item and resource node if one exists
         if len(self._story._properties["nodes"][slide]["children"]) >= 1:
             media_item = self._story._properties["nodes"][slide]["children"][0]
-            self._story._delete(media_item)
+            utils._delete(self._story, media_item)
 
     # ----------------------------------------------------------------------
     def _add_item_story(self, content):
@@ -3404,7 +3404,7 @@ class Timeline:
                 old_text_node = self._story._properties["nodes"][event]["children"].pop(
                     position
                 )
-                self._story._delete(old_text_node)
+                utils._delete(self._story, old_text_node)
                 self._story._properties["nodes"][event]["children"].insert(
                     position, content.node
                 )
@@ -3416,7 +3416,7 @@ class Timeline:
                 old_image_node = self._story._properties["nodes"][event][
                     "children"
                 ].pop(position)
-                self._story._delete(old_image_node)
+                utils._delete(self._story, old_image_node)
                 self._story._properties["nodes"][event]["children"].insert(
                     position, content.node
                 )
@@ -3500,7 +3500,7 @@ class Timeline:
         """
         self._remove_associated(event)
         self._story._properties["nodes"][self.node]["children"].remove(event)
-        self._story._delete(event)
+        utils._delete(self._story, event)
         return True
 
     # ----------------------------------------------------------------------
@@ -3510,7 +3510,7 @@ class Timeline:
 
         :return: True if successful.
         """
-        return self._story._delete(self.node)
+        return utils._delete(self._story, self.node)
 
     # ----------------------------------------------------------------------
     def _remove_associated(self, event):
@@ -3518,8 +3518,8 @@ class Timeline:
         if "children" in self._story._properties["nodes"][event]:
             children = self._story._properties["nodes"][event]["children"]
             for child in children:
-                self._story._delete(child)
-            self._story._delete(event)
+                utils._delete(self._story, child)
+            utils._delete(self._story, event)
 
     # ----------------------------------------------------------------------
     def _find_position_content(self, content, event_node):
@@ -3692,7 +3692,7 @@ class MapTour:
             story.save()
 
         """
-        return self._story._assign_node_class(node_id)
+        return utils._assign_node_class(self._story, node_id)
 
     # ----------------------------------------------------------------------
     def _check_node(self):
@@ -3844,7 +3844,7 @@ class MapAction:
         for idx, action in enumerate(self._story._properties["actions"]):
             if action["origin"] == self.node:
                 del self._story._properties["actions"][idx]
-        return self._story._delete(self.node)
+        return utils._delete(self._story, self.node)
 
     # ----------------------------------------------------------------------
     def _check_node(self):
