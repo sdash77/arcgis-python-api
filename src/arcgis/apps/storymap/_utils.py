@@ -11,6 +11,7 @@ Briefing = LazyLoader("arcgis.apps.storymap.briefing")
 json = LazyLoader("json")
 time = LazyLoader("time")
 
+
 # ----------------------------------------------------------------------
 def _get_thumbnail(gis) -> str:
     """
@@ -21,10 +22,10 @@ def _get_thumbnail(gis) -> str:
         thumbnail = "https://storymaps.arcgis.com/static/images/item-default-thumbnails/item.jpg"
     else:
         thumbnail = (
-            gis._url
-            + "/apps/storymaps/static/images/item-default-thumbnails/item.jpg"
+            gis._url + "/apps/storymaps/static/images/item-default-thumbnails/item.jpg"
         )
     return thumbnail
+
 
 # ----------------------------------------------------------------------
 def show(item, width: Optional[int] = None, height: Optional[int] = None):
@@ -57,6 +58,7 @@ def show(item, width: Optional[int] = None, height: Optional[int] = None):
             )
     except:
         return item.url
+
 
 # ----------------------------------------------------------------------
 def cover(
@@ -100,9 +102,7 @@ def cover(
 
     """
     if isinstance(story, Briefing.Briefing):
-        ui = story._properties["nodes"][story._properties["root"]][
-            "children"
-        ][0]
+        ui = story._properties["nodes"][story._properties["root"]]["children"][0]
         story_cover_node = story._properties["nodes"][ui]["children"][0]
 
     # get original data of story cover
@@ -124,8 +124,12 @@ def cover(
 
     # set the cover media
     if media is not None:
-        if not isinstance(media, Content.Image) and not isinstance(media, Content.Video):
-            raise ValueError("Media must be an image or video object. This was not updated")
+        if not isinstance(media, Content.Image) and not isinstance(
+            media, Content.Video
+        ):
+            raise ValueError(
+                "Media must be an image or video object. This was not updated"
+            )
         if media.node not in story._properties["nodes"]:
             # must be added to story resources
             if media._type == "image":
@@ -140,6 +144,7 @@ def cover(
             story._properties["nodes"][story_cover_node]["children"] = [media]
 
     return story._properties["nodes"][story_cover_node]
+
 
 # ----------------------------------------------------------------------
 def theme(story, theme: Union[StoryMap.Themes, str] = StoryMap.Themes.SUMMIT):
@@ -175,9 +180,9 @@ def theme(story, theme: Union[StoryMap.Themes, str] = StoryMap.Themes.SUMMIT):
                     ] = theme.value
                 if isinstance(theme, str):
                     # theme is an item of type Story Theme
-                    story._properties["resources"][node]["data"][
-                        "themeItemId"
-                    ] = theme
+                    story._properties["resources"][node]["data"]["themeItemId"] = theme
+
+
 # ----------------------------------------------------------------------
 def save(
     story,
@@ -235,9 +240,7 @@ def save(
     if title:
         root = story._properties["root"]
         if "metaSettings" not in story._properties["nodes"][root]["data"]:
-            story._properties["nodes"][root]["data"]["metaSettings"] = {
-                "title": None
-            }
+            story._properties["nodes"][root]["data"]["metaSettings"] = {"title": None}
         story._properties["nodes"][root]["data"]["metaSettings"]["title"] = title
         if "config" not in story._properties["nodes"][root]:
             story._properties["nodes"][root]["config"] = {}
@@ -250,15 +253,11 @@ def save(
     json_str = json.dumps(story._properties, ensure_ascii=False)
     _add_resource(story, resource_name=draft, text=json_str, access="private")
     # get the story map version from endpoint
-    sm_version = story._gis._con.get("https://storymaps.arcgis.com/version")[
-        "version"
-    ]
+    sm_version = story._gis._con.get("https://storymaps.arcgis.com/version")["version"]
     # Find type keywords to use based on whether to publish or not
     if isinstance(story, Briefing.Briefing):
-        briefing_keywords = [
-            "alphabriefing",
-            "storymapbriefing"]
-        
+        briefing_keywords = ["alphabriefing", "storymapbriefing"]
+
     # PUBLISH MODE
     if publish is True:
         # Remove old publish item
@@ -271,7 +270,9 @@ def save(
                 _remove_resource(story, file=resource["resource"])
         # Add new publish
         _add_resource(
-            story, resource_name="published_data.json", text=json.dumps(story._properties)
+            story,
+            resource_name="published_data.json",
+            text=json.dumps(story._properties),
         )
         # Set the keywords
         # Start by getting the existing keywords and remove what will be replaced
@@ -390,6 +391,7 @@ def save(
     story._item = story._gis.content.get(story._itemid)
     return story._item
 
+
 # ----------------------------------------------------------------------
 def delete_briefing(story):
     """
@@ -398,6 +400,8 @@ def delete_briefing(story):
     # Check if item id exists
     item = story._gis.content.get(story._itemid)
     return item.delete()
+
+
 # ----------------------------------------------------------------------
 def duplicate(story, title: Optional[str] = None):
     """
@@ -409,7 +413,7 @@ def duplicate(story, title: Optional[str] = None):
 
     .. note::
         Can be used with ArcGIS Online or with ArcGIS Enterprise starting 10.8.1.
-    
+
     .. note::
         To duplicate into another organization, use the :func:`~arcgis.gis.ContentManager.clone_items` method.
 
@@ -444,6 +448,7 @@ def duplicate(story, title: Optional[str] = None):
     # save to update keywords
     clone_story = Briefing(clone.id)
     return clone_story.save()
+
 
 # ----------------------------------------------------------------------
 def get(story, node: Optional[str] = None, type: Optional[str] = None):
@@ -527,6 +532,7 @@ def get(story, node: Optional[str] = None, type: Optional[str] = None):
                     spec_type.append(node)
         return spec_type
 
+
 # ----------------------------------------------------------------------
 def _has_children(story, node):
     """
@@ -559,6 +565,7 @@ def _has_children(story, node):
     else:
         return None
 
+
 # ----------------------------------------------------------------------
 def _delete(story, node_id):
     # Check if node is in story
@@ -587,6 +594,7 @@ def _delete(story, node_id):
                     story._properties["nodes"][node]["children"].remove(node_id)
 
     return True
+
 
 # ----------------------------------------------------------------------
 def _add_child(story, node_id, position=None):
@@ -619,6 +627,7 @@ def _add_child(story, node_id, position=None):
     else:
         # Last node is reserved for credits so add before this if user wanted last position
         story._properties["nodes"][principal_id]["children"].insert(last, node_id)
+
 
 # ----------------------------------------------------------------------
 def _add_resource(story, file=None, resource_name=None, text=None, access="inherit"):
@@ -654,6 +663,7 @@ def _add_resource(story, file=None, resource_name=None, text=None, access="inher
     story._resources = story._item.resources.list()
     return resp
 
+
 # ----------------------------------------------------------------------
 def _remove_resource(story, file=None):
     """
@@ -668,55 +678,57 @@ def _remove_resource(story, file=None):
         # Resource cannot be found. Should not throw error
         return True
 
+
 # ----------------------------------------------------------------------
 def _assign_node_class(story, node_id):
-        # Find the node type to assign to correct class
-        node_type = story._properties["nodes"][node_id]["type"]
-        # Create an instance of this class using existing node properties
-        if node_type == "separator":
-            node = Content.Separator(story=story, node_id=node_id)
-        elif node_type == "briefing-slide":
-            node = Content.Slide(story=story, node_id=node_id)
-        elif node_type == "image":
-            node = Content.Image(story=story, node_id=node_id)
-        elif node_type == "video":
+    # Find the node type to assign to correct class
+    node_type = story._properties["nodes"][node_id]["type"]
+    # Create an instance of this class using existing node properties
+    if node_type == "separator":
+        node = Content.Separator(story=story, node_id=node_id)
+    elif node_type == "briefing-slide":
+        node = Content.Slide(story=story, node_id=node_id)
+    elif node_type == "image":
+        node = Content.Image(story=story, node_id=node_id)
+    elif node_type == "video":
+        node = Content.Video(story=story, node_id=node_id)
+    elif node_type == "audio":
+        node = Content.Audio(story=story, node_id=node_id)
+    elif node_type == "embed":
+        # embed has subtype: video or link
+        subtype = story._properties["nodes"][node_id]["data"]["embedType"]
+        if subtype == "video":
             node = Content.Video(story=story, node_id=node_id)
-        elif node_type == "audio":
-            node = Content.Audio(story=story, node_id=node_id)
-        elif node_type == "embed":
-            # embed has subtype: video or link
-            subtype = story._properties["nodes"][node_id]["data"]["embedType"]
-            if subtype == "video":
-                node = Content.Video(story=story, node_id=node_id)
-            else:
-                node = Content.Embed(story=story, node_id=node_id)
-        elif node_type == "webmap":
-            node = Content.Map(story=story, node_id=node_id)
-        elif node_type == "text":
-            node = Content.Text(story=story, node_id=node_id)
-        elif node_type == "button":
-            node = Content.Button(story=story, node_id=node_id)
-        elif node_type == "swipe":
-            node = Content.Swipe(story=story, node_id=node_id)
-        elif node_type == "gallery":
-            node = Content.Gallery(story=story, node_id=node_id)
-        elif node_type == "timeline":
-            node = Content.Timeline(story=story, node_id=node_id)
-        elif node_type == "tour":
-            node = Content.MapTour(story=story, node_id=node_id)
-        elif node_type == "immersive":
-            # immersive has subtype sidecar (more to add later)
-            subtype = story._properties["nodes"][node_id]["data"]["type"]
-            if subtype == "sidecar":
-                node = Content.Sidecar(story=story, node_id=node_id)
-            else:
-                node = subtype
-        elif node_type == "action-button":
-            node = Content.MapAction(story=story, node_id=node_id)
         else:
-            # if not of type story content then just return name of type
-            node = node_type.capitalize()
-        return node
+            node = Content.Embed(story=story, node_id=node_id)
+    elif node_type == "webmap":
+        node = Content.Map(story=story, node_id=node_id)
+    elif node_type == "text":
+        node = Content.Text(story=story, node_id=node_id)
+    elif node_type == "button":
+        node = Content.Button(story=story, node_id=node_id)
+    elif node_type == "swipe":
+        node = Content.Swipe(story=story, node_id=node_id)
+    elif node_type == "gallery":
+        node = Content.Gallery(story=story, node_id=node_id)
+    elif node_type == "timeline":
+        node = Content.Timeline(story=story, node_id=node_id)
+    elif node_type == "tour":
+        node = Content.MapTour(story=story, node_id=node_id)
+    elif node_type == "immersive":
+        # immersive has subtype sidecar (more to add later)
+        subtype = story._properties["nodes"][node_id]["data"]["type"]
+        if subtype == "sidecar":
+            node = Content.Sidecar(story=story, node_id=node_id)
+        else:
+            node = subtype
+    elif node_type == "action-button":
+        node = Content.MapAction(story=story, node_id=node_id)
+    else:
+        # if not of type story content then just return name of type
+        node = node_type.capitalize()
+    return node
+
 
 # ----------------------------------------------------------------------
 def _create_node_dict(story):

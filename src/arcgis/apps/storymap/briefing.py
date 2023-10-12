@@ -12,17 +12,18 @@ json = LazyLoader("json")
 time = LazyLoader("time")
 utils = LazyLoader("arcgis.apps.storymap._utils")
 
+
 ###############################################################################################################
 class Briefing(object):
     """
-    Synthesize critical information and maintain mission readiness with briefings, a new slide-based presentation 
-    style now available as a type of ArcGIS StoryMap. Make data-driven decisions and provide meaningful context to 
-    your audience by infusing your presentations with real-time data and dynamic maps. Briefings also allow you to 
-    unify images, videos, and other multimedia in your presentation to create a cohesive experience for both you 
+    Synthesize critical information and maintain mission readiness with briefings, a new slide-based presentation
+    style now available as a type of ArcGIS StoryMap. Make data-driven decisions and provide meaningful context to
+    your audience by infusing your presentations with real-time data and dynamic maps. Briefings also allow you to
+    unify images, videos, and other multimedia in your presentation to create a cohesive experience for both you
     and your viewers.
 
-    Example use cases include on-the-ground disaster briefings, budget numbers presented in real-time, and daily 
-    leadership briefings. After the briefings mobile app launches in September, you'll be able to securely connect 
+    Example use cases include on-the-ground disaster briefings, budget numbers presented in real-time, and daily
+    leadership briefings. After the briefings mobile app launches in September, you'll be able to securely connect
     with your stakeholders wherever they are with a tablet app that works on- and offline.
 
     Create a StoryMap Briefing object to make edits to a story. Can be created from an item of type 'StoryMap Briefing',
@@ -75,7 +76,12 @@ class Briefing(object):
                 raise ValueError(
                     "Cannot find storymap briefing associated with this item id in your portal. Please check it is correct."
                 )
-        if item and isinstance(item, arcgis.gis.Item) and item.type == "StoryMap" and "storymapbriefing" in item.typeKeywords:
+        if (
+            item
+            and isinstance(item, arcgis.gis.Item)
+            and item.type == "StoryMap"
+            and "storymapbriefing" in item.typeKeywords
+        ):
             # Set item properties from existing item
             self._item = item
             self._itemid = self._item.itemid
@@ -161,7 +167,7 @@ class Briefing(object):
             "version"
         ]
         keywords = ",".join(
-            [   
+            [
                 "alphabriefing",
                 "arcgis-storymaps",
                 "smdraftresourceid:" + draft,
@@ -169,7 +175,7 @@ class Briefing(object):
                 "StoryMap",
                 "storymapbriefing",
                 "Web Application",
-                "smstatusdraft"
+                "smstatusdraft",
             ]
         )
         # Get default thumbnail for a new item
@@ -237,7 +243,7 @@ class Briefing(object):
         """
         Private method to get the default thumbnail path dependent on whether the
         user is Online or on Enterprise.
-        """ 
+        """
         return utils._get_thumbnail(self._gis)
 
     # ----------------------------------------------------------------------
@@ -278,8 +284,8 @@ class Briefing(object):
     @property
     def actions(self):
         """
-        Get list of action nodes. These are nodes that trigger an action to occur, for 
-        example when text is linked to an image, map, etc. 
+        Get list of action nodes. These are nodes that trigger an action to occur, for
+        example when text is linked to an image, map, etc.
         """
         actions = []
         if "actions" in self._properties:
@@ -389,19 +395,19 @@ class Briefing(object):
         for slide in slides:
             if not isinstance(slide, Content.Slide):
                 raise ValueError("Only Slide objects can be added to a Briefing.")
-        
+
         for slide in slides:
             # Add slide to story
             slide._add_slide(story=self)
 
             # Add to story children
             utils._add_child(self, node_id=slide.node)
-        
+
         return True
 
     # ----------------------------------------------------------------------
     def move(
-        self, slide:int, position: Optional[int] = None, delete_current: bool = False
+        self, slide: int, position: Optional[int] = None, delete_current: bool = False
     ):
         """
         Move a slide to another position. The slide currently at that position will
@@ -431,20 +437,22 @@ class Briefing(object):
         # Check that slide is not cover
         if slide == 0:
             raise ValueError("Cannot move the cover slide.")
-        
+
         # Get slide position if none is provided
         if position is None:
             # Move to end
             position = len(children)
-        
+
         # move the slide to correct position in the list
-        self._properties["nodes"][ui[0]]["children"].insert(position, children.pop(slide))
+        self._properties["nodes"][ui[0]]["children"].insert(
+            position, children.pop(slide)
+        )
 
         # Delete the slide that was at the position before if specified
         if delete_current:
-            # do position+1 since the slide was moved up one space in insert 
-            self._properties["nodes"].pop(children[position+1])
-        
+            # do position+1 since the slide was moved up one space in insert
+            self._properties["nodes"].pop(children[position + 1])
+
         return True
 
     # ----------------------------------------------------------------------
@@ -515,7 +523,7 @@ class Briefing(object):
 
         .. note::
             Can be used with ArcGIS Online or with ArcGIS Enterprise starting 10.8.1.
-        
+
         .. note::
             To duplicate into another organization, use the :func:`~arcgis.gis.ContentManager.clone_items` method.
 
@@ -559,7 +567,7 @@ class Briefing(object):
         target_briefing     Required Briefing instance. The target briefing that the content will be
                             copied to.
         ---------------     --------------------------------------------------------------------
-        content             Required list of content. The list of content that will be copied to 
+        content             Required list of content. The list of content that will be copied to
                             the target briefing.
         ===============     ====================================================================
 

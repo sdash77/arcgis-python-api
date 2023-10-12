@@ -19,11 +19,7 @@ from .story_content import (
     TextStyles,
     Scales,
     MapTour,
-    Slide
+    Slide,
 )
 
-__all__ = [
-    "JournalStoryMap",
-    "StoryMap",
-    "Briefing"
-]
+__all__ = ["JournalStoryMap", "StoryMap", "Briefing"]

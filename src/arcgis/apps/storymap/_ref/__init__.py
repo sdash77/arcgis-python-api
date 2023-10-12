@@ -65,16 +65,11 @@ storymap_2 = {
 briefing = {
     "root": "n-k23c2p",
     "nodes": {
-        "n-XK0GeP": {
-            "type": "briefing-ui",
-            "children": ["n-11SuEF"]
-        },
+        "n-XK0GeP": {"type": "briefing-ui", "children": ["n-11SuEF"]},
         "n-11SuEF": {
             "type": "briefing-slide",
-            "data": {
-                "layout": "cover"
-            },
-            "children": ["n-3r3mhh"]
+            "data": {"layout": "cover"},
+            "children": ["n-3r3mhh"],
         },
         "n-3r3mhh": {
             "type": "storycover",
@@ -85,7 +80,7 @@ briefing = {
                 "byline": "",
                 "titlePanelPosition": "start",
             },
-            "children": []
+            "children": [],
         },
         "n-k23c2p": {
             "type": "briefing",

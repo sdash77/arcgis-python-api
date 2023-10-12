@@ -9338,7 +9338,6 @@ class ResourceManager(object):
 
         params = {"f": "json"}
 
-
         if folder_name is not None:
             params["resourcesPrefix"] = folder_name
         if file_name is not None:
