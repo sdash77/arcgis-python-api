@@ -2770,12 +2770,11 @@ class FeatureLayerCollectionManager(_GISResource):
 
         :return: JSON message as dictionary such as {'success':True} or {'error':'error message'}
         """
-        if (
-            data_file
-            and isinstance(data_file, str)
-            and os.path.exists(data_file)
-            and os.path.isfile(data_file)
-            and os.stat(data_file).st_size > int(2.5e7)
+        if data_file and (
+            not isinstance(data_file, str)
+            or not os.path.exists(data_file)
+            or not os.path.isfile(data_file)
+            or not os.stat(data_file).st_size > int(2.5e7)
         ):
             raise ValueError(
                 "The data file provided does not exist or could not be accessed."
