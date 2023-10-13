@@ -6,6 +6,7 @@ from typing import List, Dict, Any, Optional
 
 _common_deprecated = LazyLoader("arcgis._impl.common._deprecate")
 
+
 ########################################################################
 class ContainerNotebook(object):
     """
