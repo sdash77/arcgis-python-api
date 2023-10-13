@@ -45,16 +45,21 @@ class Job(object):
         self._url = task_url
         if jobid is None:
             self._jobid = uuid.uuid4().hex
+            self._has_id = False
         else:
             self._jobid = jobid
+            self._has_id = True
 
     # ----------------------------------------------------------------------
     def __repr__(self):
-        return f"<{self._task_name} job {self._jobid}>"
+        return self.__str__()
 
     # ----------------------------------------------------------------------
     def __str__(self):
-        return f"<{self._task_name} job {self._jobid}>"
+        if self._jobid is None or self._has_id == False:
+            return f"<{self._task_name}>"
+        else:
+            return f"<{self._task_name} job {self._jobid}>"
 
     # ----------------------------------------------------------------------
     def cancelled(self):
