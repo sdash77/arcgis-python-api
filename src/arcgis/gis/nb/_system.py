@@ -6,6 +6,7 @@ from typing import List, Dict, Any, Optional
 
 _common_deprecated = LazyLoader("arcgis._impl.common._deprecate")
 
+
 ########################################################################
 class ContainerNotebook(object):
     """
@@ -48,9 +49,7 @@ class ContainerNotebook(object):
         """
         url = f"{self._url}/close"
         params = {"f": "json"}
-        return (
-            self._con.post(url, params).get("status", "failure") == "success"
-        )
+        return self._con.post(url, params).get("status", "failure") == "success"
 
 
 ########################################################################
@@ -388,9 +387,7 @@ class WebAdaptorManager(object):
         res = self._con.get(url, params)
         if "webAdaptors" in res:
             return [
-                WebAdaptor(
-                    self._url + "/{wa}".format(wa=wa["id"]), gis=self._gis
-                )
+                WebAdaptor(self._url + "/{wa}".format(wa=wa["id"]), gis=self._gis)
                 for wa in res["webAdaptors"]
             ]
         return res
@@ -755,9 +752,7 @@ class SystemManager(object):
         return resp["status"] == "success"
 
     # ----------------------------------------------------------------------
-    def list_jobs(
-        self, num: int = 100, details: bool = False
-    ) -> List[Dict[str, Any]]:
+    def list_jobs(self, num: int = 100, details: bool = False) -> List[Dict[str, Any]]:
         """
         This resource is a collection of all the administrative jobs
         (asynchronous operations) created within your site. When operations
