@@ -1,8 +1,10 @@
 import os
 from arcgis.gis import GIS
+from arcgis.auth.tools import LazyLoader
 from arcgis._impl.common._mixins import PropertyMap
 from typing import List, Dict, Any, Optional
 
+_common_deprecated = LazyLoader("arcgis._impl.common._deprecate")
 
 ########################################################################
 class ContainerNotebook(object):
@@ -46,7 +48,9 @@ class ContainerNotebook(object):
         """
         url = f"{self._url}/close"
         params = {"f": "json"}
-        return self._con.post(url, params).get("status", "failure") == "success"
+        return (
+            self._con.post(url, params).get("status", "failure") == "success"
+        )
 
 
 ########################################################################
@@ -129,7 +133,12 @@ class DirectoryManager(object):
         :return: Boolean
 
         """
-        params = {"f": "json", "name": name, "path": path, "type": directory_type}
+        params = {
+            "f": "json",
+            "name": name,
+            "path": path,
+            "type": directory_type,
+        }
         url = self._url + "/register"
         res = self._con.post(url, params)
         if "status" in res:
@@ -379,7 +388,9 @@ class WebAdaptorManager(object):
         res = self._con.get(url, params)
         if "webAdaptors" in res:
             return [
-                WebAdaptor(self._url + "/{wa}".format(wa=wa["id"]), gis=self._gis)
+                WebAdaptor(
+                    self._url + "/{wa}".format(wa=wa["id"]), gis=self._gis
+                )
                 for wa in res["webAdaptors"]
             ]
         return res
@@ -495,6 +506,12 @@ class Container(object):
         url = f"{self._url}/logs"
         return self._con.post(url, params).get("containerLogs", [])
 
+    @_common_deprecated.deprecated(
+        deprecated_in="2.3.0",
+        removed_in="3.0.0",
+        current_version=None,
+        details="Use `shutdown` instead.",
+    )
     def terminate(self) -> bool:
         """
         Stops the container
@@ -738,7 +755,9 @@ class SystemManager(object):
         return resp["status"] == "success"
 
     # ----------------------------------------------------------------------
-    def list_jobs(self, num: int = 100, details: bool = False) -> List[Dict[str, Any]]:
+    def list_jobs(
+        self, num: int = 100, details: bool = False
+    ) -> List[Dict[str, Any]]:
         """
         This resource is a collection of all the administrative jobs
         (asynchronous operations) created within your site. When operations
