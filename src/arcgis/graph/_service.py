@@ -469,12 +469,12 @@ class KnowledgeGraph:
 
     def sync_data_model(self):
         """
-        Synchronizes the Knowledge Graph service's datamodel with any changes made
-        in the database. Will return any errors from the sync.
+        Synchronizes the Knowledge Graph Service's data model with any changes made
+        in the database. Will return any errors or warnings from the sync.
 
         .. code-block:: python
 
-            # Synchronize the datamodel
+            # Synchronize the data model
             sync_result = knowledge_graph.sync_data_model()
 
 
@@ -1065,28 +1065,28 @@ class KnowledgeGraph:
 
         return results_dict
 
-    def field_index_add(
-        self, type_name: str, field_indexes: list[dict[str, any]]
+    def graph_property_index_adds(
+        self, type_name: str, field_indexes: list[dict[str, Any]]
     ) -> dict:
         """
-        Adds field indexes for a named type in the data model.
+        Adds indexes to a field or multiple fields associated with a named type in the data model.
 
-        `Learn more about adding field indexes in a knowledge graph <https://developers.arcgis.com/rest/services-reference/enterprise/kgs-datamodel-edit-namedtypes-type-indexes-add.htm>`_
+        `Learn more about adding graph property indexes in a knowledge graph <https://developers.arcgis.com/rest/services-reference/enterprise/kgs-datamodel-edit-namedtypes-type-indexes-add.htm>`_
 
         ================    ===============================================================
         **Parameter**        **Description**
         ----------------    ---------------------------------------------------------------
         type_name           Required string. The entity or relationship type to add the
-                            field indexes to.
+                            indexes to.
         ----------------    ---------------------------------------------------------------
-        field_indexes       Required list of dicts. The field indexes to add for the type.
+        field_indexes       Required list of dicts. The indexes to add for the type.
                             See below for an example of the structure.
         ================    ===============================================================
 
         .. code-block:: python
 
-            # Add a list of field index dicts to a Knowledge Graph type
-            add_result = knowledge_graph.field_index_add(
+            # Add a list of index dicts to fields for a Knowledge Graph type
+            add_result = knowledge_graph.graph_property_index_adds(
                 "Project", [
                     {
                         "name" : "title",
@@ -1098,7 +1098,7 @@ class KnowledgeGraph:
             )
 
 
-        :return: A `dict` showing the results of adding the field indexes.
+        :return: A `dict` showing the results of adding the indexes.
 
         """
         self._validate_import()
@@ -1133,11 +1133,13 @@ class KnowledgeGraph:
         results_dict = dec.get_results()
         return results_dict
 
-    def field_index_delete(self, type_name: str, field_indexes: list[str]) -> dict:
+    def graph_property_index_deletes(
+        self, type_name: str, field_indexes: list[str]
+    ) -> dict:
         """
-        Deletes field indexes for a named type in the data model.
+        Deletes indexes from fields associated with a named type in the data model.
 
-        `Learn more about deletes field indexes from a knowledge graph <https://developers.arcgis.com/rest/services-reference/enterprise/kgs-datamodel-edit-namedtypes-type-indexes-delete.htm>`_
+        `Learn more about deleting graph property indexes from a knowledge graph <https://developers.arcgis.com/rest/services-reference/enterprise/kgs-datamodel-edit-namedtypes-type-indexes-delete.htm>`_
 
         ================    ===============================================================
         **Parameter**        **Description**
@@ -1152,10 +1154,10 @@ class KnowledgeGraph:
         .. code-block:: python
 
             # Delete a list of field index dicts from a Knowledge Graph type
-            delete_result = knowledge_graph.field_index_delete("Project", ["title"])
+            delete_result = knowledge_graph.graph_property_index_deletes("Project", ["title"])
 
 
-        :return: A `dict` showing the results of deleting the field indexes.
+        :return: A `dict` showing the results of deleting the indexes.
 
         """
         self._validate_import()

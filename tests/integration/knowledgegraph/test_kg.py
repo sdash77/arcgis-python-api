@@ -199,14 +199,14 @@ class TestKGMethods(unittest.TestCase):
             assert len(list(gen2)) > 0
 
         with self.subTest(msg="Simple object bind test"):
-            bind = {"simple" : {"name" : "Snorlax"}}
+            bind = {"simple": {"name": "Snorlax"}}
             query = """MATCH (n) WHERE n.name = $simple.name RETURN n"""
             gen = kg.query_streaming(query=query, bind_param=bind)
             assert isinstance(gen, Generator)
             assert len(list(gen)) > 0
 
         with self.subTest(msg="List bind test"):
-            bind = {"list" : ['Snorlax', 'Articuno']}
+            bind = {"list": ["Snorlax", "Articuno"]}
             query = """MATCH (n) where n.name IN $list RETURN n"""
             gen = kg.query_streaming(query=query, bind_param=bind)
             assert isinstance(gen, Generator)
@@ -262,7 +262,7 @@ class TestKGMethods(unittest.TestCase):
             ]["property_names"]
         )
 
-    def test_update_field_index(self):
+    def test_update_graph_property_index(self):
         # setup
         kg.named_object_type_adds(
             entity_types=[
@@ -285,40 +285,43 @@ class TestKGMethods(unittest.TestCase):
                         "city": {
                             "name": "city",
                             "role": "esriGraphPropertyRegular",
-                        }
+                        },
                     },
                 }
             ]
         )
 
-        assert "city" not in kg.datamodel['entity_types']['PokeCenter']['field_indexes']
+        assert "city" not in kg.datamodel["entity_types"]["PokeCenter"]["field_indexes"]
 
         with self.subTest(msg="Add test"):
-            res = kg.field_index_add(
-                "PokeCenter", 
+            res = kg.graph_property_index_adds(
+                "PokeCenter",
                 [
                     {
-                        "name" : "city", 
-                        "isAscending": True, 
-                        "isUnique": True, 
-                        "fields": ["city"]
+                        "name": "city",
+                        "isAscending": True,
+                        "isUnique": True,
+                        "fields": ["city"],
                     }
-                ]
+                ],
             )
 
             assert res
-            assert res['indexAddResults '] == [{'name': 'city'}]
-            assert "city" in kg.datamodel['entity_types']['PokeCenter']['field_indexes']
-        
+            assert res["indexAddResults "] == [{"name": "city"}]
+            assert "city" in kg.datamodel["entity_types"]["PokeCenter"]["field_indexes"]
+
         with self.subTest(msg="Delete test"):
-            res = kg.field_index_delete(
+            res = kg.graph_property_index_deletes(
                 "PokeCenter",
                 ["city"],
             )
 
             assert res
-            assert res['indexDeleteResults '] == [{'name': 'city'}]
-            assert "city" not in kg.datamodel['entity_types']['PokeCenter']['field_indexes']
+            assert res["indexDeleteResults "] == [{"name": "city"}]
+            assert (
+                "city"
+                not in kg.datamodel["entity_types"]["PokeCenter"]["field_indexes"]
+            )
 
     def test_apply_edits(self):
         import time
