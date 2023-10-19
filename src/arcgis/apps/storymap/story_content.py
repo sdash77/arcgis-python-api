@@ -12,6 +12,7 @@ pil_image = LazyLoader("PIL.Image")
 os = LazyLoader("os")
 _io = LazyLoader("io")
 _parse = LazyLoader("urllib.parse")
+arcgiswidgets = LazyLoader("arcgiswidgets.widgets.map_widget")
 
 
 class TextStyles(Enum):
@@ -1280,7 +1281,7 @@ class Map:
             # Create map object to extract properties
             if isinstance(item, arcgis.gis.Item):
                 if item.type == "Web Map":
-                    map_item = arcgis.mapping.WebMap(item)
+                    map_item = arcgiswidgets.Map(item)
                 elif item.type == "Web Scene":
                     map_item = arcgis.mapping.WebScene(item)
                 else:

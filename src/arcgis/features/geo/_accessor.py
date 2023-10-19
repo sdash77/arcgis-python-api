@@ -2459,9 +2459,6 @@ class GeoAccessor(object):
                 "ymax": self._data.spatial.full_extent[3],
             }
 
-            # adjust the zoom level so the map displays the data as expected
-            map_widget.on_draw_end(_adjust_zoom, True)
-
             # return the map widget so it will be displayed below the cell in Jupyter Notebook
             return map_widget
 

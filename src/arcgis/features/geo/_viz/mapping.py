@@ -19,7 +19,7 @@ from arcgis.mapping.renderer import (
     generate_simple,
     generate_unique,
 )
-from arcgis.widgets import MapView
+from arcgiswidgets.widgets.map_widget import Map
 
 CLASSIFICATIONS = {
     "simple": {"renderer_type": "u"},  # simple
@@ -51,7 +51,7 @@ RENDERER_TYPES = {
 
 def plot(
     df,
-    map_widget: Optional[Union[arcgis.mapping.WebMap, MapView]] = None,
+    map_widget: Optional[Map] = None,
     name: Optional[str] = None,
     renderer_type: Optional[str] = None,
     symbol_type: Optional[str] = None,
@@ -193,7 +193,7 @@ def plot(
         name = uuid.uuid4().hex[:7]
     if map_widget is None:
         map_exists = False
-        map_widget = MapView()
+        map_widget = Map()
     import string
 
     trantab = str.maketrans(string.punctuation, "_" * len(string.punctuation))
