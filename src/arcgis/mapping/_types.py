@@ -107,6 +107,7 @@ class _ApplicationProperties(object):
 
     # ----------------------------------------------------------------------
 
+
 ###########################################################################
 class PackagingJob(object):
     """
@@ -374,11 +375,13 @@ class OfflineMapAreaManager(object):
         if (
             "application_properties" in self._map._webmap
             and "offline" in self._map._webmap.application_properties
-        ): 
+        ):
             offline_dict = self._map._webmap.application_properties.offline.dict()
             if "editableLayers" in offline_dict:
                 if "download" in offline_dict["editableLayers"]:
-                    values["download"] = dl_lu[offline_dict["editableLayers"]["download"]]
+                    values["download"] = dl_lu[
+                        offline_dict["editableLayers"]["download"]
+                    ]
                 else:
                     values.pop("download")
                 if "sync" in offline_dict["editableLayers"]:
@@ -389,14 +392,22 @@ class OfflineMapAreaManager(object):
                 values.pop("download")
                 values.pop("sync")
 
-            if "offlinebasemap" in offline_dict and "referenceBasemapName" in offline_dict["offlinebasemap"]:
+            if (
+                "offlinebasemap" in offline_dict
+                and "referenceBasemapName" in offline_dict["offlinebasemap"]
+            ):
                 values["reference_basemap"] = offline_dict["offlinebasemap"][
                     "referenceBasemapName"
                 ]
             else:
                 values.pop("reference_basemap")
-            if "readonlyLayers" in offline_dict and "downloadAttachments" in offline_dict["readonlyLayers"]:
-                values["get_attachments"] = offline_dict["readonlyLayers"]["downloadAttachments"]
+            if (
+                "readonlyLayers" in offline_dict
+                and "downloadAttachments" in offline_dict["readonlyLayers"]
+            ):
+                values["get_attachments"] = offline_dict["readonlyLayers"][
+                    "downloadAttachments"
+                ]
             else:
                 values.pop("get_attachments")
             return values
@@ -1232,7 +1243,9 @@ class OfflineMapAreaManager(object):
                         layer0_obj = VectorTileLayer.fromitem(
                             self._gis.content.get(cached_layer["itemId"])
                         )
-                    elif "styleUrl" in cached_layer and cached_layer["title"] in ["OpenStreetMap"]:
+                    elif "styleUrl" in cached_layer and cached_layer["title"] in [
+                        "OpenStreetMap"
+                    ]:
                         res = findall(
                             r"[0-9a-f]{8}(?:[0-9a-f]{4}){3}[0-9a-f]{12}",
                             cached_layer["styleUrl"],

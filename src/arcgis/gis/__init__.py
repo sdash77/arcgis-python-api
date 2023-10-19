@@ -8,6 +8,7 @@ Python and is an invaluable tool in the API.
 """
 from __future__ import absolute_import, annotations
 import sys
+
 sys.path.insert(0, r"C:\ipython_workfolder\Geosaurus_MapWidget")
 import base64
 import json
@@ -1626,7 +1627,7 @@ class GIS(object):
                 mapwidget = Map(location=location, gis=self)
         else:
             mapwidget = Map(gis=self)
-        
+
         if zoomlevel:
             mapwidget.zoom = zoomlevel
 
