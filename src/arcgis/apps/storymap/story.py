@@ -460,7 +460,7 @@ class StoryMap(object):
 
 
                             Values: `image` | `video` | `audio` | `embed` | `webmap` | `text` |
-                            `button` | `separator` | `expressmap` | `webscene` | `immersive`
+                            `button` | `separator` | `expressmap` | `webscene` | `immersive` | `code`
         ===============     ====================================================================
 
         :return:
@@ -835,6 +835,7 @@ class StoryMap(object):
                 Content.Gallery,
                 Content.Timeline,
                 Content.Sidecar,
+                Content.Code,
             ]
         ] = None,
         caption: Optional[str] = None,
@@ -863,7 +864,8 @@ class StoryMap(object):
                             :class:`~arcgis.apps.storymap.story_content.Timeline`,
                             :class:`~arcgis.apps.storymap.story_content.Sidecar`
                             :class:`~arcgis.apps.storymap.story_content.Swipe`,
-                            :class:`~arcgis.apps.storymap.story_content.Separator`
+                            :class:`~arcgis.apps.storymap.story_content.Separator`,
+                            :class:`~arcgis.apps.storymap.story_content.Code`
 
 
                             If none is provided, a separator is added.
@@ -939,6 +941,8 @@ class StoryMap(object):
             content._add_sidecar(self)
         elif isinstance(content, Content.Swipe):
             content._add_swipe(caption, alt_text, display, self)
+        elif isinstance(content, Content.Code):
+            content._add_code(self)
         else:
             content = Content.Separator(story=self, node_id=node_id)
             content._add_separator(story=self)
@@ -1575,6 +1579,8 @@ class StoryMap(object):
                 node = Content.Video(story=self, node_id=node_id)
             else:
                 node = Content.Embed(story=self, node_id=node_id)
+        elif node_type == "code":
+            node = Content.Code(story=self, node_id=node_id)
         elif node_type == "webmap":
             node = Content.Map(story=self, node_id=node_id)
         elif node_type == "text":

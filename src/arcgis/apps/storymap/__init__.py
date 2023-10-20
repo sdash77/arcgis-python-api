@@ -18,6 +18,8 @@ from .story_content import (
     TextStyles,
     Scales,
     MapTour,
+    Code,
+    Language,
 )
 
 __all__ = [
