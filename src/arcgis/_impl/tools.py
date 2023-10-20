@@ -3556,26 +3556,11 @@ class _FeatureAnalysisTools(BaseAnalytics):
         if output_name is None:
             output_name = "Extracted_data_" + _id_generator()
 
-        if data_format.upper() == "SHAPEFILE":
-            if isinstance(output_name, dict):
-                params["outputName"] = {"itemProperties": output_name}
-            else:
-                params["outputName"] = {
-                    "itemProperties": {
-                        "title": output_name,
-                        "description": "File generated from running the Extract Data tool.",
-                        "tags": "Analysis Results, Extract Data",
-                        "snippet": "Analysis file item generated from running the Extract Data tool.",
-                        "folderId": "",
-                    }
-                }
-            output_name = params["outputName"]
-        elif isinstance(output_name, dict) and "title" in output_name:
+        # define the output name parameter
+        if isinstance(output_name, dict) and "title" in output_name:
             params["outputName"] = {"itemProperties": output_name}
-            output_name = params["outputName"]
         else:
             params["outputName"] = {
-                "serviceProperties": {"name": output_name},
                 "itemProperties": {
                     "title": output_name,
                     "description": "File generated from running the Extract Data solution.",
@@ -3585,7 +3570,8 @@ class _FeatureAnalysisTools(BaseAnalytics):
                 },
             }
 
-            output_name = params["outputName"]
+        output_name = params["outputName"]
+
         if context is not None:
             params["context"] = context
 

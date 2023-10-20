@@ -15099,6 +15099,13 @@ class Item(dict):
                 if not "type" in item_properties:
                     item_properties["type"] = self.type
                 if not "fileName" in item_properties:
+                    if self.name is None or self.name == "":
+                        msg: str = (
+                            "The `update` method requires a user to "
+                            "pass a `fileName` value in the `item_properties` "
+                            "if the file name is not defined on the Item"
+                        )
+                        raise ValueError(msg)
                     fileName = self.name
                     item_properties["fileName"] = fileName
 

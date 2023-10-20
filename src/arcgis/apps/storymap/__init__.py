@@ -20,6 +20,8 @@ from .story_content import (
     Scales,
     MapTour,
     Slide,
+    Code,
+    Language,
 )
 
 __all__ = ["JournalStoryMap", "StoryMap", "Briefing"]
