@@ -13,6 +13,7 @@ html = LazyLoader("html")
 os = LazyLoader("os")
 _io = LazyLoader("io")
 _parse = LazyLoader("urllib.parse")
+utils = LazyLoader("arcgis.apps.storymap._utils")
 
 
 class Language(Enum):
