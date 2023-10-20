@@ -3927,9 +3927,9 @@ class Code:
             self._content = content
 
             if isinstance(language, Language):
-                self.language = language.value
+                self._language = language.value
             elif isinstance(language, str) and language in Language:
-                self.language = language
+                self._language = language
             else:
                 raise ValueError(
                     "Language provided is not part of the accepted languages. Please make sure to provide one from the list."
