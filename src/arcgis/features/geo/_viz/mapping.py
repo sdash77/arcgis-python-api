@@ -6,6 +6,7 @@ from typing import Optional, Union
 import pandas as pd
 
 from arcgiswidgets.widgets.map_widget import Map
+
 # from arcgiswidgets._dataclasses.symbols import (
 #     create_picture_fill_symbol,
 #     create_picture_marker_symbol,
