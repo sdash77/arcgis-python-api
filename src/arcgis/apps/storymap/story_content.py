@@ -1758,7 +1758,7 @@ class Map:
             new_map = arcgiswidgets.Map(map)
         elif map.type == "Web Scene":
             new_map = arcgiswidgets.Scene(map)
-            
+
         # Get all the old properties but update with new map where needed
 
         # remove old resource node
