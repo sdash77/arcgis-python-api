@@ -103,7 +103,8 @@ def cover(
     """
     if isinstance(story, Briefing.Briefing):
         ui = story._properties["nodes"][story._properties["root"]]["children"][0]
-        story_cover_node = story._properties["nodes"][ui]["children"][0]
+        story_cover_slide = story._properties["nodes"][ui]["children"][0]
+        story_cover_node = story._properties["nodes"][story_cover_slide]["children"][0]
     else:
         story_cover_node = story._properties["nodes"][story._properties["root"]][
             "children"
