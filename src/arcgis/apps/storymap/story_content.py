@@ -4382,11 +4382,11 @@ class Block:
 
         # If content is text and the current content is a list, append to the list
         if isinstance(content, Text) and isinstance(self._content, list):
-            self._add_item_story(self._story)
+            self._add_item_story(content)
             self._content.append(content.node)
         # If content is text and the current content is not a list, create a list and append
         elif isinstance(content, Text) and not isinstance(self._content, list):
-            self._add_item_story(self._story)
+            self._add_item_story(content)
             # check if current content is Text, if so add to the list if not create a list with just new content
             if isinstance(self.content, Text):
                 self._content = [self._content, content.node]
