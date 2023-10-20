@@ -1197,7 +1197,7 @@ class Embed:
 ###############################################################################################################
 class Map:
     """
-    Class representing a `webmap` or `webscene` for the story
+    Class representing a `map` or `scene` for the story
 
     .. note::
         Once you create a Map instance you must add it to the story to be able to edit it further.
@@ -1205,8 +1205,8 @@ class Map:
     =================       ====================================================================
     **Parameter**            **Description**
     -----------------       --------------------------------------------------------------------
-    item                    An Item of type :class:`~arcgis.mapping.WebMap` or
-                            :class:`~arcgis.mapping.WebScene` or a String representing the item
+    item                    An Item of type :class:`~arcgiswidgets.Map` or
+                            :class:`~arcgiswidgets.Scene` or a String representing the item
                             id to add to the story map.
     =================       ====================================================================
     """
@@ -1283,7 +1283,7 @@ class Map:
                 if item.type == "Web Map":
                     map_item = arcgiswidgets.Map(item)
                 elif item.type == "Web Scene":
-                    map_item = arcgis.mapping.WebScene(item)
+                    map_item = arcgiswidgets.Scene(item)
                 else:
                     raise ValueError("Item must be of Type Web Map or Web Scene")
             # Assign properties
@@ -1292,21 +1292,21 @@ class Map:
             self._path = item
             self._type = item.type
             if item.type == "Web Map":
-                self._extent = map_item._mapview.extent
-                if map_item._mapview.center is None:
+                self._extent = map_item.extent.dict()
+                if map_item.center.dict() is None or map_item.center.dict() == {}:
                     x_center = (self._extent["xmin"] + self._extent["xmax"]) / 2
                     y_center = (self._extent["ymin"] + self._extent["ymax"]) / 2
                     self._center = {
-                        "spatialReference": map_item.definition.spatialReference,
+                        "spatialReference": self._extent["spatialReference"],
                         "x": x_center,
                         "y": y_center,
                     }
                 else:
-                    self._center = map_item._mapview.center
-                self._zoom = map_item._mapview.zoom if map_item.zoom is not False else 2
+                    self._center = map_item.center.dict()
+                self._zoom = map_item.zoom if map_item.zoom is not False else 2
                 self._viewpoint = {
-                    "rotation": map_item._mapview.rotation,
-                    "scale": map_item._mapview.scale,
+                    "rotation": map_item.rotation.dict(),
+                    "scale": map_item.scale.dict(),
                     "targetGeometry": self._center,
                 }
 
@@ -1314,8 +1314,8 @@ class Map:
                 # Create layer dictionary:
                 for layer in map_item.layers:
                     layer_props = {}
-                    layer_props["id"] = layer["id"]
-                    layer_props["title"] = layer["title"]
+                    layer_props["id"] = layer.id
+                    layer_props["title"] = layer.title
                     if "visibility" in layer:
                         layer_props["visible"] = layer["visibility"]
                     elif "layer_visibility" in map_item:
@@ -1326,10 +1326,10 @@ class Map:
             elif item.type == "Web Scene":
                 layers = []
                 # Create layer dictionary:
-                for layer in map_item["operationalLayers"]:
+                for layer in map_item.layers:
                     layer_props = {}
-                    layer_props["id"] = layer["id"]
-                    layer_props["title"] = layer["title"]
+                    layer_props["id"] = layer.id
+                    layer_props["title"] = layer.title
                     if "visibility" in layer:
                         layer_props["visible"] = layer["visibility"]
                     else:
@@ -1337,13 +1337,14 @@ class Map:
                     layers.append(layer_props)
                 self._map_layers = layers
                 self._extent = None
-                self._center = map_item["initialState"]["viewpoint"]["camera"][
+                scene_dict = map_item._webscene_dict
+                self._center = scene_dict["initialState"]["viewpoint"]["camera"][
                     "position"
                 ]
                 self._zoom = 2
-                self._viewpoint = map_item["initialState"]["viewpoint"]
-                self._camera = map_item["initialState"]["viewpoint"]["camera"]
-                self._lighting_date = map_item["initialState"]["environment"][
+                self._viewpoint = scene_dict["initialState"]["viewpoint"]
+                self._camera = scene_dict["initialState"]["viewpoint"]["camera"]
+                self._lighting_date = scene_dict["initialState"]["environment"][
                     "lighting"
                 ]["datetime"]
 
@@ -1386,12 +1387,12 @@ class Map:
         map                 One of three choices:
 
                             * String being an item id for an Item of type
-                            :class:`~arcgis.mapping.WebMap`
-                            or :class:`~arcgis.mapping.WebScene`.
+                            :class:`~arcgiswidgets.Map`
+                            or :class:`~arcgiswidgets.Scene`.
 
                             * An :class:`~arcgis.gis.Item` of type
-                            :class:`~arcgis.mapping.WebMap`
-                            or :class:`~arcgis.mapping.WebScene`.
+                            :class:`~arcgiswidgets.Map`
+                            or :class:`~arcgiswidgets.Scene`.
         ==================  ========================================
 
         .. note::
@@ -1740,16 +1741,24 @@ class Map:
 
     # ----------------------------------------------------------------------
     def _update_map(self, map):
-        new_map = Map(map)
         # Check for error.
+        # First find the type of the new map
+        if isinstance(map, str):
+            map = self._story._gis.content.get(map)
         if (
-            new_map._type
+            map.type
             != self._story._properties["resources"][self.resource_node]["data"][
                 "itemType"
             ]
         ):
             raise ValueError("New Map must be of same type as the exisiting map.")
 
+        # create new map
+        if map.type == "Web Map":
+            new_map = arcgiswidgets.Map(map)
+        elif map.type == "Web Scene":
+            new_map = arcgiswidgets.Scene(map)
+            
         # Get all the old properties but update with new map where needed
 
         # remove old resource node
