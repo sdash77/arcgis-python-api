@@ -3924,7 +3924,7 @@ class Code:
                 self._language = "txt"
         else:
             # Create new instance, notice no resource node is needed for code
-            self.content = content
+            self._content = content
 
             if isinstance(language, Language):
                 self.language = language.value
