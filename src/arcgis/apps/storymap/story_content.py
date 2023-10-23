@@ -4187,12 +4187,7 @@ class Slide:
                 # If string then need to create text node and add to story
                 if isinstance(title, str):
                     title = Text(title, TextStyles.SUBHEADING)
-                    self._add_item_story(title)
-                elif isinstance(title, Text):
-                    # If text created but not in story
-                    if title._existing is False:
-                        self._add_item_story(title)
-            self._title = title.node if title else None
+            self._title = title if title else None
 
     # ----------------------------------------------------------------------
     def _fix_children(self):
@@ -4389,7 +4384,7 @@ class Slide:
                     self._add_item_story(title)
             # Set the title node id in data of slide
             self._story._properties["nodes"][self.node]["data"]["title"] = title.node
-            self._title = title.node
+            self._title = title
 
     # ----------------------------------------------------------------------
     @property
@@ -4526,7 +4521,11 @@ class Slide:
                 "sublayout"
             ] = self._sublayout
         if self._title:
-            self._story._properties["nodes"][self.node]["data"]["title"] = self._title
+            if self._title._existing is False:
+                self._add_item_story(self._title)
+            self._story._properties["nodes"][self.node]["data"][
+                "title"
+            ] = self._title.node
         # For editing purposes, have children even if empty
         self._fix_children()
 

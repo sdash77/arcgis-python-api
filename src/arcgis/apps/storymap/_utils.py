@@ -88,7 +88,7 @@ def cover(
     ---------------     --------------------------------------------------------------------
     by_line             Optional string. Crediting the author(s).
     ---------------     --------------------------------------------------------------------
-    media               Optional url or file path or :class:`~arcgis.apps.storymap.story_content.Image` or
+    media               Optional url or file path for an image or :class:`~arcgis.apps.storymap.story_content.Image` or
                         :class:`~arcgis.apps.storymap.story_content.Video` object.
     ===============     ====================================================================
 
@@ -129,6 +129,8 @@ def cover(
 
     # set the cover media
     if media is not None:
+        if isinstance(media, str):
+            media = Content.Image(media)
         if not isinstance(media, Content.Image) and not isinstance(
             media, Content.Video
         ):
@@ -803,7 +805,12 @@ def _add_child(story, node_id, position=None):
     else:
         # for storymap the children are the root
         principal_id = root_id
+
+    # find the last position. If only one node then the last position is 1
     last = len(story._properties["nodes"][principal_id]["children"]) - 1
+    if last == 0:
+        # briefings only have cover when you start
+        last = 1
 
     if position and position < last and position != 0 and position != 1:
         # If the position adheres to rules then add node
