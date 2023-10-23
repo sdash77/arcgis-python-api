@@ -10412,27 +10412,32 @@ class Group(dict):
             >>>              method="email"
 
         """
-        from arcgis.gis import User
+        if self._gis._is_agol:
+            from arcgis.gis import User
 
-        cusers = []
-        for user in users:
-            if isinstance(user, User):
-                cusers.append(user.username)
-            else:
-                cusers.append(user)
-            del user
-        url = "community/groups/{groupid}/createNotification".format(
-            groupid=self.groupid
-        )
-        params = {
-            "notificationChannelType": method,
-            "subject": subject,
-            "message": message,
-            "users": ",".join(cusers),
-            "clientId": client_id,
-            "f": "json",
-        }
-        return self._gis._con.post(url, params)
+            cusers = []
+            for user in users:
+                if isinstance(user, User):
+                    cusers.append(user.username)
+                else:
+                    cusers.append(user)
+                del user
+            url = "community/groups/{groupid}/createNotification".format(
+                groupid=self.groupid
+            )
+            params = {
+                "notificationChannelType": method,
+                "subject": subject,
+                "message": message,
+                "users": ",".join(cusers),
+                "clientId": client_id,
+                "f": "json",
+            }
+            return self._gis._con.post(url, params)
+        else:
+            raise NotImplementedError(
+                "The current version of the enterprise does not support `notify`"
+            )
 
     def get_members(self):
         """
