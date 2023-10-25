@@ -6686,6 +6686,7 @@ class ImageryLayer(Layer):
             colStart = math.floor(
                 (dataSourceExtent["xmin"] - origin["x"]) / resolution["x"] / tw
             )
+            colStart = 0 if colStart < 0 else colStart
             colEnd = math.ceil(
                 (dataSourceExtent["xmax"] - origin["x"] - resolution["x"])
                 / resolution["x"]
@@ -6694,6 +6695,7 @@ class ImageryLayer(Layer):
             rowStart = math.floor(
                 (origin["y"] - dataSourceExtent["ymax"]) / resolution["y"] / th
             )
+            rowStart = 0 if rowStart < 0 else rowStart
             rowEnd = math.ceil(
                 (origin["y"] - dataSourceExtent["ymin"] - resolution["y"])
                 / resolution["y"]
