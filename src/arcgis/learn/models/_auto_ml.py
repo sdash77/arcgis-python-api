@@ -487,9 +487,7 @@ class AutoML(object):
         if getattr(self._data, "_is_not_empty", True):
             with warnings.catch_warnings():
                 warnings.simplefilter("ignore", UserWarning)
-                return self._model.score(
-                    self._validation_data_df, val_labels
-                )
+                return self._model.score(self._validation_data_df, val_labels)
         else:
             raise Exception(
                 "This method is not available when the model is initiated for prediction"

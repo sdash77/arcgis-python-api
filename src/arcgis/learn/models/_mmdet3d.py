@@ -88,7 +88,7 @@ class MMDetection3D(ArcGISModel):
     def __init__(self, data, model="SECOND", pretrained_path=None, **kwargs):
         if not HAS_FASTAI:
             _raise_fastai_import_error(import_exception=import_exception)
-
+        kwargs["voxel_parms"] = kwargs.get("voxel_parms", {})
         self._kwargs = kwargs
         self._kwargs["model"] = model
         self._check_dataset_support(data)

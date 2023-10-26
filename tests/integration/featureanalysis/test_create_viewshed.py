@@ -1,13 +1,10 @@
-import sys
-
-# sys.path.insert(0, r"C:\ipython_workfolder\geosaurus\src")
 import unittest
 import datetime
 import pandas as pd
 from arcgis.gis import GIS, Item
 from arcgis.features import FeatureLayer
 from arcgis.features.find_locations import create_viewshed
-from config_tests import setup_profiles
+from .config_tests import setup_profiles
 
 data = [
     {

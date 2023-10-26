@@ -1,13 +1,9 @@
-import sys
-
-# sys.path.insert(0, r"C:\SVN\geosaurus_master_issue_7042\src")
-sys.path.insert(0, r"/Users/cowboy/GitHub/np_geo/src")
 import unittest
 import pandas as pd
 import datetime as _dt
 from arcgis.gis import GIS
 from arcgis.features import analyze_patterns
-from config_tests import setup_profiles
+from .config_tests import setup_profiles
 
 
 data = [
@@ -1789,11 +1785,9 @@ data = [
     },
 ]
 
-profiles = ["online_test", "ent_test", "kube_test"]
+profiles = ["kube_test"]
 setup_profiles(
     profiles[0],
-    profiles[1],
-    profiles[2],
 )
 
 

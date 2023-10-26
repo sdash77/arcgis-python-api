@@ -1585,6 +1585,29 @@ class MapView(widgets.DOMWidget):
             except KeyError:
                 log.warning("No 'layers' in Item: will not be added to map")
         elif isinstance(item, Layer):
+            if isinstance(item, FeatureCollection):
+                # Need to do extra processing when plotting Feature Collection
+                if "featureSet" in item.layer:
+                    item.layer = {
+                        "layers": [
+                            {
+                                "featureSet": item.layer["featureSet"],
+                                "layerDefinition": item.layer["layerDefinition"],
+                            }
+                        ]
+                    }
+                else:
+                    item.layer = dict(item.layer)
+                for layer in item.layer["layers"]:
+                    for field in layer["layerDefinition"]["fields"]:
+                        if field["type"] == "esriFieldTypeBigInteger":
+                            field["type"] = "esriFieldTypeDouble"
+                        if field["type"] == "esriFieldTypeDateOnly":
+                            field["type"] = "esriFieldTypeDate"
+                        if field["type"] == "esriFieldTypeTimeOnly":
+                            field["type"] == "esriFieldTypeString"
+                        if field["type"] == "esriFieldTimestampOffset":
+                            field["type"] == "esriFieldTypeString"
             self._add_layer_to_webmap(item, options)
             _lyr = _make_jsonable_dict(item._lyr_json)
             if ("type" in _lyr and _lyr["type"] == "MapImageLayer") and (

@@ -2083,17 +2083,6 @@ def kernel_density(
             "OutputRasterParameterName": "out_raster",
             "in_features": input_features,
             "population_field": population_field,
-            "RasterInfo": {
-                "blockWidth": 2048,
-                "blockHeight": 256,
-                "bandCount": 1,
-                "pixelType": 9,
-                "firstPyramidLevel": 1,
-                "maximumPyramidLevel": 30,
-                "pixelSizeX": 0,
-                "pixelSizeY": 0,
-                "type": "RasterInfo",
-            },
         },
     }
 
@@ -4137,17 +4126,6 @@ def distance_accumulation(
             "PrimaryInputParameterName": "in_source_data",
             "OutputRasterParameterName": "out_distance_accumulation_raster",
             "in_source_data": input_source_data,
-            "RasterInfo": {
-                "blockWidth": 2048,
-                "blockHeight": 256,
-                "bandCount": 1,
-                "pixelType": 9,
-                "firstPyramidLevel": 1,
-                "maximumPyramidLevel": 30,
-                "pixelSizeX": 1,
-                "pixelSizeY": 1,
-                "type": "RasterInfo",
-            },
         },
     }
 
@@ -4421,17 +4399,6 @@ def distance_allocation(
             "PrimaryInputParameterName": "in_source_data",
             "OutputRasterParameterName": "out_distance_allocation_raster",
             "in_source_data": input_source_data,
-            "RasterInfo": {
-                "blockWidth": 2048,
-                "blockHeight": 256,
-                "bandCount": 1,
-                "pixelType": 8,
-                "firstPyramidLevel": 1,
-                "maximumPyramidLevel": 30,
-                "pixelSizeX": 1,
-                "pixelSizeY": 1,
-                "type": "RasterInfo",
-            },
         },
     }
 
@@ -4630,17 +4597,6 @@ def optimal_path_as_raster(
             "PrimaryInputParameterName": "in_destination_data",
             "OutputRasterParameterName": "out_path_accumulation_raster",
             "in_destination_data": input_destination_data,
-            "RasterInfo": {
-                "blockWidth": 2048,
-                "blockHeight": 256,
-                "bandCount": 1,
-                "pixelType": 8,
-                "firstPyramidLevel": 1,
-                "maximumPyramidLevel": 30,
-                "pixelSizeX": 1,
-                "pixelSizeY": 1,
-                "type": "RasterInfo",
-            },
         },
     }
 

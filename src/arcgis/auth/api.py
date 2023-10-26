@@ -1,3 +1,4 @@
+from __future__ import annotations
 import sys
 import logging
 from typing import Dict, Any, Tuple
@@ -53,7 +54,9 @@ from requests_toolbelt.adapters.host_header_ssl import HostHeaderSSLAdapter
 
 from .tools import LazyLoader
 
+
 urllib3 = LazyLoader("urllib3")
+__USERAGENT__ = f"Geosaurus/{__version__}"
 
 
 ###########################################################################
@@ -166,7 +169,7 @@ class EsriSession:
         self,
         auth: "AuthBase" = None,
         cert: Tuple[str] = None,
-        verify_cert: bool = True,
+        verify_cert: bool | str = True,
         allow_redirects: bool = True,
         headers: Dict[str, Any] = None,
         referer="http",
@@ -185,7 +188,7 @@ class EsriSession:
         self._cert = cert
         self.allow_redirects = allow_redirects
         self.verify_cert = verify_cert
-        self._useragent = f"EsriSession/{__version__}"
+        self._useragent = __USERAGENT__
         self._session.headers["User-Agent"] = self._useragent
         if referer is None:
             referer = ""
@@ -269,7 +272,27 @@ class EsriSession:
                         ),
                     ),
                 )
-            adapter = HTTPAdapter(max_retries=r)
+            if isinstance(self.auth, EsriPKIAuth):
+                from .tools._pki_adaptor import PKIAdapter
+
+                adapter = PKIAdapter(
+                    pki_data=cert,
+                    pki_password=kwargs.pop("pki_password", None),
+                    max_retries=r,
+                )
+                self._session.cert = None
+                self.auth = None
+            else:
+                adapter = HTTPAdapter(max_retries=r)
+            self._session.mount("http://", adapter)
+            self._session.mount("https://", adapter)
+        if isinstance(self.auth, EsriPKIAuth) and not "retries" in kwargs:
+            from .tools._pki_adaptor import PKIAdapter
+
+            adapter = PKIAdapter(
+                pki_data=cert,
+                pki_password=kwargs.pop("pki_password", None),
+            )
             self._session.mount("http://", adapter)
             self._session.mount("https://", adapter)
 
@@ -349,7 +372,7 @@ class EsriSession:
 
     # ----------------------------------------------------------------------
     @property
-    def verify_cert(self) -> bool:
+    def verify_cert(self) -> bool | str:
         """
         Get/Set property that allows for the verification of SSL certificates
 
@@ -359,8 +382,8 @@ class EsriSession:
 
     # ----------------------------------------------------------------------
     @verify_cert.setter
-    def verify_cert(self, value: bool):
-        if isinstance(value, bool) and value != self._session.verify:
+    def verify_cert(self, value: bool | str):
+        if isinstance(value, (bool, str)) and value != self._session.verify:
             self._session.verify = value
 
     # ----------------------------------------------------------------------
