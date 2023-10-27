@@ -830,7 +830,7 @@ class StoryMap(object):
             content._add_separator(story=self)
 
         # Add to story children
-        self._add_child(node_id=node_id, position=position)
+        _utils._add_child(node_id=node_id, position=position)
         return node_id
 
     # ----------------------------------------------------------------------
@@ -883,7 +883,7 @@ class StoryMap(object):
             self._properties["nodes"][root_id]["children"].pop(position)
 
         # Add node to new position
-        self._add_child(node_id, position)
+        _utils._add_child(node_id, position)
 
     # ----------------------------------------------------------------------
     def save(
@@ -1009,27 +1009,3 @@ class StoryMap(object):
 
         """
         return utils.copy_content(self, target_story, node_list)
-
-    # ----------------------------------------------------------------------
-    def _add_child(self, node_id, position=None):
-        """
-        A story node has children. Children is a list of item nodes that are in
-        the story. The order of the list determines the order that the nodes
-        appear in the story. First and last nodes are reserved for story_cover
-        and credits. The second node is always navigation. If visible is not set
-        to True is simply won't be seen but stays in position 2.
-        """
-        # Get list of children in story
-        root_id = self._properties["root"]
-        last = len(self._properties["nodes"][root_id]["children"]) - 1
-
-        if position and position < last and position != 0 and position != 1:
-            # If the position adheres to rules then add node
-            self._properties["nodes"][root_id]["children"].insert(position, node_id)
-        elif position and (position == 0 or position == 1):
-            # First and second node reserved for story cover and navigation
-            # Add as third node if user specified position 0 or 1
-            self._properties["nodes"][root_id]["children"].insert(2, node_id)
-        else:
-            # Last node is reserved for credits so add before this if user wanted last position
-            self._properties["nodes"][root_id]["children"].insert(last, node_id)

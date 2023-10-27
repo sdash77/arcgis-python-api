@@ -371,6 +371,7 @@ class Briefing(object):
     def add(
         self,
         slides: list[Content.Slide],
+        position: Optional[int] = None,
     ):
         """
         Use this method to add content to your StoryMap. Content can be of various class types and when
@@ -384,6 +385,9 @@ class Briefing(object):
         slides              Required list of :class:`~arcgis.apps.storymap.story_content.Slide`.
                             The list of slides to be added to the story. The order of the slides
                             in the list is the order in which they will appear in the briefing.
+        ---------------     --------------------------------------------------------------------
+        position            Optional Integer. Indicates the position in which the slide will be
+                            added. If no position is provided, the slide will be placed at the end.
         ===============     ====================================================================
 
         :return: True if the slide was added successfully.
@@ -401,7 +405,7 @@ class Briefing(object):
             slide._add_slide(story=self)
 
             # Add to story children
-            utils._add_child(self, node_id=slide.node)
+            utils._add_child(self, node_id=slide.node, postion=position)
 
         return True
 
