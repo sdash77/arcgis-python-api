@@ -298,7 +298,7 @@ class GPJob(object):
                     processing_states = json.loads(processing_states.replace('u"', '"'))
                     return processing_states
 
-            if isinstance(value, DataFile):
+            if isinstance(value, DataFile) and self.task != "GenerateReport":
                 return self._gis._con.post(value.to_dict()["url"], {})
             if isinstance(value, (RasterData, LinearUnit)):
                 return value
@@ -1104,6 +1104,34 @@ class OMJob(GPJob):
                     }
                 }
             )
+            if item_name == "reset":
+                keys = [
+                    "adjustment",
+                    "matchControlPoint",
+                    "colorCorrection",
+                    "computeControlPoints",
+                    "seamline",
+                    "appendControlPoints",
+                    "report",
+                    "queryControlPoints",
+                    "ortho",
+                    "dsm",
+                    "dtm",
+                ]
+                for key in keys:
+                    if key in mission_json["jobs"].keys():
+                        if key != "adjustment":
+                            mission_json["jobs"].update({key: {"checked": False}})
+                        else:
+                            mission_json["jobs"].update(
+                                {key: {"checked": False, "mode": "Quick"}}
+                            )
+
+                item_keys = ["ortho", "dsm", "dtm"]
+                for key in item_keys:
+                    if key in mission_json["items"].keys():
+                        mission_json["items"].update({key: {}})
+
             if processing_states is not None:
                 mission_json["processingSettings"].update(
                     {item_name: processing_states}
@@ -1116,8 +1144,22 @@ class OMJob(GPJob):
             properties = json.loads(resource["properties"])
 
             if self._item:
-                url = json.loads(self._item)["serviceProperties"]["serviceUrl"]
-                itemid = json.loads(self._item)["itemProperties"]["itemId"]
+                item = ""
+                url = ""
+                item_props = json.loads(self._item)
+                if "serviceProperties" in item_props.keys():
+                    if "serviceUrl" in item_props["serviceProperties"].keys():
+                        url = item_props["serviceProperties"]["serviceUrl"]
+                    if "itemProperties" in item_props.keys():
+                        if "itemId" in item_props["itemProperties"].keys():
+                            itemid = item_props["itemProperties"]["itemId"]
+                elif "itemId" in item_props.keys():
+                    itemid = item_props["itemId"]
+                    portal_item = mission._gis.content.get(itemid)
+                    url = portal_item.url
+                elif "url" in item_props.keys():
+                    url = item_props["url"]
+
                 mission_json["items"].update(
                     {item_name: {"itemId": itemid, "url": url}}
                 )

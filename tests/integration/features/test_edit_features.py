@@ -3386,7 +3386,6 @@ class TestFeatureLayerEditFeatures(unittest.TestCase):
         for profile in PROFILES:
             item = None
             try:
-
                 gis = GIS(profile=profile, verify_cert=False, trust_env=True)
 
                 item = gis.content.import_data(self._sdf)
@@ -3406,7 +3405,6 @@ class TestFeatureLayerEditFeatures(unittest.TestCase):
                 # assert resp['updateResults']
                 assert resp["addResults"]
             except Exception as e:
-
                 raise e
             finally:
                 if item:
@@ -3423,7 +3421,6 @@ class TestFeatureLayerEditFeatures(unittest.TestCase):
         for profile in PROFILES:
             item = None
             try:
-
                 gis = GIS(profile=profile, verify_cert=False, trust_env=True)
 
                 item = gis.content.import_data(self._sdf)
@@ -3438,7 +3435,6 @@ class TestFeatureLayerEditFeatures(unittest.TestCase):
 
                 assert resp["updateResults"]
             except Exception as e:
-
                 raise e
             finally:
                 if item:
@@ -3458,7 +3454,6 @@ class TestFeatureLayerEditFeatures(unittest.TestCase):
         for profile in PROFILES:
             item = None
             try:
-
                 gis = GIS(profile=profile, verify_cert=False, trust_env=True)
 
                 item = gis.content.import_data(self._sdf)
@@ -3468,7 +3463,6 @@ class TestFeatureLayerEditFeatures(unittest.TestCase):
                 resp = item.layers[0].edit_features(adds=adds)
                 assert resp["addResults"]
             except Exception as e:
-
                 raise e
             finally:
                 if item:
@@ -3488,7 +3482,6 @@ class TestFeatureLayerEditFeatures(unittest.TestCase):
         for profile in PROFILES:
             item = None
             try:
-
                 gis = GIS(profile=profile, verify_cert=False, trust_env=True)
 
                 item = gis.content.import_data(self._sdf)
@@ -3499,7 +3492,6 @@ class TestFeatureLayerEditFeatures(unittest.TestCase):
                 resp = item.layers[0].edit_features(updates=updates)
                 assert resp["updateResults"]
             except Exception as e:
-
                 raise e
             finally:
                 if item:
@@ -3534,7 +3526,6 @@ class TestFeatureLayerEditFeatures(unittest.TestCase):
         for profile in PROFILES:
             item = None
             try:
-
                 gis = GIS(profile=profile, verify_cert=False, trust_env=True)
 
                 item = gis.content.import_data(self._sdf)
@@ -3546,7 +3537,6 @@ class TestFeatureLayerEditFeatures(unittest.TestCase):
                 resp = lyr.edit_features(adds=features)
                 assert resp
             except Exception as e:
-
                 raise e
             finally:
                 if item:
@@ -3565,7 +3555,6 @@ class TestFeatureLayerEditFeatures(unittest.TestCase):
         for profile in PROFILES:
             item = None
             try:
-
                 gis = GIS(profile=profile, verify_cert=False, trust_env=True)
 
                 item = gis.content.import_data(self._sdf)
@@ -3578,7 +3567,51 @@ class TestFeatureLayerEditFeatures(unittest.TestCase):
                 # this throws the error
                 resp = feature_layer.edit_features(adds=[Feature(geometry=geometry)])
             except Exception as e:
+                raise e
+            finally:
+                if item:
+                    related = self._get_relationships(item)
+                    item.delete()
+                    for relate in related:
+                        try:
+                            relate.delete()
+                        except:
+                            ...
 
+    def test_asset_maps(self):
+        for profile in PROFILES:
+            item = None
+            try:
+                gis = GIS(profile=profile, verify_cert=False, trust_env=True)
+
+                item = gis.content.import_data(self._sdf)
+                feature_layer: FeatureLayer = item.layers[0]
+
+                adds = [
+                    {
+                        "attributes": {
+                            "case_": "HZ104460",
+                            "VALUE": 94820.37,
+                            "secondary": "OVER $500",
+                            "location_d": "CONSTRUCTION SITE",
+                            "GlobalID": "{064185b3-d827-fa42-a9bb-aff1ccb9b6a1}",
+                        }
+                    }
+                ]
+                asset_maps = {
+                    "adds": [
+                        {
+                            "globalId": "{c9e887e9-c8bd-4014-be62-03e5b0f7b25f}",
+                            "parentGlobalId": "{064185b3-d827-fa42-a9bb-aff1ccb9b6a1}",
+                            "assetName": "geometry.glb",
+                            "assetHash": "6486ee53c8faba18045ef29d382f1c8227bde3a25d37f7a62fe0d2259a3a14dd",
+                            "flags": ["PROJECT_VERTICES"],
+                        }
+                    ]
+                }
+                # this throws the error
+                resp = feature_layer.edit_features(adds=adds, asset_maps=asset_maps)
+            except Exception as e:
                 raise e
             finally:
                 if item:

@@ -28,26 +28,51 @@ def get_backbone_channel(model_cfg, data):
     return backbone_feature.shape[1]
 
 
-def set_voxel_info(voxel_parms, data):
+def get_voxel_size(voxel_parms, data):
     pc_range = np.array(data.range)
     pc_lwh = pc_range[3:] - pc_range[:3]
     # keep the minimum resolution of point cloud grid to (200, 200) in x, y direction
     tile_voxel_size = ([0.005, 0.005, 0.02] * pc_lwh).tolist()
     default_voxel_size = list(map(min, zip(tile_voxel_size, data.voxel_size)))
-    voxel_size = voxel_parms.get("voxel_size", default_voxel_size)
+    voxel_size = voxel_parms.get("voxel_size", None)
+    if voxel_size is None:
+        voxel_size = default_voxel_size
+    else:
+        if len(voxel_size) != 3:
+            raise Exception("voxel_size list should contain 3 items.")
+        # check if given voxel_size is creating at least 64x64x8 voxels
+        grid_size = pc_lwh / voxel_size
+        if min(grid_size) < 64:
+            raise Exception(f"The size {voxel_size} of the voxel is too big.")
 
     grid_size = torch.tensor(pc_lwh / voxel_size).round().long().tolist()[::-1]
+
+    return voxel_size, grid_size
+
+
+def get_max_voxels(voxel_parms, grid_size):
     no_of_voxels = np.prod(grid_size, dtype=np.uint64).tolist()
-    max_voxels = max(
-        [20000, 40000],
-        voxel_parms.get("max_voxels", [no_of_voxels // 3000, no_of_voxels // 2000]),
-    )
-    voxel_points = max(
-        10,
-        voxel_parms.get(
-            "voxel_points", int(data.no_of_points_per_tile // (max_voxels[0] * 0.3))
-        ),
-    )
+    max_voxels = voxel_parms.get("max_voxels", None)
+    if max_voxels is None:
+        max_voxels = list(
+            map(max, [20000, 40000], [no_of_voxels // 3000, no_of_voxels // 2000])
+        )
+    else:
+        if len(max_voxels) != 2:
+            raise Exception("max_voxels list should contain 2 items.")
+        if min(max_voxels) < 20000:
+            raise Exception("The minimum values in max_voxel should be at least 20000.")
+    return max_voxels
+
+
+def set_voxel_info(voxel_parms, data):
+    voxel_size, grid_size = get_voxel_size(voxel_parms, data)
+    max_voxels = get_max_voxels(voxel_parms, grid_size)
+    voxel_points = voxel_parms.get("voxel_points", None)
+    if voxel_points is None:
+        voxel_points = max(10, int(data.no_of_points_per_tile // (max_voxels[0] * 0.3)))
+    if voxel_points < 10:
+        raise Exception("voxel_points should be greater than or equal to 10.")
 
     voxel_parms["voxel_size"] = voxel_size
     voxel_parms["sparse_shape"] = grid_size

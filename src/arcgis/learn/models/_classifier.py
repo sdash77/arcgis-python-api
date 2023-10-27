@@ -183,7 +183,10 @@ class FeatureClassifier(ArcGISModel):
 
         self._free_memory()
         backbone = complete_transformer_backbone_name(backbone, data.chip_size)
-        if not self._check_backbone_support(backbone):
+        if not (
+            self._check_backbone_support(backbone)
+            or backbone in self._transformer_backbone_original_names()
+        ):
             raise Exception(
                 f"Enter only compatible backbones from {', '.join(self.supported_backbones)}"
             )
@@ -397,7 +400,7 @@ class FeatureClassifier(ArcGISModel):
     def _supported_backbones():
         timm_models = filter_timm_models(["*repvgg*", "*tresnet*"])
         timm_backbones = list(map(lambda m: "timm:" + m, timm_models))
-        transformer_backbones = FeatureClassifier._transformer_backbone_original_names()
+        transformer_backbones = FeatureClassifier.transformer_backbones()
         return [*_resnet_family, models.mobilenet_v2.__name__] + sorted(
             timm_backbones + transformer_backbones
         )

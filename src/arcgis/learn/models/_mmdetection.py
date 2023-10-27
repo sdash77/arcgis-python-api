@@ -37,7 +37,8 @@ class MMDetectionConfig:
 
         config = kwargs.get("model", False)
         checkpoint = kwargs.get("model_weight", False)
-
+        if config[-2:] != "py":
+            config += ".py"
         if self.os.path.exists(self.pathlib.Path(config)):
             cfg = mmcv.Config.fromfile(config)
             cfg.model.pretrained = None
@@ -48,7 +49,7 @@ class MMDetectionConfig:
                 self.pathlib.Path(arcgis.__file__).parent
                 / "learn"
                 / "_mmdetection_config"
-                / (config + ".{}".format("py"))
+                / config
             )
             cfg = mmcv.Config.fromfile(cfg_abs_path)
             checkpoint = cfg.get("checkpoint", False)

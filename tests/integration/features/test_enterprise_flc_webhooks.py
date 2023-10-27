@@ -73,12 +73,12 @@ class Test_EnterpriseWebhooks(unittest.TestCase):
         assert whm.delete_all_hooks()
         hook = whm.create(
             name="simple_create",
-            hook_url="https://webhook.site/1ff0c3e0-17b7-4354-b98f-93954dd45c68",
+            hook_url="https://en1dx5cd33emv.x.pipedream.net",
         )
         try:
             hook2 = whm.create(
                 name="simple_create",
-                hook_url="https://webhook.site/1ff0c3e0-17b7-4354-b98f-93954dd45c68",
+                hook_url="https://en1dx5cd33emv.x.pipedream.net",
             )
         except ValueError as va:
             print(va)
@@ -89,7 +89,7 @@ class Test_EnterpriseWebhooks(unittest.TestCase):
         assert len(whm.list) == 0
         hook = whm.create(
             name="simple_create",
-            hook_url="https://webhook.site/1ff0c3e0-17b7-4354-b98f-93954dd45c68",
+            hook_url="https://en1dx5cd33emv.x.pipedream.net",
         )
         hook.edit(name="new_name")
         assert hook.properties["name"] == "new_name"

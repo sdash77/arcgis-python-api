@@ -321,6 +321,8 @@ class ServicesDirectory(BaseServer):
             res = self._con.get(self._url, {"f": "json"})
         elif folder.lower() in [f.lower() for f in self.folders]:
             res = self._con.get("%s/%s" % (self._url, folder), {"f": "json"})
+        elif not folder.lower() in [f.lower() for f in self.folders]:
+            raise ValueError(f"The folder: {folder} does not exist.")
         if "services" in res:
             for s in res["services"]:
                 if s["name"].split("/")[-1].lower() == name.lower():

@@ -1,7 +1,9 @@
 """
 Modifies a local portal's system settings.
 """
-from typing import Optional
+import json
+import requests
+from typing import Optional, Any
 from .._impl._con import Connection
 from .. import GIS
 from ._base import BasePortalAdmin
@@ -603,6 +605,64 @@ class System(BasePortalAdmin):
         return res["isExternalContentEnabled"]
 
     # ----------------------------------------------------------------------
+    @property
+    def limits(self) -> dict[str, Any]:
+        """
+        The limits resource provides limits associated with the portal
+        organization, such as user and organizational limits for scheduled
+        tasks.
+
+        ==================     ====================================================================
+        **Parameter**           **Description**
+        ------------------     --------------------------------------------------------------------
+        value                  required Boolean. If true, external content is enabled, else it is
+                               disabled.
+        ==================     ====================================================================
+
+        :returns: dict[str,Any]
+        """
+        if self._gis.version < [2023, 2]:
+            return None
+        url: str = f"{self.url}/limits"
+        params: dict[str, Any] = {
+            "f": "json",
+        }
+        resp: requests.Response = self._con._session.get(url=url, params=params)
+        resp.raise_for_status()
+        return resp.json()
+
+    # ----------------------------------------------------------------------
+    def set_limits(
+        self, properties: list[dict], *, category: str = "ScheduleTask"
+    ) -> dict:
+        """
+        The update operation updates one or more system limits in a
+        specific category. Only limits that are included in this request
+        will be updated.
+
+        ==================     ====================================================================
+        **Parameter**           **Description**
+        ------------------     --------------------------------------------------------------------
+        properties             A JSON array containing one or more limits of specific category to be updated.
+        ------------------     --------------------------------------------------------------------
+        category               Optional String. Category limits to be updated. The default is `ScheduleTask`
+        ==================     ====================================================================
+
+        :returns: None
+        """
+        if self._gis.version < [2023, 2]:
+            return None
+        url: str = f"{self.url}/limits/update"
+        params: dict[str, Any] = {
+            "f": "json",
+            "category": category,
+            "properties": json.dumps(properties),
+        }
+        resp: requests.Response = self._con._session.post(url=url, data=params)
+        resp.raise_for_status()
+        return resp.json()
+
+    # ----------------------------------------------------------------------
     @content_discovery.setter
     def content_discovery(self, value: bool):
         """
@@ -726,7 +786,10 @@ class WebAdaptors(BasePortalAdmin):
         """
         url = "%s/config/update" % self._url
         if isinstance(shared_key, str):
-            params = {"webAdaptorsConfig": {"sharedkey": shared_key}, "f": "json"}
+            params = {
+                "webAdaptorsConfig": {"sharedkey": shared_key},
+                "f": "json",
+            }
         elif isinstance(shared_key, dict) and "sharedKey" in shared_key:
             params = {"webAdaptorsConfig": shared_key, "f": "json"}
         return self._con.post(path=url, postdata=params)

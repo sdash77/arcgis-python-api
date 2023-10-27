@@ -1,5 +1,6 @@
 from ._codetemplate import super_resolution
 import torch, json, traceback
+from ... import __version__ as ArcGISLearnVersion
 from .._data import prepare_data, _raise_fastai_import_error
 
 try:
@@ -99,6 +100,7 @@ class SuperResolution(ArcGISModel):
     """
 
     def __init__(self, data, backbone=None, pretrained_path=None, *args, **kwargs):
+        self._learn_version = kwargs.get("ArcGISLearnVersion", ArcGISLearnVersion)
         if backbone == "SR3":
             data_bunch = None
             if data.train_ds.__class__.__name__ == "Pix2PixHDDataset":
@@ -175,6 +177,7 @@ class SuperResolution(ArcGISModel):
                 )
                 self.learn.split(ifnone(None, cnn_config(self._backbone)["split"]))
             else:
+                attention = True if self._learn_version > "2.1.0.3" else False
                 self._data.c = self._data._n_channel
                 self.learn = unet_learner(
                     self._data,
@@ -183,7 +186,7 @@ class SuperResolution(ArcGISModel):
                     loss_func=feat_loss,
                     callback_fns=LossMetrics,
                     blur=True,
-                    self_attention=True,
+                    self_attention=attention,
                     norm_type=NormType.Weight,
                 )
             self.model_type = "UNet"
@@ -262,16 +265,17 @@ class SuperResolution(ArcGISModel):
         model_file = Path(emd["ModelFile"])
         if not model_file.is_absolute():
             model_file = emd_path.parent / model_file
-        modtype = emd.get("ModelArch")
+        modtype = emd.get("ModelArch", "UNet")
         model_params = emd["ModelParameters"]
         downsample_factor = emd.get("downsample_factor")
-        n_channel = emd.get("n_channel")
+        n_channel = emd.get("n_channel", 3)
         resize_to = emd.get("resize_to")
         chip_size = emd["ImageHeight"]
         kwargs = emd.get("Kwargs", {})
+        kwargs["ArcGISLearnVersion"] = emd.get("ArcGISLearnVersion", "1.0.0")
 
         if data is None:
-            if modtype:
+            if modtype == "SR3":
                 data = _EmptyData(
                     path=emd_path.parent, loss_func=None, c=2, chip_size=chip_size
                 )
@@ -290,7 +294,7 @@ class SuperResolution(ArcGISModel):
                     data = _EmptyData(
                         path=emd_path.parent, loss_func=None, c=2, chip_size=chip_size
                     )
-            data._is_multispec = emd.get("is_multispec")
+            data._is_multispec = emd.get("is_multispec", False)
             data._n_channel = n_channel
             data._is_empty = True
             data.emd_path = emd_path
