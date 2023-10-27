@@ -730,9 +730,9 @@ def compute_sensor_model(
     flight_json_details = {}
     from ._realitymapping_mission import Mission
 
-    if isinstance(image_collection, Mission):
-        mission = image_collection
-        image_collection = image_collection.image_collection
+    image_collection = mission
+    if isinstance(mission, Mission):
+        image_collection = mission.image_collection
         update_flight_json = True
 
         adj_dict = {}
@@ -762,7 +762,7 @@ def compute_sensor_model(
         }
 
     return gis._tools.realitymapping.compute_sensor_model(
-        image_collection=mission,
+        image_collection=image_collection,
         mode=mode,
         location_accuracy=location_accuracy,
         context=context,
@@ -824,12 +824,12 @@ def alter_processing_states(
     gis = arcgis.env.active_gis if gis is None else gis
     from ._realitymapping_mission import Mission
 
-    if isinstance(image_collection, Mission):
-        mission = image_collection
+    image_collection = mission
+    if isinstance(mission, Mission):
         image_collection = image_collection.image_collection
 
     return gis._tools.realitymapping.alter_processing_states(
-        image_collection=mission,
+        image_collection=image_collection,
         new_states=new_states,
         future=future,
         **kwargs,
@@ -865,12 +865,12 @@ def get_processing_states(
     gis = arcgis.env.active_gis if gis is None else gis
     from ._realitymapping_mission import Mission
 
-    if isinstance(image_collection, Mission):
-        mission = image_collection
-        image_collection = image_collection.image_collection
+    image_collection = mission
+    if isinstance(mission, Mission):
+        image_collection = mission.image_collection
 
     return gis._tools.realitymapping.get_processing_states(
-        image_collection=mission, future=future, **kwargs
+        image_collection=image_collection, future=future, **kwargs
     )
 
 
@@ -1009,9 +1009,9 @@ def match_control_points(
     flight_json_details = {}
     from ._realitymapping_mission import Mission
 
-    if isinstance(image_collection, Mission):
-        mission = image_collection
-        image_collection = image_collection.image_collection
+    image_collection = mission
+    if isinstance(mission, Mission):
+        image_collection = mission.image_collection
         update_flight_json = True
 
         flight_json_details = {
@@ -1021,7 +1021,7 @@ def match_control_points(
         }
 
     return gis._tools.realitymapping.match_control_points(
-        image_collection=mission,
+        image_collection=image_collection,
         control_points=control_points,
         similarity=similarity,
         context=context,
@@ -1132,9 +1132,9 @@ def compute_control_points(
     flight_json_details = {}
     from ._realitymapping_mission import Mission
 
-    if isinstance(image_collection, Mission):
-        mission = image_collection
-        image_collection = image_collection.image_collection
+    image_collection = mission
+    if isinstance(mission, Mission):
+        image_collection = mission.image_collection
         update_flight_json = True
 
         flight_json_details = {
@@ -1144,7 +1144,7 @@ def compute_control_points(
         }
 
     return gis._tools.realitymapping.compute_control_points(
-        image_collection=mission,
+        image_collection=image_collection,
         reference_image=reference_image,
         image_location_accuracy=image_location_accuracy,
         context=context,
@@ -1263,9 +1263,9 @@ def edit_control_points(
     flight_json_details = {}
     from ._realitymapping_mission import Mission
 
-    if isinstance(image_collection, Mission):
-        mission = image_collection
-        image_collection = image_collection.image_collection
+    image_collection = mission
+    if isinstance(mission, Mission):
+        image_collection = mission.image_collection
         update_flight_json = True
 
         flight_json_details = {
@@ -1275,7 +1275,7 @@ def edit_control_points(
         }
 
     return gis._tools.realitymapping.edit_control_points(
-        image_collection=mission,
+        image_collection=image_collection,
         input_control_points=control_points,
         future=future,
         flight_json_details=flight_json_details,
@@ -1390,9 +1390,10 @@ def generate_orthomosaic(
     update_flight_json = False
     from ._realitymapping_mission import Mission
 
-    if isinstance(image_collection, Mission):
-        mission = image_collection
-        image_collection = image_collection.image_collection
+    image_collection = mission
+    flight_json_details = None
+    if isinstance(mission, Mission):
+        image_collection = mission.image_collection
         update_flight_json = True
 
         if kwargs is not None:
@@ -1505,7 +1506,7 @@ def generate_orthomosaic(
         }
 
     return gis._tools.realitymapping.generate_orthomosaic(
-        image_collection=mission,
+        image_collection=image_collection,
         output_ortho_image=out_ortho,
         regen_seamlines=regen_seamlines,
         recompute_color_correction=recompute_color_correction,
@@ -1555,9 +1556,9 @@ def generate_report(
     flight_json_details = {}
     from ._realitymapping_mission import Mission
 
-    if isinstance(image_collection, Mission):
-        mission = image_collection
-        image_collection = image_collection.image_collection
+    image_collection = mission
+    if isinstance(mission, Mission):
+        image_collection = mission.image_collection
         update_flight_json = True
 
         flight_json_details = {
@@ -1567,7 +1568,7 @@ def generate_report(
         }
 
     return gis._tools.realitymapping.generate_report(
-        image_collection=mission,
+        image_collection=image_collection,
         report_format=report_format,
         future=future,
         flight_json_details=flight_json_details,
@@ -1662,9 +1663,9 @@ def query_control_points(
     flight_json_details = {}
     from ._realitymapping_mission import Mission
 
-    if isinstance(image_collection, Mission):
-        mission = image_collection
-        image_collection = image_collection.image_collection
+    image_collection = mission
+    if isinstance(mission, Mission):
+        image_collection = mission.image_collection
         update_flight_json = True
 
         flight_json_details = {
@@ -1674,7 +1675,7 @@ def query_control_points(
         }
 
     return gis._tools.realitymapping.query_control_points(
-        image_collection=mission,
+        image_collection=image_collection,
         where=query,
         future=future,
         flight_json_details=flight_json_details,
@@ -1713,9 +1714,9 @@ def reset_image_collection(
     gis = arcgis.env.active_gis if gis is None else gis
     from ._realitymapping_mission import Mission
 
-    if isinstance(image_collection, Mission):
-        mission = image_collection
-        image_collection = image_collection.image_collection
+    image_collection = mission
+    if isinstance(mission, Mission):
+        image_collection = mission.image_collection
         update_flight_json = True
 
         flight_json_details = {
@@ -1725,7 +1726,7 @@ def reset_image_collection(
         }
 
     return gis._tools.realitymapping.reset_image_collection(
-        image_collection=mission,
+        image_collection=image_collection,
         future=future,
         flight_json_details=flight_json_details,
         **kwargs,
@@ -1973,13 +1974,13 @@ def reconstruct_surface(
     gis = arcgis.env.active_gis if gis is None else gis
     from ._realitymapping_mission import Mission
 
-    if isinstance(image_collection, Mission):
-        mission = image_collection
-        image_collection = image_collection.image_collection
+    image_collection = mission
+    if isinstance(mission, Mission):
+        image_collection = mission.image_collection
         # update_flight_json = True
 
     return gis._tools.realitymapping.reconstruct_surface(
-        image_collection=mission,
+        image_collection=image_collection,
         scenario=scenario,
         forward_overlap=forward_overlap,
         sideward_overlap=sideward_overlap,

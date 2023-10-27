@@ -1221,6 +1221,10 @@ class RMJob(GPJob):
 
     """
 
+    _item = None
+    _gpjob = None
+    _flight_details = None
+
     # ----------------------------------------------------------------------
     def __init__(self, gpjob: GPJob, item: "Item" = None):
         """
