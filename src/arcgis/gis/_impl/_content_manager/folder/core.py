@@ -19,6 +19,7 @@ from ._util import (
     status,
 )
 from arcgis.gis import GIS, Item
+from ..._dataclasses import ItemProperties, ItemTypeEnum
 from arcgis.auth import EsriSession
 
 logger = logging.getLogger(__name__)
@@ -212,6 +213,83 @@ class Folder:
         yield
 
     # ---------------------------------------------------------------------
+    def _add_async_streaming(
+        self,
+        url: str,
+        params: dict,
+        upload_size: int,
+        file_list: dict | list | None,
+    ) -> Item | dict[str, Any]:
+        """performs the add by parts upload for files over 5 MBs."""
+
+        parts_url: str = url.replace("/addItem", "/addPart")
+        ftuple: tuple = file_list.pop("file")
+        params.pop("async", None)
+        resp: requests.Response = self._session.post(
+            url=url, data=params, files=file_list
+        )  # Gets the initial Item
+        data: dict[str, Any] = resp.json()
+        itemid = data.get("id", None) or data.get("itemId", None)
+        if itemid is None:
+            raise FolderException(f"The item could not be added: {str(data)}")
+        parts_url: str = url.replace("/addItem", f"/items/{itemid}/addPart")
+        commit_url: str = url.replace("/addItem", f"/items/{itemid}/commit")
+        # Add By Each Part
+        import concurrent.futures
+
+        results = []
+        futures = {}
+        with concurrent.futures.ThreadPoolExecutor(max_workers=5) as tp:
+            for idx, chunk in enumerate(
+                chunk_by_file_size(ftuple[1], size=upload_size, upload_format=False)
+            ):
+                part_name: str = ftuple[0]
+                part_params: dict[str, Any] = {
+                    "f": "json",
+                    "partNum": f"{idx + 1}",
+                    "streamdata": True,
+                    "size": len(chunk.getvalue()),
+                }
+                future = tp.submit(
+                    self._session.post,
+                    **{
+                        "url": parts_url,
+                        "params": part_params,
+                        "files": {"file": (part_name, chunk, None)},
+                    },
+                )
+                futures[future] = part_name
+            messages = []
+            for future in concurrent.futures.as_completed(futures):
+                r = future.result()
+                r.raise_for_status()
+                data: dict[str, Any] = r.json()
+                if "success" in data:
+                    results.append(data["success"])
+                elif "status" in data and data["status"] == "success":
+                    results.append(True)
+                else:
+                    results.append(False)
+                logger.info(r.text)
+                messages.append(r.text)
+        if all(results):
+            commit_params = {
+                "f": "json",
+                "id": itemid,
+                "type": params["type"],
+                "async": True,
+            }
+            commit_params.update(params)
+            resp: requests.Response = self._session.post(
+                url=commit_url, data=commit_params
+            )
+            resp.raise_for_status()
+            res: dict[str, Any] = resp.json()
+            if "success" in res and res["success"]:
+                return self._process_item_status(itemid=itemid)
+        raise FolderException(str(r.text))
+
+    # ---------------------------------------------------------------------
     def _add_async_large_files(
         self,
         url: str,
@@ -356,20 +434,68 @@ class Folder:
     # ---------------------------------------------------------------------
     def add(
         self,
-        item_properties: dict[str, Any],
+        item_properties: ItemProperties,
         file: str = None,
         text: str | None = None,
         url: str | None = None,
         data_url: str | None = None,
+        item_id: str | None = None,
+        stream: bool = True,
     ) -> concurrent.futures.Future:
         """
         Adds an item to the current folder
 
-        thumbnail can be a tuple ("image.png", io.BytesIO) or path c:\temp\mythumbnail.jpg"
+        ===============     ====================================================================
+        **Parameter**        **Description**
+        ---------------     --------------------------------------------------------------------
+        item_properties     Required ItemProperties. The information to create an item.  The
+                            `title` and `item_type` are required.
+        ---------------     --------------------------------------------------------------------
+        file                Optional string, io.StringIO, or io.BytesIO. Provide the data to the
+                            item.
+        ---------------     --------------------------------------------------------------------
+        text                Optional String. The JSON content for the item to be submitted.
+        ---------------     --------------------------------------------------------------------
+        url                 Optional string. The URL of the item to be submitted. The URL can be
+                            a URL to a service, a web mapping application, or any other content
+                            available at that URL.
+        ---------------     --------------------------------------------------------------------
+        data_url            Optional string. The URL where the item can be downloaded. The
+                            resource will be downloaded and stored as a file type. Similar to
+                            uploading a file to be added, but instead of transferring the
+                            contents of the file, the URL of the data file is referenced and
+                            creates a file item. The referenced URL must be an unsecured URL
+                            where the data can be downloaded. This parameter requires the
+                            operation to be performed asynchronously. Once the job status
+                            returns as complete, the item can be downloaded and the item is
+                            added successfully.
+        ---------------     --------------------------------------------------------------------
+        item_id             Optional string. Available in ArcGIS Enterprise 10.8.1+. Not available in ArcGIS Online.
+                            This parameter allows the desired item id to be specified during creation which
+                            can be useful for cloning and automated content creation scenarios.
+                            The specified id must be a 32 character GUID string without any special characters.
 
-        # Create 3-4 methods to upload file, dataUrl, url, and text
+                            If the `item_id` is already being used, an error will be raised
+                            during the `add` process.
+
+                            Example: item_id=9311d21a9a2047d19c0faaebd6f2cca6
+        ===============     ====================================================================
+
+        :returns: concurrent.futures.Future
+
+
 
         """
+        if isinstance(item_properties, ItemProperties):
+            item_properties: dict = {
+                key: value
+                for key, value in item_properties.to_dict().items()
+                if not value is None
+            }
+        if not file:
+            stream = False
+        elif file and item_id:
+            stream = True
         upload_size: int = None
         thumbnail: str = item_properties.pop("thumbnail", None)
         metadata: str | None = item_properties.pop("metadata", None)
@@ -379,7 +505,8 @@ class Folder:
             "f": "json",
             "async": True,
         }
-
+        if item_id and isinstance(item_id, str) and len(item_id) == 32:
+            params["itemIdToCreate"] = item_id
         if thumbnail and isinstance(thumbnail, tuple):
             fn, thumbnail = thumbnail
             file_list["thumbnail"] = create_upload_tuple(thumbnail, file_name=fn)
@@ -417,9 +544,30 @@ class Folder:
             )
         else:
             curl: str = f"{self._gis._portal.resturl}content/users/{owner}/addItem"
+        max_workers: int = 1
+        with concurrent.futures.ThreadPoolExecutor(max_workers=max_workers) as tp:
+            if stream == True and file:
+                # upload by streaming data
+                logger.info("Adding Item by parts using streaming.")
 
-        with concurrent.futures.ThreadPoolExecutor(max_workers=1) as tp:
-            if text and file is None and url is None and data_url is None:
+                params["multipart"] = True
+                params["fileName"] = params.get("fileName", None) or os.path.basename(
+                    file
+                )
+                params["async"] = True
+                file_list["file"] = create_upload_tuple(file)
+                future = tp.submit(
+                    self._add_async_streaming,
+                    **{
+                        "url": curl,
+                        "params": params,
+                        "file_list": file_list,
+                        "upload_size": upload_size,
+                    },
+                )
+                tp.shutdown(wait=True)
+                return future
+            elif text and file is None and url is None and data_url is None:
                 #  text workflow
                 params["async"] = False
                 if not isinstance(text, str):
@@ -458,6 +606,7 @@ class Folder:
                     )
                     tp.shutdown(wait=True)
                     return future
+
                 else:
                     logger.info("Adding Item by parts because it's over 5 MBs.")
                     params["multipart"] = True
@@ -517,6 +666,14 @@ class Folders:
     def __init__(self, gis: GIS) -> "Folders":
         self._gis = gis
         self._session: EsriSession = gis._con._session
+
+    # ---------------------------------------------------------------------
+    def __str__(self) -> str:
+        return f"< Folders >"
+
+    # ---------------------------------------------------------------------
+    def __repr__(self) -> str:
+        return self.__str__()
 
     @property
     @lru_cache(maxsize=255)
