@@ -384,7 +384,7 @@ class SystemManager(_BaseKube):
         ---------------     --------------------------------------------------------------------
         value               Required dict. A dictionary of registry properties.
 
-                            Allowed Key/Value
+                            Allowed Key/Value:
 
                             ==========================================     ====================================================================
                             **Parameter**                                   **Description**
@@ -417,7 +417,7 @@ class SystemManager(_BaseKube):
         ---------------     --------------------------------------------------------------------
         value               Required dict. A dictionary of registry properties.
 
-                            Allowed Key/Value
+                            Allowed Key/Value:
 
                             ==========================================     ====================================================================
                             **Parameter**                                   **Description**
