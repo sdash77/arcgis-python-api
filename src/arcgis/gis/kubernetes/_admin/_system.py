@@ -387,13 +387,13 @@ class SystemManager(_BaseKube):
                             Allowed Key/Value
 
                             ==========================================     ====================================================================
-                            **Parameter**                                  **Description**
+                            **Parameter**                                   **Description**
                             ------------------------------------------     --------------------------------------------------------------------
                             versionManifestURL                             The URL to the version manifest used in the upgrade process. This property should not be modified.
                             ------------------------------------------     --------------------------------------------------------------------
                             containerStartUpTimeoutSeconds                 The timeout (in seconds) for the start-up of containers during the upgrade process. The default value is 900.
                             ------------------------------------------     --------------------------------------------------------------------
-                            allowGPAndExtensionPublishingToPublishers      ntroduced at 11.0. When set as true, this property allows administrators and publishers to publish geoprocessing services and extensions. By default, only administrators can publish extensions and geoprocessing services.
+                            allowGPAndExtensionPublishingToPublishers      Introduced at 11.0. When set as true, this property allows administrators and publishers to publish geoprocessing services and extensions. By default, only administrators can publish extensions and geoprocessing services.
                             ==========================================     ====================================================================
 
         ===============     ====================================================================
@@ -420,13 +420,13 @@ class SystemManager(_BaseKube):
                             Allowed Key/Value
 
                             ==========================================     ====================================================================
-                            **Parameter**                                  **Description**
+                            **Parameter**                                   **Description**
                             ------------------------------------------     --------------------------------------------------------------------
                             versionManifestURL                             The URL to the version manifest used in the upgrade process. This property should not be modified.
                             ------------------------------------------     --------------------------------------------------------------------
                             containerStartUpTimeoutSeconds                 The timeout (in seconds) for the start-up of containers during the upgrade process. The default value is 900.
                             ------------------------------------------     --------------------------------------------------------------------
-                            allowGPAndExtensionPublishingToPublishers      ntroduced at 11.0. When set as true, this property allows administrators and publishers to publish geoprocessing services and extensions. By default, only administrators can publish extensions and geoprocessing services.
+                            allowGPAndExtensionPublishingToPublishers      Introduced at 11.0. When set as true, this property allows administrators and publishers to publish geoprocessing services and extensions. By default, only administrators can publish extensions and geoprocessing services.
                             ==========================================     ====================================================================
 
         ===============     ====================================================================
