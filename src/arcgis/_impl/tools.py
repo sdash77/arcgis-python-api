@@ -7496,16 +7496,18 @@ class _OrthoRealityMappingTools(BaseAnalytics):
         """initializer"""
         if gis is None:
             gis = arcgis.env.active_gis
-        # if url is None:
-        #     url = gis.properties.helperServices["orthoMapping"]["url"]
         self._url = url
         self._gis = gis
         self._con = gis._con
         self._verbose = verbose
         if "orthomapping" in self._url.lower():
             self._is_ortho = True
+            if url is None:
+                url = gis.properties.helperServices["orthoMapping"]["url"]
         else:
             self._is_ortho = False
+            if url is None:
+                url = gis.properties.helperServices["realityMapping"]["url"]
 
     # ----------------------------------------------------------------------
     def _refresh(self):
@@ -22150,10 +22152,7 @@ class _Tools(object):
             return self._analysis
         try:
             try:
-                # svcurl = self._gis.properties.helperServices["realityMapping"]["url"]
-                # svcurl = "https://svrcluster-sha.esri.com/server/rest/services/System/RealitymappingTools/GPServer"
-                # svcurl = "https://sha-97611-d02.esri.com/server/rest/services/System/RealityMappingTools/GPServer"
-                svcurl = "https://sha-97462-d01.esri.com/server/rest/services/System/RealityMappingTools/GPServer"
+                svcurl = self._gis.properties.helperServices["realityMapping"]["url"]
                 if self._gis._is_hosted_nb_home:
                     svcurl = self._validate_url(svcurl)
             except:

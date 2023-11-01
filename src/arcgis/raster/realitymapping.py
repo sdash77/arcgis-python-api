@@ -199,7 +199,7 @@ def _create_project(
 
     item_properties = {
         "title": name,
-        "type": "Reality Mapping Project",
+        "type": "Ortho Mapping Project", # "Reality Mapping Project",
         "properties": {"flightCount": 0, "status": "inProgress"},
     }
     if definition is None:
