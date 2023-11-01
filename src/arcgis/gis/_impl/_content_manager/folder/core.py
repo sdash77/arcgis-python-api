@@ -19,6 +19,7 @@ from ._util import (
     status,
 )
 from arcgis.gis import GIS, Item
+from ..._dataclasses import ItemProperties, ItemTypeEnum
 from arcgis.auth import EsriSession
 
 logger = logging.getLogger(__name__)
@@ -356,20 +357,61 @@ class Folder:
     # ---------------------------------------------------------------------
     def add(
         self,
-        item_properties: dict[str, Any],
+        item_properties: ItemProperties,
         file: str = None,
         text: str | None = None,
         url: str | None = None,
         data_url: str | None = None,
+        item_id: str | None = None,
     ) -> concurrent.futures.Future:
         """
         Adds an item to the current folder
 
-        thumbnail can be a tuple ("image.png", io.BytesIO) or path c:\temp\mythumbnail.jpg"
+        ===============     ====================================================================
+        **Parameter**        **Description**
+        ---------------     --------------------------------------------------------------------
+        item_properties     Required ItemProperties. The information to create an item.  The
+                            `title` and `item_type` are required.
+        ---------------     --------------------------------------------------------------------
+        file                Optional string, io.StringIO, or io.BytesIO. Provide the data to the
+                            item.
+        ---------------     --------------------------------------------------------------------
+        text                Optional String. The JSON content for the item to be submitted.
+        ---------------     --------------------------------------------------------------------
+        url                 Optional string. The URL of the item to be submitted. The URL can be
+                            a URL to a service, a web mapping application, or any other content
+                            available at that URL.
+        ---------------     --------------------------------------------------------------------
+        data_url            Optional string. The URL where the item can be downloaded. The
+                            resource will be downloaded and stored as a file type. Similar to
+                            uploading a file to be added, but instead of transferring the
+                            contents of the file, the URL of the data file is referenced and
+                            creates a file item. The referenced URL must be an unsecured URL
+                            where the data can be downloaded. This parameter requires the
+                            operation to be performed asynchronously. Once the job status
+                            returns as complete, the item can be downloaded and the item is
+                            added successfully.
+        ---------------     --------------------------------------------------------------------
+        item_id             Optional string. Available in ArcGIS Enterprise 10.8.1+. Not available in ArcGIS Online.
+                            This parameter allows the desired item id to be specified during creation which
+                            can be useful for cloning and automated content creation scenarios.
+                            The specified id must be a 32 character GUID string without any special characters.
 
-        # Create 3-4 methods to upload file, dataUrl, url, and text
+                            If the `item_id` is already being used, an error will be raised
+                            during the `add` process.
+
+                            Example: item_id=9311d21a9a2047d19c0faaebd6f2cca6
+        ===============     ====================================================================
+
+        :returns: concurrent.futures.Future
+
+
 
         """
+        if isinstance(item_properties, ItemProperties):
+            item_properties: dict = {
+                key: value for key, value in item_properties.to_dict().items() if value
+            }
         upload_size: int = None
         thumbnail: str = item_properties.pop("thumbnail", None)
         metadata: str | None = item_properties.pop("metadata", None)
@@ -379,7 +421,8 @@ class Folder:
             "f": "json",
             "async": True,
         }
-
+        if item_id and isinstance(item_id, str) and len(item_id) == 32:
+            params["itemIdToCreate"] = item_id
         if thumbnail and isinstance(thumbnail, tuple):
             fn, thumbnail = thumbnail
             file_list["thumbnail"] = create_upload_tuple(thumbnail, file_name=fn)
@@ -517,6 +560,14 @@ class Folders:
     def __init__(self, gis: GIS) -> "Folders":
         self._gis = gis
         self._session: EsriSession = gis._con._session
+
+    # ---------------------------------------------------------------------
+    def __str__(self) -> str:
+        return f"< Folders >"
+
+    # ---------------------------------------------------------------------
+    def __repr__(self) -> str:
+        return self.__str__()
 
     @property
     @lru_cache(maxsize=255)
