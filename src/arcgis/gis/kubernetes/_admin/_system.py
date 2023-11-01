@@ -374,10 +374,29 @@ class SystemManager(_BaseKube):
 
     # ----------------------------------------------------------------------
     @property
-    def properties(self):
+    def properties(self) -> dict:
         """
         Gets/Sets the system properties resource list system properties
         that have been modified to control the portal's environment.
+
+        ===============     ====================================================================
+        **Parameter**        **Description**
+        ---------------     --------------------------------------------------------------------
+        value               Required dict. A dictionary of registry properties.
+
+                            Allowed Key/Value
+
+                            ==========================================     ====================================================================
+                            **Parameter**                                  **Description**
+                            ------------------------------------------     --------------------------------------------------------------------
+                            versionManifestURL                             The URL to the version manifest used in the upgrade process. This property should not be modified.
+                            ------------------------------------------     --------------------------------------------------------------------
+                            containerStartUpTimeoutSeconds                 The timeout (in seconds) for the start-up of containers during the upgrade process. The default value is 900.
+                            ------------------------------------------     --------------------------------------------------------------------
+                            allowGPAndExtensionPublishingToPublishers      ntroduced at 11.0. When set as true, this property allows administrators and publishers to publish geoprocessing services and extensions. By default, only administrators can publish extensions and geoprocessing services.
+                            ==========================================     ====================================================================
+
+        ===============     ====================================================================
 
         :return: dict
         """
@@ -387,10 +406,31 @@ class SystemManager(_BaseKube):
 
     # ----------------------------------------------------------------------
     @properties.setter
-    def properties(self, value):
+    def properties(self, value: dict) -> None:
         """
         Gets/Sets the system properties resource list system properties
         that have been modified to control the portal's environment.
+
+
+        ===============     ====================================================================
+        **Parameter**        **Description**
+        ---------------     --------------------------------------------------------------------
+        value               Required dict. A dictionary of registry properties.
+
+                            Allowed Key/Value
+
+                            ==========================================     ====================================================================
+                            **Parameter**                                  **Description**
+                            ------------------------------------------     --------------------------------------------------------------------
+                            versionManifestURL                             The URL to the version manifest used in the upgrade process. This property should not be modified.
+                            ------------------------------------------     --------------------------------------------------------------------
+                            containerStartUpTimeoutSeconds                 The timeout (in seconds) for the start-up of containers during the upgrade process. The default value is 900.
+                            ------------------------------------------     --------------------------------------------------------------------
+                            allowGPAndExtensionPublishingToPublishers      ntroduced at 11.0. When set as true, this property allows administrators and publishers to publish geoprocessing services and extensions. By default, only administrators can publish extensions and geoprocessing services.
+                            ==========================================     ====================================================================
+
+        ===============     ====================================================================
+
 
         :return: dict
         """
