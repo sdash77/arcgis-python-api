@@ -216,6 +216,7 @@ class ItemProperties:
     categories: list[str] | None = None
     text: dict | str | None = None
     extension: str | None = None
+    overwrite: bool | None = None
     _dict_data: dict | None = field(init=False)
 
     def __str__(self):
@@ -282,6 +283,7 @@ class ItemProperties:
             "categories": ",".join(self.categories or []),
             "text": self.text or None,
             "extension": self.extension or None,
+            "overwrite": self.overwrite or None,
         }
 
     @classmethod

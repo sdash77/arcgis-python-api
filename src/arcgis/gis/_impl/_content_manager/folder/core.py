@@ -213,6 +213,83 @@ class Folder:
         yield
 
     # ---------------------------------------------------------------------
+    def _add_async_streaming(
+        self,
+        url: str,
+        params: dict,
+        upload_size: int,
+        file_list: dict | list | None,
+    ) -> Item | dict[str, Any]:
+        """performs the add by parts upload for files over 5 MBs."""
+
+        parts_url: str = url.replace("/addItem", "/addPart")
+        ftuple: tuple = file_list.pop("file")
+        params.pop("async", None)
+        resp: requests.Response = self._session.post(
+            url=url, data=params, files=file_list
+        )  # Gets the initial Item
+        data: dict[str, Any] = resp.json()
+        itemid = data.get("id", None) or data.get("itemId", None)
+        if itemid is None:
+            raise FolderException(f"The item could not be added: {str(data)}")
+        parts_url: str = url.replace("/addItem", f"/items/{itemid}/addPart")
+        commit_url: str = url.replace("/addItem", f"/items/{itemid}/commit")
+        # Add By Each Part
+        import concurrent.futures
+
+        results = []
+        futures = {}
+        with concurrent.futures.ThreadPoolExecutor(max_workers=5) as tp:
+            for idx, chunk in enumerate(
+                chunk_by_file_size(ftuple[1], size=upload_size, upload_format=False)
+            ):
+                part_name: str = ftuple[0]
+                part_params: dict[str, Any] = {
+                    "f": "json",
+                    "partNum": f"{idx + 1}",
+                    "streamdata": True,
+                    "size": len(chunk.getvalue()),
+                }
+                future = tp.submit(
+                    self._session.post,
+                    **{
+                        "url": parts_url,
+                        "params": part_params,
+                        "files": {"file": (part_name, chunk, None)},
+                    },
+                )
+                futures[future] = part_name
+            messages = []
+            for future in concurrent.futures.as_completed(futures):
+                r = future.result()
+                r.raise_for_status()
+                data: dict[str, Any] = r.json()
+                if "success" in data:
+                    results.append(data["success"])
+                elif "status" in data and data["status"] == "success":
+                    results.append(True)
+                else:
+                    results.append(False)
+                logger.info(r.text)
+                messages.append(r.text)
+        if all(results):
+            commit_params = {
+                "f": "json",
+                "id": itemid,
+                "type": params["type"],
+                "async": True,
+            }
+            commit_params.update(params)
+            resp: requests.Response = self._session.post(
+                url=commit_url, data=commit_params
+            )
+            resp.raise_for_status()
+            res: dict[str, Any] = resp.json()
+            if "success" in res and res["success"]:
+                return self._process_item_status(itemid=itemid)
+        raise FolderException(str(r.text))
+
+    # ---------------------------------------------------------------------
     def _add_async_large_files(
         self,
         url: str,
@@ -363,6 +440,7 @@ class Folder:
         url: str | None = None,
         data_url: str | None = None,
         item_id: str | None = None,
+        stream: bool = True,
     ) -> concurrent.futures.Future:
         """
         Adds an item to the current folder
@@ -410,8 +488,14 @@ class Folder:
         """
         if isinstance(item_properties, ItemProperties):
             item_properties: dict = {
-                key: value for key, value in item_properties.to_dict().items() if value
+                key: value
+                for key, value in item_properties.to_dict().items()
+                if not value is None
             }
+        if not file:
+            stream = False
+        elif file and item_id:
+            stream = True
         upload_size: int = None
         thumbnail: str = item_properties.pop("thumbnail", None)
         metadata: str | None = item_properties.pop("metadata", None)
@@ -460,9 +544,30 @@ class Folder:
             )
         else:
             curl: str = f"{self._gis._portal.resturl}content/users/{owner}/addItem"
+        max_workers: int = 1
+        with concurrent.futures.ThreadPoolExecutor(max_workers=max_workers) as tp:
+            if stream == True and file:
+                # upload by streaming data
+                logger.info("Adding Item by parts using streaming.")
 
-        with concurrent.futures.ThreadPoolExecutor(max_workers=1) as tp:
-            if text and file is None and url is None and data_url is None:
+                params["multipart"] = True
+                params["fileName"] = params.get("fileName", None) or os.path.basename(
+                    file
+                )
+                params["async"] = True
+                file_list["file"] = create_upload_tuple(file)
+                future = tp.submit(
+                    self._add_async_streaming,
+                    **{
+                        "url": curl,
+                        "params": params,
+                        "file_list": file_list,
+                        "upload_size": upload_size,
+                    },
+                )
+                tp.shutdown(wait=True)
+                return future
+            elif text and file is None and url is None and data_url is None:
                 #  text workflow
                 params["async"] = False
                 if not isinstance(text, str):
@@ -501,6 +606,7 @@ class Folder:
                     )
                     tp.shutdown(wait=True)
                     return future
+
                 else:
                     logger.info("Adding Item by parts because it's over 5 MBs.")
                     params["multipart"] = True
