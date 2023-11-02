@@ -156,15 +156,6 @@ try:
 except:
     long_description = "ArcGIS API for Python"
 
-# Assemble the `data_files` list of all non-python files
-data_files = [
-    (
-        [
-            "arcgis/apps/workforce/_store/resources/default-project-thumbnail.png",
-        ],
-    ),
-]
-
 
 def get_version():
     """gets the version from environment variable or sets via manually setting"""
@@ -237,7 +228,6 @@ kwargs = {
     "packages": find_packages(),
     "python_requires": ">=3.9, <3.12",
     "include_package_data": True,
-    "data_files": data_files,
     # List run-time dependencies here.  These will be installed by pip when
     # your project is installed. For an analysis of "install_requires" vs pip's
     # requirements files see:
@@ -279,6 +269,7 @@ kwargs = {
     # },
     "package_data": {
         "arcgis": [
+            "apps/workforce/_store/resources/default-project-thumbnail.png",
             "gis/_impl/*.pyd",
             "gis/_impl/*.so",
             "graph/_decoder/**/*.pyd",
