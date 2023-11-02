@@ -2010,6 +2010,9 @@ class Text:
         ===============     ====================================================================
         """
         if self._existing is True and isinstance(self._story, briefing.Briefing):
+            content_node = None
+            content_type = None
+
             # First determine what type of content we are dealing with.
             if isinstance(content, arcgis.gis.Item):
                 # Need to check the item type.
@@ -2017,11 +2020,17 @@ class Text:
                 if content.type == "Web Map":
                     # create the map
                     content = Map(content)
+                    content_node = content.node
+                    content_type = "Web Map"
                 else:
-                    content = Embed(content)
-
-            # Make sure of one of the correct types
-            if not isinstance(content, (Map, Embed, Image, Video)):
+                    content_type = content.type
+                    content_node = self._create_item_embed(content)
+            elif isinstance(content, (Image, Video)):
+                content_node = content.node
+                content_type = content._type
+            
+            if content_node is None:
+                # It means it didn't go through the if statement above
                 raise ValueError(
                     "Content is not of type: Web Map, Image, StoryMap, Collection, Dashboard, Web Experience, or other arcgis Apps. Or a story content of type Image or Video."
                 )
@@ -2036,8 +2045,8 @@ class Text:
                 "event": "Briefing_ShowAttachment",
                 "data": {
                     "actionId": action_id,
-                    "attachment": content.node,
-                    "attachmentType": content._type,
+                    "attachment": content_node,
+                    "attachmentType": content_type,
                 },
             }
 
@@ -2091,6 +2100,41 @@ class Text:
         :return: True if successful.
         """
         return utils._delete(self._story, self.node)
+
+    # ----------------------------------------------------------------------
+    def _create_item_embed(self, item):
+        """
+        Create the embed dictionary when adding an item as a text attachment.
+        """
+        # first create resource dictionary
+        resource_id = "r-" + uuid.uuid4().hex[0:6]
+        resource_dict = {
+            "type": "portal-item",
+            "data": {
+                "itemId": item.id,
+            }
+        }
+        # add the resource to the resouces
+        self._story._properties["resources"][resource_id] = resource_dict
+
+        # second create the embed dictionary
+        embed_dict = {
+            "type": "embed",
+            "data": {
+                "embedResourceId": resource_id,
+                "url": item.homepage,
+                "isInteractiveByDefault": True,
+                "display": "inline"
+            }
+        }
+
+        # add the embed dict to the nodes
+        # create node id
+        node_id = "n-" + uuid.uuid4().hex[0:6]
+        # add to nodes
+        self._story._properties["nodes"][node_id] = embed_dict
+        # return the node id
+        return node_id
 
     # ----------------------------------------------------------------------
     def _add_text(self, story=None):
