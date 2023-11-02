@@ -1994,10 +1994,7 @@ class Text:
             return self.text
 
     # ----------------------------------------------------------------------
-    def add_attachment(
-        self,
-        content
-    ):
+    def add_attachment(self, content):
         """
         Add a text action to your text. You can specify the data of the action.
         This can only be used within a Briefing
@@ -2005,7 +2002,7 @@ class Text:
         ===============     ====================================================================
         **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
-        content             Required content that can be added as an attachment. 
+        content             Required content that can be added as an attachment.
                             Content can be:
                             * An Item object of type: Web Map, Image, StoryMap, Collection, Dashboard,
                             Web Experience, or other arcgis Apps.
@@ -2041,17 +2038,48 @@ class Text:
                     "actionId": action_id,
                     "attachment": content.node,
                     "attachmentType": content._type,
-                }
-            
+                },
+            }
 
-            
+            # Need to edit the text so that the format is: <span data-action-type="attachment-action" id="a-Mr9KE4">This is an attachment to ArcGIS Content</span>
+            # First get the text
+            text = self.text
+            # Now create the new text
+            new_text = f'<span data-action-type="attachment-action" id="{action_id}">{text}</span>'
+            # Now update the text
+            self.text = new_text
+
             # add to actions list in story properties
             if "actions" in self._story._properties:
                 self._story._properties["actions"].append(action_dict)
             else:
                 self._story._properties["actions"] = [action_dict]
 
-            
+        else:
+            pass
+
+    # ----------------------------------------------------------------------
+    def remove_attachment(self):
+        """
+        Remove any attachment from the text. This can only be used within a Briefing.
+        """
+        if self._existing is True and isinstance(self._story, briefing.Briefing):
+            # First get the text
+            text = self.text
+            # Now remove the action, get the action id to remove it from the dictionary as well
+            action_id = text.split('id="')[1].split('">')[0]
+            # Now remove the action from the text
+            new_text = text.replace(
+                f'<span data-action-type="attachment-action" id="{action_id}">', ""
+            ).replace("</span>", "")
+            # Now update the text
+            self.text = new_text
+
+            # Now remove the action from the actions list in the story properties
+            for action in self._story._properties["actions"]:
+                if action["data"]["actionId"] == action_id:
+                    self._story._properties["actions"].remove(action)
+                    break
         else:
             pass
 
@@ -2092,6 +2120,7 @@ class Text:
             content._add_link(display="card", story=self._story)
         elif isinstance(content, Map):
             content._add_map(display="wide", story=self._story)
+
     # ----------------------------------------------------------------------
     def _check_node(self):
         # Check if node exists
