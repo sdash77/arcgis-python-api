@@ -2028,7 +2028,7 @@ class Text:
             elif isinstance(content, (Image, Video)):
                 content_node = content.node
                 content_type = content._type
-            
+
             if content_node is None:
                 # It means it didn't go through the if statement above
                 raise ValueError(
@@ -2112,7 +2112,7 @@ class Text:
             "type": "portal-item",
             "data": {
                 "itemId": item.id,
-            }
+            },
         }
         # add the resource to the resouces
         self._story._properties["resources"][resource_id] = resource_dict
@@ -2124,8 +2124,8 @@ class Text:
                 "embedResourceId": resource_id,
                 "url": item.homepage,
                 "isInteractiveByDefault": True,
-                "display": "inline"
-            }
+                "display": "inline",
+            },
         }
 
         # add the embed dict to the nodes
