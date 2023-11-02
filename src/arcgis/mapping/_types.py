@@ -11,7 +11,7 @@ from arcgis.gis import Error, Item
 from arcgis.geoprocessing import import_toolbox
 from arcgis.auth.tools import LazyLoader
 from datetime import timezone
-from arcgiswidgets.widgets.map_widget import Map
+Map = LazyLoader("arcgiswidgets.widgets.map_widget.Map")
 
 collections = LazyLoader("collections")
 json = LazyLoader("json")

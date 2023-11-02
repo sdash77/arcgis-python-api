@@ -6,10 +6,11 @@ import json
 from typing import Optional, Union
 from arcgis import mapping
 from arcgis._impl.common._mixins import PropertyMap
+from arcgis.auth.tools import LazyLoader
 from arcgis.gis import Item
 from arcgis.features import FeatureLayer
 import copy
-from arcgiswidgets.widgets.map_widget import Map
+Map = LazyLoader("arcgiswidgets.widgets.map_widget.Map")
 
 
 class FormCollection:
