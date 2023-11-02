@@ -67,18 +67,13 @@ else:
         "urllib3>=1.21.1,<3",
         "cachetools",
         "lxml",
-        "notebook",
         "cryptography",
-        "ipywidgets >=7,<8",
-        "widgetsnbextension >=3",
-        "jupyter-client <=6.1.12",
         "pandas >=2.0.0,<3",
         "numpy >=1.21.6",
         "matplotlib",
         "keyring >=23.3.0",
         "pylerc",
         "ujson >=3",
-        "jupyterlab",
         "python-certifi-win32;python_version<'3.10'",
         "truststore>=0.7.0;python_version>'3.9'",
         'pywin32 >=223;platform_system=="Windows"',
@@ -232,7 +227,7 @@ def get_version():
             MICRO = open(__path("build.info")).read().strip()
     except:
         MICRO = "0"
-    return f"{MAJOR}.{MINOR}.{MICRO}"
+    return f"{MAJOR}.{MINOR}.{MICRO}a0+jupyterlab"
 
 
 kwargs = {

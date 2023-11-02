@@ -7,7 +7,7 @@ build:
   number: '0'
 package:
   name: arcgis
-  version: 2.3.0
+  version: 2.3.0a0+jupyterlab
 requirements:
   build:
   - python
@@ -17,10 +17,6 @@ requirements:
   - urllib3 <2
   - pillow
   - cachetools
-  - notebook
-  - jupyter_client <=6.1.12
-  - ipywidgets >=7,<8
-  - widgetsnbextension >=3
   - pandas >=2.0.0,<3
   - ujson >=3
   - numpy >=1.21.6
