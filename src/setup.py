@@ -92,12 +92,8 @@ else:
 
 
 def _post_install():
-    """This function will run after 'pip install' finishes. It has 2 parts:
-    1) activate the notebook map widget, equivalent of running these cmds:
-        - jupyter nbextension install --py --sys-prefix arcgis
-        - jupyter nbextension enable --py --sys-prefix arcgis
-        - jupyter nbextension enable --py --sys-prefix widgetsnbextension
-    2) If the O.S. is Mac OSX, run the OpenSSL workaround as described in
+    """This function will run after 'pip install' finishes.
+       If the O.S. is Mac OSX, run the OpenSSL workaround as described in
        this issue: https://bugs.python.org/issue28150, equivalent of running
        '/Applications/Python X.X/Install Certificates.command' cmd
     """
@@ -105,45 +101,7 @@ def _post_install():
         # Don't run any post installation methods for conda installs
         return
 
-    # 1) activate the notebook map widget
-    try:
-        import notebook.nbextensions as nbext
-        import arcgis
-
-        activate_map_widget = True
-    except Exception as e:
-        log.exception(
-            "arcgis/notebook packages don't appear to be installed: "
-            "map widget not activated, may not work. The rest of "
-            "install is unaffected by this. Exception caught: "
-        )
-        log.exception(e)
-        activate_map_widget = False
-
-    if activate_map_widget:
-        log.warning("Attempting to activate map widget...")
-        print("Attempting to activate map widget...")
-        try:
-            log.warning(
-                nbext.install_nbextension_python("arcgis", sys_prefix=True, logger=log)
-            )
-
-            log.warning(
-                nbext.enable_nbextension_python("arcgis", sys_prefix=True, logger=log)
-            )
-
-            log.warning(
-                nbext.enable_nbextension_python(
-                    "widgetsnbextension", sys_prefix=True, logger=log
-                )
-            )
-
-        except Exception as e:
-            print(f"Activating the widget failed {e}")
-            log.exception("Activating map widget failed: Continuing install..")
-            log.exception(e)
-
-    # 2) If the OS is Mac OSX, run the OpenSSL workaround
+    # If the OS is Mac OSX, run the OpenSSL workaround
     platform_is_osx = sys.platform == "darwin"
     if not platform_is_osx:
         return
@@ -201,11 +159,7 @@ except:
 # Assemble the `data_files` list of all non-python files
 data_files = [
     (
-        "share/jupyter/nbextensions/arcgis",
         [
-            "arcgis/widgets/js/dist/extension.js",
-            "arcgis/widgets/js/dist/arcgis-map-ipywidget.js",
-            "arcgis/widgets/js/dist/arcgis-map-ipywidget.js.map",
             "arcgis/apps/workforce/_store/resources/default-project-thumbnail.png",
         ],
     ),
@@ -260,9 +214,6 @@ kwargs = {
         # Indicate who your project is intended for
         "Intended Audience :: Developers",
         "Intended Audience :: Science/Research",
-        # Frameworks
-        "Framework :: IPython",
-        "Framework :: Jupyter",
         # OS
         "Operating System :: OS Independent",
         # Pick your license as you wish (should match "license" above)
