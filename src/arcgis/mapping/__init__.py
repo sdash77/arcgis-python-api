@@ -1,13 +1,9 @@
 """
 The arcgis.mapping module provides components for visualizing GIS data and analysis.
-This module includes WebMap and WebScene components that enable 2D and 3D
-mapping and visualization in the GIS. This module also includes mapping layers like
-MapImageLayer, SceneLayer and VectorTileLayer.
+This module also includes mapping layers like MapImageLayer, SceneLayer and VectorTileLayer.
 """
 
 from ._types import (
-    WebMap,
-    WebScene,
     MapImageLayer,
     MapImageLayerManager,
     EnterpriseMapImageLayerManager,
@@ -53,8 +49,6 @@ from .renderer import (
 )
 
 __all__ = [
-    "WebMap",
-    "WebScene",
     "MapImageLayer",
     "MapImageLayerManager",
     "EnterpriseMapImageLayerManager",

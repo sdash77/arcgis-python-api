@@ -7,6 +7,9 @@ Python and is an invaluable tool in the API.
 
 """
 from __future__ import absolute_import, annotations
+import sys
+
+sys.path.insert(0, r"C:\ipython_workfolder\Geosaurus_MapWidget")
 import base64
 import json
 import locale
@@ -1608,87 +1611,25 @@ class GIS(object):
           A :class:`map widget <arcgis.widgets.MapView>` (the widget is displayed in Jupyter Notebook when queried).
         """
         try:
-            from arcgis.widgets import MapView
+            from arcgiswidgets.widgets.map_widget import Map
             from arcgis.geocoding import get_geocoders, geocode, Geocoder
         except Error as err:
             _log.error("ipywidgets packages is required for the map widget.")
             _log.error("Please install it:\n\tconda install ipywidgets")
 
         if isinstance(location, Item) and location.type == "Web Map":
-            mapwidget = MapView(gis=self, item=location, mode=mode)
+            mapwidget = Map(webmap=location, gis=self)
+        elif isinstance(location, str):
+            if mode == "3D":
+                # mapwidget = Scene(gis=self)
+                pass
+            else:
+                mapwidget = Map(location=location, gis=self)
         else:
-            mapwidget = MapView(gis=self, mode=mode)
+            mapwidget = Map(gis=self)
 
-            # Geocode the location
-            if isinstance(location, str):
-                if geocoder and isinstance(geocoder, Geocoder):
-                    locations = geocode(
-                        location,
-                        out_sr=4326,
-                        max_locations=1,
-                        geocoder=geocoder,
-                    )
-                    if len(locations) > 0:
-                        if zoomlevel is not None:
-                            loc = locations[0]["location"]
-                            mapwidget.center = loc["y"], loc["x"]
-                            mapwidget.zoom = zoomlevel
-                        else:
-                            mapwidget.extent = locations[0]["extent"]
-                else:
-                    for geocoder in get_geocoders(self):
-                        locations = geocode(
-                            location,
-                            out_sr=4326,
-                            max_locations=1,
-                            geocoder=geocoder,
-                        )
-                        if len(locations) > 0:
-                            if zoomlevel is not None:
-                                loc = locations[0]["location"]
-                                mapwidget.center = loc["y"], loc["x"]
-                                mapwidget.zoom = zoomlevel
-                            else:
-                                if "extent" in locations[0]:
-                                    mapwidget.extent = locations[0]["extent"]
-                            break
-
-            # Center the map at the location
-            elif isinstance(location, (tuple, list)):
-                if all(isinstance(el, list) for el in location):
-                    extent = {
-                        "xmin": location[0][0],
-                        "ymin": location[0][1],
-                        "xmax": location[1][0],
-                        "ymax": location[1][1],
-                    }
-                    mapwidget.extent = extent
-                else:
-                    mapwidget.center = location
-
-            elif isinstance(location, dict):  # geocode result
-                if "extent" in location and zoomlevel is None:
-                    mapwidget.extent = location["extent"]
-                elif "location" in location:
-                    mapwidget.center = (
-                        location["location"]["y"],
-                        location["location"]["x"],
-                    )
-                    if zoomlevel is not None:
-                        mapwidget.zoom = zoomlevel
-
-            elif location is not None:
-                print(
-                    "location must be an address(string) or (lat, long) pair as a tuple"
-                )
-
-        if zoomlevel is not None:
+        if zoomlevel:
             mapwidget.zoom = zoomlevel
-
-        if not location:
-            # Set up default extent
-            if "defaultExtent" in self.org_settings:
-                mapwidget.extent = self.org_settings["defaultExtent"]
 
         return mapwidget
 
