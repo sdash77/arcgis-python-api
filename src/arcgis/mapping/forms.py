@@ -6,10 +6,11 @@ import json
 from typing import Optional, Union
 from arcgis import mapping
 from arcgis._impl.common._mixins import PropertyMap
+from arcgis.auth.tools import LazyLoader
 from arcgis.gis import Item
 from arcgis.features import FeatureLayer
 import copy
-from arcgiswidgets.widgets.map_widget import Map
+map_widget = LazyLoader("arcgiswidgets.widgets.map_widget")
 
 
 class FormCollection:
@@ -76,7 +77,7 @@ class FormCollection:
             return self.forms[self._index - 1]
 
     def _refresh_forms(self, parent):
-        if isinstance(parent, Map):
+        if isinstance(parent, map_widget.Map):
             self.forms = self._get_forms_from_webmap(parent)
         elif isinstance(parent, Item):
             if parent.type != "Feature Layer Collection":
@@ -365,7 +366,7 @@ class FormInfo:
             else:
                 item_data["layers"][self._layer_data["id"]].pop("formInfo", None)
             self._parent.update(data=item_data)
-        if isinstance(self._parent, Map):
+        if isinstance(self._parent, map_widget.Map):
             if self.exists():
                 self._original_layer["formInfo"] = self.to_dict()
             else:
