@@ -621,9 +621,9 @@ class ImageryLayer(Layer):
         img_lyr = ImageryLayer("https://sentinel-cogs.s3.us-west-2.amazonaws.com/sentinel-s2-l2a-cogs/43/M/BP/2021/6/S2A_43MBP_20210622_0_L2A/B08.tif",
                                 gis=gis)
 
-        # Overlay an imagery layer on the 'MapView' widget
+        # Overlay an imagery layer on the 'Map' widget
         map = gis.map()
-        map.add_layer(img_lyr)
+        map.content.add(img_lyr)
 
     """
 
@@ -7593,7 +7593,7 @@ class Raster:
     ------------------------------------     --------------------------------------------------------------------
     extent                                   Optional dict. If the input raster's extent cannot be automatically
                                              inferred, pass in a dictionary representing the raster's extent
-                                             for when viewing on a :class:`~arcgis.widgets.MapView` widget.
+                                             for when viewing on a :class:`~arcgiswidgets.Map` widget.
 
                                              Example:
                                                 | { "xmin" : -74.22655,
@@ -7605,12 +7605,12 @@ class Raster:
                                                 | }
     ------------------------------------     --------------------------------------------------------------------
     cmap                                     Optional str. When displaying a 1 band raster in a
-                                             :class:`~arcgis.widgets.MapView` widget, what matplotlib colormap
+                                             :class:`~arcgiswidgets.Map` widget, what matplotlib colormap
                                              to apply to the raster. See :meth:`arcgis.mapping.symbol.display_colormaps`
                                              for a list of compatible values.
     ------------------------------------     --------------------------------------------------------------------
     opacity                                  Optional number. When displaying a raster in a
-                                             :class:`~arcgis.widgets.MapView` widget, what opacity to apply. 0
+                                             :class:`~arcgiswidgets.Map` widget, what opacity to apply. 0
                                              is completely transparent, 1 is completely opaque.
                                              Default: 1
     ------------------------------------     --------------------------------------------------------------------
@@ -7629,7 +7629,7 @@ class Raster:
 
         map = gis.map()
 
-        # Overlay an image service on the 'MapView' widget
+        # Overlay an image service on the 'Map' widget
         service_url = gis.content.search("my_image_service", item_type="Imagery Layer")[0].url
         raster = Raster(path=service_url, gis=gis)
         map.add_layer(raster)
@@ -7785,7 +7785,7 @@ class Raster:
     def cmap(self):
         """
         Get/Set what matplotlib colormap to apply to the raster (when displaying a 1 band raster
-        in a :class:`~arcgis.widgets.MapView` widget).
+        in a :class:`~arcgis.widgets.Map` widget).
 
         .. note::
             The ``cmap`` value must be a string. See :attr:`arcgis.mapping.symbol.display_colormaps`
@@ -7806,7 +7806,7 @@ class Raster:
     def vmin(self):
         """
         When displaying a 1 band raster with the ``cmap`` argument specified
-        on a MapView, ``vmin`` and ``vmax`` define the data range that the colormap covers.
+        on a Map, ``vmin`` and ``vmax`` define the data range that the colormap covers.
         The ``vmin`` property is the lower end of that range.
         """
         if self._vmin is None:
@@ -7830,7 +7830,7 @@ class Raster:
     def vmax(self):
         """
         When displaying a 1 band raster with the ``cmap`` argument specified
-        on a MapView, ``vmin`` and ``vmax`` define the data range that the colormap covers.
+        on a Map, ``vmin`` and ``vmax`` define the data range that the colormap covers.
         The ``vmax`` property is the upper end of that range.
         """
         if self._vmax is None:
@@ -7854,7 +7854,7 @@ class Raster:
     def opacity(self):
         """
         Get/Set what opacity to apply when displaying the raster in a
-        :class:`~arcgis.widgets.MapView` widget.
+        :class:`~arcgiswidgets.Map` widget.
 
         .. note::
             0 is completely transparent, 1 is completely opaque. The default value of ``opacity`` is 1.

@@ -194,7 +194,6 @@ class DataframeSpatialTests(unittest.TestCase):
     # -------------------------------------------------------------------------
     def test_plot(self):
         """tests plot with map widget"""
-        from arcgis.gis import GIS
 
         v = GeoArray(geoms)
         data = [[1, 2, 3, 4]] * len(geoms)
@@ -206,15 +205,13 @@ class DataframeSpatialTests(unittest.TestCase):
     # -------------------------------------------------------------------------
     def test_plot_not_mapwidget_obj(self):
         """tests plot with invalid map widget"""
-        from arcgis.mapping._types import WebMap
-        from arcgis.widgets import MapView
-
+        from arcgiswidgets.widgets.map_widget import Map
         v = GeoArray(geoms)
         data = [[1, 2, 3, 4]] * len(geoms)
         columns = ["A", "B", "C", "D"]
         df = pd.DataFrame(data=data, columns=columns)
         df.spatial.set_geometry(v)
-        assert isinstance(df.spatial.plot(), MapView)
+        assert isinstance(df.spatial.plot(), Map)
 
     ##-------------------------------------------------------------------------
     ## Geometry Property Call Tests
