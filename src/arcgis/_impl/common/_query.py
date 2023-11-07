@@ -585,7 +585,7 @@ def _query_df(layer, url, params, **kwargs):
             df = df[params["out_fields"].split(",")].copy()
 
         if "SHAPE" in df.columns:
-            df["SHAPE"] = arcgis_features.GeoArray([])
+            df["SHAPE"] = arcgis_features.geo._arrayGeoArray([])
             df.spatial.set_geometry("SHAPE")
             df.spatial.renderer = layer.renderer
             df.spatial._meta.source = layer
