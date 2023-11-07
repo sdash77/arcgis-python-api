@@ -3,13 +3,14 @@
 from arcgis.features import FeatureLayer, Table
 from arcgis.gis import Group
 from arcgis._impl.common._utils import _lazy_property
+from arcgis.auth.tools import LazyLoader
 from warnings import warn
 import json
 
 from ._schemas import *
 from .managers import *
 from arcgis.apps.workforce.exceptions import WorkforceError
-import arcgiswidgets
+arcgiswidgets = LazyLoader("arcgiswidgets")
 
 
 class Project:

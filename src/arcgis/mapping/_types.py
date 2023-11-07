@@ -9,7 +9,7 @@ from arcgis.gis import Item
 from arcgis.geoprocessing import import_toolbox
 from arcgis.auth.tools import LazyLoader
 from datetime import timezone
-from arcgiswidgets.widgets.map_widget import Map
+map_widget = LazyLoader("arcgiswidgets.widgets.map_widget")
 
 collections = LazyLoader("collections")
 json = LazyLoader("json")
@@ -262,7 +262,7 @@ class OfflineMapAreaManager(object):
         self._gis = gis
         self._portal = gis._portal
         self._item = item
-        self._map = Map(self._item)
+        self._map = map_widget.Map(self._item)
         try:
             self._url = self._gis.properties.helperServices.packaging.url
             self._pm = self._gis._tools.packaging
@@ -482,7 +482,7 @@ class OfflineMapAreaManager(object):
         if self._item.update(item_properties=update_items):
             self._item._hydrated = False
             self._item._hydrate()
-            self._map = Map(self._item)
+            self._map = map_widget.Map(self._item)
         else:
             raise Exception("Could not update the offline properties.")
 
