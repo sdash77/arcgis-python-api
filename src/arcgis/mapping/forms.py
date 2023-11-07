@@ -10,6 +10,7 @@ from arcgis.auth.tools import LazyLoader
 from arcgis.gis import Item
 from arcgis.features import FeatureLayer
 import copy
+
 map_widget = LazyLoader("arcgiswidgets.widgets.map_widget")
 
 

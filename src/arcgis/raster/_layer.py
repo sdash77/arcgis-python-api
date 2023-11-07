@@ -7632,28 +7632,28 @@ class Raster:
         # Overlay an image service on the 'Map' widget
         service_url = gis.content.search("my_image_service", item_type="Imagery Layer")[0].url
         raster = Raster(path=service_url, gis=gis)
-        map.add_layer(raster)
+        map.content.add(raster)
 
         # Overlay .tif file present in user's registered fileShare datastore
         # (Requires RasterRendering service to be enabled in the active GIS)
         raster = Raster("/fileShares/data/Amberg.tif", gis=gis)
-        map.add_layer(raster)
+        map.content.add(raster)
 
         # Overlay a publicly accesible Cloud-Optimized GeoTIFF
         # (Requires RasterRendering service to be enabled in the active GIS)
         raster = Raster("https://sentinel-cogs.s3.us-west-2.amazonaws.com/sentinel-s2-l2a-cogs/43/M/BP/2021/6/S2A_43MBP_20210622_0_L2A/B08.tif",
                         gis=gis)
-        map.add_layer(raster)
+        map.content.add(raster)
 
         # Overlay a local .tif file
         raster = Raster(r"./data/Amberg.tif")
-        map.add_layer(raster)
+        map.content.add(raster)
 
         # Overlay a 1-channel .gdb file with the "Orange Red" colormap at 85% opacity
         raster = Raster("./data/madison_wi.gdb/Impervious_Surfaces",
                         cmap = "OrRd",
                         opacity = 0.85)
-        map.add_layer(raster)
+        map.content.add(raster)
 
         # Overlay a local .jpg file by manually specifying its extent
         raster = Raster("./data/newark_nj_1922.jpg",
@@ -7662,7 +7662,7 @@ class Raster:
                                   "xmax":-74.12544,
                                   "ymax":40.773941,
                                   "spatialReference":{"wkid":4326}})
-        map.add_layer(raster)
+        map.content.add(raster)
 
     """
 

@@ -9,6 +9,7 @@ from arcgis.gis import Item
 from arcgis.geoprocessing import import_toolbox
 from arcgis.auth.tools import LazyLoader
 from datetime import timezone
+
 map_widget = LazyLoader("arcgiswidgets.widgets.map_widget")
 
 collections = LazyLoader("collections")

@@ -321,8 +321,6 @@ class Test_Feature_class(unittest.TestCase):
                     df_sel.spatial.plot(
                         map_widget=map_g,
                         name=ea.get_value("title"),
-                        symbol_type="simple",
-                        symbol_style="s.",
                     )
 
                 elif ea.get_value("type") == "Point":
@@ -330,20 +328,28 @@ class Test_Feature_class(unittest.TestCase):
                     df_sel.spatial.plot(
                         map_widget=map_g,
                         name=ea.get_value("title"),
-                        symbol_type="simple",
-                        symbol_style="x",
                     )
                 else:  # Polygon
+                    from arcgiswidgets.widgets.renderers import SimpleRenderer
+                    from arcgiswidgets.widgets.symbols import SimpleMarkerSymbolEsriSMS, SimpleLineSymbolStyle, SimpleMarkerSymbolStyle, SimpleLineSymbolEsriSLS
                     df_sel = df[df["OBJECTID"] == ea.attributes["OBJECTID"]]
+                    # create the simple renderer dataclass
+                    simple_renderer = SimpleRenderer(
+                        symbol=SimpleMarkerSymbolEsriSMS(
+                            style=SimpleMarkerSymbolStyle.esriSMSCircle,
+                            color=[255, 0, 0, 255],
+                            size=12,
+                            outline=SimpleLineSymbolEsriSLS(
+                                style=SimpleLineSymbolStyle.esriSLSSolid,
+                                color=[0, 0, 0, 255],
+                                width=1,
+                            ),
+                        )
+                    )
                     df_sel.spatial.plot(
                         map_widget=map_g,
                         name=ea.get_value("title"),
-                        cmap="RdPu",
-                        symbol_type="simple",
-                        symbol_style="s",
-                        outline_style="s",
-                        outline_color=[0, 0, 0, 255],
-                        line_width=1.0,
+                        renderer = simple_renderer
                     )
 
             wm_title = "Unit Test Natural Disasters (FC only) Collection"

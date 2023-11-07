@@ -93,9 +93,9 @@ else:
 
 def _post_install():
     """This function will run after 'pip install' finishes.
-       If the O.S. is Mac OSX, run the OpenSSL workaround as described in
-       this issue: https://bugs.python.org/issue28150, equivalent of running
-       '/Applications/Python X.X/Install Certificates.command' cmd
+    If the O.S. is Mac OSX, run the OpenSSL workaround as described in
+    this issue: https://bugs.python.org/issue28150, equivalent of running
+    '/Applications/Python X.X/Install Certificates.command' cmd
     """
     if conda_install_mode:
         # Don't run any post installation methods for conda installs
