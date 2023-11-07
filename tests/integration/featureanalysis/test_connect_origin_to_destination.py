@@ -1,14 +1,11 @@
 import unittest
 import datetime
-import sys
-
-# sys.path.insert(0, r"C:\ipython_workfolder\geosaurus\src")
 import pandas as pd
 from arcgis.features.layer import FeatureLayer
 from arcgis.gis import GIS, Item
 from arcgis.geometry import Geometry
 from arcgis.features.use_proximity import connect_origins_to_destinations
-from config_tests import setup_profiles
+from .config_tests import setup_profiles
 
 
 profiles = ["online_test", "ent_test", "kube_test"]
