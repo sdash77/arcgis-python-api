@@ -119,7 +119,7 @@ class Folder:
         order: str | None = "asc",
         sort_on: str | None = None,
     ) -> Iterator[dict[str, Any]]:
-        """Returns a Python generatore object to ierate over the the content in
+        """Returns a Python generator object to ierate over the the content in
            the *folder*.
         
         ================  ==========================================================================
