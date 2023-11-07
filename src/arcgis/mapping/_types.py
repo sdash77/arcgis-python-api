@@ -1,13 +1,11 @@
 from __future__ import absolute_import, annotations
 
 import logging
-from re import search, findall
-from uuid import uuid4
+from re import findall
 from warnings import warn
 from contextlib import contextmanager
 from typing import Any, Optional, Union
-from arcgis.features.layer import FeatureLayer
-from arcgis.gis import Error, Item
+from arcgis.gis import Item
 from arcgis.geoprocessing import import_toolbox
 from arcgis.auth.tools import LazyLoader
 from datetime import timezone
@@ -22,33 +20,10 @@ time = LazyLoader("time")
 datetime = LazyLoader("datetime")
 arcgis = LazyLoader("arcgis")
 _arcgis_features = LazyLoader("arcgis.features")
-_arcgis_mapping = LazyLoader("arcgis.mapping")
 _gis = LazyLoader("arcgis.gis")
 _mixins = LazyLoader("arcgis._impl.common._mixins")
-_utils = LazyLoader("arcgis._impl.common._utils")
 _geometry = LazyLoader("arcgis.geometry")
-_basemap_definitions = LazyLoader("arcgis.mapping._basemap_definitions")
-_forms = LazyLoader("arcgis.mapping.forms")
-_scenelyrs = LazyLoader("arcgis.mapping._scenelyrs")
-_realtime = LazyLoader("arcgis.realtime")
 _services = LazyLoader("arcgis.gis.server.admin._services")
-
-try:
-    from traitlets import HasTraits, observe
-    from arcgis.widgets._mapview._traitlets_extension import ObservableDict
-except ImportError:
-
-    class HasTraits:
-        pass
-
-    class ObservableDict(dict):
-        def tag(*args, **kwargs):
-            pass
-
-    def observe(_=None, *args, **kwargs):
-        return observe
-
-
 _log = logging.getLogger(__name__)
 
 
@@ -1218,16 +1193,16 @@ class OfflineMapAreaManager(object):
             # find tile and vector tile layers in map
             cached_layers = [
                 l
-                for l in self._map.layers
+                for l in self._map.content.layers
                 if l.layerType in ["VectorTileLayer", "ArcGISTiledMapServiceLayer"]
             ]
 
             # find tile and vector tile layers in basemap set of layers
-            if hasattr(self._map, "basemap"):
-                if "baseMapLayers" in self._map.basemap:
+            if hasattr(self._map.basemap, "basemap"):
+                if "baseMapLayers" in self._map.basemap.basemap:
                     cached_layers_bm = [
                         l
-                        for l in self._map.basemap["baseMapLayers"]
+                        for l in self._map.basemap.basemap["baseMapLayers"]
                         if l["layerType"]
                         in ["VectorTileLayer", "ArcGISTiledMapServiceLayer"]
                     ]
@@ -1293,7 +1268,7 @@ class OfflineMapAreaManager(object):
         if enable_updates:
             if feature_services is None:
                 feature_services = {}
-                for l in self._map.layers:
+                for l in self._map.content.layers:
                     if os.path.dirname(l["url"]) not in feature_services:
                         feature_services[os.path.dirname(l["url"])] = {
                             "url": os.path.dirname(l["url"]),

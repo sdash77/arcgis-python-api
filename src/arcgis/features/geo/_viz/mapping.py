@@ -1,36 +1,32 @@
 """
 Mapping Holds the Plot function for creating a FeatureCollection JSON plus the render options
 """
-import json
 from typing import Optional, Union
 import pandas as pd
 
 from arcgiswidgets.widgets.map_widget import Map
-
-# from arcgiswidgets._dataclasses.symbols import (
-#     create_picture_fill_symbol,
-#     create_picture_marker_symbol,
-#     create_simple_fill_symbol,
-#     create_simple_line_symbol,
-#     create_simple_marker_symbol,
-#     create_text_symbol
-# )
-# from arcgiswidgets._dataclasses.renderers import (
-#     create_simple,
-#     create_visual_variables,
-# )
+from arcgiswidgets.widgets.renderers import (
+    HeatmapRenderer,
+    SimpleRenderer,
+    UniqueValueRenderer,
+    ClassBreaksRenderer,
+    DotDensityRenderer,
+)
 
 
 def plot(
     df,
-    map_widget: Optional[Map] = None,
+    map: Optional[Map] = None,
     name: Optional[str] = None,
-    renderer_type: Optional[str] = None,
-    symbol_type: Optional[str] = None,
-    symbol_style: Optional[str] = None,
-    col: Optional[Union[str, list]] = None,
-    colors: Optional[Union[str, list, object]] = "jet",
-    alpha: float = 1,
+    renderer: Optional[
+        Union[
+            HeatmapRenderer,
+            SimpleRenderer,
+            UniqueValueRenderer,
+            ClassBreaksRenderer,
+            DotDensityRenderer,
+        ]
+    ] = None,
     **kwargs,
 ):
     """
@@ -46,15 +42,15 @@ def plot(
     df                      Required Spatially Enabled DataFrame or GeoSeries. This is the data
                             to map.
     ----------------------  ---------------------------------------------------------
-    map_widget              Optional WebMap object. This is the map to display the
+    map                     Optional Map object. This is the map to display the
                             data on.
     ----------------------  ---------------------------------------------------------
     name                    Optional string. The name to assign as a title of the map widget.
+    ----------------------  ---------------------------------------------------------
+    renderer                Optional Renderer object. The renderer to use to draw the data.
+                            To create a renderer dataclass use the renderers module in the
+                            arcgiswidgets package.
     ======================  =========================================================
-
-    The kwargs parameter accepts all parameters of the create_symbol method and the
-    create_renderer method.
-
 
     """
     renderer = kwargs.pop("renderer", None)
@@ -62,38 +58,24 @@ def plot(
     if not hasattr(df, "spatial") and not hasattr(df, "geom"):
         raise ValueError("DataFrame or Series must be spatially enabled.")
 
-    if renderer_type is None and renderer is None and df.spatial.renderer:
-        renderer = json.loads(df.spatial.renderer.json)
-
     if isinstance(df, pd.Series) and df.dtype.name == "geometry":
         fid = df.index.tolist()
         sdf = pd.DataFrame(data=fid, columns=["OID"])
         sdf["SHAPE"] = df
         return plot(
             df=sdf,
-            map_widget=map_widget,
+            map_widget=map,
             name=name,
-            renderer_type=renderer_type,
-            symbol_type=symbol_type,
-            symbol_style=symbol_style,
-            col=col,
-            colors=colors,
-            alpha=alpha,
+            renderer=renderer,
             **kwargs,
         )
-    r = None
-    if isinstance(col, str):
-        col = [col]
-    map_exists = True
-    if symbol_type is None:
-        symbol_type = "simple"
+
     if name is None:
         import uuid
 
         name = uuid.uuid4().hex[:7]
-    if map_widget is None:
-        map_exists = False
-        map_widget = Map()
+    if map is None:
+        map = Map()
     import string
 
     trantab = str.maketrans(string.punctuation, "_" * len(string.punctuation))
@@ -102,6 +84,9 @@ def plot(
     df.columns = col_new
     fc = df.spatial.to_feature_collection(name=name)
     df.columns = col_old
-    geometry_type = [el for el in df.spatial.geometry_type if el is not None]
-    map_widget.add_layer(fc)
-    return map_widget
+    drawing_info = {}
+    if renderer is not None:
+        drawing_info["renderer"] = renderer
+    map.content.add(fc, drawing_info=drawing_info)
+
+    return True
