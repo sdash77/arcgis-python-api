@@ -11704,7 +11704,7 @@ class User(dict):
 
         try:
             description = self.description
-        except Exception: 
+        except Exception:
             description = "This user has not provided any personal information."
 
         url = self.homepage
@@ -12030,7 +12030,7 @@ class User(dict):
             raise ValueError(
                 f"Invalid culture provided. Allowed cultures: {''.join(culture_check)}"
             )
-        if region and  region.upper() not in [g["region"] for g in self._gis.regions]:
+        if region and region.upper() not in [g["region"] for g in self._gis.regions]:
             raise ValueError(
                 f"Invalid region provided. Allowed regions: {''.join([g['region'] for g in self._gis.regions])}"
             )
@@ -13944,7 +13944,6 @@ class Item(dict):
             }
 
         elif self.type == "Web Map":
-
             layers = []
             mapjson = self.get_data()
             container = None
@@ -16122,9 +16121,7 @@ class Item(dict):
                     min_scale = ms.properties.minScale
                     max_scale = ms.properties.maxScale
 
-                manager.edit_tile_service(
-                    min_scale=min_scale, max_scale=max_scale
-                )
+                manager.edit_tile_service(min_scale=min_scale, max_scale=max_scale)
 
                 # Get LoD from Map Image Layer
                 full_extent = dict(ms.properties.fullExtent)
