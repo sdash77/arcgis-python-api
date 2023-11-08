@@ -247,13 +247,13 @@ def areas_and_lengths(
                                              future = True)
            >>> trials = 0
            >>> while trials < 10:
-           >>> if not ft_output.done():
-           >>>     print("...processing...")
-           >>>     time.sleep(3)
-           >>>     trials += 1
-           >>> else:
-           >>>     print(ft_output.result())
-           >>>     break
+           >>>     if not ft_output.done():
+           >>>         print("...processing...")
+           >>>         time.sleep(3)
+           >>>         trials += 1
+           >>>     else:
+           >>>         print(ft_output.result())
+           >>>         break
            
            ...processing...
            ...processing...
@@ -303,8 +303,8 @@ def auto_complete(
                       
                       * If *True*, a :class:`~arcgis.geometry.GeometryJob` that can
                         be queried will be returned and control returns to the user.
-                      * If *False*, a :class:`~arcgis.geometry.Polygon` object after the function
-                        completes.
+                      * If *False*, a :class:`~arcgis.geometry.Polygon` object will be returned
+                        after the function completes.
     ================  ===============================================================================
 
     :returns:
@@ -517,15 +517,23 @@ def convex_hull(
                                                         spatial_ref=sr_obj_wkid)
 
     ----------------  -------------------------------------------------------------------------------
-    future            Optional boolean. If True, a future object will be returned and the process
-                      will not wait for the task to complete. The default is False, which means wait for results.
-                      If setting future to True there is a limitation of 6500 geometries that can be processed in one call.
+    future            Optional boolean.
+    
+                      * If *True*, a :class:`~arcgis.geometry.GeometryJob` will be returned for query
+                        and the process returns control to the user.
+                      * If *False*, the process waits until completion before returning the output
+                        :class:`polygons <arcgis.geometry.Polygon>`
+                      The default is False.
+                      
+                      .. note::
+                          If setting future to *True* there is a limitation of 6500 *geometries*
+                          that can be processed in one call.
     ================  ===============================================================================
 
     :returns:
         A list containing the :class:`~arcgis.geometry.Geometry` object of the result, or  if ``future=True``,
         a :class:`~arcgis.geometry.GeometryJob` object. Call the job's
-        :meth:`~arcgis.geometry.GeometryJob.result`` method to inspect the process and results.
+        :meth:`~arcgis.geometry.GeometryJob.result` method to inspect the process and results.
 
 
     .. code-block:: python
@@ -550,13 +558,13 @@ def convex_hull(
 
         >>> trials = 0
         >>> while trials < 5:
-        >>>   if not hull_job.done():
-        >>>       print("...processing...")
-        >>>       time.sleep(3)
-        >>>       trials += 1
-        >>>   else:
-        >>>       print(hull_job.result())
-        >>>       break
+        >>>     if not hull_job.done():
+        >>>         print("...processing...")
+        >>>         time.sleep(3)
+        >>>         trials += 1
+        >>>     else:
+        >>>         print(hull_job.result())
+        >>>         break
         
         ...processing...       
         {'rings': [[[2664507.7925999984, 1212609.7138999999],
