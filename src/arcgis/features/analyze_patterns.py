@@ -311,6 +311,8 @@ def find_point_clusters(
     gis: Optional[_arcgis.gis.GIS] = None,
     estimate: bool = False,
     future: bool = False,
+    method: Optional[str] = None,
+    sensitivity: Optional[float] = None,
 ):
     """
     .. image:: _static/images/find_point_clusters/find_point_clusters.png
@@ -391,6 +393,21 @@ def find_point_clusters(
     future                  Optional, If True, a future object will be returned and the process
                             will not wait for the task to complete.
                             The default is False, which means wait for results.
+    --------------------    ---------------------------------------------------------
+    method                  Optional string. Specifies the method that will be used
+                            to find clusters. If the method is not specified and the
+                            search_distance value is not provided, the HDBSCAN algorithm
+                            will be used. If the method is not specified and the search_distance
+                            value is provided, the DBSCAN algorithm will be used.
+
+                            This parameter is available in ArcGIS Enterprise 11.2 or higher.
+
+                            Values: "DBSCAN" | "HDBSCAN" | "OPTICS"
+    --------------------    ---------------------------------------------------------
+    sensitivity             Optional float. A double value between 0 and 100 that
+                            determines the compactness of the clusters.
+
+                            This parameter is available in ArcGIS Enterprise 11.2 or higher.
     ====================    =========================================================
 
     :return: :class:`~arcgis.features.FeatureLayer` if ``output_name`` is specified, else :class:`~arcgis.features.FeatureCollection`.
@@ -418,6 +435,8 @@ def find_point_clusters(
         "gis": gis,
         "estimate": estimate,
         "future": future,
+        "method": method,
+        "sensitivity": sensitivity,
     }
     params = _util.inspect_function_inputs(
         fn=gis._tools.featureanalysis._tbx.find_point_clusters, **kwargs
@@ -722,6 +741,7 @@ def find_outliers(
                                                                         - ``extent`` - a bounding box that defines the analysis area. Only those features in the input_layer that intersect the bounding box will be analyzed.
                                                                         - ``outSR`` - the output features will be projected into the output spatial reference referred to by the `wkid`.
                                                                         - ``overwrite`` - if True, then the feature layer in output_name will be overwritten with new feature layer. Available for ArcGIS Online and ArcGIS Enterprise 11.1+.
+                                                                        - ``randomGenerator`` - A string representing the integer and seed type that will initiate a random number generator. The seed type is always MERSENNE_TWISTER, for example, 13 MERSENNE_TWISTER. This parameter is available in ArcGIS Enterprise 11.2 or later.
 
                                                                             .. code-block:: python
 
@@ -732,7 +752,8 @@ def find_outliers(
                                                                                                     "ymax": -9175500.875353,
                                                                                                     "spatialReference":{"wkid":102100,"latestWkid":3857}},
                                                                                             "outSR": {"wkid": 3857},
-                                                                                            "overwrite": True}
+                                                                                            "overwrite": True,
+                                                                                            "randomGenerator": "13 MERSENNE_TWISTER"}
     ------------------------------------------------------------------  ---------------------------------------------------------------
     estimate                                                            Optional boolean. Returns the number of credit for the operation.
     ------------------------------------------------------------------  ---------------------------------------------------------------
@@ -758,7 +779,6 @@ def find_outliers(
                                 output_name='find outliers')
 
     """
-    distance_band_units = band_units
     gis = _arcgis.env.active_gis if gis is None else gis
     kwargs = {
         "analysis_layer": analysis_layer,
