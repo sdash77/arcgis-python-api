@@ -193,9 +193,9 @@ def _create_project(
             owner = gis.properties.user.username
             folderId = gis._portal.get_folder_id(owner, folder)
         if folderId is None:
-            folder_dict = gis.content.create_folder(folder, owner)
-            folder = folder_dict["title"]
-            folderId = folder_dict["id"]
+            folder_dict = gis.content.folders.create(folder, owner)
+            folder = folder_dict.name
+            folderId = folder_dict._folder_id
 
     item_properties = {
         "title": name,
@@ -2018,6 +2018,8 @@ class Project:
                                                 | om_item = gis.content.get("85a54236c6364a88a7c7c2b1a31fd901")
                                                 | project = rm_item
     ------------------------------------     --------------------------------------------------------------------
+    definition                               Optional dictionary. Custom project definition.
+    ------------------------------------     --------------------------------------------------------------------
     gis                                      Optional  :class:`~arcgis.gis.GIS` . Represents the GIS object of the Realitymapping
                                              Project item.
     ====================================     ====================================================================
@@ -2045,7 +2047,11 @@ class Project:
                 raise RuntimeError("Creation of realitymapping project failed.")
 
         self._project_item = project
-        self._project_name = self._project_item.name
+        try:
+            self._project_name = self._project_item.title
+        except:
+            self._project_name = self._project_item.name
+
         self._mission_list = []
         gis = arcgis.env.active_gis if gis is None else gis
         self._gis = gis
