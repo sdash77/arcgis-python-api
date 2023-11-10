@@ -28,29 +28,14 @@ match_control_points
 .. autofunction:: arcgis.raster.realitymapping.match_control_points
 
 
-color_correction
------------------
-.. autofunction:: arcgis.raster.realitymapping.color_correction
-
-
 compute_control_points
 --------
 .. autofunction:: arcgis.raster.realitymapping.compute_control_points
 
 
-compute_seamlines
-------------------
-.. autofunction:: arcgis.raster.realitymapping.compute_seamlines
-
-
 edit_control_points
 ----------------
 .. autofunction:: arcgis.raster.realitymapping.edit_control_points
-
-
-generate_dem
--------------------------
-.. autofunction:: arcgis.raster.realitymapping.generate_dem
 
 
 generate_orthomosaic
