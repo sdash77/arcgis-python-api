@@ -23,7 +23,7 @@ class Mission:
 
                                                 mission_name='Mission_Yucaipa'
     ------------------------------------     --------------------------------------------------------------------
-    project                                  Required Project object or an Orthomapping Project portal item. The realitymapping project to which the mission belongs to.
+    project                                  Required Project object or an Realitymapping Project portal item. The realitymapping project to which the mission belongs to.
     ====================================     ====================================================================
 
     .. code-block:: python
