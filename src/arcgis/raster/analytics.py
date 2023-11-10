@@ -656,7 +656,8 @@ def _set_output_raster(output_name, task, gis, output_properties=None):
             owner = gis.properties.user.username
             folderId = gis._portal.get_folder_id(owner, folder)
         if folderId is None:
-            folder_dict = gis.content.create_folder(folder, owner)
+            folder_item = gis.content.folders.create(folder, owner)
+            folder_dict = folder_item.properties
             folder = folder_dict["title"]
             folderId = folder_dict["id"]
 
@@ -1113,7 +1114,7 @@ def generate_raster(
     ------------------------------------     ------------------------------------------------------------------------------------------------------------------
     folder                                   Keyword only parameter. Optional str or dict. Creates a folder in the portal, if it does
                                              not exist, with the given folder name and persists the output in this folder.
-                                             The dictionary returned by the :meth:`create_folder() <arcgis.gis.ContentManager.create_folder>` can also be passed in as input.
+                                             The properties property on the Folder object returned by the :meth:`create() <gis.content.folders.create>` can also be passed in as input.
 
                                              Example:
 
@@ -1268,7 +1269,7 @@ def convert_feature_to_raster(
     ------------------------------------     --------------------------------------------------------------------
     folder                                   Keyword only parameter. Optional str or dict. Creates a folder in the portal, if it does
                                              not exist, with the given folder name and persists the output in this folder.
-                                             The dictionary returned by the :meth:`create_folder() <arcgis.gis.ContentManager.create_folder>` can also be passed in as input.
+                                             The properties property on the Folder object returned by the :meth:`create() <gis.content.folders.create>` can also be passed in as input.
 
                                              Example:
 
@@ -1515,8 +1516,10 @@ def copy_raster(
     --------------------------------     --------------------------------------------------------------------
     folder                               Keyword only parameter. Optional str or dict. Creates a folder in the 
                                          portal, if it does not exist, with the given folder name and persists 
-                                         the output in this folder. The dictionary returned by the 
-                                         :meth:`create_folder() <arcgis.gis.ContentManager.create_folder>` can also be passed in as input.
+                                         the output in this folder. The properties property on the Folder object 
+                                         returned by the :meth:`create() <gis.content.folders.create>` can also be 
+                                         passed in as input.
+
 
                                          Example:
 
@@ -1854,7 +1857,7 @@ def summarize_raster_within(
     ------------------------------------     --------------------------------------------------------------------
     folder                                   Keyword only parameter. Optional str or dict. Creates a folder in the portal, if it does
                                              not exist, with the given folder name and persists the output in this folder.
-                                             The dictionary returned by the :meth:`create_folder() <arcgis.gis.ContentManager.create_folder>` can also be passed in as input.
+                                             The properties property on the Folder object returned by the :meth:`create() <gis.content.folders.create>` can also be passed in as input.
 
                                              Example:
 
@@ -2007,7 +2010,7 @@ def convert_raster_to_feature(
     ------------------------------------     --------------------------------------------------------------------
     folder                                   Keyword only parameter. Optional str or dict. Creates a folder in the portal, if it does
                                              not exist, with the given folder name and persists the output in this folder.
-                                             The dictionary returned by the :meth:`create_folder() <arcgis.gis.ContentManager.create_folder>` can also be passed in as input.
+                                             The properties property on the Folder object returned by the :meth:`create() <gis.content.folders.create>` can also be passed in as input.
 
                                              Example:
 
@@ -2214,7 +2217,7 @@ def calculate_density(
     ------------------------------------     --------------------------------------------------------------------
     folder                                   Keyword only parameter. Optional str or dict. Creates a folder in the portal, if it does
                                              not exist, with the given folder name and persists the output in this folder.
-                                             The dictionary returned by the :meth:`~arcgis.gis.ContentManager.create_folder` can also be passed in as input.
+                                             The properties property on the Folder object returned by the :meth:`create() <gis.content.folders.create>` can also be passed in as input.
 
                                              Example:
 
@@ -2486,7 +2489,7 @@ def create_viewshed(
     ------------------------------------     ---------------------------------------------------------------------------------------------------------------------------------------------
     folder                                   Keyword only parameter. Optional str or dict. Creates a folder in the portal, if it does
                                              not exist, with the given folder name and persists the output in this folder.
-                                             The dictionary returned by the :meth:`create_folder() <arcgis.gis.ContentManager.create_folder>` can also be passed in as input.
+                                             The properties property on the Folder object returned by the :meth:`create() <gis.content.folders.create>` can also be passed in as input.
 
                                              Example:
 
@@ -2721,7 +2724,7 @@ def interpolate_points(
     ------------------------------------     --------------------------------------------------------------------
     folder                                   Keyword only parameter. Optional str or dict. Creates a folder in the portal, if it does
                                              not exist, with the given folder name and persists the output in this folder.
-                                             The dictionary returned by the :meth:`create_folder() <arcgis.gis.ContentManager.create_folder>` can also be passed in as input.
+                                             The properties property on the Folder object returned by the :meth:`create() <gis.content.folders.create>` can also be passed in as input.
 
                                              Example:
 
@@ -2910,7 +2913,7 @@ def classify(
     --------------------------------     --------------------------------------------------------------------
     folder                               Keyword only parameter. Optional str or dict. Creates a folder in the portal, if it does
                                          not exist, with the given folder name and persists the output in this folder.
-                                         The dictionary returned by the :meth:`create_folder() <arcgis.gis.ContentManager.create_folder>` can also be passed in as input.
+                                         The properties property on the Folder object returned by the :meth:`create() <gis.content.folders.create>` can also be passed in as input.
 
                                          Example:
 
@@ -3101,7 +3104,7 @@ def segment(
     --------------------------------     --------------------------------------------------------------------
     folder                               Keyword only parameter. Optional str or dict. Creates a folder in the portal, if it does
                                          not exist, with the given folder name and persists the output in this folder.
-                                         The dictionary returned by the :meth:`create_folder() <arcgis.gis.ContentManager.create_folder>` can also be passed in as input.
+                                         The properties property on the Folder object returned by the :meth:`create() <gis.content.folders.create>` can also be passed in as input.
 
                                          Example:
 
@@ -3489,7 +3492,7 @@ def create_image_collection(
     ----------------------               --------------------------------------------------------------------
     folder                               Keyword only parameter. Optional str or dict. Creates a folder in the portal, if it does
                                          not exist, with the given folder name and persists the output in this folder.
-                                         The dictionary returned by the :meth:`create_folder() <arcgis.gis.ContentManager.create_folder>` can also be passed in as input.
+                                         The properties property on the Folder object returned by the :meth:`create() <gis.content.folders.create>` can also be passed in as input.
 
                                          Example:
 
@@ -4611,7 +4614,7 @@ def optimum_travel_cost_network(
     ------------------------------------     --------------------------------------------------------------------
     folder                                   Keyword only parameter. Optional str or dict. Creates a folder in the portal, if it does
                                              not exist, with the given folder name and persists the output in this folder.
-                                             The dictionary returned by the :meth:`create_folder() <arcgis.gis.ContentManager.create_folder>` can also be passed in as input.
+                                             The properties property on the Folder object returned by the :meth:`create() <gis.content.folders.create>` can also be passed in as input.
 
                                              Example:
 
@@ -5012,7 +5015,7 @@ def determine_travel_costpath_as_polyline(
     ------------------------------------     --------------------------------------------------------------------
     folder                                   Keyword only parameter. Optional str or dict. Creates a folder in the portal, if it does
                                              not exist, with the given folder name and persists the output in this folder.
-                                             The dictionary returned by the :meth:`create_folder() <arcgis.gis.ContentManager.create_folder>` can also be passed in as input.
+                                             The properties property on the Folder object returned by the :meth:`create() <gis.content.folders.create>` can also be passed in as input.
 
                                              Example:
                                                 | {'username': 'user1',
@@ -5299,7 +5302,7 @@ def generate_multidimensional_anomaly(
     ------------------------------------     --------------------------------------------------------------------
     folder                                   Keyword only parameter. Optional str or dict. Creates a folder in the portal, if it does
                                              not exist, with the given folder name and persists the output in this folder.
-                                             The dictionary returned by the :meth:`create_folder() <arcgis.gis.ContentManager.create_folder>` can also be passed in as input.
+                                             The properties property on the Folder object returned by the :meth:`create() <gis.content.folders.create>` can also be passed in as input.
 
                                              Example:
 
@@ -5721,7 +5724,7 @@ def aggregate_multidimensional_raster(
     ------------------------------------     --------------------------------------------------------------------
     folder                                   Keyword only parameter. Optional str or dict. Creates a folder in the portal, if it does
                                              not exist, with the given folder name and persists the output in this folder.
-                                             The dictionary returned by the :meth:`create_folder() <arcgis.gis.ContentManager.create_folder>` can also be passed in as input.
+                                             The properties property on the Folder object returned by the :meth:`create() <gis.content.folders.create>` can also be passed in as input.
 
                                              Example:
 
@@ -5973,7 +5976,7 @@ def generate_trend_raster(
     ------------------------------------     --------------------------------------------------------------------
     folder                                   Keyword only parameter. Optional str or dict. Creates a folder in the portal, if it does
                                              not exist, with the given folder name and persists the output in this folder.
-                                             The dictionary returned by the :meth:`create_folder() <arcgis.gis.ContentManager.create_folder>` can also be passed in as input.
+                                             The properties property on the Folder object returned by the :meth:`create() <gis.content.folders.create>` can also be passed in as input.
 
                                              Example:
 
@@ -6166,7 +6169,7 @@ def predict_using_trend_raster(
     ------------------------------------     --------------------------------------------------------------------
     folder                                   Keyword only parameter. Optional str or dict. Creates a folder in the portal, if it does
                                              not exist, with the given folder name and persists the output in this folder.
-                                             The dictionary returned by the :meth:`create_folder() <arcgis.gis.ContentManager.create_folder>` can also be passed in as input.
+                                             The properties property on the Folder object returned by the :meth:`create() <gis.content.folders.create>` can also be passed in as input.
 
                                              Example:
 
@@ -6425,7 +6428,7 @@ def find_argument_statistics(
     ------------------------------------     --------------------------------------------------------------------
     folder                                   Keyword only parameter. Optional str or dict. Creates a folder in the portal, if it does
                                              not exist, with the given folder name and persists the output in this folder.
-                                             The dictionary returned by the :meth:`create_folder() <arcgis.gis.ContentManager.create_folder>` can also be passed in as input.
+                                             The properties property on the Folder object returned by the :meth:`create() <gis.content.folders.create>` can also be passed in as input.
 
                                              Example:
 
@@ -6594,7 +6597,7 @@ def linear_spectral_unmixing(
     ------------------------------------     --------------------------------------------------------------------
     folder                                   Keyword only parameter. Optional str or dict. Creates a folder in the portal, if it does
                                              not exist, with the given folder name and persists the output in this folder.
-                                             The dictionary returned by the :meth:`create_folder() <arcgis.gis.ContentManager.create_folder>` can also be passed in as input.
+                                             The properties property on the Folder object returned by the :meth:`create() <gis.content.folders.create>` can also be passed in as input.
 
                                              Example:
 
@@ -6833,7 +6836,7 @@ def subset_multidimensional_raster(
     ------------------------------------     --------------------------------------------------------------------
     folder                                   Keyword only parameter. Optional str or dict. Creates a folder in the portal, if it does
                                              not exist, with the given folder name and persists the output in this folder.
-                                             The dictionary returned by the :meth:`create_folder() <arcgis.gis.ContentManager.create_folder>` can also be passed in as input.
+                                             The properties property on the Folder object returned by the :meth:`create() <gis.content.folders.create>` can also be passed in as input.
 
                                              Example:
 
@@ -6975,7 +6978,7 @@ def costpath_as_polyline(
     ------------------------------------     --------------------------------------------------------------------
     folder                                   Keyword only parameter. Optional str or dict. Creates a folder in the portal, if it does
                                              not exist, with the given folder name and persists the output in this folder.
-                                             The dictionary returned by the :meth:`create_folder() <arcgis.gis.ContentManager.create_folder>` can also be passed in as input.
+                                             The properties property on the Folder object returned by the :meth:`create() <gis.content.folders.create>` can also be passed in as input.
 
                                              Example:
 
@@ -7188,7 +7191,7 @@ def optimal_path_as_line(
     ------------------------------------     --------------------------------------------------------------------
     folder                                   Keyword only parameter. Optional str or dict. Creates a folder in the portal, if it does
                                              not exist, with the given folder name and persists the output in this folder.
-                                             The dictionary returned by the :meth:`create_folder() <arcgis.gis.ContentManager.create_folder>` can also be passed in as input.
+                                             The properties property on the Folder object returned by the :meth:`create() <gis.content.folders.create>` can also be passed in as input.
 
                                              Example:
 
@@ -7361,7 +7364,7 @@ def optimal_region_connections(
     ------------------------------------     --------------------------------------------------------------------
     folder                                   Keyword only parameter. Optional str or dict. Creates a folder in the portal, if it does
                                              not exist, with the given folder name and persists the output in this folder.
-                                             The dictionary returned by the :meth:`gis.content.create_folder <arcgis.gis.ContentManager.create_folder>` can also be passed in as input.
+                                             The properties property on the Folder object returned by the :meth:`create() <gis.content.folders.create>` can also be passed in as input.
 
                                              Example:
 
@@ -7635,7 +7638,7 @@ def analyze_changes_using_ccdc(
     ------------------------------------     --------------------------------------------------------------------
     folder                                   Keyword only parameter. Optional str or dict. Creates a folder in the portal, if it does
                                              not exist, with the given folder name and persists the output in this folder.
-                                             The dictionary returned by the :meth:`create_folder() <arcgis.gis.ContentManager.create_folder>` can also be passed in as input.
+                                             The properties property on the Folder object returned by the :meth:`create() <gis.content.folders.create>` can also be passed in as input.
 
                                              Example:
 
@@ -8019,7 +8022,7 @@ def detect_change_using_change_analysis_raster(
     ------------------------------------     --------------------------------------------------------------------
     folder                                   Keyword only parameter. Optional str or dict. Creates a folder in the portal, if it does
                                              not exist, with the given folder name and persists the output in this folder.
-                                             The dictionary returned by the :meth:`gis.content.create_folder <arcgis.gis.ContentManager.create_folder>` can also be passed in as input.
+                                             The properties property on the Folder object returned by the :meth:`create() <gis.content.folders.create>` can also be passed in as input.
 
                                              Example:
 
@@ -8327,7 +8330,7 @@ def sample(
     ------------------------------------     --------------------------------------------------------------------
     folder                                   Keyword only parameter. Optional str or dict. Creates a folder in the portal, if it does
                                              not exist, with the given folder name and persists the output in this folder.
-                                             The dictionary returned by the :meth:`create_folder <arcgis.gis.ContentManager.create_folder>` can also be passed in as input.
+                                             The properties property on the Folder object returned by the :meth:`create() <gis.content.folders.create>` can also be passed in as input.
 
                                              Example:
 
@@ -8496,7 +8499,7 @@ def merge_multidimensional_rasters(
     ------------------------------------     ---------------------------------------------------------------------------------------------------------------------------------------------
     folder                                   Keyword only parameter. Optional str or dict. Creates a folder in the portal, if it does
                                              not exist, with the given folder name and persists the output in this folder.
-                                             The dictionary returned by the :meth:`create_folder() <arcgis.gis.ContentManager.create_folder>` can also be passed in as input.
+                                             The properties property on the Folder object returned by the :meth:`create() <gis.content.folders.create>` can also be passed in as input.
 
                                              Example:
 
@@ -8757,7 +8760,7 @@ def analyze_changes_using_landtrendr(
     ------------------------------------     --------------------------------------------------------------------
     folder                                   Keyword only parameter. Optional str or dict. Creates a folder in the portal, if it does
                                              not exist, with the given folder name and persists the output in this folder.
-                                             The dictionary returned by the :meth:`create_folder() <arcgis.gis.ContentManager.create_folder>` can also be passed in as input.
+                                             The properties property on the Folder object returned by the :meth:`create() <gis.content.folders.create>` can also be passed in as input.
 
                                              Example:
 
@@ -9039,7 +9042,7 @@ def zonal_statistics_as_table(
     ------------------------------------     --------------------------------------------------------------------
     folder                                   Keyword only parameter. Optional str or dict. Creates a folder in the portal, if it does
                                              not exist, with the given folder name and persists the output in this folder.
-                                             The dictionary returned by the :meth:`create_folder() <arcgis.gis.ContentManager.create_folder>` can also be passed in as input.
+                                             The properties property on the Folder object returned by the :meth:`create() <gis.content.folders.create>` can also be passed in as input.
 
                                              Example:
 
@@ -9267,7 +9270,7 @@ def compute_change_raster(
     ------------------------------------     --------------------------------------------------------------------
     folder                                   Keyword only parameter. Optional str or dict. Creates a folder in the portal, if it does
                                              not exist, with the given folder name and persists the output in this folder.
-                                             The dictionary returned by the :meth:`create_folder() <arcgis.gis.ContentManager.create_folder>` can also be passed in as input.
+                                             The properties property on the Folder object returned by the :meth:`create() <gis.content.folders.create>` can also be passed in as input.
 
                                              Example:
 
@@ -9393,7 +9396,7 @@ def summarize_categorical_raster(
     ------------------------------------     --------------------------------------------------------------------
     folder                                   Keyword only parameter. Optional str or dict. Creates a folder in the portal, if it does
                                              not exist, with the given folder name and persists the output in this folder.
-                                             The dictionary returned by the :meth:`create_folder() <arcgis.gis.ContentManager.create_folder>` can also be passed in as input.
+                                             The properties property on the Folder object returned by the :meth:`create() <gis.content.folders.create>` can also be passed in as input.
 
                                              Example:
 
@@ -9563,7 +9566,7 @@ def train_random_trees_regression_model(
     ------------------------------------     ---------------------------------------------------------------------------------------------------------------------------------------------
     folder                                   Keyword only parameter. Optional str or dict. Creates a folder in the portal, if it does
                                              not exist, with the given folder name and persists the output in this folder.
-                                             The dictionary returned by the :meth:`create_folder() <arcgis.gis.ContentManager.create_folder>` can also be passed in as input.
+                                             The properties property on the Folder object returned by the :meth:`create() <gis.content.folders.create>` can also be passed in as input.
 
                                              Example:
 

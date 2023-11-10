@@ -5154,7 +5154,7 @@ class ImageryLayer(Layer):
         ------------------------------------     --------------------------------------------------------------------
         folder                                   Optional string or dictionary. Creates a folder in the portal, if it does
                                                  not exist, with the given folder name and persists the output in this folder.
-                                                 The dictionary returned by the gis.content.create_folder() can also be passed in as input.
+                                                 The properties property on the Folder object returned by the :meth:`create() <gis.content.folders.create>` can also be passed in as input.
 
                                                  Example:
                                                     {'username': 'user1', 'id': '6a3b77c187514ef7873ba73338cf1af8', 'title': 'trial'}
@@ -9245,7 +9245,7 @@ class Raster:
         ------------------------------------     --------------------------------------------------------------------
         folder                                   Optional string or dictionary. Creates a folder in the portal, if it does
                                                  not exist, with the given folder name and persists the output in this folder.
-                                                 The dictionary returned by the gis.content.create_folder() can also be passed in as input.
+                                                 The properties property on the Folder object returned by the :meth:`create() <gis.content.folders.create>` can also be passed in as input.
 
                                                  (Available only when image_server engine is used)
 
