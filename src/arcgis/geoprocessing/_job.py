@@ -1378,6 +1378,34 @@ class RMJob(GPJob):
                     }
                 }
             )
+            if item_name == "reset":
+                keys = [
+                    "adjustment",
+                    "matchControlPoint",
+                    "colorCorrection",
+                    "computeControlPoints",
+                    "seamline",
+                    "appendControlPoints",
+                    "report",
+                    "queryControlPoints",
+                    "ortho",
+                    "dsm",
+                    "dtm",
+                ]
+                for key in keys:
+                    if key in mission_json["jobs"].keys():
+                        if key != "adjustment":
+                            mission_json["jobs"].update({key: {"checked": False}})
+                        else:
+                            mission_json["jobs"].update(
+                                {key: {"checked": False, "mode": "Quick"}}
+                            )
+
+                item_keys = ["ortho", "dsm", "dtm"]
+                for key in item_keys:
+                    if key in mission_json["items"].keys():
+                        mission_json["items"].update({key: {}})
+
             if processing_states is not None:
                 mission_json["processingSettings"].update(
                     {item_name: processing_states}

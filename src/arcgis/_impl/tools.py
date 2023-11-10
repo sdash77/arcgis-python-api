@@ -8574,7 +8574,10 @@ class _OrthoRealityMappingTools(BaseAnalytics):
             final_job = OMJob(job, item=item)
         else:
             job._is_reality = True
-            final_job = RMJob(job)
+            item = None
+            if output_ortho_image:
+                item = output_ortho_image
+            final_job = RMJob(job, item=item)
         final_job._flight_details = flight_json_details
         if future:
             return final_job
