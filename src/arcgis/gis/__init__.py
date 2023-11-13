@@ -6190,17 +6190,17 @@ class ContentManager(object):
 
         :return:
             A :class:`~arcgis.gis._impl._content_manager.Folders` object.
-            
+
         .. code-block:: python
-        
+
             # Usage example
             >>> from arcgis.gis import GIS
             >>> gis = GIS(profile="your_online_profile")
-            
+
             >>> folders_obj = gis.content.folders
             >>> type(folder_obj)
-            
-            arcgis.gis._impl._content_manager.folder.core.Folders                      
+
+            arcgis.gis._impl._content_manager.folder.core.Folders
         """
         if self._folders is None:
             from ._impl._content_manager import Folders
