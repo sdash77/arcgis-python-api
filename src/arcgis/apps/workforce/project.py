@@ -10,6 +10,7 @@ import json
 from ._schemas import *
 from .managers import *
 from arcgis.apps.workforce.exceptions import WorkforceError
+
 arcgiswidgets = LazyLoader("arcgiswidgets")
 
 

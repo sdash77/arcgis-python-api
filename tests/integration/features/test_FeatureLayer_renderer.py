@@ -35,25 +35,25 @@ class TestRendererProperty(unittest.TestCase):
                 assert isinstance(lyr.renderer, InsensitiveDict)
 
     def test_plot_mapview(self):
-        from arcgis.widgets import MapView
+        from arcgiswidgets import Map
 
         for profile in profiles:
             gis = GIS(profile=profile, verify_cert=False)
             item = gis.content.search("*", "Feature Layer", outside_org=True)[0]
             lyr = item.layers[0]
-            wm = MapView()
+            wm = Map()
             lyr.renderer.symbol.color = [0, 255, 0, 100]
             wm.add_layer(lyr)
             assert list(wm.layers[0].renderer.symbol.color) == [0, 255, 0, 100]
 
     def test_plot_webmap(self):
-        from arcgis.mapping import WebMap
+        from arcgiswidgets import Map
 
         for profile in profiles:
             gis = GIS(profile=profile, verify_cert=False)
             item = gis.content.search("*", "Feature Layer", outside_org=True)[0]
             lyr = item.layers[0]
-            wm = WebMap()
+            wm = Map()
             lyr.renderer.symbol.color = [255, 0, 0, 100]
             wm.add_layer(lyr)
             assert list(

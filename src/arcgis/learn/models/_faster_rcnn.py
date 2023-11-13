@@ -52,7 +52,10 @@ class MyFasterRCNN:
         These two arguments comes from dataset which you have prepared from prepare_data method above.
 
         """
-        (self.fasterrcnn_kwargs, kwargs,) = self.fastai.core.split_kwargs_by_func(
+        (
+            self.fasterrcnn_kwargs,
+            kwargs,
+        ) = self.fastai.core.split_kwargs_by_func(
             kwargs, self.torchvision.models.detection.FasterRCNN.__init__
         )
 

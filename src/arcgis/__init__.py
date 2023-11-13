@@ -3,9 +3,7 @@ __version__ = "2.3.0"
 from arcgis.auth.tools import LazyLoader
 
 os = LazyLoader("os")
-from arcgis import env
-from arcgis import features
-
+features = LazyLoader("arcgis.features")
 geoanalytics = LazyLoader("arcgis.geoanalytics")
 geocoding = LazyLoader("arcgis.geocoding")
 geometry = LazyLoader("arcgis.geometry")

@@ -865,16 +865,16 @@ class Test_WebMap_AGO(unittest.TestCase):
         """
         try:
             usa_map = self.gis.map(
-                "USA", zoomlevel=4
-            )  # you can specify the zoom level when creating a map
+                "USA"
+            )  
 
             # Add timezone layer
             fl_item = self.gis.content.get("312cebfea2624e108e234220b04460b8")
-            usa_map.add_layer(fl_item)
+            usa_map.content.add(fl_item)
 
             # Draw capitals with custom marker
             from arcgis.geocoding import geocode
-
+            from arcgiswidgets.widgets.symbols import PictureMarkerSymbolEsriPMS
             usa_extent = geocode("USA")[0]["extent"]
             usa_capitols_fset = geocode(
                 "Capitol",
@@ -882,62 +882,49 @@ class Test_WebMap_AGO(unittest.TestCase):
                 max_locations=10,
                 as_featureset=True,
             )
-            capitol_symbol = {
-                "angle": 0,
-                "xoffset": 0,
-                "yoffset": 0,
-                "type": "picture-marker",
-                "url": "http://static.arcgis.com/images/Symbols/PeoplePlaces/esriBusinessMarker_57.png",
-                "contentType": "image/png",
-                "width": 24,
-                "height": 24,
-            }
-            usa_map.draw(usa_capitols_fset, symbol=capitol_symbol)
+            capitol_symbol = PictureMarkerSymbolEsriPMS(
+                url="http://static.arcgis.com/images/Symbols/PeoplePlaces/esriBusinessMarker_57.png",
+                width=24,
+                height=24,
+            )
+
+
+            usa_map.content.draw(usa_capitols_fset, symbol=capitol_symbol)
 
             # Add the layer we will remove layer
             landsat_item = GIS().content.search(
                 "Landsat 8 Views", "Imagery Layer", max_items=2
             )[0]
-            hash_ = usa_map._get_hash(landsat_item.layers[0])
-            print(hash_)
-            usa_map.add_layer(landsat_item.layers[0])
+            usa_map.content.add(landsat_item.layers[0])
 
             # fl - add 2nd time
             fl_item2 = self.gis.content.get("312cebfea2624e108e234220b04460b8")
-            hash_ = usa_map._get_hash(fl_item2)
-            print(hash_)
-            usa_map.add_layer(fl_item2)
-            print(usa_map._hashed_layers)
+            usa_map.content.add(fl_item2)
+            print(usa_map.content.layers)
 
             # imagery - add 2nd time
             landsat_item = GIS().content.search(
                 "Landsat 8 Views", "Imagery Layer", max_items=2
             )[0]
             img_item2 = landsat_item.layers[0]
-            hash_ = usa_map._get_hash(img_item2)
-            print(hash_)
-            usa_map.add_layer(img_item2)
-            print(usa_map._hashed_layers)
+            usa_map.content.add(img_item2)
+            print(usa_map.content.layers)
 
             # fl - add 3rd time
             fl_item = self.gis.content.get("312cebfea2624e108e234220b04460b8")
-            hash_ = usa_map._get_hash(fl_item)
-            print(hash_)
-            usa_map.add_layer(fl_item)
-            print(usa_map._hashed_layers)
+            usa_map.content.add(fl_item)
+            print(usa_map.content.layers)
 
             # imagery - add 3rd time
             landsat_item = GIS().content.search(
                 "Landsat 8 Views", "Imagery Layer", max_items=2
             )[0]
             img_item = landsat_item.layers[0]
-            hash_ = usa_map._get_hash(img_item)
-            print(hash_)
-            usa_map.add_layer(img_item)
-            print(usa_map._hashed_layers)
+            usa_map.content.add(img_item)
+            print(usa_map.content.layers)
 
             self.assertEqual(
-                len(usa_map._hashed_layers),
+                len(usa_map.content.layers),
                 6,
                 msg="One or more layers failed to be added.",
             )
@@ -953,21 +940,19 @@ class Test_WebMap_AGO(unittest.TestCase):
                 }
             )
 
-            from arcgis.mapping import WebMap
+            from arcgiswidgets import Map
+            wm = Map(wm_item)
+            wm_len = len(wm.content.layers)
 
-            wm = WebMap(wm_item)
-            wm_len = len(wm.layers)
-            print(wm._webmapdict["operationalLayers"])
-
-            usa_map.remove_layers([fl_item2, img_item2])
+            usa_map.content.remove(2) 
+            usa_map.content.remove(1)
             self.assertEqual(
-                len(usa_map._hashed_layers),
+                len(usa_map.content.layers),
                 4,
                 msg="One or more layers failed to be removed.",
             )
 
             usa_map.update(
-                mode="2D",
                 item_properties={
                     "title": wm_title,
                     "snippet": "# of Imagery Layer should be 2",
@@ -975,10 +960,10 @@ class Test_WebMap_AGO(unittest.TestCase):
                 },
             )
             wm_item2 = self.gis.content.get(wm_item.id)
-            wm = WebMap(wm_item2)
-            print(wm._webmapdict["operationalLayers"])
+            wm = Map(wm_item2)
+            print(wm.content.layers)
             self.assertEqual(
-                len(wm.layers),
+                len(wm.content.layers),
                 wm_len - 2,
                 msg="Removed layers are not updated onto the web map.",
             )
@@ -1033,17 +1018,14 @@ class Test_WebMap_AGO(unittest.TestCase):
                 lang_code="ES",
                 as_featureset=True,
             )
-            poi_symbol = {
-                "angle": 0,
-                "xoffset": 0,
-                "yoffset": 0,
-                "type": "picture-marker",
-                "url": "http://static.arcgis.com/images/Symbols/PeoplePlaces/esriBusinessMarker_57.png",
-                "contentType": "image/png",
-                "width": 24,
-                "height": 24,
-            }
-            usa_map.draw(usa_poi_fset, symbol=poi_symbol)
+            from arcgiswidgets.widgets.symbols import PictureMarkerSymbolEsriPMS
+            poi_symbol = PictureMarkerSymbolEsriPMS(
+                url="http://static.arcgis.com/images/Symbols/PeoplePlaces/esriBusinessMarker_57.png",
+                width=24,
+                height=24,
+            )
+
+            usa_map.content.draw(usa_poi_fset, symbol=poi_symbol)
 
             wm_item = usa_map.save(
                 {
