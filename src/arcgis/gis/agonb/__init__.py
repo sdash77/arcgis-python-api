@@ -5,4 +5,11 @@ from .notebook import NotebookManager
 from .runtime import RuntimeManager
 from .snapshot import SnapshotManager
 
-__all__ = ["AGOLNotebookManager", "ContainerManager", "InstancePreference", "NotebookManager", "RuntimeManager", "SnapshotManager"]
+__all__ = [
+    "AGOLNotebookManager",
+    "ContainerManager",
+    "InstancePreference",
+    "NotebookManager",
+    "RuntimeManager",
+    "SnapshotManager",
+]
