@@ -1973,11 +1973,18 @@ def reconstruct_surface(
     """
     gis = arcgis.env.active_gis if gis is None else gis
     from ._realitymapping_mission import Mission
-
+    update_flight_json = False
+    flight_json_details = {}
     image_collection = mission
     if isinstance(mission, Mission):
         image_collection = mission.image_collection
-        # update_flight_json = True
+        update_flight_json = True
+
+        flight_json_details = {
+            "update_flight_json": update_flight_json,
+            "mission": mission,
+            "item_name": "reconstructSurface",
+        }
 
     return gis._tools.realitymapping.reconstruct_surface(
         image_collection=image_collection,
@@ -1996,6 +2003,7 @@ def reconstruct_surface(
         output_mesh_name=output_mesh_name,
         context=context,
         future=future,
+        flight_json_details=flight_json_details,
         **kwargs,
     )
 
