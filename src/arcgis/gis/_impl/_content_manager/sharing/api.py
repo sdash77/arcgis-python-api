@@ -3,6 +3,7 @@ import json
 from enum import Enum
 from arcgis.auth import EsriSession
 from arcgis.auth.tools import LazyLoader
+from typing import Union
 import requests
 
 arcgis = LazyLoader("arcgis")
@@ -327,13 +328,20 @@ class SharingManager:
 
     # ----------------------------------------------------------------------
     @sharing_level.setter
-    def sharing_level(self, value: SharingLevel) -> None:
+    def sharing_level(self, value: Union[SharingLevel, str]) -> None:
         """
         get/sets the Item's sharing level.
 
 
         :returns: SharingLevel
         """
+        if isinstance(value, str):
+            for level in SharingLevel:
+                name = level.name.lower()
+                val = str(level.value).lower()
+                if name == value.lower() or val == value.lower():
+                    value = level
+                    break
         assert isinstance(value, SharingLevel)
         self._share(level=value)
         self._item._hydrated = False
