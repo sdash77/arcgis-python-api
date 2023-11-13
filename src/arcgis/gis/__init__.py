@@ -75,6 +75,7 @@ _portalpy = LazyLoader("arcgis.gis._impl._portalpy")
 _jb = LazyLoader("arcgis.gis._impl._jb")
 _cloner = LazyLoader("arcgis.gis.clone")
 _cm_helper = LazyLoader("arcgis.gis._impl._content_manager._import_data")
+_sharing = LazyLoader("arcgis.gis._impl._content_manager.sharing")
 _log = logging.getLogger(__name__)
 from arcgis.gis._impl._dataclasses._viewdc import JoinType
 
@@ -14527,6 +14528,12 @@ class Item(dict):
 
     # ----------------------------------------------------------------------
     @property
+    @_common_deprecated.deprecated(
+        deprecated_in="2.3.0",
+        removed_in="3.0.0",
+        current_version=None,
+        details="Use `Item.sharing` instead.",
+    )
     def shared_with(self):
         """
         The ``shared_with`` property reveals the privacy or sharing status of the current item. An item can be private
@@ -14647,6 +14654,13 @@ class Item(dict):
         return ret_dict
 
     # ----------------------------------------------------------------------
+    @property
+    @_common_deprecated.deprecated(
+        deprecated_in="2.3.0",
+        removed_in="3.0.0",
+        current_version=None,
+        details="Use `Item.sharing` instead.",
+    )
     def share(
         self,
         everyone: bool = False,
@@ -14774,6 +14788,26 @@ class Item(dict):
             )
 
     # ----------------------------------------------------------------------
+    @property
+    @functools.lru_cache(maxsize=255)
+    def sharing(self) -> _sharing.SharingManager:
+        """
+        The ``sharing`` property allows users and administrators to control how
+        the current ``Item`` is shared throughout the `GIS`.
+
+        :returns: SharingManager
+
+        """
+
+        return _sharing.SharingManager(item=self, gis=self._gis)
+
+    # ----------------------------------------------------------------------
+    @_common_deprecated.deprecated(
+        deprecated_in="2.3.0",
+        removed_in="3.0.0",
+        current_version=None,
+        details="Use `Item.sharing` instead.",
+    )
     def unshare(self, groups: Union[list[str], list[Group]]):
         """
         The ``unshare`` method stops sharing of the Item with the specified list of groups.

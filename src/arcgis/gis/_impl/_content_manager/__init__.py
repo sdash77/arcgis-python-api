@@ -1,3 +1,4 @@
+from __future__ import annotations
 from . import _import_data
 from ._recyclebin import RecycleBin, RecycleItem
 from .folder import FolderException, Folders, Folder
