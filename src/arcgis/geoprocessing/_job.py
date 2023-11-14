@@ -975,7 +975,9 @@ class OMJob(GPJob):
                         if key == item_name:
                             item_info = mission_json["items"][key]
                             if "itemId" in item_info.keys():
-                                item_object = mission._gis.content.get(item_info["itemId"])
+                                item_object = mission._gis.content.get(
+                                    item_info["itemId"]
+                                )
                                 deleted = item_object.delete()
                                 if deleted:
                                     mission_json["items"].update({key: {}})
