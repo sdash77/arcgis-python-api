@@ -10865,6 +10865,12 @@ class _RasterAnalysisTools(BaseAnalytics):
         target_height=None,
         target_height_field=None,
         above_ground_level_output_name=None,
+        vertical_error=None,
+        refractivity_coefficient=0.13,
+        horizontal_start_angle=0,
+        horizontal_end_angle=360,
+        vertical_upper_angle=90,
+        vertical_lower_angle=-90,
         context=None,
         future=False,
         **kwargs,
@@ -10898,27 +10904,63 @@ class _RasterAnalysisTools(BaseAnalytics):
             )
             output_layers.append(above_ground_level_service)
 
-        gpjob = self._tbx.create_viewshed(
-            input_elevation_surface=input_elevation_surface,
-            input_observer_features=input_observer_features,
-            output_name=output_raster,
-            optimize_for=optimize_for,
-            maximum_viewing_distance=maximum_viewing_distance,
-            maximum_viewing_distance_field=maximum_viewing_distance_field,
-            minimum_viewing_distance=minimum_viewing_distance,
-            minimum_viewing_distance_field=minimum_viewing_distance_field,
-            viewing_distance_is3_d=viewing_distance_is3D,
-            observers_elevation=observers_elevation,
-            observers_elevation_field=observers_elevation_field,
-            observers_height=observers_height,
-            observers_height_field=observers_height_field,
-            target_height=target_height,
-            target_height_field=target_height_field,
-            above_ground_level_output_name=above_ground_level_raster,
-            context=context,
-            gis=self._gis,
-            future=True,
-        )
+        current_version = None
+        if "currentVersion" in self._gis._tools.rasteranalysis.properties.keys():
+            current_version = self._gis._tools.rasteranalysis.properties[
+                "currentVersion"
+            ]
+
+        if (current_version is not None) and current_version < 11.2:
+            gpjob = self._tbx.create_viewshed(
+                input_elevation_surface=input_elevation_surface,
+                input_observer_features=input_observer_features,
+                output_name=output_raster,
+                optimize_for=optimize_for,
+                maximum_viewing_distance=maximum_viewing_distance,
+                maximum_viewing_distance_field=maximum_viewing_distance_field,
+                minimum_viewing_distance=minimum_viewing_distance,
+                minimum_viewing_distance_field=minimum_viewing_distance_field,
+                viewing_distance_is3_d=viewing_distance_is3D,
+                observers_elevation=observers_elevation,
+                observers_elevation_field=observers_elevation_field,
+                observers_height=observers_height,
+                observers_height_field=observers_height_field,
+                target_height=target_height,
+                target_height_field=target_height_field,
+                above_ground_level_output_name=above_ground_level_raster,
+                context=context,
+                gis=self._gis,
+                future=True,
+            )
+        elif (current_version is not None) and current_version >= 11.2:
+            gpjob = self._tbx.create_viewshed(
+                input_elevation_surface=input_elevation_surface,
+                input_observer_features=input_observer_features,
+                output_name=output_raster,
+                optimize_for=optimize_for,
+                maximum_viewing_distance=maximum_viewing_distance,
+                maximum_viewing_distance_field=maximum_viewing_distance_field,
+                minimum_viewing_distance=minimum_viewing_distance,
+                minimum_viewing_distance_field=minimum_viewing_distance_field,
+                viewing_distance_is3_d=viewing_distance_is3D,
+                observers_elevation=observers_elevation,
+                observers_elevation_field=observers_elevation_field,
+                observers_height=observers_height,
+                observers_height_field=observers_height_field,
+                target_height=target_height,
+                target_height_field=target_height_field,
+                above_ground_level_output_name=above_ground_level_raster,
+                vertical_error=vertical_error,
+                refractivity_coefficient=refractivity_coefficient,
+                horizontal_start_angle=horizontal_start_angle,
+                horizontal_end_angle=horizontal_end_angle,
+                vertical_upper_angle=vertical_upper_angle,
+                vertical_lower_angle=vertical_lower_angle,
+                context=context,
+                gis=self._gis,
+                future=True,
+            )
+
         gpjob._is_ra = True
         gpjob._item_properties = True
         if future:
