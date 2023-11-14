@@ -2224,6 +2224,7 @@ def generate_orthomosaic(
 
     update_flight_json = False
     from ._mission import Mission
+    flight_json_details= {}
 
     if isinstance(image_collection, Mission):
         mission = image_collection
@@ -2685,6 +2686,7 @@ def reset_image_collection(
 
     gis = arcgis.env.active_gis if gis is None else gis
     from ._mission import Mission
+    flight_json_details = {}
 
     if isinstance(image_collection, Mission):
         mission = image_collection
