@@ -970,18 +970,19 @@ class OMJob(GPJob):
                                 mission_json["items"].update({key: {}})
 
             if item_name == "dsm" or item_name == "dtm" or item_name == "ortho":
-                for key in mission_json["items"].keys():
-                    if key == item_name:
-                        item_info = mission_json["items"][key]
-                        if "itemId" in item_info.keys():
-                            item_object = mission._gis.content.get(item_info["itemId"])
-                            deleted = item_object.delete()
-                            if deleted:
-                                mission_json["items"].update({key: {}})
-                                if key in mission_json["jobs"].keys():
-                                    mission_json["jobs"].update(
-                                        {key: {"checked": False, "mode": "Quick"}}
-                                    )
+                if "items" in mission_json.keys():
+                    for key in mission_json["items"].keys():
+                        if key == item_name:
+                            item_info = mission_json["items"][key]
+                            if "itemId" in item_info.keys():
+                                item_object = mission._gis.content.get(item_info["itemId"])
+                                deleted = item_object.delete()
+                                if deleted:
+                                    mission_json["items"].update({key: {}})
+                                    if key in mission_json["jobs"].keys():
+                                        mission_json["jobs"].update(
+                                            {key: {"checked": False}}
+                                        )
 
             if processing_states is not None:
                 mission_json["processingSettings"].update(
