@@ -17,7 +17,7 @@ from ..._impl.common._utils import _to_utf8
 from urllib import request
 from urllib.parse import urlparse
 
-__version__ = "2.2.0"
+__version__ = "2.3.0"
 
 _log = logging.getLogger(__name__)
 
@@ -730,6 +730,7 @@ class Portal(object):
         owner: str,
         folder: Optional[str] = None,
         force: bool = False,
+        permanent: bool = False,
     ):
         """Deletes an item.
 
@@ -744,6 +745,8 @@ class Portal(object):
                           to the root folder.
         ----------------  --------------------------------------------------------
         force             optional bool. If True, will force delete orphaned items
+        ----------------  --------------------------------------------------------
+        permanent         optional bool. If True, item will not be sent to recycle bin.
         ================  ========================================================
 
         :return:
@@ -759,6 +762,8 @@ class Portal(object):
             post_data = {"f": "json", "force": True}
         else:
             post_data = self._postdata()
+        if permanent:
+            post_data["permanentDelete"] = True
         resp = self.con.post(path, post_data)
 
         if resp:

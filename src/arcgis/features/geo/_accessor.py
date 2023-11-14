@@ -3550,14 +3550,12 @@ class GeoAccessor(object):
 
         for td in time_delta_fields:
             df[td] = df[td].dt.total_seconds() * 1000
-        for f in date_fields:
-            fn = (
-                lambda x: int(x.timestamp() * 1000)
-                if isinstance(x, pd.Timestamp)
-                else 0
-            )
 
-            df[f] = pd.to_datetime(df[date_fields[-1]]).apply(fn)
+        # define the function once
+        fn = lambda x,: int(x.timestamp() * 1000) if isinstance(x, pd.Timestamp) else 0
+        for f in date_fields:
+            # apply function to each column in date_fields
+            df[f] = pd.to_datetime(df[f]).apply(fn)
         for row in df.to_dict("records"):
             geom = {}
             if self.name in row:

@@ -151,12 +151,24 @@ class TabularDataObject(object):
         if tabular_data._dependent_variable:
             if isinstance(tabular_data._dependent_variable, list):
                 for var in tabular_data._dependent_variable:
-                    if var in tabular_data._categorical_variables + tabular_data._continuous_variables:
-                        raise Exception('Variable to predict cannot be an explanatory variable')
+                    if (
+                        var
+                        in tabular_data._categorical_variables
+                        + tabular_data._continuous_variables
+                    ):
+                        raise Exception(
+                            "Variable to predict cannot be an explanatory variable"
+                        )
             else:
-                if tabular_data._dependent_variable in tabular_data._categorical_variables + tabular_data._continuous_variables:
-                    raise Exception('Variable to predict cannot be an explanatory variable')
-                
+                if (
+                    tabular_data._dependent_variable
+                    in tabular_data._categorical_variables
+                    + tabular_data._continuous_variables
+                ):
+                    raise Exception(
+                        "Variable to predict cannot be an explanatory variable"
+                    )
+
             if (
                 tabular_data._dataframe[tabular_data._dependent_variable]
                 .isnull()
@@ -1267,9 +1279,7 @@ class TabularDataObject(object):
             # Try to convert the datatype to timestamp
             warnings.warn("Index field is not timestamp. Converting it to timestamp.")
             try:
-                index_data_copy = pd.to_datetime(
-                    index_data_copy, infer_datetime_format=True
-                )
+                index_data_copy = pd.to_datetime(index_data_copy)
             except:
                 sample_ticks = True
 
@@ -2188,8 +2198,9 @@ class TabularDataObject(object):
             ].to_list()
         del sorted_dataframe
         # CHanges to handle the pandas datatype issue
-        dataframe[fields_mapping['categorical_variables']] = dataframe[
-            fields_mapping['categorical_variables']].astype('category')
+        dataframe[fields_mapping["categorical_variables"]] = dataframe[
+            fields_mapping["categorical_variables"]
+        ].astype("category")
         data_bunch = TabularDataBunch.from_df(
             temp_file,
             dataframe,
