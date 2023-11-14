@@ -1446,15 +1446,6 @@ def prepare_data(
                             Applies to single label feature classification,
                             object detection and pixel classification.
     ---------------------   -------------------------------------------
-    bands_of_interest       Optional list. List of spectral bands of interest.
-                            This will filter bands based on `bands_of_interest`.
-                            If we have bands [1, 2, 3, 4] in our dataset,
-                            but we are mainly interested in 2 and 3,
-                            Set `bands_of_interest=[2,3]`. Only those spectral bands
-                            will be considered for training, rest of the bands will
-                            be filtered out. Applicable only for
-                            dataset_type='PSETAE'.
-    ---------------------   -------------------------------------------
     timesteps_of_interest   Optional list. List of time steps of interest.
                             This will filter multi-temporal timesereis based
                             on `timesteps_of_interest`. If the dataset have
@@ -1464,9 +1455,9 @@ def prepare_data(
                             rest of the time-steps will be filtered out.
                             Applicable only for dataset_type='PSETAE'.
     ---------------------   -------------------------------------------
-    channels_of_interest    Optional list. List of bands/channels of interest.
+    channels_of_interest    Optional list. List of spectral bands/channels of interest.
                             This will filter out bands from rasters of
-                            multi-temporal timesereis based on
+                            multi-temporal timeseries based on
                             `channels_of_interest` list. If we have bands
                             [0,1,2,3,4] in our dataset, but we are mainly
                             interested in 0, 1 and 2, Set
