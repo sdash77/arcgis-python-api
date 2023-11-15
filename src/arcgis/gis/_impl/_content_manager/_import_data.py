@@ -284,6 +284,9 @@ def import_as_item(gis, df, **kwargs):
     # This pushes the features and adds new dependencies
     _add_item_dependency(file_type, index, file_item, fs_item, new_item, gis)
 
+    # clean up
+    new_item.delete()
+
     return fs_item
 
 
