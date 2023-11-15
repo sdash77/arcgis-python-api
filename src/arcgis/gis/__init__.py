@@ -14223,9 +14223,14 @@ class Item(dict):
             Items with metadata have 'Metadata' in their typeKeywords.
 
         """
-        metadataurlpath = "content/items/" + self.itemid + "/info/metadata/metadata.xml"
+        metadataurlpath = f"{self._gis._portal.resturl}content/items/{self.itemid}/info/metadata/metadata.xml"
+
         try:
-            return self._portal.con.get(metadataurlpath, try_json=False)
+            response = self._portal.con.get(metadataurlpath, try_json=False)
+            if response.find("Metadata for item not found") > -1:
+                return None
+            else:
+                return response
 
         # If the get operation returns a 400 HTTP Error then the metadata simply
         # doesn't exist, let's just return None in this case
