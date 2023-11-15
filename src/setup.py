@@ -131,15 +131,11 @@ def _post_install():
         print("Attempting to activate map widget...")
         try:
             log.warning(
-                nbext.install_nbextension_python(
-                    "arcgis", sys_prefix=True, logger=log
-                )
+                nbext.install_nbextension_python("arcgis", sys_prefix=True, logger=log)
             )
 
             log.warning(
-                nbext.enable_nbextension_python(
-                    "arcgis", sys_prefix=True, logger=log
-                )
+                nbext.enable_nbextension_python("arcgis", sys_prefix=True, logger=log)
             )
 
             log.warning(
@@ -150,9 +146,7 @@ def _post_install():
 
         except Exception as e:
             print(f"Activating the widget failed {e}")
-            log.exception(
-                "Activating map widget failed: Continuing install.."
-            )
+            log.exception("Activating map widget failed: Continuing install..")
             log.exception(e)
 
     # 2) If the OS is Mac OSX, run the OpenSSL workaround
@@ -162,9 +156,7 @@ def _post_install():
     for potential_cert_script in glob("/Applications/Python*/*"):
         if "Install Certificates.command" in potential_cert_script:
             try:
-                cmd_output = check_output(
-                    potential_cert_script, stderr=STDOUT
-                )
+                cmd_output = check_output(potential_cert_script, stderr=STDOUT)
                 log.warning(
                     "OpenSSL workaround for OSX completed successfully. "
                     "See https://bugs.python.org/issue28150 for info. "
