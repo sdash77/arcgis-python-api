@@ -45,7 +45,7 @@ class TestOrientedImageryLayer(unittest.TestCase):
         ip = ItemProperties(
             **{
                 "item_type": ItemTypeEnum.FILE_GEODATABASE,
-                "title": "FGDB{uuid.uuid4().hex[: 4]}",
+                "title": f"FGDB{uuid.uuid4().hex[: 4]}",
                 "tags": "tags",
             }
         )

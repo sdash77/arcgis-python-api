@@ -14,7 +14,7 @@ import os
 from re import S, search
 import time
 import concurrent.futures
-from typing import Any, Optional, Union, Generator
+from typing import Any, Optional, Union
 from arcgis._impl.common import _query
 from arcgis._impl.common._filters import (
     StatisticFilter,
