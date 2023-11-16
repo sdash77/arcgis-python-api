@@ -13,9 +13,10 @@ from arcgis.raster._layer import ImageryLayer as _ImageryLayer
 from arcgis.raster._util import _set_context, _id_generator
 from ._scannedmapdigitizer import ScannedMapDigitizer
 from .models._timm_utils import load_timm_bckbn_pretrained
-from timm.models import helpers
 
-helpers.load_pretrained = load_timm_bckbn_pretrained
+# from timm.models import helpers
+
+# helpers.load_pretrained = load_timm_bckbn_pretrained
 
 if not _LAMBDA_TEXT_CLASSIFICATION:
     from .models import (

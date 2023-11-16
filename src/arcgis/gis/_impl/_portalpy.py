@@ -6,7 +6,7 @@ import io
 import copy
 from datetime import datetime
 import json
-import imghdr
+import puremagic
 import logging
 import os
 import tempfile
@@ -413,7 +413,7 @@ class Portal(object):
                 thumbnail = request.urlretrieve(thumbnail)[0]
                 file_ext = os.path.splitext(thumbnail)[1]
                 if not file_ext:
-                    file_ext = imghdr.what(thumbnail)
+                    file_ext = puremagic.from_file(thumbnail)
                     if file_ext in ("gif", "png", "jpeg"):
                         new_thumbnail = thumbnail + "." + file_ext
                         os.rename(thumbnail, new_thumbnail)
@@ -636,7 +636,7 @@ class Portal(object):
                 thumbnail = request.urlretrieve(thumbnail)[0]
                 file_ext = os.path.splitext(thumbnail)[1]
                 if not file_ext:
-                    file_ext = imghdr.what(thumbnail)
+                    file_ext = puremagic.from_file(thumbnail)
                     if file_ext in ("gif", "png", "jpeg"):
                         new_thumbnail = thumbnail + "." + file_ext
                         os.rename(thumbnail, new_thumbnail)
@@ -2319,7 +2319,7 @@ class Portal(object):
                 thumbnail = request.urlretrieve(thumbnail)[0]
                 file_ext = os.path.splitext(thumbnail)[1]
                 if not file_ext:
-                    file_ext = imghdr.what(thumbnail)
+                    file_ext = puremagic.from_file(thumbnail)
                     if file_ext in ("gif", "png", "jpeg"):
                         new_thumbnail = thumbnail + "." + file_ext
                         os.rename(thumbnail, new_thumbnail)
@@ -2477,7 +2477,7 @@ class Portal(object):
                 thumbnail = request.urlretrieve(thumbnail)[0]
                 file_ext = os.path.splitext(thumbnail)[1]
                 if not file_ext:
-                    file_ext = imghdr.what(thumbnail)
+                    file_ext = puremagic.from_file(thumbnail)
                     if file_ext in ("gif", "png", "jpeg"):
                         new_thumbnail = thumbnail + "." + file_ext
                         os.rename(thumbnail, new_thumbnail)
@@ -2618,7 +2618,7 @@ class Portal(object):
                 thumbnail = request.urlretrieve(thumbnail)[0]
                 file_ext = os.path.splitext(thumbnail)[1]
                 if not file_ext:
-                    file_ext = imghdr.what(thumbnail)
+                    file_ext = puremagic.from_file(thumbnail)
                     if file_ext in ("gif", "png", "jpeg"):
                         new_thumbnail = thumbnail + "." + file_ext
                         os.rename(thumbnail, new_thumbnail)
@@ -2629,7 +2629,7 @@ class Portal(object):
                 large_thumbnail = request.urlretrieve(large_thumbnail)[0]
                 file_ext = os.path.splitext(large_thumbnail)[1]
                 if not file_ext:
-                    file_ext = imghdr.what(large_thumbnail)
+                    file_ext = puremagic.from_file(large_thumbnail)
                     if file_ext in ("gif", "png", "jpeg"):
                         new_large_thumbnail = large_thumbnail + "." + file_ext
                         os.rename(large_thumbnail, new_thumbnail)
