@@ -328,12 +328,15 @@ def find_point_clusters(
     noise. Multiple clusters will be assigned each color. Colors will be assigned
     and repeated so that each cluster is visually distinct from its neighboring clusters.
 
-    This method utilizes two related algorithms. By default the HDBSCAN algorithm is
-    used to find clusters. If a ``search_distance`` is specified, the DBSCAN algorithm
-    is used. DBSCAN is only appropriate if there is a very clear search distance to use
-    for your analysis and will return clusters with similar densities. When
-    no ``search_distance`` is specified, HDBSCAN will use a range of distances to separate clusters
-    of varying densities from sparser noise resulting in more data-driven clusters.
+    This task uses the DBSCAN, HDBSCAN, or OPTICS method to find clusters. If the method
+    is not specified and the searchDistance value is not provided, the HDBSCAN method will
+    be used. If the method is not specified and searchDistance value is provided, the
+    DBSCAN algorithm will be used. DBSCAN will return clusters with similar densities
+    and is only appropriate if there is a clear search distance to use for the analysis.
+    HDBSCAN will use a range of distances to separate clusters of varying densities from
+    sparser noise resulting in more data-driven clusters. OPTICS will use the distances
+    between neighboring features to create a reachability plot, and use it to separate
+    clusters of varying densities from noise.
 
     ====================    =========================================================
     **Parameter**            **Description**
