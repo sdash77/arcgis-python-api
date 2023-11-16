@@ -19,7 +19,6 @@ import shutil
 import tempfile
 import warnings
 import zipfile
-from uuid import uuid4
 import configparser
 from contextlib import contextmanager
 import functools
@@ -30,11 +29,9 @@ from urllib.error import HTTPError
 import requests
 
 from arcgis.gis._impl._dataclasses._contentds import (
-    ItemTypeEnum,
     ItemProperties,
 )
 from arcgis.gis._impl import (
-    MetadataFormatEnum,
     CreateServiceParameter,
     ViewLayerDefParameter,
 )
@@ -14427,7 +14424,7 @@ class Item(dict):
         portalurl = self.homepage
 
         # locale.setlocale(locale.LC_ALL, "")
-        numViews = locale.format("%d", self.numViews, grouping=True)
+        numViews = locale.format_string("%d", self.numViews, grouping=True)
         return (
             """<div class="item_container" style="height: auto; overflow: hidden; border: 1px solid #cfcfcf; border-radius: 2px; background: #f6fafa; line-height: 1.21429em; padding: 10px;">
                     <div class="item_left" style="width: 210px; float: left;">
