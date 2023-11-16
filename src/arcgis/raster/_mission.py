@@ -5,6 +5,10 @@ from arcgis.gis import GIS, Item
 
 from arcgis.raster.orthomapping import Project
 
+import logging
+
+_LOGGER = logging.getLogger(__name__)
+
 
 class Mission:
     """
@@ -58,9 +62,12 @@ class Mission:
 
         self._project_item = project._project_item
         self._gis = project._gis
-        self._mission_json = self._get_mission_json(self._mission_name)
         self._collection = None
         self._resource_info = self._resource_info(self._mission_name)
+
+    @property
+    def _mission_json(self):
+        return self._get_mission_json(self._mission_name)
 
     @property
     def products(self):
@@ -133,6 +140,139 @@ class Mission:
                 image_collection_item = self._gis.content.get(item_id)
                 self._collection = image_collection_item
                 return image_collection_item
+
+    def _update_mission_json(self, mission_json):
+        rm = self._project_item.resources
+        # mission_json = mission._mission_json
+        resource = self._resource_info
+        resource_name = resource["resource"]
+
+        resource_props = resource["properties"]
+        import json
+
+        properties = json.loads(resource["properties"])
+
+        import tempfile, uuid, os
+
+        fname = resource_name.split("/")[1]
+        temp_dir = tempfile.gettempdir()
+        temp_file = os.path.join(temp_dir, fname)
+        with open(temp_file, "w") as writer:
+            json.dump(mission_json, writer)
+        del writer
+
+        try:
+            rm.update(
+                file=temp_file,
+                text=mission_json,
+                folder_name="flights",
+                file_name=fname,
+                properties=properties,
+            )
+        except:
+            raise RuntimeError("Error updating the mission resource")
+
+    def delete_product(self, product):
+        if product not in ["dsm", "dtm", "ortho"]:
+            raise RuntimeError("Invalid product type")
+
+        mission_json = self._mission_json
+        if "items" in mission_json.keys():
+            for key in mission_json["items"].keys():
+                if key == product:
+                    item_info = mission_json["items"][key]
+                    if "itemId" in item_info.keys():
+                        item_object = self._gis.content.get(item_info["itemId"])
+                        deleted = item_object.delete()
+                        if deleted:
+                            mission_json["items"].update({key: {}})
+                            if key in mission_json["jobs"].keys():
+                                mission_json["jobs"].update({key: {"checked": False}})
+                            self._update_mission_json(mission_json)
+                            return True
+        return False
+
+    def delete(self):
+        try:
+            gis = self._gis
+            project = self._project
+            project_item = project._project_item
+            resource_manager = project_item.resources
+            resource = self._resource_info
+            resource_name = resource["resource"]
+            total_no_missions = project.mission_count
+
+            mission_json = self._get_mission_json(self._mission_name)
+            oid = mission_json["oid"]
+
+            item_dict = mission_json.get("items", {})
+
+            image_collection_item_id = item_dict.get("imageCollection", {}).get(
+                "itemId", None
+            )
+
+            image_collection_item = None
+            if image_collection_item_id is not None:
+                image_collection_item = gis.content.get(image_collection_item_id)
+
+            dsm_item_id = item_dict.get("dsm", {}).get("itemId", None)
+
+            dsm_item = None
+            if dsm_item_id is not None:
+                dsm_item = gis.content.get(dsm_item_id)
+
+            dtm_item_id = item_dict.get("dtm", {}).get("itemId", None)
+
+            dtm_item = None
+            if dtm_item_id is not None:
+                dtm_item = gis.content.get(dtm_item_id)
+
+            ortho_item_id = item_dict.get("ortho", {}).get("itemId", None)
+
+            ortho_item = None
+            if ortho_item_id is not None:
+                ortho_item = gis.content.get(ortho_item_id)
+
+            prj_data = project_item.get_data()
+            flights_list = prj_data.get("flights", [])
+
+            flights_list = [flight for flight in flights_list if flight["oid"] != oid]
+            prj_data.update({"flights": flights_list})
+
+            image_count = image_collection_item.layers[0].query(return_count_only=True)
+
+            project_properties = project_item.properties
+            flight_count = project_properties.get("flightCount", 0)
+            flight_count = flight_count - 1
+
+            image_count_ex = project_properties.get("imageCount", 0)
+            image_count_ex = image_count_ex - image_count
+
+            project_properties.update(
+                {"flightCount": flight_count, "imageCount": image_count_ex}
+            )
+            import json
+
+            project_item.update(
+                item_properties={"properties": project_properties},
+                data=json.dumps(prj_data),
+            )
+
+            try:
+                resource_manager.remove(resource_name)
+            except:
+                raise RuntimeError("Error deleting the mission resource")
+        except:
+            raise RuntimeError("Error deleting the mission")
+
+        items_list = [image_collection_item, dsm_item, dtm_item, ortho_item]
+        items_to_be_deleted = [item for item in items_list if item is not None]
+        try:
+            deleted = gis.content.delete_items(items_to_be_deleted)
+        except:
+            _LOGGER.warning("Failed to delete the products")
+
+        return True
 
     def add_image(
         self,
