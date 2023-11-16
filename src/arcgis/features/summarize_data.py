@@ -534,9 +534,9 @@ def summarize_center_and_dispersion(
     --------------------    --------------------------------------------------------------------------------------------
     ellipse_size            Optional string. The size of the output ellipse in standard deviations.
 
-                            Choice list: ['1 standard deviations', '2 standard deviations', '3 standard deviations']
+                            Choice list: ['1 standard deviation', '2 standard deviations', '3 standard deviations']
 
-                            The default ellipse size is '1 standard deviations'.
+                            The default ellipse size is '1 standard deviation'.
     --------------------    --------------------------------------------------------------------------------------------
     weight_field            Optional field. A numeric field in the ``analysis_layer`` to be used to
                             weight locations according to their relative importance.
