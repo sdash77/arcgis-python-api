@@ -272,7 +272,7 @@ def _create_parameters(
     if time_filter is None and layer.time_filter:
         params["time"] = layer.time_filter
     elif time_filter is not None:
-        if type(time_filter) is list:
+        if isinstance(time_filter, list):
             starttime = _date_handler(time_filter[0])
             endtime = _date_handler(time_filter[1])
             if starttime is None:
@@ -575,7 +575,7 @@ def _query_df(layer, url, params, **kwargs):
             columns[fld["name"]] = _fld_lu[fld["type"]]
         if (
             "geometryType" in layer.properties
-            and not layer.properties.geometryType is None
+            and layer.properties.geometryType is not None
         ):
             columns["SHAPE"] = object
         if "return_geometry" in params and params["return_geometry"] == False:
@@ -585,7 +585,7 @@ def _query_df(layer, url, params, **kwargs):
             df = df[params["out_fields"].split(",")].copy()
 
         if "SHAPE" in df.columns:
-            df["SHAPE"] = arcgis_features.GeoArray([])
+            df["SHAPE"] = arcgis_features.geo._array.GeoArray([])
             df.spatial.set_geometry("SHAPE")
             df.spatial.renderer = layer.renderer
             df.spatial._meta.source = layer
@@ -633,7 +633,7 @@ def _query_df(layer, url, params, **kwargs):
                     errors="coerce",
                     unit="s",
                 )
-            except:
+            except Exception:
                 df[fld] = pd.to_datetime(
                     df[fld],
                     errors="coerce",
