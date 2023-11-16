@@ -93,6 +93,7 @@ else:
         "dask >=2023.3.2",
         "matplotlib-inline",
         "pyarrow >=11.0.0",
+        "puremagic >=1.15,<2",
     ]
 
 
