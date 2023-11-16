@@ -11261,12 +11261,22 @@ class User(dict):
             raise ValueError("Daily only applies to activity report type.")
         if (
             start_time
-            and isinstance(start_time, _dt.datetime)
-            and start_time.date().today().strftime("%A") in ["Monday", "Sunday"]
-            and duration in ["weekly", "monthly"]
+            and duration == "weekly"
+            and (
+                not isinstance(start_time, _dt.datetime)
+                or not start_time.date().today().strftime("%A") in ["Monday", "Sunday"]
+            )
         ):
             raise ValueError(
                 "Invalid start_time. Weekly report must start from Sunday or Monday."
+            )
+        if (
+            start_time
+            and duration == "monthly"
+            and (not isinstance(start_time, _dt.datetime) or start_time.day != 1)
+        ):
+            raise ValueError(
+                "Invalid start_time. Monthly report must start from 1st of the month."
             )
         elif start_time and isinstance(start_time, _dt.datetime):
             start_time = int(start_time.timestamp() * 1000)
