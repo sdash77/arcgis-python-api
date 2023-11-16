@@ -47,6 +47,7 @@ from arcgis.geometry import (
 import arcgis.env
 from arcgis.gis import GIS
 
+
 class AreaUnits(Enum):
     """
     Represents the Supported Geometry Service Area Units Enumerations.
@@ -160,8 +161,8 @@ def areas_and_lengths(
                       are to be computed.
     ----------------  -------------------------------------------------------------------------------
     length_unit       The length unit in which the perimeters of polygons will be calculated.
-                      
-                      * If *calculation_type* is *planar*, then this argument can be any 
+
+                      * If *calculation_type* is *planar*, then this argument can be any
                         `esriUnits <https://developers.arcgis.com/enterprise-sdk/api-reference/net/esriUnits/>`_
                         constant string or integer.
                       * If *calculationType* is *not planar*, then *length_unit* must be a linear
@@ -172,12 +173,12 @@ def areas_and_lengths(
                         If *spatial_ref* is not specified as well, the units are in *meters*.
     ----------------  -------------------------------------------------------------------------------
     area_unit         The area unit in which areas of polygons will be calculated.
-    
+
                       * If *calculation_type* is *planar*, then area_unit can be any
                         `esriAreaUnits constant <https://developers.arcgis.com/enterprise-sdk/api-reference/net/esriAreaUnits/>`_.
                       * If *calculation_type* is not planar, then *area_unit* must be an
                         :class:`~arcgis.geometry.functions.AreaUnits` dictionary.
-                        For example, 
+                        For example,
                           * for *square meters* use - `{"areaUnit": "esriSquareMeters"}`
                           * for *square miles* use  - `{"areaUnit": "esriSquareMiles"}`
                       * If *area_unit* is not specified, the units are derived from the *spatial_ref*.
@@ -200,7 +201,7 @@ def areas_and_lengths(
     ----------------  -------------------------------------------------------------------------------
     spatial_ref       Optional integer. The desiried spatial reference of the output. Integer value
                       is the *wkid* value of the spatial reference. Default `4326 <https://developers.arcgis.com/documentation/spatial-references/#4326---gps>`_.
-                      
+
                       .. note::
                           See `Using Spatial References <https://developers.arcgis.com/rest/services-reference/enterprise/using-spatial-references.htm>`_
                           for links to comprehensive list of values.
@@ -209,7 +210,7 @@ def areas_and_lengths(
                       *GIS* will be used.
     ----------------  -------------------------------------------------------------------------------
     future            Optional boolean.
-                      
+
                       * If *True*, a :class:`~arcgis.geometry.GeometryJob` that can be queried
                         will be returned and control returns to the user.
                       * If *False*, a dictionary object with results after the function completes.
@@ -225,7 +226,7 @@ def areas_and_lengths(
             >>> poly_lyr = fl_item.layers[0]
             >>> polygon1 = poly_lyr.query(where="objectid=14, as_df=True).SHAPE.loc[0]
             >>> polygon2 = poly_lyr.query(where="objectd=38, as_df=True).SHAPE.loc[0]
-            
+
             # Usage Example 1
             >>> output_1 = areas_and_lengths(polygons =[polygon1, polygon2],
                                              length_unit = 9001,
@@ -235,8 +236,8 @@ def areas_and_lengths(
             >>> output_1
                 {'areas': [7845609.082046935, 52794153.65053841],
                  'lengths': [29042.783436295722, 98763.80242520552]}
-                                  
-                                  
+
+
             # Usage Example 2
             >>> from arcgis.geometry import LengthUnits, AreaUnits
             >>> output_2 = areas_and_lengths(polygons =[polygon1, polygon2,...],
@@ -254,10 +255,10 @@ def areas_and_lengths(
            >>>     else:
            >>>         print(ft_output.result())
            >>>         break
-           
+
            ...processing...
            ...processing...
-           {'areas': [84449433.3236774, 568271540.420404], 'lengths': [95284.72256002533, 324028.2231798081]}                      
+           {'areas': [84449433.3236774, 568271540.420404], 'lengths': [95284.72256002533, 324028.2231798081]}
     """
     if gis is None:
         gis = arcgis.env.active_gis
@@ -284,7 +285,7 @@ def auto_complete(
     future: bool = False,
 ):
     """
-    The ``auto_complete`` function simplifies the process of constructing new 
+    The ``auto_complete`` function simplifies the process of constructing new
     :class:`~arcgis.geometry.Polygon` objects that are adjacent to other
     *polygons*. It constructs *polygons* that fill in the gaps between existing
     *polygons* and a set of :class:`~arcgis.geometry.Polyline` objects.
@@ -300,7 +301,7 @@ def auto_complete(
                       integer WKID of the spatial reference.
     ----------------  -------------------------------------------------------------------------------
     future            Optional boolean.
-                      
+
                       * If *True*, a :class:`~arcgis.geometry.GeometryJob` that can
                         be queried will be returned and control returns to the user.
                       * If *False*, a :class:`~arcgis.geometry.Polygon` object will be returned
@@ -367,7 +368,7 @@ def buffer(
                       is *False*.
     ----------------  -------------------------------------------------------------------------------
     geodesic          Optional boolean.
-                      
+
                       * If *True*, buffer the input *geometries* using geodesic distance. Geodesic
                       distance is the shortest path between two points along the ellipsoid of the earth.
                       If *False*, the 2D Euclidean distance is used
@@ -379,13 +380,13 @@ def buffer(
                           for details.
     ----------------  -------------------------------------------------------------------------------
     future            Optional boolean.
-                      
+
                       * If *True*, a :class:`~arcgis.geometry.GeometryJob` will be returned for query
                         and the process returns control to the user.
                       * If *False*, the process waits until completion before returning the output
                         :class:`polygons <arcgis.geometry.Polygon>`
                       The default is False.
-                      
+
                       .. note::
                           If setting future to *True* there is a limitation of 6500 *geometries*
                           that can be processed in one call.
@@ -394,22 +395,22 @@ def buffer(
     :returns:
         A list of :class:`~arcgis.geometry.Polygon` objects if *future=False*, or a
         :class:`~arcgis.geometry.GeometryJob` object if *future=True*.
-        Query the job's :meth:`~arcgis.geometry.GeometryJob.result` method to get results. 
+        Query the job's :meth:`~arcgis.geometry.GeometryJob.result` method to get results.
 
     .. code-block:: python
 
             >>> from arcgis.gis import GIS
             >>> from arcgis.geometry import Point, buffer, LengthUnits, AreaUnits
-            
+
             >>> gis = GIS(profile="my_entertprise_user")
-            
+
             >>> flyr_item = gis.content.get("<item_id>")
-            
+
             >>> pts_layer = fl_item.layers[0]
-            
+
             >>> geom1 = Point(pts_layer.query(where="name='Water Dept'").features[0].geometry)
             >>> geom2 = Point(pts_layer.query(where="name='Water Satellite'").features[0].geometry)
-            
+
             >>> buffer_res = buffer(geometries =[geom1, geom2],
                              distances=[1000,2000,...],
                              in_sr = {"wkid": 3857},
@@ -420,7 +421,7 @@ def buffer(
                              geodesic = True,
                              future = False)
             >>> buffer_res
-            
+
             [{'rings': [[[-1231272.7177999988, -367594.3729999997], [-1231259.824000001, -367596.90949999914],…
                         [-1231285.7353999987, -367592.5767999999], [-1231272.7177999988, -367594.3729999997]]],
                         'spatialReference': {'wkid': 102009, 'latestWkid': 102009}},
@@ -518,13 +519,13 @@ def convex_hull(
 
     ----------------  -------------------------------------------------------------------------------
     future            Optional boolean.
-    
+
                       * If *True*, a :class:`~arcgis.geometry.GeometryJob` will be returned for query
                         and the process returns control to the user.
                       * If *False*, the process waits until completion before returning the output
                         :class:`polygons <arcgis.geometry.Polygon>`
                       The default is False.
-                      
+
                       .. note::
                           If setting future to *True* there is a limitation of 6500 *geometries*
                           that can be processed in one call.
@@ -565,8 +566,8 @@ def convex_hull(
         >>>     else:
         >>>         print(hull_job.result())
         >>>         break
-        
-        ...processing...       
+
+        ...processing...
         {'rings': [[[2664507.7925999984, 1212609.7138999999],
                      ...,
                     [2664678.264199998, 1212618.6860999987],
@@ -607,12 +608,12 @@ def cut(
                       the spatial reference of the input geometries.
     ----------------  -------------------------------------------------------------------------------
     future            Optional boolean.
-                      
+
                       * If *True*, a :class:`~arcgis.geometry.GeometryJob` object
                         will be returned and the process returns control to the user.
                       * If *False*, the process waits for the operation to complete before returning
                         results and passing control back to the user.
-                      
+
                       .. note::
                           If *future=True*, there is a limitation of 6500 geometries that can be
                           processed in one call.
@@ -653,30 +654,30 @@ def densify(
                       replaced with sequences of lines no longer than *max_segment_length*.
     ----------------  -------------------------------------------------------------------------------
     length_unit       The length unit of *max_segment_length*.
-                      
+
                       * If *geodesic = False*, then the units are derived from the *spatial_ref*
                         argument and the *length_unit* argument is ignored
                       * If *geodesic = True*, then *length_unit* must be a linear unit
-                      
+
                       * If argument is not provided and the *spatial_ref* argument is a projected
                         coordinate system, this value is derived from the *spatial_ref*
                       * If argument is not provided and the *spatial_ref* argument is a geographic
                         coordinate system, the units are *meters*
     ----------------  -------------------------------------------------------------------------------
     geodesic          Optional boolean.
-                      
+
                       * If *True*, then `geodesic distance <https://developers.arcgis.com/documentation/glossary/geodesic/>`_
                         is used to calculate *max_segment_length*.
                       * If *False*, then `2D Euclidean distance <https://en.wikipedia.org/wiki/Euclidean_distance>`_ is used to calculate
                         *max_segment_length*. The default is *False*.
     ----------------  -------------------------------------------------------------------------------
     future            Optional boolean.
-                      
+
                       * If *True*, a :class:`~arcgis.geometry.GeometryJob` object
                         will be returned and the process returns control to the user.
                       * If *False*, the process waits for the operation to complete before returning
                         results and passing control back to the user.
-                      
+
                       .. note::
                           If *future=True*, there is a limitation of 6500 geometries that can be
                           processed in one call.
@@ -714,7 +715,7 @@ def difference(
     and another :class:`~arcgis.geometry.Geometry` object. In other words, let B be the
     difference geometry. For each geometry, A, in the input geometry
     list, it constructs A - B.
-    
+
     .. note::
         The operation calls :func:`~arcgis.geometry.functions.simplify` on the input *geometries*
 
@@ -731,12 +732,12 @@ def difference(
                       specifying the spatial reference of the input *geometries*.
     ----------------  -------------------------------------------------------------------------------
     future            Optional boolean.
-                      
+
                       * If *True*, a :class:`~arcgis.geometry.GeometryJob` object
                         will be returned and the process returns control to the user.
                       * If *False*, the process waits for the operation to complete before returning
                         results and passing control back to the user.
-                      
+
                       .. note::
                           If *future=True*, there is a limitation of 6500 geometries that can be
                           processed in one call.
@@ -796,7 +797,7 @@ def distance(
                       ID or JSON object
     ----------------  -------------------------------------------------------------------------------
     future            Optional boolean.
-                      
+
                       * If *True*, a :class:`~arcgis.geometry.GeometryJob` object
                         will be returned and the process returns control to the user.
                       * If *False*, the process waits for the operation to complete before returning
@@ -877,19 +878,19 @@ def find_transformation(
                         If ``num_of_results`` has a value of -1, all applicable transformations are returned.
     ----------------  -------------------------------------------------------------------------------
     future            Optional boolean.
-                      
+
                       * If *True*, a :class:`~arcgis.geometry.GeometryJob` object
                         will be returned and the process returns control to the user.
                       * If *False*, the process waits for the operation to complete before returning
                         results and passing control back to the user.
-                      
+
                       .. note::
                           If *future=True*, there is a limitation of 6500 geometries that can be
                           processed in one call.
     ================  ===============================================================================
 
     :returns:
-        If *future = False*, a list of geographic transformations, or if *future = True*, a 
+        If *future = False*, a list of geographic transformations, or if *future = True*, a
         :class:`~arcgis.geometry.GeometryJob` object.
     """
     if gis is None:
@@ -928,7 +929,7 @@ def from_geo_coordinate_string(
 
                       .. note::
                         Valid conversion types are:
-                        
+
                         * `MGRS` - Military Grid Reference System
                         * `USNG` - United States National Grid
                         * `UTM` - Universal Transverse Mercator
@@ -942,7 +943,7 @@ def from_geo_coordinate_string(
 
                       .. note::
                         Valid conversion modes for MGRS are:
-                        
+
                         * `mgrsDefault` - Default. Uses the spheroid from the given spatial reference.
                         * `mgrsNewStyle` - Treats all spheroids as new, like WGS 1984. The 80 degree longitude falls into Zone 60.
                         * `mgrsOldStyle` - Treats all spheroids as old, like Bessel 1841. The 180 degree longitude falls into Zone 60.
@@ -951,14 +952,14 @@ def from_geo_coordinate_string(
 
                       .. note::
                         Valid conversion modes for UTM are:
-                        
+
                         * `utmDefault` - Default. No options.
                         * `utmNorthSouth` - Uses north/south latitude indicators instead of
                         * `zone numbers` - Non-standard. Default is recommended
 
     ----------------  -------------------------------------------------------------------------------
     future            Optional boolean.
-                      
+
                       * If *True*, a :class:`~arcgis.geometry.GeometryJob` object
                         will be returned and the process returns control to the user.
                       * If *False*, the process waits for the operation to complete before returning
@@ -968,16 +969,16 @@ def from_geo_coordinate_string(
     :returns:
         If *future = False*, a is of (x,y) coordinates and if *future = True*, a
         :class:`~arcgis.geometry.GeometryJob` object.
-    
+
     .. code-block:: python
-        
+
         >>> coords = from_geo_coordinate_string(spatial_ref = "wkid",
                                                 strings = ["01N AA 66021 00000","11S NT 00000 62155", "31U BT 94071 65288"],
                                                 conversion_type = "MGRS",
                                                 conversion_mode = "mgrs_default",
                                                 future = False)
         >>> coords
-                
+
         [[-117.378, 34.233], [14.387, 58.092], [179.0432, 98.653]]
     """
     if gis is None:
@@ -1015,7 +1016,7 @@ def generalize(
                       geometry.
     ----------------  -------------------------------------------------------------------------------
     deviation_unit    Specifies a unit for the *max_deviation* argument.
-                      
+
                       .. note::
                           If not specified, the units are derived from *spatial_ref*
     ----------------  -------------------------------------------------------------------------------
@@ -1023,12 +1024,12 @@ def generalize(
                       of the input *geometries*.
     ----------------  -------------------------------------------------------------------------------
     future            Optional boolean.
-                      
+
                       * If *True*, a :class:`~arcgis.geometry.GeometryJob` object
                         will be returned and the process returns control to the user.
                       * If *False*, the process waits for the operation to complete before returning
                         results and passing control back to the user.
-                      
+
                       .. note::
                           If *future=True*, there is a limitation of 6500 geometries that can be
                           processed in one call.
@@ -1079,12 +1080,12 @@ def intersect(
                       input *geometries*.
     ----------------  -------------------------------------------------------------------------------
     future            Optional boolean.
-                      
+
                       * If *True*, a :class:`~arcgis.geometry.GeometryJob` object
                         will be returned and the process returns control to the user.
                       * If *False*, the process waits for the operation to complete before returning
                         results and passing control back to the user.
-                      
+
                       .. note::
                           If *future=True*, there is a limitation of 6500 geometries that can be
                           processed in one call.
@@ -1122,12 +1123,12 @@ def label_points(
                       the spatial reference of the input *polygons*.
     ----------------  -------------------------------------------------------------------------------
     future            Optional boolean.
-                      
+
                       * If *True*, a :class:`~arcgis.geometry.GeometryJob` object
                         will be returned and the process returns control to the user.
                       * If *False*, the process waits for the operation to complete before returning
                         results and passing control back to the user.
-                      
+
                       .. note::
                           If *future=True*, there is a limitation of 6500 geometries that can be
                           processed in one call.
@@ -1163,12 +1164,12 @@ def lengths(
     polylines         The list of :class:`~arcgis.geometry.Polyline` objects to compute.
     ----------------  -------------------------------------------------------------------------------
     length_unit       The length unit in which the lengths are calculated.
-    
+
                       * If *calculation_type* is *planar* - value can be any `esriUnits` constant
-                      
+
                         * If *calculation_type* is *planar* and argument not provided, the units
                           are derived from ``spatial_ref``.
-                     
+
                       * If *calculationType* is *not* planar, then must be a
                         :class:`~arcgis.geometry.functions.LengthUnits` value, such as
                         *LengthUnits.METER* or *LengthUnits.SURVEYMILE*
@@ -1176,7 +1177,7 @@ def lengths(
                         *meters*
     ----------------  -------------------------------------------------------------------------------
     calculation_type  The length calculation type used for the operation. Can be one of the following:
-                      
+
 
                           * *planar* - uses 2D Euclidean distance to calculate length. Only use this
                              if the length needs to be calculated in the given *spatial_ref*,
@@ -1191,12 +1192,12 @@ def lengths(
                              the length. The shape of the geometry in its coordinate system is preserved.
     ----------------  -------------------------------------------------------------------------------
     future            Optional boolean.
-                      
+
                       * If *True*, a :class:`~arcgis.geometry.GeometryJob` object
                         will be returned and the process returns control to the user.
                       * If *False*, the process waits for the operation to complete before returning
                         results and passing control back to the user.
-                      
+
                       .. note::
                           If *future=True*, there is a limitation of 6500 geometries that can be
                           processed in one call.
@@ -1257,7 +1258,7 @@ def offset(
     ----------------  -------------------------------------------------------------------------------
     offset_how        Determines how outer corners between segments are handled.
                       The three options are as follows:
-                      
+
                       * *esriGeometryOffsetRounded* - Rounds the corner between extended offsets
                       * *esriGeometryOffsetBevelled* - Squares off the corner after a given ratio distance
                       * *esriGeometryOffsetMitered* - Attempts to allow extended offsets to naturally
@@ -1266,7 +1267,7 @@ def offset(
     ----------------  -------------------------------------------------------------------------------
     bevel_ratio       Value is multiplied by the *offset_distance*, and determines how far a mitered
                       offset intersection can be located before it is bevelled.
-                      
+
                       * when *offset_how = esriGeometryOffsetMitered*, argument is ignored and 10 is
                         used internally.
                       * when *offset_how = esriGeometryOffsetBevelled*, 1.1 will be used if argument
@@ -1274,18 +1275,18 @@ def offset(
                       * when *offset_how = esriGeometryOffsetRounded*, argument is ignored
     ----------------  -------------------------------------------------------------------------------
     simplify_result   Option boolean. If *True*,  true, then self intersecting loops will be removed.
-                      The default is False.                     
+                      The default is False.
     ----------------  -------------------------------------------------------------------------------
     spatial_ref       A :class:`~arcgis.geometry.SpatialReference` object of the well-known ID of the
                       spatial reference of the of the input geometries.
     ----------------  -------------------------------------------------------------------------------
     future            Optional boolean.
-                      
+
                       * If *True*, a :class:`~arcgis.geometry.GeometryJob` object
                         will be returned and the process returns control to the user.
                       * If *False*, the process waits for the operation to complete before returning
                         results and passing control back to the user.
-                      
+
                       .. note::
                           If *future=True*, there is a limitation of 6500 geometries that can be
                           processed in one call.
@@ -1296,9 +1297,9 @@ def offset(
         *future = True*, a :class:`~arcgis.geometry.GeometryJob` object.
 
     .. code-block:: python
-        
+
         # Usage Example:
-        
+
         >>> from arcgis.geometry import Polyline
         >>> pline = Polyline(iterable={"paths":[[[0,0],[2000,2000],[3000,0]]],
                                        :spatialReference: {"wkid": 2229}})
@@ -1350,7 +1351,7 @@ def project(
                         :class:`~arcgis.geometry.SpatialReference` object specifying the spatial
                         reference of the output *geometries*.
     ------------------  -------------------------------------------------------------------------------
-    transformation      The well-known ID or a dictionary specifying the *geographic transformation* 
+    transformation      The well-known ID or a dictionary specifying the *geographic transformation*
                         (also known as *datum transformation*) to be applied to the projected
                         geometries.
 
@@ -1361,19 +1362,19 @@ def project(
                             transformations, see `Transformation PDFs <https://developers.arcgis.com/rest/services-reference/enterprise/using-spatial-references.htm#ESRI_SECTION2_092C96BE89C749E289025A032DBEFDB8>`_.
     ------------------  -------------------------------------------------------------------------------
     transform_forward   Optional boolean. Indicates whether or not to transform forward.
-                      
+
                         .. note::
                             The forward or reverse direction is implied in the name of the transformation.
                             If transformation is specified, a value for this argument must be provided.
                             The default value is *False*.
     ------------------  -------------------------------------------------------------------------------
     future              Optional boolean.
-                      
+
                         * If *True*, a :class:`~arcgis.geometry.GeometryJob` object
                           will be returned and the process returns control to the user.
                         * If *False*, the process waits for the operation to complete before returning
                           results and passing control back to the user.
-                      
+
                         .. note::
                             If *future=True*, there is a limitation of 6500 geometries that can be
                             processed in one call.
@@ -1416,7 +1417,7 @@ def relation(
     """
     The ``relation`` function determines the pairs of geometries from the input
     list that participate in the specified spatial *relation*.
-    
+
     .. note::
         Both lists are assumed to be in the spatial reference specified by
         the *spatial_ref*, which is a required argument. Geometry types cannot be mixed
@@ -1442,7 +1443,7 @@ def relation(
     ----------------  -------------------------------------------------------------------------------
     spatial_relation  The spatial relationship to be tested between the two input geometry lists.
                       Options:
-                      
+
                       * `esriGeometryRelationCross`
                       * `esriGeometryRelationDisjoint`
                       * `esriGeometryRelationIn`
@@ -1457,7 +1458,7 @@ def relation(
                       * `esriGeometryRelationRelation`
     ----------------  -------------------------------------------------------------------------------
     future            Optional boolean.
-                      
+
                       * If *True*, a :class:`~arcgis.geometry.GeometryJob` object
                         will be returned and the process returns control to the user.
                       * If *False*, the process waits for the operation to complete before returning
@@ -1468,16 +1469,16 @@ def relation(
     :returns:
         If *future = False*, a dictionary of geometry index positions of geometries that participate
         in the specified *relation*, or if *future = True*, a :class:`~arcgis.geometry.GeometryJob` object.
-    
+
     .. code-block:: python
-        
+
         >>> new_res = relation(geometry1 = [{"x":-104.53,"y":34.74},{"x":-63.53,"y":10.23}],
                                geometry2 = [{"rings":[[[-105,34],[-104,34],[-104,35],[-105,35],[-105,34]]]}],
                                spatial_relation = "esriGeometryRelationWithin",
                                spatial_ref = 4326,
                                future = False)
         >>> new_res
-        
+
         {'relations': [{"geometry1Index": 0, "geometry2Index": 3},
                        {"geometry1Index": 1, "geometry2Index": 0}]}
     """
@@ -1518,7 +1519,7 @@ def reshape(
                       spatial reference of the geometries.
     ----------------  -------------------------------------------------------------------------------
     future            Optional boolean.
-                      
+
                       * If *True*, a :class:`~arcgis.geometry.GeometryJob` object
                         will be returned and the process returns control to the user.
                       * If *False*, the process waits for the operation to complete before returning
@@ -1543,7 +1544,7 @@ def simplify(
     """
     The ``simplify`` function permanently alters each of the input
     :class:`geometries <arcgis.geometry.Geometry>` so they become topologically consistent.
-    
+
     ================  ===============================================================================
     **Keys**          **Description**
     ----------------  -------------------------------------------------------------------------------
@@ -1555,12 +1556,12 @@ def simplify(
                       spatial reference of the input and output *geometries*.
     ----------------  -------------------------------------------------------------------------------
     future            Optional boolean.
-                      
+
                       * If *True*, a :class:`~arcgis.geometry.GeometryJob` object
                         will be returned and the process returns control to the user.
                       * If *False*, the process waits for the operation to complete before returning
                         results and passing control back to the user.
-                      
+
                       .. note::
                           If *future=True*, there is a limitation of 6500 geometries that can be
                           processed in one call.
@@ -1607,14 +1608,14 @@ def to_geo_coordinate_string(
     ----------------  -------------------------------------------------------------------------------
     coordinates       An list of xy-coordinates in JSON format to be converted.
                       Syntax:
-                      
+
                       * *[[10,10],[10,20]...[30,40]]*
     ----------------  -------------------------------------------------------------------------------
     conversion-type   The conversion type of the input strings.
 
                       .. note::
                         Valid conversion types are:
-                        
+
                         * `MGRS` - Military Grid Reference System
                         * `USNG` - United States National Grid
                         * `UTM` - Universal Transverse Mercator
@@ -1628,7 +1629,7 @@ def to_geo_coordinate_string(
 
                       .. note::
                           Valid conversion modes for MGRS are:
-                        
+
                           * `mgrsDefault` - Default. Uses the spheroid from the given spatial reference
                           * `mgrsNewStyle` - Treats all spheroids as new, like WGS 1984. The 80 degree longitude falls into Zone 60
                           * `mgrsOldStyle` - Treats all spheroids as old, like Bessel 1841. The 180 degree longitude falls into Zone 60
@@ -1637,14 +1638,14 @@ def to_geo_coordinate_string(
 
                       .. note::
                           Valid conversion modes for UTM are:
-                        
+
                           * `utmDefault` - Default. No options.
                           * `utmNorthSouth` - Uses north/south latitude indicators instead of
                           * `zone numbers` - Non-standard. Default is recommended
     ----------------  -------------------------------------------------------------------------------
     num_of_digits     The number of digits to output for each of the numerical portions in the string. The default
                       value for ``num_of_digits`` varies depending on ``conversion_type``:
-                      
+
                         * MGRS: 5
                         * USNG: 8
                         * UTM: NA
@@ -1657,24 +1658,24 @@ def to_geo_coordinate_string(
     rounding          * If *True*, then numeric portions of the string are rounded to the nearest whole magnitude as
                         specified by *num_of_digits*
                       * Otherwise, numeric portions of the string are truncated.
-                      
+
                       .. note::
                           The rounding parameter applies only to conversion types `MGRS`, `USNG`
                           and `GeoRef`.
-                      
+
                       The default value is *True*.
     ----------------  -------------------------------------------------------------------------------
     add_spaces        Option boolean.
-                      
+
                       * If *True*, then spaces are added between components of the string.
-                      
+
                       .. note::
                           Only applies to *conversion_types* `MGRS`, `USNG` and `UTM`. The default
                           value for `MGRS` is *False*, while the default value for both `USNG`
                           and `UTM` is *True*.
     ----------------  -------------------------------------------------------------------------------
     future            Optional boolean.
-                      
+
                       * If *True*, a :class:`~arcgis.geometry.GeometryJob` object
                         will be returned and the process returns control to the user.
                       * If *False*, the process waits for the operation to complete before returning
@@ -1694,8 +1695,7 @@ def to_geo_coordinate_string(
                                                add_spaces=True,
                                                future = False)
         >>> strings
-            ["01N AA 66021 00000","11S NT 00000 62155", "31U BT 94071 65288"]
-"""
+            ["01N AA 66021 00000","11S NT 00000 62155", "31U BT 94071 65288"]"""
     if gis is None:
         gis = arcgis.env.active_gis
     return gis._tools.geometry.to_geo_coordinate_string(
@@ -1757,7 +1757,7 @@ def trim_extend(
                       spatial reference of the input *geometries*.
     ----------------  -------------------------------------------------------------------------------
     future            Optional boolean.
-                      
+
                       * If *True*, a :class:`~arcgis.geometry.GeometryJob` object
                         will be returned and the process returns control to the user.
                       * If *False*, the process waits for the operation to complete before returning
@@ -1799,12 +1799,12 @@ def union(
                       spatial reference of the input *geometries*.
     ----------------  -------------------------------------------------------------------------------
     future            Optional boolean.
-                      
+
                       * If *True*, a :class:`~arcgis.geometry.GeometryJob` object
                         will be returned and the process returns control to the user.
                       * If *False*, the process waits for the operation to complete before returning
                         results and passing control back to the user.
-                      
+
                       .. note::
                           If *future=True*, there is a limitation of 6500 geometries that can be
                           processed in one call.
@@ -1813,7 +1813,7 @@ def union(
     :returns:
         If *future = False*, the set-theoretic union of the :class:`~arcgis.geometry.Geometry` objects
         in the *geometries* argument, or if *future = True*, a :class:`~arcgis.geometry.GeometryJob`
-        object. 
+        object.
     """
     if gis is None:
         gis = arcgis.env.active_gis
