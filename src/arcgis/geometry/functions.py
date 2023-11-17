@@ -1139,9 +1139,10 @@ def offset(
 
     .. code-block:: python
 
+            >>> from arcgis.geometry import LengthUnits
             >>> new_job = offset( geometries = [geom1,geom2,...],
                                   offset_distance = 100,
-                                  offset_unit = "esriMeters",
+                                  offset_unit = LengthUnits.METER,
                                   offset_how = "esriGeometryOffsetRounded",
                                   bevel_ratio = 0,
                                   simplify_result = True
