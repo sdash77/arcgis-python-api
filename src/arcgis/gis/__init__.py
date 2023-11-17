@@ -19,7 +19,6 @@ import shutil
 import tempfile
 import warnings
 import zipfile
-from uuid import uuid4
 import configparser
 from contextlib import contextmanager
 import functools

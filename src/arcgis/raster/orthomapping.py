@@ -223,7 +223,8 @@ def _create_project(
             owner = gis.properties.user.username
             folderId = gis._portal.get_folder_id(owner, folder)
         if folderId is None:
-            folder_dict = gis.content.create_folder(folder, owner)
+            folder_item = gis.content.folders.create(folder, owner)
+            folder_dict = folder_item.properties
             folder = folder_dict["title"]
             folderId = folder_dict["id"]
 
@@ -2820,6 +2821,10 @@ class Project:
         self._mission_list = []
         gis = arcgis.env.active_gis if gis is None else gis
         self._gis = gis
+        for f in self._gis.users.me.folders:
+            if f["id"] == self._project_item.ownerFolder:
+                self._folder_title = f.get("title", '')
+                break
 
     @property
     def missions(self):
@@ -2859,6 +2864,15 @@ class Project:
         :return: A portal item
         """
         return self._project_item
+
+    def delete(self):
+        """
+        The ``delete`` method deletes the project item from the portal and all the associated products.
+
+        :return: A boolean indicating whether the deletion was successful or not
+        """
+        deleted  = self._gis.content.delete_folder(self._folder_title, owner= self._gis.properties.user.username)
+        return deleted
 
     # def create_project(self, name, definition: Optional[dict[str, Any]] = None):
     #    try:
