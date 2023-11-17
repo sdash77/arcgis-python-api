@@ -113,8 +113,8 @@ class LengthUnits(Enum):
 # -------------------------------------------------------------------------
 def areas_and_lengths(
     polygons: Polygon,
-    length_unit: str,
-    area_unit: str,
+    length_unit: str | LengthUnits,
+    area_unit: str | AreaUnits,
     calculation_type: str,
     spatial_ref: int = 4326,
     gis: Optional[GIS] = None,
@@ -253,8 +253,8 @@ def auto_complete(
 def buffer(
     geometries: list,
     in_sr: Union[int, dict[str, Any]],
-    distances: float,
-    unit: str,
+    distances: float | list[float],
+    unit: str | LengthUnits,
     out_sr: Optional[Union[int, dict[str, Any]]] = None,
     buffer_sr: Optional[float] = None,
     union_results: Optional[bool] = None,
@@ -317,8 +317,9 @@ def buffer(
     .. code-block:: python
 
             >>> buffer(geometries =[geom1, geom2,...],
+                       distances=[1000,2000,...],
                        in_sr = "wkid_in",
-                       unit = "esriMeters",
+                       unit = LengthUnits.METER,
                        out_sr = "wkid_out",
                        buffer_sr = "wkid_buffer",
                        union_results =True,
@@ -328,6 +329,10 @@ def buffer(
     """
     if gis is None:
         gis = arcgis.env.active_gis
+    if isinstance(unit, LengthUnits):
+        unit = unit.value
+    if isinstance(distances, list):
+        distances = ",".join([str(d) for d in distances])
     return gis._tools.geometry.buffer(
         geometries,
         in_sr,
@@ -508,7 +513,7 @@ def densify(
     geometries: Union[list[Polygon], list[Polyline], list[MultiPoint], list[Point]],
     spatial_ref: Optional[Union[int, dict[str, Any]]],
     max_segment_length: Optional[float],
-    length_unit: Optional[str],
+    length_unit: Optional[str] | Optional[LengthUnits],
     geodesic: bool = False,
     gis: Optional[GIS] = None,
     future: bool = False,
@@ -566,7 +571,7 @@ def densify(
             >>> densify(geometries =[geom1, geom2,...],
                         spatial_ref = "wkid",
                         max_segment_length = 100.0,
-                        length_unit = "esriMeters",
+                        length_unit = LengthUnits.METER,
                         geodesic = True,
                         future = False)
 
@@ -639,7 +644,7 @@ def distance(
     spatial_ref: Optional[Union[int, dict[str, Any]]],
     geometry1: Geometry,
     geometry2: Geometry,
-    distance_unit: str = "",
+    distance_unit: str | LengthUnits | None = "",
     geodesic: bool = False,
     gis: Optional[GIS] = None,
     future: bool = False,
@@ -689,6 +694,8 @@ def distance(
         gis = arcgis.env.active_gis
     if isinstance(distance_unit, LengthUnits):
         distance_unit = distance_unit.value
+    elif distance_unit in [None, ""]:
+        distance_unit = ""
     return gis._tools.geometry.distance(
         spatial_ref,
         geometry1,
@@ -855,7 +862,7 @@ def generalize(
     spatial_ref: Optional[Union[int, dict[str, Any]]],
     geometries: list[Geometry],
     max_deviation: int,
-    deviation_unit: str,
+    deviation_unit: str | LengthUnits | None = None,
     gis: Optional[GIS] = None,
     future: bool = False,
 ):
@@ -880,7 +887,7 @@ def generalize(
                       limits the distance the output geometry can differ from the input
                       geometry.
     ----------------  -------------------------------------------------------------------------------
-    deviation_unit          If ``geodesic`` is set to true, then the geodesic distance
+    deviation_unit    If ``geodesic`` is set to true, then the geodesic distance
                       between the ``geometry1`` and ``geometry2`` geometries is returned.
                       Geodesic distance is the shortest path between two points along
                       the ellipsoid of the earth. If ``geodesic`` is set to false or not
@@ -899,6 +906,10 @@ def generalize(
     """
     if gis is None:
         gis = arcgis.env.active_gis
+    if isinstance(deviation_unit, LengthUnits):
+        deviation_unit = deviation_unit.value
+    elif deviation_unit is None:
+        deviation_unit = ""
     return gis._tools.geometry.generalize(
         spatial_ref, geometries, max_deviation, deviation_unit, future=future
     )
@@ -992,7 +1003,7 @@ def label_points(
 def lengths(
     spatial_ref: Optional[Union[int, dict[str, Any]]],
     polylines: Polyline,
-    length_unit: str,
+    length_unit: str | LengthUnits,
     calculation_type: str,
     gis: Optional[GIS] = None,
     future: bool = False,
@@ -1055,7 +1066,7 @@ def lengths(
 def offset(
     geometries: Union[list[Polygon], list[Polyline], list[MultiPoint], list[Point]],
     offset_distance: float,
-    offset_unit: str,
+    offset_unit: str | LengthUnits,
     offset_how: str = "esriGeometryOffsetRounded",
     bevel_ratio: int = 10,
     simplify_result: bool = False,
@@ -1128,9 +1139,10 @@ def offset(
 
     .. code-block:: python
 
+            >>> from arcgis.geometry import LengthUnits
             >>> new_job = offset( geometries = [geom1,geom2,...],
                                   offset_distance = 100,
-                                  offset_unit = "esriMeters",
+                                  offset_unit = LengthUnits.METER,
                                   offset_how = "esriGeometryOffsetRounded",
                                   bevel_ratio = 0,
                                   simplify_result = True
@@ -1140,6 +1152,8 @@ def offset(
     """
     if gis is None:
         gis = arcgis.env.active_gis
+    if isinstance(offset_unit, LengthUnits):
+        offset_unit = offset_unit.value
     return gis._tools.geometry.offset(
         geometries,
         offset_distance,

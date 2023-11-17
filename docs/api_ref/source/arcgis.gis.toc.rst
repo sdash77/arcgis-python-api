@@ -76,6 +76,20 @@ ContentManager
 .. autoclass:: arcgis.gis.ContentManager
     :members:
     :undoc-members:
+    
+Folders
+-------
+.. autoclass:: arcgis.gis._impl._content_manager.Folders
+    :members:
+    :undoc-members:
+    :show-inheritance:
+    
+Folder
+------
+.. autoclass:: arcgis.gis._impl._content_manager.Folder
+    :members:
+    :undoc-members:
+    :show-inheritance:
 
 UserManager
 ----------------------
@@ -115,6 +129,20 @@ RoleManager
 ResourceManager
 ---------------------------
 .. autoclass:: arcgis.gis.ResourceManager
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+RecycleBin
+---------------------------
+.. autoclass:: arcgis.gis._impl._content_manager.RecycleBin
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+RecycleItem
+---------------------------
+.. autoclass:: arcgis.gis._impl._content_manager.RecycleItem
     :members:
     :undoc-members:
     :show-inheritance:

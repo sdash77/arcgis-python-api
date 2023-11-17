@@ -6,7 +6,7 @@ import io
 import copy
 from datetime import datetime
 import json
-import imghdr
+import puremagic
 import logging
 import os
 import tempfile
@@ -17,7 +17,7 @@ from ..._impl.common._utils import _to_utf8
 from urllib import request
 from urllib.parse import urlparse
 
-__version__ = "2.2.0"
+__version__ = "2.3.0"
 
 _log = logging.getLogger(__name__)
 
@@ -413,7 +413,7 @@ class Portal(object):
                 thumbnail = request.urlretrieve(thumbnail)[0]
                 file_ext = os.path.splitext(thumbnail)[1]
                 if not file_ext:
-                    file_ext = imghdr.what(thumbnail)
+                    file_ext = puremagic.from_file(thumbnail)
                     if file_ext in ("gif", "png", "jpeg"):
                         new_thumbnail = thumbnail + "." + file_ext
                         os.rename(thumbnail, new_thumbnail)
@@ -636,7 +636,7 @@ class Portal(object):
                 thumbnail = request.urlretrieve(thumbnail)[0]
                 file_ext = os.path.splitext(thumbnail)[1]
                 if not file_ext:
-                    file_ext = imghdr.what(thumbnail)
+                    file_ext = puremagic.from_file(thumbnail)
                     if file_ext in ("gif", "png", "jpeg"):
                         new_thumbnail = thumbnail + "." + file_ext
                         os.rename(thumbnail, new_thumbnail)
@@ -730,6 +730,7 @@ class Portal(object):
         owner: str,
         folder: Optional[str] = None,
         force: bool = False,
+        permanent: bool = False,
     ):
         """Deletes an item.
 
@@ -744,6 +745,8 @@ class Portal(object):
                           to the root folder.
         ----------------  --------------------------------------------------------
         force             optional bool. If True, will force delete orphaned items
+        ----------------  --------------------------------------------------------
+        permanent         optional bool. If True, item will not be sent to recycle bin.
         ================  ========================================================
 
         :return:
@@ -759,6 +762,8 @@ class Portal(object):
             post_data = {"f": "json", "force": True}
         else:
             post_data = self._postdata()
+        if permanent:
+            post_data["permanentDelete"] = True
         resp = self.con.post(path, post_data)
 
         if resp:
@@ -2314,7 +2319,7 @@ class Portal(object):
                 thumbnail = request.urlretrieve(thumbnail)[0]
                 file_ext = os.path.splitext(thumbnail)[1]
                 if not file_ext:
-                    file_ext = imghdr.what(thumbnail)
+                    file_ext = puremagic.from_file(thumbnail)
                     if file_ext in ("gif", "png", "jpeg"):
                         new_thumbnail = thumbnail + "." + file_ext
                         os.rename(thumbnail, new_thumbnail)
@@ -2472,7 +2477,7 @@ class Portal(object):
                 thumbnail = request.urlretrieve(thumbnail)[0]
                 file_ext = os.path.splitext(thumbnail)[1]
                 if not file_ext:
-                    file_ext = imghdr.what(thumbnail)
+                    file_ext = puremagic.from_file(thumbnail)
                     if file_ext in ("gif", "png", "jpeg"):
                         new_thumbnail = thumbnail + "." + file_ext
                         os.rename(thumbnail, new_thumbnail)
@@ -2613,7 +2618,7 @@ class Portal(object):
                 thumbnail = request.urlretrieve(thumbnail)[0]
                 file_ext = os.path.splitext(thumbnail)[1]
                 if not file_ext:
-                    file_ext = imghdr.what(thumbnail)
+                    file_ext = puremagic.from_file(thumbnail)
                     if file_ext in ("gif", "png", "jpeg"):
                         new_thumbnail = thumbnail + "." + file_ext
                         os.rename(thumbnail, new_thumbnail)
@@ -2624,7 +2629,7 @@ class Portal(object):
                 large_thumbnail = request.urlretrieve(large_thumbnail)[0]
                 file_ext = os.path.splitext(large_thumbnail)[1]
                 if not file_ext:
-                    file_ext = imghdr.what(large_thumbnail)
+                    file_ext = puremagic.from_file(large_thumbnail)
                     if file_ext in ("gif", "png", "jpeg"):
                         new_large_thumbnail = large_thumbnail + "." + file_ext
                         os.rename(large_thumbnail, new_thumbnail)

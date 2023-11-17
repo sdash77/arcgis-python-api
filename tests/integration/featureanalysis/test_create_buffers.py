@@ -1,12 +1,9 @@
 import unittest
 import datetime
-import sys
-
-# sys.path.insert(0, r"C:\ipython_workfolder\geosaurus\src")
 from arcgis.gis import GIS, Item
 from arcgis.features import FeatureLayer
 from arcgis.features.use_proximity import create_buffers
-from config_tests import setup_profiles, stage_data
+from .config_tests import setup_profiles, stage_data
 
 test_items = ["435fcf6cff1f4f34989e151c1f25d64a"]  # Esri Offices
 profiles = ["online_test", "ent_test", "kube_test"]

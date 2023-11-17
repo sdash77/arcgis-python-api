@@ -127,7 +127,7 @@ class ChildImageClassifier:
     def initialize(self, model, model_as_file):
         if not HAS_TORCH:
             raise Exception(
-                "PyTorch is not installed. Install it using conda install -c pytorch pytorch torchvision"
+                "Could not find the required deep learning dependencies. Ensure you have installed the required dependent libraries. See https://developers.arcgis.com/python/guide/deep-learning/"
             )
 
         if arcpy.env.processorType == "GPU" and torch.cuda.is_available():
@@ -257,10 +257,7 @@ class ChildImageClassifier:
         )
 
         superres_prediction = util.pixel_classify_superres_image(
-            self.model,
-            batch,
-            self.device,
-            model_info=self.json_info,
+            self.model, batch, self.device, self.json_info, None, None
         )
         superres_prediction = batch_to_tile(
             superres_prediction.unsqueeze(dim=1).detach().cpu().numpy(),
