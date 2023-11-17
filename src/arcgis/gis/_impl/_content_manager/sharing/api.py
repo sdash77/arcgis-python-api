@@ -109,40 +109,9 @@ class SharingGroupManager:
     def _groups(self) -> list[str]:
         """private method to get the groups shared with a given item."""
         itemid: str = self._item.id
-        params: dict = {
-            "f": "json",
-            "q": "isviewonly:false",
-            "num": 100,
-            "sortField": "title",
-            "sortOrder": "asc",
-            "start": 1,
-            "searchUserAccess": "groupMember",
-            "searchUserName": self._gis.users.me.username,
-        }
-        url: str = f"{self._gis._portal.resturl}community/groups"
-        resp: requests.Response = self._session.get(url=url, params=params)
-        resp.raise_for_status()
-        data: dict[str, Any] = resp.json()
-        groups: list[str] = []
-        if "error" in data:
-            raise Exception(f"{data}")
-        else:
-            groups = [grp.get("id", None) for grp in data.get("results", [])]
-            next_start: int = data.get("nextStart", -1)
-            while next_start > -1:
-                params["start"] = next_start
-                groups = [grp.get("id", None) for grp in data.get("results", [])]
-                next_start: int = data.get("nextStart", -1)
-                if next_start == -1:
-                    break
-                resp: requests.Response = self._session.get(url=url, params=params)
-                resp.raise_for_status()
-                data: dict[str, Any] = resp.json()
-        groups: str = ",".join(groups)
         params: dict[str, Any] = {
             "f": "json",
             "items": itemid,
-            "groups": groups,
         }
         url: str = f"{self._gis._portal.resturl}content/itemsgroups"
         resp: requests.Response = self._session.get(url=url, params=params)
