@@ -172,7 +172,7 @@ class SharingManager:
             self._session = item._gis.session
 
     def __repr__(self) -> str:
-        return "< {self._item.id} SharingManager >"
+        return f"< {self._item.id} SharingManager >"
 
     def __str__(self) -> str:
         return self.__repr__()
