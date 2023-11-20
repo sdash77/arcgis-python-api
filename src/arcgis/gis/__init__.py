@@ -30,6 +30,7 @@ import requests
 
 from arcgis.gis._impl._dataclasses._contentds import (
     ItemProperties,
+    ItemTypeEnum,
 )
 from arcgis.gis._impl import (
     CreateServiceParameter,
