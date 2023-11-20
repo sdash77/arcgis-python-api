@@ -1816,7 +1816,7 @@ class TestReplaceSpacesInFeatureAnalysis(unittest.TestCase):
 
             finally:
                 if result:
-                    result.delete()
+                    result['point_clusters_result_layer'].delete()
                 del gis, sdf
 
 
