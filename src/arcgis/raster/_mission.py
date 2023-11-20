@@ -173,6 +173,11 @@ class Mission:
             raise RuntimeError("Error updating the mission resource")
 
     def delete_product(self, product):
+        """
+        The ``delete_product`` method deletes the product specified by the product parameter.
+
+        :return: A boolean indicating whether the deletion was successful or not
+        """
         if product not in ["dsm", "dtm", "ortho"]:
             raise RuntimeError("Invalid product type")
 
@@ -193,6 +198,11 @@ class Mission:
         return False
 
     def delete(self):
+        """
+        The ``delete`` method deletes the Mission and all the associated products.
+
+        :return: A boolean indicating whether the deletion was successful or not
+        """
         try:
             gis = self._gis
             project = self._project
