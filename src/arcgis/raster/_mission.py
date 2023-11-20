@@ -176,6 +176,13 @@ class Mission:
         """
         The ``delete_product`` method deletes the product specified by the product parameter.
 
+        ==================                   ====================================================================
+        **Parameter**                         **Description**
+        ------------------                   --------------------------------------------------------------------
+        product                              Required string, the product that needs to be deleted from the mission.
+                                             It could be "dsm", "dtm", "ortho".
+        ==================                   ====================================================================
+
         :return: A boolean indicating whether the deletion was successful or not
         """
         if product not in ["dsm", "dtm", "ortho"]:
