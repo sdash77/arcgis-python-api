@@ -742,11 +742,13 @@ def prepare_pix2pix_data(
         **kwargs,
     )
 
-    databunch_kwargs = (
-        {"num_workers": 0}
-        if sys.platform == "win32"
-        else {"num_workers": os.cpu_count() - 4}
+    num_workers = kwargs.get("num_workers", 0)
+    databunch_kwargs = dict()
+    databunch_kwargs["num_workers"] = (
+        num_workers if sys.platform == "win32" else os.cpu_count() - 4
     )
+    if sys.platform == "win32" and num_workers > 0:
+        databunch_kwargs["persistent_workers"] = True
 
     train_dl, valid_dl = create_dataloaders(datasets, batch_size, databunch_kwargs)
     device = get_device()
