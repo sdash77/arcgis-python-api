@@ -1,6 +1,6 @@
 """
-The ``functions`` module is used to take :class:`~arcgis.geometry.Geometry` objecs
-as parameters and return :class:`~arcgis.geometry.Geometry` objects as results.
+The ``functions`` module is used to take :class:`~arcgis.geometry.Geometry` objects
+as parameter arguments and return :class:`~arcgis.geometry.Geometry` objects as results.
 
 These functions use spatial references as inputs and outputs. They can be entered as
 :class:`~arcgis.geometry.SpatialReference` objects or as integer values representing the
