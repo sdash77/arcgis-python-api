@@ -2821,9 +2821,12 @@ class Project:
         self._mission_list = []
         gis = arcgis.env.active_gis if gis is None else gis
         self._gis = gis
-        for f in self._gis.users.me.folders:
-            if f["id"] == self._project_item.ownerFolder:
-                self._folder_title = f.get("title", '')
+
+        content = self._gis.content
+        fm = content.folders
+        for folder in fm.list():
+            if folder.properties["id"] == self._project_item.ownerFolder:
+                self._folder = folder
                 break
 
     @property
@@ -2871,7 +2874,7 @@ class Project:
 
         :return: A boolean indicating whether the deletion was successful or not
         """
-        deleted  = self._gis.content.delete_folder(self._folder_title, owner= self._gis.properties.user.username)
+        deleted = self._folder.delete()
         return deleted
 
     # def create_project(self, name, definition: Optional[dict[str, Any]] = None):
