@@ -1806,7 +1806,10 @@ class TestReplaceSpacesInFeatureAnalysis(unittest.TestCase):
                 result = analyze_patterns.find_point_clusters(
                     sdf, min_features_cluster=2, output_name=output_name
                 )
-                assert result.title != output_name
+                assert (
+                    result['point_clusters_result_layer'].title
+                    != output_name
+                )
             except Exception as e:
                 print(e)
                 raise e
