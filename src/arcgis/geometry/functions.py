@@ -1300,11 +1300,12 @@ def offset(
 
         # Usage Example:
 
-        >>> from arcgis.geometry import Polyline
+        >>> from arcgis.geometry import Polyline, LengthUnits
         >>> pline = Polyline(iterable={"paths":[[[0,0],[2000,2000],[3000,0]]],
                                        :spatialReference: {"wkid": 2229}})
         >>> new_geoms = offset(geometries = [pline],
                                offset_distance = 1000,
+                               offset_unit = LengthUnits.METER,
                                offset_how = "esriGeometryOffsetMitered",
                                spatial_ref = {"wkid": 2229})
     """
