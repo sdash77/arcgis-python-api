@@ -1021,7 +1021,6 @@ class Connection(object):
 
         errormessage = errormessage + "\n(Error Code: " + str(errorcode) + ")"
 
-
     def post_multipart(
         self, path: str, params: dict = None, files: list = None, **kwargs
     ) -> Union[dict, requests.Response]:

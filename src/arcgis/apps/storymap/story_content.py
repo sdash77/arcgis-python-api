@@ -2023,6 +2023,8 @@ class Text:
                     content_node = content.node
                     content_type = "Web Map"
                 else:
+                    # content gets added to story in custom method
+                    content = "custom embed"
                     content_type = content.type
                     content_node = self._create_item_embed(content)
             elif isinstance(content, (Image, Video)):
@@ -2035,8 +2037,9 @@ class Text:
                     "Content is not of type: Web Map, Image, StoryMap, Collection, Dashboard, Web Experience, or other arcgis Apps. Or a story content of type Image or Video."
                 )
 
-            # Now content is either type Map, Embed, Image, or Video
-            self._add_item_story(content)
+            if content != "custom embed":
+                # Now content is either type Map, Image, or Video
+                self._add_item_story(content)
             action_id = "a-" + uuid.uuid4().hex[0:6]
             action_dict = {
                 "origin": self.node,
