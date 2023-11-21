@@ -190,6 +190,11 @@ class Briefing(object):
         item = self._gis.content.add(
             item_properties=item_properties, thumbnail=thumbnail
         )
+        if item is None:
+            # Error with storymap in current gis
+            raise ValueError(
+                "Cannot create storymap briefing in your portal. Please check your portal is configured correctly."
+            )
         # Assign to story properties
         self._item = item
         self._itemid = item.itemid

@@ -410,9 +410,13 @@ class Portal(object):
             files.append(("metadata", metadata, "metadata.xml"))
         if thumbnail:
             if _is_http_url(thumbnail):
+                file_ext = os.path.splitext(thumbnail)[1] #checking url
+                #create a new file
                 thumbnail = request.urlretrieve(thumbnail)[0]
-                file_ext = os.path.splitext(thumbnail)[1]
                 if not file_ext:
+                    file_ext = os.path.splitext(thumbnail)[1] #check the newly created file
+                if not file_ext:
+                    # no file ext found in two checks above, attempt to use puremagic
                     file_ext = puremagic.from_file(thumbnail)
                     if file_ext in ("gif", "png", "jpeg"):
                         new_thumbnail = thumbnail + "." + file_ext
