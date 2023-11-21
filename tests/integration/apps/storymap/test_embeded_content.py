@@ -41,9 +41,9 @@ class TestEmbedContent(unittest.TestCase):
                 emb = Embed(
                     "https://www.nps.gov/media/multimedia-search.htm#sort=Date_Last_Modified+desc"
                 )
-                web_page = story.add(emb)
+                story.add(emb)
 
-                deleted = web_page.delete()
+                deleted = emb.delete()
                 assert deleted
                 item = gis.content.get(story._itemid)
                 assert item.delete()

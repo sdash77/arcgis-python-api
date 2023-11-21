@@ -2265,7 +2265,7 @@ class FeatureLayerCollectionManager(_GISResource):
             # When view_layers and view_tables are not specified, create a view from all layers and tables
             for lyr in fs.layers:
                 lyr_id = lyr.manager.properties.serviceItemId
-                data_path = "content/items/" + lyr_id + "/data"
+                data_path = "content/items/" + res["itemId"] + "/data"
                 data = item._portal.con.get(path=data_path)
                 add_def["layers"].append(
                     {

@@ -10,6 +10,7 @@ try:
     from .._utils.common import get_multispectral_data_params_from_emd, _get_emd_path
     from ._arcgis_model import _resnet_family, _vgg_family
     from ._timm_utils import filter_timm_models
+    from ._hed_utils import DDPCallback
 
     HAS_FASTAI = True
 
@@ -137,6 +138,9 @@ class BDCNEdgeDetector(ModelExtension):
             )
 
         super().__init__(data, CustomBDCN, backbone, pretrained_path)
+
+        if getattr(self, "_multigpu_training", False):
+            self.learn.callbacks.append(DDPCallback(self.learn, self._rank_distributed))
         self._freeze()
 
     def unfreeze(self):

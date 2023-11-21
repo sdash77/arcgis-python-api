@@ -1446,15 +1446,6 @@ def prepare_data(
                             Applies to single label feature classification,
                             object detection and pixel classification.
     ---------------------   -------------------------------------------
-    bands_of_interest       Optional list. List of spectral bands of interest.
-                            This will filter bands based on `bands_of_interest`.
-                            If we have bands [1, 2, 3, 4] in our dataset,
-                            but we are mainly interested in 2 and 3,
-                            Set `bands_of_interest=[2,3]`. Only those spectral bands
-                            will be considered for training, rest of the bands will
-                            be filtered out. Applicable only for
-                            dataset_type='PSETAE'.
-    ---------------------   -------------------------------------------
     timesteps_of_interest   Optional list. List of time steps of interest.
                             This will filter multi-temporal timesereis based
                             on `timesteps_of_interest`. If the dataset have
@@ -1464,9 +1455,9 @@ def prepare_data(
                             rest of the time-steps will be filtered out.
                             Applicable only for dataset_type='PSETAE'.
     ---------------------   -------------------------------------------
-    channels_of_interest    Optional list. List of bands/channels of interest.
+    channels_of_interest    Optional list. List of spectral bands/channels of interest.
                             This will filter out bands from rasters of
-                            multi-temporal timesereis based on
+                            multi-temporal timeseries based on
                             `channels_of_interest` list. If we have bands
                             [0,1,2,3,4] in our dataset, but we are mainly
                             interested in 0, 1 and 2, Set
@@ -2515,6 +2506,9 @@ def prepare_data(
         databunch_kwargs["collate_fn"] = collate_fn
 
     elif dataset_type in ["Labeled_Tiles", "MultiLabeled_Tiles", "Imagenet"]:
+        assert (
+            batch_size >= 2
+        ), f"dataset_type({dataset_type}) does not support a batch_size of less than 2."
         if dataset_type == "Labeled_Tiles":
             get_y_func = partial(_get_lbls, class_mapping=class_mapping)
         elif dataset_type == "MultiLabeled_Tiles":
@@ -3043,11 +3037,13 @@ def prepare_data(
                     emd = json.load(f)
             data = None
             if emd is not None and emd["MetaDataMode"] == "RCNN_Masks":
-                data = prepare_pro_data(path, batch_size, val_split_pct)
+                data = prepare_pro_data(path, batch_size, val_split_pct, **kwargs)
             else:
                 raise Exception(f"Check MetaDataMode for the exported training data.")
         else:
-            data = prepare_object_tracking_data(path, batch_size, val_split_pct)
+            data = prepare_object_tracking_data(
+                path, batch_size, val_split_pct, **kwargs
+            )
 
         data._is_multispectral = False
         data._extract_bands = None
