@@ -10108,7 +10108,7 @@ class Group(dict):
 
             # Usage Example
 
-            >>> group.add_users(usernames=["User1234","User5678"], admin="Admin9012")
+            >>> group.add_users(usernames=["User1234","User5678"], admins="Admin9012")
         """
         if usernames is None and admins is None:
             return {"notAdded": []}
