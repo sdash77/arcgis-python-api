@@ -1,5 +1,4 @@
 from __future__ import annotations
-import os
 from typing import Optional, Union
 import uuid
 from enum import Enum
@@ -407,7 +406,7 @@ class StoryMap(object):
                     if key == "nodeId":
                         node_ids.append(value)
             return node_ids
-        except:
+        except Exception:
             return None
 
     # ----------------------------------------------------------------------
@@ -830,7 +829,7 @@ class StoryMap(object):
             content._add_separator(story=self)
 
         # Add to story children
-        _utils._add_child(node_id=node_id, position=position)
+        utils._add_child(node_id=node_id, position=position)
         return node_id
 
     # ----------------------------------------------------------------------
@@ -883,7 +882,7 @@ class StoryMap(object):
             self._properties["nodes"][root_id]["children"].pop(position)
 
         # Add node to new position
-        _utils._add_child(node_id, position)
+        utils._add_child(node_id, position)
 
     # ----------------------------------------------------------------------
     def save(
