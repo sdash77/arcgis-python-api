@@ -473,6 +473,9 @@ class FeatureClassifier(ArcGISModel):
 
         :return: prediction label and confidence
         """
+        if self._data._is_multispectral:
+            raise Exception("This method is not supported for multispectral images.")
+
         img = open_image(img_path)
         pred = self.learn.predict(img)
         if visualize == True:
