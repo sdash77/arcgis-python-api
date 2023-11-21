@@ -405,7 +405,7 @@ class Briefing(object):
             slide._add_slide(story=self)
 
             # Add to story children
-            utils._add_child(self, node_id=slide.node, postion=position)
+            utils._add_child(self, node_id=slide.node, position=position)
 
         return True
 

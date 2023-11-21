@@ -1487,7 +1487,7 @@ class Map:
                 self._story._properties["nodes"][self.node]["data"][
                     "viewpoint"
                 ] = rdata_dict["viewpoint"]
-            except:
+            except Exception:
                 self._story._properties["nodes"][self.node]["data"]["viewpoint"] = {
                     "rotation": 0,
                     "scale": -1,
@@ -1507,7 +1507,7 @@ class Map:
                         extent["spatialReference"] = self._story._properties[
                             "resources"
                         ][self.resource_node]["data"]["extent"]["spatialReference"]
-                    except:
+                    except Exception:
                         extent["spatialReference"] = {"wkid": 4326}
 
                 # In order to correctly edit, the viewpoint, extent, and center must be updated.
@@ -2989,7 +2989,7 @@ class Sidecar:
                 # Get the media content for the slide
                 media = list(slide_dict["media"].values())[0]
 
-                if media == None or media == "":
+                if media is None or media == "":
                     pass
                 else:
                     # Get the class using the node value
@@ -4448,7 +4448,7 @@ class Slide:
                 del self._story._properties["nodes"][self.node]["data"]["contents"][
                     str(key)
                 ]
-            except:
+            except Exception:
                 pass
 
     # ----------------------------------------------------------------------
