@@ -3,7 +3,7 @@ import json
 from enum import Enum
 from arcgis.auth import EsriSession
 from arcgis.auth.tools import LazyLoader
-from typing import Union
+from typing import Union, Any
 import requests
 
 arcgis = LazyLoader("arcgis")
@@ -73,11 +73,11 @@ class SharingGroupManager:
         g: str | arcgis.gis.Group | None = None
         g = [grp.id for grp in self.list()]
         do_update = False
-        if hasattr(group, "id") and not getattr(group, "id") in g:
+        if hasattr(group, "id") and getattr(group, "id") not in g:
             g.append(getattr(group, "id"))
             groups: str = ",".join(g)
             do_update = True
-        elif isinstance(group, str) and not group in g:
+        elif isinstance(group, str) and group not in g:
             g.append(group)
             groups: str = ",".join(g)
             do_update = True
@@ -180,7 +180,7 @@ class SharingManager:
     def _share(
         self,
         level: SharingLevel,
-        groups: list["Group"] | str | None = None,
+        groups: list[arcgis.gis.Group] | str | None = None,
     ) -> dict[str, Any]:
         """
         The share operation shares an item with a public or organization
@@ -333,7 +333,7 @@ class SharingManager:
         results: dict[str, Any] = {"groups": sw.get("groups", [])}
         if sw["everyone"]:
             results["level"] = SharingLevel.EVERYONE
-        elif sw["everyone"] == False and sw["org"]:
+        elif sw["everyone"] is False and sw["org"]:
             results["level"] = SharingLevel.ORG
         else:
             results["level"] = SharingLevel.PRIVATE

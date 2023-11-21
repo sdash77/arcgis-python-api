@@ -10,6 +10,7 @@ StoryMap = LazyLoader("arcgis.apps.storymap.story")
 Briefing = LazyLoader("arcgis.apps.storymap.briefing")
 json = LazyLoader("json")
 time = LazyLoader("time")
+sharing = LazyLoader("gis._impl._content_manager_sharing.api")
 
 
 # ----------------------------------------------------------------------
@@ -330,11 +331,12 @@ def save(
         story._item.update(item_properties=p)
 
         if sharing == "private":
-            story._item.share(everyone=False, org=False, groups=None)
+            level = sharing.SharingLevel.PRIVATE
         elif sharing == "org":
-            story._item.share(org=True)
+            level = sharing.SharingLevel.ORG
         elif sharing == "public":
-            story._item.share(everyone=True)
+            level = sharing.SharingLevel.EVERYONE
+        story._item.sharing.sharing_level = level
 
         if (
             story._gis._con._session.auth

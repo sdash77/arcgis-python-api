@@ -2065,7 +2065,9 @@ class Text:
                 self._story._properties["actions"] = [action_dict]
 
         else:
-            pass
+            print(
+                "This can only be used within a Briefing and the Text must exist in a Block."
+            )
 
     # ----------------------------------------------------------------------
     def remove_attachment(self):
@@ -4327,6 +4329,8 @@ class Slide:
             self._children = {}
             if layout in ["single", "double"]:
                 self._layout = layout
+            elif layout is None:
+                self._layout = "single"
             else:
                 raise Exception("Layout must be one of the following: single, double")
             # if sublayout is 5-5 or None then leave as None. 5-5 is taken as None in json
