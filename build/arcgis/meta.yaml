@@ -31,6 +31,7 @@ requirements:
   - requests-toolbelt
   - requests-kerberos
   - requests-oauthlib
+  - puremagic >=1.15,<2
   - pywin32-security [win]
   - pylerc
   - python-certifi-win32 [win and py<310]

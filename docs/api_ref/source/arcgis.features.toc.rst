@@ -21,6 +21,13 @@ FeatureLayer
     :members:
     :undoc-members:
 
+Oriented Imagery Layer
+--------------
+.. autoclass:: arcgis.features.OrientedImageryLayer
+    :inherited-members:
+    :members:
+    :undoc-members:
+
 Table
 --------------
 .. autoclass:: arcgis.features.Table

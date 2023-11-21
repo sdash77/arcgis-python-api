@@ -336,6 +336,10 @@ def dice(
             score = intersection / (union + eps)
         score = score[union != 0.0]
         mean_per_img = score.mean(dim=0)
+        # Return a score of 1 where there are no labeled pixels in the target batch
+        # and the predictions are also none, i.e. union = 0.0
+        if len(score) == 0:
+            return torch.tensor(1.0, device=union.device)
         return mean_per_img
 
 
