@@ -5925,7 +5925,10 @@ class GroupManager(object):
         }
 
         if autojoin is not None:
-            warnings.warn("The 'autojoin' parameter is deprecated. Use 'auto_join' instead.", DeprecationWarning)
+            warnings.warn(
+                "The 'autojoin' parameter is deprecated. Use 'auto_join' instead.",
+                DeprecationWarning,
+            )
         if max_file_size is None:
             max_file_size = 1024000
         if users_update_items is None:

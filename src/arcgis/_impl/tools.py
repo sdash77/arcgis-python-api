@@ -8552,10 +8552,7 @@ class _OrthoMappingTools:
                         {"itemId": output_ortho_image_result.itemid}
                     )
                 else:
-                    (
-                        output_ortho_image,
-                        output_service,
-                    ) = self._set_output_raster(
+                    (output_ortho_image, output_service,) = self._set_output_raster(
                         output_name=output_ortho_image,
                         task=task,
                         output_properties=kwargs,
@@ -10006,10 +10003,7 @@ class _RasterAnalysisTools(BaseAnalytics):
                     input_barrier_raster_or_features
                 )
 
-        (
-            output_distance_raster,
-            output_distance_service,
-        ) = self._set_output_raster(
+        (output_distance_raster, output_distance_service,) = self._set_output_raster(
             output_name=output_distance_name,
             task=task,
             output_properties=kwargs,
@@ -10164,10 +10158,7 @@ class _RasterAnalysisTools(BaseAnalytics):
         if "context" in context_param.keys():
             context = context_param["context"]
 
-        (
-            output_distance_raster,
-            output_distance_service,
-        ) = self._set_output_raster(
+        (output_distance_raster, output_distance_service,) = self._set_output_raster(
             output_name=output_name, task=task, output_properties=kwargs
         )
 
@@ -10785,10 +10776,7 @@ class _RasterAnalysisTools(BaseAnalytics):
                         {"itemId": image_collection_result.itemid}
                     )
                 else:
-                    (
-                        image_collection,
-                        output_service,
-                    ) = self._set_output_raster(
+                    (image_collection, output_service,) = self._set_output_raster(
                         output_name=image_collection,
                         task=task,
                         output_properties=kwargs,
@@ -10825,11 +10813,7 @@ class _RasterAnalysisTools(BaseAnalytics):
 
         md_data_info = []
         if (isinstance(raster_type_name, str)) and raster_type_name == "mosaic_dataset":
-            (
-                input_rasters,
-                raster_type,
-                md_data_info,
-            ) = self._build_param_dictionary(
+            (input_rasters, raster_type, md_data_info,) = self._build_param_dictionary(
                 input_rasters=input_rasters,
                 raster_type_name=raster_type_name,
                 raster_type_params=raster_type_params,
@@ -12119,10 +12103,7 @@ class _RasterAnalysisTools(BaseAnalytics):
 
         output_drop_raster = None
         if output_drop_name is not None:
-            (
-                output_drop_raster,
-                output_drop_service,
-            ) = self._set_output_raster(
+            (output_drop_raster, output_drop_service,) = self._set_output_raster(
                 output_name=output_drop_name,
                 task=task,
                 output_properties=kwargs,
@@ -17669,10 +17650,7 @@ class _RasterAnalysisTools(BaseAnalytics):
             ):
                 input_regression_definition = {"uri": input_regression_definition}
 
-        (
-            output_predicted_raster_name,
-            output_service,
-        ) = self._set_output_raster(
+        (output_predicted_raster_name, output_service,) = self._set_output_raster(
             output_name=output_predicted_raster_name,
             task=task,
             output_properties=kwargs,
@@ -18084,10 +18062,7 @@ class _RasterAnalysisTools(BaseAnalytics):
                 task=task,
                 output_properties=kwargs,
             )
-            (
-                output_loadings_name,
-                output_feature_service,
-            ) = self._set_output_feature(
+            (output_loadings_name, output_feature_service,) = self._set_output_feature(
                 output_name=output_loadings_name,
                 task=task,
                 output_properties=kwargs,
@@ -18102,10 +18077,7 @@ class _RasterAnalysisTools(BaseAnalytics):
                 task=task,
                 output_properties=kwargs,
             )
-            (
-                output_loadings_name,
-                output_feature_service,
-            ) = self._set_output_raster(
+            (output_loadings_name, output_feature_service,) = self._set_output_raster(
                 output_name=output_loadings_name,
                 task=task,
                 output_properties=kwargs,
