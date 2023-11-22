@@ -2446,7 +2446,7 @@ def create_viewshed(
 
                                                  0.13
     ------------------------------------     ---------------------------------------------------------------------------------------------------------------------------------------------
-    horizontal_start_angle                   Optional string. The start angle of the horizontal scan range. It is a string
+    horizontal_start_angle                   Optional string or double. The start angle of the horizontal scan range. It is a string
                                              representing a numerical value or field. The value should be in degrees from 0 to 360,
                                              with 0 oriented to north. The default value is 0.
 
@@ -2454,7 +2454,7 @@ def create_viewshed(
 
                                                  "azimuth1"
     ------------------------------------     ---------------------------------------------------------------------------------------------------------------------------------------------
-    horizontal_end_angle                     Optional string. The end angle of the horizontal scan range. It is a string
+    horizontal_end_angle                     Optional string or double. The end angle of the horizontal scan range. It is a string
                                              representing a numerical value or field. The value should be in degrees from 0 to 360,
                                              with 0 oriented to north. The default value is 360.
 
@@ -2462,7 +2462,7 @@ def create_viewshed(
 
                                                  "azimuth2"
     ------------------------------------     ---------------------------------------------------------------------------------------------------------------------------------------------
-    vertical_upper_angle                     Optional string. The upper vertical angle limit of the scan relative to the horizontal plane.
+    vertical_upper_angle                     Optional string or double. The upper vertical angle limit of the scan relative to the horizontal plane.
                                              It is a string representing a numerical value or field. The allowed range is from above -90 up to
                                              and including 90. The default value is 90 (straight up).
 
@@ -2470,7 +2470,7 @@ def create_viewshed(
 
                                                  "vert1"
     ------------------------------------     ---------------------------------------------------------------------------------------------------------------------------------------------
-    vertical_lower_angle                     Optional string. The lower vertical angle limit of the scan relative to the horizontal plane.
+    vertical_lower_angle                     Optional string or double. The lower vertical angle limit of the scan relative to the horizontal plane.
                                              It is a string representing a numerical value or field. The allowed range is from -90 up to
                                              but not including 90. The default value is -90 (straight down).
 
