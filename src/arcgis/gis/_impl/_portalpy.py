@@ -17,7 +17,7 @@ from ._con import (
     _is_http_url,
     _parse_hostname,
     _unpack,
-    find_pure_magic_ext,
+    find_puremagic_ext,
 )
 from ..._impl.common._utils import _to_utf8
 from urllib import request
@@ -417,7 +417,7 @@ class Portal(object):
         if thumbnail:
             if _is_http_url(thumbnail):
                 # find file ext from url
-                file_ext = find_pure_magic_ext(thumbnail)
+                file_ext = find_puremagic_ext(thumbnail)
                 # download file
                 thumbnail = request.urlretrieve(thumbnail)[0]
                 # assign the file extension to the thumbnail
@@ -641,7 +641,7 @@ class Portal(object):
         if thumbnail:
             if _is_http_url(thumbnail):
                 # find file ext from url
-                file_ext = find_pure_magic_ext(thumbnail)
+                file_ext = find_puremagic_ext(thumbnail)
                 # download file
                 thumbnail = request.urlretrieve(thumbnail)[0]
                 # assign the file extension to the thumbnail
@@ -2325,7 +2325,7 @@ class Portal(object):
         if thumbnail:
             if _is_http_url(thumbnail):
                 # find file ext from url
-                file_ext = find_pure_magic_ext(thumbnail)
+                file_ext = find_puremagic_ext(thumbnail)
                 # download file
                 thumbnail = request.urlretrieve(thumbnail)[0]
                 # assign the file extension to the thumbnail
@@ -2484,7 +2484,7 @@ class Portal(object):
         if thumbnail:
             if _is_http_url(thumbnail):
                 # find file ext from url
-                file_ext = find_pure_magic_ext(thumbnail)
+                file_ext = find_puremagic_ext(thumbnail)
                 # download file
                 thumbnail = request.urlretrieve(thumbnail)[0]
                 # assign the file extension to the thumbnail
@@ -2626,7 +2626,7 @@ class Portal(object):
         if thumbnail:
             if _is_http_url(thumbnail):
                 # find file ext from url
-                file_ext = find_pure_magic_ext(thumbnail)
+                file_ext = find_puremagic_ext(thumbnail)
                 # download file
                 thumbnail = request.urlretrieve(thumbnail)[0]
                 # assign the file extension to the thumbnail
@@ -2638,7 +2638,7 @@ class Portal(object):
         if large_thumbnail is not None:
             if _is_http_url(large_thumbnail):
                 # find file ext from url
-                file_ext = find_pure_magic_ext(large_thumbnail)
+                file_ext = find_puremagic_ext(large_thumbnail)
                 # download file
                 large_thumbnail = request.urlretrieve(large_thumbnail)[0]
                 # assign the file extension to the thumbnail

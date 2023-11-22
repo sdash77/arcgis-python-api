@@ -6,12 +6,11 @@ import io
 import os
 import copy
 import json
-import puremagic
 import logging
 import tempfile
 from typing import Any, Optional, Union
 import requests
-from arcgis.gis._impl._con._pure_magic_ext import find_pure_magic_ext
+from arcgis.gis._impl._con._puremagic_ext import find_puremagic_ext
 from urllib.parse import urlparse
 
 from arcgis.gis._impl._con import Connection
@@ -558,7 +557,7 @@ class KbertnetesPy(object):
         if thumbnail:
             if _is_http_url(thumbnail):
                 # find file ext from url
-                file_ext = find_pure_magic_ext(thumbnail)
+                file_ext = find_puremagic_ext(thumbnail)
                 # download file
                 thumbnail = request.urlretrieve(thumbnail)[0]
                 # assign the file extension to the thumbnail
@@ -1160,7 +1159,7 @@ class KbertnetesPy(object):
         if thumbnail:
             if _is_http_url(thumbnail):
                 # find file ext from url
-                file_ext = find_pure_magic_ext(thumbnail)
+                file_ext = find_puremagic_ext(thumbnail)
                 # download file
                 thumbnail = request.urlretrieve(thumbnail)[0]
                 # assign the file extension to the thumbnail
@@ -1513,7 +1512,7 @@ class KbertnetesPy(object):
         if thumbnail:
             if _is_http_url(thumbnail):
                 # find file ext from url
-                file_ext = find_pure_magic_ext(thumbnail)
+                file_ext = find_puremagic_ext(thumbnail)
                 # download file
                 thumbnail = request.urlretrieve(thumbnail)[0]
                 # assign the file extension to the thumbnail
@@ -2016,7 +2015,7 @@ class KbertnetesPy(object):
         if thumbnail:
             if _is_http_url(thumbnail):
                 # find file ext from url
-                file_ext = find_pure_magic_ext(thumbnail)
+                file_ext = find_puremagic_ext(thumbnail)
                 # download file
                 thumbnail = request.urlretrieve(thumbnail)[0]
                 # assign the file extension to the thumbnail
@@ -2028,7 +2027,7 @@ class KbertnetesPy(object):
         if large_thumbnail is not None:
             if _is_http_url(large_thumbnail):
                 # find file ext from url
-                file_ext = find_pure_magic_ext(large_thumbnail)
+                file_ext = find_puremagic_ext(large_thumbnail)
                 # download file
                 large_thumbnail = request.urlretrieve(large_thumbnail)[0]
                 # assign the file extension to the thumbnail
@@ -2670,7 +2669,7 @@ class KbertnetesPy(object):
         if thumbnail:
             if _is_http_url(thumbnail):
                 # find file ext from url
-                file_ext = find_pure_magic_ext(thumbnail)
+                file_ext = find_puremagic_ext(thumbnail)
                 # download file
                 thumbnail = request.urlretrieve(thumbnail)[0]
                 # assign the file extension to the thumbnail

@@ -3,7 +3,7 @@ from io import BytesIO
 import puremagic
 
 
-def find_pure_magic_ext(path):
+def find_puremagic_ext(path):
     """
     Validate the file extension returned by puremagic.
     Try to go through and see if either jpeg, png, or gif.
