@@ -259,7 +259,6 @@ def save(
 
     # Add new draft with time in milliseconds
     draft = "draft_" + str(int(time.time() * 1000)) + ".json"
-    # json_str = json.dumps(story._properties, ensure_ascii=False)
 
     # Add a new empty json draft
     _add_resource(story, resource_name=draft, text="{}", access="private")
