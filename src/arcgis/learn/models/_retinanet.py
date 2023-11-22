@@ -755,6 +755,9 @@ class RetinaNet(ArcGISModel):
                 "This function requires opencv 4.0.1.24. Install it using pip install opencv-python==4.0.1.24"
             )
 
+        if self._data._is_multispectral:
+            raise Exception("This method is not supported for multispectral images.")
+
         if isinstance(image_path, str):
             image = cv2.imread(image_path)
         else:

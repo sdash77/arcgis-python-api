@@ -10,8 +10,8 @@ from .text_data import TextDataObject
 
 try:
     import spacy
-    from spacy.gold import offsets_from_biluo_tags as _offsets_from_biluo_tags
-    from spacy.gold import iob_to_biluo as _iob_to_biluo
+    from spacy.training import biluo_tags_to_offsets as _offsets_from_biluo_tags
+    from spacy.training import iob_to_biluo as _iob_to_biluo
     import pandas as pd
     import numpy as np
 

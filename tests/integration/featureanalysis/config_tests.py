@@ -140,7 +140,7 @@ def setup_profiles(
             # hard-coded as backup
             pm.create(
                 kube_name,
-                url="https://1120pubbi-1120pubbi.apps.openshift410release.esri.com/web/home/",
+                url="https://1120pubbi-1120pubbi.apps.openshift412release.esri.com/web/home/",
                 username="creator2",
                 password="portalaccount1",
             )
