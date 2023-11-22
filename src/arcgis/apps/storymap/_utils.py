@@ -1,4 +1,5 @@
 from __future__ import annotations
+import tempfile
 from typing import Optional, Union
 import uuid
 from arcgis.auth.tools import LazyLoader
@@ -258,8 +259,19 @@ def save(
 
     # Add new draft with time in milliseconds
     draft = "draft_" + str(int(time.time() * 1000)) + ".json"
-    json_str = json.dumps(story._properties, ensure_ascii=False)
-    _add_resource(story, resource_name=draft, text=json_str, access="private")
+    # json_str = json.dumps(story._properties, ensure_ascii=False)
+
+    # Add a new empty json draft
+    _add_resource(story, resource_name=draft, text="{}", access="private")
+
+    # Create a temporary file to write the story._properties
+    with tempfile.NamedTemporaryFile(mode="w+", suffix=".json", delete=False) as temp:
+        json.dump(story._properties, temp, ensure_ascii=False)
+        temp.seek(0)
+
+        # update the draft with the story._properties
+        story._item.resources.update(file=temp.name, file_name=draft)
+
     # get the story map version from endpoint
     sm_version = story._gis._con.get("https://storymaps.arcgis.com/version")["version"]
     # Find type keywords to use based on whether to publish or not
