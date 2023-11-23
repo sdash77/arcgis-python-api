@@ -5690,7 +5690,7 @@ class GroupManager(object):
     as a property of the :class:`~arcgis.gis.GIS` object.
 
     .. note::
-        This class is not created by users directly.
+       This class is not created by users directly.
     """
 
     def __init__(self, gis):
@@ -5817,8 +5817,7 @@ class GroupManager(object):
         owner.
 
         .. note::
-            Only title and tags are required.
-
+            Only title and tags are required. ``autojoin`` is deprecated, use ``auto_join`` instead
 
         ====================  =========================================================
         **Parameter**         **Description**
@@ -5900,10 +5899,6 @@ class GroupManager(object):
 
                               .. note::
                                 For Enterprise only "org" is accepted.
-        --------------------  ---------------------------------------------------------
-        autojoin              Optional Boolean. The default is `False`. Only applies to
-                              org accounts. If `True`, this group will allow joined
-                              without requesting membership approval.
         ====================  =========================================================
 
         :return:
@@ -5928,6 +5923,12 @@ class GroupManager(object):
             "scenes": {"itemTypes": "Web Scene"},
             "tools": {"itemTypes": "Locator Package"},
         }
+
+        if autojoin is not None:
+            warnings.warn(
+                "The 'autojoin' parameter is deprecated. Use 'auto_join' instead.",
+                DeprecationWarning,
+            )
         if max_file_size is None:
             max_file_size = 1024000
         if users_update_items is None:
@@ -10108,7 +10109,7 @@ class Group(dict):
 
             # Usage Example
 
-            >>> group.add_users(usernames=["User1234","User5678"], admin="Admin9012")
+            >>> group.add_users(usernames=["User1234","User5678"], admins="Admin9012")
         """
         if usernames is None and admins is None:
             return {"notAdded": []}
