@@ -2432,7 +2432,7 @@ def create_viewshed(
                                              used as the output for the tool.
                                              A RuntimeError is raised if a service by that name already exists
     ------------------------------------     ---------------------------------------------------------------------------------------------------------------------------------------------
-    vertical_error                           Optional dict. The coefficient of the refraction of visible light in air. The default value is 0.13.
+    vertical_error                           Optional dict. The amount of uncertainty (the Root Mean Square error, or RMSE) in the surface elevation values.
 
                                              Supported units: Meters | Kilometers | Feet | Yards | Miles
 
