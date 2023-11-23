@@ -33,6 +33,8 @@ from fastai.vision.models.unet import _get_sfs_idxs
 from fastprogress.fastprogress import progress_bar
 from fastai.vision import flatten_model
 from ._timm_utils import get_backbone
+from fastai.basic_train import LearnerCallback
+from torch.nn.parallel import DistributedDataParallel
 
 
 def modify_layers(backbone, backbone_fn):
@@ -248,13 +250,14 @@ def get_confusion_metric(gt, pred, buffer):
 
 
 def f1_score(pred, gt):
+    device = gt.device
     gt = gt.byte().squeeze(1).cpu().numpy()
     pred = (pred[-1] >= 0.5).byte().squeeze(1).cpu().numpy()
     tp, predicted_tp, actual_tp = get_confusion_metric(gt, pred, 3)
     precision = tp / (predicted_tp + 1e-12)
     recall = tp / (actual_tp + 1e-12)
     f1score = 2 * precision * recall / (precision + recall + 1e-12)
-    return torch.tensor(f1score)
+    return torch.tensor(f1score).to(device)
 
 
 def accuracies(model, dl, detect_thresh=0.5, buffer=3, show_progress=True):
@@ -277,3 +280,17 @@ def accuracies(model, dl, detect_thresh=0.5, buffer=3, show_progress=True):
     acc["F1 Score"] = np.mean(f1score)
 
     return acc
+
+
+class DDPCallback(LearnerCallback):
+    def __init__(self, learn, cuda_id):
+        super().__init__(learn)
+        self.cuda_id = cuda_id
+
+    def on_train_begin(self, **kwargs):
+        self.learn.model = DistributedDataParallel(
+            self.learn.model.module,
+            device_ids=[self.cuda_id],
+            output_device=self.cuda_id,
+            find_unused_parameters=True,
+        )

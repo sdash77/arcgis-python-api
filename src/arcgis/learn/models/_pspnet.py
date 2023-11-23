@@ -236,6 +236,8 @@ class PSPNetClassifier(ArcGISModel):
             )
 
         self._map_location = getattr(self.learn, "_map_location_multi_gpu", None)
+        if self._map_location is not None:
+            self._multigpu_training = True
 
         if self.mixup:
             self.learn.callbacks.append(MixUpCallback(self.learn))
