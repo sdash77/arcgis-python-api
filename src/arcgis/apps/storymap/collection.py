@@ -451,7 +451,13 @@ class Collection(object):
         return False
 
     # ----------------------------------------------------------------------
-    def add(self, item:Union[content.Image, content.Video, content.Embed, _gis.Item, str], title: Optional[str]=None, thumbnail:Optional[str]=None, position:Optional[int]=None):
+    def add(
+        self,
+        item: Union[content.Image, content.Video, content.Embed, _gis.Item, str],
+        title: Optional[str] = None,
+        thumbnail: Optional[str] = None,
+        position: Optional[int] = None,
+    ):
         """
         Add an item to the collection. Specify this item with the item object.
         The item can be a portal item, file resource, or a story content of type
@@ -483,8 +489,10 @@ class Collection(object):
                 item._add_video(story=self)
             elif isinstance(item, content.Embed):
                 item._add_embed(story=self)
-            
-            item_dict = {"nodeId": item.node}.update(self._add_custom_properties(title, thumbnail))
+
+            item_dict = {"nodeId": item.node}.update(
+                self._add_custom_properties(title, thumbnail)
+            )
             # add the node to the collection-ui node
             self._properties["nodes"][ui_node]["data"]["items"].insert(
                 position, item_dict
@@ -512,7 +520,9 @@ class Collection(object):
                                 "provider": "item-resource",
                             },
                         }
-            item_dict = {"resourceId": resource_node}.update(self._add_custom_properties(title, thumbnail))
+            item_dict = {"resourceId": resource_node}.update(
+                self._add_custom_properties(title, thumbnail)
+            )
             # add the resource to the collection-ui node
             self._properties["nodes"][ui_node]["data"]["items"].insert(
                 position, item_dict
@@ -524,7 +534,7 @@ class Collection(object):
         """
         new_item = {}
         if title:
-                new_item["customTitle"] = title
+            new_item["customTitle"] = title
         if thumbnail:
             resource_node = "r-" + uuid.uuid4().hex[0:6]
             # The item is a file resource
