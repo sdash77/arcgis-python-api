@@ -187,8 +187,15 @@ class Image:
                 self._url = True
 
     # ----------------------------------------------------------------------
+    def __str__(self) -> str:
+        if self.caption:
+            return f"Image: {self.caption}"
+        else:
+            return "Image"
+
+    # ----------------------------------------------------------------------
     def __repr__(self) -> str:
-        return "Image"
+        return self.__str__()
 
     # ----------------------------------------------------------------------
     @property
@@ -515,7 +522,10 @@ class Video:
 
     # ----------------------------------------------------------------------
     def __str__(self) -> str:
-        return f"Video: {self.video}"
+        if self.caption:
+            return f"Video: {self.caption}"
+        else:
+            return "Video"
 
     # ----------------------------------------------------------------------
     def __repr__(self) -> str:
@@ -821,7 +831,10 @@ class Audio:
 
     # ----------------------------------------------------------------------
     def __str__(self) -> str:
-        return f"Audio: {self.audio}"
+        if self.caption:
+            return f"Audio: {self.caption}"
+        else:
+            return "Audio"
 
     # ----------------------------------------------------------------------
     def __repr__(self) -> str:
@@ -1945,7 +1958,10 @@ class Text:
 
     # ----------------------------------------------------------------------
     def __str__(self) -> str:
-        return f"Text: {self.text}"
+        if self.text:
+            return f"Text: {self._style}"
+        else:
+            return "Text"
 
     # ----------------------------------------------------------------------
     def __repr__(self) -> str:
