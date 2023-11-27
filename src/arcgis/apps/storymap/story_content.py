@@ -2025,7 +2025,7 @@ class Text:
                 else:
                     # content gets added to story in custom method
                     content = "custom embed"
-                    content_type = content.type
+                    content_type = content
                     content_node = self._create_item_embed(content)
             elif isinstance(content, (Image, Video)):
                 content_node = content.node
