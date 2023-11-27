@@ -115,4 +115,10 @@ collection = {
         },
         "n-JTJJo2": {"type": "collection-nav", "data": {"type": "compact"}},
     },
+    "resources": {
+        "r-QvId58": {
+            "type": "story-theme",
+            "data": {"themeId": "summit", "themeBaseVariableOverrides": {}},
+        }
+    },
 }

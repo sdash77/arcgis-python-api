@@ -3,6 +3,7 @@ from typing import Optional, Union
 import uuid
 from arcgis.auth.tools import LazyLoader
 import re
+import os
 import copy
 
 arcgis = LazyLoader("arcgis")
@@ -130,13 +131,13 @@ class Collection(object):
         # Get template from _ref folder
         template = copy.deepcopy(arcgis.apps.storymap._ref.collection)
         # Add correct by-line and locale
-        template["nodes"]["n-3r3mhh"]["data"]["byline"] = self._gis._username
+        template["nodes"]["n-U3Ou63"]["data"]["byline"] = self._gis._username
 
         # Create unique collection node id
         collection_node = "n-" + uuid.uuid4().hex[0:6]
         template["root"] = collection_node
-        template["nodes"][collection_node] = template["nodes"]["n-k23c2p"]
-        del template["nodes"]["n-k23c2p"]
+        template["nodes"][collection_node] = template["nodes"]["n-vCW523"]
+        del template["nodes"]["n-vCW523"]
         # Set properties for the collection
         self._properties = template
         # Create text for resource call
@@ -374,3 +375,139 @@ class Collection(object):
         """
         # deletes the item
         return utils.delete_item(self)
+    
+    # ----------------------------------------------------------------------
+    @property
+    def content(self):
+        """
+        Returns the content of the collection.
+        """
+        # content is found in the collection-ui node.
+        root_node = self._properties["root"]
+        ui_node = self._properties["nodes"][root_node]["children"][0]
+        ui = self._properties["nodes"][ui_node]
+
+        content = []
+        for item in ui["data"]["items"]:
+            if "nodeId" in item:
+                # Either a node that is a story content type
+                node = utils._assign_node_class(self, item["nodeId"])
+                content.append(node)
+            elif "resourceId" in item:
+                # A resource, most likely a portal item or file resource
+                resource = self._properties["resources"][item["resourceId"]]
+                if resource["type"] == "file-item":
+                    # File resource
+                    content.append(resource["type"])
+                elif resource["type"] == "portal-item":
+                    # Portal item resource
+                    content.append(
+                        self._gis.content.get(resource["data"]["itemId"])
+                    )
+        return content
+
+    # ----------------------------------------------------------------------
+    def remove(self, index):
+        """
+        Remove an item from the collection. Specify this item with the index position
+        of the item in the collection. The list of items in the collection can be found
+        by using the `content` property. The index position is the position of the item
+        in the list.
+
+        ===============     ====================================================================
+        **Parameter**        **Description**
+        ---------------     --------------------------------------------------------------------
+        index               Required integer. The index position of the item to remove.
+        ===============     ====================================================================
+
+        :return: True if the item was removed successfully.
+        """
+        # Get the list of content and find what the item is
+        content = self.content
+        item = content[index]
+
+        # If the item is a node, remove the node from the collection
+        if isinstance(item, (content.Video, content.Image, content.Embed)):
+            # Remove the node from the collection by using the class method `delete`
+            item.delete()
+            return True
+        else:
+            # The item is a portal item or file resource
+            # Get the collection-ui node
+            root_node = self._properties["root"]
+            ui_node = self._properties["nodes"][root_node]["children"][0]
+            ui = self._properties["nodes"][ui_node]
+
+            # Find the item in the collection-ui node, it will be a resource item
+            for i, item in enumerate(ui["data"]["items"]):
+                if "resourceId" in item:
+                    # will be a resource item
+                    if i == index:
+                        # will be the same index since the list of content and the list of items
+                        # in the collection-ui node are the same
+                        # Remove the resource from the collection
+                        del self._properties["resources"][item["resourceId"]]
+                        # Remove the item from the collection-ui node
+                        del self._properties["nodes"][ui_node]["data"]["items"][i]
+                        return True
+        return False
+    
+    # ----------------------------------------------------------------------
+    def add(self, item, position=None):
+        """
+        Add an item to the collection. Specify this item with the item object.
+        The item can be a portal item, file resource, or a story content of type
+        Image, Video, or Embed.
+
+        ===============     ====================================================================
+        **Parameter**        **Description**
+        ---------------     --------------------------------------------------------------------
+        item                Required object. The item to add to the collection or file path to a pdf.
+        ---------------     --------------------------------------------------------------------
+        position            Optional integer. The position in the collection to add the item.
+                            If none is specified, the item is added to the end of the collection.
+        ===============     ====================================================================
+        """
+        root_node = self._properties["root"]
+        ui_node = self._properties["nodes"][root_node]["children"][0]
+        if position is None:
+            # If no position is specified, add the item to the end of the collection
+            position = len(self._properties["nodes"][ui_node]["data"]["items"])
+        # If the item is an Image, Video or Embed, add the node to the collection
+        if isinstance(item, (content.Image, content.Video, content.Embed)):
+            if isinstance(item, content.Image):
+                item._add_image(story=self)
+            elif isinstance(item, content.Video):
+                item._add_video(story=self)
+            elif isinstance(item, content.Embed):
+                item._add_embed(story=self)
+            # add the node to the collection-ui node
+            
+            self._properties["nodes"][ui_node]["data"]["items"].insert(position,
+                {"nodeId": item._node_id}
+            )
+        else:
+            resource_node = "r-" + uuid.uuid4().hex[0:6]
+            # The item is a portal item or file resource
+            # If item, add the item id to the resources
+            if isinstance(item, arcgis.gis.Item):
+                self._properties["resources"][resource_node] = {
+                    "type": "portal-item",
+                    "data": {"itemId": item.itemid},
+                }
+            else:
+                # The item is a file resource
+                name = os.path.basename(item).replace(".pdf", "")
+                utils._add_resource(self, file = item, resource_name = name)
+                resources = self._item.resources.list()
+                for resource in resources:
+                    if resource["resource"] == name:
+                        self._properties["resources"][resource_node] = {
+                            "type": "file-item",
+                            "data": {"resourceId": resource["resource"],
+                                     "provider": "item-resource"},
+                        }
+            # add the resource to the collection-ui node
+            self._properties["nodes"][ui_node]["data"]["items"].insert(position,
+                {"resourceId": resource_node}
+            )
