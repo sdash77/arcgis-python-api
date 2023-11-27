@@ -95,3 +95,24 @@ briefing = {
         }
     },
 }
+
+collection = {
+    "root": "n-vCW523",
+    "nodes": {
+        "n-vCW523": {
+            "type": "collection",
+            "data": {"storyTheme": "r-QvId58"},
+            "children": ["n-eERiZz"],
+        },
+        "n-eERiZz": {
+            "type": "collection-ui",
+            "data": {"items": []},
+            "children": ["n-U3Ou63", "n-JTJJo2"],
+        },
+        "n-U3Ou63": {
+            "type": "collection-cover",
+            "data": {"title": "", "summary": "", "byline": "", "type": "tiles"},
+        },
+        "n-JTJJo2": {"type": "collection-nav", "data": {"type": "compact"}},
+    },
+}

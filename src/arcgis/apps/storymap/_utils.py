@@ -7,6 +7,7 @@ import re
 arcgis = LazyLoader("arcgis")
 Content = LazyLoader("arcgis.apps.storymap.story_content")
 StoryMap = LazyLoader("arcgis.apps.storymap.story")
+collection = LazyLoader("arcgis.apps.storymap.collection")
 Briefing = LazyLoader("arcgis.apps.storymap.briefing")
 json = LazyLoader("json")
 time = LazyLoader("time")
@@ -101,7 +102,7 @@ def cover(
         briefing.save()
 
     """
-    if isinstance(story, Briefing.Briefing):
+    if isinstance(story, Briefing.Briefing) or isinstance(story, collection.Collection):
         ui = story._properties["nodes"][story._properties["root"]]["children"][0]
         story_cover_slide = story._properties["nodes"][ui]["children"][0]
         story_cover_node = story._properties["nodes"][story_cover_slide]["children"][0]
@@ -264,6 +265,8 @@ def save(
     # Find type keywords to use based on whether to publish or not
     if isinstance(story, Briefing.Briefing):
         briefing_keywords = ["alphabriefing", "storymapbriefing"]
+    elif isinstance(story, collection.Collection):
+        collection_keywords = ["storymapcollection"]
 
     # PUBLISH MODE
     if publish is True:
@@ -311,6 +314,8 @@ def save(
         ]
         if isinstance(story, Briefing.Briefing):
             new_keywords = new_keywords + briefing_keywords
+        elif isinstance(story, collection.Collection):
+            new_keywords = new_keywords + collection_keywords
         # Setting the keywords in a set will remove duplicates
         p = {
             "typeKeywords": list(set(keywords + new_keywords)),
@@ -385,6 +390,8 @@ def save(
             ]
         if isinstance(story, Briefing.Briefing):
             new_keywords = new_keywords + briefing_keywords
+        elif isinstance(story, collection.Collection):
+            new_keywords = new_keywords + collection_keywords
         # Pass through set first to remove duplicates
         p = {"typeKeywords": list(set(keywords + new_keywords))}
         if title:
