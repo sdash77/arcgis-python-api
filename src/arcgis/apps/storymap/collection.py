@@ -375,7 +375,7 @@ class Collection(object):
         """
         # deletes the item
         return utils.delete_item(self)
-    
+
     # ----------------------------------------------------------------------
     @property
     def content(self):
@@ -401,9 +401,7 @@ class Collection(object):
                     content.append(resource["type"])
                 elif resource["type"] == "portal-item":
                     # Portal item resource
-                    content.append(
-                        self._gis.content.get(resource["data"]["itemId"])
-                    )
+                    content.append(self._gis.content.get(resource["data"]["itemId"]))
         return content
 
     # ----------------------------------------------------------------------
@@ -451,9 +449,9 @@ class Collection(object):
                         del self._properties["nodes"][ui_node]["data"]["items"][i]
                         return True
         return False
-    
+
     # ----------------------------------------------------------------------
-    def add(self, item, position=None):
+    def add(self, item:Union[content.Image, content.Video, content.Embed, _gis.Item, str], title: Optional[str]=None, thumbnail:Optional[str]=None, position:Optional[int]=None):
         """
         Add an item to the collection. Specify this item with the item object.
         The item can be a portal item, file resource, or a story content of type
@@ -463,6 +461,10 @@ class Collection(object):
         **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         item                Required object. The item to add to the collection or file path to a pdf.
+        ---------------     --------------------------------------------------------------------
+        title               Optional string. The title of the item to add under the thumbnail in the collection.
+        ---------------     --------------------------------------------------------------------
+        thumbnail           Optional string. The image file path to use as the thumbnail for the item.
         ---------------     --------------------------------------------------------------------
         position            Optional integer. The position in the collection to add the item.
                             If none is specified, the item is added to the end of the collection.
@@ -481,10 +483,11 @@ class Collection(object):
                 item._add_video(story=self)
             elif isinstance(item, content.Embed):
                 item._add_embed(story=self)
-            # add the node to the collection-ui node
             
-            self._properties["nodes"][ui_node]["data"]["items"].insert(position,
-                {"nodeId": item._node_id}
+            item_dict = {"nodeId": item.node}.update(self._add_custom_properties(title, thumbnail))
+            # add the node to the collection-ui node
+            self._properties["nodes"][ui_node]["data"]["items"].insert(
+                position, item_dict
             )
         else:
             resource_node = "r-" + uuid.uuid4().hex[0:6]
@@ -498,16 +501,45 @@ class Collection(object):
             else:
                 # The item is a file resource
                 name = os.path.basename(item).replace(".pdf", "")
-                utils._add_resource(self, file = item, resource_name = name)
+                utils._add_resource(self, file=item, resource_name=name)
                 resources = self._item.resources.list()
                 for resource in resources:
                     if resource["resource"] == name:
                         self._properties["resources"][resource_node] = {
                             "type": "file-item",
-                            "data": {"resourceId": resource["resource"],
-                                     "provider": "item-resource"},
+                            "data": {
+                                "resourceId": resource["resource"],
+                                "provider": "item-resource",
+                            },
                         }
+            item_dict = {"resourceId": resource_node}.update(self._add_custom_properties(title, thumbnail))
             # add the resource to the collection-ui node
-            self._properties["nodes"][ui_node]["data"]["items"].insert(position,
-                {"resourceId": resource_node}
+            self._properties["nodes"][ui_node]["data"]["items"].insert(
+                position, item_dict
             )
+
+    def _add_custom_properties(self, title, thumbnail):
+        """
+        Add extra properties to the items in a collection. As of now only title and thumbnail
+        """
+        new_item = {}
+        if title:
+                new_item["customTitle"] = title
+        if thumbnail:
+            resource_node = "r-" + uuid.uuid4().hex[0:6]
+            # The item is a file resource
+            name = os.path.basename(thumbnail).replace(".pdf", "")
+            utils._add_resource(self, file=thumbnail, resource_name=name)
+            resources = self._item.resources.list()
+            for resource in resources:
+                if resource["resource"] == name:
+                    self._properties["resources"][resource_node] = {
+                        "type": "image",
+                        "data": {
+                            "resourceId": resource["resource"],
+                            "provider": "item-resource",
+                        },
+                    }
+
+            new_item["customThumbnail"] = resource_node
+        return new_item
