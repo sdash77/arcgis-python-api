@@ -421,8 +421,7 @@ class Collection(object):
         :return: True if the item was removed successfully.
         """
         # Get the list of content and find what the item is
-        content = self.content
-        item = content[index]
+        item = self.content[index]
 
         # If the item is a node, remove the node from the collection
         if isinstance(item, (content.Video, content.Image, content.Embed)):
@@ -490,9 +489,10 @@ class Collection(object):
             elif isinstance(item, content.Embed):
                 item._add_embed(story=self)
 
-            item_dict = {"nodeId": item.node}.update(
-                self._add_custom_properties(title, thumbnail)
-            )
+            item_dict = {"nodeId": item.ndoe}
+            extra = self._add_custom_properties(title, thumbnail)
+            item_dict.update(extra)
+
             # add the node to the collection-ui node
             self._properties["nodes"][ui_node]["data"]["items"].insert(
                 position, item_dict
@@ -520,9 +520,9 @@ class Collection(object):
                                 "provider": "item-resource",
                             },
                         }
-            item_dict = {"resourceId": resource_node}.update(
-                self._add_custom_properties(title, thumbnail)
-            )
+            item_dict = {"resourceId": resource_node}
+            extra = self._add_custom_properties(title, thumbnail)
+            item_dict.update(extra)
             # add the resource to the collection-ui node
             self._properties["nodes"][ui_node]["data"]["items"].insert(
                 position, item_dict

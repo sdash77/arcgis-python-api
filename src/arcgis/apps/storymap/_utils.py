@@ -105,7 +105,13 @@ def cover(
     if isinstance(story, Briefing.Briefing) or isinstance(story, collection.Collection):
         ui = story._properties["nodes"][story._properties["root"]]["children"][0]
         story_cover_slide = story._properties["nodes"][ui]["children"][0]
-        story_cover_node = story._properties["nodes"][story_cover_slide]["children"][0]
+        if isinstance(story, Briefing.Briefing):
+            story_cover_node = story._properties["nodes"][story_cover_slide][
+                "children"
+            ][0]
+        else:
+            # for collection, the cover is the first node in ui
+            story_cover_node = story_cover_slide
     else:
         story_cover_node = story._properties["nodes"][story._properties["root"]][
             "children"

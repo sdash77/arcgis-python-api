@@ -1,11 +1,11 @@
-# import sys
-# sys.path.insert(0, r"C:\ipython_workfolder\geosaurus\src")
+import sys
+sys.path.insert(0, r"C:\ipython_workfolder\geosaurus\src")
 import unittest
-from arcgis.gis import GIS, Item
+from arcgis.gis import GIS
 from arcgis.apps.storymap import Collection, Themes
 from arcgis.apps.storymap import Image, Slide
 
-profiles = ["your_online_profile", "your_enterprise_profile"]
+profiles = ["your_online_profile"]
 
 
 class TestStoryMap(unittest.TestCase):
@@ -20,7 +20,7 @@ class TestStoryMap(unittest.TestCase):
                 collection = Collection()
 
                 # assert some properties
-                assert collection.content
+                assert len(collection.content) == 0
                 assert collection
 
                 # Edit briefing cover
@@ -37,37 +37,27 @@ class TestStoryMap(unittest.TestCase):
 
                 assert collection.delete_collection()
 
-    def test_create_slide(self):
+    def test_add_item(self):
         for profile in profiles:
             with self.subTest(msg=profile):
                 # establish gis connection
                 gis = GIS(profile=profile, verify_cert=False)
-                briefing = Briefing()
+                collection = Collection()
 
                 # assert some properties
-                assert briefing.slides
-                assert len(briefing.slides) == 1
+                assert len(collection.content) == 0
+                assert collection
 
-                # Create a slide
-                slide = Slide(layout="single")
-                briefing.add(slide)
+                item = gis.content.search("USA", item_type="Storymap", outside_org=True)[0]
+                collection.add(item, title="USA")
 
-                # assert some properties
-                assert briefing.slides
-                assert len(briefing.slides) == 2
-                assert slide.blocks
-                assert len(slide.blocks) == 1
+                assert len(collection.content) == 1
 
-                # add an image to the block
-                block = slide.blocks[0]
-                img = Image(
-                    "https://www.nps.gov/npgallery/GetAsset/0022D3FF-1DD8-B71B-0BE3AD4C48F96FF9/proxy/hires"
-                )
-                block.add_content(img)
-                assert block.content
-                assert isinstance(block.content, Image)
+                collection.remove(0)
 
-                assert briefing.delete_briefing()
+                assert len(collection.content) == 0
+
+                assert collection.delete_collection()
 
 
 if __name__ == "__main__":
