@@ -5,9 +5,9 @@ from arcgis.auth.tools import LazyLoader
 import re
 
 arcgis = LazyLoader("arcgis")
-Content = LazyLoader("arcgis.apps.storymap.story_content")
-StoryMap = LazyLoader("arcgis.apps.storymap.story")
-Briefing = LazyLoader("arcgis.apps.storymap.briefing")
+content = LazyLoader("arcgis.apps.storymap.story_content")
+storymap = LazyLoader("arcgis.apps.storymap.story")
+briefing = LazyLoader("arcgis.apps.storymap.briefing")
 json = LazyLoader("json")
 time = LazyLoader("time")
 
@@ -30,19 +30,7 @@ def _get_thumbnail(gis) -> str:
 # ----------------------------------------------------------------------
 def show(item, width: Optional[int] = None, height: Optional[int] = None):
     """
-    Show a preview of the briefing. The default is a width of 700 and height of 300.
-
-    ===============     ====================================================================
-    **Parameter**       **Description**
-    ---------------     --------------------------------------------------------------------
-    width               Optional integer. The desired width to show the preview.
-    ---------------     --------------------------------------------------------------------
-    height              Optional integer. The desired height to show the preview.
-    ===============     ====================================================================
-
-    :return:
-        An Iframe display of the briefing if possible, else the item url is returned to be
-        clicked on.
+    Show a preview. The default is a width of 700 and height of 300.
     """
     try:
         if item:
@@ -56,7 +44,7 @@ def show(item, width: Optional[int] = None, height: Optional[int] = None):
                 height=height,
                 params="title=" + item.title,
             )
-    except:
+    except Exception:
         return item.url
 
 
@@ -67,41 +55,15 @@ def cover(
     type: str = None,
     summary: Optional[str] = None,
     by_line: Optional[str] = None,
-    media: Optional[Union[Content.Image, Content.Video]] = None,
+    media: Optional[Union[content.Image, content.Video]] = None,
 ):
     """
-    A briefing's cover is the first slide.
+    A cover is the first slide/node.
     This method allows the cover to be edited by updating the title, byline, image, and more.
     Changing one part of the briefing cover will not change the rest of the cover. If just the
     image is passed in then only the image will change.
-
-    ===============     ====================================================================
-    **Parameter**        **Description**
-    ---------------     --------------------------------------------------------------------
-    title               Optional string. The title of the Briefing cover.
-    ---------------     --------------------------------------------------------------------
-    type                Optional string. The type of briefing cover to be used in the story.
-
-                        ``Values: "full" | "sidebyside" | "minimal"``
-    ---------------     --------------------------------------------------------------------
-    summary             Optional string. The description of the story.
-    ---------------     --------------------------------------------------------------------
-    by_line             Optional string. Crediting the author(s).
-    ---------------     --------------------------------------------------------------------
-    media               Optional url or file path for an image or :class:`~arcgis.apps.storymap.story_content.Image` or
-                        :class:`~arcgis.apps.storymap.story_content.Video` object.
-    ===============     ====================================================================
-
-    :return: True if the cover was updated successfully.
-
-    .. code-block:: python
-
-        briefing = Briefing(<briefing item>)
-        briefing.cover(title="My Briefing Title", type="sidebyside", summary="My little summary", by_line="python_dev")
-        briefing.save()
-
     """
-    if isinstance(story, Briefing.Briefing):
+    if isinstance(story, briefing.Briefing):
         ui = story._properties["nodes"][story._properties["root"]]["children"][0]
         story_cover_slide = story._properties["nodes"][ui]["children"][0]
         story_cover_node = story._properties["nodes"][story_cover_slide]["children"][0]
@@ -130,9 +92,9 @@ def cover(
     # set the cover media
     if media is not None:
         if isinstance(media, str):
-            media = Content.Image(media)
-        if not isinstance(media, Content.Image) and not isinstance(
-            media, Content.Video
+            media = content.Image(media)
+        if not isinstance(media, content.Image) and not isinstance(
+            media, content.Video
         ):
             raise ValueError(
                 "Media must be an image or video object. This was not updated"
@@ -154,33 +116,17 @@ def cover(
 
 
 # ----------------------------------------------------------------------
-def theme(story, theme: Union[StoryMap.Themes, str] = StoryMap.Themes.SUMMIT):
+def theme(story, theme: Union[storymap.Themes, str] = storymap.Themes.SUMMIT):
     """
-    Each briefing has a theme node in its resources. This method can be used to change the theme.
+    Each story/briefing has a theme node in its resources. This method can be used to change the theme.
     To add a custom theme to your story, pass in the item_id for the item of type Story Map Theme.
-
-    ===============     ====================================================================
-    **Parameter**        **Description**
-    ---------------     --------------------------------------------------------------------
-    theme               Required Themes Style or custom theme item id.
-                        The theme to set on the briefing.
-
-                        Values: `SUMMIT` | `TIDAL` | `MESA` | `RIDGELINE` | `SLATE` | `OBSIDIAN` | `<item_id>`
-    ===============     ====================================================================
-
-    .. code-block:: python
-
-        >>> from arcgis.apps.storymap import Themes, Briefing
-
-        >>> briefing = Briefing()
-        >>> briefing.theme(Themes.TIDAL)
     """
     # find the node corresponding to the story theme in resources
     # the properties only holds the resource node id. If this doesn't change then don't need to update
     for node, node_info in story._properties["resources"].items():
         for key, val in node_info.items():
             if key == "type" and val == "story-theme":
-                if isinstance(theme, StoryMap.Themes):
+                if isinstance(theme, storymap.Themes):
                     # theme comes from Themes class
                     story._properties["resources"][node]["data"][
                         "themeId"
@@ -199,42 +145,11 @@ def save(
     publish: bool = False,
 ):
     """
-    This method will save your Story Map to your active GIS. The story will be saved
+    This method will save your StoryMap or Briefing to your active GIS. The story will be saved
     with unpublished changes unless `publish` parameter is specified to True.
 
     The title only needs to be specified if a change is wanted, otherwise exisiting title
     is used.
-
-    .. warning::
-        Publishing your story through the Python API means it will not go through the Story Map
-        issue checker. It is recommended to publish through the Story Maps builder if you
-        want your story to go through the issue checker.
-
-    .. warning::
-        Changes to the published story may not be visible for up to one hour. You can open
-        the story in the story builder to force changes to appear immediately and perform
-        other optimizations, such as updating the story's social/SEO metadata.
-
-    ===============     ====================================================================
-    **Parameter**        **Description**
-    ---------------     --------------------------------------------------------------------
-    title               Optional string. The title of the StoryMap.
-    ---------------     --------------------------------------------------------------------
-    tags                Optional string. The tags of the StoryMap.
-    ---------------     --------------------------------------------------------------------
-    access              Optional string. The access of the StoryMap. If none is specified, the
-                        current access is kept. This is used when `publish` parameter is set
-                        to True.
-
-                        Values: `private` | `org` | `public`
-    ---------------     --------------------------------------------------------------------
-    publish             Optional boolean. If True, the story is saved and also published.
-                        Default is false so story is saved with unpublished changes.
-    ===============     ====================================================================
-
-
-    :return: The Item that was saved to your active GIS.
-
     """
     # Remove old draft item
     for resource in story._resources:
@@ -262,7 +177,7 @@ def save(
     # get the story map version from endpoint
     sm_version = story._gis._con.get("https://storymaps.arcgis.com/version")["version"]
     # Find type keywords to use based on whether to publish or not
-    if isinstance(story, Briefing.Briefing):
+    if isinstance(story, briefing.Briefing):
         briefing_keywords = ["alphabriefing", "storymapbriefing"]
 
     # PUBLISH MODE
@@ -309,7 +224,7 @@ def save(
             "smdraftresourceid:" + draft,
             "smpublisheddate:" + str(int(time.time() * 1000)),
         ]
-        if isinstance(story, Briefing.Briefing):
+        if isinstance(story, briefing.Briefing):
             new_keywords = new_keywords + briefing_keywords
         # Setting the keywords in a set will remove duplicates
         p = {
@@ -383,7 +298,7 @@ def save(
                 "smeditorapp:python-api-" + arcgis.__version__,
                 "smdraftresourceid:" + draft,
             ]
-        if isinstance(story, Briefing.Briefing):
+        if isinstance(story, briefing.Briefing):
             new_keywords = new_keywords + briefing_keywords
         # Pass through set first to remove duplicates
         p = {"typeKeywords": list(set(keywords + new_keywords))}
@@ -400,9 +315,9 @@ def save(
 
 
 # ----------------------------------------------------------------------
-def delete_briefing(story):
+def delete_item(story):
     """
-    Deletes the briefing item.
+    Deletes the item.
     """
     # Check if item id exists
     item = story._gis.content.get(story._itemid)
@@ -414,31 +329,6 @@ def duplicate(story, title: Optional[str] = None):
     """
     Duplicate the story. All items will be duplicated as they are. This allows you to create
     a briefing template and duplicate it when you want to work with it.
-
-    It is highly recommended that once the duplicate is created, open it in StoryMap Briefing
-    builder to ensure the issue checker finds any issues before editing.
-
-    .. note::
-        Can be used with ArcGIS Online or with ArcGIS Enterprise starting 10.8.1.
-
-    .. note::
-        To duplicate into another organization, use the :func:`~arcgis.gis.ContentManager.clone_items` method.
-
-    ===============     ====================================================================
-    **Parameter**        **Description**
-    ---------------     --------------------------------------------------------------------
-    title               Optional string. The title of the duplicated story. Only availble
-                        for ArcGIS Online.
-    ===============     ====================================================================
-
-    :return:
-        The Item that was created.
-
-    .. code-block:: python
-
-        # Example for ArcGIS Online
-        >>> briefing = Briefing(<briefing item>)
-        >>> briefing.duplicate("A Briefing Copy")
     """
     # get the item to copy
     item = story._gis.content.get(story._itemid)
@@ -453,7 +343,7 @@ def duplicate(story, title: Optional[str] = None):
             include_private=True,
         )
     # save to update keywords
-    clone_story = Briefing.Briefing(clone.id)
+    clone_story = briefing.Briefing(clone.id)
     return clone_story.save()
 
 
@@ -463,39 +353,6 @@ def get(story, node: Optional[str] = None, type: Optional[str] = None):
     Get node(s) by type or by their id. Using this function will help grab a specific node
     from the story if a node id is provided. Set this to a variable and this way edits can be
     made on the node in the story.
-
-    ===============     ====================================================================
-    **Parameter**        **Description**
-    ---------------     --------------------------------------------------------------------
-    node                Optional string. The node id for the node that should be returned.
-                        This will return the class of the node if of type story content.
-    ---------------     --------------------------------------------------------------------
-    type                Optional string. The type of nodes that user wants returned.
-                        If none specified, list of all nodes returned.
-
-
-                        Values: `image` | `video` | `audio` | `embed` | `webmap` | `text` |
-                        `button` | `separator` | `expressmap` | `webscene` | `immersive`
-    ===============     ====================================================================
-
-    :return:
-        If type specified: List of node ids and their types in order of appearance in the story map.
-
-        If node_id specified: The node itstory.
-
-
-    .. code-block:: python
-
-        >>> story = StoryMap(<story item>)
-
-        # Example get by type
-        >>> story.get(type = "text")
-        Returns a list of all nodes of type text
-
-        # Example by id
-        >>> text = story.get(node= "<id for text node>")
-        >>> text.properties
-        Returns a specific node of type text
 
     """
     spec_type = []
@@ -542,33 +399,11 @@ def get(story, node: Optional[str] = None, type: Optional[str] = None):
 
 # ----------------------------------------------------------------------
 def copy_content(
-    story, target_story: Union[Briefing.Briefing, StoryMap.StoryMap], content: list
+    story, target_story: Union[briefing.Briefing, storymap.StoryMap], content: list
 ):
     """
-    Copy the content from one briefing to another. This will copy the content
-    indicated to the target briefing in the order they are provided.
-
-    .. note::
-        Do not forget to save the target briefing once you are done copying and making
-        any further edits.
-
-    .. note::
-        This method can take time depending on the number of resources. Each resource coming
-        from a file must be copied over and heavy files, such as videos or audio, can be time
-        consuming.
-
-    ===============     ====================================================================
-    **Parameter**        **Description**
-    ---------------     --------------------------------------------------------------------
-    target_briefing     Required Briefing instance. The target briefing that the content will be
-                        copied to.
-    ---------------     --------------------------------------------------------------------
-    content             Required list of content. The list of content that will be copied to
-                        the target briefing.
-    ===============     ====================================================================
-
-    :return:
-        True if all content has been successfully copied over.
+    Copy the content from one briefing/story to another. This will copy the content
+    indicated to the target briefing/story in the order they are provided.
 
     """
     if isinstance(content, list) and not isinstance(content[0], str):
@@ -581,7 +416,7 @@ def copy_content(
 
     # Step 1: Do Checks
     # Check that nodes exist in original story (children of source story contain all of node_list)
-    if isinstance(target_story, Briefing.Briefing):
+    if isinstance(target_story, briefing.Briefing):
         # children are in the children of the the root node. In the ui node
         ui = story._properties["nodes"][target_story._properties["root"]]["children"][0]
         story_children = story._properties["nodes"][ui]["children"]
@@ -712,7 +547,7 @@ def copy_content(
     for key, value in resource_files.items():
         try:
             _add_resource(target_story, file=value, resource_name=key)
-        except:
+        except Exception:
             # express map, image editor, other created files will be here
             text = json.dumps(value)
             _add_resource(target_story, resource_name=key, text=text)
@@ -730,14 +565,14 @@ def _has_children(story, node):
     """
     node_class = _assign_node_class(story, node)
     if (
-        isinstance(node_class, Content.Sidecar)
-        or isinstance(node_class, Content.Gallery)
-        or isinstance(node_class, Content.Timeline)
+        isinstance(node_class, content.Sidecar)
+        or isinstance(node_class, content.Gallery)
+        or isinstance(node_class, content.Timeline)
     ):
         return story._properties["nodes"][node]["children"]
-    elif isinstance(node_class, Content.Swipe):
+    elif isinstance(node_class, content.Swipe):
         return list(story._properties["nodes"][node]["data"]["contents"].values())
-    elif isinstance(node_class, Content.MapTour):
+    elif isinstance(node_class, content.MapTour):
         mt = get(story, node)
         return mt._children
     elif isinstance(node_class, str):
@@ -798,7 +633,7 @@ def _add_child(story, node_id, position=None):
     # Get list of children in story
     root_id = story._properties["root"]
 
-    if isinstance(story, Briefing.Briefing):
+    if isinstance(story, briefing.Briefing):
         # for briefings, the only child is the ui
         # the ui node has the slides
         principal_id = story._properties["nodes"][root_id]["children"][0]
@@ -869,7 +704,7 @@ def _remove_resource(story, file=None):
         resp = resource_manager.remove(file=file)
         story._resources = story._item.resources.list()
         return resp
-    except:
+    except Exception:
         # Resource cannot be found. Should not throw error
         return True
 
@@ -880,45 +715,45 @@ def _assign_node_class(story, node_id):
     node_type = story._properties["nodes"][node_id]["type"]
     # Create an instance of this class using existing node properties
     if node_type == "separator":
-        node = Content.Separator(story=story, node_id=node_id)
+        node = content.Separator(story=story, node_id=node_id)
     elif node_type == "briefing-slide":
-        node = Content.Slide(story=story, node_id=node_id)
+        node = content.Slide(story=story, node_id=node_id)
     elif node_type == "image":
-        node = Content.Image(story=story, node_id=node_id)
+        node = content.Image(story=story, node_id=node_id)
     elif node_type == "video":
-        node = Content.Video(story=story, node_id=node_id)
+        node = content.Video(story=story, node_id=node_id)
     elif node_type == "audio":
-        node = Content.Audio(story=story, node_id=node_id)
+        node = content.Audio(story=story, node_id=node_id)
     elif node_type == "embed":
         # embed has subtype: video or link
         subtype = story._properties["nodes"][node_id]["data"]["embedType"]
         if subtype == "video":
-            node = Content.Video(story=story, node_id=node_id)
+            node = content.Video(story=story, node_id=node_id)
         else:
-            node = Content.Embed(story=story, node_id=node_id)
+            node = content.Embed(story=story, node_id=node_id)
     elif node_type == "webmap":
-        node = Content.Map(story=story, node_id=node_id)
+        node = content.Map(story=story, node_id=node_id)
     elif node_type == "text":
-        node = Content.Text(story=story, node_id=node_id)
+        node = content.Text(story=story, node_id=node_id)
     elif node_type == "button":
-        node = Content.Button(story=story, node_id=node_id)
+        node = content.Button(story=story, node_id=node_id)
     elif node_type == "swipe":
-        node = Content.Swipe(story=story, node_id=node_id)
+        node = content.Swipe(story=story, node_id=node_id)
     elif node_type == "gallery":
-        node = Content.Gallery(story=story, node_id=node_id)
+        node = content.Gallery(story=story, node_id=node_id)
     elif node_type == "timeline":
-        node = Content.Timeline(story=story, node_id=node_id)
+        node = content.Timeline(story=story, node_id=node_id)
     elif node_type == "tour":
-        node = Content.MapTour(story=story, node_id=node_id)
+        node = content.MapTour(story=story, node_id=node_id)
     elif node_type == "immersive":
         # immersive has subtype sidecar (more to add later)
         subtype = story._properties["nodes"][node_id]["data"]["type"]
         if subtype == "sidecar":
-            node = Content.Sidecar(story=story, node_id=node_id)
+            node = content.Sidecar(story=story, node_id=node_id)
         else:
             node = subtype
     elif node_type == "action-button":
-        node = Content.MapAction(story=story, node_id=node_id)
+        node = content.MapAction(story=story, node_id=node_id)
     else:
         # if not of type story content then just return name of type
         node = node_type.capitalize()
@@ -935,7 +770,7 @@ def _create_node_dict(story):
     # get rood node id since it is story node id
     root_id = story._properties["root"]
     # get list of children from story node
-    if isinstance(story, Briefing.Briefing):
+    if isinstance(story, briefing.Briefing):
         ui = story._properties["nodes"][root_id]["children"]
         children = story._properties["nodes"][ui[0]]["children"]
     else:

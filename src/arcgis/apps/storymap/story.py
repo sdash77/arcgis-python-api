@@ -1,14 +1,14 @@
 from __future__ import annotations
-import os
 from typing import Optional, Union
 import uuid
 from enum import Enum
+from arcgis._impl.common._deprecate import deprecated
 from arcgis.auth.tools import LazyLoader
 import re
 import copy
 
 arcgis = LazyLoader("arcgis")
-Content = LazyLoader("arcgis.apps.storymap.story_content")
+content = LazyLoader("arcgis.apps.storymap.story_content")
 json = LazyLoader("json")
 time = LazyLoader("time")
 utils = LazyLoader("arcgis.apps.storymap._utils")
@@ -336,6 +336,12 @@ class StoryMap(object):
         return self._properties
 
     # ----------------------------------------------------------------------
+    @deprecated(
+        deprecated_in="2.2.0",
+        removed_in="3.0.0",
+        current_version="2.3.0",
+        details="`nodes` property has been deprecated, use `content_list` property instead.",
+    )
     @property
     def nodes(self):
         """
@@ -407,10 +413,16 @@ class StoryMap(object):
                     if key == "nodeId":
                         node_ids.append(value)
             return node_ids
-        except:
+        except Exception:
             return None
 
     # ----------------------------------------------------------------------
+    @deprecated(
+        deprecated_in="2.2.0",
+        removed_in="3.0.0",
+        current_version="2.3.0",
+        details="`get` method has been deprecated, use `content_list` property instead.",
+    )
     def get(self, node: Optional[str] = None, type: Optional[str] = None):
         """
         Get node(s) by type or by their id. Using this function will help grab a specific node
@@ -460,7 +472,7 @@ class StoryMap(object):
         type: str = None,
         summary: Optional[str] = None,
         by_line: Optional[str] = None,
-        image: Optional[Content.Image] = None,
+        image: Optional[content.Image] = None,
     ):
         """
         A story's cover is at the top of the story and always the first node.
@@ -607,7 +619,7 @@ class StoryMap(object):
         Credits are found at the end of the story and thus are always the last node.
 
         To create a credit, add the text that should be shown on each side of the divider.
-        Content represents the text seen on the left side and attribution is in line with content
+        content represents the text seen on the left side and attribution is in line with content
         on the right side of the divider. (i.e. 'content' | 'attribution')
 
         Adding ``content`` and ``attribution`` will add a new line to the credits and will not change previous
@@ -707,17 +719,17 @@ class StoryMap(object):
         self,
         content: Optional[
             Union[
-                Content.Image,
-                Content.Video,
-                Content.Audio,
-                Content.Embed,
-                Content.Map,
-                Content.Button,
-                Content.Text,
-                Content.Gallery,
-                Content.Timeline,
-                Content.Sidecar,
-                Content.Code,
+                content.Image,
+                content.Video,
+                content.Audio,
+                content.Embed,
+                content.Map,
+                content.Button,
+                content.Text,
+                content.Gallery,
+                content.Timeline,
+                content.Sidecar,
+                content.Code,
             ]
         ] = None,
         caption: Optional[str] = None,
@@ -726,7 +738,7 @@ class StoryMap(object):
         position: Optional[int] = None,
     ):
         """
-        Use this method to add content to your StoryMap. Content can be of various class types and when
+        Use this method to add content to your StoryMap. content can be of various class types and when
         you add this content you can specify a caption, alt_text, display style, and the position
         at which it will be in your story.
         Not passing in any content means a separator will be added.
@@ -801,36 +813,36 @@ class StoryMap(object):
         node_id = content.node if content is not None else "n-" + uuid.uuid4().hex[0:6]
 
         # Find instance of content and call correct method
-        if isinstance(content, Content.Image):
+        if isinstance(content, content.Image):
             content._add_image(caption, alt_text, display, self)
-        elif isinstance(content, Content.Gallery):
+        elif isinstance(content, content.Gallery):
             content._add_gallery(caption, alt_text, display, self)
-        elif isinstance(content, Content.Video):
+        elif isinstance(content, content.Video):
             content._add_video(caption, alt_text, display, self)
-        elif isinstance(content, Content.Audio):
+        elif isinstance(content, content.Audio):
             content._add_audio(caption, alt_text, display, self)
-        elif isinstance(content, Content.Map):
+        elif isinstance(content, content.Map):
             content._add_map(caption, alt_text, display, story=self)
-        elif isinstance(content, Content.Embed):
+        elif isinstance(content, content.Embed):
             content._add_link(caption, alt_text, display, self)
-        elif isinstance(content, Content.Button):
+        elif isinstance(content, content.Button):
             content._add_button(self)
-        elif isinstance(content, Content.Text):
+        elif isinstance(content, content.Text):
             content._add_text(self)
-        elif isinstance(content, Content.Timeline):
+        elif isinstance(content, content.Timeline):
             content._add_timeline(self)
-        elif isinstance(content, Content.Sidecar):
+        elif isinstance(content, content.Sidecar):
             content._add_sidecar(self)
-        elif isinstance(content, Content.Swipe):
+        elif isinstance(content, content.Swipe):
             content._add_swipe(caption, alt_text, display, self)
-        elif isinstance(content, Content.Code):
+        elif isinstance(content, content.Code):
             content._add_code(self)
         else:
-            content = Content.Separator(story=self, node_id=node_id)
+            content = content.Separator(story=self, node_id=node_id)
             content._add_separator(story=self)
 
         # Add to story children
-        _utils._add_child(node_id=node_id, position=position)
+        utils._add_child(node_id=node_id, position=position)
         return node_id
 
     # ----------------------------------------------------------------------
@@ -883,7 +895,7 @@ class StoryMap(object):
             self._properties["nodes"][root_id]["children"].pop(position)
 
         # Add node to new position
-        _utils._add_child(node_id, position)
+        utils._add_child(node_id, position)
 
     # ----------------------------------------------------------------------
     def save(
@@ -941,7 +953,7 @@ class StoryMap(object):
         """
         # Check if item id exists
         # deletes the item
-        return utils.delete_briefing(self)
+        return utils.delete_item(self)
 
     # ----------------------------------------------------------------------
     def duplicate(self, title: Optional[str] = None):

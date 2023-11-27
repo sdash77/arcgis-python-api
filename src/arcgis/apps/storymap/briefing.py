@@ -6,8 +6,8 @@ import re
 import copy
 
 arcgis = LazyLoader("arcgis")
-Content = LazyLoader("arcgis.apps.storymap.story_content")
-StoryMap = LazyLoader("arcgis.apps.storymap.story")
+content = LazyLoader("arcgis.apps.storymap.story_content")
+storymap = LazyLoader("arcgis.apps.storymap.story")
 json = LazyLoader("json")
 time = LazyLoader("time")
 utils = LazyLoader("arcgis.apps.storymap._utils")
@@ -303,7 +303,7 @@ class Briefing(object):
         type: str = None,
         summary: Optional[str] = None,
         by_line: Optional[str] = None,
-        media: Optional[Union[Content.Image, Content.Video]] = None,
+        media: Optional[Union[content.Image, content.Video]] = None,
     ):
         """
         A briefing's cover is the first slide.
@@ -342,7 +342,7 @@ class Briefing(object):
         return True
 
     # ----------------------------------------------------------------------
-    def theme(self, theme: Union[StoryMap.Themes, str] = StoryMap.Themes.SUMMIT):
+    def theme(self, theme: Union[storymap.Themes, str] = storymap.Themes.SUMMIT):
         """
         Each briefing has a theme node in its resources. This method can be used to change the theme.
         To add a custom theme to your story, pass in the item_id for the item of type Story Map Theme.
@@ -370,11 +370,11 @@ class Briefing(object):
     # ----------------------------------------------------------------------
     def add(
         self,
-        slides: list[Content.Slide],
+        slides: list[content.Slide],
         position: Optional[int] = None,
     ):
         """
-        Use this method to add content to your StoryMap. Content can be of various class types and when
+        Use this method to add content to your StoryMap. content can be of various class types and when
         you add this content you can specify a caption, alt_text, display style, and the position
         at which it will be in your story.
         Not passing in any content means a separator will be added.
@@ -397,7 +397,7 @@ class Briefing(object):
         slides = slides if isinstance(slides, list) else [slides]
 
         for slide in slides:
-            if not isinstance(slide, Content.Slide):
+            if not isinstance(slide, content.Slide):
                 raise ValueError("Only Slide objects can be added to a Briefing.")
 
         for slide in slides:
@@ -514,7 +514,7 @@ class Briefing(object):
         Deletes the briefing item.
         """
         # deletes the item
-        return utils.delete_briefing(self)
+        return utils.delete_item(self)
 
     # ----------------------------------------------------------------------
     def duplicate(self, title: Optional[str] = None):
@@ -529,7 +529,7 @@ class Briefing(object):
             Can be used with ArcGIS Online or with ArcGIS Enterprise starting 10.8.1.
 
         .. note::
-            To duplicate into another organization, use the :func:`~arcgis.gis.ContentManager.clone_items` method.
+            To duplicate into another organization, use the :func:`~arcgis.gis.contentManager.clone_items` method.
 
         ===============     ====================================================================
         **Parameter**        **Description**
