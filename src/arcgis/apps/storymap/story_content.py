@@ -2024,9 +2024,9 @@ class Text:
                     content_type = "Web Map"
                 else:
                     # content gets added to story in custom method
-                    content = "custom embed"
                     content_type = "embed"
                     content_node = self._create_item_embed(content)
+                    content = "custom embed"
             elif isinstance(content, (Image, Video)):
                 content_node = content.node
                 content_type = content._type
