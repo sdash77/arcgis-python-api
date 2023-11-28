@@ -6,7 +6,7 @@ import re
 import copy
 
 arcgis = LazyLoader("arcgis")
-content = LazyLoader("arcgis.apps.storymap.story_content")
+Content = LazyLoader("arcgis.apps.storymap.story_content")
 storymap = LazyLoader("arcgis.apps.storymap.story")
 json = LazyLoader("json")
 time = LazyLoader("time")
@@ -303,7 +303,7 @@ class Briefing(object):
         type: str = None,
         summary: Optional[str] = None,
         by_line: Optional[str] = None,
-        media: Optional[Union[content.Image, content.Video]] = None,
+        media: Optional[Union[Content.Image, Content.Video]] = None,
     ):
         """
         A briefing's cover is the first slide.
@@ -370,7 +370,7 @@ class Briefing(object):
     # ----------------------------------------------------------------------
     def add(
         self,
-        slides: list[content.Slide],
+        slides: list[Content.Slide],
         position: Optional[int] = None,
     ):
         """
@@ -397,7 +397,7 @@ class Briefing(object):
         slides = slides if isinstance(slides, list) else [slides]
 
         for slide in slides:
-            if not isinstance(slide, content.Slide):
+            if not isinstance(slide, Content.Slide):
                 raise ValueError("Only Slide objects can be added to a Briefing.")
 
         for slide in slides:

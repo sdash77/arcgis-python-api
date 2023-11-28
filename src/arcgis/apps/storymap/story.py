@@ -8,7 +8,7 @@ import re
 import copy
 
 arcgis = LazyLoader("arcgis")
-content = LazyLoader("arcgis.apps.storymap.story_content")
+Content = LazyLoader("arcgis.apps.storymap.story_content")
 json = LazyLoader("json")
 time = LazyLoader("time")
 utils = LazyLoader("arcgis.apps.storymap._utils")
@@ -472,7 +472,7 @@ class StoryMap(object):
         type: str = None,
         summary: Optional[str] = None,
         by_line: Optional[str] = None,
-        image: Optional[content.Image] = None,
+        image: Optional[Content.Image] = None,
     ):
         """
         A story's cover is at the top of the story and always the first node.
@@ -719,17 +719,17 @@ class StoryMap(object):
         self,
         content: Optional[
             Union[
-                content.Image,
-                content.Video,
-                content.Audio,
-                content.Embed,
-                content.Map,
-                content.Button,
-                content.Text,
-                content.Gallery,
-                content.Timeline,
-                content.Sidecar,
-                content.Code,
+                Content.Image,
+                Content.Video,
+                Content.Audio,
+                Content.Embed,
+                Content.Map,
+                Content.Button,
+                Content.Text,
+                Content.Gallery,
+                Content.Timeline,
+                Content.Sidecar,
+                Content.Code,
             ]
         ] = None,
         caption: Optional[str] = None,
@@ -813,32 +813,32 @@ class StoryMap(object):
         node_id = content.node if content is not None else "n-" + uuid.uuid4().hex[0:6]
 
         # Find instance of content and call correct method
-        if isinstance(content, content.Image):
+        if isinstance(content, Content.Image):
             content._add_image(caption, alt_text, display, self)
-        elif isinstance(content, content.Gallery):
+        elif isinstance(content, Content.Gallery):
             content._add_gallery(caption, alt_text, display, self)
-        elif isinstance(content, content.Video):
+        elif isinstance(content, Content.Video):
             content._add_video(caption, alt_text, display, self)
-        elif isinstance(content, content.Audio):
+        elif isinstance(content, Content.Audio):
             content._add_audio(caption, alt_text, display, self)
-        elif isinstance(content, content.Map):
+        elif isinstance(content, Content.Map):
             content._add_map(caption, alt_text, display, story=self)
-        elif isinstance(content, content.Embed):
+        elif isinstance(content, Content.Embed):
             content._add_link(caption, alt_text, display, self)
-        elif isinstance(content, content.Button):
+        elif isinstance(content, Content.Button):
             content._add_button(self)
-        elif isinstance(content, content.Text):
+        elif isinstance(content, Content.Text):
             content._add_text(self)
-        elif isinstance(content, content.Timeline):
+        elif isinstance(content, Content.Timeline):
             content._add_timeline(self)
-        elif isinstance(content, content.Sidecar):
+        elif isinstance(content, Content.Sidecar):
             content._add_sidecar(self)
-        elif isinstance(content, content.Swipe):
+        elif isinstance(content, Content.Swipe):
             content._add_swipe(caption, alt_text, display, self)
-        elif isinstance(content, content.Code):
+        elif isinstance(content, Content.Code):
             content._add_code(self)
         else:
-            content = content.Separator(story=self, node_id=node_id)
+            content = Content.Separator(story=self, node_id=node_id)
             content._add_separator(story=self)
 
         # Add to story children

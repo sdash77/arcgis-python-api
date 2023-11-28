@@ -5,7 +5,7 @@ from arcgis.auth.tools import LazyLoader
 import re
 
 arcgis = LazyLoader("arcgis")
-content = LazyLoader("arcgis.apps.storymap.story_content")
+Content = LazyLoader("arcgis.apps.storymap.story_content")
 storymap = LazyLoader("arcgis.apps.storymap.story")
 briefing = LazyLoader("arcgis.apps.storymap.briefing")
 json = LazyLoader("json")
@@ -55,7 +55,7 @@ def cover(
     type: str = None,
     summary: Optional[str] = None,
     by_line: Optional[str] = None,
-    media: Optional[Union[content.Image, content.Video]] = None,
+    media: Optional[Union[Content.Image, Content.Video]] = None,
 ):
     """
     A cover is the first slide/node.
@@ -92,9 +92,9 @@ def cover(
     # set the cover media
     if media is not None:
         if isinstance(media, str):
-            media = content.Image(media)
-        if not isinstance(media, content.Image) and not isinstance(
-            media, content.Video
+            media = Content.Image(media)
+        if not isinstance(media, Content.Image) and not isinstance(
+            media, Content.Video
         ):
             raise ValueError(
                 "Media must be an image or video object. This was not updated"
@@ -565,14 +565,14 @@ def _has_children(story, node):
     """
     node_class = _assign_node_class(story, node)
     if (
-        isinstance(node_class, content.Sidecar)
-        or isinstance(node_class, content.Gallery)
-        or isinstance(node_class, content.Timeline)
+        isinstance(node_class, Content.Sidecar)
+        or isinstance(node_class, Content.Gallery)
+        or isinstance(node_class, Content.Timeline)
     ):
         return story._properties["nodes"][node]["children"]
-    elif isinstance(node_class, content.Swipe):
+    elif isinstance(node_class, Content.Swipe):
         return list(story._properties["nodes"][node]["data"]["contents"].values())
-    elif isinstance(node_class, content.MapTour):
+    elif isinstance(node_class, Content.MapTour):
         mt = get(story, node)
         return mt._children
     elif isinstance(node_class, str):
@@ -715,45 +715,45 @@ def _assign_node_class(story, node_id):
     node_type = story._properties["nodes"][node_id]["type"]
     # Create an instance of this class using existing node properties
     if node_type == "separator":
-        node = content.Separator(story=story, node_id=node_id)
+        node = Content.Separator(story=story, node_id=node_id)
     elif node_type == "briefing-slide":
-        node = content.Slide(story=story, node_id=node_id)
+        node = Content.Slide(story=story, node_id=node_id)
     elif node_type == "image":
-        node = content.Image(story=story, node_id=node_id)
+        node = Content.Image(story=story, node_id=node_id)
     elif node_type == "video":
-        node = content.Video(story=story, node_id=node_id)
+        node = Content.Video(story=story, node_id=node_id)
     elif node_type == "audio":
-        node = content.Audio(story=story, node_id=node_id)
+        node = Content.Audio(story=story, node_id=node_id)
     elif node_type == "embed":
         # embed has subtype: video or link
         subtype = story._properties["nodes"][node_id]["data"]["embedType"]
         if subtype == "video":
-            node = content.Video(story=story, node_id=node_id)
+            node = Content.Video(story=story, node_id=node_id)
         else:
-            node = content.Embed(story=story, node_id=node_id)
+            node = Content.Embed(story=story, node_id=node_id)
     elif node_type == "webmap":
-        node = content.Map(story=story, node_id=node_id)
+        node = Content.Map(story=story, node_id=node_id)
     elif node_type == "text":
-        node = content.Text(story=story, node_id=node_id)
+        node = Content.Text(story=story, node_id=node_id)
     elif node_type == "button":
-        node = content.Button(story=story, node_id=node_id)
+        node = Content.Button(story=story, node_id=node_id)
     elif node_type == "swipe":
-        node = content.Swipe(story=story, node_id=node_id)
+        node = Content.Swipe(story=story, node_id=node_id)
     elif node_type == "gallery":
-        node = content.Gallery(story=story, node_id=node_id)
+        node = Content.Gallery(story=story, node_id=node_id)
     elif node_type == "timeline":
-        node = content.Timeline(story=story, node_id=node_id)
+        node = Content.Timeline(story=story, node_id=node_id)
     elif node_type == "tour":
-        node = content.MapTour(story=story, node_id=node_id)
+        node = Content.MapTour(story=story, node_id=node_id)
     elif node_type == "immersive":
         # immersive has subtype sidecar (more to add later)
         subtype = story._properties["nodes"][node_id]["data"]["type"]
         if subtype == "sidecar":
-            node = content.Sidecar(story=story, node_id=node_id)
+            node = Content.Sidecar(story=story, node_id=node_id)
         else:
             node = subtype
     elif node_type == "action-button":
-        node = content.MapAction(story=story, node_id=node_id)
+        node = Content.MapAction(story=story, node_id=node_id)
     else:
         # if not of type story content then just return name of type
         node = node_type.capitalize()
