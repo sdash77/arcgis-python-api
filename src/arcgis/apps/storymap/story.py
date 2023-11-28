@@ -836,13 +836,13 @@ class StoryMap(object):
         elif isinstance(content, Content.Swipe):
             content._add_swipe(caption, alt_text, display, self)
         elif isinstance(content, Content.Code):
-            content._add_code(self)
+            content._add_code(story=self)
         else:
             content = Content.Separator(story=self, node_id=node_id)
             content._add_separator(story=self)
 
         # Add to story children
-        utils._add_child(node_id=node_id, position=position)
+        utils._add_child(self, node_id=node_id, position=position)
         return node_id
 
     # ----------------------------------------------------------------------
@@ -895,7 +895,7 @@ class StoryMap(object):
             self._properties["nodes"][root_id]["children"].pop(position)
 
         # Add node to new position
-        utils._add_child(node_id, position)
+        utils._add_child(self, node_id, position)
 
     # ----------------------------------------------------------------------
     def save(
