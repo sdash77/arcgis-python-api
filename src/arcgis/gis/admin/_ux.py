@@ -6,6 +6,7 @@ import tempfile
 from enum import Enum
 import os
 import json
+import logging
 from typing import Any
 from arcgis._impl.common._deprecate import deprecated
 from arcgis.auth.tools import LazyLoader
@@ -14,6 +15,8 @@ from arcgis.gis.clone._ux import UXCloner
 
 _basemap_definitions = LazyLoader("arcgis.mapping._basemap_definitions")
 _arcgis_gis = LazyLoader("arcgis.gis")
+
+_log = logging.getLogger(__name__)
 
 
 class StockImage(Enum):
@@ -1872,6 +1875,40 @@ class MapSettings(object):
         self._gis.update_properties(
             {"basemapGalleryGroupQuery": group, "useVectorBasemaps": value}
         )
+
+    # ----------------------------------------------------------------------
+    @property
+    def use_3D_basemaps(self) -> bool:
+        """
+        Include Esri default 3D basemaps. The 3D basemaps can be used as a
+        reference in a web scene.
+
+        **This is only applicable to to ArcGIS Online**
+        """
+        if self._gis._is_arcgisonline:
+            return self._gis.properties.get("use3dBasemaps", False)
+        else:
+            _log.warning("This property only works with ArcGIS Online.")
+            return False
+
+    # ----------------------------------------------------------------------
+    @use_3D_basemaps.setter
+    def use_3D_basemaps(self, value: bool) -> bool:
+        """
+        Include Esri default 3D basemaps. The 3D basemaps can be used as a
+        reference in a web scene.
+
+        **This is only applicable to to ArcGIS Online**
+        """
+
+        if (
+            self._gis._is_arcgisonline
+            and self._gis.properties.get("use3dBasemaps", False) != value
+        ):
+            self._gis.update_properties({"use3dBasemaps": value})
+            assert self._gis.properties["use3dBasemaps"] == value
+        elif self._gis._is_arcgisonline == False:
+            _log.warning("This property only works with ArcGIS Online.")
 
     # ----------------------------------------------------------------------
     def update_basemap_gallery(self):
