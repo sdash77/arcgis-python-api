@@ -396,7 +396,7 @@ class SharingManager:
         
             # Usage example: Setting the sharing level to organization
             >>> from arcgis.gis import GIS
-            >>> from arcgis.gis._impl._content_manager.sharing import SharingLevel
+            >>> from arcgis.gis._impl._content_manager import SharingLevel
             
             >>> data_item = gis.content.search(query="Hurricanes 2022")
             >>> sharing_mgr = data_item.sharing
