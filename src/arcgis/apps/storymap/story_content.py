@@ -3948,7 +3948,7 @@ class Code:
 
             if isinstance(language, Language):
                 self._language = language.value
-            elif isinstance(language, str) and language in Language:
+            elif isinstance(language, str) and language in [e.value for e in Language]:
                 self._language = language
             else:
                 raise ValueError(
