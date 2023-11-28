@@ -188,8 +188,15 @@ class Image:
                 self._url = True
 
     # ----------------------------------------------------------------------
+    def __str__(self) -> str:
+        if self.caption:
+            return f"Image: {self.caption}"
+        else:
+            return "Image"
+
+    # ----------------------------------------------------------------------
     def __repr__(self) -> str:
-        return "Image"
+        return self.__str__()
 
     # ----------------------------------------------------------------------
     @property
@@ -516,11 +523,14 @@ class Video:
 
     # ----------------------------------------------------------------------
     def __str__(self) -> str:
-        return "Video"
+        if self.caption:
+            return f"Video: {self.caption}"
+        else:
+            return "Video"
 
     # ----------------------------------------------------------------------
     def __repr__(self) -> str:
-        return "Video"
+        return self.__str__()
 
     # ----------------------------------------------------------------------
     @property
@@ -822,11 +832,14 @@ class Audio:
 
     # ----------------------------------------------------------------------
     def __str__(self) -> str:
-        return "Audio"
+        if self.caption:
+            return f"Audio: {self.caption}"
+        else:
+            return "Audio"
 
     # ----------------------------------------------------------------------
     def __repr__(self) -> str:
-        return "Audio"
+        return self.__str__()
 
     # ----------------------------------------------------------------------
     @property
@@ -1070,11 +1083,11 @@ class Embed:
 
     # ----------------------------------------------------------------------
     def __str__(self) -> str:
-        return "Embed"
+        return f"Embed: {self.link}"
 
     # ----------------------------------------------------------------------
     def __repr__(self) -> str:
-        return "Embed"
+        return self.__str__()
 
     # ----------------------------------------------------------------------
     @property
@@ -1946,11 +1959,14 @@ class Text:
 
     # ----------------------------------------------------------------------
     def __str__(self) -> str:
-        return "Text"
+        if self.text:
+            return f"Text: {self._style}"
+        else:
+            return "Text"
 
     # ----------------------------------------------------------------------
     def __repr__(self) -> str:
-        return "Text"
+        return self.__str__()
 
     # ----------------------------------------------------------------------
     @property
@@ -2220,11 +2236,11 @@ class Button:
 
     # ----------------------------------------------------------------------
     def __str__(self) -> str:
-        return "Button"
+        return f"Button: {self.text}"
 
     # ----------------------------------------------------------------------
     def __repr__(self) -> str:
-        return "Button"
+        return self.__str__()
 
     # ----------------------------------------------------------------------
     @property
@@ -2363,7 +2379,7 @@ class Gallery:
 
     # ----------------------------------------------------------------------
     def __repr__(self) -> str:
-        return "Image Gallery"
+        return self.__str__()
 
     # ----------------------------------------------------------------------
     @property
@@ -2660,11 +2676,11 @@ class Swipe:
 
     # ----------------------------------------------------------------------
     def __str__(self) -> str:
-        return "Swipe"
+        return f"Swipe: {self._media_type}"
 
     # ----------------------------------------------------------------------
     def __repr__(self) -> str:
-        return "Swipe"
+        return self.__str__()
 
     # ----------------------------------------------------------------------
     @property
@@ -4085,7 +4101,7 @@ class Code:
 
             if isinstance(language, Language):
                 self._language = language.value
-            elif isinstance(language, str) and language in Language:
+            elif isinstance(language, str) and language in [e.value for e in Language]:
                 self._language = language
             else:
                 raise ValueError(
@@ -4113,11 +4129,11 @@ class Code:
 
     # ----------------------------------------------------------------------
     def __str__(self) -> str:
-        return "Code"
+        return f"Code: {self.language}"
 
     # ----------------------------------------------------------------------
     def __repr__(self) -> str:
-        return "Code"
+        return self.__str__()
 
     # ----------------------------------------------------------------------
     @property
@@ -4460,11 +4476,11 @@ class Slide:
 
     # ----------------------------------------------------------------------
     def __str__(self) -> str:
-        return "Briefing Slide"
+        return f"Briefing Slide: {self.layout}"
 
     # ----------------------------------------------------------------------
     def __repr__(self) -> str:
-        return "Briefing Slide"
+        return self.__str__()
 
     # ----------------------------------------------------------------------
     @property
@@ -4723,7 +4739,7 @@ class Block:
 
     # ----------------------------------------------------------------------
     def __repr__(self) -> str:
-        return "Block: " + str(self._index)
+        return self.__str__()
 
     # ----------------------------------------------------------------------
     @property

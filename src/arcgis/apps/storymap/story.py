@@ -2,6 +2,7 @@ from __future__ import annotations
 from typing import Optional, Union
 import uuid
 from enum import Enum
+from arcgis._impl.common._deprecate import deprecated
 from arcgis.auth.tools import LazyLoader
 import re
 import copy
@@ -335,6 +336,12 @@ class StoryMap(object):
         return self._properties
 
     # ----------------------------------------------------------------------
+    @deprecated(
+        deprecated_in="2.2.0",
+        removed_in="3.0.0",
+        current_version="2.3.0",
+        details="`nodes` property has been deprecated, use `content_list` property instead.",
+    )
     @property
     def nodes(self):
         """
@@ -410,6 +417,12 @@ class StoryMap(object):
             return None
 
     # ----------------------------------------------------------------------
+    @deprecated(
+        deprecated_in="2.2.0",
+        removed_in="3.0.0",
+        current_version="2.3.0",
+        details="`get` method has been deprecated, use `content_list` property instead.",
+    )
     def get(self, node: Optional[str] = None, type: Optional[str] = None):
         """
         Get node(s) by type or by their id. Using this function will help grab a specific node
@@ -606,7 +619,7 @@ class StoryMap(object):
         Credits are found at the end of the story and thus are always the last node.
 
         To create a credit, add the text that should be shown on each side of the divider.
-        Content represents the text seen on the left side and attribution is in line with content
+        content represents the text seen on the left side and attribution is in line with content
         on the right side of the divider. (i.e. 'content' | 'attribution')
 
         Adding ``content`` and ``attribution`` will add a new line to the credits and will not change previous
@@ -725,7 +738,7 @@ class StoryMap(object):
         position: Optional[int] = None,
     ):
         """
-        Use this method to add content to your StoryMap. Content can be of various class types and when
+        Use this method to add content to your StoryMap. content can be of various class types and when
         you add this content you can specify a caption, alt_text, display style, and the position
         at which it will be in your story.
         Not passing in any content means a separator will be added.
@@ -823,13 +836,13 @@ class StoryMap(object):
         elif isinstance(content, Content.Swipe):
             content._add_swipe(caption, alt_text, display, self)
         elif isinstance(content, Content.Code):
-            content._add_code(self)
+            content._add_code(story=self)
         else:
             content = Content.Separator(story=self, node_id=node_id)
             content._add_separator(story=self)
 
         # Add to story children
-        utils._add_child(node_id=node_id, position=position)
+        utils._add_child(self, node_id=node_id, position=position)
         return node_id
 
     # ----------------------------------------------------------------------
@@ -882,7 +895,7 @@ class StoryMap(object):
             self._properties["nodes"][root_id]["children"].pop(position)
 
         # Add node to new position
-        utils._add_child(node_id, position)
+        utils._add_child(self, node_id, position)
 
     # ----------------------------------------------------------------------
     def save(
@@ -940,7 +953,7 @@ class StoryMap(object):
         """
         # Check if item id exists
         # deletes the item
-        return utils.delete_briefing(self)
+        return utils.delete_item(self)
 
     # ----------------------------------------------------------------------
     def duplicate(self, title: Optional[str] = None):
