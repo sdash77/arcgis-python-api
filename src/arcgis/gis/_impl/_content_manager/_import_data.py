@@ -5,14 +5,17 @@ import os
 import pandas as pd
 import tempfile
 import shutil
+from arcgis.auth.tools import LazyLoader
 from arcgis._impl.common._utils import _date_handler
-from arcgis.gis import Item, ItemDependency
+
+
 from arcgis._impl.common._mixins import PropertyMap
 from arcgis._impl.common._isd import InsensitiveDict
 from arcgis.auth.tools import LazyLoader
 
 _tool_utils = LazyLoader("arcgis.features.geo._tools._utils")
 _common_utils = LazyLoader("arcgis._impl.common._utils")
+_arcgis_gis = LazyLoader("arcgis.gis")
 features = LazyLoader("arcgis.features")
 json = LazyLoader("json")
 
@@ -55,7 +58,11 @@ def _json_encode_params(postdata):
 def _create_file_item(gis, df, file_type, **kwargs):
     try:
         # File Type Dictionary
-        ftypes = {"File Geodatabase": "gdb", "Shapefile": "shp", "CSV": "csv"}
+        ftypes = {
+            "File Geodatabase": "gdb",
+            "Shapefile": "shp",
+            "CSV": "csv",
+        }
 
         # Pop out kwargs, establish params to be used throughout
         service_name = kwargs.pop("service_name", None)
@@ -190,7 +197,7 @@ def _add_item_dependency(
 ):
     if file_type.lower() == "csv":
         source_info = gis.content.analyze(item=file_item)["publishParameters"]
-        ItemDependency(fs_item).add("itemid", file_item.id)
+        _arcgis_gis.ItemDependency(fs_item).add("itemid", file_item.id)
         fs_item.tables[fl_index].append(
             item_id=file_item.id,
             upload_format=file_type.lower(),
@@ -205,7 +212,7 @@ def _add_item_dependency(
             file_type = "filegdb"
         else:
             file_type = "shapefile"
-        ItemDependency(fs_item).add("itemid", file_item.id)
+        _arcgis_gis.ItemDependency(fs_item).add("itemid", file_item.id)
         fs_item.layers[fl_index].append(item_id=file_item.id, upload_format=file_type)
     else:
         # When filegdb not supported through append, use featureCollection
@@ -258,7 +265,7 @@ def import_as_item(gis, df, **kwargs):
             raise ValueError(
                 "The provided feature service id cannot be found. Please check it is correct and try again."
             )
-        elif isinstance(fs_id, Item):
+        elif isinstance(fs_id, _arcgis_gis.Item):
             fs_id = fs_id.itemid
 
         # Index passed in for overwrite, None for insert
