@@ -1224,6 +1224,7 @@ class RMJob(GPJob):
     _item = None
     _gpjob = None
     _flight_details = None
+    _op = None
 
     # ----------------------------------------------------------------------
     def __init__(self, gpjob: GPJob, item: "Item" = None):
@@ -1286,6 +1287,7 @@ class RMJob(GPJob):
         """
         try:
             op = self._gpjob.result()
+            self._op = op
             self._update_flight_info()
             return op
         except Exception as e:
@@ -1339,6 +1341,78 @@ class RMJob(GPJob):
         :return: boolean
         """
         return self._gpjob.done()
+
+    # ----------------------------------------------------------------------
+    def _update_properties_items(self, properties, products):
+        properties_items = properties["items"]
+        if isinstance(properties_items, str):
+            properties_items = json.loads(properties_items)
+        existing_products = []
+        for dict_item in properties_items:
+            existing_products.append(dict_item["product"])
+        # Loop through the products generated in this run and add/update them
+        for product, itemid in products.items():
+            if product not in existing_products:
+                properties_items.append(
+                    {"product": product, "id": itemid, "created": True}
+                )
+            else:
+                index = existing_products.index(product)
+                properties_items[index] = {
+                    "product": product,
+                    "id": itemid,
+                    "created": True,
+                }
+        
+        return properties_items
+
+    # ----------------------------------------------------------------------
+    def _update_items(self, mission, item_name):
+        items = {}
+        if isinstance(self._item, dict):
+            for name, item in self._item.items():
+                parsed_item = self._parse_item(mission, item)
+                items[name] = parsed_item
+        else:
+            parsed_item = self._parse_item(mission, self._item)
+            items[item_name] = parsed_item
+
+        return items
+
+    # ----------------------------------------------------------------------
+    def _parse_item(self, mission, item):
+        
+        url = ""
+        itemid = ""
+        parsed_item = {}
+        try:
+            item_props = json.loads(item)
+        except:
+            # This exception is for processing dictionaries
+            # e.g., for scene layers from the reconstruct surface method
+            item_props = item
+
+        if "serviceProperties" in item_props.keys():
+            if "serviceUrl" in item_props["serviceProperties"].keys():
+                url = item_props["serviceProperties"]["serviceUrl"]
+            if "itemProperties" in item_props.keys():
+                if "itemId" in item_props["itemProperties"].keys():
+                    itemid = item_props["itemProperties"]["itemId"]
+        elif "itemId" in item_props.keys():
+            itemid = item_props["itemId"]
+            portal_item = mission._gis.content.get(itemid)
+            url = portal_item.url
+        elif "url" in item_props.keys():
+            url = item_props["url"]
+
+        parsed_item = {"itemId": itemid, "url": url}
+        
+        if not parsed_item["itemId"]:
+            parsed_item.pop("itemId")
+        if not parsed_item["url"]:
+            parsed_item.pop("url")
+
+        return parsed_item
 
     # ----------------------------------------------------------------------
     def _update_flight_info(self):
@@ -1418,42 +1492,67 @@ class RMJob(GPJob):
             properties = json.loads(resource["properties"])
 
             if self._item:
-                item = ""
-                url = ""
-                item_props = json.loads(self._item)
-                if "serviceProperties" in item_props.keys():
-                    if "serviceUrl" in item_props["serviceProperties"].keys():
-                        url = item_props["serviceProperties"]["serviceUrl"]
-                    if "itemProperties" in item_props.keys():
-                        if "itemId" in item_props["itemProperties"].keys():
-                            itemid = item_props["itemProperties"]["itemId"]
-                elif "itemId" in item_props.keys():
-                    itemid = item_props["itemId"]
-                    portal_item = mission._gis.content.get(itemid)
-                    url = portal_item.url
-                elif "url" in item_props.keys():
-                    url = item_props["url"]
+                # item = ""
+                # url = ""
+                # item_props = json.loads(self._item)
+                # if "serviceProperties" in item_props.keys():
+                #     if "serviceUrl" in item_props["serviceProperties"].keys():
+                #         url = item_props["serviceProperties"]["serviceUrl"]
+                #     if "itemProperties" in item_props.keys():
+                #         if "itemId" in item_props["itemProperties"].keys():
+                #             itemid = item_props["itemProperties"]["itemId"]
+                # elif "itemId" in item_props.keys():
+                #     itemid = item_props["itemId"]
+                #     portal_item = mission._gis.content.get(itemid)
+                #     url = portal_item.url
+                # elif "url" in item_props.keys():
+                #     url = item_props["url"]
 
-                mission_json["items"].update(
-                    {item_name: {"itemId": itemid, "url": url}}
-                )
+                # mission_json["items"].update(
+                #     {item_name: {"itemId": itemid, "url": url}}
+                # )
+                items = self._update_items(mission, item_name)
+                mission_json["items"].update(items)
 
                 properties = json.loads(resource["properties"])
-                properties_items = properties["items"]
-                products = []
-                for dict_item in properties_items:
-                    products.append(dict_item["product"])
-                if item_name not in products:
-                    properties_items.append(
-                        {"product": item_name, "id": itemid, "created": True}
-                    )
-                else:
-                    index = products.index(item_name)
-                    properties_items[index] = {
-                        "product": item_name,
-                        "id": itemid,
-                        "created": True,
-                    }
+                # properties_items = properties["items"]
+                # products = []
+                # for dict_item in properties_items:
+                #     products.append(dict_item["product"])
+                # if item_name not in products:
+                #     properties_items.append(
+                #         {"product": item_name, "id": itemid, "created": True}
+                #     )
+                # else:
+                #     index = products.index(item_name)
+                #     properties_items[index] = {
+                #         "product": item_name,
+                #         "id": itemid,
+                #         "created": True,
+                #     }
+
+                products = {}
+                for item in items:
+                    val = items[item]
+                    products[item] = val["itemId"]
+
+                properties_items = self._update_properties_items(properties, products)
+                properties.update({"items": properties_items})
+
+            # This part is to process the scene layer outputs since this is not returned
+            # as an item from the tool call (in _impl/tools.py) unlike the image service items
+            if item_name == "reconstructSurface":
+                items = {}
+                scene_layers = set(["mesh", "dsm_mesh", "point_cloud"])
+                for layer, val in self._op.items():
+                    if layer.lower() in scene_layers:
+                        parsed_item = self._parse_item(val)
+                        items[layer] = parsed_item
+
+                mission_json["items"].update(items)
+
+                properties = json.loads(resource["properties"])
+                properties_items = self._update_properties_items(properties, items)
                 properties.update({"items": properties_items})
 
             import tempfile, uuid, os

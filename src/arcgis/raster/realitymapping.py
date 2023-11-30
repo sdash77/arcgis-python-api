@@ -1877,8 +1877,6 @@ def reconstruct_surface(
 
                                                                                 - ULTRA - Input images will be used at their original (full) resolution.
                                                                                 - HIGH - Input images will be downsampled two times.
-                                                                                - MEDIUM - Input images will be downsampled four times.
-                                                                                - LOW - Input images will be downsampled eight times.
     -------------------------------------------------------------------------   ---------------------------------------------------------------------------
     area_of_interest                                                            Optional :class:`~arcgis.features.FeatureLayer` or String. The area of interest that will
                                                                                 be used to select images for processing. The area of interest can be computed automatically

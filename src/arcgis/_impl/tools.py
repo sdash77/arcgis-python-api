@@ -9253,8 +9253,13 @@ class _OrthoRealityMappingTools(BaseAnalytics):
             future=True,
         )
 
+        items = {}
+        if output_dsm_name is not None:
+            items["dsm"] = json.loads(output_dsm_raster)
+        if output_true_ortho_name is not None:
+            items["true_ortho"] = json.loads(output_true_ortho_raster)
         final_job = None
-        final_job = RMJob(job)
+        final_job = RMJob(job, item=items)
         final_job._flight_details = flight_json_details
         if future:
             return final_job
