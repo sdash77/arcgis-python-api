@@ -76,6 +76,7 @@ _cm_helper = LazyLoader("arcgis.gis._impl._content_manager._import_data")
 _sharing = LazyLoader("arcgis.gis._impl._content_manager.sharing")
 _log = logging.getLogger(__name__)
 from arcgis.gis._impl._dataclasses._viewdc import JoinType
+from arcgis.auth.tools._util import create_base_url as _create_base_url
 
 
 class Error(Exception):
@@ -529,7 +530,7 @@ class GIS(object):
                 raise Exception(
                     "key_file parameter is required along with cert_file when using PKI authentication."
                 )
-
+        self.resturl = _create_base_url(url)
         self._url = url
         self._username = username
         self._password = password
@@ -1372,6 +1373,9 @@ class GIS(object):
 
     @property
     def _public_rest_url(self):
+        if self.url.find("/sharing/rest/") > -1:
+            return self.url
+
         return self.url + "/sharing/rest/"
 
     # ----------------------------------------------------------------------
