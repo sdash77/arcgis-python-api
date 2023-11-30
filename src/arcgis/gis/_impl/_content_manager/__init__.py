@@ -13,5 +13,5 @@ __all__ = [
     "Folder",
     "SharingGroupManager",
     "SharingManager",
-    "SharingLevel"
+    "SharingLevel",
 ]

@@ -35,7 +35,7 @@ class SharingGroupManager:
     """
     This class controls the :class:`~arcgis.gis.Group` sharing for a specific
     :class:`~arcgis.gis.Item`.
-    
+
     ================  ===============================================================
     **Parameter**      **Description**
     ----------------  ---------------------------------------------------------------
@@ -43,27 +43,27 @@ class SharingGroupManager:
                       :class:`~arcgis.gis._impl._content_manager.SharingManager`
                       object for a specific :class:`~arcgis.gis.Item`.
     ================  ===============================================================
-    
+
     Objects of this class are not meant to be intialized
     directly, but rather accessed through the
     :attr:`~arcgis.gis._impl._content_manager.SharingManager.groups`
     property of an *item's* *SharingManager*.
-    
+
     .. code-block:: python
-    
+
         # Usage example:
         >>> from arcgis.gis import GIS
         >>> gis = GIS(profile="your_organization_profile")
-        
+
         >>> org_item = gis.content.get("<item_id>")
         >>> item_sharing_mgr = org_item.sharing
         >>> item_grp_sharing_mgr = item_sharing_mgr.groups
         >>> item_grp_sharing_mgr
-        
+
         <<item_id> SharingGroupManager>
-        
+
         >>> type(item_grp_sharing_mgr)
-        
+
         <class 'arcgis.gis._impl._content_manager.sharing.api.SharingGroupManager'>
     """
 
@@ -92,7 +92,7 @@ class SharingGroupManager:
         """
         Shares an :class:`~arcgis.gis.Item` with the :class:`~arcgis.gis.Group`
         entered as the *group* argument.
-        
+
         ================  ===============================================================
         **Parameter**      **Description**
         ----------------  ---------------------------------------------------------------
@@ -102,24 +102,24 @@ class SharingGroupManager:
 
         :returns:
             Boolean value indicating the status of the operation.
-         
+
         .. code-block:: python
-    
+
             # Usage example:
             >>> from arcgis.gis import GIS
             >>> gis = GIS(profile="your_organization_profile")
-            
+
             >>> org_item = gis.content.get("<item_id>")
             >>> org_group = gis.groups.search("Storm Data Group")[0]
-            
+
             >>> item_sharing_mgr = org_item.sharing
             >>> item_grp_sharing_mgr = item_sharing_mgr.groups
             >>> item_grp_sharing_mgr.list()
             []
-            
-            >>> item_grp_sharing_mgr.add(group=org_group)    
+
+            >>> item_grp_sharing_mgr.add(group=org_group)
             True
-            
+
             >>> item_grp_sharing_mgr.list()
             [<Group title:"Storm Data Group" owner:web_gis_user1>]
         """
@@ -144,14 +144,14 @@ class SharingGroupManager:
         """Removes the :class:`item <arcgis.gis.Item>` from the list of
         *items* shared with the :class:`~arcgis.gis.Group` entered as the
         *group* argument.
-        
+
         ================  ===============================================================
         **Parameter**      **Description**
         ----------------  ---------------------------------------------------------------
         group             Required :class:`~arcgis.gis.Group` object with which the
                           *item* will no longer be shared.
         ================  ===============================================================
-        
+
         :returns:
             Boolean value indicating the status of the operation.
         """
@@ -201,7 +201,7 @@ class SharingGroupManager:
 class SharingManager:
     """
     Manages the sharing operations for an :class:`~arcgis.gis.Item`.
-    
+
     ================  ===============================================================
     **Parameter**      **Description**
     ----------------  ---------------------------------------------------------------
@@ -209,24 +209,24 @@ class SharingManager:
     ----------------  ---------------------------------------------------------------
     gis               Optional GIS. The GIS object to the Item.
     ================  ===============================================================
-    
+
     This class is not meant to be initialized directly. An instance of a
     *SharingManager* is available through the :attr:`~arcgis.gis.Item.sharing`
     property of an *item*.
-    
+
     .. code-block:: python
-    
+
         # Usage example:
         >>> gis = GIS(profile="your_organization_profile", verify_cert=False)
-    
+
         >>> test_item = gis.content.get("4976ad...b9583e")
         >>> sharing_mgr = test_item.sharing
-        
+
         < "4976ad...b9583e" SharingManager >
-        
+
         >>> type(sharing_mgr)
-        
-        <class 'arcgis.gis._impl._content_manager.sharing.api.SharingManager'>   
+
+        <class 'arcgis.gis._impl._content_manager.sharing.api.SharingManager'>
     """
 
     __slots__ = ("_item", "_gis", "_session", "_sgm")
@@ -373,7 +373,7 @@ class SharingManager:
         :class:`~arcgis.gis.Item` from which the
         :class:`~arcgis.gis._impl._content_manager.SharingManager` was
         initialized
-        
+
         :returns:
             :class:`~arcgis.gis._impl._content_manager.SharingGroupManager`
             object
@@ -391,26 +391,26 @@ class SharingManager:
         :returns:
             :class:`~arcgis.gis._impl._content_manager.SharingLevel`
             enumeration instance.
-            
+
         .. code-block:: python
-        
+
             # Usage example: Setting the sharing level to organization
             >>> from arcgis.gis import GIS
             >>> from arcgis.gis._impl._content_manager import SharingLevel
-            
+
             >>> data_item = gis.content.search(query="Hurricanes 2022")
             >>> sharing_mgr = data_item.sharing
             >>> sharing_mgr.sharing_level
-            
+
             <SharingLevel.PRIVATE: 'PRIVATE'>
-            
+
             >>> sharing_mgr.sharing_level = SharingLevel.ORG
-            
+
             >>> sharing_mgr.sharing_level
             <SharingLevel.ORG: 'ORGANIZATION'>
-            
+
             >>> type(sharing_mgr.sharing_level)
-            <enum 'SharingLevel'>                              
+            <enum 'SharingLevel'>
         """
         return self.shared_with["level"]
 
@@ -444,7 +444,7 @@ class SharingManager:
         :class:`groups <arcgis.gis.Group>` and the sharing level
         of the :class:`~arcgis.gis.Item`. An *item* can be private to its owner,
         or shared in one or more of the following ways:
-        
+
         * to a specified list of groups
         * to all members in the organization
         * to everyone (including anonymous users), aka publicly
@@ -453,15 +453,15 @@ class SharingManager:
             dict[str,Any]. A dictionary describing the sharing level.
 
         .. code-block:: python
-        
+
             # Usage example: Item only visible to the owner.
-            
+
             >>> from arcgis.gis import GIS
             >>> gis = GIS(profile="your_organization_profile")
-            
+
             >>> data_item = gis.content.get("269029...2c482e")
             >>> data_item.sharing.shared_with
-            
+
             {'groups': [], 'level': <SharingLevel.PRIVATE: 'PRIVATE'>}
 
         """
