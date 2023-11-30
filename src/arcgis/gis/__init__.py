@@ -9089,6 +9089,33 @@ class CategorySchemaManager(object):
         return
 
     # ----------------------------------------------------------------------
+    @property
+    def schema_paths(self):
+        """"""
+        schema = self.schema
+        # Ensure top most category is named "Categories"
+        schema[0]["title"] = "Categories"
+        paths = self._generate_paths(schema)
+        modified_paths = [f"/{path}" for path in paths]
+        return modified_paths
+
+    def _generate_paths(self, category_schema, current_path="", paths=[]):
+        """
+        Recursively generates file paths from the category schema.
+        """
+        for category in category_schema:
+            title = category["title"]
+            new_path = f"{current_path}\{title}" if current_path else title
+            paths.append(
+                new_path.replace("\\", "/")
+            )  # Replace backslashes with forward slashes
+
+            if "categories" in category:
+                self._generate_paths(category["categories"], new_path, paths)
+
+        return paths
+
+    # ----------------------------------------------------------------------
     def delete(self):
         """
         The ``delete`` function allows group owner or managers to remove the
