@@ -7,7 +7,7 @@ import copy
 
 arcgis = LazyLoader("arcgis")
 Content = LazyLoader("arcgis.apps.storymap.story_content")
-StoryMap = LazyLoader("arcgis.apps.storymap.story")
+storymap = LazyLoader("arcgis.apps.storymap.story")
 json = LazyLoader("json")
 time = LazyLoader("time")
 utils = LazyLoader("arcgis.apps.storymap._utils")
@@ -342,7 +342,7 @@ class Briefing(object):
         return True
 
     # ----------------------------------------------------------------------
-    def theme(self, theme: Union[StoryMap.Themes, str] = StoryMap.Themes.SUMMIT):
+    def theme(self, theme: Union[storymap.Themes, str] = storymap.Themes.SUMMIT):
         """
         Each briefing has a theme node in its resources. This method can be used to change the theme.
         To add a custom theme to your story, pass in the item_id for the item of type Story Map Theme.
@@ -374,7 +374,7 @@ class Briefing(object):
         position: Optional[int] = None,
     ):
         """
-        Use this method to add content to your StoryMap. Content can be of various class types and when
+        Use this method to add content to your StoryMap. content can be of various class types and when
         you add this content you can specify a caption, alt_text, display style, and the position
         at which it will be in your story.
         Not passing in any content means a separator will be added.
@@ -514,7 +514,7 @@ class Briefing(object):
         Deletes the briefing item.
         """
         # deletes the item
-        return utils.delete_briefing(self)
+        return utils.delete_item(self)
 
     # ----------------------------------------------------------------------
     def duplicate(self, title: Optional[str] = None):
@@ -529,7 +529,7 @@ class Briefing(object):
             Can be used with ArcGIS Online or with ArcGIS Enterprise starting 10.8.1.
 
         .. note::
-            To duplicate into another organization, use the :func:`~arcgis.gis.ContentManager.clone_items` method.
+            To duplicate into another organization, use the :func:`~arcgis.gis.contentManager.clone_items` method.
 
         ===============     ====================================================================
         **Parameter**        **Description**
