@@ -9255,10 +9255,11 @@ class _OrthoRealityMappingTools(BaseAnalytics):
 
         items = {}
         if output_dsm_name is not None:
-            items["dsm"] = json.loads(output_dsm_raster)
+            items["DSM"] = json.loads(output_dsm_raster)
         if output_true_ortho_name is not None:
-            items["true_ortho"] = json.loads(output_true_ortho_raster)
+            items["True_Ortho"] = json.loads(output_true_ortho_raster)
         final_job = None
+        print(f"passing items: {items}")
         final_job = RMJob(job, item=items)
         final_job._flight_details = flight_json_details
         if future:

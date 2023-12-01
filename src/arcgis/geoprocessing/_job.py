@@ -1345,22 +1345,29 @@ class RMJob(GPJob):
     # ----------------------------------------------------------------------
     def _update_properties_items(self, properties, products):
         properties_items = properties["items"]
+        
         if isinstance(properties_items, str):
             properties_items = json.loads(properties_items)
+        
         existing_products = []
         for dict_item in properties_items:
             existing_products.append(dict_item["product"])
+        
         # Loop through the products generated in this run and add/update them
         for product, itemid in products.items():
+            id_or_url = "id"
+            if "http" in itemid:
+                id_or_url = "url"
+            
             if product not in existing_products:
                 properties_items.append(
-                    {"product": product, "id": itemid, "created": True}
+                    {"product": product, id_or_url: itemid, "created": True}
                 )
             else:
                 index = existing_products.index(product)
                 properties_items[index] = {
                     "product": product,
-                    "id": itemid,
+                    id_or_url: itemid,
                     "created": True,
                 }
         
@@ -1546,13 +1553,18 @@ class RMJob(GPJob):
                 scene_layers = set(["mesh", "dsm_mesh", "point_cloud"])
                 for layer, val in self._op.items():
                     if layer.lower() in scene_layers:
-                        parsed_item = self._parse_item(val)
+                        parsed_item = self._parse_item(mission, val)
                         items[layer] = parsed_item
 
                 mission_json["items"].update(items)
 
+                products = {}
+                for item in items:
+                    val = items[item]
+                    products[item] = val["url"]
+
                 properties = json.loads(resource["properties"])
-                properties_items = self._update_properties_items(properties, items)
+                properties_items = self._update_properties_items(properties, products)
                 properties.update({"items": properties_items})
 
             import tempfile, uuid, os
