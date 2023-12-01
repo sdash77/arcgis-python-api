@@ -323,7 +323,7 @@ class LogManager(BaseServer):
                 else:
                     csvwriter = csv.writer(f)
                 for message in logs["logMessages"]:
-                    if hasKeys is False:
+                    if hasKeys == False:
                         csvwriter.writerow(list(message.keys()))
                         hasKeys = True
                     csvwriter.writerow(list(message.values()))
