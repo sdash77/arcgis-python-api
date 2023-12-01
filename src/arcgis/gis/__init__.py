@@ -9091,10 +9091,11 @@ class CategorySchemaManager(object):
     # ----------------------------------------------------------------------
     @property
     def schema_paths(self):
-        """"""
+        """
+        See the category paths that can be used to assign to an item.
+        If the category schema is empty, an empty list is returned.
+        """
         schema = self.schema
-        # Ensure top most category is named "Categories"
-        schema[0]["title"] = "Categories"
         paths = self._generate_paths(schema)
         modified_paths = [f"/{path}" for path in paths]
         return modified_paths
