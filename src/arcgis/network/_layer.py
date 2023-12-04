@@ -12,6 +12,8 @@ from arcgis.features import Feature, FeatureSet
 from arcgis.features import FeatureLayer, Table
 from arcgis.network import _utils
 from arcgis._impl.common._utils import _validate_url
+from dataclasses import dataclass
+from enum import Enum
 
 try:
     import pandas as pd
@@ -57,7 +59,6 @@ def _handle_spatial_inputs(data, do_not_locate=True, has_z=False, where=None):
         return template
     elif isinstance(data, (FeatureLayer, Table)):
         from urllib.parse import quote
-        import json
 
         query = data.filter
         url = data._url
@@ -75,7 +76,6 @@ def _handle_spatial_inputs(data, do_not_locate=True, has_z=False, where=None):
         return template
     else:
         return data
-    return data
 
 
 ###########################################################################
@@ -123,7 +123,7 @@ class NAJob(object):
         """prints finished method"""
         jobid = str(self).replace("<", "").replace(">", "")
         try:
-            res = future.result()
+            future.result()
             infomsg = "{jobid} finished successfully.".format(jobid=jobid)
             _log.info(infomsg)
             print(infomsg)
@@ -229,7 +229,7 @@ class NetworkLayer(Layer):
         tp = concurrent.futures.ThreadPoolExecutor(1)
         try:
             future = tp.submit(fn=fn, **inputs)
-        except:
+        except Exception:
             future = tp.submit(fn, **inputs)
         tp.shutdown(False)
         return future
@@ -244,6 +244,47 @@ class NetworkLayer(Layer):
             path=url,
             params=params,
         )
+
+
+###########################################################################
+class ToleranceUnits(Enum):
+    centimeters = "esriCentimeters"
+    decimaldegrees = "esriDecimalDegrees"
+    decimeters = "esriDecimeters"
+    feet = "esriFeet"
+    inches = "esriInches"
+    intFeet = "esriIntFeet"
+    intInches = "esriIntInches"
+    intMiles = "esriIntMiles"
+    intNauticalMiles = "esriIntNauticalMiles"
+    intYards = "esriIntYards"
+    kilometers = "esriKilometers"
+    meters = "esriMeters"
+    miles = "esriMiles"
+    millimeters = "esriMillimeters"
+    nauticalMiles = "esriNauticalMiles"
+    yards = "esriYards"
+
+
+@dataclass
+class LocateSettings:
+    """
+    Parameters available for the locate settings dictionary that can be
+    passed to the solve operation.
+    """
+
+    tolerance: float
+    tolerance_units: str | ToleranceUnits
+    allow_auto_relocate: bool
+    sources: list[dict[str, Any]] | None
+
+    def to_dict(self):
+        return {
+            "tolerance": self.tolerance,
+            "toleranceUnits": self.tolerance_units.value,
+            "allowAutoRelocate": self.allow_auto_relocate,
+            "sources": self.sources,
+        }
 
 
 ###########################################################################
@@ -299,6 +340,8 @@ class RouteLayer(NetworkLayer):
         geometry_precision: Optional[int] = None,
         geometry_precision_z: Optional[int] = None,
         geometry_precision_m: Optional[int] = None,
+        locate_settings: Optional[dict] = None,
+        return_empty_results: Optional[bool] = False,
     ):
         """
         The solve operation is performed on a network layer resource.
@@ -472,17 +515,51 @@ class RouteLayer(NetworkLayer):
                                                 attribute values on stops are specified in coordinated universal time (UTC)
                                                 or geographically local time.
         -----------------------------------     --------------------------------------------------------------------
-        return_traversed_edges                  Optional boolean. Specify whether traversed edges will be returned by the service.
+        return_traversed_edges                  Optional boolean. Specify whether traversed edges will be returned
+                                                by the service.
         -----------------------------------     --------------------------------------------------------------------
-        return_traversed_junctions              Optional boolean. Specify whether traversed junctions will be returned by the service.
+        return_traversed_junctions              Optional boolean. Specify whether traversed junctions will be returned
+                                                by the service.
         -----------------------------------     --------------------------------------------------------------------
-        return_traversed_turns                  Optional boolean. Specify whether traversed turns will be returned by the service.
+        return_traversed_turns                  Optional boolean. Specify whether traversed turns will be returned
+                                                by the service.
         -----------------------------------     --------------------------------------------------------------------
-        geometry_precision                      Optional Integer. Use this parameter to specify the number of decimal places in the response geometries returned by solve operation. This applies to x/y values only (not m- or z-values).
+        geometry_precision                      Optional Integer. Use this parameter to specify the number of decimal
+                                                places in the response geometries returned by solve operation. This
+                                                applies to x/y values only (not m- or z-values).
         -----------------------------------     --------------------------------------------------------------------
-        geometry_precision_z                    Optional Integer. Use this parameter specify the number of decimal places in the response geometries returned by solve operation. This applies to z-value only.
+        geometry_precision_z                    Optional Integer. Use this parameter specify the number of decimal places
+                                                in the response geometries returned by solve operation. This applies to
+                                                z-value only.
         -----------------------------------     --------------------------------------------------------------------
-        geometry_precision_m                    Optional Integer. Use this parameter to specify the number of decimal places in the response geometries returned by solve operation. This applies to m-value only.
+        geometry_precision_m                    Optional Integer. Use this parameter to specify the number of decimal
+                                                places in the response geometries returned by solve operation.
+                                                This applies to m-value only.
+        -----------------------------------     --------------------------------------------------------------------
+        locate_settings                         Optional dictionary containing additional input location settings.
+                                                Use this parameter to specify settings that affect how inputs are
+                                                located, such as the maximum search distance to use when locating the
+                                                inputs on the network or the network sources being used for locating.
+                                                To restrict locating on a portion of the source, you can specify a where
+                                                clause for a source.
+
+                                                To create the dictionary of parameters that can be assigned to the
+                                                'default', 'facilities', 'incidents', 'barriers', 'polylineBarriers',
+                                                or 'polygonBarriers' keys, use the
+                                                :py:class:`~arcgis.network.LocateSettings` class. For example, to
+                                                specify a maximum search distance of 5000 meters for locating the
+                                                facilities, use the following code:
+
+                                                .. code-block:: python
+
+                                                    from arcgis.network import LocateSettings
+                                                    locate_settings = LocateSettings(tolerance=5000, tolerance_units="esriMeters")
+                                                    result = route_layer.solve(stops=stops, locate_settings={"facilities": locate_settings.to_dict()})
+
+        -----------------------------------     --------------------------------------------------------------------
+        return_empty_results                    Optional boolean. If True, the service will return empty results
+                                                instead of the error property when the request fails. The default
+                                                is False.
         ===================================     ====================================================================
 
 
@@ -539,92 +616,96 @@ class RouteLayer(NetworkLayer):
         params["stops"] = stops
         if directions_output_type is None:
             directions_output_type = "esriDOTInstructionsOnly"
-        if not barriers is None:
+        if barriers is not None:
             params["barriers"] = _handle_spatial_inputs(data=barriers)
-        if not polyline_barriers is None:
+        if polyline_barriers is not None:
             params["polylineBarriers"] = _handle_spatial_inputs(data=polyline_barriers)
-        if not polygon_barriers is None:
+        if polygon_barriers is not None:
             params["polygonBarriers"] = _handle_spatial_inputs(data=polygon_barriers)
-        if not travel_mode is None:
+        if travel_mode is not None:
             params["travelMode"] = travel_mode
-        if not attribute_parameter_values is None:
+        if attribute_parameter_values is not None:
             params["attributeParameterValues"] = attribute_parameter_values
-        if not return_directions is None:
+        if return_directions is not None:
             params["returnDirections"] = return_directions
-        if not return_routes is None:
+        if return_routes is not None:
             params["returnRoutes"] = return_routes
-        if not return_stops is None:
+        if return_stops is not None:
             params["returnStops"] = return_stops
-        if not return_barriers is None:
+        if return_barriers is not None:
             params["returnBarriers"] = return_barriers
-        if not return_polyline_barriers is None:
+        if return_polyline_barriers is not None:
             params["returnPolylineBarriers"] = return_polyline_barriers
-        if not return_polygon_barriers is None:
+        if return_polygon_barriers is not None:
             params["returnPolygonBarriers"] = return_polygon_barriers
-        if not out_sr is None:
+        if out_sr is not None:
             params["outSR"] = out_sr
-        if not ignore_invalid_locations is None:
+        if ignore_invalid_locations is not None:
             params["ignoreInvalidLocations"] = ignore_invalid_locations
-        if not output_lines is None:
+        if output_lines is not None:
             params["outputLines"] = output_lines
-        if not find_best_sequence is None:
+        if find_best_sequence is not None:
             params["findBestSequence"] = find_best_sequence
-        if not preserve_first_stop is None:
+        if preserve_first_stop is not None:
             params["preserveFirstStop"] = preserve_first_stop
-        if not preserve_last_stop is None:
+        if preserve_last_stop is not None:
             params["preserveLastStop"] = preserve_last_stop
-        if not use_time_windows is None:
+        if use_time_windows is not None:
             params["useTimeWindows"] = use_time_windows
-        if not time_windows_are_utc is None:
+        if time_windows_are_utc is not None:
             params["timeWindowsAreUTC"] = time_windows_are_utc
-        if not start_time is None:
+        if start_time is not None:
             if isinstance(start_time, datetime.datetime):
                 start_time = f"{start_time.timestamp() * 1000}"
             params["startTime"] = start_time
-        if not start_time_is_utc is None:
+        if start_time_is_utc is not None:
             params["startTimeIsUTC"] = start_time_is_utc
-        if not accumulate_attribute_names is None:
+        if accumulate_attribute_names is not None:
             params["accumulateAttributeNames"] = accumulate_attribute_names
-        if not impedance_attribute_name is None:
+        if impedance_attribute_name is not None:
             params["impedanceAttributeName"] = impedance_attribute_name
-        if not restriction_attribute_names is None:
+        if restriction_attribute_names is not None:
             params["restrictionAttributeNames"] = restriction_attribute_names
-        if not restrict_u_turns is None:
+        if restrict_u_turns is not None:
             params["restrictUTurns"] = restrict_u_turns
-        if not use_hierarchy is None:
+        if use_hierarchy is not None:
             params["useHierarchy"] = use_hierarchy
-        if not directions_language is None:
+        if directions_language is not None:
             params["directionsLanguage"] = directions_language
-        if not directions_output_type is None:
+        if directions_output_type is not None:
             params["directionsOutputType"] = directions_output_type
-        if not directions_style_name is None:
+        if directions_style_name is not None:
             params["directionsStyleName"] = directions_style_name
-        if not directions_length_units is None:
+        if directions_length_units is not None:
             params["directionsLengthUnits"] = directions_length_units
-        if not directions_time_attribute_name is None:
+        if directions_time_attribute_name is not None:
             params["directionsTimeAttributeName"] = directions_time_attribute_name
-        if not output_geometry_precision is None:
+        if output_geometry_precision is not None:
             params["outputGeometryPrecision"] = output_geometry_precision
-        if not output_geometry_precision_units is None:
+        if output_geometry_precision_units is not None:
             params["outputGeometryPrecisionUnits"] = output_geometry_precision_units
-        if not return_z is None:
+        if return_z is not None:
             params["returnZ"] = return_z
-        if not overrides is None:
+        if overrides is not None:
             params["overrides"] = overrides
-        if not preserve_objectid is None:
+        if preserve_objectid is not None:
             params["preserveObjectID"] = preserve_objectid
-        if not geometry_precision is None:
+        if geometry_precision is not None:
             params["geometryPrecision"] = geometry_precision
-        if not geometry_precision_z is None:
+        if geometry_precision_z is not None:
             params["geometryPrecisionZ"] = geometry_precision_z
-        if not geometry_precision_m is None:
+        if geometry_precision_m is not None:
             params["geometryPrecisionM"] = geometry_precision_m
-        if not return_traversed_edges is None:
+        if return_traversed_edges is not None:
             params["returnTraversedEdges"] = return_traversed_edges
-        if not return_traversed_junctions is None:
+        if return_traversed_junctions is not None:
             params["returnTraversedJunctions"] = return_traversed_junctions
-        if not return_traversed_turns is None:
+        if return_traversed_turns is not None:
             params["returnTraversedTurns"] = return_traversed_turns
+        if locate_settings is not None:
+            params["locateSettings"] = locate_settings
+        if return_empty_results is not None:
+            params["returnEmptyRoutes"] = return_empty_results
 
         if future:
             f = self._run_async(
@@ -686,6 +767,9 @@ class ServiceAreaLayer(NetworkLayer):
         geometry_precision: Optional[int] = None,
         geometry_precision_z: Optional[int] = None,
         geometry_precision_m: Optional[int] = None,
+        locate_settings: Optional[dict[str, Any]] = None,
+        return_empty_results: Optional[bool] = False,
+        include_source_information_on_lines: Optional[bool] = True,
     ):
         """The solve service area operation is performed on a network layer
         resource of type service area (layerType is esriNAServerServiceArea).
@@ -888,6 +972,39 @@ class ServiceAreaLayer(NetworkLayer):
         geometry_precision_m                    Optional Integer. Use this parameter to specify the number of
                                                 decimal places in the response geometries returned by solve operation.
                                                 This applies to m values only.
+        -----------------------------------     --------------------------------------------------------------------
+        locate_settings                         Optional dictionary containing additional input location settings.
+                                                Use this parameter to specify settings that affect how inputs are located,
+                                                such as the maximum search distance to use when locating the inputs on the
+                                                network or the network sources being used for locating. To restrict locating
+                                                on a portion of the source, you can specify a where clause for a source.
+
+                                                To create the dictionary of parameters that can be assigned to the 'default',
+                                                'facilities', 'incidents', 'barriers', 'polylineBarriers', or 'polygonBarriers'
+                                                keys, use the :py:class:`~arcgis.network.LocateSettings` class. For example,
+                                                to specify a maximum search distance of 5000 meters for locating the facilities,
+                                                use the following code:
+
+                                                .. code-block:: python
+
+                                                    from arcgis.network import LocateSettings
+                                                    locate_settings = LocateSettings(tolerance=5000, tolerance_units="esriMeters")
+                                                    result = route_layer.solve(stops=stops, locate_settings={"facilities": locate_settings.to_dict()})
+        -----------------------------------     --------------------------------------------------------------------
+        return_empty_results                    Optional boolean. If True, the service will return empty results instead
+                                                of the error property when the request fails. The default is False.
+        -----------------------------------     --------------------------------------------------------------------
+        include_source_information_on_lines     Optional boolean. Specify whether the service will include network source
+                                                fields on the output `saPolylines`. Source fields on `saPolylines` are `SourceID`,
+                                                `SourceOID`, `FromPosition` and `ToPosition`.
+
+                                                * true—The `saPolylines` property in the JSON response will include network source fields.
+                                                * false—The `saPolylines` property in the JSON response will not include network source fields.
+                                                The default value is true.
+
+                                                Setting this parameter has no effect if `output_lines` is set to `esriNAOutputLineNone`.
+                                                You can set this to false if you don't need network source fields on `saPolylines`
+                                                and this will reduce the response size.
         ===================================     ====================================================================
 
 
@@ -916,86 +1033,94 @@ class ServiceAreaLayer(NetworkLayer):
                 )
                 params["travel_mode"] = travel_mode
 
-        if not barriers is None:
+        if barriers is not None:
             params["barriers"] = _handle_spatial_inputs(barriers)
-        if not polyline_barriers is None:
+        if polyline_barriers is not None:
             params["polylineBarriers"] = _handle_spatial_inputs(polyline_barriers)
-        if not polygon_barriers is None:
+        if polygon_barriers is not None:
             params["polygonBarriers"] = _handle_spatial_inputs(polygon_barriers)
-        if not travel_mode is None:
+        if travel_mode is not None:
             params["travelMode"] = travel_mode
-        if not attribute_parameter_values is None:
+        if attribute_parameter_values is not None:
             params["attributeParameterValues"] = attribute_parameter_values
-        if not default_breaks is None:
+        if default_breaks is not None:
             params["defaultBreaks"] = default_breaks
-        if not exclude_sources_from_polygons is None:
+        if exclude_sources_from_polygons is not None:
             params["excludeSourcesFromPolygons"] = exclude_sources_from_polygons
-        if not merge_similar_polygon_ranges is None:
+        if merge_similar_polygon_ranges is not None:
             params["mergeSimilarPolygonRanges"] = merge_similar_polygon_ranges
-        if not output_lines is None:
+        if output_lines is not None:
             params["outputLines"] = output_lines
-        if not output_polygons is None:
+        if output_polygons is not None:
             params["outputPolygons"] = output_polygons
-        if not overlap_lines is None:
+        if overlap_lines is not None:
             params["overlapLines"] = overlap_lines
-        if not overlap_polygons is None:
+        if overlap_polygons is not None:
             params["overlapPolygons"] = overlap_polygons
-        if not split_lines_at_breaks is None:
+        if split_lines_at_breaks is not None:
             params["splitLinesAtBreaks"] = split_lines_at_breaks
-        if not split_polygons_at_breaks is None:
+        if split_polygons_at_breaks is not None:
             params["splitPolygonsAtBreaks"] = split_polygons_at_breaks
-        if not trim_outer_polygon is None:
+        if trim_outer_polygon is not None:
             params["trimOuterPolygon"] = trim_outer_polygon
-        if not trim_polygon_distance is None:
+        if trim_polygon_distance is not None:
             params["trimPolygonDistance"] = trim_polygon_distance
-        if not trim_polygon_distance_units is None:
+        if trim_polygon_distance_units is not None:
             params["trimPolygonDistanceUnits"] = trim_polygon_distance_units
-        if not return_facilities is None:
+        if return_facilities is not None:
             params["returnFacilities"] = return_facilities
-        if not return_barriers is None:
+        if return_barriers is not None:
             params["returnBarriers"] = return_barriers
-        if not return_polyline_barriers is None:
+        if return_polyline_barriers is not None:
             params["returnPolylineBarriers"] = return_polyline_barriers
-        if not return_polygon_barriers is None:
+        if return_polygon_barriers is not None:
             params["returnPolygonBarriers"] = return_polygon_barriers
-        if not out_sr is None:
+        if out_sr is not None:
             params["outSR"] = out_sr
-        if not ignore_invalid_locations is None:
+        if ignore_invalid_locations is not None:
             params["ignoreInvalidLocations"] = ignore_invalid_locations
-        if not accumulate_attribute_names is None:
+        if accumulate_attribute_names is not None:
             params["accumulateAttributeNames"] = accumulate_attribute_names
-        if not impedance_attribute_name is None:
+        if impedance_attribute_name is not None:
             params["impedanceAttributeName"] = impedance_attribute_name
-        if not restriction_attribute_names is None:
+        if restriction_attribute_names is not None:
             params["restrictionAttributeNames"] = restriction_attribute_names
-        if not restrict_u_turns is None:
+        if restrict_u_turns is not None:
             params["restrictUTurns"] = restrict_u_turns
-        if not output_geometry_precision is None:
+        if output_geometry_precision is not None:
             params["outputGeometryPrecision"] = output_geometry_precision
-        if not output_geometry_precision_units is None:
+        if output_geometry_precision_units is not None:
             params["outputGeometryPrecisionUnits"] = output_geometry_precision_units
-        if not use_hierarchy is None:
+        if use_hierarchy is not None:
             params["useHierarchy"] = use_hierarchy
-        if not time_of_day is None:
+        if time_of_day is not None:
             if isinstance(time_of_day, datetime.datetime):
                 time_of_day = f"{time_of_day.timestamp() * 1000}"
             params["timeOfDay"] = time_of_day
-        if not time_of_day_is_utc is None:
+        if time_of_day_is_utc is not None:
             params["timeOfDayIsUTC"] = time_of_day_is_utc
-        if not travel_direction is None:
+        if travel_direction is not None:
             params["travelDirection"] = travel_direction
-        if not return_z is None:
+        if return_z is not None:
             params["returnZ"] = return_z
-        if not overrides is None:
+        if overrides is not None:
             params["overrides"] = overrides
-        if not preserve_objectid is None:
+        if preserve_objectid is not None:
             params["preserveObjectID"] = preserve_objectid
-        if not geometry_precision is None:
+        if geometry_precision is not None:
             params["geometryPrecision"] = geometry_precision
-        if not geometry_precision_z is None:
+        if geometry_precision_z is not None:
             params["geometryPrecisionZ"] = geometry_precision_z
-        if not geometry_precision_m is None:
+        if geometry_precision_m is not None:
             params["geometryPrecisionM"] = geometry_precision_m
+        if locate_settings is not None:
+            params["locateSettings"] = locate_settings
+        if return_empty_results is not None:
+            params["returnEmptyFacilities"] = return_empty_results
+        if include_source_information_on_lines is not None:
+            params[
+                "includeSourceInformationOnLines"
+            ] = include_source_information_on_lines
         if future:
             f = self._run_async(
                 self._con.post,
@@ -1060,6 +1185,8 @@ class ClosestFacilityLayer(NetworkLayer):
         geometry_precision: Optional[int] = None,
         geometry_precision_z: Optional[int] = None,
         geometry_precision_m: Optional[int] = None,
+        locate_settings: Optional[dict] = None,
+        return_empty_results: Optional[bool] = False,
     ):
         """The solve operation is performed on a network layer resource of
         type closest facility (layerType is esriNAServerClosestFacilityLayer).
@@ -1256,7 +1383,8 @@ class ClosestFacilityLayer(NetworkLayer):
                                                 maintained. The default is False.
         -----------------------------------     --------------------------------------------------------------------
         future                                  Optional boolean. If True, a future object will be returned and the process
-                                                will not wait for the task to complete. The default is False, which means wait for results.
+                                                will not wait for the task to complete. The default is False,
+                                                which means wait for results.
         -----------------------------------     --------------------------------------------------------------------
         ignore_invalid_locations                If true, the solver will ignore invalid
                                                 locations. Otherwise, it will raise an error.
@@ -1282,6 +1410,27 @@ class ClosestFacilityLayer(NetworkLayer):
         geometry_precision_m                    Optional Integer. Use this parameter to specify the number of decimal
                                                 places in the response geometries returned by solve operation.
                                                 This applies to m-value only.
+        -----------------------------------     --------------------------------------------------------------------
+        locate_settings                         Optional dictionary containing additional input location settings.
+                                                Use this parameter to specify settings that affect how inputs are located,
+                                                such as the maximum search distance to use when locating the inputs on the
+                                                network or the network sources being used for locating. To restrict locating
+                                                on a portion of the source, you can specify a where clause for a source.
+
+                                                To create the dictionary of parameters that can be assigned to the 'default',
+                                                'facilities', 'incidents', 'barriers', 'polylineBarriers', or 'polygonBarriers'
+                                                keys, use the :py:class:`~arcgis.network.LocateSettings` class. For example,
+                                                to specify a maximum search distance of 5000 meters for locating the facilities,
+                                                use the following code:
+
+                                                .. code-block:: python
+
+                                                    from arcgis.network import LocateSettings
+                                                    locate_settings = LocateSettings(tolerance=5000, tolerance_units="esriMeters")
+                                                    result = route_layer.solve(stops=stops, locate_settings={"facilities": locate_settings.to_dict()})
+        -----------------------------------     --------------------------------------------------------------------
+        return_empty_results                    Optional boolean. If True, the service will return empty results instead
+                                                of the error property when the request fails. The default is False.
         ===================================     ====================================================================
 
 
@@ -1315,92 +1464,96 @@ class ClosestFacilityLayer(NetworkLayer):
                 )
                 params["travel_mode"] = travel_mode
 
-        if not barriers is None:
+        if barriers is not None:
             params["barriers"] = _handle_spatial_inputs(barriers)
-        if not polyline_barriers is None:
+        if polyline_barriers is not None:
             params["polylineBarriers"] = _handle_spatial_inputs(polyline_barriers)
-        if not polygon_barriers is None:
+        if polygon_barriers is not None:
             params["polygonBarriers"] = _handle_spatial_inputs(polygon_barriers)
-        if not travel_mode is None:
+        if travel_mode is not None:
             params["travelMode"] = travel_mode
-        if not attribute_parameter_values is None:
+        if attribute_parameter_values is not None:
             params["attributeParameterValues"] = attribute_parameter_values
-        if not return_directions is None:
+        if return_directions is not None:
             params["returnDirections"] = return_directions
-        if not directions_language is None:
+        if directions_language is not None:
             params["directionsLanguage"] = directions_language
-        if not directions_style_name is None:
+        if directions_style_name is not None:
             params["directionsStyleName"] = directions_style_name
-        if not directions_length_units is None:
+        if directions_length_units is not None:
             params["directionsLengthUnits"] = directions_length_units
-        if not directions_time_attribute_name is None:
+        if directions_time_attribute_name is not None:
             params["directionsTimeAttributeName"] = directions_time_attribute_name
-        if not directions_output_type is None:
+        if directions_output_type is not None:
             params["directionsOutputType"] = directions_output_type
-        if not return_cf_routes is None:
+        if return_cf_routes is not None:
             params["returnCFRoutes"] = return_cf_routes
-        if not return_facilities is None:
+        if return_facilities is not None:
             params["returnFacilities"] = return_facilities
-        if not return_incidents is None:
+        if return_incidents is not None:
             params["returnIncidents"] = return_incidents
-        if not return_barriers is None:
+        if return_barriers is not None:
             params["returnBarriers"] = return_barriers
-        if not return_polyline_barriers is None:
+        if return_polyline_barriers is not None:
             params["returnPolylineBarriers"] = return_polyline_barriers
-        if not return_polygon_barriers is None:
+        if return_polygon_barriers is not None:
             params["returnPolygonBarriers"] = return_polygon_barriers
-        if not output_lines is None:
+        if output_lines is not None:
             params["outputLines"] = output_lines
-        if not default_cutoff is None:
+        if default_cutoff is not None:
             params["defaultCutoff"] = default_cutoff
-        if not default_target_facility_count is None:
+        if default_target_facility_count is not None:
             params["defaultTargetFacilityCount"] = default_target_facility_count
-        if not travel_direction is None:
+        if travel_direction is not None:
             params["travelDirection"] = travel_direction
-        if not out_sr is None:
+        if out_sr is not None:
             params["outSR"] = out_sr
-        if not ignore_invalid_locations is None:
+        if ignore_invalid_locations is not None:
             params["ignoreInvalidLocations"] = ignore_invalid_locations
-        if not accumulate_attribute_names is None:
+        if accumulate_attribute_names is not None:
             params["accumulateAttributeNames"] = accumulate_attribute_names
-        if not impedance_attribute_name is None:
+        if impedance_attribute_name is not None:
             params["impedanceAttributeName"] = impedance_attribute_name
-        if not restriction_attribute_names is None:
+        if restriction_attribute_names is not None:
             params["restrictionAttributeNames"] = restriction_attribute_names
-        if not restrict_u_turns is None:
+        if restrict_u_turns is not None:
             params["restrictUTurns"] = restrict_u_turns
-        if not use_hierarchy is None:
+        if use_hierarchy is not None:
             params["useHierarchy"] = use_hierarchy
-        if not output_geometry_precision is None:
+        if output_geometry_precision is not None:
             params["outputGeometryPrecision"] = output_geometry_precision
-        if not output_geometry_precision_units is None:
+        if output_geometry_precision_units is not None:
             params["outputGeometryPrecisionUnits"] = output_geometry_precision_units
-        if not time_of_day is None:
+        if time_of_day is not None:
             if isinstance(time_of_day, datetime.datetime):
                 time_of_day = f"{time_of_day.timestamp() * 1000}"
             params["timeOfDay"] = time_of_day
-        if not time_of_day_is_utc is None:
+        if time_of_day_is_utc is not None:
             params["timeOfDayIsUTC"] = time_of_day_is_utc
-        if not time_of_day_usage is None:
+        if time_of_day_usage is not None:
             params["timeOfDayUsage"] = time_of_day_usage
-        if not return_z is None:
+        if return_z is not None:
             params["returnZ"] = return_z
-        if not overrides is None:
+        if overrides is not None:
             params["overrides"] = overrides
-        if not preserve_objectid is None:
+        if preserve_objectid is not None:
             params["preserveObjectID"] = preserve_objectid
-        if not geometry_precision is None:
+        if geometry_precision is not None:
             params["geometryPrecision"] = geometry_precision
-        if not geometry_precision_z is None:
+        if geometry_precision_z is not None:
             params["geometryPrecisionZ"] = geometry_precision_z
-        if not geometry_precision_m is None:
+        if geometry_precision_m is not None:
             params["geometryPrecisionM"] = geometry_precision_m
-        if not return_traversed_edges is None:
+        if return_traversed_edges is not None:
             params["returnTraversedEdges"] = return_traversed_edges
-        if not return_traversed_junctions is None:
+        if return_traversed_junctions is not None:
             params["returnTraversedJunctions"] = return_traversed_junctions
-        if not return_traversed_turns is None:
+        if return_traversed_turns is not None:
             params["returnTraversedTurns"] = return_traversed_turns
+        if locate_settings is not None:
+            params["locateSettings"] = locate_settings
+        if return_empty_results is not None:
+            params["returnEmptyFacilities"] = return_empty_results
         if future:
             f = self._run_async(self._con.post, **{"path": url, "postdata": params})
             return NAJob(future=f, task="Solve Closest Facility")
@@ -1445,6 +1598,8 @@ class ODCostMatrixLayer(NetworkLayer):
         future: bool = False,
         geometry_precision: Optional[int] = None,
         geometry_precision_z: Optional[int] = None,
+        locate_settings: Optional[dict] = None,
+        return_empty_results: Optional[bool] = False,
     ):
         """
 
@@ -1471,97 +1626,131 @@ class ODCostMatrixLayer(NetworkLayer):
         travel time and/or travel distance based on the street network, not
         based on Euclidean distance.
 
-        ====================================     ====================================================================
-        **Parameter**                             **Description**
-        ------------------------------------     --------------------------------------------------------------------
-        origins                                  Required FeatureLayer/SeDF/FeatureSet.
-                                                 Specifies the starting points from which to travel to the destinations.
-        ------------------------------------     --------------------------------------------------------------------
-        destinations                             Required FeatureLayer/SeDF/FeatureSet.
-                                                 Specifies the ending point locations to travel to from the origins.
-        ------------------------------------     --------------------------------------------------------------------
-        default_cutoff                           Optional Float. Specify the travel time or travel distance value at
-                                                 which to stop searching for destinations. The default value is
-                                                 `None` which means to search until all destinations are found for
-                                                 every origin. The units are the same as the impedance attribute
-                                                 units.
-        ------------------------------------     --------------------------------------------------------------------
-        default_target_destination_count         Optional Integer. Specify the number of destinations to find per
-                                                 origin. The default value is `None` which means to search until all
-                                                 destinations are found for every origin.
-        ------------------------------------     --------------------------------------------------------------------
-        travel_mode                              Optional String. Choose the mode of transportation for the analysis.
-        ------------------------------------     --------------------------------------------------------------------
-        output_type                              Optional String. Specify the type of output returned by the service.
-                                                 Allowed value: `Sparse Matrix` (default), `Straight Lines`, or
-                                                 `No Lines`.
-        ------------------------------------     --------------------------------------------------------------------
-        time_of_day                              Optional Datetime. The `time_of_day` value represents the time at which
-                                                 the travel begins from the input origins.
-                                                 If a value of `now` is passed, the travel begins at current time.
-        ------------------------------------     --------------------------------------------------------------------
-        time_of_day_is_utc                       Optional Boolean. Specify the time zone or zones of the
-                                                 `time_of_day` parameter. The default is as defined
-                                                 in the network layer.
-        ------------------------------------     --------------------------------------------------------------------
-        barriers                                 Optional FeatureLayer/SeDF/FeatureSet. Specify one or more points that act as
-                                                 temporary restrictions or represent additional time or distance that
-                                                 may be required to travel on the underlying streets.
-        ------------------------------------     --------------------------------------------------------------------
-        polyline_barriers                        Optional FeatureLayer/SeDF/FeatureSet. Specify one or more lines that prohibit
-                                                 travel anywhere the lines intersect the streets.
-        ------------------------------------     --------------------------------------------------------------------
-        polygon_barriers                         Optional FeatureLayer/SeDF/FeatureSet. Specify polygons that either prohibit
-                                                 travel or proportionately scale the time or distance required to
-                                                 travel on the streets intersected by the polygons.
-        ------------------------------------     --------------------------------------------------------------------
-        impedance_attribute_name                 Optional String. Specify the impedance. The default is as defined
-                                                 in the network layer.
-        ------------------------------------     --------------------------------------------------------------------
-        accumulate_attribute_names               Optional String. Specify whether the service should accumulate
-                                                 values other than the value specified for `impedance_attribute_names`.
+        ====================================        ====================================================================
+        **Parameter**                               **Description**
+        ------------------------------------        --------------------------------------------------------------------
+        origins                                     Required FeatureLayer/SeDF/FeatureSet.
+                                                    Specifies the starting points from which to travel to the destinations.
+        ------------------------------------        --------------------------------------------------------------------
+        destinations                                Required FeatureLayer/SeDF/FeatureSet.
+                                                    Specifies the ending point locations to travel to from the origins.
+        ------------------------------------        --------------------------------------------------------------------
+        default_cutoff                              Optional Float. Specify the travel time or travel distance value at
+                                                    which to stop searching for destinations. The default value is
+                                                    `None` which means to search until all destinations are found for
+                                                    every origin. The units are the same as the impedance attribute
+                                                    units.
+        ------------------------------------        --------------------------------------------------------------------
+        default_target_destination_count            Optional Integer. Specify the number of destinations to find per
+                                                    origin. The default value is `None` which means to search until all
+                                                    destinations are found for every origin.
+        ------------------------------------        --------------------------------------------------------------------
+        travel_mode                                 Optional String. Choose the mode of transportation for the analysis.
+        ------------------------------------        --------------------------------------------------------------------
+        output_type                                 Optional String. Specify the type of output returned by the service.
+                                                    Allowed value: `Sparse Matrix` (default), `Straight Lines`, or
+                                                    `No Lines`.
+        ------------------------------------        --------------------------------------------------------------------
+        time_of_day                                 Optional Datetime. The `time_of_day` value represents the time at which
+                                                    the travel begins from the input origins.
+                                                    If a value of `now` is passed, the travel begins at current time.
+        ------------------------------------        --------------------------------------------------------------------
+        time_of_day_is_utc                          Optional Boolean. Specify the time zone or zones of the
+                                                    `time_of_day` parameter. The default is as defined
+                                                    in the network layer.
+        ------------------------------------        --------------------------------------------------------------------
+        barriers                                    Optional FeatureLayer/SeDF/FeatureSet. Specify one or more points that act as
+                                                    temporary restrictions or represent additional time or distance that
+                                                    may be required to travel on the underlying streets.
+        ------------------------------------        --------------------------------------------------------------------
+        polyline_barriers                           Optional FeatureLayer/SeDF/FeatureSet. Specify one or more lines that prohibit
+                                                    travel anywhere the lines intersect the streets.
+        ------------------------------------        --------------------------------------------------------------------
+        polygon_barriers                            Optional FeatureLayer/SeDF/FeatureSet. Specify polygons that either prohibit
+                                                    travel or proportionately scale the time or distance required to
+                                                    travel on the streets intersected by the polygons.
+        ------------------------------------        --------------------------------------------------------------------
+        impedance_attribute_name                    Optional String. Specify the impedance. The default is as defined
+                                                    in the network layer.
+        ------------------------------------        --------------------------------------------------------------------
+        accumulate_attribute_names                  Optional String. Specify whether the service should accumulate
+                                                    values other than the value specified for `impedance_attribute_names`.
 
-                                                 The default is as defined in the network layer. The parameter value
-                                                 should be specified as a comma-separated list of names.
-        ------------------------------------     --------------------------------------------------------------------
-        restriction_attribute_names              Optional String. Specify which restrictions should be honored by the service.
-        ------------------------------------     --------------------------------------------------------------------
-        attribute_parameter_values               Optional String. Specify additional values required by an attribute or restriction.
-        ------------------------------------     --------------------------------------------------------------------
-        restrict_u_turns                         Optional String. Restrict or permit the route from making U-turns at
-                                                 junctions. The default is as defined in the network layer.
+                                                    The default is as defined in the network layer. The parameter value
+                                                    should be specified as a comma-separated list of names.
+        ------------------------------------        --------------------------------------------------------------------
+        restriction_attribute_names                 Optional String. Specify which restrictions should be honored by the service.
+        ------------------------------------        --------------------------------------------------------------------
+        attribute_parameter_values                  Optional String. Specify additional values required by an attribute or restriction.
+        ------------------------------------        --------------------------------------------------------------------
+        restrict_u_turns                            Optional String. Restrict or permit the route from making U-turns at
+                                                    junctions. The default is as defined in the network layer.
 
-                                                 Values: esriNFSBAllowBacktrack | esriNFSBAtDeadEndsOnly |
+                                                    Values: esriNFSBAllowBacktrack | esriNFSBAtDeadEndsOnly |
                                                          esriNFSBNoBacktrack | esriNFSBAtDeadEndsAndIntersections
-        ------------------------------------     --------------------------------------------------------------------
-        use_hierarchy                            Optional Boolean. Specify whether hierarchy should be used when finding the shortest paths. The default value is true.
-        ------------------------------------     --------------------------------------------------------------------
-        return_origins                           Optional Boolean. Specify whether origins will be returned by the service. The default value is false.
-        ------------------------------------     --------------------------------------------------------------------
-        return_destinations                      Optional Boolean. Specify whether origins will be returned by the service. The default value is false.
-        ------------------------------------     --------------------------------------------------------------------
-        return_barriers                          Optional Boolean. Specify whether barriers will be returned by the service. The default value is false.
-        ------------------------------------     --------------------------------------------------------------------
-        return_polyline_barriers                 Optional Boolean. Specify whether polyline barriers will be returned by the service. The default value is false.
-        ------------------------------------     --------------------------------------------------------------------
-        return_polygon_barriers                  Optional Boolean. Specify whether polygon barriers will be returned by the service. The default value is false.
-        ------------------------------------     --------------------------------------------------------------------
-        out_sr                                   Optional Integer. Specify the spatial reference of the geometries.
-        ------------------------------------     --------------------------------------------------------------------
-        ignore_invalid_locations                 Optional Boolean. Specify whether invalid input locations should be
-                                                 ignored when finding the best solution. The default is True.
-        ------------------------------------     --------------------------------------------------------------------
-        return_z                                 Optional Boolean. Include z values for the returned geometries if supported by the underlying network. The default value is false.
-        ------------------------------------     --------------------------------------------------------------------
-        overrides                                Optional Dict. Specify additional settings that can influence the behavior of the solver.
-        ------------------------------------     --------------------------------------------------------------------
-        future                                   Optional boolean. If True, a future object will be returned and the process
-                                                 will not wait for the task to complete. The default is False, which means wait for results.
-        ------------------------------------     --------------------------------------------------------------------
-        geometry_precision                       Optional Integer. Use this parameter to specify the number of decimal places in the response geometries returned by solve operation. This applies to x/y values only (not m- or z-values).
-        ------------------------------------     --------------------------------------------------------------------
-        geometry_precision_z                     Optional Integer. Use this parameter specify the number of decimal places in the response geometries returned by solve operation. This applies to z-value only.
-        ====================================     ====================================================================
+        ------------------------------------        --------------------------------------------------------------------
+        use_hierarchy                               Optional Boolean. Specify whether hierarchy should be used when
+                                                    finding the shortest paths. The default value is true.
+        ------------------------------------        --------------------------------------------------------------------
+        return_origins                              Optional Boolean. Specify whether origins will be returned by the service.
+                                                    The default value is false.
+        ------------------------------------        --------------------------------------------------------------------
+        return_destinations                         Optional Boolean. Specify whether origins will be returned by the service.
+                                                    The default value is false.
+        ------------------------------------        --------------------------------------------------------------------
+        return_barriers                             Optional Boolean. Specify whether barriers will be returned by the service.
+                                                    The default value is false.
+        ------------------------------------        --------------------------------------------------------------------
+        return_polyline_barriers                    Optional Boolean. Specify whether polyline barriers will be returned
+                                                    by the service. The default value is false.
+        ------------------------------------        --------------------------------------------------------------------
+        return_polygon_barriers                     Optional Boolean. Specify whether polygon barriers will be returned
+                                                    by the service. The default value is false.
+        ------------------------------------        --------------------------------------------------------------------
+        out_sr                                      Optional Integer. Specify the spatial reference of the geometries.
+        ------------------------------------        --------------------------------------------------------------------
+        ignore_invalid_locations                    Optional Boolean. Specify whether invalid input locations should be
+                                                    ignored when finding the best solution. The default is True.
+        ------------------------------------        --------------------------------------------------------------------
+        return_z                                    Optional Boolean. Include z values for the returned geometries if supported
+                                                    by the underlying network. The default value is false.
+        ------------------------------------        --------------------------------------------------------------------
+        overrides                                   Optional Dict. Specify additional settings that can influence the behavior
+                                                    of the solver.
+        ------------------------------------        --------------------------------------------------------------------
+        future                                      Optional boolean. If True, a future object will be returned and the process
+                                                    will not wait for the task to complete. The default is False,
+                                                    which means wait for results.
+        ------------------------------------        --------------------------------------------------------------------
+        geometry_precision                          Optional Integer. Use this parameter to specify the number of decimal
+                                                    places in the response geometries returned by solve operation. This
+                                                    applies to x/y values only (not m- or z-values).
+        ------------------------------------        --------------------------------------------------------------------
+        geometry_precision_z                        Optional Integer. Use this parameter specify the number of decimal
+                                                    places in the response geometries returned by solve operation. This
+                                                    applies to z-value only.
+        ------------------------------------        --------------------------------------------------------------------
+        locate_settings                             Optional dictionary containing additional input location settings.
+                                                    Use this parameter to specify settings that affect how inputs are located,
+                                                    such as the maximum search distance to use when locating the inputs on the
+                                                    network or the network sources being used for locating. To restrict locating
+                                                    on a portion of the source, you can specify a where clause for a source.
+
+                                                    To create the dictionary of parameters that can be assigned to the 'default',
+                                                    'facilities', 'incidents', 'barriers', 'polylineBarriers', or 'polygonBarriers'
+                                                    keys, use the :py:class:`~arcgis.network.LocateSettings` class. For example,
+                                                    to specify a maximum search distance of 5000 meters for locating the facilities,
+                                                    use the following code:
+
+                                                    .. code-block:: python
+
+                                                        from arcgis.network import LocateSettings
+                                                        locate_settings = LocateSettings(tolerance=5000, tolerance_units="esriMeters")
+                                                        result = route_layer.solve(stops=stops, locate_settings={"facilities": locate_settings.to_dict()})
+        -----------------------------------         --------------------------------------------------------------------
+        return_empty_results                        Optional boolean. If True, the service will return empty results instead
+                                                    of the error property when the request fails. The default is False.
+        ====================================        ====================================================================
 
         :return: Dictionary or `NAJob` when `future=True`
 
@@ -1599,61 +1788,65 @@ class ODCostMatrixLayer(NetworkLayer):
             "esriNAODOutputNoLines": "esriNAODOutputNoLines",
             "No Lines": "esriNAODOutputNoLines",
         }
-        if not default_cutoff is None:
+        if default_cutoff is not None:
             params["defaultCutoff"] = default_cutoff
-        if not default_target_destination_count is None:
+        if default_target_destination_count is not None:
             params["defaultTargetDestinationCount"] = default_target_destination_count
-        if not travel_mode is None:
+        if travel_mode is not None:
             params["travelMode"] = travel_mode
-        if not output_type is None:
+        if output_type is not None:
             assert output_type in allowed_output_types
             params["outputType"] = allowed_output_types[output_type]
-        if not time_of_day is None:
+        if time_of_day is not None:
             if isinstance(time_of_day, datetime.datetime):
                 time_of_day = f"{time_of_day.timestamp() * 1000}"
             params["timeOfDay"] = time_of_day
-        if not time_of_day_is_utc is None:
+        if time_of_day_is_utc is not None:
             params["timeOfDayIsUTC"] = time_of_day_is_utc
-        if not barriers is None:
+        if barriers is not None:
             params["barriers"] = _handle_spatial_inputs(barriers)
-        if not polyline_barriers is None:
+        if polyline_barriers is not None:
             params["polylineBarriers"] = _handle_spatial_inputs(polyline_barriers)
-        if not polygon_barriers is None:
+        if polygon_barriers is not None:
             params["polygonBarriers"] = _handle_spatial_inputs(polygon_barriers)
-        if not impedance_attribute_name is None:
+        if impedance_attribute_name is not None:
             params["impedanceAttributeName"] = impedance_attribute_name
-        if not accumulate_attribute_names is None:
+        if accumulate_attribute_names is not None:
             params["accumulateAttributeNames"] = accumulate_attribute_names
-        if not restriction_attribute_names is None:
+        if restriction_attribute_names is not None:
             params["restrictionAttributeNames"] = restriction_attribute_names
-        if not attribute_parameter_values is None:
+        if attribute_parameter_values is not None:
             params["attributeParameterValues"] = attribute_parameter_values
-        if not restrict_u_turns is None:
+        if restrict_u_turns is not None:
             params["restrictUTurns"] = restrict_u_turns
-        if not use_hierarchy is None:
+        if use_hierarchy is not None:
             params["useHierarchy"] = use_hierarchy
-        if not return_origins is None:
+        if return_origins is not None:
             params["returnOrigins"] = return_origins
-        if not return_destinations is None:
+        if return_destinations is not None:
             params["returnDestinations"] = return_destinations
-        if not return_barriers is None:
+        if return_barriers is not None:
             params["returnBarriers"] = return_barriers
-        if not return_polyline_barriers is None:
+        if return_polyline_barriers is not None:
             params["returnPolylineBarriers"] = return_polyline_barriers
-        if not return_polygon_barriers is None:
+        if return_polygon_barriers is not None:
             params["returnPolygonBarriers"] = return_polygon_barriers
-        if not out_sr is None:
+        if out_sr is not None:
             params["outSR"] = out_sr
-        if not ignore_invalid_locations is None:
+        if ignore_invalid_locations is not None:
             params["ignoreInvalidLocations"] = ignore_invalid_locations
-        if not return_z is None:
+        if return_z is not None:
             params["returnZ"] = return_z
-        if not overrides is None:
+        if overrides is not None:
             params["overrides"] = overrides
-        if not geometry_precision is None:
+        if geometry_precision is not None:
             params["geometryPrecision"] = geometry_precision
-        if not geometry_precision_z is None:
+        if geometry_precision_z is not None:
             params["geometryPrecisionZ"] = geometry_precision_z
+        if locate_settings is not None:
+            params["locateSettings"] = locate_settings
+        if return_empty_results is not None:
+            params["returnEmptyFacilities"] = return_empty_results
 
         if future:
             f = self._run_async(self._con.post, **{"path": url, "postdata": params})
@@ -1696,7 +1889,7 @@ class NetworkDataset(_GISResource):
             from ..gis.server._service._adminfactory import AdminServiceGen
 
             self.service = AdminServiceGen(service=self, gis=gis)
-        except:
+        except Exception:
             pass
         self._closestFacilityLayers = []
         self._routeLayers = []
