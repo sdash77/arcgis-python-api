@@ -4,9 +4,7 @@ import arcgis
 from datetime import datetime
 from arcgis.features import FeatureSet
 from arcgis.gis import GIS
-from arcgis.mapping import MapImageLayer
-from arcgis.geoprocessing import DataFile, LinearUnit, RasterData
-from arcgis.geoprocessing._support import _execute_gp_tool
+from arcgis.geoprocessing import LinearUnit
 from arcgis._impl.common._utils import _validate_url
 from ._routing_utils import _create_toolbox
 
@@ -519,6 +517,10 @@ def generate_service_areas(
     output_format: Optional[str] = None,
     gis: Optional[GIS] = None,
     future: bool = False,
+    accumulate_attributes: Optional[list] = None,
+    ignore_network_location_fields: bool = False,
+    ignore_invalid_locations: bool = True,
+    locate_settings: Optional[dict] = None,
 ):
     """
     .. image:: _static/images/generate_service_areas/generate_service_areas.png
@@ -1212,6 +1214,37 @@ def generate_service_areas(
     -------------------------------------------------     ------------------------------------------------------------------------
     future                                                Optional boolean. If True, a future object will be returned and the process
                                                           will not wait for the task to complete. The default is False, which means wait for results.
+    -------------------------------------------------     ------------------------------------------------------------------------
+    accumulate_attributes                                 Optional list of cost attributes to be accumulated during analysis.
+                                                          These accumulated attributes are for reference only; the solver only uses the
+                                                          cost attribute used by the designated travel mode when solving the analysis.
+    -------------------------------------------------     ------------------------------------------------------------------------
+    ignore_network_location_fields                        Optional boolean. Specifies whether the network location fields will be
+                                                          considered when locating inputs such as stops or facilities on the network.
+                                                          The default is False, which means the network location fields will be considered.
+    -------------------------------------------------     ------------------------------------------------------------------------
+    ignore_invalid_locations                              Optional boolean. Specifies whether the tool will ignore invalid locations.
+                                                          The default is True.
+    -------------------------------------------------     ------------------------------------------------------------------------
+    locate_settings                                       Optional dictionary containing additional input location settings.
+                                                          Use this parameter to specify settings that affect how inputs are
+                                                          located, such as the maximum search distance to use when locating the
+                                                          inputs on the network or the network sources being used for locating.
+                                                          To restrict locating on a portion of the source, you can specify a where
+                                                          clause for a source.
+
+                                                          To create the dictionary of parameters that can be assigned to the
+                                                          'default', 'facilities', 'incidents', 'barriers', 'polylineBarriers',
+                                                          or 'polygonBarriers' keys, use the
+                                                          :py:class:`~arcgis.network.LocateSettings` class. For example, to
+                                                          specify a maximum search distance of 5000 meters for locating the
+                                                          facilities, use the following code:
+
+                                                          .. code-block:: python
+
+                                                              from arcgis.network import LocateSettings
+                                                              locate_settings = LocateSettings(tolerance=5000, tolerance_units="esriMeters")
+                                                              result = route_layer.solve(stops=stops, locate_settings={"facilities": locate_settings.to_dict()})
     =================================================     ========================================================================
 
     :return: the following as a named tuple:
@@ -1230,8 +1263,6 @@ def generate_service_areas(
                                                 break_units="Minutes",
                                                 time_of_day=current_time)
     """
-
-    from arcgis.geoprocessing import import_toolbox
 
     if gis is None:
         gis = arcgis.env.active_gis
@@ -1311,6 +1342,10 @@ def generate_service_areas(
         "output_format": output_format,
         "gis": gis,
         "future": True,
+        "accumulate_attributes": accumulate_attributes,
+        "ignore_network_location_fields": ignore_network_location_fields,
+        "ignore_invalid_locations": ignore_invalid_locations,
+        "locate_settings": locate_settings,
     }
     params = inspect_function_inputs(tbx.generate_service_areas, **params)
     params["future"] = True

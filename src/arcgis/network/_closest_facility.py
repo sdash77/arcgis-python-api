@@ -6,10 +6,7 @@ import arcgis
 from datetime import datetime
 from arcgis.features import FeatureSet
 from arcgis.gis import GIS
-from arcgis.mapping import MapImageLayer
-from arcgis.geoprocessing import DataFile, LinearUnit, RasterData
-from arcgis.geoprocessing import import_toolbox
-from arcgis.geoprocessing._support import _execute_gp_tool
+from arcgis.geoprocessing import LinearUnit
 from arcgis._impl.common._utils import _validate_url
 from ._routing_utils import _create_toolbox
 
@@ -597,6 +594,9 @@ def find_closest_facilities(
     output_format: str = "Feature Set",
     gis: Optional[GIS] = None,
     future: bool = False,
+    accumulate_attributes: Optional[list] = None,
+    ignore_network_location_fields: bool = False,
+    ignore_invalid_locations: bool = True,
 ):
     """
     Finds one or more facilities that are closest from an incident based on travel time or travel distance and outputs the best routes,
@@ -1484,6 +1484,18 @@ def find_closest_facilities(
     --------------------------------------  ------------------------------------------------------------------------------------------------------------------------------------------
     future                                  Optional boolean. If True, a future object will be returned and the process
                                             will not wait for the task to complete. The default is False, which means wait for results.
+    --------------------------------------  ------------------------------------------------------------------------------------------------------------------------------------------
+    accumulate_attributes                   Optional list of cost attributes to be accumulated during analysis. These accumulated attributes are for reference only; the solver only
+                                            uses the cost attribute used by the designated travel mode when solving the analysis.
+
+                                            For each cost attribute that is accumulated, a `Total_[Cost Attribute Name]_[Units]` field is populated in the outputs created from the tool.
+    --------------------------------------  ------------------------------------------------------------------------------------------------------------------------------------------
+    ignore_network_location_fields          Optional bool. Specifies whether the newtork location fields will be considered when locating inputs such as stops or facilities on the
+                                            network.
+                                            * True - Network location fields will not be considered when locating inputs on the network. Instead, the inputs will always be located by performing a spatial search.
+                                            * False - Network location fields will be considered when locating inputs on the network. This is the default.
+    --------------------------------------  ------------------------------------------------------------------------------------------------------------------------------------------
+    ignore_invalid_locations                Optional bool. Specifies whether locations that cannot be located on the network should be included in the output. Default is True.
     ======================================  ==========================================================================================================================================
 
     :return: the following as a named tuple:
@@ -1571,6 +1583,9 @@ def find_closest_facilities(
         "output_format": output_format,
         "gis": gis,
         "future": True,
+        "accumulate_attributes": accumulate_attributes,
+        "ignore_network_location_fields": ignore_network_location_fields,
+        "ignore_invalid_locations": ignore_invalid_locations,
     }
     params = inspect_function_inputs(tbx.find_closest_facilities, **params)
     job = tbx.find_closest_facilities(**params)
