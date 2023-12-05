@@ -58,7 +58,29 @@ def publish_routing_service(
     solver_types: list[SolverType] | SolverType = SolverType.ALL,
     config: str = None,
     gis: _arcgis_gis.GIS | None = None,
-):
+) -> dict:
+    """
+    ======================================  ==========================================================================================================================================
+    **Parameter**                            **Description**
+    --------------------------------------  ------------------------------------------------------------------------------------------------------------------------------------------
+    datastore                               Required Item. The registered datastore where the network dataset resides.
+    --------------------------------------  ------------------------------------------------------------------------------------------------------------------------------------------
+    path                                    Required String. The workspace path to the location of the network dataset.
+    --------------------------------------  ------------------------------------------------------------------------------------------------------------------------------------------
+    folder                                  Optional String. The name for the server folder that will contain all the routing services created by this service. The service returns
+                                            an error if the folder contains existing services. The default value is `Routing`
+    --------------------------------------  ------------------------------------------------------------------------------------------------------------------------------------------
+    solver_types                            Optional SolverType. The list of Network Analyst solvers to be included in the services. The default is to include all the solvers.
+    --------------------------------------  ------------------------------------------------------------------------------------------------------------------------------------------
+    config                                  Optional str. The file containing additional configuration for the services. If no value is specified, the system default configuration
+                                            file is used.  For a full list of config values and explination, please reach out to support@esri.com.
+    --------------------------------------  ------------------------------------------------------------------------------------------------------------------------------------------
+    gis                                     Optional GIS. The GIS object where the dataset will be hosted at.  If `None` is provided, the datastore's GIS will be used.
+    ======================================  ==========================================================================================================================================
+
+    :returns: dict[str,Any]
+    """
+
     if gis is None:
         gis = datastore._gis
     network_dataset: dict[str, Any] = {
