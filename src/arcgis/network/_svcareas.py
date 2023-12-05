@@ -521,6 +521,7 @@ def generate_service_areas(
     ignore_network_location_fields: bool = False,
     ignore_invalid_locations: bool = True,
     locate_settings: Optional[dict] = None,
+    exclude_sources_from_polygon_generation: Optional[str] = None,
 ):
     """
     .. image:: _static/images/generate_service_areas/generate_service_areas.png
@@ -1245,6 +1246,27 @@ def generate_service_areas(
                                                               from arcgis.network import LocateSettings
                                                               locate_settings = LocateSettings(tolerance=5000, tolerance_units="esriMeters")
                                                               result = route_layer.solve(stops=stops, locate_settings={"facilities": locate_settings.to_dict()})
+    -------------------------------------------------     ------------------------------------------------------------------------
+    exclude_sources_from_polygon_generation               Optional string. You can exclude certain network dataset edge sources when
+                                                          generating service area polygons. Polygons will not be generated around
+                                                          the excluded sources, even though they are traversed in the analysis.
+                                                          Excluding a network source from service area polygons does not prevent
+                                                          those sources from being traversed. Excluding sources from service area
+                                                          polygons only influences the shape of the service area polygons.
+                                                          To prevent traversal of a given network source, you must create an appropriate
+                                                          restriction when defining your network dataset.This is useful if you have some
+                                                          network sources that you don't want included in the polygon generation because
+                                                          they create less accurate polygons or are inconsequential for the service area
+                                                          analysis. For example, when creating a walk-time service area in a multimodal
+                                                          network that includes streets and metro lines, you should choose to exclude
+                                                          the metro lines from polygon generation. Although travelers can use the metro
+                                                          lines, they cannot stop partway along a metro line and enter a nearby building.
+                                                          Instead, they must travel the full length of the metro line, exit the metro system at
+                                                          a station, and use the streets to walk to the building. Generating a polygon
+                                                          feature around a metro line will be inaccurate.
+
+                                                          .. note::
+                                                                This parameter is only supported for ArcGIS Enterprise.
     =================================================     ========================================================================
 
     :return: the following as a named tuple:
@@ -1347,6 +1369,10 @@ def generate_service_areas(
         "ignore_invalid_locations": ignore_invalid_locations,
         "locate_settings": locate_settings,
     }
+    if gis._is_agol == False:
+        params[
+            "exclude_sources_from_polygon_generation"
+        ] = exclude_sources_from_polygon_generation
     params = inspect_function_inputs(tbx.generate_service_areas, **params)
     params["future"] = True
     job = tbx.generate_service_areas(**params)
