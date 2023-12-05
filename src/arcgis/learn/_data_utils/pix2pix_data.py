@@ -28,6 +28,7 @@ from .._data import _prepare_working_dir
 from .._utils.cyclegan import image_extensions
 from .._data import _tensor_scaler
 from .._utils.superres import show_batch
+import warnings
 
 stats = [[0.5, 0.5, 0.5], [0.5, 0.5, 0.5]]
 
@@ -741,11 +742,13 @@ def prepare_pix2pix_data(
         **kwargs,
     )
 
-    databunch_kwargs = (
-        {"num_workers": 0}
-        if sys.platform == "win32"
-        else {"num_workers": os.cpu_count() - 4}
+    num_workers = kwargs.get("num_workers", 0)
+    databunch_kwargs = dict()
+    databunch_kwargs["num_workers"] = (
+        num_workers if sys.platform == "win32" else os.cpu_count() - 4
     )
+    if sys.platform == "win32" and num_workers > 0:
+        databunch_kwargs["persistent_workers"] = True
 
     train_dl, valid_dl = create_dataloaders(datasets, batch_size, databunch_kwargs)
     device = get_device()
@@ -939,7 +942,9 @@ def rgb_or_ms(im_path):
     try:
         from osgeo import gdal
 
-        ds = gdal.Open(im_path)
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            ds = gdal.Open(im_path)
         if ds.RasterCount != 3 or ds.GetRasterBand(1).DataType != gdal.GDT_Byte:
             return "ms"
         else:

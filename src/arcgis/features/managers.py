@@ -2087,6 +2087,8 @@ class FeatureLayerCollectionManager(_GISResource):
         overwrite: bool | None = None,
         set_item_id: str | None = None,
         preserve_layer_ids: bool = False,
+        visible_fields: list[str] | None = None,
+        query: str | None = None,
     ):
         """
         Creates a view of an existing feature service. You can create a view, if you need a different view of the data
@@ -2133,11 +2135,24 @@ class FeatureLayerCollectionManager(_GISResource):
         --------------------     --------------------------------------------------------------------
         snippet                  Optional String. A short description of the view item.
         --------------------     --------------------------------------------------------------------
-        overwrite                Optional Boolean.  If true, the view is overwritten, False is the default.
+        overwrite                Not supported.
+
+                                 .. note::
+                                     To overwrite the data used in a hosted feature layer view, you
+                                     must overwrite the hosted feature layer from which it was
+                                     created. See the `ArcGIS Online Overwrite hosted feature layers <https://doc.arcgis.com/en/arcgis-online/manage-data/manage-hosted-feature-layers.htm#ESRI_SECTION1_1D3A87A80E3E4CD2A71744715F1522FE>`_
+                                     or the `ArcGIS Enterprise Overwrite hosted feature layers <https://enterprise.arcgis.com/en/portal/latest/use/manage-hosted-feature-layers.htm#ESRI_SECTION1_1D3A87A80E3E4CD2A71744715F1522FE>`_
+                                     documentation for requirements and considerations for
+                                     overwriting. See also `Considerations when creating hosted feature layer views <https://doc.arcgis.com/en/arcgis-online/manage-data/create-hosted-views.htm#GUID-E4F46139-1F6E-4036-8C4F-EF73C2C2CE72>`_
+                                     for additional criteria for overwriting.
         --------------------     --------------------------------------------------------------------
         set_item_id              Optional String. If set, the ItemId is defined by the user, not the system.
         --------------------     --------------------------------------------------------------------
         preserve_layer_ids       Optional Boolean. Preserves the layer's `id` on it's definition when `True`.  The default is `False`.
+        --------------------     --------------------------------------------------------------------
+        visible_fields           Optional list[str] or None. A list of visible fields to display.
+        --------------------     --------------------------------------------------------------------
+        query                    Optional String. A SQL statement that defines the view.
         ====================     ====================================================================
 
         .. code-block:: python  (optional)
@@ -2250,7 +2265,7 @@ class FeatureLayerCollectionManager(_GISResource):
             # When view_layers and view_tables are not specified, create a view from all layers and tables
             for lyr in fs.layers:
                 lyr_id = lyr.manager.properties.serviceItemId
-                data_path = "content/items/" + lyr_id + "/data"
+                data_path = "content/items/" + res["itemId"] + "/data"
                 data = item._portal.con.get(path=data_path)
                 add_def["layers"].append(
                     {
@@ -2448,8 +2463,32 @@ class FeatureLayerCollectionManager(_GISResource):
                 view.update(data=item_upd_dict)
         else:
             view.update(data=item.get_data())
-
-        return content.get(res["itemId"])
+        item = content.get(res["itemId"])
+        if visible_fields or query:
+            values: dict[str, Any] = {}
+            if visible_fields:
+                values["fields"] = [
+                    {"name": fld["name"], "visible": True}
+                    for fld in self.layers[0].properties["fields"]
+                    if fld["name"].lower() in [f.lower() for f in visible_fields]
+                ] + [
+                    {"name": fld["name"], "visible": False}
+                    for fld in self.layers[0].properties["fields"]
+                    if not fld["name"].lower() in [f.lower() for f in visible_fields]
+                ]
+            else:
+                values["fields"] = [
+                    {"name": fld["name"], "visible": True}
+                    for fld in self.layers[0].properties["fields"]
+                ]
+            if query:
+                values["viewDefinitionQuery"] = query
+            if values:
+                flc = FeatureLayerCollection.fromitem(item)
+                lyr = flc.layers[0]
+                mgr = lyr.manager
+                mgr.update_definition(values)
+        return item
 
     # ----------------------------------------------------------------------
     def _check_status(self, url: str) -> dict:
@@ -2717,7 +2756,7 @@ class FeatureLayerCollectionManager(_GISResource):
 
         3. The data file used to overwrite should be of the same format and filename as the original that was used to publish the layer
 
-        4. The schema (column names, column data types) of the data_file should be the same as original. You can have additional or fewer rows (features).
+        4. In older versions of Enterprise (pre-11.2), the schema (column names, column data types) of the data_file should be the same as original. You can have additional or fewer rows (features).
 
         In addition to overwriting the features, this operation also updates the data of the item used to published this
         layer.
@@ -2725,12 +2764,22 @@ class FeatureLayerCollectionManager(_GISResource):
         ===============     ====================================================================
         **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
-        data                Required string. Path to the file used to overwrite the hosted
+        data_file           Required string. Path to the file used to overwrite the hosted
                             feature layer collection.
         ===============     ====================================================================
 
         :return: JSON message as dictionary such as {'success':True} or {'error':'error message'}
         """
+        if data_file and (
+            not isinstance(data_file, str)
+            or not os.path.exists(data_file)
+            or not os.path.isfile(data_file)
+            or os.stat(data_file).st_size > int(2.5e7)
+        ):
+            raise ValueError(
+                "The data file provided does not exist or could not be accessed."
+            )
+
         # check for outstanding replicas
         if hasattr(self._fs, "replicas") and bool(self._fs.replicas.get_list()):
             raise Exception(
@@ -2754,6 +2803,12 @@ class FeatureLayerCollectionManager(_GISResource):
             return {
                 "Error": "Cannot find related data item used to publish this Feature Layer"
             }
+
+        # Check that file type and name are the same:
+        if os.path.basename(data_file) != related_data_item["name"]:
+            raise ValueError(
+                "The name and extension of the file must be the same as the original data."
+            )
 
         # find if we are overwritting only a hosted table
         hosted_table = False

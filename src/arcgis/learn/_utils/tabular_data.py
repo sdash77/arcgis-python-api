@@ -149,6 +149,26 @@ class TabularDataObject(object):
             "raster_field_variables"
         ]
         if tabular_data._dependent_variable:
+            if isinstance(tabular_data._dependent_variable, list):
+                for var in tabular_data._dependent_variable:
+                    if (
+                        var
+                        in tabular_data._categorical_variables
+                        + tabular_data._continuous_variables
+                    ):
+                        raise Exception(
+                            "Variable to predict cannot be an explanatory variable"
+                        )
+            else:
+                if (
+                    tabular_data._dependent_variable
+                    in tabular_data._categorical_variables
+                    + tabular_data._continuous_variables
+                ):
+                    raise Exception(
+                        "Variable to predict cannot be an explanatory variable"
+                    )
+
             if (
                 tabular_data._dataframe[tabular_data._dependent_variable]
                 .isnull()
@@ -1259,9 +1279,7 @@ class TabularDataObject(object):
             # Try to convert the datatype to timestamp
             warnings.warn("Index field is not timestamp. Converting it to timestamp.")
             try:
-                index_data_copy = pd.to_datetime(
-                    index_data_copy, infer_datetime_format=True
-                )
+                index_data_copy = pd.to_datetime(index_data_copy)
             except:
                 sample_ticks = True
 
@@ -1522,7 +1540,7 @@ class TabularDataObject(object):
             elif (
                 unique_values[col] / total_rows > 0.5
                 and col_length[col] > 5
-                and len(dataframe[col][0].split("\\")[0]) < 3
+                and len(dataframe[col].iloc[0].split("\\")[0]) < 3
             ):
                 categorical_variables.remove(col)
                 image_variables.append(col)
@@ -2179,7 +2197,10 @@ class TabularDataObject(object):
                 "sorted_index_col"
             ].to_list()
         del sorted_dataframe
-
+        # CHanges to handle the pandas datatype issue
+        dataframe[fields_mapping["categorical_variables"]] = dataframe[
+            fields_mapping["categorical_variables"]
+        ].astype("category")
         data_bunch = TabularDataBunch.from_df(
             temp_file,
             dataframe,

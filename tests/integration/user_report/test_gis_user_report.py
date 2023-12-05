@@ -29,7 +29,7 @@ class TestReportApi(unittest.TestCase):
             user.report("user", None, "weekly")
 
     def test_content_report(self):
-        gis = GIS(profile="your_online_profile", verify_cert=False, trust_env=True)
+        gis = GIS(profile="your_online_admin_profile", verify_cert=False, trust_env=True)
         user = gis.users.me
         date_time_str = "16/01/22"
         then = _dt.datetime.strptime(date_time_str, "%d/%m/%y")
@@ -54,7 +54,7 @@ class TestReportApi(unittest.TestCase):
         assert final_item.delete()
 
     def test_users_report(self):
-        gis = GIS(profile="your_online_profile", verify_cert=False, trust_env=True)
+        gis = GIS(profile="your_online_admin_profile", verify_cert=False, trust_env=True)
         user = gis.users.me
         date_time_str = "16/01/22"
         then = _dt.datetime.strptime(date_time_str, "%d/%m/%y")

@@ -1,5 +1,6 @@
 from ._codetemplate import super_resolution
 import torch, json, traceback
+from ... import __version__ as ArcGISLearnVersion
 from .._data import prepare_data, _raise_fastai_import_error
 
 try:
@@ -99,7 +100,7 @@ class SuperResolution(ArcGISModel):
     """
 
     def __init__(self, data, backbone=None, pretrained_path=None, *args, **kwargs):
-        self._learn_version = kwargs.get("ArcGISLearnVersion", "1.9.1")
+        self._learn_version = kwargs.get("ArcGISLearnVersion", ArcGISLearnVersion)
         if backbone == "SR3":
             data_bunch = None
             if data.train_ds.__class__.__name__ == "Pix2PixHDDataset":

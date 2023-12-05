@@ -1,4 +1,7 @@
 import sys
+
+sys.path.insert(0, r"C:\\ipython_workfolder\\geosaurus\\src")
+
 import unittest
 from arcgis.gis import GIS, ContentManager
 
@@ -180,6 +183,24 @@ class TestCMCanDelete(unittest.TestCase):
             assert res == False
             item.protect(False)
             assert item.delete()
+
+
+class TestPermanentDelete(unittest.TestCase):
+    def test_permanent_delete(self):
+        # As of now, only available in ArcGIS Online
+        gis = GIS(profile="your_dev_profile", verify_cert=False)  # devext
+        content = gis.content
+        assert isinstance(content, ContentManager)
+        user = gis.users.me
+        rb = user.recyclebin
+        num_items_before = len(list(rb.content))
+
+        item = create_item(gis=gis)
+        res = content.delete_items([item], permanent=True)
+        assert res
+
+        num_items_after = len(list(rb.content))
+        assert num_items_after == num_items_before
 
 
 if __name__ == "__main__":

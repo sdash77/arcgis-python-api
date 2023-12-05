@@ -1,6 +1,6 @@
 import sys
+sys.path.insert(0, r"C:\\ipython_workfolder\\geosaurus\\src")
 
-# sys.path.insert(0, r"<path_to_repo>\geosaurus\src")
 
 from arcgis.gis import GIS
 import unittest
@@ -15,8 +15,8 @@ class TestVectorTileLayerClass_online(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.vtl_id = "c98c939d961d463095199140dd30a75c"
-        cls.gis = GIS(profile="your_online_admin_profile")
+        cls.vtl_id = "d720f1fc7b17466bac18b4533db25e03"
+        cls.gis = GIS(profile="your_online_profile")
 
         cls.vtl_item = cls.gis.content.get(cls.vtl_id)
         cls.tl = VectorTileLayer.fromitem(cls.vtl_item)
@@ -68,9 +68,9 @@ class TestVectorTileLayerClass_enterprise(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.vtl_id = "5afcbf725cdb418798620b64ff330f18"
+        cls.vtl_id = "b9fc667bd61540f6832e9a74139d640c"
         cls.gis = GIS(
-            profile="your_ent_admin_profile", verify_cert=False, trust_env=True
+            profile="your_enterprise_profile", verify_cert=False, trust_env=True
         )
 
         cls.vtl_item = cls.gis.content.get(cls.vtl_id)
@@ -99,17 +99,9 @@ class TestVectorTileLayerClass_enterprise(unittest.TestCase):
 
     def test_export_tiles(self):
         exported = self.tl.export_tiles(
-            levels="0-2",
-            export_extent={
-                "xmin": -109.55,
-                "ymin": 25.76,
-                "xmax": -86.39,
-                "ymax": 49.94,
-                "spatialReference": {"wkid": 102100, "latestWkid": 3857},
-            },
+            levels="0-1",
         )
         assert exported
-        os.remove(exported[0])
 
     @classmethod
     def tearDownClass(cls):

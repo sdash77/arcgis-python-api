@@ -53,6 +53,7 @@ except:
 _PROTOCOL_LEVEL = 2
 _FAIRNESS_ARGS_NOT_DICT = "Fairness args must be a dictionary"
 _FAIRNESS_ARGS_KEY_NOT_FOUND = "Fairness args key not found"
+_DEGENERATE_LABEL_FOR_SENSITIVE_FEATURE = "ValueError: The sensitive feature encountered a degenerate label. A degenerate label typically refers to a label or category within a dataset that has very little variation or diversity, making it less informative for machine learning or statistical analysis."
 
 
 def _get_model_type(model_type):
@@ -153,11 +154,10 @@ class MLModel(object):
 
                                                 A dictionary to provide fairness args. Following are allowed keys and values
                                                 Keyword Args:                   Value Args:
-                                                <sensitive_feature> str:        Protected class column or feature name
+                                                <sensitive_feature> str:        Protected class column or feature name. Ony categorical variable is allowed.
                                                 <mitigation_type> str:          `reweighing` or `threshold_optimizer` or `exponentiated_gradient` (For Classification)
                                                                                 `grid_search` or `exponentiated_gradient` (For Regression)
-                                                <mitigation_constraint> str:    'demographic_parity' or'equalized_odds' or 'selection_rate_parity'
-                                                                                or `false_positive_rate_parity` or `true_negative_rate_parity` or `equalized_odds` (For Classification)
+                                                <mitigation_constraint> str:    'demographic_parity' or'equalized_odds' (For Classification)
                                                                                 and `ZeroOneLoss` or `SquareLoss` (For Regression)
 
 
@@ -403,14 +403,24 @@ class MLModel(object):
                             sample_weight=self.instance_weights_train,
                         )
                     else:
-                        print(f"Fitting with {self.mitigation_method}")
-                        self._model.fit(
-                            self._training_df,
-                            self._training_labels,
-                            sensitive_features=self._training_df.loc[
-                                :, self.protected_class
-                            ],
-                        )
+                        try:
+                            print(f"Fitting with {self.mitigation_method}")
+                            self._model.fit(
+                                self._training_df,
+                                self._training_labels,
+                                sensitive_features=self._training_df.loc[
+                                    :, self.protected_class
+                                ],
+                            )
+                        except ValueError as val:
+                            val_error_message = val.args[0]
+                            if (
+                                "Degenerate labels for sensitive feature"
+                                in val_error_message
+                            ):
+                                raise Exception(_DEGENERATE_LABEL_FOR_SENSITIVE_FEATURE)
+                            else:
+                                raise Exception(val)
 
                 else:
                     self._model.fit(self._training_data, self._training_labels)
@@ -441,9 +451,13 @@ class MLModel(object):
                                     ]
                                  2. for Regression
                                     [
-                                    "mean_absolute_error",
-                                    "mean_squared_error",
+                                    "MAE",
+                                    "MSE",
+                                    "RMSE",
+                                    "MAPE"
                                     ]
+                                 Metric should be one of the values mentioned in
+                                 the list.
 
         visualize                A boolean value to visualize plot of metrics
         =====================   ===========================================
@@ -1316,11 +1330,8 @@ class MLModel(object):
             processed_dataframe.reindex(sorted(processed_dataframe.columns), axis=1),
             fit=False,
         )
-        if self._fairness and self.mitigation_method == "threshold_optimizer":
-            processed_df = processed_numpy[self._validation_df.columns]
-            group_data = processed_df.loc[:, self.protected_class]
-            predictions = self._predict(processed_df, group_data)
-        elif self._fairness:
+
+        if self._fairness:
             processed_df = processed_numpy[self._validation_df.columns]
             group_data = processed_df.loc[:, self.protected_class]
             predictions = self._predict(processed_df, group_data)

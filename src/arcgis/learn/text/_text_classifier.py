@@ -976,6 +976,10 @@ samples. Metrics are only being calculated for classes present in the validation
                 key=self.learn.model._config.label2id.get,
             )
             explainer = shap.Explainer(self._logit_wrapper, masker, output_names=labels)
+            text_or_list = [
+                text if len(text.split(" ")) > 1 else text + "  "
+                for text in text_or_list
+            ]
             self.shap_values = explainer(text_or_list)
             shap.plots.text(self.shap_values)
 
