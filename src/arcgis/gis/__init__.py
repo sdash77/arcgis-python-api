@@ -9095,16 +9095,17 @@ class CategorySchemaManager(object):
         See the category paths that can be used to assign to an item.
         If the category schema is empty, an empty list is returned.
         """
-        schema = self.schema
-        paths = self._generate_paths(schema)
-        modified_paths = [f"/{path}" for path in paths]
+        paths = self._generate_paths(self.schema, current_path=None, paths=[])
+        modified_paths = [f"/{path}" for path in paths][1:]
         return modified_paths
 
-    def _generate_paths(self, category_schema, current_path="", paths=[]):
+    def _generate_paths(self, schema_dict, current_path=None, paths=[]):
         """
         Recursively generates file paths from the category schema.
         """
-        for category in category_schema:
+        if current_path is None:
+            current_path = ""
+        for category in schema_dict:
             title = category["title"]
             new_path = f"{current_path}\{title}" if current_path else title
             paths.append(
