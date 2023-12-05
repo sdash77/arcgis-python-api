@@ -115,7 +115,7 @@ class OGCCollection:
             params["offset"] += limit
             while True:
                 res = self._gis._con.get(url, params)
-                if res["numberReturned"] == 0:
+                if res == {} or res["numberReturned"] == 0:
                     break
                 elif return_all == False and len(results) >= limit:
                     results = results[:limit]
@@ -147,10 +147,12 @@ class OGCCollection:
             params["offset"] += limit
             while res["numberReturned"] > 0:
                 res = self._gis._con.get(url, params)
-                results["features"].extend(res["features"])
-                if results["numberReturned"] == 0:
+
+                if res == {} or res["numberReturned"] == 0:
                     break
-                elif return_all == False and len(results["features"]) >= limit:
+
+                results["features"].extend(res["features"])
+                if return_all == False and len(results["features"]) >= limit:
                     results["features"] = results["features"][:limit]
                     break
                 elif res["numberReturned"] < limit:
@@ -162,7 +164,8 @@ class OGCCollection:
     # ---------------------------------------------------------------------
     def get(self, feature_id: int) -> Dict[str, Any]:
         """
-        Gets an individual feature on the service
+        Gets an individual feature on the service. Needs to correspond
+        to an id of the feature.
 
         :return: Dict[str, Any]
         """

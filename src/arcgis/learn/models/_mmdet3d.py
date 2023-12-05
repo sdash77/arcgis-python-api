@@ -61,20 +61,25 @@ class MMDetection3D(ArcGISModel):
                                     `voxel_size`, `voxel_points`, and `max_voxels`. The
                                     default value of `voxel_size`,`voxel_points`, and
                                     `max_voxels` are automatically calculated based on
-                                    the 'block size', 'object size' and
-                                    'average no. of points per block' of the exported data.
+                                    the 'block size', 'object size' and 'average no.
+                                    of points per block' of the exported data.
 
                                     Example:
                                         |    {'voxel_size': [0.05, 0.05, 0.1],
                                         |    'voxel_points': 10,
-                                        |    'max_voxels':(16000, 40000),
+                                        |    'max_voxels':[20000, 40000],
                                         |    }
 
                                     Parameter Explanation:
 
-                                    - 'voxel_size': The size of voxel in meter [x,y,z],
-                                    - 'voxel_points': Maximum number of points per voxel,
-                                    - 'max_voxels': Maximum number of voxels in (training, validation).
+                                    - 'voxel_size': List of voxel dimensions in meter
+                                      [x,y,z],
+                                    - 'voxel_points': An Int, that decides the maximum
+                                      number of points per voxel,
+                                    - 'max_voxels': List of maximum number of voxels in
+                                      [training, validation].
+
+                                    Default: None.
     =============================   =============================================
 
     :return: :class:`~arcgis.learn.MMDetection3D` Object
@@ -83,7 +88,7 @@ class MMDetection3D(ArcGISModel):
     def __init__(self, data, model="SECOND", pretrained_path=None, **kwargs):
         if not HAS_FASTAI:
             _raise_fastai_import_error(import_exception=import_exception)
-
+        kwargs["voxel_parms"] = kwargs.get("voxel_parms", {})
         self._kwargs = kwargs
         self._kwargs["model"] = model
         self._check_dataset_support(data)
@@ -357,6 +362,7 @@ class MMDetection3D(ArcGISModel):
 
     def _get_emd_params(self, save_inference_file):
         emd_template = {"DataAttributes": {}, "ModelParameters": {}}
+        emd_template["ModelType"] = "PointCloudDetection"
         emd_template["ModelParameters"]["kwargs"] = self._kwargs
         emd_template["DataAttributes"]["block_size"] = self._data.block_size
         emd_template["DataAttributes"]["max_point"] = self._data.max_point

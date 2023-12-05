@@ -1,13 +1,10 @@
-import sys
-
-# sys.path.insert(0, r"C:\ipython_workfolder\geosaurus\src")
 import datetime
 import unittest
 import pandas as pd
 from arcgis.gis import GIS, Item
 from arcgis.features import FeatureLayer
 from arcgis.features.manage_data import overlay_layers
-from config_tests import setup_profiles, stage_data
+from .config_tests import setup_profiles, stage_data
 
 test_items = ["d3cb37b9636d47888268ca086810bd9b"]  # Cougar Habitat
 profiles = ["online_test", "ent_test", "kube_test"]
@@ -29,8 +26,8 @@ class TestOverlayLayers(unittest.TestCase):
                 watershed = cougar_item.layers[6]
             else:
                 cougar_item = gis.content.get("d3cb37b9636d47888268ca086810bd9b")
-                park = cougar_item.layers[0]
-                watershed = cougar_item.layers[1]
+                park = cougar_item.layers[4]
+                watershed = cougar_item.layers[6]
             # create layer that will be overwritten
             test_id = str(datetime.datetime.now().microsecond)
             output_name = "test_overlay_layers_" + test_id

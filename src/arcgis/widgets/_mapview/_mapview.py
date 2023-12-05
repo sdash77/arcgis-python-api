@@ -923,7 +923,7 @@ class MapView(widgets.DOMWidget):
         30. ArcGIS Human Geography Dark
 
         """
-        if self._gis._is_authenticated:
+        if self._gis is not None and self._gis._is_authenticated:
             return [
                 "dark-gray-vector",
                 "gray-vector",
@@ -1544,7 +1544,9 @@ class MapView(widgets.DOMWidget):
         ):
             item = item.spatial.to_feature_collection()
         self._add_layer_to_widget(item, options)
-        if "opacity" in options:
+
+        # Only for imagery layers
+        if isinstance(item, ImageryLayer) and "opacity" in options:
             # Extra steps because the layer opacity will only update after renderering on
             # the widget. Weird behavior with no other solution found.
             wm_layer = dict(self.webmap.layers[-1])  # last layer added
@@ -1583,6 +1585,29 @@ class MapView(widgets.DOMWidget):
             except KeyError:
                 log.warning("No 'layers' in Item: will not be added to map")
         elif isinstance(item, Layer):
+            if isinstance(item, FeatureCollection):
+                # Need to do extra processing when plotting Feature Collection
+                if "featureSet" in item.layer:
+                    item.layer = {
+                        "layers": [
+                            {
+                                "featureSet": item.layer["featureSet"],
+                                "layerDefinition": item.layer["layerDefinition"],
+                            }
+                        ]
+                    }
+                else:
+                    item.layer = dict(item.layer)
+                for layer in item.layer["layers"]:
+                    for field in layer["layerDefinition"]["fields"]:
+                        if field["type"] == "esriFieldTypeBigInteger":
+                            field["type"] = "esriFieldTypeDouble"
+                        if field["type"] == "esriFieldTypeDateOnly":
+                            field["type"] = "esriFieldTypeDate"
+                        if field["type"] == "esriFieldTypeTimeOnly":
+                            field["type"] == "esriFieldTypeString"
+                        if field["type"] == "esriFieldTimestampOffset":
+                            field["type"] == "esriFieldTypeString"
             self._add_layer_to_webmap(item, options)
             _lyr = _make_jsonable_dict(item._lyr_json)
             if ("type" in _lyr and _lyr["type"] == "MapImageLayer") and (
@@ -1608,11 +1633,6 @@ class MapView(widgets.DOMWidget):
                 )
         elif isinstance(item, FeatureSet):
             fset_symbol = options["symbol"] if options and "symbol" in options else None
-            for feature in item.features:
-                try:
-                    feature.geometry = dict(feature.geometry)
-                except:
-                    pass
             fc = FeatureCollection.from_featureset(item, symbol=fset_symbol)
             self._add_layer_to_widget(fc, options)
 

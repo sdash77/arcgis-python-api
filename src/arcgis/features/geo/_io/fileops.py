@@ -1136,7 +1136,16 @@ def to_featureclass(
                         except:
                             dtypes.append((col, "<U254"))
                 elif df[col].dtype.name in ["int64", "Int64"]:
-                    dtypes.append((col, "<i8"))
+                    # Enterprise 11.1 and less do not accept Int64. Need to make float
+                    gis = arcgis.env.active_gis
+                    if (
+                        gis is not None
+                        and gis._is_agol == False
+                        and gis.version <= [10, 3]
+                    ):
+                        dtypes.append((col, np.float64))
+                    else:
+                        dtypes.append((col, "<i8"))
                 elif df[col].dtype.name == "bool":
                     dtypes.append((col, np.int32))
                 elif df[col].dtype.name == "boolean":

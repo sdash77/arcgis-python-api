@@ -2280,6 +2280,12 @@ def create_viewshed(
     above_ground_level_output_name: Optional[str] = None,
     output_name: Optional[str] = None,
     context: Optional[dict[str, Any]] = None,
+    vertical_error: Optional[dict[str, Any]] = None,
+    refractivity_coefficient: Optional[float] = 0.13,
+    horizontal_start_angle: Optional[Union[str, float]] = 0,
+    horizontal_end_angle: Optional[Union[str, float]] = 360,
+    vertical_upper_angle: Optional[Union[str, float]] = 90,
+    vertical_lower_angle: Optional[Union[str, float]] = -90,
     *,
     gis: Optional[GIS] = None,
     future: bool = False,
@@ -2426,6 +2432,52 @@ def create_viewshed(
                                              used as the output for the tool.
                                              A RuntimeError is raised if a service by that name already exists
     ------------------------------------     ---------------------------------------------------------------------------------------------------------------------------------------------
+    vertical_error                           Optional dict. The amount of uncertainty (the Root Mean Square error, or RMSE) in the surface elevation values.
+
+                                             Supported units: Meters | Kilometers | Feet | Yards | Miles
+
+                                             Example:
+
+                                                 {"distance":"2","units":"Meters"}
+    ------------------------------------     ---------------------------------------------------------------------------------------------------------------------------------------------
+    refractivity_coefficient                 Optional double. The coefficient of the refraction of visible light in air.
+
+                                             Example:
+
+                                                 0.13
+    ------------------------------------     ---------------------------------------------------------------------------------------------------------------------------------------------
+    horizontal_start_angle                   Optional string or double. The start angle of the horizontal scan range. It is a string
+                                             representing a numerical value or field. The value should be in degrees from 0 to 360,
+                                             with 0 oriented to north. The default value is 0.
+
+                                             Example:
+
+                                                 "azimuth1"
+    ------------------------------------     ---------------------------------------------------------------------------------------------------------------------------------------------
+    horizontal_end_angle                     Optional string or double. The end angle of the horizontal scan range. It is a string
+                                             representing a numerical value or field. The value should be in degrees from 0 to 360,
+                                             with 0 oriented to north. The default value is 360.
+
+                                             Example:
+
+                                                 "azimuth2"
+    ------------------------------------     ---------------------------------------------------------------------------------------------------------------------------------------------
+    vertical_upper_angle                     Optional string or double. The upper vertical angle limit of the scan relative to the horizontal plane.
+                                             It is a string representing a numerical value or field. The allowed range is from above -90 up to
+                                             and including 90. The default value is 90 (straight up).
+
+                                             Example:
+
+                                                 "vert1"
+    ------------------------------------     ---------------------------------------------------------------------------------------------------------------------------------------------
+    vertical_lower_angle                     Optional string or double. The lower vertical angle limit of the scan relative to the horizontal plane.
+                                             It is a string representing a numerical value or field. The allowed range is from -90 up to
+                                             but not including 90. The default value is -90 (straight down).
+
+                                             Example:
+
+                                                 "vert2"
+    ------------------------------------     ---------------------------------------------------------------------------------------------------------------------------------------------
     context                                  context contains additional settings that affect task execution.
 
                                              context parameter overwrites values set through arcgis.env parameter
@@ -2541,6 +2593,12 @@ def create_viewshed(
         target_height=target_height,
         target_height_field=target_height_field,
         above_ground_level_output_name=above_ground_level_output_name,
+        vertical_error=vertical_error,
+        refractivity_coefficient=refractivity_coefficient,
+        horizontal_start_angle=horizontal_start_angle,
+        horizontal_end_angle=horizontal_end_angle,
+        vertical_upper_angle=vertical_upper_angle,
+        vertical_lower_angle=vertical_lower_angle,
         context=context,
         future=future,
         **kwargs,
