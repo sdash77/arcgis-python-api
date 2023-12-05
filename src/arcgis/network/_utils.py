@@ -1,15 +1,98 @@
+from __future__ import annotations
 import json
 import logging
+from enum import Enum
+from typing import Any
+import requests
 from functools import lru_cache
-from arcgis.gis import GIS
+from arcgis.auth.tools import LazyLoader
 from arcgis import network
 from arcgis._impl.common._utils import _validate_url
 
 _log = logging.getLogger()
+_arcgis_gis = LazyLoader("arcgis.gis")
+_arcgis = LazyLoader("arcgis")
+_gp = LazyLoader("arcgis.geoprocessing")
+__all__ = [
+    "SolverType",
+    "publish_routing_service",
+    "find_travel_mode",
+    "default_travel_mode",
+]
+
+
+@lru_cache(maxsize=255)
+def _get_network_publishing(gis: _arcgis_gis.GIS) -> str:
+    """gets the network system publishing url"""
+    params = {"f": "json"}
+    if gis._is_arcgisonline == False:
+        url = f"{gis.resturl}portals/self/servers"
+    else:
+        url = f"{gis.resturl}portals/self/urls"
+    resp: requests.Response = gis.session.get(url=url, params=params)
+    resp.raise_for_status()
+    data: dict = resp.json()
+    for server in data.get("servers", []):
+        if server.get("serverRole", "NOPE") == "HOSTING_SERVER":
+            return _gp._tool.Toolbox(
+                server.get("url") + "/rest/services/System/PublishingTools/GPServer",
+                gis=gis,
+            )
+
+
+class SolverType(Enum):
+    CLOSESTFACILITY: str = "ClosestFacility"
+    LOCATIONALLOCATION: str = "Location-Allocation"
+    ORIGINDESTINATIONCOSTMATRIX: str = "OriginDestinationCostMatrix"
+    ROUTE: str = "Route"
+    SERVICEAREA: str = "ServiceArea"
+    VEHICLEROUTINGPROBLEM: str = "VehicleRoutingProblem"
+    ALL: str = "ClosestFacility,Location-Allocation,OriginDestinationCostMatrix,Route,ServiceArea,VehicleRoutingProblem"
 
 
 # -------------------------------------------------------------------------
-def _gp_travel_mode(gis: GIS, travel_mode: str = None) -> str:
+def publish_routing_service(
+    datastore: _arcgis_gis.Item,
+    path: str,
+    folder: str | None = None,
+    solver_types: list[SolverType] | SolverType = SolverType.ALL,
+    config: str = None,
+    gis: _arcgis_gis.GIS | None = None,
+):
+    if gis is None:
+        gis = datastore._gis
+    network_dataset: dict[str, Any] = {
+        "datastoreId": datastore.id,
+        "path": path,
+    }
+    folder = folder or "Routing"
+    sts: list = []
+    if isinstance(solver_types, list):
+        for st in solver_types:
+            if isinstance(st, str):
+                sts.append(st)
+            elif isinstance(st, SolverType):
+                sts.append(sts.value)
+    elif isinstance(solver_types, SolverType):
+        sts.append(solver_types.value)
+    elif isinstance(solver_types, str):
+        sts = [""]
+    else:
+        raise ValueError("Invalid solver_types, please verify the parameter.")
+    solver_types: str = ",".join(sts)
+
+    toolbox = _get_network_publishing(gis=gis)
+    result = toolbox.publish_routing_services(
+        network_dataset=network_dataset,
+        service_folder=folder,
+        solver_types=solver_types,
+        config_file=config,
+    )
+    return result
+
+
+# -------------------------------------------------------------------------
+def _gp_travel_mode(gis: _arcgis_gis.GIS, travel_mode: str = None) -> str:
     """Calculates the travel mode via the GP Service"""
     output = network.analysis.get_travel_modes(gis=gis)
     if travel_mode is None:
@@ -57,7 +140,10 @@ def _route_service_travel_modes(gis, travel_mode: str = None) -> str:
     modes = route_service.retrieve_travel_modes()
     if travel_mode is None:
         travel_mode = modes["defaultTravelMode"]
-    fn = lambda tm: travel_mode.lower() in [tm["id"].lower(), tm["name"].lower()]
+    fn = lambda tm: travel_mode.lower() in [
+        tm["id"].lower(),
+        tm["name"].lower(),
+    ]
     res = list(filter(fn, modes["supportedTravelModes"]))
     if len(res) > 0:
         return json.dumps(res[0])
@@ -69,7 +155,7 @@ def _route_service_travel_modes(gis, travel_mode: str = None) -> str:
 
 # -------------------------------------------------------------------------
 @lru_cache(maxsize=10)
-def find_travel_mode(gis: GIS, travel_mode: str = None) -> str:
+def find_travel_mode(gis: _arcgis_gis.GIS, travel_mode: str = None) -> str:
     """Gets and Validate the Travel Mode for the Network Analyst Tools"""
     try:
         return _gp_travel_mode(gis, travel_mode)
@@ -79,7 +165,7 @@ def find_travel_mode(gis: GIS, travel_mode: str = None) -> str:
 
 # -------------------------------------------------------------------------
 @lru_cache(maxsize=10)
-def default_travel_mode(gis: GIS) -> str:
+def default_travel_mode(gis: _arcgis_gis.GIS) -> str:
     """Gets the default travel mode for the GIS"""
     try:
         output = network.analysis.get_travel_modes(gis=gis)
