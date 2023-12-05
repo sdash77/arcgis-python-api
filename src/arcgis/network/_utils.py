@@ -21,6 +21,16 @@ __all__ = [
 ]
 
 
+class SolverType(Enum):
+    CLOSESTFACILITY: str = "ClosestFacility"
+    LOCATIONALLOCATION: str = "Location-Allocation"
+    ORIGINDESTINATIONCOSTMATRIX: str = "OriginDestinationCostMatrix"
+    ROUTE: str = "Route"
+    SERVICEAREA: str = "ServiceArea"
+    VEHICLEROUTINGPROBLEM: str = "VehicleRoutingProblem"
+    ALL: str = "ClosestFacility,Location-Allocation,OriginDestinationCostMatrix,Route,ServiceArea,VehicleRoutingProblem"
+
+
 @lru_cache(maxsize=255)
 def _get_network_publishing(gis: _arcgis_gis.GIS) -> str:
     """gets the network system publishing url"""
@@ -38,16 +48,6 @@ def _get_network_publishing(gis: _arcgis_gis.GIS) -> str:
                 server.get("url") + "/rest/services/System/PublishingTools/GPServer",
                 gis=gis,
             )
-
-
-class SolverType(Enum):
-    CLOSESTFACILITY: str = "ClosestFacility"
-    LOCATIONALLOCATION: str = "Location-Allocation"
-    ORIGINDESTINATIONCOSTMATRIX: str = "OriginDestinationCostMatrix"
-    ROUTE: str = "Route"
-    SERVICEAREA: str = "ServiceArea"
-    VEHICLEROUTINGPROBLEM: str = "VehicleRoutingProblem"
-    ALL: str = "ClosestFacility,Location-Allocation,OriginDestinationCostMatrix,Route,ServiceArea,VehicleRoutingProblem"
 
 
 # -------------------------------------------------------------------------
@@ -82,6 +82,11 @@ def publish_routing_service(
     solver_types: str = ",".join(sts)
 
     toolbox = _get_network_publishing(gis=gis)
+    if config and os.path.isfile(config):
+        upload = toolbox.uploads.upload(config)
+        config: dict = {"itemID": upload.properties["itemID"]}
+    else:
+        config = ""
     result = toolbox.publish_routing_services(
         network_dataset=network_dataset,
         service_folder=folder,
