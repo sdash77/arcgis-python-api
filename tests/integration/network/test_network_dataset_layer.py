@@ -10,7 +10,7 @@ from arcgis._impl.common._isd import InsensitiveDict
 gis = GIS(
     url="https://punjab.esri.com/portal",
     username="administrator",
-    password="esri.agp1",
+    # password="",
     verify_cert=False,
 )
 url = "https://punjab.esri.com/server/rest/services/Routing/NetworkAnalysis/NAServer/Routing_ND"
