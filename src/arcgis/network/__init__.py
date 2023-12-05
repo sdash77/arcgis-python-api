@@ -7,6 +7,7 @@ vehicles, locating facilities using location allocation, calculating an OD cost 
 from ._layer import (
     NetworkLayer,
     NetworkDataset,
+    NetworkDatasetLayer,
     ClosestFacilityLayer,
     ServiceAreaLayer,
     RouteLayer,
