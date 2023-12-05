@@ -11007,6 +11007,7 @@ class _RasterAnalysisTools(BaseAnalytics):
                 context=context,
                 gis=self._gis,
                 future=True,
+                estimate=estimate,
             )
         elif (current_version is not None) and current_version >= 11.2:
             gpjob = self._tbx.create_viewshed(
@@ -11035,6 +11036,7 @@ class _RasterAnalysisTools(BaseAnalytics):
                 context=context,
                 gis=self._gis,
                 future=True,
+                estimate=estimate,
             )
 
         gpjob._is_ra = True
