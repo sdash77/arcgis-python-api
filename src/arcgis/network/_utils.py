@@ -1,4 +1,5 @@
 from __future__ import annotations
+import os
 import json
 import logging
 from enum import Enum
@@ -98,10 +99,10 @@ def publish_routing_service(
     elif isinstance(solver_types, SolverType):
         sts.append(solver_types.value)
     elif isinstance(solver_types, str):
-        sts = [""]
+        sts = ""
     else:
         raise ValueError("Invalid solver_types, please verify the parameter.")
-    solver_types: str = ",".join(sts)
+    solver_types: str = json.dumps(sts)
 
     toolbox = _get_network_publishing(gis=gis)
     if config and os.path.isfile(config):
