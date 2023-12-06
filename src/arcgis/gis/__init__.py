@@ -76,6 +76,8 @@ _cloner = LazyLoader("arcgis.gis.clone")
 _cm_helper = LazyLoader("arcgis.gis._impl._content_manager._import_data")
 _sharing = LazyLoader("arcgis.gis._impl._content_manager.sharing")
 _log = logging.getLogger(__name__)
+from arcgis.gis._impl._dataclasses._viewdc import JoinType
+from arcgis.auth.tools._util import create_base_url as _create_base_url
 
 
 class Error(Exception):
@@ -529,7 +531,7 @@ class GIS(object):
                 raise Exception(
                     "key_file parameter is required along with cert_file when using PKI authentication."
                 )
-
+        self.resturl = _create_base_url(url)
         self._url = url
         self._username = username
         self._password = password
@@ -1372,6 +1374,9 @@ class GIS(object):
 
     @property
     def _public_rest_url(self):
+        if self.url.find("/sharing/rest/") > -1:
+            return self.url
+
         return self.url + "/sharing/rest/"
 
     # ----------------------------------------------------------------------
@@ -5618,7 +5623,7 @@ class GroupManager(object):
     as a property of the :class:`~arcgis.gis.GIS` object.
 
     .. note::
-        This class is not created by users directly.
+       This class is not created by users directly.
     """
 
     def __init__(self, gis):
@@ -5745,8 +5750,7 @@ class GroupManager(object):
         owner.
 
         .. note::
-            Only title and tags are required.
-
+            Only title and tags are required. ``autojoin`` is deprecated, use ``auto_join`` instead
 
         ====================  =========================================================
         **Parameter**         **Description**
@@ -5828,10 +5832,6 @@ class GroupManager(object):
 
                               .. note::
                                 For Enterprise only "org" is accepted.
-        --------------------  ---------------------------------------------------------
-        autojoin              Optional Boolean. The default is `False`. Only applies to
-                              org accounts. If `True`, this group will allow joined
-                              without requesting membership approval.
         ====================  =========================================================
 
         :return:
@@ -5856,6 +5856,12 @@ class GroupManager(object):
             "scenes": {"itemTypes": "Web Scene"},
             "tools": {"itemTypes": "Locator Package"},
         }
+
+        if autojoin is not None:
+            warnings.warn(
+                "The 'autojoin' parameter is deprecated. Use 'auto_join' instead.",
+                DeprecationWarning,
+            )
         if max_file_size is None:
             max_file_size = 1024000
         if users_update_items is None:
