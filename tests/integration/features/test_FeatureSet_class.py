@@ -369,6 +369,22 @@ class Test_Feature_class(unittest.TestCase):
         except Exception as testException:
             self.fail("Error during test: " + testException.__str__())
 
+    def test_create_featureSet_with_one_feature(self):
+        line_fs = features.FeatureSet.from_dict(
+            {
+                "features": [
+                    {
+                        "geometry": {"paths": [[[-80.7, 35.1], [-80.8, 35.2]]]},
+                        "attributes": {"ObjectID": 1}}
+                ],
+                "objectIdFieldName": "ObjectID",
+                "spatialReference": {"wkid": 4326},
+        #         "geometryType": "esriGeometryPolyline",
+                "fields": [{"name": "ObjectID", "alias": "ObjectID", "type": "esriFieldTypeOID", "sqlType": "sqlTypeOther"}]
+            }
+        )
+        assert line_fs.geometry_type
+
     def tearDown(self):
         print("------------------------------------------------------------------\n")
 

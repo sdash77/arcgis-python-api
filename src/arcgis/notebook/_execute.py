@@ -148,7 +148,7 @@ def execute_notebook(
 
     mgrs = gis.notebook_server
     if len(mgrs) > 0:
-        if gis._portal.is_arcgisonline:
+        if gis._is_arcgisonline:
             instance_type = None
             mgr = gis.notebook_server[0]
             assert isinstance(mgr, AGOLNotebookManager)

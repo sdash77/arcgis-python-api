@@ -507,7 +507,12 @@ class ModelExtension(ArcGISModel):
 
         Returns per class precision, recall and f1 scores
         """
-        ignore_classes = np.unique(self._ignore_classes + ignore_classes).tolist()
+        # Standalone models will be missing _ignore_classes attribute
+        if hasattr(self, "_ignore_classes"):
+            ignore_classes = np.unique(self._ignore_classes + ignore_classes).tolist()
+        else:
+            ignore_classes = np.unique(ignore_classes).tolist()
+
         try:
             self._check_requisites()
             ## Calling imported function `per_class_metrics`
@@ -894,6 +899,7 @@ class ModelExtension(ArcGISModel):
     ):
         """
         Runs prediction on an Image.
+        This method is only supported for RGB images.
         =====================   ===========================================
         **Parameter**            **Description**
         ---------------------   -------------------------------------------
@@ -940,6 +946,9 @@ class ModelExtension(ArcGISModel):
             raise Exception(
                 "This function requires opencv 4.0.1.24. Install it using pip install opencv-python==4.0.1.24"
             )
+
+        if self._data._is_multispectral:
+            raise Exception("This method is not supported for multispectral images.")
 
         if isinstance(image_path, str):
             image = cv2.imread(image_path)

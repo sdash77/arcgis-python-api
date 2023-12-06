@@ -44,6 +44,7 @@ try:
     import math
     import warnings
     from fastai.distributed import *
+    from fastai.torch_core import distrib_barrier
     import argparse
     from torch.nn.parallel import DistributedDataParallel
     from .._utils.segmentation_loss_functions import dice
@@ -332,8 +333,10 @@ class SaveModelCallback(TrackerCallback):
             try:
                 self.model.load(f"{self.name}_epoch_{self.best_epoch}")
             except FileNotFoundError:
-                # logging this to notify about possible errors.
-                print("Could not load the best model.")
+                # don't show message in child process in case of multigpu
+                if not int(os.environ.get("RANK", 0)):
+                    # logging this to notify about possible errors.
+                    print("Could not load the best model.")
 
             try:
                 self.model.save(
@@ -607,7 +610,7 @@ class ArcGISModel(object):
         self._model_metrics_cache = None
         self._slice_lr = True
         self._pretrained_path = kwargs.get("pretrained_path", None)
-        if hasattr(self._data, 'arcgis_init_kwargs'):
+        if hasattr(self._data, "arcgis_init_kwargs"):
             self._check_data_support_with_pretrained_path()
         self._model_kwargs = kwargs
         if self.__class__.__name__ not in unsupported_models:
@@ -752,9 +755,21 @@ class ArcGISModel(object):
             try:
                 metrics = self.learn.metrics
                 self.learn.metrics = []
-                with tempfile.TemporaryDirectory(prefix="arcgisTemp_") as _tempfolder:
-                    self.learn.path = Path(_tempfolder)
+                # ddp training
+                if getattr(self, "_multigpu_training", False):
                     self.learn.lr_find()
+                    distrib_barrier()
+                    # remove tmp.pth created during lr_find in parent process
+                    if not int(os.environ.get("RANK", 0)):
+                        os.remove(
+                            Path(self.learn.path) / self.learn.model_dir / "tmp.pth"
+                        )
+                else:
+                    with tempfile.TemporaryDirectory(
+                        prefix="arcgisTemp_"
+                    ) as _tempfolder:
+                        self.learn.path = Path(_tempfolder)
+                        self.learn.lr_find()
             except Exception as e:
                 # if some error comes in lr_find
                 raise e
@@ -932,6 +947,9 @@ class ArcGISModel(object):
         """
         if os.environ.get("BLOCK_MODEL_TRAINING", 0) == "1":
             raise Exception(f"This model cannot be trained in ArcGIS Online Notebooks")
+
+        if getattr(self, "_is_mm3d", False):
+            self.learn.model.prediction = False
 
         with warnings.catch_warnings():
             warnings.simplefilter("ignore", UserWarning)
@@ -1162,6 +1180,8 @@ class ArcGISModel(object):
                 "model_name": self._kwargs["model"],
                 "backend": self._backend,
             }
+        elif getattr(self, "model_type", False) == "SR3":
+            model_params = {"backbone": "SR3", "backend": self._backend}
         else:
             model_params = {"backbone": backbone, "backend": self._backend}
         if _emd_template.get("ModelParameters", None) is None:
@@ -1913,7 +1933,7 @@ class ArcGISModel(object):
                 from onnx_tf.backend import prepare
         except:
             raise Exception(
-                'Tensorflow(version 1.13.1 or above), Onnx(version 1.5.0) and Onnx_tf(version 1.3.0) libraries are not installed. Install Tensorflow using "conda install tensorflow-gpu=1.13.1". Install onnx and onnx_tf using "pip install onnx onnx_tf".'
+                "Could not find the required deep learning dependencies. Ensure you have installed the required dependent libraries. See https://developers.arcgis.com/python/guide/deep-learning/."
             )
 
         batch_size = int(math.sqrt(int(batch_size))) ** 2

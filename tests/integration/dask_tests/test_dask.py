@@ -1,45 +1,59 @@
 import sys, os
 import random
 import tempfile
-sys.path.insert(0, r"C:\SVN\geosaurus_master_dask_integration\src")
+
+sys.path.insert(0, r"C:\SVN\geosaurus_issue_10329\src")
 import pandas as pd
-import unittest #pytest,
+import unittest  # pytest,
 import dask.dataframe as dd
 
 from arcgis.geometry import Geometry
 from arcgis.features import FeatureCollection
 from arcgis.features.geo._array import GeoArray
-from arcgis.features.geo._dask import (_from_geometry,
-                                       GeoDaskSeriesAccessor,
-                                       GeoDaskSpatialAccessor)
+from arcgis.features.geo._dask import (
+    _from_geometry,
+    GeoDaskSeriesAccessor,
+    GeoDaskSpatialAccessor,
+)
 
 import arcgis
 
 try:
     import arcpy
+
     HASARCPY = True
 except:
     HASARCPY = False
 geoms = [
-    Geometry({'x' : 1, 'y' : 1, 'spatialReference' : {'wkid' : 4326}}),
-    Geometry({'x' : 2, 'y' : 2, 'spatialReference' : {'wkid' : 4326}})
+    Geometry({'x': 1, 'y': 1, 'spatialReference': {'wkid': 4326}}),
+    Geometry({'x': 2, 'y': 2, 'spatialReference': {'wkid': 4326}}),
 ]
-
 
 
 class TestDaskSeriesAccessor(unittest.TestCase):
     def test_properties(self):
         """tests creating a feature set dictionary"""
         data_size = 100
-        x = [random.randrange(start=1,stop=10) + random.random() for i in range(data_size)]
-        y = [random.randrange(*sorted([1,10])) - random.random() for i in range(data_size)]
-        a = [random.randrange(*sorted([1,10000])) for i in range(data_size)]
-        coords = list(zip(x,y))
-        geoms = [ Geometry({'x' : i[0], 'y' : i[1], 'spatialReference' : {'wkid' : 4326}}) for i in coords]
+        x = [
+            random.randrange(start=1, stop=10) + random.random()
+            for i in range(data_size)
+        ]
+        y = [
+            random.randrange(*sorted([1, 10])) - random.random()
+            for i in range(data_size)
+        ]
+        a = [random.randrange(*sorted([1, 10000])) for i in range(data_size)]
+        coords = list(zip(x, y))
+        geoms = [
+            Geometry(
+                {'x': i[0], 'y': i[1], 'spatialReference': {'wkid': 4326}}
+            )
+            for i in coords
+        ]
 
         ga = GeoArray(geoms)
         s = pd.Series(_from_geometry(geoms))
-        df = pd.DataFrame({"SHAPE": s, 'a' : a})
+        df = pd.DataFrame({"SHAPE": s, 'a': a})
         ddf = dd.from_pandas(df, 5)
         assert isinstance(ddf.SHAPE.geom, GeoDaskSeriesAccessor)
         series = ddf.SHAPE.geom
@@ -68,45 +82,77 @@ class TestDaskSeriesAccessor(unittest.TestCase):
         assert isinstance(series.point_count.compute(), pd.Series)
         assert isinstance(series.true_centroid.compute(), pd.Series)
         assert isinstance(series.spatial_reference.compute(), pd.Series)
-    #----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
     def test_angleDistTo(self):
         """tests angle distance to"""
         try:
             data_size = 10
-            x = [random.randrange(start=1,stop=10) + random.random() for i in range(data_size)]
-            y = [random.randrange(*sorted([1,10])) - random.random() for i in range(data_size)]
-            a = [random.randrange(*sorted([1,10000])) for i in range(data_size)]
-            coords = list(zip(x,y))
-            geoms = [ Geometry({'x' : i[0], 'y' : i[1], 'spatialReference' : {'wkid' : 4326}}) for i in coords]
+            x = [
+                random.randrange(start=1, stop=10) + random.random()
+                for i in range(data_size)
+            ]
+            y = [
+                random.randrange(*sorted([1, 10])) - random.random()
+                for i in range(data_size)
+            ]
+            a = [
+                random.randrange(*sorted([1, 10000]))
+                for i in range(data_size)
+            ]
+            coords = list(zip(x, y))
+            geoms = [
+                Geometry(
+                    {
+                        'x': i[0],
+                        'y': i[1],
+                        'spatialReference': {'wkid': 4326},
+                    }
+                )
+                for i in coords
+            ]
 
             ga = GeoArray(geoms)
             s = pd.Series(_from_geometry(geoms))
-            df = pd.DataFrame({"SHAPE": s, 'a' : a})
+            df = pd.DataFrame({"SHAPE": s, 'a': a})
             ddf = dd.from_pandas(df, 5)
             r = ddf.SHAPE.geom.angle_distance_to(geoms[0]).compute()
             assert isinstance(r, pd.Series)
             assert isinstance(r[0], tuple)
         except:  # Handles ARCPY not being signed in
             pass
+
     ##--------------------------------------------------------------------------
     def test_boundary(self):
         if HASARCPY:
-            geoms = [ Geometry({
-                "rings" : [[[-97.06138,32.837],[-97.06133,32.836],[-97.06124,32.834],[-97.06127,32.832]]],
-                "spatialReference" : {"wkid" : 4326}
-            })]
+            geoms = [
+                Geometry(
+                    {
+                        "rings": [
+                            [
+                                [-97.06138, 32.837],
+                                [-97.06133, 32.836],
+                                [-97.06124, 32.834],
+                                [-97.06127, 32.832],
+                            ]
+                        ],
+                        "spatialReference": {"wkid": 4326},
+                    }
+                )
+            ]
             s = pd.Series(_from_geometry(geoms))
-            df = pd.DataFrame({"SHAPE": s, 'a' : [1]})
+            df = pd.DataFrame({"SHAPE": s, 'a': [1]})
             ddf = dd.from_pandas(df, 5)
 
             b = ddf.SHAPE.geom.boundary().compute()
             assert isinstance(b, pd.Series)
-            assert b.geom.geometry_type.unique()[0]== 'polyline'
+            assert b.geom.geometry_type.unique()[0] == 'polyline'
 
 
 ###########################################################################
 class TestDaskTestCase(unittest.TestCase):
     """Unit Tests for Dask Spatial Accessor"""
+
     def test_from_pandas(self):
         s = pd.Series(_from_geometry(geoms))
         ds = dd.from_pandas(s, 2)
@@ -134,22 +180,23 @@ class TestDaskTestCase(unittest.TestCase):
 
     def test_to_from_featureclass(self):
         """tests the read/write feature classes"""
-        with tempfile.TemporaryDirectory(suffix="_shp") as path:
-            ga = GeoArray(geoms)
-            s = pd.Series(_from_geometry(geoms))
-            df = pd.DataFrame({"SHAPE": s, 'a' : [-10, 20]})
-            ddf = dd.from_pandas(df, 2)
-            fp = os.path.join(path, "dataset.shp")
-            ddf.spatial.to_featureclass(fp)
-            assert fp == ddf.spatial.to_featureclass(fp)
-            ddf2 = dd.DataFrame.spatial.from_featureclass(fp, 2)
-            assert isinstance(ddf2, dd.DataFrame)
+        path = tempfile.gettempdir()
+        ga = GeoArray(geoms)
+        s = pd.Series(ga)
+        a = pd.Series(data=[-1, 2])
+        df = pd.DataFrame({"SHAPE": s, 'a': a})
+        ddf = dd.from_pandas(df, 2)
+        fp = os.path.join(path, "dataset.shp")
+        ddf.spatial.to_featureclass(fp)
+        assert fp == ddf.spatial.to_featureclass(fp)
+        ddf2 = dd.DataFrame.spatial.from_featureclass(fp, 2)
+        assert isinstance(ddf2, dd.DataFrame)
 
     def test_df_spatial(self):
         """tests the dataframe spatial props"""
         ga = GeoArray(geoms)
         s = pd.Series(_from_geometry(geoms))
-        df = pd.DataFrame({"SHAPE": s, 'a' : [-10, 20]})
+        df = pd.DataFrame({"SHAPE": s, 'a': [-10, 20]})
         ddf = dd.from_pandas(df, 2)
         spatial = ddf.spatial
         assert isinstance(spatial, GeoDaskSpatialAccessor)
@@ -163,19 +210,19 @@ class TestDaskTestCase(unittest.TestCase):
         assert isinstance(spatial.geometry_type, list)
         assert spatial.has_z.compute() == False
         assert spatial.has_m.compute() == False
-        a,b,c = spatial._check_geometry_engine()
+        a, b, c = spatial._check_geometry_engine()
         assert a is not None
         assert b is not None
         assert c is not None
         assert spatial.renderer
-        spatial.renderer['symbol']['color'] = [0,255,0,128]
-        assert spatial.renderer['symbol']['color'] == [0,255,0,128]
+        spatial.renderer['symbol']['color'] = [0, 255, 0, 128]
+        assert spatial.renderer['symbol']['color'] == [0, 255, 0, 128]
 
     def test_df_project(self):
         """tests projecting to a new coordinate reference system"""
 
         s = pd.Series(_from_geometry(geoms))
-        df = pd.DataFrame({"SHAPE": s, 'a' : [-10, 20]})
+        df = pd.DataFrame({"SHAPE": s, 'a': [-10, 20]})
         ddf = dd.from_pandas(df, 2)
         spatial = ddf.spatial
         assert isinstance(spatial, GeoDaskSpatialAccessor)
@@ -184,7 +231,7 @@ class TestDaskTestCase(unittest.TestCase):
     def test_df_sindex(self):
         """tests the sindex creation"""
         s = pd.Series(_from_geometry(geoms))
-        df = pd.DataFrame({"SHAPE": s, 'a' : [-10, 20]})
+        df = pd.DataFrame({"SHAPE": s, 'a': [-10, 20]})
         ddf = dd.from_pandas(df, 2)
         spatial = ddf.spatial
         assert isinstance(spatial, GeoDaskSpatialAccessor)
@@ -193,15 +240,26 @@ class TestDaskTestCase(unittest.TestCase):
     def test_feature_set(self):
         """tests creating a feature set dictionary"""
         data_size = 100
-        x = [random.randrange(start=1,stop=10) + random.random() for i in range(data_size)]
-        y = [random.randrange(*sorted([1,10])) - random.random() for i in range(data_size)]
-        a = [random.randrange(*sorted([1,10000])) for i in range(data_size)]
-        coords = list(zip(x,y))
-        geoms = [ Geometry({'x' : i[0], 'y' : i[1], 'spatialReference' : {'wkid' : 4326}}) for i in coords]
+        x = [
+            random.randrange(start=1, stop=10) + random.random()
+            for i in range(data_size)
+        ]
+        y = [
+            random.randrange(*sorted([1, 10])) - random.random()
+            for i in range(data_size)
+        ]
+        a = [random.randrange(*sorted([1, 10000])) for i in range(data_size)]
+        coords = list(zip(x, y))
+        geoms = [
+            Geometry(
+                {'x': i[0], 'y': i[1], 'spatialReference': {'wkid': 4326}}
+            )
+            for i in coords
+        ]
 
         ga = GeoArray(geoms)
         s = pd.Series(_from_geometry(geoms))
-        df = pd.DataFrame({"SHAPE": s, 'a' : a})
+        df = pd.DataFrame({"SHAPE": s, 'a': a})
         ddf = dd.from_pandas(df, 5)
         fs = ddf.spatial.__feature_set__
         assert isinstance(fs, dict)
@@ -210,15 +268,26 @@ class TestDaskTestCase(unittest.TestCase):
     def test_feature_collection(self):
         """tests creating a feature collection"""
         data_size = 100
-        x = [random.randrange(start=1,stop=10) + random.random() for i in range(data_size)]
-        y = [random.randrange(*sorted([1,10])) - random.random() for i in range(data_size)]
-        a = [random.randrange(*sorted([1,10000])) for i in range(data_size)]
-        coords = list(zip(x,y))
-        geoms = [ Geometry({'x' : i[0], 'y' : i[1], 'spatialReference' : {'wkid' : 4326}}) for i in coords]
+        x = [
+            random.randrange(start=1, stop=10) + random.random()
+            for i in range(data_size)
+        ]
+        y = [
+            random.randrange(*sorted([1, 10])) - random.random()
+            for i in range(data_size)
+        ]
+        a = [random.randrange(*sorted([1, 10000])) for i in range(data_size)]
+        coords = list(zip(x, y))
+        geoms = [
+            Geometry(
+                {'x': i[0], 'y': i[1], 'spatialReference': {'wkid': 4326}}
+            )
+            for i in coords
+        ]
 
         ga = GeoArray(geoms)
         s = pd.Series(_from_geometry(geoms))
-        df = pd.DataFrame({"SHAPE": s, 'a' : a})
+        df = pd.DataFrame({"SHAPE": s, 'a': a})
         ddf = dd.from_pandas(df, 5)
         fc = ddf.spatial.to_feature_collection().compute()
         assert isinstance(fc, FeatureCollection)

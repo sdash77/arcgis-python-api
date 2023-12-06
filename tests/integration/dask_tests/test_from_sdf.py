@@ -72,10 +72,10 @@ class TestSDF2Dask(unittest.TestCase):
         sdf.spatial.name
 
         ddf = dd.from_pandas(sdf.iloc[[1, 2, 3]], npartitions=1)
-        with tempfile.TemporaryDirectory("_sss") as path:
-            out_fc = os.path.join(path, "data.shp")
-            assert isinstance(ddf.spatial.to_featureclass(out_fc), str)
-            assert os.path.isfile(out_fc)
+        path = tempfile.gettempdir()
+        out_fc = os.path.join(path, "data.shp")
+        assert isinstance(ddf.spatial.to_featureclass(out_fc), str)
+        assert os.path.isfile(out_fc)
         del ddf
         del sdf
         del item
