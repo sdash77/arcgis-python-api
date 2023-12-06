@@ -2,7 +2,6 @@ import random
 from uuid import uuid4
 import string
 import os
-import pandas as pd
 import tempfile
 import shutil
 from arcgis._impl.common._utils import _date_handler
@@ -15,7 +14,7 @@ _tool_utils = LazyLoader("arcgis.features.geo._tools._utils")
 _common_utils = LazyLoader("arcgis._impl.common._utils")
 features = LazyLoader("arcgis.features")
 json = LazyLoader("json")
-
+pd = LazyLoader("pandas")
 try:
     from arcgis.features.geo import _is_geoenabled
 except:
