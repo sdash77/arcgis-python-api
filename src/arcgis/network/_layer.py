@@ -1880,23 +1880,32 @@ class NetworkDatasetLayer(NetworkLayer):
                                                 that the routing service references.
         ------------------------------------    --------------------------------------------------------------------
         locate_settings                         Optional dictionary containing additional input location settings.
-                                                Use this parameter to specify settings that affect how inputs are
-                                                located, such as the maximum search distance to use when locating the
-                                                inputs on the network or the network sources being used for locating.
-                                                To restrict locating on a portion of the source, you can specify a where
-                                                clause for a source.
+                                                Use this parameter to specify settings that affect how inputs are located,
+                                                such as the maximum search distance to use when locating the inputs on the
+                                                network or the network sources being used for locating. To restrict locating
+                                                on a portion of the source, you can specify a where clause for a source.
 
-                                                To create the dictionary of parameters that can be assigned to the
-                                                'input_locations', 'barriers', 'polyline_barriers', 'polygon_barriers' keys, use the
-                                                :py:class:`~arcgis.network.LocateSettings` class. For example, to
-                                                specify a maximum search distance of 5000 meters for locating the
-                                                facilities, use the following code:
+                                                The dictionary of parameters can be assigned to the 'default', or to the
+                                                'overrides' key which holds the dictionary of parameters for each override, types of override are
+                                                'input_locations', 'barriers', 'polyline_barriers', 'polygon_barriers'.
+                                                Use the :py:class:`~arcgis.network.LocateSettings` class to create the dictionary for each override or
+                                                for the default.
+
+                                                .. note::
+                                                    'default' has to be present if you want to pass in any locate_settings to the
+                                                    service. In addition, locate setttings for default have to be complete, meaning
+                                                    all properties need to be present.
+                                                    For each override, the keys do not have to be complete.
+
+                                                .. note::
+                                                    for 'polyline_barriers' and 'polygon_barriers', tolerance and tolerance_untis are
+                                                    not supported.
 
                                                 .. code-block:: python
 
                                                     from arcgis.network import LocateSettings
-                                                    locate_settings = LocateSettings(tolerance=5000, tolerance_units="esriMeters")
-                                                    result = route_layer.solve(stops=stops, locate_settings={"input_locations": locate_settings.to_dict()})
+                                                    locate_settings = LocateSettings(tolerance=5000, tolerance_units="esriMeters", allow_auto_relocate=True, sources=[{"name": "Routing_Streets"}])
+                                                    result = route_layer.solve(stops=stops, locate_settings={"default": locate_settings.to_dict()})
         ------------------------------------    --------------------------------------------------------------------
         barriers                                Optional Point/FeatureSet. The set of barriers loaded as network
                                                 locations during analysis. Barriers can be specified using a simple
@@ -1983,6 +1992,8 @@ class NetworkDatasetLayer(NetworkLayer):
             params["outSR"] = out_sr
         if locate_settings:
             params["locateSettings"] = locate_settings
+        if return_barriers:
+            params["returnBarriers"] = return_barriers
 
         if future:
             f = self._run_async(self._con.post, **{"path": url, "postdata": params})
