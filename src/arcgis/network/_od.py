@@ -881,24 +881,32 @@ def generate_origin_destination_cost_matrix(
                                             * False - Invalid locations will not be ignored. Do not run the analysis if there are invalid locations. Correct the invalid locations and rerun the analysis.
     --------------------------------------  ------------------------------------------------------------------------------------------------------------------------------------------
     locate_settings                         Optional dictionary containing additional input location settings.
-                                            Use this parameter to specify settings that affect how inputs are
-                                            located, such as the maximum search distance to use when locating the
-                                            inputs on the network or the network sources being used for locating.
-                                            To restrict locating on a portion of the source, you can specify a where
-                                            clause for a source.
-                                            
-                                            To create the dictionary of parameters that can be assigned to the
-                                            'input_locations', 'barriers', 'polyline_barriers', 'polygon_barriers' keys, use the
-                                            :py:class:`~arcgis.network.LocateSettings` class. For example, to
-                                            specify a maximum search distance of 5000 meters for locating the
-                                            facilities, use the following code:
-                                            
-                                            .. code-block:: python
-                                            
-                                                from arcgis.network import LocateSettings
-                                                locate_settings = LocateSettings(tolerance=5000, tolerance_units="esriMeters")
-                                                result = route_layer.solve(stops=stops, locate_settings={"input_locations": locate_settings.to_dict()})
+                                            Use this parameter to specify settings that affect how inputs are located,
+                                            such as the maximum search distance to use when locating the inputs on the
+                                            network or the network sources being used for locating. To restrict locating
+                                            on a portion of the source, you can specify a where clause for a source.
 
+                                            The dictionary of parameters can be assigned to the 'default', or to the
+                                            'overrides' key which holds the dictionary of parameters for each override, types of override are
+                                            'origins', 'destinations', 'point_barriers', 'line_barriers', 'polygon_barriers'.
+                                            Use the :py:class:`~arcgis.network.LocateSettings` class to create the dictionary for each override or
+                                            for the default.
+
+                                            .. note::
+                                                'default' has to be present if you want to pass in any locate_settings to the
+                                                service. In addition, locate setttings for default have to be complete, meaning
+                                                all properties need to be present.
+                                                For each override, the keys do not have to be complete.
+
+                                            .. note::
+                                                for 'polyline_barriers' and 'polygon_barriers', tolerance and tolerance_untis are
+                                                not supported.
+
+                                            .. code-block:: python
+
+                                                from arcgis.network import LocateSettings
+                                                locate_settings = LocateSettings(tolerance=5000, tolerance_units="esriMeters", allow_auto_relocate=True, sources=[{"name": "Routing_Streets"}])
+                                                result = route_layer.solve(stops=stops, locate_settings={"default": locate_settings.to_dict()})
     ======================================  ==========================================================================================================================================
 
     :returns: the following as a named tuple:
