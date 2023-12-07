@@ -1801,30 +1801,16 @@ class NetworkDatasetLayer(NetworkLayer):
         This is only available for ArcGIS Enterprise 11.1+
     """
 
-    # ----------------------------------------------------------------------
-    def retrieve_travel_modes(self):
-        """
-        Identify all the valid travel modes that have been defined on the
-        network dataset or in the portal if the GIS server is federated
-
-        :return: Dictionary
-
-        """
-        from arcgis._impl.common._isd import InsensitiveDict
-
-        url = self._url + "/retrieveTravelModes"
-        params = {"f": "json"}
-        return InsensitiveDict(self._con.get(path=url, params=params))
-
     # -----------------------------------------------------------------------
     def locate(
         self,
-        input_locations: Union[FeatureSet, Point, list, dict],
+        input_locations: Union[FeatureSet, list[Point], str],
         travel_mode: Optional[str] = None,
         locate_settings: Optional[dict] = None,
         barriers: Optional[Union[Point, FeatureSet, dict[str, Any]]] = None,
         polyline_barriers: Optional[Union[Polyline, FeatureSet, dict[str, Any]]] = None,
         polygon_barriers: Optional[Union[Polygon, FeatureSet, dict[str, Any]]] = None,
+        return_barriers: bool = False,
         return_polyline_barriers: bool = False,
         return_polygon_barriers: bool = False,
         output_source_field_names: Optional[str] = None,
@@ -1901,8 +1887,7 @@ class NetworkDatasetLayer(NetworkLayer):
                                                 clause for a source.
 
                                                 To create the dictionary of parameters that can be assigned to the
-                                                'default', 'facilities', 'incidents', 'barriers', 'polylineBarriers',
-                                                or 'polygonBarriers' keys, use the
+                                                'input_locations', 'barriers', 'polyline_barriers', 'polygon_barriers' keys, use the
                                                 :py:class:`~arcgis.network.LocateSettings` class. For example, to
                                                 specify a maximum search distance of 5000 meters for locating the
                                                 facilities, use the following code:
@@ -1911,7 +1896,7 @@ class NetworkDatasetLayer(NetworkLayer):
 
                                                     from arcgis.network import LocateSettings
                                                     locate_settings = LocateSettings(tolerance=5000, tolerance_units="esriMeters")
-                                                    result = route_layer.solve(stops=stops, locate_settings={"facilities": locate_settings.to_dict()})
+                                                    result = route_layer.solve(stops=stops, locate_settings={"input_locations": locate_settings.to_dict()})
         ------------------------------------    --------------------------------------------------------------------
         barriers                                Optional Point/FeatureSet. The set of barriers loaded as network
                                                 locations during analysis. Barriers can be specified using a simple
@@ -1931,6 +1916,9 @@ class NetworkDatasetLayer(NetworkLayer):
                                                 specified, preloaded polygon barriers from the map document are used
                                                 in the analysis. If an empty json object is passed ('{}') preloaded
                                                 polygon barriers are ignored.
+        ------------------------------------    --------------------------------------------------------------------
+        return_barriers                         Optional boolean. If true, barriers will be returned with the analysis
+                                                results. Default is False.
         -----------------------------------     --------------------------------------------------------------------
         return_polyline_barriers                Optional boolean. If true, polyline barriers will be returned with
                                                 the analysis results. Default is False.
