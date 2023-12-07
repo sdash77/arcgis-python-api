@@ -886,19 +886,18 @@ def generate_origin_destination_cost_matrix(
                                             inputs on the network or the network sources being used for locating.
                                             To restrict locating on a portion of the source, you can specify a where
                                             clause for a source.
-
+                                            
                                             To create the dictionary of parameters that can be assigned to the
-                                            'default', 'facilities', 'incidents', 'barriers', 'polylineBarriers',
-                                            or 'polygonBarriers' keys, use the
+                                            'input_locations', 'barriers', 'polyline_barriers', 'polygon_barriers' keys, use the
                                             :py:class:`~arcgis.network.LocateSettings` class. For example, to
                                             specify a maximum search distance of 5000 meters for locating the
                                             facilities, use the following code:
-
+                                            
                                             .. code-block:: python
-
+                                            
                                                 from arcgis.network import LocateSettings
                                                 locate_settings = LocateSettings(tolerance=5000, tolerance_units="esriMeters")
-                                                result = route_layer.solve(stops=stops, locate_settings={"facilities": locate_settings.to_dict()})
+                                                result = route_layer.solve(stops=stops, locate_settings={"input_locations": locate_settings.to_dict()})
 
     ======================================  ==========================================================================================================================================
 

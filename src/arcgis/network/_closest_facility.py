@@ -597,6 +597,7 @@ def find_closest_facilities(
     accumulate_attributes: Optional[list] = None,
     ignore_network_location_fields: bool = False,
     ignore_invalid_locations: bool = True,
+    locate_settings: Optional[dict] = None,
 ):
     """
     Finds one or more facilities that are closest from an incident based on travel time or travel distance and outputs the best routes,
@@ -1496,6 +1497,25 @@ def find_closest_facilities(
                                             * False - Network location fields will be considered when locating inputs on the network. This is the default.
     --------------------------------------  ------------------------------------------------------------------------------------------------------------------------------------------
     ignore_invalid_locations                Optional bool. Specifies whether locations that cannot be located on the network should be included in the output. Default is True.
+    --------------------------------------  ------------------------------------------------------------------------------------------------------------------------------------------
+    locate_settings                         Optional dictionary containing additional input location settings.
+                                            Use this parameter to specify settings that affect how inputs are
+                                            located, such as the maximum search distance to use when locating the
+                                            inputs on the network or the network sources being used for locating.
+                                            To restrict locating on a portion of the source, you can specify a where
+                                            clause for a source.
+                                            
+                                            To create the dictionary of parameters that can be assigned to the
+                                            'input_locations', 'barriers', 'polyline_barriers', 'polygon_barriers' keys, use the
+                                            :py:class:`~arcgis.network.LocateSettings` class. For example, to
+                                            specify a maximum search distance of 5000 meters for locating the
+                                            facilities, use the following code:
+                                            
+                                            .. code-block:: python
+                                            
+                                                from arcgis.network import LocateSettings
+                                                locate_settings = LocateSettings(tolerance=5000, tolerance_units="esriMeters")
+                                                result = route_layer.solve(stops=stops, locate_settings={"input_locations": locate_settings.to_dict()})
     ======================================  ==========================================================================================================================================
 
     :return: the following as a named tuple:

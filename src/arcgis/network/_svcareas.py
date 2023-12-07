@@ -521,7 +521,7 @@ def generate_service_areas(
     ignore_network_location_fields: bool = False,
     ignore_invalid_locations: bool = True,
     locate_settings: Optional[dict] = None,
-    exclude_sources_from_polygon_generation: Optional[str] = None,
+    exclude_sources_from_polygon_generation: Optional[list[str]] = None,
 ):
     """
     .. image:: _static/images/generate_service_areas/generate_service_areas.png
@@ -1233,21 +1233,20 @@ def generate_service_areas(
                                                           inputs on the network or the network sources being used for locating.
                                                           To restrict locating on a portion of the source, you can specify a where
                                                           clause for a source.
-
+                                                        
                                                           To create the dictionary of parameters that can be assigned to the
-                                                          'default', 'facilities', 'incidents', 'barriers', 'polylineBarriers',
-                                                          or 'polygonBarriers' keys, use the
+                                                          'input_locations', 'barriers', 'polyline_barriers', 'polygon_barriers' keys, use the
                                                           :py:class:`~arcgis.network.LocateSettings` class. For example, to
                                                           specify a maximum search distance of 5000 meters for locating the
                                                           facilities, use the following code:
-
+                                                        
                                                           .. code-block:: python
-
-                                                              from arcgis.network import LocateSettings
-                                                              locate_settings = LocateSettings(tolerance=5000, tolerance_units="esriMeters")
-                                                              result = route_layer.solve(stops=stops, locate_settings={"facilities": locate_settings.to_dict()})
+                                                        
+                                                                from arcgis.network import LocateSettings
+                                                                locate_settings = LocateSettings(tolerance=5000, tolerance_units="esriMeters")
+                                                                result = route_layer.solve(stops=stops, locate_settings={"input_locations": locate_settings.to_dict()})
     -------------------------------------------------     ------------------------------------------------------------------------
-    exclude_sources_from_polygon_generation               Optional string. You can exclude certain network dataset edge sources when
+    exclude_sources_from_polygon_generation               Optional list of strings. You can exclude certain network dataset edge sources when
                                                           generating service area polygons. Polygons will not be generated around
                                                           the excluded sources, even though they are traversed in the analysis.
                                                           Excluding a network source from service area polygons does not prevent
