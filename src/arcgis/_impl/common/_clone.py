@@ -45,6 +45,7 @@ _TEXT_BASED_ITEM_TYPES = [
     "Workflow Manager Service",
     "StoryMap",
     "Web Scene",
+    "Data Pipeline",
 ]
 
 # Regular expressions for finding fields in json
