@@ -9,6 +9,11 @@ from functools import lru_cache
 from arcgis.auth.tools import LazyLoader
 from arcgis import network
 from arcgis._impl.common._utils import _validate_url
+from arcgis.geoprocessing import (
+    import_toolbox as _import_toolbox,
+)
+
+from ..geoprocessing._uploads import Uploads
 
 _log = logging.getLogger()
 _arcgis_gis = LazyLoader("arcgis.gis")
@@ -29,11 +34,13 @@ class SolverType(Enum):
     ROUTE: str = "Route"
     SERVICEAREA: str = "ServiceArea"
     VEHICLEROUTINGPROBLEM: str = "VehicleRoutingProblem"
-    ALL: str = "ClosestFacility,Location-Allocation,OriginDestinationCostMatrix,Route,ServiceArea,VehicleRoutingProblem"
+    ALL: str = [
+        "ClosestFacility,Location-Allocation,OriginDestinationCostMatrix,Route,ServiceArea,VehicleRoutingProblem"
+    ]
 
 
 @lru_cache(maxsize=255)
-def _get_network_publishing(gis: _arcgis_gis.GIS) -> str:
+def _get_network_publishing_url(gis: _arcgis_gis.GIS, server_id: str) -> str:
     """gets the network system publishing url"""
     params = {"f": "json"}
     if gis._is_arcgisonline == False:
@@ -43,20 +50,46 @@ def _get_network_publishing(gis: _arcgis_gis.GIS) -> str:
     resp: requests.Response = gis.session.get(url=url, params=params)
     resp.raise_for_status()
     data: dict = resp.json()
+    hosting_server_urls: list[str] = []
     for server in data.get("servers", []):
-        if server.get("serverRole", "NOPE") == "HOSTING_SERVER":
-            return _gp._tool.Toolbox(
-                server.get("url") + "/rest/services/System/PublishingTools/GPServer",
-                gis=gis,
+        if server_id == server.get("id", None):
+            return (
+                server.get("url")
+                + "/rest/services/System/PublishingTools/GPServer"
             )
+        elif server.get("serverRole", "NOPE") == "HOSTING_SERVER":
+            hosting_server_urls.append(
+                server.get("url")
+                + "/rest/services/System/PublishingTools/GPServer"
+            )
+    if hosting_server_urls:
+        return hosting_server_urls[0]
+    else:
+        raise Exception(
+            "The enterprise does not have a valid hosting server."
+        )
+
+
+@lru_cache(maxsize=255)
+def _get_network_publishing_toolbox(
+    gis: _arcgis_gis.GIS, server_id: str | None = None
+):
+    """gets the network system publishing tool"""
+    service: str = _get_network_publishing_url(gis=gis, server_id=server_id)
+
+    return _import_toolbox(
+        url_or_item=service,
+        gis=gis,
+    )
 
 
 # -------------------------------------------------------------------------
 def publish_routing_service(
     datastore: _arcgis_gis.Item,
     path: str,
+    server_id: str | None = None,
     folder: str | None = None,
-    solver_types: list[SolverType] | SolverType = SolverType.ALL,
+    solver_types: list[SolverType] | SolverType = SolverType.ROUTE,
     config: str = None,
     gis: _arcgis_gis.GIS | None = None,
 ) -> dict:
@@ -66,24 +99,29 @@ def publish_routing_service(
     --------------------------------------  ------------------------------------------------------------------------------------------------------------------------------------------
     datastore                               Required Item. The registered datastore where the network dataset resides.
     --------------------------------------  ------------------------------------------------------------------------------------------------------------------------------------------
-    path                                    Required String. The workspace path to the location of the network dataset.
+    path                                    Required String. The relative path to the network dataset in the data store.
+    --------------------------------------  ------------------------------------------------------------------------------------------------------------------------------------------
+    server_id                               Required String. The unique ID of the server to publish the dataset to.
     --------------------------------------  ------------------------------------------------------------------------------------------------------------------------------------------
     folder                                  Optional String. The name for the server folder that will contain all the routing services created by this service. The service returns
                                             an error if the folder contains existing services. The default value is `Routing`
     --------------------------------------  ------------------------------------------------------------------------------------------------------------------------------------------
-    solver_types                            Optional SolverType. The list of Network Analyst solvers to be included in the services. The default is to include all the solvers.
+    solver_types                            Optional SolverType. The list of Network Analyst solvers to be included in the services. The default is to include just the routing.
     --------------------------------------  ------------------------------------------------------------------------------------------------------------------------------------------
     config                                  Optional str. The file containing additional configuration for the services. If no value is specified, the system default configuration
-                                            file is used.  For a full list of config values and explination, please reach out to support@esri.com.
+                                            file is used.  For a full list of config values and explanation, please reach out to support@esri.com.
     --------------------------------------  ------------------------------------------------------------------------------------------------------------------------------------------
     gis                                     Optional GIS. The GIS object where the dataset will be hosted at.  If `None` is provided, the datastore's GIS will be used.
     ======================================  ==========================================================================================================================================
 
-    :returns: dict[str,Any]
+    :returns: Future
     """
 
     if gis is None:
         gis = datastore._gis
+    if gis._is_arcgisonline:
+        return None
+
     network_dataset: dict[str, Any] = {
         "datastoreId": datastore.id,
         "path": path,
@@ -101,22 +139,32 @@ def publish_routing_service(
     elif isinstance(solver_types, str):
         sts = ""
     else:
-        raise ValueError("Invalid solver_types, please verify the parameter.")
+        raise ValueError(
+            "Invalid solver_types, please verify the parameter."
+        )
     solver_types: str = json.dumps(sts)
 
-    toolbox = _get_network_publishing(gis=gis)
+    toolbox = _get_network_publishing_toolbox(gis=gis, server_id=server_id)
     if config and os.path.isfile(config):
-        upload = toolbox.uploads.upload(config)
+        base_url: str = _get_network_publishing_url(
+            gis=gis, server_id=server_id
+        )
+        uploads = Uploads(url=f"{base_url}/uploads", gis=gis)
+        upload = uploads.upload(config)
         config: dict = {"itemID": upload.properties["itemID"]}
     else:
         config = ""
-    result = toolbox.publish_routing_services(
+
+    job = toolbox.publish_routing_services(
         network_dataset=network_dataset,
         service_folder=folder,
         solver_types=solver_types,
         config_file=config,
+        gis=gis,
+        future=True,
     )
-    return result
+
+    return job
 
 
 # -------------------------------------------------------------------------
