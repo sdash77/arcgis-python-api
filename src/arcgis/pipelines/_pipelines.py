@@ -70,7 +70,8 @@ class PipelineRun:
         """
         i: int = 1
 
-        while isinstance(self.status, RunStatus) and self.status in [
+        status: RunStatus = self.status
+        while isinstance(status, RunStatus) and status in [
             RunStatus.WAITING,
             RunStatus.SUBMITTED,
             RunStatus.CANCELLING,
@@ -82,6 +83,7 @@ class PipelineRun:
             time.sleep(i * 2)
             if i <= 5:
                 i += 1
+            status: RunStatus = self.status
         url: str = f"{self.url}/result"
         params: dict[str, Any] = {"f": "json"}
         resp: requests.Response = self.session.get(url=url, params=params)
