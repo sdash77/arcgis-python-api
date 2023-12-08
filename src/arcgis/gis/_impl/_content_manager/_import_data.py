@@ -2,23 +2,21 @@ import random
 from uuid import uuid4
 import string
 import os
-import pandas as pd
 import tempfile
 import shutil
 from arcgis.auth.tools import LazyLoader
 from arcgis._impl.common._utils import _date_handler
-
-
 from arcgis._impl.common._mixins import PropertyMap
 from arcgis._impl.common._isd import InsensitiveDict
 from arcgis.auth.tools import LazyLoader
 
+_arcgis_gis = LazyLoader("arcgis.gis")
 _tool_utils = LazyLoader("arcgis.features.geo._tools._utils")
 _common_utils = LazyLoader("arcgis._impl.common._utils")
 _arcgis_gis = LazyLoader("arcgis.gis")
 features = LazyLoader("arcgis.features")
 json = LazyLoader("json")
-
+pd = LazyLoader("pandas")
 try:
     from arcgis.features.geo import _is_geoenabled
 except:
@@ -342,7 +340,7 @@ def import_as_fc(gis, df, **kwargs):
     path = gis._public_rest_url + "content/features/generate"
     postdata = {
         "f": "json",
-        "text": df.to_csv(),
+        "text": df.to_csv(index=False),
         "filetype": "csv",
         "publishParameters": json.dumps(res["publishParameters"]),
     }
