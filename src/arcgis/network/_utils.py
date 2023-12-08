@@ -53,27 +53,19 @@ def _get_network_publishing_url(gis: _arcgis_gis.GIS, server_id: str) -> str:
     hosting_server_urls: list[str] = []
     for server in data.get("servers", []):
         if server_id == server.get("id", None):
-            return (
-                server.get("url")
-                + "/rest/services/System/PublishingTools/GPServer"
-            )
+            return server.get("url") + "/rest/services/System/PublishingTools/GPServer"
         elif server.get("serverRole", "NOPE") == "HOSTING_SERVER":
             hosting_server_urls.append(
-                server.get("url")
-                + "/rest/services/System/PublishingTools/GPServer"
+                server.get("url") + "/rest/services/System/PublishingTools/GPServer"
             )
     if hosting_server_urls:
         return hosting_server_urls[0]
     else:
-        raise Exception(
-            "The enterprise does not have a valid hosting server."
-        )
+        raise Exception("The enterprise does not have a valid hosting server.")
 
 
 @lru_cache(maxsize=255)
-def _get_network_publishing_toolbox(
-    gis: _arcgis_gis.GIS, server_id: str | None = None
-):
+def _get_network_publishing_toolbox(gis: _arcgis_gis.GIS, server_id: str | None = None):
     """gets the network system publishing tool"""
     service: str = _get_network_publishing_url(gis=gis, server_id=server_id)
 
@@ -139,16 +131,12 @@ def publish_routing_service(
     elif isinstance(solver_types, str):
         sts = ""
     else:
-        raise ValueError(
-            "Invalid solver_types, please verify the parameter."
-        )
+        raise ValueError("Invalid solver_types, please verify the parameter.")
     solver_types: str = json.dumps(sts)
 
     toolbox = _get_network_publishing_toolbox(gis=gis, server_id=server_id)
     if config and os.path.isfile(config):
-        base_url: str = _get_network_publishing_url(
-            gis=gis, server_id=server_id
-        )
+        base_url: str = _get_network_publishing_url(gis=gis, server_id=server_id)
         uploads = Uploads(url=f"{base_url}/uploads", gis=gis)
         upload = uploads.upload(config)
         config: dict = {"itemID": upload.properties["itemID"]}
