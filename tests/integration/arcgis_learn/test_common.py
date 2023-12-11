@@ -509,10 +509,10 @@ def commonTestCases(
         model_object = model_type(data)
 
     # model_object.show_results()
-    # model_object.lr_find(allow_plot=False)
+    lr_val = model_object.lr_find(allow_plot=False)
 
     # Fit for 1 epochs without LR.
-    model_object.fit(1)
+    model_object.fit(1, lr=lr_val, checkpoint=False)
     # # Fit for 1 epochs with LR.
 
     # save model
@@ -528,7 +528,7 @@ def commonTestCases(
         supported_backbones = model_object.supported_backbones
         for backbone in supported_backbones:
             model_object = model_type(data, backbone=str(backbone))
-            model_object.fit(1)
+            model_object.fit(1, lr=lr_val, checkpoint=False)
             model_object.save(model_test + "_" + str(backbone))
             gc.collect()
             torch.cuda.empty_cache()
@@ -537,7 +537,7 @@ def commonTestCases(
         if not ms_flag:
             print("Testing for accuracy with default backbone")
             global accuracy_values
-            model_object.fit(num_epochs)
+            model_object.fit(num_epochs, lr=lr_val, checkpoint=False)
             if regression_parameter == "average_precision_score":
                 result = model_object.average_precision_score()
                 result = [
@@ -579,7 +579,10 @@ def commonTestCases(
             elif regression_parameter == "get_model_metrics":
                 result = model_object.get_model_metrics()["seq2seq_acc"]
             elif regression_parameter == "mIOU":
-                result = model_object.mIOU()["0"]
+                if model_name == "psetae":
+                    result = float(model_object.mIOU()["mIOU"])
+                else:
+                    result = model_object.mIOU()["0"]
             elif regression_parameter == "edge_detection":
                 result = model_object.compute_precision_recall()["Precision"]
             elif regression_parameter == "precision_recall_score":
