@@ -13023,6 +13023,7 @@ class RasterCollection:
                 "application/geo+json",
                 "application/json;charset=utf-8",
                 "application/geo+json; charset=utf-8",
+                "binary/octet-stream",
             ]:
                 raise RuntimeError(
                     f"Invalid Response: Please verify that the stac_catalog URL is correct-\n{data.text}"
@@ -13032,12 +13033,12 @@ class RasterCollection:
 
             from ._util import _get_stac_links, _get_all_stac_catalog_items
 
-            if not _get_stac_links(json_data, "item") and not _get_stac_links(
-                json_data, "child"
-            ):
+            if not _get_stac_links(
+                json_data, stac_catalog, "item"
+            ) and not _get_stac_links(json_data, stac_catalog, "child"):
                 raise RuntimeError(f"Invalid STAC catalog-\n{stac_catalog}")
 
-            items = _get_all_stac_catalog_items(json_data, request_params)
+            items = _get_all_stac_catalog_items(json_data, stac_catalog, request_params)
         else:
             try:
                 import pystac
@@ -13061,14 +13062,12 @@ class RasterCollection:
         if "Geometry" not in rc_attribute_dict:
             rc_attribute_dict["Geometry"] = []
 
-        from ._util import _get_stac_metadata_file
-
         raster_list = []
-        for item in items:
+        for item_resources in items:
             if is_pystac_cat:
                 item_dict = item.to_dict()
             else:
-                item_dict = item
+                item_dict, item_product = item_resources
 
             for key in attribute_dict:
                 if isinstance(attribute_dict[key], list):
@@ -13083,11 +13082,10 @@ class RasterCollection:
                     else:
                         rc_attribute_dict[key].append(key)
 
-            metadata_file = _get_stac_metadata_file(item_dict)
-            if not metadata_file:
+            if not item_product:
                 raise RuntimeError(f"STAC Item not supported-\n{item_dict}")
 
-            ras = Raster(metadata_file, engine=engine, gis=gis)
+            ras = Raster(item_product, engine=engine, gis=gis)
             raster_list.append(ras)
 
             if "Geometry" not in attribute_dict:

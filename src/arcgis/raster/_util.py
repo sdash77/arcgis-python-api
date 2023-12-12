@@ -1781,7 +1781,7 @@ def _get_stac_metadata_file(item):
     return href
 
 
-def _get_stac_links(stac_json, rel):
+def _get_stac_links(stac_json, cat_filename, rel):
     """
     This method is used to retrieve all the links matching the specified relation type from a STAC Item or Catalog.
     :param stac_json: input STAC Item or Catalog (JSON dictionary).
@@ -1799,39 +1799,53 @@ def _get_stac_links(stac_json, rel):
         if l.startswith("http"):
             link = l
         else:
-            link = urljoin(os.path.dirname(stac_json["links"][0]["href"]) + "/", l)
+            source_href = os.path.dirname(cat_filename) + "/"
+            link = (source_href, l)
         all_links.append(link)
     return all_links
 
 
-def _get_all_stac_catalog_items(stac_json, request_params={}):
+def _get_all_stac_catalog_items(stac_json, filename, request_params={}):
     """
     This method is used to get all items from a STAC catalog and all its subcatalogs. Will traverse any subcatalogs recursively.
     :param stac_json: input Static STAC (Catalog - JSON dictionary)
     :param request_params: requests.get() method parameters used for the STAC Item and Catalog requests (passed through the RasterCollection.from_stac_catalog() method call).
     :return generator (of all items retrived in the Catalog)
     """
-    for item_link in _get_stac_links(stac_json, "item"):
-        item_res = _requests.get(item_link, **request_params)
-        if item_res.status_code != 200 or item_res.headers.get("content-type") not in [
-            "application/json",
-            "application/geo+json",
-            "application/json;charset=utf-8",
-        ]:
-            raise RuntimeError(f"Invalid STAC Item-\n{item_res.text}")
-        item_json = item_res.json()
-        yield item_json
+    for item_link in _get_stac_links(stac_json, filename, "item"):
+        request_link = (
+            urljoin(*item_link) if not isinstance(item_link, str) else item_link
+        )
+        item_resources = _get_static_catalog_item_resources(
+            stac_json, request_link, request_params
+        )
+        yield item_resources
 
-    children = _get_stac_links(stac_json, "child")
+    children = _get_stac_links(stac_json, filename, "child")
     for child in children:
-        child_res = _requests.get(child, **request_params)
+        request_link = urljoin(*child) if not isinstance(child, str) else child
+        child_res = _requests.get(request_link, **request_params)
         if child_res.status_code != 200 or child_res.headers.get(
             "content-type"
         ) not in [
             "application/json",
             "application/geo+json",
             "application/json;charset=utf-8",
+            "binary/octet-stream",
         ]:
             raise RuntimeError(f"Invalid STAC Catalog-\n{child_res.text}")
         child_json = child_res.json()
-        yield from _get_all_stac_catalog_items(child_json, request_params)
+        yield from _get_all_stac_catalog_items(child_json, request_link, request_params)
+
+
+def _get_static_catalog_item_resources(item, request_link, request_params):
+    item_res = _requests.get(request_link, **request_params)
+    if item_res.status_code != 200 or item_res.headers.get("content-type") not in [
+        "application/json",
+        "application/geo+json",
+        "application/json;charset=utf-8",
+    ]:
+        raise RuntimeError(f"Invalid STAC Item-\n{item_res.text}")
+    item_json = item_res.json()
+    if "maxar-opendata.s3.amazonaws.com/events" in request_link:
+        return item_json, request_link
