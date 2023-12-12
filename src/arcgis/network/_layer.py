@@ -265,8 +265,8 @@ class RouteLayer(NetworkLayer):
         return_routes: bool = True,
         return_stops: bool = False,
         return_barriers: bool = False,
-        return_polyline_barriers: bool = True,
-        return_polygon_barriers: bool = True,
+        return_polyline_barriers: bool = False,
+        return_polygon_barriers: bool = False,
         out_sr: Optional[int] = None,
         ignore_invalid_locations: bool = True,
         output_lines: Optional[str] = None,
@@ -357,10 +357,10 @@ class RouteLayer(NetworkLayer):
                                                 analysis results. Default is false.
         -----------------------------------     --------------------------------------------------------------------
         return_polyline_barriers                Optional boolean. If true, polyline barriers will be returned with
-                                                the analysis results. Default is True.
+                                                the analysis results. Default is False.
         -----------------------------------     --------------------------------------------------------------------
         return_polygon_barriers                 Optional boolean. If true, polygon barriers will be returned with
-                                                the analysis results. Default is True.
+                                                the analysis results. Default is False.
         -----------------------------------     --------------------------------------------------------------------
         out_sr                                  Optional Integer. The spatial reference of the geometries returned
                                                 with the analysis results.
