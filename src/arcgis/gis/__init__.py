@@ -37,6 +37,7 @@ from arcgis.gis._impl import (
     ViewLayerDefParameter,
 )
 
+
 try:
     import pandas as pd
 except:
@@ -18470,5 +18471,6 @@ class Layer(_GISResource):
 
 
 from arcgis.gis._impl._profile import ProfileManager
+from ._impl import SharingLevel
 
 login_profiles = ProfileManager()
