@@ -40,17 +40,16 @@ import json
 from arcgis.learn.text import EntityRecognizer, SequenceToSequence, TextClassifier
 
 if os.environ.get("run_nightly") == "1":
-    data_folder = r"/root/data_for_testing/test_automation/data/train_model_regression"
+    data_folder = r"/root/test_automation/data/test_train_model/train_model_regression"
 else:
-    data_folder = r"/root/data_for_testing/test_automation/data/train_model"
+    data_folder = r"/root/test_automation/data/test_train_model/train_model"
 data_folder_inference = (
-    r"/root/data_for_testing/test_automation/data/train_inference"
+    r"/root/test_automation/data/test_train_model/train_inference"
 )
 data_folder_ms = (
-    r"/root/data_for_testing/test_automation/data/train_model_ms"
+    r"/root/test_automation/data/test_train_model/train_model_ms"
 )
-authorization_path = r"/root/data_for_testing/test_automation/data/properties/properties.json"
-
+authorization_path = r"/root/test_automation/data/test_train_model/properties/properties.json"
 
 colormap = {
     "0": [0, 0, 0],

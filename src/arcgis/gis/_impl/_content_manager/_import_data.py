@@ -4,6 +4,7 @@ import string
 import os
 import tempfile
 import shutil
+from arcgis.auth.tools import LazyLoader
 from arcgis._impl.common._utils import _date_handler
 from arcgis._impl.common._mixins import PropertyMap
 from arcgis._impl.common._isd import InsensitiveDict
@@ -12,6 +13,7 @@ from arcgis.auth.tools import LazyLoader
 _arcgis_gis = LazyLoader("arcgis.gis")
 _tool_utils = LazyLoader("arcgis.features.geo._tools._utils")
 _common_utils = LazyLoader("arcgis._impl.common._utils")
+_arcgis_gis = LazyLoader("arcgis.gis")
 features = LazyLoader("arcgis.features")
 json = LazyLoader("json")
 pd = LazyLoader("pandas")
