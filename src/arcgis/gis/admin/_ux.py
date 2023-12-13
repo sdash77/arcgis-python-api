@@ -1932,16 +1932,19 @@ class MapSettings(object):
             if item.content_status == "deprecated" and item.type == "Web Map":
                 dep_id = item.itemid
                 self._gis._portal.unshare_item_as_group_admin(dep_id, basemap_group.id)
-        
+
         # retrieve the default basemaps and add any missing, non-deprecated ones
         try:
             gis_culture = self._gis.properties.user.culture
         except:
-            gis_culture = 'en-US'
-        url = "https://www.arcgis.com/sharing/rest/portals/self?f=json&culture=" + gis_culture
+            gis_culture = "en-US"
+        url = (
+            "https://www.arcgis.com/sharing/rest/portals/self?f=json&culture="
+            + gis_culture
+        )
         resp = requests.get(url)
-        bm_query = resp.json()['basemapGalleryGroupQuery']
-        default_group = self._gis.groups.search(bm_query, outside_org = True)[0]
+        bm_query = resp.json()["basemapGalleryGroupQuery"]
+        default_group = self._gis.groups.search(bm_query, outside_org=True)[0]
         bmg_content = basemap_group.content()
         for bm in default_group.content():
             if bm not in bmg_content and bm.content_status != "deprecated":
