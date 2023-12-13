@@ -1817,7 +1817,7 @@ def _get_all_stac_catalog_items(stac_json, filename, request_params={}):
             urljoin(*item_link) if not isinstance(item_link, str) else item_link
         )
         item_resources = _get_static_catalog_item_resources(
-            stac_json, request_link, request_params
+            request_link, request_params
         )
         yield item_resources
 
@@ -1838,7 +1838,7 @@ def _get_all_stac_catalog_items(stac_json, filename, request_params={}):
         yield from _get_all_stac_catalog_items(child_json, request_link, request_params)
 
 
-def _get_static_catalog_item_resources(item, request_link, request_params):
+def _get_static_catalog_item_resources(request_link, request_params):
     item_res = _requests.get(request_link, **request_params)
     if item_res.status_code != 200 or item_res.headers.get("content-type") not in [
         "application/json",
@@ -1846,6 +1846,12 @@ def _get_static_catalog_item_resources(item, request_link, request_params):
         "application/json;charset=utf-8",
     ]:
         raise RuntimeError(f"Invalid STAC Item-\n{item_res.text}")
-    item_json = item_res.json()
+    item = item_res.json()
+    assets = item["assets"]
+    product_file = None
     if "maxar-opendata.s3.amazonaws.com/events" in request_link:
-        return item_json, request_link
+        product_file = request_link
+    elif "https://capella-open-data.s3.us-west-2.amazonaws.com/stac" in request_link:
+        product_file = (assets.get("HH") or assets.get("VV")).get("href")
+
+    return item, product_file

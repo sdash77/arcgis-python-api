@@ -13065,7 +13065,7 @@ class RasterCollection:
         raster_list = []
         for item_resources in items:
             if is_pystac_cat:
-                item_dict = item.to_dict()
+                item_dict = item_resources.to_dict()
             else:
                 item_dict, item_product = item_resources
 
