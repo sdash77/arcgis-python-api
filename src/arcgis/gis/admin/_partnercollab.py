@@ -26,6 +26,8 @@ def _get_org_id(url: str, session: EsriSession, return_type: str = "url_key") ->
 
 
 class PartneredCollaboration:
+    """Represents a single partnered collaboration for the organization."""
+
     _url: str
     _gis: _arcgis_gis.GIS
     _session: EsriSession
