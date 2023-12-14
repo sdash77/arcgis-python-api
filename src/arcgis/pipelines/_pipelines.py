@@ -198,7 +198,7 @@ class PipelineRuns:
         has_more: str = resp.headers.get("X-Esri-Continuation", None)
 
         for run in resp.json().get("results", []):
-            task_id: str = run.get("taskId", None)
+            task_id: str = run.get("id", None)
             if task_id:
                 run_url: str = f"{self.url}/{task_id}"
                 yield PipelineRun(url=run_url, session=self.session)
@@ -212,7 +212,7 @@ class PipelineRuns:
             has_more: str = resp.headers.get("X-Esri-Continuation", None)
             data: dict[str, Any] = resp.json()
             for run in data.get("results", []):
-                task_id: str = run.get("taskId", None)
+                task_id: str = run.get("id", None)
                 if task_id:
                     run_url: str = f"{self.url}/{task_id}"
                     yield PipelineRun(url=run_url, session=self.session)
