@@ -2,7 +2,7 @@ import sys
 
 #
 #  Update the Path to set the test area
-sys.path.insert(0, r"C:\SVN\geosaurus_master\src")
+sys.path.insert(0, r"C:\SVN\geosaurus_issue_10917\src")
 import logging
 import unittest
 from arcgis.auth.tools._util import detect_proxy
@@ -71,7 +71,8 @@ class TestPartneredCollaboration(unittest.TestCase):
             search_users=False,
         )
         assert collab
-        list(mgr.collaborations())
+        for collab in list(mgr.collaborations()):
+            collab.delete()
 
 
 if __name__ == "__main__":

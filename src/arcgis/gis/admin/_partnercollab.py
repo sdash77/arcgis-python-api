@@ -98,12 +98,17 @@ class PartneredCollaboration:
     @property
     def search_users(self) -> bool:
         """Enables/Disable Searching for users on the partnered collaboration"""
-        return self.properties["to"]["userAccess"]
+        return self.properties["to"]["usersAccess"]
 
+    @search_users.setter
     def search_users(self, value: bool) -> None:
         """Enables/Disable Searching for users on the partnered collaboration"""
-        if self.properties["to"]["userAccess"] == value:
+        if self.properties["to"]["usersAccess"] == value:
             return
+        if self.properties["to"]["established"] == -1:
+            raise ValueError(
+                "You cannot change the `search_users` until the collaboration is accepted."
+            )
         url: str = f"{self.url}/update"
         orgid: str = self.properties["to"]["orgId"]
         params: dict[str, Any] = {
@@ -323,29 +328,3 @@ class PartneredCollabManager:
             return True
         else:
             return data
-
-
-if __name__ == "__main__":
-    gis = _arcgis_gis.GIS(profile="your_online_profile", verify_cert=False)
-    print(gis.url)
-    p = PartneredCollabManager(url=gis.url, gis=gis)
-    print(p.coordinators)
-    p.coordinators = [gis.users.me]
-    print(p.coordinators)
-    p.coordinators = None
-    print("stop")
-    collab = p.create(
-        message="Welcome to the collaboration.",
-        org_url="https://pythonapi.maps.arcgis.com/home/organization.html",
-        org_id=None,
-        search_users=False,
-    )
-    print(collab)
-    # print(p.properties)
-    # print(p.url)
-    # print(p.session)
-    print(p.limits)
-    print(p.collaborations(False))
-    pc = p.collaborations(False)
-    print(pc.properties)
-    print("stop")
