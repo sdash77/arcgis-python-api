@@ -726,6 +726,8 @@ def _assign_node_class(story, node_id):
         node = Content.Video(story=story, node_id=node_id)
     elif node_type == "audio":
         node = Content.Audio(story=story, node_id=node_id)
+    elif node_type == "table":
+        node = Content.Table(story=story, node_id=node_id)
     elif node_type == "embed":
         # embed has subtype: video or link
         subtype = story._properties["nodes"][node_id]["data"]["embedType"]
