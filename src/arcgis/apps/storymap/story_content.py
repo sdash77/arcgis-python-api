@@ -4765,7 +4765,7 @@ class Block:
             return utils._assign_node_class(self._story, self._content)
 
     # ----------------------------------------------------------------------
-    def add_content(self, content):
+    def add(self, content):
         """
         Add content to the block.
 
@@ -4822,7 +4822,7 @@ class Block:
         return True
 
     # ----------------------------------------------------------------------
-    def delete_content(self, index: Optional[int] = None):
+    def delete(self, index: Optional[int] = None):
         """
         Delete content from the block.
 
