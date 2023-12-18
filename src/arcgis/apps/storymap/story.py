@@ -245,7 +245,7 @@ class StoryMap(object):
             )
         else:
             # Enterprise
-            self._url = "https://{portal}/apps/storymaps/stories/{storyid}".format(
+            self._url = "{portal}/apps/storymaps/stories/{storyid}".format(
                 portal=self._gis.url, storyid=self._itemid
             )
         return self._url

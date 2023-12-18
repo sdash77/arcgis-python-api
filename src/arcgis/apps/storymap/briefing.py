@@ -238,7 +238,7 @@ class Briefing(object):
             )
         else:
             # Enterprise
-            self._url = "https://{portal}/apps/storymaps/briefings/{briefingid}".format(
+            self._url = "{portal}/apps/storymaps/briefings/{briefingid}".format(
                 portal=self._gis.url, briefingid=self._itemid
             )
         return self._url
