@@ -65,7 +65,7 @@ pipeline {
                     steps {
                         dir('docs/api_ref/build/json') {
                             sh 'zip -r ../json.zip *'
-                            sh 'cp json.zip /media/geosaurus_public/docs/python-api/master'
+                            sh 'cp ../json.zip /media/geosaurus_public/docs/python-api/master'
 
                             // clean and deploy to geosaurus share (master)
                             sh 'rm -rf /media/geosaurus_public/docs/python-api/master/json/*'
