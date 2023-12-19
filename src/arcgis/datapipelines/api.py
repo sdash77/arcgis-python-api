@@ -7,7 +7,7 @@ from ._pipelines import DataPipelines, PipelineRun
 
 _arcgis_gis = LazyLoader("arcgis.gis")
 
-__all__ = ["list_runs", "run_pipeline"]
+__all__ = ["list_runs", "run_data_pipeline"]
 
 
 @lru_cache(maxsize=254)
@@ -34,7 +34,7 @@ def list_runs(
     -------------------------------------------------     ------------------------------------------------------------------------
     item                                                  Required Item. The `Data Pipeline` type item to examine.
     -------------------------------------------------     ------------------------------------------------------------------------
-    gis                                                   Optional GIS. The WebGIS connection class used to run the `run_pipeline`
+    gis                                                   Optional GIS. The WebGIS connection class used to run the `run_data_pipeline`
                                                           operation.  If the value is `None`, then the item's GIS object will be
                                                           used.
     =================================================     ========================================================================
@@ -48,7 +48,7 @@ def list_runs(
         yield run
 
 
-def run_pipeline(
+def run_data_pipeline(
     item: _arcgis_gis.Item, gis: _arcgis_gis.GIS | None = None
 ) -> PipelineRun:
     """
@@ -60,7 +60,7 @@ def run_pipeline(
     -------------------------------------------------     ------------------------------------------------------------------------
     item                                                  Required Item. The `Data Pipeline` type item to examine.
     -------------------------------------------------     ------------------------------------------------------------------------
-    gis                                                   Optional GIS. The WebGIS connection class used to run the `run_pipeline`
+    gis                                                   Optional GIS. The WebGIS connection class used to run the `run_data_pipeline`
                                                           operation.  If the value is `None`, then the item's GIS object will be
                                                           used.
     =================================================     ========================================================================
