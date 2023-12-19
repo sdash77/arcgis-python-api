@@ -1,6 +1,7 @@
 """
 Entry point to working with local enterprise GIS functions
 """
+from __future__ import annotations
 from datetime import datetime
 from typing import Optional
 from ...gis._impl._con import Connection
@@ -206,6 +207,54 @@ class PortalAdminManager(BasePortalAdmin):
 
             self._metadata = MetadataManager(gis=self._gis)
         return self._metadata
+
+    # ----------------------------------------------------------------------
+    def content(
+        self,
+        item_type: "ItemTypeEnum" | None = None,
+        sort_field: str = "created",
+        order: str = "asc",
+    ):
+        """
+        The portal content operation allows an administrator to return a
+        list of all items in the organization. Only available to
+        administrators with a privilege to view all items in the
+        organization.
+
+        ===========================     ====================================================================
+        **Parameter**                    **Description**
+        ---------------------------     --------------------------------------------------------------------
+        item_type                       Optional ItemTypeEnum. The item type to filter by.
+        ---------------------------     --------------------------------------------------------------------
+        sort_field                      Optional String. Field to sort by.
+        ---------------------------     --------------------------------------------------------------------
+        order                           Optional String. The sort order of the return data.
+        ===========================     ====================================================================
+
+        """
+        params: dict = {
+            "sortField": sort_field,
+            "sortOrder": order,
+            "f": "json",
+            "start": 1,
+            "num": 100,
+        }
+        if item_type:
+            params["types"] = item_type.value
+        url: str = f"{self._gis._portal.resturl}content/portals/{self._gis.properties.get('id')}"
+        session = self._gis._con._session
+        resp = session.get(url=url, params=params)
+        resp.raise_for_status()
+        data: dict = resp.json()
+
+        while data["items"]:
+            for i in data["items"]:
+                yield Item(gis=self._gis, itemid=i["id"], itemdict=i)
+            if data.get("nextStart") == -1:
+                break
+            params["start"] = data["nextStart"]
+            resp = session.get(url=url, params=params)
+            data: dict = resp.json()
 
     # ----------------------------------------------------------------------
     @property
@@ -501,7 +550,10 @@ class PortalAdminManager(BasePortalAdmin):
 
     # ----------------------------------------------------------------------
     def history(
-        self, start_date: datetime, num: int = 100, save_folder: Optional[str] = None
+        self,
+        start_date: datetime,
+        num: int = 100,
+        save_folder: Optional[str] = None,
     ):
         """
         Returns a CSV file containing the login history from a start_date to the present.
@@ -536,5 +588,8 @@ class PortalAdminManager(BasePortalAdmin):
                     "fromDate": json.dumps(start_date, default=_date_handler),
                 }
                 return self._gis._con.post(
-                    url, params, file_name="history.csv", out_folder=save_folder
+                    url,
+                    params,
+                    file_name="history.csv",
+                    out_folder=save_folder,
                 )

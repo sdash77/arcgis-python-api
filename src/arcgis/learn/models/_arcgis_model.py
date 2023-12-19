@@ -44,6 +44,7 @@ try:
     import math
     import warnings
     from fastai.distributed import *
+    from fastai.torch_core import distrib_barrier
     import argparse
     from torch.nn.parallel import DistributedDataParallel
     from .._utils.segmentation_loss_functions import dice
@@ -332,8 +333,10 @@ class SaveModelCallback(TrackerCallback):
             try:
                 self.model.load(f"{self.name}_epoch_{self.best_epoch}")
             except FileNotFoundError:
-                # logging this to notify about possible errors.
-                print("Could not load the best model.")
+                # don't show message in child process in case of multigpu
+                if not int(os.environ.get("RANK", 0)):
+                    # logging this to notify about possible errors.
+                    print("Could not load the best model.")
 
             try:
                 self.model.save(
@@ -752,9 +755,21 @@ class ArcGISModel(object):
             try:
                 metrics = self.learn.metrics
                 self.learn.metrics = []
-                with tempfile.TemporaryDirectory(prefix="arcgisTemp_") as _tempfolder:
-                    self.learn.path = Path(_tempfolder)
+                # ddp training
+                if getattr(self, "_multigpu_training", False):
                     self.learn.lr_find()
+                    distrib_barrier()
+                    # remove tmp.pth created during lr_find in parent process
+                    if not int(os.environ.get("RANK", 0)):
+                        os.remove(
+                            Path(self.learn.path) / self.learn.model_dir / "tmp.pth"
+                        )
+                else:
+                    with tempfile.TemporaryDirectory(
+                        prefix="arcgisTemp_"
+                    ) as _tempfolder:
+                        self.learn.path = Path(_tempfolder)
+                        self.learn.lr_find()
             except Exception as e:
                 # if some error comes in lr_find
                 raise e

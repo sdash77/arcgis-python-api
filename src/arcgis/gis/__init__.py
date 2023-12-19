@@ -19,7 +19,6 @@ import shutil
 import tempfile
 import warnings
 import zipfile
-from uuid import uuid4
 import configparser
 from contextlib import contextmanager
 import functools
@@ -30,14 +29,14 @@ from urllib.error import HTTPError
 import requests
 
 from arcgis.gis._impl._dataclasses._contentds import (
-    ItemTypeEnum,
     ItemProperties,
+    ItemTypeEnum,
 )
 from arcgis.gis._impl import (
-    MetadataFormatEnum,
     CreateServiceParameter,
     ViewLayerDefParameter,
 )
+
 
 try:
     import pandas as pd
@@ -75,8 +74,10 @@ _portalpy = LazyLoader("arcgis.gis._impl._portalpy")
 _jb = LazyLoader("arcgis.gis._impl._jb")
 _cloner = LazyLoader("arcgis.gis.clone")
 _cm_helper = LazyLoader("arcgis.gis._impl._content_manager._import_data")
+_sharing = LazyLoader("arcgis.gis._impl._content_manager.sharing")
 _log = logging.getLogger(__name__)
 from arcgis.gis._impl._dataclasses._viewdc import JoinType
+from arcgis.auth.tools._util import create_base_url as _create_base_url
 
 
 class Error(Exception):
@@ -530,7 +531,7 @@ class GIS(object):
                 raise Exception(
                     "key_file parameter is required along with cert_file when using PKI authentication."
                 )
-
+        self.resturl = _create_base_url(url)
         self._url = url
         self._username = username
         self._password = password
@@ -1373,6 +1374,9 @@ class GIS(object):
 
     @property
     def _public_rest_url(self):
+        if self.url.find("/sharing/rest/") > -1:
+            return self.url
+
         return self.url + "/sharing/rest/"
 
     # ----------------------------------------------------------------------
@@ -5691,7 +5695,7 @@ class GroupManager(object):
     as a property of the :class:`~arcgis.gis.GIS` object.
 
     .. note::
-        This class is not created by users directly.
+       This class is not created by users directly.
     """
 
     def __init__(self, gis):
@@ -5818,8 +5822,7 @@ class GroupManager(object):
         owner.
 
         .. note::
-            Only title and tags are required.
-
+            Only title and tags are required. ``autojoin`` is deprecated, use ``auto_join`` instead
 
         ====================  =========================================================
         **Parameter**         **Description**
@@ -5901,10 +5904,6 @@ class GroupManager(object):
 
                               .. note::
                                 For Enterprise only "org" is accepted.
-        --------------------  ---------------------------------------------------------
-        autojoin              Optional Boolean. The default is `False`. Only applies to
-                              org accounts. If `True`, this group will allow joined
-                              without requesting membership approval.
         ====================  =========================================================
 
         :return:
@@ -5929,6 +5928,12 @@ class GroupManager(object):
             "scenes": {"itemTypes": "Web Scene"},
             "tools": {"itemTypes": "Locator Package"},
         }
+
+        if autojoin is not None:
+            warnings.warn(
+                "The 'autojoin' parameter is deprecated. Use 'auto_join' instead.",
+                DeprecationWarning,
+            )
         if max_file_size is None:
             max_file_size = 1024000
         if users_update_items is None:
@@ -6185,9 +6190,22 @@ class ContentManager(object):
     @property
     def folders(self):
         """
-        A manager to work with `User` folders.
+        A manager object to work with folders owned by the currently logged-in
+        :class:`~arcgis.gis.User`.
 
-        :return: Folders
+        :return:
+            A :class:`~arcgis.gis._impl._content_manager.Folders` object.
+
+        .. code-block:: python
+
+            # Usage example
+            >>> from arcgis.gis import GIS
+            >>> gis = GIS(profile="your_online_profile")
+
+            >>> folders_obj = gis.content.folders
+            >>> type(folder_obj)
+
+            arcgis.gis._impl._content_manager.folder.core.Folders
         """
         if self._folders is None:
             from ._impl._content_manager import Folders
@@ -9072,6 +9090,35 @@ class CategorySchemaManager(object):
         return
 
     # ----------------------------------------------------------------------
+    @property
+    def schema_paths(self):
+        """
+        See the category paths that can be used to assign to an item.
+        If the category schema is empty, an empty list is returned.
+        """
+        paths = self._generate_paths(self.schema, current_path=None, paths=[])
+        modified_paths = [f"/{path}" for path in paths][1:]
+        return modified_paths
+
+    def _generate_paths(self, schema_dict, current_path=None, paths=[]):
+        """
+        Recursively generates file paths from the category schema.
+        """
+        if current_path is None:
+            current_path = ""
+        for category in schema_dict:
+            title = category["title"]
+            new_path = f"{current_path}\{title}" if current_path else title
+            paths.append(
+                new_path.replace("\\", "/")
+            )  # Replace backslashes with forward slashes
+
+            if "categories" in category:
+                self._generate_paths(category["categories"], new_path, paths)
+
+        return paths
+
+    # ----------------------------------------------------------------------
     def delete(self):
         """
         The ``delete`` function allows group owner or managers to remove the
@@ -9336,8 +9383,7 @@ class ResourceManager(object):
         elif file and os.path.isfile(os.path.abspath(file)) == False:
             raise RuntimeError("File(" + file + ") not found.")
 
-        params = {}
-        params["f"] = "json"
+        params = {"f": "json"}
 
         if folder_name is not None:
             params["resourcesPrefix"] = folder_name
@@ -10097,7 +10143,7 @@ class Group(dict):
 
             # Usage Example
 
-            >>> group.add_users(usernames=["User1234","User5678"], admin="Admin9012")
+            >>> group.add_users(usernames=["User1234","User5678"], admins="Admin9012")
         """
         if usernames is None and admins is None:
             return {"notAdded": []}
@@ -10442,27 +10488,32 @@ class Group(dict):
             >>>              method="email"
 
         """
-        from arcgis.gis import User
+        if self._gis._is_agol:
+            from arcgis.gis import User
 
-        cusers = []
-        for user in users:
-            if isinstance(user, User):
-                cusers.append(user.username)
-            else:
-                cusers.append(user)
-            del user
-        url = "community/groups/{groupid}/createNotification".format(
-            groupid=self.groupid
-        )
-        params = {
-            "notificationChannelType": method,
-            "subject": subject,
-            "message": message,
-            "users": ",".join(cusers),
-            "clientId": client_id,
-            "f": "json",
-        }
-        return self._gis._con.post(url, params)
+            cusers = []
+            for user in users:
+                if isinstance(user, User):
+                    cusers.append(user.username)
+                else:
+                    cusers.append(user)
+                del user
+            url = "community/groups/{groupid}/createNotification".format(
+                groupid=self.groupid
+            )
+            params = {
+                "notificationChannelType": method,
+                "subject": subject,
+                "message": message,
+                "users": ",".join(cusers),
+                "clientId": client_id,
+                "f": "json",
+            }
+            return self._gis._con.post(url, params)
+        else:
+            raise NotImplementedError(
+                "The current version of the enterprise does not support `notify`"
+            )
 
     def get_members(self):
         """
@@ -11245,12 +11296,22 @@ class User(dict):
             raise ValueError("Daily only applies to activity report type.")
         if (
             start_time
-            and isinstance(start_time, _dt.datetime)
-            and start_time.date().today().strftime("%A") in ["Monday", "Sunday"]
-            and duration in ["weekly", "monthly"]
+            and duration == "weekly"
+            and (
+                not isinstance(start_time, _dt.datetime)
+                or not start_time.date().today().strftime("%A") in ["Monday", "Sunday"]
+            )
         ):
             raise ValueError(
                 "Invalid start_time. Weekly report must start from Sunday or Monday."
+            )
+        if (
+            start_time
+            and duration == "monthly"
+            and (not isinstance(start_time, _dt.datetime) or start_time.day != 1)
+        ):
+            raise ValueError(
+                "Invalid start_time. Monthly report must start from 1st of the month."
             )
         elif start_time and isinstance(start_time, _dt.datetime):
             start_time = int(start_time.timestamp() * 1000)
@@ -14204,9 +14265,14 @@ class Item(dict):
             Items with metadata have 'Metadata' in their typeKeywords.
 
         """
-        metadataurlpath = "content/items/" + self.itemid + "/info/metadata/metadata.xml"
+        metadataurlpath = f"{self._gis._portal.resturl}content/items/{self.itemid}/info/metadata/metadata.xml"
+
         try:
-            return self._portal.con.get(metadataurlpath, try_json=False)
+            response = self._portal.con.get(metadataurlpath, try_json=False)
+            if response.find("Metadata for item not found") > -1:
+                return None
+            else:
+                return response
 
         # If the get operation returns a 400 HTTP Error then the metadata simply
         # doesn't exist, let's just return None in this case
@@ -14403,7 +14469,7 @@ class Item(dict):
         portalurl = self.homepage
 
         # locale.setlocale(locale.LC_ALL, "")
-        numViews = locale.format("%d", self.numViews, grouping=True)
+        numViews = locale.format_string("%d", self.numViews, grouping=True)
         return (
             """<div class="item_container" style="height: auto; overflow: hidden; border: 1px solid #cfcfcf; border-radius: 2px; background: #f6fafa; line-height: 1.21429em; padding: 10px;">
                     <div class="item_left" style="width: 210px; float: left;">
@@ -14509,6 +14575,12 @@ class Item(dict):
 
     # ----------------------------------------------------------------------
     @property
+    @_common_deprecated.deprecated(
+        deprecated_in="2.3.0",
+        removed_in="3.0.0",
+        current_version=None,
+        details="Use `Item.sharing` instead.",
+    )
     def shared_with(self):
         """
         The ``shared_with`` property reveals the privacy or sharing status of the current item. An item can be private
@@ -14629,6 +14701,13 @@ class Item(dict):
         return ret_dict
 
     # ----------------------------------------------------------------------
+    @property
+    @_common_deprecated.deprecated(
+        deprecated_in="2.3.0",
+        removed_in="3.0.0",
+        current_version=None,
+        details="Use `Item.sharing` instead.",
+    )
     def share(
         self,
         everyone: bool = False,
@@ -14756,6 +14835,26 @@ class Item(dict):
             )
 
     # ----------------------------------------------------------------------
+    @property
+    @functools.lru_cache(maxsize=255)
+    def sharing(self) -> _sharing.SharingManager:
+        """
+        The ``sharing`` property allows users and administrators to control how
+        the current ``Item`` is shared throughout the `GIS`.
+
+        :returns: SharingManager
+
+        """
+
+        return _sharing.SharingManager(item=self, gis=self._gis)
+
+    # ----------------------------------------------------------------------
+    @_common_deprecated.deprecated(
+        deprecated_in="2.3.0",
+        removed_in="3.0.0",
+        current_version=None,
+        details="Use `Item.sharing` instead.",
+    )
     def unshare(self, groups: Union[list[str], list[Group]]):
         """
         The ``unshare`` method stops sharing of the Item with the specified list of groups.
@@ -18401,5 +18500,6 @@ class Layer(_GISResource):
 
 
 from arcgis.gis._impl._profile import ProfileManager
+from ._impl import SharingLevel
 
 login_profiles = ProfileManager()
