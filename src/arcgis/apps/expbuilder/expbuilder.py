@@ -88,6 +88,17 @@ class Templates(Enum):
     EVENTS = "events"
     SKETCHBOOK = "sketchbook"
     BOOKING = "booking"
+    MULTIVERSE = "multiverse"
+    COLLAGE = "collage"
+    AVATARBOARD = "avatarboard"
+    MAPFLYER = "mapflyer"
+    LEAFLET = "leaflet"
+    PANORAMA = "panorama"
+    FRAME = "frame"
+    COMPARATIST = "comparatist"
+    ELEVATE = "elevate"
+    LENS = "lens"
+    PAMPHLET = "pamphlet"
 
     def preview(self, width: Optional[int] = 800, height: Optional[int] = 500):
         import threading
