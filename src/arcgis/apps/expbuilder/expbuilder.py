@@ -73,6 +73,21 @@ class Templates(Enum):
     INDICATOR = "indicator"
     MONITOR = "monitor"
     REVEAL = "reveal"
+    KIT = "kit"
+    CHRONOLOGY = "chronology"
+    CHECKERBOARD = "checkerboard"
+    ILLUSTRATOR = "illustrator"
+    VOYAGE = "voyage"
+    DATACOLLECTOR = "data_collector"
+    GEAR = "gear"
+    SHOWROOM = "showroom"
+    ROUTE = "route"
+    VACATION = "vacation"
+    DASHBOARD = "dashboard"
+    SEEKER = "seeker"
+    EVENTS = "events"
+    SKETCHBOOK = "sketchbook"
+    BOOKING = "booking"
 
     def preview(self, width: Optional[int] = 800, height: Optional[int] = 500):
         import threading
