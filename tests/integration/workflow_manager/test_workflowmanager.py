@@ -2112,7 +2112,9 @@ class TestWorkflowManager(unittest.TestCase):
         # Arrange
         self.assertTrue(actual, "Incorrect return type")
         self.assertIsNotNone(the_job.holds, "Incorrect return type")
-        self.assertEqual(the_job.holds[0]["releasedBy"], 'admin', "Incorrect return type")
+        self.assertEqual(
+            the_job.holds[0]["releasedBy"], "admin", "Incorrect return type"
+        )
 
     def test_dependent_add_hold_returns_successfully(self):
         # Arrange
@@ -2124,11 +2126,15 @@ class TestWorkflowManager(unittest.TestCase):
         job_2 = self.create_job()
         job_two_id = job_2[0]
         diagram_two = self.connection.workflow_manager.jobs.diagram(job_two_id)
-        step_id_two = diagram_two.steps[1]['id']
+        step_id_two = diagram_two.steps[1]["id"]
 
         # Act: Add a hold to job one blocked by the step from job two
         job_one = self.connection.workflow_manager.jobs.get(job_id)
-        actual = job_one.add_hold(step_ids=[step_id], dependent_step_id=step_id_two, dependent_job_id=job_two_id)
+        actual = job_one.add_hold(
+            step_ids=[step_id],
+            dependent_step_id=step_id_two,
+            dependent_job_id=job_two_id,
+        )
 
         the_job = self.connection.workflow_manager.jobs.get(job_id)
 
@@ -2146,11 +2152,15 @@ class TestWorkflowManager(unittest.TestCase):
         job_2 = self.create_job()
         job_two_id = job_2[0]
         diagram_two = self.connection.workflow_manager.jobs.diagram(job_two_id)
-        step_id_two = diagram_two.steps[1]['id']
+        step_id_two = diagram_two.steps[1]["id"]
 
         # Act: Add a hold to job one blocked by the step from job two
         job_one = self.connection.workflow_manager.jobs.get(job_id)
-        actual = job_one.add_hold(step_ids=[step_id], dependent_step_id=step_id_two, dependent_job_id=job_two_id)
+        actual = job_one.add_hold(
+            step_ids=[step_id],
+            dependent_step_id=step_id_two,
+            dependent_job_id=job_two_id,
+        )
 
         the_job = self.connection.workflow_manager.jobs.get(job_id)
 
@@ -2159,14 +2169,20 @@ class TestWorkflowManager(unittest.TestCase):
         self.assertIsNotNone(the_job.holds, "Incorrect return type")
 
         # Act: Add a hold to job one blocked by the step from job two
-        actual = job_one.release_hold(step_ids=[step_id], dependent_step_id=step_id_two, dependent_job_id=job_two_id)
+        actual = job_one.release_hold(
+            step_ids=[step_id],
+            dependent_step_id=step_id_two,
+            dependent_job_id=job_two_id,
+        )
 
         the_job = self.connection.workflow_manager.jobs.get(job_id)
 
         # Arrange
         self.assertTrue(actual, "Incorrect return type")
         self.assertIsNotNone(the_job.holds, "Incorrect return type")
-        self.assertEqual(the_job.holds[0]["releasedBy"], 'admin', "Incorrect return type")
+        self.assertEqual(
+            the_job.holds[0]["releasedBy"], "admin", "Incorrect return type"
+        )
 
     def test_add_hold_returns_error(self):
         # Arrange

@@ -2617,10 +2617,13 @@ class Job(object):
         }
         return return_obj
 
-    def add_hold(self, step_ids: Optional[list],
-                 dependent_job_id: Optional[str] = None,
-                 dependent_step_id: Optional[str] = None,
-                 hold_scheduled_release: Optional[str] = None):
+    def add_hold(
+        self,
+        step_ids: Optional[list],
+        dependent_job_id: Optional[str] = None,
+        dependent_step_id: Optional[str] = None,
+        hold_scheduled_release: Optional[str] = None,
+    ):
         """
         Applies a hold or a dependency to a step. This prevents the Run and Finish actions from being performed
         on the step until the ReleaseHold action is run or the holdScheduledReleased has expired. If there is not
@@ -2683,9 +2686,12 @@ class Job(object):
         }
         return return_obj
 
-    def release_hold(self, step_ids: Optional[list],
-                     dependent_job_id: Optional[str] = None,
-                     dependent_step_id: Optional[str] = None):
+    def release_hold(
+        self,
+        step_ids: Optional[list],
+        dependent_job_id: Optional[str] = None,
+        dependent_step_id: Optional[str] = None,
+    ):
         """
         Releases a hold from a step, allowing the Run and Finish actions to be once again performed on the step.
 
