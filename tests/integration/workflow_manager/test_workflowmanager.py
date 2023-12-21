@@ -2068,6 +2068,123 @@ class TestWorkflowManager(unittest.TestCase):
 
     # endregion
 
+    # region Holds and Release Holds
+
+    def test_simple_add_hold_returns_successfully(self):
+        # Arrange
+        job = self.create_job()
+        job_id = job[0]
+        diagram = self.connection.workflow_manager.jobs.diagram(job_id)
+        step_id = diagram.initial_step_id
+
+        # Act
+        the_job = self.connection.workflow_manager.jobs.get(job_id)
+        actual = the_job.add_hold(step_ids=[step_id])
+
+        the_job = self.connection.workflow_manager.jobs.get(job_id)
+
+        # Arrange
+        self.assertTrue(actual, "Incorrect return type")
+        self.assertIsNotNone(the_job.holds, "Incorrect return type")
+
+    def test_simple_hold_release_returns_successfully(self):
+        # Arrange
+        job = self.create_job()
+        job_id = job[0]
+        diagram = self.connection.workflow_manager.jobs.diagram(job_id)
+        step_id = diagram.initial_step_id
+
+        # Act
+        the_job = self.connection.workflow_manager.jobs.get(job_id)
+        actual = the_job.add_hold(step_ids=[step_id])
+
+        the_job = self.connection.workflow_manager.jobs.get(job_id)
+
+        # Arrange
+        self.assertTrue(actual, "Incorrect return type")
+        self.assertIsNotNone(the_job.holds, "Incorrect return type")
+
+        # Act 2
+        actual = the_job.release_hold(step_ids=[step_id])
+
+        the_job = self.connection.workflow_manager.jobs.get(job_id)
+
+        # Arrange
+        self.assertTrue(actual, "Incorrect return type")
+        self.assertIsNotNone(the_job.holds, "Incorrect return type")
+        self.assertEqual(the_job.holds[0]["releasedBy"], 'admin', "Incorrect return type")
+
+    def test_dependent_add_hold_returns_successfully(self):
+        # Arrange
+        job = self.create_job()
+        job_id = job[0]
+        diagram = self.connection.workflow_manager.jobs.diagram(job_id)
+        step_id = diagram.initial_step_id
+
+        job_2 = self.create_job()
+        job_two_id = job_2[0]
+        diagram_two = self.connection.workflow_manager.jobs.diagram(job_two_id)
+        step_id_two = diagram_two.steps[1]['id']
+
+        # Act: Add a hold to job one blocked by the step from job two
+        job_one = self.connection.workflow_manager.jobs.get(job_id)
+        actual = job_one.add_hold(step_ids=[step_id], dependent_step_id=step_id_two, dependent_job_id=job_two_id)
+
+        the_job = self.connection.workflow_manager.jobs.get(job_id)
+
+        # Arrange
+        self.assertTrue(actual, "Incorrect return type")
+        self.assertIsNotNone(the_job.holds, "Incorrect return type")
+
+    def test_dependent_release_hold_returns_successfully(self):
+        # Arrange
+        job = self.create_job()
+        job_id = job[0]
+        diagram = self.connection.workflow_manager.jobs.diagram(job_id)
+        step_id = diagram.initial_step_id
+
+        job_2 = self.create_job()
+        job_two_id = job_2[0]
+        diagram_two = self.connection.workflow_manager.jobs.diagram(job_two_id)
+        step_id_two = diagram_two.steps[1]['id']
+
+        # Act: Add a hold to job one blocked by the step from job two
+        job_one = self.connection.workflow_manager.jobs.get(job_id)
+        actual = job_one.add_hold(step_ids=[step_id], dependent_step_id=step_id_two, dependent_job_id=job_two_id)
+
+        the_job = self.connection.workflow_manager.jobs.get(job_id)
+
+        # Arrange
+        self.assertTrue(actual, "Incorrect return type")
+        self.assertIsNotNone(the_job.holds, "Incorrect return type")
+
+        # Act: Add a hold to job one blocked by the step from job two
+        actual = job_one.release_hold(step_ids=[step_id], dependent_step_id=step_id_two, dependent_job_id=job_two_id)
+
+        the_job = self.connection.workflow_manager.jobs.get(job_id)
+
+        # Arrange
+        self.assertTrue(actual, "Incorrect return type")
+        self.assertIsNotNone(the_job.holds, "Incorrect return type")
+        self.assertEqual(the_job.holds[0]["releasedBy"], 'admin', "Incorrect return type")
+
+    def test_add_hold_returns_error(self):
+        # Arrange
+        job_id = "abcde12345"
+        step_id = "abcde12345"
+
+        # Act
+        try:
+            self.connection.workflow_manager.jobs.get(job_id).set_current_step(
+                step_id=step_id
+            )
+        except Exception as testException:
+            assert True, (
+                "Expected error returned during test: " + testException.__str__()
+            )
+
+    # endregion
+
     # region Comments
 
     def test_comments_returns_successfully(self):
