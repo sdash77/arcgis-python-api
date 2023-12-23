@@ -204,7 +204,7 @@ class SharingManager:
                 resturl=self._gis._portal.resturl, owner=self._item.owner
             )
         else:
-            url: str= "{resturl}content/items/{itemid}/share".format(
+            url: str = "{resturl}content/items/{itemid}/share".format(
                 resturl=self._gis._portal.resturl, itemid=self._item.itemid
             )
 
@@ -268,7 +268,7 @@ class SharingManager:
                 resturl=self._gis._portal.resturl, owner=self._item.owner
             )
         else:
-            url: str= "{resturl}content/items/{itemid}/unshare".format(
+            url: str = "{resturl}content/items/{itemid}/unshare".format(
                 resturl=self._gis._portal.resturl, itemid=self._item.itemid
             )
 
