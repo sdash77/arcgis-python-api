@@ -9728,7 +9728,7 @@ class Group(dict):
             self.__dict__.update(groupdict)
         except Exception as e:
             raise e
-        
+
     def __getattr__(
         self, name
     ):  # support group attributes as group.access, group.owner, group.phone etc
