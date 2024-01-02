@@ -4,9 +4,7 @@ Tests the Spatial Index logic
 By default the
 """
 import os
-import sys
 
-# sys.path.append(r"D:\SVN\git_hub\ArcGIS\geo_public")
 import unittest
 
 import pandas as pd
@@ -178,24 +176,4 @@ class TestSpatialIndex(unittest.TestCase):
 
 
 if __name__ == "__main__":
-
-    test_inst = TestSpatialIndex()
-
-    print(
-        "####  Begin  ##################################################################"
-    )
-    print("Running Spatial Index Tests")
-    test_inst.test_build_sindex_rtree()
-    print("######################################################################")
-    test_inst.test_build_sindex_quadtree()
-    print("######################################################################")
-    test_inst.test_build_sindex_rt_filename()
-    print("######################################################################")
-    test_inst.test_build_sindex_rt_load_fn()
-    print("######################################################################")
-    test_inst.test_intersect_quadtree()
-    print("######################################################################")
-    test_inst.test_intersect_rtree()
-    print(
-        "####  Finished ##################################################################"
-    )
+    unittest.main()

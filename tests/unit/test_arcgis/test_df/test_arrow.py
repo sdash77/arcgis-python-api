@@ -1,31 +1,17 @@
-import sys, os
+import os
 
-sys.path.insert(0, r"C:\SVN\geosaurus_master_dask_integration\src")
-sys.path.insert(0, r"C:\SVN\geosaurus_master_dask_integration\tests")
 import unittest
 import tempfile
 import pandas as pd
 
-from integration.dino_utils.dino_configs import DinoConfigs
-from configparser import ConfigParser
-
 from arcgis.geometry import SpatialReference, Geometry
-
-skip_me = False
-try:
-    from arcgis.features.geo._io._arrow import _read_parquet, _to_parquet, _to_feather, _read_feather
-except ImportError:
-    skip_me = True
-
-
-
+from arcgis.features.geo._io._arrow import _read_parquet, _to_parquet, _to_feather, _read_feather
 
 geoms = [
     Geometry({'x' : -10, 'y' : 13, 'spatialReference' : {'wkid' : 4326}}),
     Geometry({'x' : 2, 'y' : 2, 'spatialReference' : {'wkid' : 4326}}),
     Geometry({'x' : 20, 'y' : -22, 'spatialReference' : {'wkid' : 4326}})
 ] * 1
-
 
 
 class TestArrowFeatureSupport(unittest.TestCase):
