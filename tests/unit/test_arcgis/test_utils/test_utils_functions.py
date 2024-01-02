@@ -1,4 +1,3 @@
-import sys
 import unittest
 
 from arcgis._impl.common._utils import (
