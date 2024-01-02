@@ -1,9 +1,4 @@
-import sys
 import unittest
-
-# sys.path.insert(
-#    0, r"C:\SVN\geosaurus_multiiwa_fix_handle_ports_properly\src"
-# )
 from unittest import mock
 
 mock_data = {
