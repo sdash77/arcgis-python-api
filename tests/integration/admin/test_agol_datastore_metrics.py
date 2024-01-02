@@ -26,7 +26,7 @@ PROXIES = detect_proxy(True)  # Handles Fiddler when True
 enable_verbose_logging(__logger__)
 
 
-class Test_DatastoreMetrics(unittest.TestCase):
+class TestAGOLDatastoreMetrics(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         cls.gis = GIS(
