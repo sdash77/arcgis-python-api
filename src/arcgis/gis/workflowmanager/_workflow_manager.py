@@ -2625,11 +2625,11 @@ class Job(object):
         hold_scheduled_release: Optional[str] = None,
     ):
         """
-        Applies a hold or a dependency to a step. This prevents the Run and Finish actions from being performed
-        on the step until the ReleaseHold action is run or the holdScheduledReleased has expired. If there is not
-        a holdScheduledReleased timestamp, the ReleaseHold action is required to remove the hold or dependency.
-        If there are multiple holds or dependencies, they must all be released or expired for the Run and Finish
-        actions to be performed. Cannot be applied if the step is already running or job is closed.
+        Applies a hold or a dependency to a step. The Run and Finish actions cannot be performed
+        on the step until the dependent step is resolved, the ReleaseHold action is run or the holdScheduledReleased has
+        expired. If there is not a holdScheduledReleased timestamp, the ReleaseHold action is required to remove the
+        hold or dependency. If there are multiple holds or dependencies, they must all be released or expired for the
+        Run and Finish actions to be performed. Cannot be applied if the step is already running or job is closed.
 
         ===============     ====================================================================
         **Parameter**        **Description**
