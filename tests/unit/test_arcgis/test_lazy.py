@@ -1,6 +1,3 @@
-import sys
-
-# sys.path.insert(0, r"c:\SVN\geosaurus_master_issue_4790a\src")
 import unittest
 from arcgis.auth.tools import LazyLoader
 
