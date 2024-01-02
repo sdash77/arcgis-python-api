@@ -2631,22 +2631,22 @@ class Job(object):
         hold or dependency. If there are multiple holds or dependencies, they must all be released or expired for the
         Run and Finish actions to be performed. Cannot be applied if the step is already running or job is closed.
 
-        ===============     ====================================================================
-        **Parameter**        **Description**
-        ---------------     --------------------------------------------------------------------
-        step_ids             Optional. The array of steps put on hold when adding a dependency hold.
-                             If not specified, the dependency hold is applied to all the active steps in the job.
-        ---------------     --------------------------------------------------------------------
-        dependent_job_id     Optional. A job that the current job is dependent on from being performed step actions
-                             including Run and Finish
-        ---------------     --------------------------------------------------------------------
-        dependent_step_id      Optional. The step in the job that the current job is dependent on from being performed
-                               step actions including Run and Finish.
-        ---------------     --------------------------------------------------------------------
-        hold_scheduled_release  Optional. The release timestamp for a scheduled hold. Once the current date and time
-                                has passed the scheduled release timestamp, the hold will automatically release without
-                                requiring the ReleaseHold action.
-        ===============     ====================================================================
+        ======================      ====================================================================
+        **Parameter**               **Description**
+        ----------------------      --------------------------------------------------------------------
+        step_ids                    Optional. The array of steps put on hold when adding a dependency hold.
+                                    If not specified, the dependency hold is applied to all the active steps in the job.
+        ----------------------      --------------------------------------------------------------------
+        dependent_job_id            Optional. A job that the current job is dependent on from being performed step actions
+                                    including Run and Finish
+        ----------------------      --------------------------------------------------------------------
+        dependent_step_id           Optional. The step in the job that the current job is dependent on from being performed
+                                    step actions including Run and Finish.
+        ----------------------      --------------------------------------------------------------------
+        hold_scheduled_release      Optional. The release timestamp for a scheduled hold. Once the current date and time
+                                    has passed the scheduled release timestamp, the hold will automatically release without
+                                    requiring the ReleaseHold action.
+        ======================      ====================================================================
 
         :return:
             success object
@@ -2695,18 +2695,18 @@ class Job(object):
         """
         Releases a hold from a step, allowing the Run and Finish actions to be once again performed on the step.
 
-        ===============     ====================================================================
-        **Parameter**        **Description**
-        ---------------     --------------------------------------------------------------------
-        step_ids             Optional. The array of steps on hold to be released. If not specified the release
-                             is applied to all the steps on hold.
-        ---------------     --------------------------------------------------------------------
-        dependent_job_id     Optional. A job that the current job is dependent on from being performed step actions
-                             including Run and Finish.
-        ---------------     --------------------------------------------------------------------
-        dependent_step_id    Optional. The step in the job that the current job is dependent on from being performed
-                             step actions including Run and Finish.
-        ===============     ====================================================================
+        =================       ====================================================================
+        **Parameter**           **Description**
+        -----------------       --------------------------------------------------------------------
+        step_ids                Optional. The array of steps on hold to be released. If not specified the release
+                                is applied to all the steps on hold.
+        -----------------       --------------------------------------------------------------------
+        dependent_job_id        Optional. A job that the current job is dependent on from being performed step actions
+                                including Run and Finish.
+        -----------------       --------------------------------------------------------------------
+        dependent_step_id       Optional. The step in the job that the current job is dependent on from being performed
+                                step actions including Run and Finish.
+        =================       ====================================================================
 
         :return:
             success object
