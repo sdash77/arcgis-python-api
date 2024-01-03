@@ -4,6 +4,7 @@ from unittest import mock
 
 
 class TestNetworkAccessFails(unittest.TestCase):
+    """demonstrates that patching urllib.request will cause a MockHttpCall"""
 
     def test_network_access_fails(self):
         """All unit tests should NOT connect to the network. Assert that trying
