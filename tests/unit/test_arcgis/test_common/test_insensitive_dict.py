@@ -1,7 +1,3 @@
-import sys
-
-# sys.path.insert(0, r"C:\SVN\achapkowski_geosaurus_fork_issue_viz_take_3\src")
-import pytest
 import unittest
 from arcgis._impl.common._isd import InsensitiveDict
 import json
