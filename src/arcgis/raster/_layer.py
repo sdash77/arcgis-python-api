@@ -6759,7 +6759,9 @@ class ImageryLayer(Layer):
 
                         # percent clip stretching
                         p005 = np.percentile(band_arr, 0.5)
-                        band_arr_new = np.copy(band_arr) # second percentile on original array returns error that output val is read only
+                        band_arr_new = np.copy(
+                            band_arr
+                        )  # second percentile on original array returns error that output val is read only
                         p995 = np.percentile(band_arr_new, 99.5)
                         r = 255.0 / (p995 - p005 + 2)
                         out = np.round(r * (band_arr - p005 + 1)).astype("uint8")
