@@ -6759,7 +6759,8 @@ class ImageryLayer(Layer):
 
                         # percent clip stretching
                         p005 = np.percentile(band_arr, 0.5)
-                        p995 = np.percentile(band_arr, 99.5)
+                        band_arr_new = np.copy(band_arr) # second percentile on original array returns error that output val is read only
+                        p995 = np.percentile(band_arr_new, 99.5)
                         r = 255.0 / (p995 - p005 + 2)
                         out = np.round(r * (band_arr - p005 + 1)).astype("uint8")
                         out[band_arr < p005] = 0
@@ -6769,6 +6770,8 @@ class ImageryLayer(Layer):
                     if num_bands == 1 and numarray.ndim == 2:
                         stretched_img = band_arr_list[0]
                     else:
+                        if num_bands == 2:
+                            band_arr_list.append(band_arr_list[1])
                         stretched_img = np.ma.dstack(band_arr_list)
                     numarray = stretched_img
             except:
@@ -6850,9 +6853,7 @@ class ImageryLayer(Layer):
             data = ma.masked_array(data, valid_mask)
             if data.shape[0] > 3 and len(data.shape) == 3:
                 data = data[0:3]  # Extract first 3 bands
-            if len(data) == 2:
-                data = np.expand_dims(data, axis=2)
-            elif len(data) == 3:
+            if len(data) == 2 or len(data) == 3:
                 data = np.transpose(data, axes=[1, 2, 0])
 
             # data = data[np.ix_(valid_mask.any(1), valid_mask.any(0))]
