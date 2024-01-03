@@ -46,10 +46,11 @@ geoms = [
 
 
 class TestGeometryHash(unittest.TestCase):
-    def test_hash(self):
+    def test_hashes(self):
         """tests the hash and __hash__ methods"""
         for g in geoms:
             g = Geometry(g)
+            assert hash(g)
             assert g.__hash__() == hash(g)
 
 

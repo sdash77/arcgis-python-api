@@ -3,7 +3,7 @@ from arcgis.geometry.affine import skew, scale, rotate, translate
 from arcgis.geometry import Geometry
 
 #############################################################################
-class AffineTest(unittest.TestCase):
+class TestAffine(unittest.TestCase):
     """
     tests the affine functions on dictionaries and arcgis.Geometry objects.
     """
