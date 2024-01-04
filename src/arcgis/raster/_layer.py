@@ -6780,7 +6780,7 @@ class ImageryLayer(Layer):
                         stretched_img = np.ma.dstack(band_arr_list)
                     numarray = stretched_img
             except:
-                raise
+                pass
 
             # numarray = numarray[np.ix_(mask_array.any(1), mask_array.any(0))]
             custom_cmap = None
