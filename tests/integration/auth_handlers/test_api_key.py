@@ -1,4 +1,5 @@
 import unittest
+from arcgis.gis import GIS
 from arcgis.auth import EsriAPIKeyAuth, EsriSession, EsriKerberosAuth
 from utils.decorators.cls import agol_api_key_only
 
@@ -23,6 +24,11 @@ class TestApiKey(unittest.TestCase):
             data = resp.json()
             assert "appInfo" in data
             assert not "user" in data
+
+    def test_api_key_gis(self):
+        gis = GIS(url=self.portal_url, api_key=self.password)
+        assert gis._con._auth == "API_KEY"
+        assert gis.properties["appInfo"]["appOwner"]
 
 
 if __name__ == "__main__":
