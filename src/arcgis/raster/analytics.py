@@ -10220,17 +10220,17 @@ def locate_regions(
     input_raster                             Required ImageryLayer object. The input utility raster from which the regions will be derived.
                                              The higher the value in the input raster, the greater the utility.
     ------------------------------------     --------------------------------------------------------------------
-    input_existing_regions                   Optional ImageryLayer object. A dataset identifying where regions already exist.
+    input_existing_regions                   Optional ImageryLayer or FeatureLayer object. A dataset identifying where regions already exist.
                                              The input can be a raster or a feature layer. If the input is a raster, any location in the raster with a valid value is considered already allocated. All other locations are set to NoData.
 
                                              In the parameterized region-growing algorithm, no region will grow from any location containing an existing region.
                                              Existing regions will be used in the growth and evaluation of the minimum_distance and maximum_distance as described
-                                             in the corresponding parameter descriptions above.
+                                             in the corresponding parameter descriptions below.
     ------------------------------------     --------------------------------------------------------------------
     total_area                               Optional float. The total amount of area for all regions.
                                              The default is 10 percent of the input cells within the processing extent.
     ------------------------------------     --------------------------------------------------------------------
-    area_units                               Optional string. Defines the area units used for the ``total_area``, ``minimum_area``, and ``maximum_area parameters``.
+    area_units                               Optional string. Defines the area units used for the ``total_area``, ``minimum_area``, and ``maximum_area`` parameters.
 
                                              | The available options and their corresponding units are the following:
 
@@ -10254,7 +10254,7 @@ def locate_regions(
                                              If the input raster is in feet, yards, miles or any other imperial unit, Square miles will be used.
                                              If the input raster is in meters, kilometers, or any other metric unit, Square kilometers will be used.
     ------------------------------------     --------------------------------------------------------------------
-    number_of_regions                        Optional integer. Determines how many regions the total_area will be distributed across.
+    number_of_regions                        Optional integer. Determines how many regions the ``total_area`` will be distributed across.
 
                                              The maximum number of regions that can be specified is 30. The default is 1.
     ------------------------------------     --------------------------------------------------------------------
@@ -10374,8 +10374,8 @@ def locate_regions(
                                              If the input raster is in meters, kilometers, or any other metric unit, KILOMETERS will be used.
     ------------------------------------     --------------------------------------------------------------------
     number_of_neighbors                      Optional string. Defines which neighboring cells to use in the growth of the regions.
-                                             |
-                                             The available options are the following:
+
+                                             | The available options are the following:
 
                                              - FOUR - Only the four direct (orthogonal) neighbors of the region cells will be considered in the region growth.
 

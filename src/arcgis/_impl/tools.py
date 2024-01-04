@@ -18184,8 +18184,6 @@ class _RasterAnalysisTools(BaseAnalytics):
         selection_method="BASED_ON_NUMBER_OF_REGIONS",
         output_name=None,
         context=None,
-        *,
-        gis=None,
         future=False,
         **kwargs,
     ):
@@ -18219,7 +18217,8 @@ class _RasterAnalysisTools(BaseAnalytics):
                 "ACRES",
                 "HECTARES",
                 "SQUARE_METERS",
-                "SQUARE_YARDS" "SQUARE_FEET",
+                "SQUARE_YARDS",
+                "SQUARE_FEET",
             ]
             if [element.lower() for element in area_units_allowed_values].count(
                 area_units.lower()
