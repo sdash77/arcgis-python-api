@@ -6758,10 +6758,13 @@ class ImageryLayer(Layer):
                             band_arr = numarray[:, :, i]
 
                         # percent clip stretching
-                        p005 = np.percentile(band_arr, 0.5)
                         band_arr_new = np.copy(
                             band_arr
-                        )  # second percentile on original array returns error that output val is read only
+                        )  # new arr to perform percentile. percentile on original array returns error that output val is read only
+                        p005 = np.percentile(band_arr_new, 0.5)
+                        band_arr_new = np.copy(
+                            band_arr
+                        )  # new arr to perform percentile. percentile on original array returns error that output val is read only
                         p995 = np.percentile(band_arr_new, 99.5)
                         r = 255.0 / (p995 - p005 + 2)
                         out = np.round(r * (band_arr - p005 + 1)).astype("uint8")
@@ -6777,7 +6780,7 @@ class ImageryLayer(Layer):
                         stretched_img = np.ma.dstack(band_arr_list)
                     numarray = stretched_img
             except:
-                pass
+                raise
 
             # numarray = numarray[np.ix_(mask_array.any(1), mask_array.any(0))]
             custom_cmap = None
