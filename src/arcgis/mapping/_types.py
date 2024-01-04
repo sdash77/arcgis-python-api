@@ -827,6 +827,10 @@ class WebMap(HasTraits, collections.OrderedDict):
                 if hasattr(layer.layer, "layers"):
                     fc_layer_definition = dict(layer.layer.layers[0].layerDefinition)
                     fc_feature_set = dict(layer.layer.layers[0].featureSet)
+                elif "layers" in layer.layer:
+                    # already a dict
+                    fc_layer_definition = layer.layer["layers"][0]["layerDefinition"]
+                    fc_feature_set = layer.layer["layers"][0]["featureSet"]
                 else:
                     fc_layer_definition = dict(layer.layer.layerDefinition)
                     fc_feature_set = dict(layer.layer.featureSet)
@@ -1946,7 +1950,7 @@ class WebMap(HasTraits, collections.OrderedDict):
         Gets a list of possible base maps to set as the
         :attr:`~arcgis.mapping.WebMap.basemap` for the ``WebMap``.
         """
-        if self._gis._is_authenticated:
+        if self._gis is not None and self._gis._is_authenticated:
             return [
                 "dark-gray-vector",
                 "gray-vector",

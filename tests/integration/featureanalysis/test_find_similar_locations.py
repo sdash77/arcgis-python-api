@@ -1,13 +1,10 @@
 import unittest
-import sys
-
-# sys.path.insert(0, r"/Users/cowboy/GitHub/np_geo/src")
 import datetime
 from arcgis.features import FeatureLayer
 from arcgis.gis import Item
 from arcgis.gis import GIS
 from arcgis.features.find_locations import find_similar_locations
-from config_tests import setup_profiles, stage_data
+from .config_tests import setup_profiles, stage_data
 
 test_items = [
     "00fbc412f68645958520d946806f90c0",  # Tennessee Town

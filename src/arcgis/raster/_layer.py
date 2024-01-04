@@ -2296,7 +2296,7 @@ class ImageryLayer(Layer):
                 import lerc
             except ImportError:
                 raise ImportError(
-                    "lerc not found. Install lerc to export image service as numpy array"
+                    "lerc not found. Install lerc to export image service as numpy array (pip install pylerc)"
                 )
 
             if not isinstance(res, bytes):
@@ -6835,7 +6835,7 @@ class ImageryLayer(Layer):
                 import lerc
             except:
                 _LOGGER.warning(
-                    "lerc needs to be installed, to render Tiled Imagery Layer"
+                    "lerc needs to be installed, to render Tiled Imagery Layer (pip install pylerc)"
                 )
             if not isinstance(res, bytes):
                 raise RuntimeError(res)

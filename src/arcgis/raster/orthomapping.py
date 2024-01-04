@@ -517,7 +517,11 @@ def _add_mission(
         gps_data = []
         gps_info_list = ["name", "lat", "long", "alt", "acq"]
 
-        if "gps" in raster_type_params:
+        if (
+            raster_type_params is not None
+            and isinstance(raster_type_params, dict)
+            and "gps" in raster_type_params
+        ):
             for ele in raster_type_params["gps"]:
                 dict_gps = dict(zip(gps_info_list, ele))
                 gps_data.append(dict_gps)
@@ -2697,7 +2701,10 @@ def reset_image_collection(
         }
 
     return gis._tools.orthomapping.reset_image_collection(
-        image_collection=image_collection, future=future, **kwargs
+        image_collection=image_collection,
+        future=future,
+        flight_json_details=flight_json_details,
+        **kwargs,
     )
     """
     gis = arcgis.env.active_gis if gis is None else gis
@@ -2847,6 +2854,15 @@ class Project:
         """
         res_list = self._project_item.resources.list()
         return len(res_list)
+
+    @property
+    def item(self):
+        """
+        The ``item`` property returns the portal item associated with the Project.
+
+        :return: A portal item
+        """
+        return self._project_item
 
     # def create_project(self, name, definition: Optional[dict[str, Any]] = None):
     #    try:

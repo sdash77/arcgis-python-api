@@ -45,6 +45,7 @@ _TEXT_BASED_ITEM_TYPES = [
     "Workflow Manager Service",
     "StoryMap",
     "Web Scene",
+    "Data Pipeline",
 ]
 
 # Regular expressions for finding fields in json
@@ -1292,6 +1293,10 @@ class _DeepCloner:
                     created_items = self._get_created_items()
                     for item in reversed(created_items):
                         if item:
+                            if isinstance(item, gis.Item):
+                                item.protect(False)
+                            elif isinstance(item, gis.Group):
+                                item.protected = False
                             item.delete()
                     raise ex
 

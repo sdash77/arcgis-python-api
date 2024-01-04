@@ -1,13 +1,10 @@
-import sys
-
-# sys.path.insert(0, r"C:\ipython_workfolder\geosaurus\src")
 import datetime
 import unittest
 import pandas as pd
 from arcgis.gis import GIS, Item
 from arcgis.features import FeatureLayer
 from arcgis.features.analyze_patterns import calculate_density
-from config_tests import setup_profiles
+from .config_tests import setup_profiles
 
 data = [
     {
