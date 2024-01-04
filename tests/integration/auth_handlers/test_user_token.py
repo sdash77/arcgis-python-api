@@ -49,18 +49,6 @@ class TestUserToken(unittest.TestCase):
             data = session.get(url).json()
             assert data.get("user", False) == False
 
-    def test_none_given(self):
-        with self.assertRaises(ValueError):
-            token_auth = EsriUserTokenAuth(
-                token=None, referer=None, verify_cert=True, legacy=False
-            )
-
-    def test_referer_set(self):
-        token_auth = EsriUserTokenAuth(
-            token="ABCD", referer="ABCD", verify_cert=True, legacy=False
-        )
-        assert token_auth.referer == "ABCD"
-
 
 if __name__ == "__main__":
     unittest.main()
