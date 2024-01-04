@@ -1,35 +1,33 @@
-import sys, json, uuid
-import sys
-
-sys.path.insert(0, r"c:\SVN\geosaurus_issue_9708\src")
 import unittest
 from arcgis.auth import EsriSession, EsriUserTokenAuth, EsriBuiltInAuth
+from utils.decorators.cls import standard_enterprise_only
 
-
+@standard_enterprise_only
 class TestUserToken(unittest.TestCase):
+    def setUp(self):
+        self.auth_handler = EsriBuiltInAuth(
+            self.portal_url,
+            self.username,
+            self.password,
+        )
+
     def test_user_token_test(self):
         """user token tests"""
-        username = "esri_requests"
-        password = "portalaccount1"
-        builtin = EsriBuiltInAuth(
-            "https://pythonapi.playground.esri.com/portal",
-            username,
-            password,
-        )
+        builtin = self.auth_handler
         user_token = builtin.token
         referer = builtin._referer
         token_auth = EsriUserTokenAuth(
             token=user_token, referer=referer, verify_cert=True, legacy=False
         )
         with EsriSession(auth=token_auth) as session:
-            url = "https://pythonapi.playground.esri.com/portal/sharing/rest/portals/self/servers?f=json"
+            url = f"{self.portal_url}/sharing/rest/portals/self/servers?f=json"
             data = session.get(url).json()
             assert data["servers"]
         token_auth = EsriUserTokenAuth(
             token=user_token, referer=referer, verify_cert=True, legacy=True
         )
         with EsriSession(auth=token_auth) as session:
-            url = "https://pythonapi.playground.esri.com/portal/sharing/rest/portals/self/servers?f=json"
+            url = f"{self.portal_url}/sharing/rest/portals/self/servers?f=json"
             data = session.get(url).json()
             assert data["servers"]
             data = session.post(url).json()
@@ -38,13 +36,7 @@ class TestUserToken(unittest.TestCase):
                 data = session.put(url)
 
     def test_user_token_invalid_token(self):
-        username = "esri_requests"
-        password = "portalaccount1"
-        builtin = EsriBuiltInAuth(
-            "https://pythonapi.playground.esri.com/portal",
-            username,
-            password,
-        )
+        builtin = self.auth_handler
         user_token = builtin.token
         referer = builtin._referer
         token_auth = EsriUserTokenAuth(
