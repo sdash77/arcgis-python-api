@@ -1,11 +1,16 @@
 from enum import unique
 from pathlib import Path
 import json
+from .._data import prepare_data
 
 import numpy
 from ._model_extension import ModelExtension
 from ._arcgis_model import _EmptyData
 import logging
+
+from .._mmseg_config.prithivi100m_burn_scar import img_norm_burn_model
+from .._mmseg_config.prithivi100m_crop_classification import img_norm_crop_model
+from .._mmseg_config.prithivi100m_sen1floods import img_norm_flood_model
 
 logger = logging.getLogger()
 
@@ -199,7 +204,11 @@ class MMSegmentationConfig:
                 return losses
 
             _losses = self.model.decode_head.losses(model_output, model_target[0])
-            return _losses.get("loss_ce", _losses.get("loss_seg"))
+            loss_dice = _losses.get("loss_dice")
+            if loss_dice:
+                return loss_dice
+            else:
+                return _losses.get("loss_ce", _losses.get("loss_seg"))
 
         return model_output["loss"]
 
@@ -212,6 +221,47 @@ class MMSegmentationConfig:
         else:
             pred = self.torch.unsqueeze(pred.argmax(dim=1), dim=1)
         return pred
+
+
+def norm_prithivi(data, model):
+    scaling_info = {
+        "prithivi100m_burn_scar": (
+            img_norm_burn_model.get("means"),
+            img_norm_burn_model.get("stds"),
+        ),
+        "prithivi100m_sen1floods": (
+            img_norm_flood_model.get("means"),
+            img_norm_flood_model.get("stds"),
+        ),
+        "prithivi100m_crop_classification": (
+            img_norm_crop_model.get("means"),
+            img_norm_crop_model.get("stds"),
+        ),
+        "prithivi100m": (data._scaled_mean_values, data._scaled_std_values),
+    }
+
+    means, stds = scaling_info[model]
+    data._scaled_mean_values, data._scaled_std_values = torch.tensor(
+        means
+    ), torch.tensor(stds)
+
+    data._min_max_scaler = None
+
+    if (data._band_max_values.mean() > 1) and (
+        model != "prithivi100m_crop_classification"
+    ):
+        div_value = 10000
+    else:
+        div_value = None
+
+    data.valid_ds.x._div = div_value
+    data.train_ds.x._div = div_value
+
+    data = data.normalize(
+        stats=(data._scaled_mean_values, data._scaled_std_values), do_x=True, do_y=False
+    )
+
+    return data
 
 
 class MMSegmentation(ModelExtension):
@@ -252,6 +302,10 @@ class MMSegmentation(ModelExtension):
     def __init__(self, data, model, model_weight=False, pretrained_path=None, **kwargs):
         self._check_dataset_support(data)
 
+        if model.startswith("prithivi100m"):
+            data.remove_tfm(data.norm)
+            data.norm, data.denorm = None, None
+            data = norm_prithivi(data, model)
         self._ignore_classes = kwargs.get("ignore_classes", [])
         self.class_balancing = kwargs.get("class_balancing", False)
         if self._ignore_classes != [] and len(data.classes) <= 2:

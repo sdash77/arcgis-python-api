@@ -43,5 +43,6 @@ from ._dsmgr import (
     DataStoreTimeUnit,
     DataStoreMetric,
 )
+from ._partnercollab import PartneredCollabManager, PartneredCollaboration
 
 __all__ = ["PortalAdminManager", "AGOLAdminManager"]
