@@ -11252,19 +11252,19 @@ class User(dict):
                           generates information.
                           
                           * If *duration* is *weekly*, the day component must
-                            evaluate to a *Sunday* or *Monday* GMT
+                            evaluate to a *Sunday* or *Monday* UTC
                           * If *duration* is *monthly*, the day component must
                             evaluate to the first of the month
                             
                           .. note::
-                              Values must be in the GMT timezone.
+                              Values must be in the UTC timezone.
                           
                           If argument is not provided:
                           
                           * and *duration* is either *weekly* or *monthly*,
                             the report will generate from the closest Sunday.
                           * and *duration* is *daily*, the report will
-                            generate from the current day/time in GMT. 
+                            generate from the current day/time in UTC. 
         ----------------  --------------------------------------------------------
         duration          Optional String. The time frame for which the reports are
                           created.  The allowed values are:
