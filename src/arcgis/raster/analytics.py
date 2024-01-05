@@ -10431,9 +10431,9 @@ def locate_regions(
                                              The default is based on the input raster. If the input raster is in feet, yards, miles, or any other imperial unit, MILES will be used.
                                              If the input raster is in meters, kilometers, or any other metric unit, KILOMETERS will be used.
     ------------------------------------     --------------------------------------------------------------------
-    number_of_neighbors                      Optional string. Defines which neighboring cells to use in the growth of the regions.
+    number_of_neighbors                      | Optional string. Defines which neighboring cells to use in the growth of the regions.
 
-                                             | The available options are the following:
+                                             The available options are the following:
 
                                              - FOUR - Only the four direct (orthogonal) neighbors of the region cells will be considered in the region growth.
 
