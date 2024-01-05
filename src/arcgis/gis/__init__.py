@@ -11241,36 +11241,71 @@ class User(dict):
         **Parameter**      **Description**
         ----------------  --------------------------------------------------------
         report_type       Required String. The type of organizational report to
-                          generated. The allowed report types are: `credits`,
-                          `content`, `users`, and `activity`.
+                          generate. The allowed arguments are:
+                          
+                          * *credits*
+                          * *content*
+                          * *users*
+                          * *activity*
         ----------------  --------------------------------------------------------
-        start_time        Required Datetime. The day on which the report is
-                          generated. Each report must start on a Sunday or Monday
-                          for the start date for weekly and monthly reports. All
-                          datetimes must be in GMT timezone. Passing in `None` for
-                          the `start_time` will use the closest Sunday to the date
-                          for weekly and monthly reports.  For daily reports, the
-                          current day/time will be used in GMT.
+        start_time        Required Datetime. The time from which the report
+                          generates information.
+                          
+                          * If *duration* is *weekly*, the day component must
+                            evaluate to a *Sunday* or *Monday* GMT
+                          * If *duration* is *monthly*, the day component must
+                            evaluate to the first of the month
+                            
+                          .. note::
+                              Values must be in the GMT timezone.
+                          
+                          If argument is not provided:
+                          
+                          * and *duration* is either *weekly* or *monthly*,
+                            the report will generate from the closest Sunday.
+                          * and *duration* is *daily*, the report will
+                            generate from the current day/time in GMT. 
         ----------------  --------------------------------------------------------
-        duration          Optional String. The time frame on which the reports are
-                          ran.  The allowed values are: `monthly`, `weekly`,
-                          `daily`. For `activity` and `credits` a `start_time`
-                          is required.
+        duration          Optional String. The time frame for which the reports are
+                          created.  The allowed values are:
+                          
+                          * *monthly*
+                          * *weekly*
+                          * *daily* - only available if *report_type* is *activity*
+                          
+                          .. note::
+                              Argument is required when setting *report_type*
+                              argument to *activity* or *credits*.
         ================  ========================================================
 
 
         .. code-block:: python
 
-            # Usage Example
+            # Usage Example #1
 
-            import datetime as _dt
-            seven_days_ago = _dt.datetime.now(_dt.timezone.utc) - _dt.timedelta(days=7)
-            item = user.report("content",
-                               seven_days_ago,
-                               duration="weekly")
-
-
-        :return: Item
+            >>> import datetime as _dt
+            >>> from arcgis.gis import GIS
+            
+            >>> gis = GIS(profile="your_online_admin_profile")
+            
+            >>> org_users = gis.users.search("*")
+            >>> org_user = org_users[3]
+            
+            >>> sept22 = _dt.datetime(2022, 9, 1, 16)
+            
+            >>> content_report = org_user.report(report_type = "content",
+                                                 start_time = sept22,
+                                                 duration = "monthly")
+            
+            # Usage Example #2
+            >>> sun_dec10 = _dt.datetime(2023, 12, 10, 17)
+            
+            >>> activity_report = org_user.report(report_type = "activity",
+                                                  start_time = sun_dec10,
+                                                  duration = "weekly")
+            
+        :return:
+            :class: A *CSV* `~arcgis.gis.Item` that can be downloaded.
 
         """
 
