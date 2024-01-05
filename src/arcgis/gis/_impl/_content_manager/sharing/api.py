@@ -199,7 +199,8 @@ class SharingManager:
         """
         # if not in org use different url
 
-        if self._item.owner in [user.username for user in self._gis.users.search()]:
+        search_query = "username:" + self._item.owner
+        if self._gis.users.search(search_query):
             url: str = "{resturl}content/users/{owner}/shareItems".format(
                 resturl=self._gis._portal.resturl, owner=self._item.owner
             )
@@ -262,8 +263,9 @@ class SharingManager:
         ======================  ========================================================
         """
         # if not in org use different url
-
-        if self._item.owner in [user.username for user in self._gis.users.search()]:
+        
+        search_query = "username:" + self._item.owner
+        if self._gis.users.search(search_query):
             url: str = "{resturl}content/users/{owner}/unshareItems".format(
                 resturl=self._gis._portal.resturl, owner=self._item.owner
             )
