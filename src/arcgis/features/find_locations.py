@@ -657,7 +657,7 @@ def find_similar_locations(
         str,
         dict[str, Any],
     ],
-    analysis_fields: Optional[list[str]] = [],
+    analysis_fields: Optional[list[str]] = None,
     input_query: Optional[str] = None,
     number_of_results: int = 0,
     output_name: Optional[Union[FeatureLayer, str]] = None,
@@ -665,6 +665,7 @@ def find_similar_locations(
     gis: Optional[GIS] = None,
     estimate: bool = False,
     future: bool = False,
+    criteria_fields: Optional[list[dict[str, str]]] = None,
 ):
     """
     .. image:: _static/images/find_similar_locations/find_similar_locations.png
@@ -719,7 +720,7 @@ def find_similar_locations(
     search_layer                Required feature layer. The layer containing candidate locations that
                                 will be evaluated against the reference locations. See :ref:`Feature Input<FeatureInput>`.
     -----------------------     -------------------------------------------------------------------------------------------
-    analysis_fields             Required list of strings. A list of fields whose values are used to determine similarity.
+    analysis_fields             Optional list of strings. A list of fields whose values are used to determine similarity.
                                 They must be numeric fields and the fields must exist on both the ``input_layer`` and
                                 the ``search_layer``. The method will find features in the ``search_layer`` that have field
                                 values closest to those of the features in your ``input_layer``.
@@ -761,6 +762,21 @@ def find_similar_locations(
     -----------------------     -------------------------------------------------------------------------------------------
     future                      Optional boolean. If True, a future object will be returned and the process
                                 will not wait for the task to complete. The default is False, which means wait for results.
+    -----------------------     -------------------------------------------------------------------------------------------
+    criteria_fields             Optional list of dicts. The fields in the inputLayer value that correspond to the fields
+                                in the search_layer value that will be used to determine similarity. All fields must be
+                                numeric fields. The task will rank the features in the search_layer value based on the similarity
+                                of their field values to the corresponding field values in the input_layer value. Either an
+                                analysis_fields or criteria_fields value must be provided.
+
+                                This parameter is available in ArcGIS Enterprise 11.2 or higher.
+
+                                Examples:
+
+                                * [{"referenceField":"population", "candidateField":"pop"}] (single criteria field)
+                                * [{"referenceField":"population", "candidateField":" pop"},
+                                    {"referenceField":"age", "candidateField":"age"},
+                                    {"referenceField":"edu", "candidateField":"education"}] (multiple criteria field)
     =======================     ===========================================================================================
 
     :return: :class:`~arcgis.features.FeatureLayer` if ``output_name`` is specified, else Python dictionary with the following keys:
@@ -777,6 +793,8 @@ def find_similar_locations(
                                                     output_name = "top 4 similar locations",
                                                     number_of_results=4)
     """
+    if analysis_fields is None:
+        analysis_fields = []
 
     gis = _arcgis.env.active_gis if gis is None else gis
     if gis is None:
@@ -794,6 +812,7 @@ def find_similar_locations(
         "gis": gis,
         "estimate": estimate,
         "future": future,
+        "criteria_fields": criteria_fields,
     }
     params = inspect_function_inputs(
         fn=gis._tools.featureanalysis._tbx.find_similar_locations, **kwargs

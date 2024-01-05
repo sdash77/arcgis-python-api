@@ -9,6 +9,7 @@ import time
 import logging
 import tempfile
 import collections
+import concurrent.futures
 from enum import Enum
 from arcgis._impl.common._mixins import PropertyMap
 from arcgis.gis import GIS, _GISResource, Item, ItemDependency
@@ -2069,6 +2070,167 @@ class FeatureLayerCollectionManager(_GISResource):
         new_item.delete()
         return orig_item
 
+    def swap_view(
+        self,
+        index: int,
+        new_source: features.FeatureLayer | features.Table,
+        future: bool = False,
+    ) -> dict | concurrent.futures.Future:
+        """
+        Swaps the Data Source Layer with a different parent layer.
+
+        ==================     ====================================================================
+        **Parameter**           **Description**
+        ------------------     --------------------------------------------------------------------
+        index                  Required int. The index of the layer on the view to replace.
+        ------------------     --------------------------------------------------------------------
+        new_source             Requred FeatureLayer or Table. The layer to replace the existing
+                               source with.
+        ------------------     --------------------------------------------------------------------
+        future                 Optional Bool. When True, a Future object will be returned else a
+                               JSON object.
+        ==================     ====================================================================
+
+        :return: dict | concurrent.futures.Future
+        """
+        return self._swap_view(
+            view=self._fs, index=index, new_source=new_source, future=future
+        )
+
+    def _swap_view(
+        self,
+        view: features.FeatureLayerCollection,
+        index: int,
+        new_source: features.FeatureLayer | features.Table,
+        future: bool = False,
+    ) -> dict | concurrent.futures.Future:
+        """
+        Swaps the Data Source Layer with a different parent layer.
+
+        ==================     ====================================================================
+        **Parameter**           **Description**
+        ------------------     --------------------------------------------------------------------
+        view                   Required FeatureLayerCollection. The view feature layer collection
+                               to update.
+        ------------------     --------------------------------------------------------------------
+        index                  Required int. The index of the layer on the view to replace.
+        ------------------     --------------------------------------------------------------------
+        new_source             Requred FeatureLayer or Table. The layer to replace the existing
+                               source with.
+        ------------------     --------------------------------------------------------------------
+        future                 Optional Bool. When True, a Future object will be returned else a
+                               JSON object.
+        ==================     ====================================================================
+
+        :return: dict | concurrent.futures.Future
+        """
+        keys: list[str] = [
+            "currentVersion",
+            "id",
+            "name",
+            "type",
+            "displayField",
+            "description",
+            "copyrightText",
+            "defaultVisibility",
+            "editingInfo",
+            "isDataVersioned",
+            "hasContingentValuesDefinition",
+            "supportsAppend",
+            "supportsCalculate",
+            "supportsASyncCalculate",
+            "supportsTruncate",
+            "supportsAttachmentsByUploadId",
+            "supportsAttachmentsResizing",
+            "supportsRollbackOnFailureParameter",
+            "supportsStatistics",
+            "supportsExceedsLimitStatistics",
+            "supportsAdvancedQueries",
+            "supportsValidateSql",
+            "supportsCoordinatesQuantization",
+            "supportsLayerOverrides",
+            "supportsTilesAndBasicQueriesMode",
+            "supportsFieldDescriptionProperty",
+            "supportsQuantizationEditMode",
+            "supportsApplyEditsWithGlobalIds",
+            "supportsMultiScaleGeometry",
+            "supportsReturningQueryGeometry",
+            "hasGeometryProperties",
+            "geometryProperties",
+            "advancedQueryCapabilities",
+            "advancedQueryAnalyticCapabilities",
+            "advancedEditingCapabilities",
+            "infoInEstimates",
+            "useStandardizedQueries",
+            "geometryType",
+            "minScale",
+            "maxScale",
+            "extent",
+            "drawingInfo",
+            "allowGeometryUpdates",
+            "hasAttachments",
+            "htmlPopupType",
+            "hasMetadata",
+            "hasM",
+            "hasZ",
+            "objectIdField",
+            "uniqueIdField",
+            "globalIdField",
+            "typeIdField",
+            "dateFieldsTimeReference",
+            "preferredTimeReference",
+            "types",
+            "templates",
+            "supportedQueryFormats",
+            "supportedAppendFormats",
+            "supportedExportFormats",
+            "supportedSpatialRelationships",
+            "supportedContingentValuesFormats",
+            "supportedSyncDataOptions",
+            "hasStaticData",
+            "maxRecordCount",
+            "standardMaxRecordCount",
+            "standardMaxRecordCountNoGeometry",
+            "tileMaxRecordCount",
+            "maxRecordCountFactor",
+            "capabilities",
+            "url",
+            "adminLayerInfo",
+        ]
+        if isinstance(new_source, features.FeatureLayer):
+            flc_lyr_info: features.FeatureLayer = view.layers[index]
+        elif isinstance(new_source, features.Table):
+            flc_lyr_info: features.Table = view.tables[index]
+        props: dict = {
+            key: new_source.properties[key]
+            for key in keys
+            if key in new_source.properties
+        }
+        if new_source._con.token:
+            props["url"] = new_source.url + f"?token={new_source._con.token}"
+        else:
+            props["url"] = new_source.url
+        if "viewLayerDefinition" in flc_lyr_info.manager.properties["adminLayerInfo"]:
+            props["adminLayerInfo"] = {}
+            props["adminLayerInfo"][
+                "viewLayerDefinition"
+            ] = flc_lyr_info.manager.properties["adminLayerInfo"]["viewLayerDefinition"]
+            props["adminLayerInfo"]["viewLayerDefinition"][
+                "sourceServiceName"
+            ] = new_source.manager.properties["name"]
+            props["adminLayerInfo"]["viewLayerDefinition"].pop("sourceId", None)
+        if isinstance(new_source, features.FeatureLayer):
+            delete_json: dict = {"layers": [{"id": index}], "tables": []}
+            add_json: dict = {"layers": [props]}
+        elif isinstance(new_source, features.Table):
+            delete_json: dict = {"layers": [], "tables": [{"id": index}]}
+            add_json: dict = {"tables": [props]}
+        view.manager.delete_from_definition(delete_json)
+        if future:
+            return view.manager.add_to_definition(add_json, future=True)
+        else:
+            return view.manager.add_to_definition(add_json, future=False)
+
     # ----------------------------------------------------------------------
     def create_view(
         self,
@@ -2265,7 +2427,7 @@ class FeatureLayerCollectionManager(_GISResource):
             # When view_layers and view_tables are not specified, create a view from all layers and tables
             for lyr in fs.layers:
                 lyr_id = lyr.manager.properties.serviceItemId
-                data_path = "content/items/" + lyr_id + "/data"
+                data_path = "content/items/" + res["itemId"] + "/data"
                 data = item._portal.con.get(path=data_path)
                 add_def["layers"].append(
                     {

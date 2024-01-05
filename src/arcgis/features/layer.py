@@ -6,6 +6,8 @@ Users create, import, export, analyze, edit, and visualize features, i.e. entiti
 A FeatureLayerCollection is a collection of feature layers and tables, with the associated relationships among the entities.
 """
 from __future__ import annotations
+from arcgis.auth.tools import LazyLoader
+from arcgis.auth import EsriSession
 from datetime import datetime
 import json
 import os
@@ -35,7 +37,23 @@ from .feature import Feature, FeatureSet
 from arcgis.gis import Item, Layer, _GISResource
 from arcgis.geometry import Geometry, SpatialReference
 
+_arcgis = LazyLoader("arcgis")
 
+
+@lru_cache(maxsize=255)
+def _is_OIL(url: str, gis: _arcgis.gis.GIS) -> bool:
+    """checks if the layer is an OrientedImageryLayer"""
+    resp = gis.session.get(
+        url=url,
+        params={
+            "f": "json",
+        },
+    )
+    resp.raise_for_status()
+    return resp.json().get("type", None) == "Oriented Imagery Layer"
+
+
+###########################################################################
 class FeatureLayer(Layer):
     """
     The ``FeatureLayer`` class is the primary concept for working with :class:`~arcgis.features.Feature` objects
@@ -3909,7 +3927,10 @@ class FeatureLayer(Layer):
 
     # ----------------------------------------------------------------------
     def convert_3d(
-        self, assets: list, target_format: str, transport_type: str | None = None
+        self,
+        assets: list,
+        target_format: str,
+        transport_type: str | None = None,
     ):
         """
         The convert_3d operation is used to convert small assets from one format to another.
@@ -4188,6 +4209,71 @@ class FeatureLayer(Layer):
         )
 
 
+###########################################################################
+class OrientedImageryLayer(FeatureLayer):
+    _gis: _arcgis.gis.GIS
+    _url: str
+    _session: EsriSession
+    _properties: dict[str, Any] = None
+
+    def __init__(self, url, gis=None, container=None, dynamic_layer=None):
+        """
+        Constructs a feature layer given a feature layer URL
+        :param url: feature layer url
+        :param gis: optional, the GIS that this layer belongs to. Required for secure feature layers.
+        :param container: optional, the feature layer collection to which this layer belongs
+        :param dynamic_layer: optional dictionary. If the layer is given a dynamic layer definition, this will be added to functions.
+        """
+        if gis is None:
+            import arcgis
+
+            gis = arcgis.env.active_gis
+        if str(url).lower().endswith("/"):
+            url = url[:-1]
+        super(OrientedImageryLayer, self).__init__(url, gis)
+        assert (
+            _is_OIL(url=url, gis=gis) == True
+        ), "The URL is not an OrientedImageryLayer."
+        self._storage = container
+        self._dynamic_layer = dynamic_layer
+        self.attachments = AttachmentManager(self)
+        self._time_filter = None
+
+    @classmethod
+    def fromitem(cls, item: Item, index: int = 0) -> OrientedImageryLayer:
+        """
+        The ``fromitem`` method returns the layer at the specified index from a layer :class:`~arcgis.gis.Item` object.
+
+        ==================     ====================================================================
+        **Parameter**           **Description**
+        ------------------     --------------------------------------------------------------------
+        item                   Required Item. An item containing layers.
+        ------------------     --------------------------------------------------------------------
+        index                  Optional int. The index of the layer amongst the item's layers
+        ==================     ====================================================================
+
+        :return:
+           The layer at the specified index.
+
+        .. code-block:: python
+
+            # Usage Example
+
+            >>> layer.fromitem(item="9311d21a9a2047d19c0faaebd6f2cca6", index=3)
+        """
+        flc = FeatureLayerCollection(url=item.url, gis=item._gis)
+        layers = flc.properties["layers"]
+        if index in [
+            lyr["id"] for lyr in layers if lyr["type"] == "Oriented Imagery Layer"
+        ]:
+            return cls(url=f"{item.url}/{index}", gis=item._gis)
+        else:
+            raise Exception(
+                "The layer index is not an Oriented Imagergy Layer, please verify the index and try again."
+            )
+
+
+###########################################################################
 class Table(FeatureLayer):
     """
     ``Table`` objects represent entity classes with uniform properties. In addition to working with

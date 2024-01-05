@@ -16,9 +16,8 @@ import tempfile
 import time
 from contextlib import contextmanager
 import concurrent.futures
-import arcgis
 import arcgis.gis
-from arcgis.gis import Item
+from arcgis.gis import Item, Layer
 from arcgis._impl.common._mixins import PropertyMap
 from arcgis._impl.common._utils import _DisableLogger
 from arcgis.geocoding import Geocoder
@@ -74,9 +73,8 @@ def _is_dask(df):
             return True
         else:
             return False
-    except Exception as e:
+    except Exception:
         return False
-    return False
 
 
 __all__ = [
@@ -138,14 +136,15 @@ def _tempinput(data):
 ###########################################################################
 class BaseAnalytics(object):
     @lru_cache(maxsize=255)
-    def _validate_token(self, con: "Connection", url: str, token: str) -> bool:
+    def _validate_token(
+        self, con: arcgis.gis._impl._con.Connection, url: str, token: str
+    ) -> bool:
         """validates that a token should be given to the endpoint"""
         resp = con.get(f"{url}?token={token}", try_json=True, return_raw_response=True)
         if resp.text.lower().find("error") == -1:
             return True
         else:
             return False
-        return False
 
     def _feature_input(self, input_layer):
         from arcgis.features.geo._accessor import _is_geoenabled
@@ -253,7 +252,7 @@ class BaseAnalytics(object):
         }
 
         input_layer_url = ""
-        if isinstance(input_layer, arcgis.gis.Item):
+        if isinstance(input_layer, Item):
             if input_layer.type.lower() == "feature service":
                 input_param = input_layer.layers[0]._lyr_dict
                 try:
@@ -271,7 +270,7 @@ class BaseAnalytics(object):
                             token=token,
                         ):
                             input_param.update({"serviceToken": token})
-                except:
+                except Exception:
                     pass
             elif input_layer.type.lower() == "feature collection":
                 fcdict = input_layer.get_data()
@@ -292,7 +291,7 @@ class BaseAnalytics(object):
                 input_param = input_layer._lyr_dict
             elif hasattr(input_layer, "layer"):
                 input_param = input_layer.layer
-        elif isinstance(input_layer, arcgis.gis.Layer):
+        elif isinstance(input_layer, Layer):
             input_param = input_layer._lyr_dict
             try:
                 input_layer_url = input_param.get("url", "")
@@ -307,7 +306,7 @@ class BaseAnalytics(object):
                         token=token,
                     ):
                         input_param.update({"serviceToken": token})
-            except:
+            except Exception:
                 pass
 
         elif isinstance(
@@ -360,7 +359,7 @@ class BaseAnalytics(object):
         return input_param
 
     def _raster_input(self, input_raster):
-        if isinstance(input_raster, arcgis.gis.Item):
+        if isinstance(input_raster, Item):
             if input_raster.type.lower() == "image service":
                 input_param = {"itemId": input_raster.itemid}
             else:
@@ -437,7 +436,7 @@ class _GISService(object):
                 else:
                     self._token = self._con.token
                 self._refresh()
-            except RuntimeError as e:
+            except RuntimeError:
                 try:
                     # try as a public server
                     self._token = None
@@ -695,7 +694,7 @@ class _AsyncService(_GISService):
         }
 
         input_layer_url = ""
-        if isinstance(input_layer, arcgis.gis.Item):
+        if isinstance(input_layer, Item):
             if input_layer.type.lower() == "feature service":
                 input_param = input_layer.layers[0]._lyr_dict
             elif input_layer.type.lower() == "feature collection":
@@ -713,7 +712,7 @@ class _AsyncService(_GISService):
         elif isinstance(input_layer, arcgis.features.FeatureCollection):
             input_param = input_layer.properties
 
-        elif isinstance(input_layer, arcgis.gis.Layer):
+        elif isinstance(input_layer, Layer):
             input_param = input_layer._lyr_dict
 
         elif isinstance(
@@ -758,7 +757,7 @@ class _AsyncService(_GISService):
         return input_param
 
     def _raster_input(self, input_raster):
-        if isinstance(input_raster, arcgis.gis.Item):
+        if isinstance(input_raster, Item):
             if input_raster.type.lower() == "image service":
                 input_param = {"itemId": input_raster.itemid}
             else:
@@ -797,7 +796,7 @@ class _FeatureAnalysisTools(BaseAnalytics):
         params = {"f": "json"}
         try:
             dictdata = self._con.post(self._url, params)
-        except:
+        except Exception:
             dictdata = self._con.get(self._url, params)
         self._properties = PropertyMap(dictdata)
 
@@ -4569,6 +4568,7 @@ class _FeatureAnalysisTools(BaseAnalytics):
                                                                             - ``extent`` - a bounding box that defines the analysis area. Only those features in the input_layer that intersect the bounding box will be analyzed.
                                                                             - ``outSR`` - the output features will be projected into the output spatial reference referred to by the `wkid`.
                                                                             - ``overwrite`` - if True, then the feature layer in output_name will be overwritten with new feature layer. Available for ArcGIS Online and ArcGIS Enterprise 11.1+.
+                                                                            - ``randomGenerator`` - A string representing the integer and seed type that will initiate a random number generator. The seed type is always MERSENNE_TWISTER, for example, 13 MERSENNE_TWISTER. This parameter is available in ArcGIS Enterprise 11.2 or later.
 
                                                                                 .. code-block:: python
 
@@ -4579,7 +4579,8 @@ class _FeatureAnalysisTools(BaseAnalytics):
                                                                                                         "ymax": -9175500.875353,
                                                                                                         "spatialReference":{"wkid":102100,"latestWkid":3857}},
                                                                                                 "outSR": {"wkid": 3857},
-                                                                                                "overwrite": True}
+                                                                                                "overwrite": True,
+                                                                                                "randomGenerator": "13 MERSENNE_TWISTER"}
         ------------------------------------------------------------------  ---------------------------------------------------------------
         estimate                                                            Optional boolean. Returns the number of credit for the operation.
         ------------------------------------------------------------------  ---------------------------------------------------------------
@@ -4673,6 +4674,8 @@ class _FeatureAnalysisTools(BaseAnalytics):
         context=None,
         estimate=False,
         future=False,
+        method=None,
+        sensitivity=None,
     ):
         """
         The ``find_point_clusters`` method finds clusters of point features within surrounding
@@ -4749,6 +4752,20 @@ class _FeatureAnalysisTools(BaseAnalytics):
         estimate                Optional Boolean. If True, the number of credits to run the operation will be returned.
         --------------------    ---------------------------------------------------------
         future                  Optional boolean. If True, the result will be a GPJob object and results will be returned asynchronously.
+        --------------------    ---------------------------------------------------------
+        method                  Optional string. Specifies the method that will be used to
+                                find clusters. If the method is not specified and the
+                                search_distance value is not provided, the HDBSCAN algorithm
+                                will be used. If the method is not specified and the search_distance
+                                value is provided, the DBSCAN algorithm will be used.
+
+                                This parameter is available in ArcGIS Enterprise 11.2 or higher.
+
+                                Values: "DBSCAN" | "HDBSCAN" | "OPTICS"
+        --------------------    ---------------------------------------------------------
+        sensitivity             Optional float. A double value between 0 and 100 that determines the compactness of the clusters.
+
+                                This parameter is available in ArcGIS Enterprise 11.2 or higher.
         ====================    =========================================================
 
         :return: :class:`~arcgis.features.FeatureLayer` if ``output_name`` is specified, else :class:`~arcgis.features.FeatureCollection`.
@@ -4767,6 +4784,13 @@ class _FeatureAnalysisTools(BaseAnalytics):
             overwrite = False
         output_name = self._output_name_dict(output_name, overwrite)
 
+        if self._gis.version >= [2023, 2] or self._gis._is_agol:
+            method = method
+            sensitivity = sensitivity
+        else:
+            method = None
+            sensitivity = None
+
         if estimate:
             params["analysisLayer"] = analysis_layer
             params["minFeaturesCluster"] = min_features_cluster
@@ -4778,6 +4802,10 @@ class _FeatureAnalysisTools(BaseAnalytics):
                 params["outputName"] = output_name
             if context is not None:
                 params["context"] = context
+            if method is not None:
+                params["method"] = method
+            if sensitivity is not None:
+                params["sensitivity"] = sensitivity
             from arcgis.features._credits import _estimate_credits
 
             return _estimate_credits(task=task, parameters=params)
@@ -4790,6 +4818,8 @@ class _FeatureAnalysisTools(BaseAnalytics):
             context=context,
             gis=self._gis,
             future=True,
+            method=method,
+            sensitivity=sensitivity,
         )
         gpjob._is_fa = True
         if future:
@@ -4801,13 +4831,14 @@ class _FeatureAnalysisTools(BaseAnalytics):
         self,
         input_layer,
         search_layer,
-        analysis_fields=[],
+        analysis_fields=None,
         input_query=None,
         number_of_results=0,
         output_name=None,
         context=None,
         estimate=False,
         future=False,
+        criteria_fields=None,
     ):
         """
         The ``find_similar_locations`` method measures the similarity of candidate locations to one or more reference locations.
@@ -4859,7 +4890,7 @@ class _FeatureAnalysisTools(BaseAnalytics):
         search_layer                Required feature layer. The layer containing candidate locations that
                                     will be evaluated against the reference locations. See :ref:`Feature Input<FeatureInput>`.
         -----------------------     -------------------------------------------------------------------------------------------
-        analysis_fields             Required list of strings. A list of fields whose values are used to determine similarity.
+        analysis_fields             Optional list of strings. A list of fields whose values are used to determine similarity.
                                     They must be numeric fields and the fields must exist on both the ``input_layer`` and
                                     the ``search_layer``. The method will find features in the ``search_layer`` that have field
                                     values closest to those of the features in your ``input_layer``.
@@ -4898,6 +4929,12 @@ class _FeatureAnalysisTools(BaseAnalytics):
         estimate                    Optional boolean. If True, the number of credits to run the operation will be returned.
         -----------------------     -------------------------------------------------------------------------------------------
         future                      Optional boolean. If True, the result will be a GPJob object and results will be returned asynchronously.
+        -----------------------     -------------------------------------------------------------------------------------------
+        criteria_fields             Optional list of dicts. The fields in the inputLayer value that correspond to the fields in
+                                    the searchLayer value that will be used to determine similarity. All fields must be numeric fields.
+                                    The task will rank the features in the searchLayer value based on the similarity of their
+                                    field values to the corresponding field values in the `input_layer` value.
+                                    Either an `analysis_fields` or `criteria_fields` value must be provided.
         =======================     ===========================================================================================
 
         :return: :class:`~arcgis.features.FeatureLayer` if ``output_name`` is specified, else Python dictionary with the following keys:
@@ -4907,6 +4944,8 @@ class _FeatureAnalysisTools(BaseAnalytics):
             "process_info" : list of message
 
         """
+        if analysis_fields is None:
+            analysis_fields = []
 
         task = "FindSimilarLocations"
         input_layer = self._feature_input(input_layer)
@@ -4917,6 +4956,13 @@ class _FeatureAnalysisTools(BaseAnalytics):
             # Remove if in context but default to False in all cases.
             overwrite = context.pop("overwrite", False) if context else False
             overwrite = False
+
+        if self._gis.version >= [2023, 2] or self._gis._is_agol:
+            # Available starting at Enterprise 11.2
+            criteria_fields = criteria_fields
+        else:
+            criteria_fields = None
+
         output_name = self._output_name_dict(output_name, overwrite)
 
         if estimate:
@@ -4924,6 +4970,8 @@ class _FeatureAnalysisTools(BaseAnalytics):
             params["inputLayer"] = input_layer
             params["searchLayer"] = search_layer
             params["analysisFields"] = analysis_fields
+            if criteria_fields is not None:
+                params["criteriaFields"] = criteria_fields
             if input_query is not None:
                 params["inputQuery"] = input_query
             if number_of_results is not None:
@@ -4935,6 +4983,7 @@ class _FeatureAnalysisTools(BaseAnalytics):
             from arcgis.features._credits import _estimate_credits
 
             return _estimate_credits(task=task, parameters=params)
+
         gpjob = self._tbx.find_similar_locations(
             input_layer=input_layer,
             search_layer=search_layer,
@@ -4945,6 +4994,7 @@ class _FeatureAnalysisTools(BaseAnalytics):
             context=context,
             gis=self._gis,
             future=True,
+            criteria_fields=None,
         )
         gpjob._is_fa = True
         if future:
@@ -6922,7 +6972,7 @@ class _PackagingTools(object):
         params = {"f": "json"}
         try:
             dictdata = self._con.post(self._url, params)
-        except:
+        except Exception:
             dictdata = self._con.get(self._url, params)
         self._properties = PropertyMap(dictdata)
 
@@ -7082,7 +7132,7 @@ class _PackagingTools(object):
             gis = self._gis
         elif gis is None and self._gis is None:
             gis = arcgis.env.active_gis
-        if isinstance(map_item_id, arcgis.gis.Item):
+        if isinstance(map_item_id, Item):
             map_item_id = map_item_id.itemid
         inputs = locals()
         function_args = {}
@@ -7235,7 +7285,7 @@ class _HydrologyTool:
         params = {"f": "json"}
         try:
             dictdata = self._con.post(self._url, params)
-        except:
+        except Exception:
             dictdata = self._con.get(self._url, params)
         self._properties = PropertyMap(dictdata)
 
@@ -7507,7 +7557,7 @@ class _OrthoMappingTools:
         params = {"f": "json"}
         try:
             dictdata = self._con.post(self._url, params)
-        except:
+        except Exception:
             dictdata = self._con.get(self._url, params)
         self._properties = PropertyMap(dictdata)
 
@@ -7682,7 +7732,7 @@ class _OrthoMappingTools:
                 },
                 "itemProperties": {"itemId": output_service.itemid},
             }
-        elif isinstance(output_name, arcgis.gis.Item):
+        elif isinstance(output_name, Item):
             output_service = output_name
             output_raster = {"itemProperties": {"itemId": output_service.itemid}}
         else:
@@ -9026,7 +9076,7 @@ class _RasterAnalysisTools(BaseAnalytics):
         elif isinstance(input_layer, arcgis.features.FeatureCollection):
             input_param = input_layer.properties
 
-        elif isinstance(input_layer, arcgis.gis.Layer):
+        elif isinstance(input_layer, Layer):
             input_param = input_layer._lyr_dict
             from arcgis.raster import ImageryLayer
             import json
@@ -9153,7 +9203,7 @@ class _RasterAnalysisTools(BaseAnalytics):
                 },
                 "itemProperties": {"itemId": output_service.itemid},
             }
-        elif isinstance(output_name, arcgis.gis.Item):
+        elif isinstance(output_name, Item):
             output_service = output_name
             output_raster = {"itemProperties": {"itemId": output_service.itemid}}
         else:
@@ -9495,7 +9545,7 @@ class _RasterAnalysisTools(BaseAnalytics):
             else:
                 param_value = json.dumps({"uri": input_param})
 
-        elif isinstance(input_param, arcgis.gis.Item):
+        elif isinstance(input_param, Item):
             param_value = json.dumps({"itemId": input_param.itemid})
 
         elif isinstance(input_param, dict):
@@ -10865,6 +10915,12 @@ class _RasterAnalysisTools(BaseAnalytics):
         target_height=None,
         target_height_field=None,
         above_ground_level_output_name=None,
+        vertical_error=None,
+        refractivity_coefficient=0.13,
+        horizontal_start_angle=0,
+        horizontal_end_angle=360,
+        vertical_upper_angle=90,
+        vertical_lower_angle=-90,
         context=None,
         future=False,
         **kwargs,
@@ -10898,27 +10954,63 @@ class _RasterAnalysisTools(BaseAnalytics):
             )
             output_layers.append(above_ground_level_service)
 
-        gpjob = self._tbx.create_viewshed(
-            input_elevation_surface=input_elevation_surface,
-            input_observer_features=input_observer_features,
-            output_name=output_raster,
-            optimize_for=optimize_for,
-            maximum_viewing_distance=maximum_viewing_distance,
-            maximum_viewing_distance_field=maximum_viewing_distance_field,
-            minimum_viewing_distance=minimum_viewing_distance,
-            minimum_viewing_distance_field=minimum_viewing_distance_field,
-            viewing_distance_is3_d=viewing_distance_is3D,
-            observers_elevation=observers_elevation,
-            observers_elevation_field=observers_elevation_field,
-            observers_height=observers_height,
-            observers_height_field=observers_height_field,
-            target_height=target_height,
-            target_height_field=target_height_field,
-            above_ground_level_output_name=above_ground_level_raster,
-            context=context,
-            gis=self._gis,
-            future=True,
-        )
+        current_version = None
+        if "currentVersion" in self._gis._tools.rasteranalysis.properties.keys():
+            current_version = self._gis._tools.rasteranalysis.properties[
+                "currentVersion"
+            ]
+
+        if (current_version is not None) and current_version < 11.2:
+            gpjob = self._tbx.create_viewshed(
+                input_elevation_surface=input_elevation_surface,
+                input_observer_features=input_observer_features,
+                output_name=output_raster,
+                optimize_for=optimize_for,
+                maximum_viewing_distance=maximum_viewing_distance,
+                maximum_viewing_distance_field=maximum_viewing_distance_field,
+                minimum_viewing_distance=minimum_viewing_distance,
+                minimum_viewing_distance_field=minimum_viewing_distance_field,
+                viewing_distance_is3_d=viewing_distance_is3D,
+                observers_elevation=observers_elevation,
+                observers_elevation_field=observers_elevation_field,
+                observers_height=observers_height,
+                observers_height_field=observers_height_field,
+                target_height=target_height,
+                target_height_field=target_height_field,
+                above_ground_level_output_name=above_ground_level_raster,
+                context=context,
+                gis=self._gis,
+                future=True,
+            )
+        elif (current_version is not None) and current_version >= 11.2:
+            gpjob = self._tbx.create_viewshed(
+                input_elevation_surface=input_elevation_surface,
+                input_observer_features=input_observer_features,
+                output_name=output_raster,
+                optimize_for=optimize_for,
+                maximum_viewing_distance=maximum_viewing_distance,
+                maximum_viewing_distance_field=maximum_viewing_distance_field,
+                minimum_viewing_distance=minimum_viewing_distance,
+                minimum_viewing_distance_field=minimum_viewing_distance_field,
+                viewing_distance_is3_d=viewing_distance_is3D,
+                observers_elevation=observers_elevation,
+                observers_elevation_field=observers_elevation_field,
+                observers_height=observers_height,
+                observers_height_field=observers_height_field,
+                target_height=target_height,
+                target_height_field=target_height_field,
+                above_ground_level_output_name=above_ground_level_raster,
+                vertical_error=vertical_error,
+                refractivity_coefficient=refractivity_coefficient,
+                horizontal_start_angle=horizontal_start_angle,
+                horizontal_end_angle=horizontal_end_angle,
+                vertical_upper_angle=vertical_upper_angle,
+                vertical_lower_angle=vertical_lower_angle,
+                context=context,
+                gis=self._gis,
+                future=True,
+            )
+
         gpjob._is_ra = True
         gpjob._item_properties = True
         if future:
@@ -12181,7 +12273,7 @@ class _RasterAnalysisTools(BaseAnalytics):
         task = "GenerateRaster"
         gis = self._gis
 
-        if isinstance(function_arguments, arcgis.gis.Item):
+        if isinstance(function_arguments, Item):
             if function_arguments.type.lower() == "image service":
                 function_arguments = {"Raster": {"itemId": function_arguments.itemid}}
             else:
@@ -16271,7 +16363,7 @@ class _RasterAnalysisTools(BaseAnalytics):
                     out_accuracy_report_name = {"uri": out_accuracy_report_name}
                 else:
                     out_accuracy_report_name = {"name": out_accuracy_report_name}
-            elif isinstance(out_accuracy_report_name, arcgis.gis.Item):
+            elif isinstance(out_accuracy_report_name, Item):
                 out_accuracy_report_name = {
                     "itemId": out_accuracy_report_name.itemid,
                     "name": out_accuracy_report_name.name,
@@ -21401,7 +21493,7 @@ class AGSSystemTools:
     _gpserver = None
     _gpcatalogs = None
 
-    def __init__(self, gis: "GIS", verbose=False):
+    def __init__(self, gis: arcgis.gis.GIS, verbose=False):
         self._gis = gis
         self._verbose = verbose
         self.properties = {}
@@ -21635,7 +21727,7 @@ class _Tools(object):
                     svcurl = self._gis.properties["helperServices"]["rasterAnalytics"][
                         "url"
                     ]
-            except:
+            except Exception:
                 print("This GIS does not support raster analysis.")
                 return None
 
@@ -21655,7 +21747,7 @@ class _Tools(object):
                 svcurl = self._gis.properties["helperServices"]["geoanalytics"]["url"]
                 if self._gis._is_hosted_nb_home:
                     svcurl = self._validate_url(svcurl)
-            except:
+            except Exception:
                 print("This GIS does not support geoanalytics.")
                 return None
 
@@ -21675,7 +21767,7 @@ class _Tools(object):
                 svcurl = self._gis.properties["helperServices"]["analysis"]["url"]
                 if self._gis._is_hosted_nb_home:
                     svcurl = self._validate_url(svcurl)
-            except:
+            except Exception:
                 if self._gis._con.token is None:
                     print("You need to be signed in to use spatial analysis.")
                 else:
@@ -21699,7 +21791,7 @@ class _Tools(object):
                 svcurl = self._validate_url(svcurl)
             self._packaging = _PackagingTools(url=svcurl, gis=self._gis)
             return self._packaging
-        except:
+        except Exception:
             if self._gis._con.token is None:
                 print("You need to be signed in to use Packaging Tools.")
                 return
@@ -21719,14 +21811,13 @@ class _Tools(object):
                 svcurl = self._gis.properties.helperServices["orthoMapping"]["url"]
                 if self._gis._is_hosted_nb_home:
                     svcurl = self._validate_url(svcurl)
-            except:
+            except Exception:
                 if self._gis._con.token is None:
                     raise RuntimeError(
                         "You need to be signed in to use Ortho Mapping Tools."
                     )
                 else:
                     raise RuntimeError("This GIS does not support Ortho Mapping Tools.")
-                return None
 
             self._orthomapping = _OrthoMappingTools(svcurl, self._gis)
             return self._orthomapping
