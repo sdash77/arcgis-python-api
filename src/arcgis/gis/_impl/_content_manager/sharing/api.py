@@ -263,7 +263,7 @@ class SharingManager:
         ======================  ========================================================
         """
         # if not in org use different url
-        
+
         search_query = "username:" + self._item.owner
         if self._gis.users.search(search_query):
             url: str = "{resturl}content/users/{owner}/unshareItems".format(
