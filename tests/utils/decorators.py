@@ -1,5 +1,9 @@
 from os import environ
 from parameterized import parameterized, parameterized_class
+from arcgis.gis import GIS
+from arcgis.auth.tools._util import detect_proxy
+
+PROXIES = detect_proxy(True)  # Handles Fiddler when True
 
 # region credential property definitions
 _credentials_properties = ("connection_name", "portal_url", "username", "password")
@@ -35,9 +39,29 @@ _agol_api_key_credential_parameters = (
 # region parameterized_class constructors
 def _get_profile_parameterized_class(*args):
     """Returns a parameterized class for the profile parameters from provided args"""
+    __profiles_properties = _profiles_properties
+    _profiles_values = []
+    # attempt to set gis property constructed from profile
+    # in each profile configuration
+    gis_set = False
+    for profile_config in [*args]:
+        try:
+            profile_config += (
+                GIS(profile=profile_config[1], verify_cert=False, proxy=PROXIES),
+                PROXIES,
+            )
+            gis_set = True
+        except Exception as e:
+            pass
+        _profiles_values += [profile_config]
+    if gis_set:
+        # at least one profile has a gis property
+        # add the properties
+        __profiles_properties += ("gis", "proxies")
+    print(__profiles_properties, _profiles_values)
     return parameterized_class(
-        _profiles_properties,
-        [*args],
+        __profiles_properties,
+        _profiles_values,
     )
 
 

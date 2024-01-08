@@ -2,7 +2,6 @@ import sys
 
 import logging
 import unittest
-from arcgis.auth.tools._util import detect_proxy
 from arcgis.auth import EsriPKCEAuth, EsriSession
 from arcgis.gis import GIS
 from utils.decorators import enterprise_and_agol_profiles
@@ -21,7 +20,6 @@ def enable_verbose_logging(root):
     root.addHandler(handler)
 
 
-PROXIES = detect_proxy(True)  # Handles Fiddler when True
 enable_verbose_logging(__logger__)
 
 
@@ -29,24 +27,16 @@ enable_verbose_logging(__logger__)
 class TestPkceAuthHandler(unittest.TestCase):
     def test_esri_session(self):
         """tests the esri session auth"""
-        gis = GIS(
-            profile=self.profile,
-            verify_cert=False,
-            proxy=PROXIES,
-        )
+        gis = self.gis
         username, password, url = gis._username, gis._password, gis.url
         auth = EsriPKCEAuth(url, username, password)
-        with EsriSession(auth=auth, proxies=PROXIES, verify_cert=False) as session:
+        with EsriSession(auth=auth, proxies=self.proxies, verify_cert=False) as session:
             data = session.get(f"{url}/sharing/rest/portals/self?f=json").json()
             assert data.get("user", {}).get("username", "").lower() == username.lower()
 
     def test_gis(self):
         """tests the PKCE auth on AGOL using a GIS"""
-        gis = GIS(
-            profile=self.profile,
-            verify_cert=False,
-            proxy=PROXIES,
-        )
+        gis = self.gis
         username, password, url = gis._username, gis._password, gis.url
         del gis
 
