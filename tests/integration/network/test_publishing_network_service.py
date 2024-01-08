@@ -30,9 +30,6 @@ enable_verbose_logging(__logger__)
 class TestPublishNetworkDataset(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
-        username = "PAPIadmin"
-        password = "PAPIletmein01"
-
         cls.gis = GIS(
             url="https://nap2.esri.com/portal",
             username="networkanalyst",
@@ -45,10 +42,10 @@ class TestPublishNetworkDataset(unittest.TestCase):
         cls.server_id = cls.gis.servers['servers'][0]['id']
 
     def test_import(self):
-        from arcgis.network import publish_routing_service
+        from arcgis.network import publish_routing_services
 
     def test_create_service_server_id(self):
-        from arcgis.network import publish_routing_service
+        from arcgis.network import publish_routing_services
 
         from arcgis.network._utils import SolverType
 
@@ -56,7 +53,7 @@ class TestPublishNetworkDataset(unittest.TestCase):
         path = self.path
         import uuid
 
-        result = publish_routing_service(
+        result = publish_routing_services(
             datastore=item,
             path=path,
             solver_types=SolverType.ROUTE,
@@ -67,7 +64,7 @@ class TestPublishNetworkDataset(unittest.TestCase):
         assert result.result()
 
     def test_create_service_no_server_id(self):
-        from arcgis.network import publish_routing_service
+        from arcgis.network import publish_routing_services
 
         from arcgis.network._utils import SolverType
 
@@ -75,7 +72,7 @@ class TestPublishNetworkDataset(unittest.TestCase):
         path = self.path
         import uuid
 
-        result = publish_routing_service(
+        result = publish_routing_services(
             datastore=item,
             path=path,
             solver_types=SolverType.ROUTE,

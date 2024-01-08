@@ -21,7 +21,7 @@ _arcgis = LazyLoader("arcgis")
 _gp = LazyLoader("arcgis.geoprocessing")
 __all__ = [
     "SolverType",
-    "publish_routing_service",
+    "publish_routing_services",
     "find_travel_mode",
     "default_travel_mode",
 ]
@@ -76,12 +76,12 @@ def _get_network_publishing_toolbox(gis: _arcgis_gis.GIS, server_id: str | None 
 
 
 # -------------------------------------------------------------------------
-def publish_routing_service(
+def publish_routing_services(
     datastore: _arcgis_gis.Item,
     path: str,
     server_id: str | None = None,
     folder: str | None = None,
-    solver_types: list[SolverType] | SolverType = SolverType.ROUTE,
+    solver_types: list[SolverType] | SolverType = SolverType.ALL,
     config: str = None,
     gis: _arcgis_gis.GIS | None = None,
 ) -> dict:
