@@ -44,6 +44,8 @@ jobs:
         working-directory: ./tests
         run: |
           python -m nose2 -s smoke
+        env:
+          TEST_ARCGIS_LEARN: false
       - name: Run unit tests
         working-directory: ./tests
         run: |
