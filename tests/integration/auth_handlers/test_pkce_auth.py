@@ -1,26 +1,10 @@
-import sys
-
-import logging
 import unittest
 from arcgis.auth import EsriPKCEAuth, EsriSession
 from arcgis.gis import GIS
 from utils.decorators import enterprise_and_agol_profiles
+from utils.logging import enable_verbose_logging
 
-
-__logger__ = logging.getLogger()
-
-
-def enable_verbose_logging(root):
-    """Enables all messages to be shown to stdout"""
-    root.setLevel(logging.DEBUG)
-    handler = logging.StreamHandler(sys.stdout)
-    handler.setLevel(logging.DEBUG)
-    # formatter = logging.Formatter(' -  -  - ')
-    # handler.setFormatter(formatter)
-    root.addHandler(handler)
-
-
-enable_verbose_logging(__logger__)
+enable_verbose_logging()
 
 
 @enterprise_and_agol_profiles
