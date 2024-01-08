@@ -20,6 +20,8 @@ import copy
 import urllib
 import time
 import pathlib
+import random
+import string
 
 
 _TEXT_BASED_ITEM_TYPES = [
@@ -2921,8 +2923,21 @@ class _FeatureServiceDefinition(_TextItemDefinition):
                     )
 
             if not new_item:
+                export_service = False
+                try:
+                    source_user = self.portal_item._gis.users.me
+                    if (
+                        source_user.role == "org_admin"
+                        or self.portal_item.owner == source_user.username
+                    ):
+                        export_service = True
+                except:
+                    pass
+
                 # Get the definition of the original feature service
                 service_definition = self.service_definition
+                if "Extract" in service_definition["capabilities"]:
+                    export_service = True
 
                 # Modify the definition before passing to create the new service
                 name = original_item["name"]
@@ -2933,365 +2948,142 @@ class _FeatureServiceDefinition(_TextItemDefinition):
                 name = self._get_unique_name(self.target, name)
                 service_definition["name"] = name
 
-                for key in ["layers", "tables", "fullExtent", "hasViews"]:
-                    if key in service_definition:
-                        del service_definition[key]
-
-                # Determine if service allows schema changes
-                source_schema_changes_allowed = True
-                if "sourceSchemaChangesAllowed" in service_definition:
-                    source_schema_changes_allowed = service_definition[
-                        "sourceSchemaChangesAllowed"
-                    ]
-
-                # Set the extent and spatial reference of the service
-                new_extent = None
-                if "spatialReference" in service_definition:
-                    new_extent = _deep_get(service_definition, "initialExtent")
-                    if new_extent is not None:
-                        if "spatialReference" not in new_extent:
-                            new_extent["spatialReference"] = service_definition[
-                                "spatialReference"
-                            ]
-                        if self._service_extent:
-                            new_extent = json.loads(self._service_extent.JSON)
-                            if "maintain-spatial-ref" in original_item["tags"]:
-                                new_extent = json.loads(
-                                    project(
-                                        [Geometry(new_extent)],
-                                        in_sr=new_extent["spatialReference"],
-                                        out_sr=service_definition["spatialReference"],
-                                    )[0].JSON
-                                )
-                                new_extent["spatialReference"] = service_definition[
-                                    "spatialReference"
-                                ]
-                        service_definition["initialExtent"] = new_extent
-                        service_definition["spatialReference"] = new_extent[
-                            "spatialReference"
-                        ]
-
-                if self.is_view:
-                    properties = [
-                        "name",
-                        "isView",
-                        "sourceSchemaChangesAllowed",
-                        "isUpdatableView",
-                        "capabilities",
-                        "isMultiServicesView",
-                    ]
-                    service_definition_copy = copy.deepcopy(service_definition)
-                    for key, value in service_definition_copy.items():
-                        if key not in properties:
-                            del service_definition[key]
-
-                # Remove any unsupported capabilities from layer for Portal
-                supported_capabilities = [
-                    "Create",
-                    "Query",
-                    "Editing",
-                    "Update",
-                    "Delete",
-                    "Uploads",
-                    "Sync",
-                    "Extract",
-                ]
-                if self.target.properties.isPortal:
-                    capabilities = _deep_get(service_definition, "capabilities")
-                    if capabilities is not None:
-                        service_definition["capabilities"] = ",".join(
-                            [
-                                x
-                                for x in capabilities.split(",")
-                                if x in supported_capabilities
-                            ]
-                        )
-
-                # Preserve layer IDs from the source definition
-                service_definition["preserveLayerIds"] = True
-
-                # Create a new feature service
-                # In some cases isServiceNameAvailable returns true but fails to create the service with error that a service with the name already exists.
-                #  In these cases catch the error and try again with a unique name.
-                # In some cases create_service fails silently and returns None as the new_item.
-                #  In these cases rasie an exception that will be caught and then try again with a unique name.
-                item_id = None
-                if (
-                    self._preserve_item_id
-                    and self.target._portal.is_arcgisonline == False
-                ):
-                    item_id = self.portal_item.itemid
-                try:
-                    new_item = self.target.content.create_service(
-                        name,
-                        service_type="featureService",
-                        create_params=service_definition,
-                        is_view=self.is_view,
-                        folder=self.folder,
-                        owner=self.owner,
-                        item_id=item_id,
+                if export_service:
+                    temp_export = self.portal_item.export(
+                        "temp export", "File Geodatabase"
                     )
-                    if new_item is None:
-                        raise RuntimeError("already exists")
-                    self.created_items.append(new_item)
-                except RuntimeError as ex:
-                    if "already exists" in str(ex):
-                        name = self._get_unique_name(self.target, name, True)
-                        service_definition["name"] = name
-                        new_item = self.target.content.create_service(
-                            name,
-                            service_type="featureService",
-                            create_params=service_definition,
+                    temp_dir = tempfile.mkdtemp()
+                    rand_name = "".join(random.choices(string.ascii_letters, k=12))
+                    temp_local = temp_export.download(temp_dir, rand_name)
+                    temp_zipped = zipfile.ZipFile(temp_local)
+
+                    item_id = None
+                    if (
+                        self._preserve_item_id
+                        and self.target._portal.is_arcgisonline == False
+                    ):
+                        item_id = self.portal_item.itemid
+                    try:
+                        # try:
+                        #     temp_name = self.portal_item.layers[0].properties["name"]
+                        # except:
+                        temp_name = self.portal_item.title
+                        propus = {
+                            "title": name,
+                            "type": "File Geodatabase",
+                            "url": self.target.url,
+                        }
+                        service_item = self.target.content.add(
+                            item_properties=propus,
+                            data=temp_zipped.filename,
                             folder=self.folder,
                             owner=self.owner,
                             item_id=item_id,
                         )
+                        if service_item is None:
+                            raise RuntimeError("already exists")
+                        # new_item_name = self.portal_item.title
+                        # new_item = service_item.publish(publish_parameters = {"name" : new_item_name})
+                        new_item = service_item.publish()
+                        new_item.update(item_properties={"title": temp_name})
+                        if new_item is None:
+                            raise RuntimeError("already exists")
                         self.created_items.append(new_item)
-                    elif "managed database" in str(ex):
-                        raise Exception(
-                            "The target portal's managed database must be an ArcGIS Data Store."
-                        )
-                    else:
-                        raise
+                    except RuntimeError as ex:
+                        if "already exists" in str(ex):
+                            name = self._get_unique_name(self.target, name, True)
+                            propus["title"] = name
+                            service_definition["name"] = name
 
-                # Get the layer and table definitions from the original service and prepare them for the new service
-                layers_definition = self.layers_definition
-                relationships = {}
-                time_infos = {}
-                original_drawing_infos = {}
-                original_templates = {}
-                original_types = {}
-                _layers = []
-                _tables = []
-                _x = 0
-                chunk_size = 20
-                layers_and_tables = []
-                total_size = len(
-                    layers_definition["layers"] + layers_definition["tables"]
-                )
-
-                for layer in layers_definition["layers"] + layers_definition["tables"]:
-                    # Need to remove relationships first and add them back individually
-                    # after all layers and tables have been added to the definition
-                    if (
-                        "relationships" in layer
-                        and layer["relationships"] is not None
-                        and len(layer["relationships"]) != 0
-                    ):
-                        relationships[layer["id"]] = layer["relationships"]
-                        layer["relationships"] = []
-
-                    # Remove time settings first and add them back after the layer has been created
-                    if "timeInfo" in layer and layer["timeInfo"] is not None:
-                        time_infos[layer["id"]] = layer["timeInfo"]
-                        del layer["timeInfo"]
-
-                    # Need to remove all indexes duplicated for fields.
-                    # Services get into this state due to a bug in 10.4 and 1.2
-                    field_names = [f["name"].lower() for f in layer["fields"]]
-
-                    unique_fields = []
-                    if "indexes" in layer:
-                        for index in list(layer["indexes"]):
-                            fields = index["fields"].lower()
-                            if fields in unique_fields or fields not in field_names:
-                                layer["indexes"].remove(index)
-                            else:
-                                unique_fields.append(fields)
-
-                    # Due to a bug at 10.5.1 any domains for a double field must explicitly have a float code rather than int
-                    for field in layer["fields"]:
-                        field_type = _deep_get(field, "type")
-                        if field_type in [
-                            "esriFieldTypeDouble",
-                            "esriFieldTypeSingle",
-                        ]:
-                            coded_values = _deep_get(field, "domain", "codedValues")
-                            if coded_values is not None:
-                                for coded_value in coded_values:
-                                    code = _deep_get(coded_value, "code")
-                                    if code is not None:
-                                        coded_value["code"] = float(code)
-
-                    # Set the extent of the feature layer to the specified default extent
-                    if layer["type"] == "Feature Layer" and new_extent:
-                        layer["extent"] = new_extent
-
-                    # Remove hasViews property if exists
-                    if "hasViews" in layer:
-                        del layer["hasViews"]
-
-                    # Update the view layer source properties
-                    if self.is_view:
-                        url = self.view_sources[layer["id"]][0]
-                        original_feature_service = os.path.dirname(url)
-                        original_id = os.path.basename(url)
-
-                        if len(self.view_sources[layer["id"]]) > 1:
-                            new_service = None
-                            for key, value in self._clone_mapping["Services"].items():
-                                if _compare_url(key, original_feature_service):
-                                    new_service = value
-                                    break
-
-                            # validate admin_layer_info
-                            if (
-                                new_service is not None
-                                and "adminLayerInfo" in layer
-                                and "viewLayerDefinition" in layer["adminLayerInfo"]
-                            ):
-                                layer["adminLayerInfo"]["viewLayerDefinition"]["table"][
-                                    "sourceServiceName"
-                                ] = os.path.basename(
-                                    os.path.dirname(new_service["url"])
-                                )
-                                layer["adminLayerInfo"]["viewLayerDefinition"]["table"][
-                                    "sourceLayerId"
-                                ] = new_service["layer_id_mapping"][int(original_id)]
-                                if (
-                                    "relatedTables"
-                                    in layer["adminLayerInfo"]["viewLayerDefinition"][
-                                        "table"
-                                    ]
-                                ):
-                                    # Update the name of the related table to use the new items name
-                                    for related_table in layer["adminLayerInfo"][
-                                        "viewLayerDefinition"
-                                    ]["table"]["relatedTables"]:
-                                        name = related_table["sourceServiceName"]
-                                        for k, v in self._clone_mapping[
-                                            "Services"
-                                        ].items():
-                                            if (
-                                                os.path.basename(os.path.dirname(k))
-                                                == name
-                                            ):
-                                                related_table[
-                                                    "sourceServiceName"
-                                                ] = os.path.basename(
-                                                    os.path.dirname(v["url"])
-                                                )
-                                                if (
-                                                    "sourceLayerId" in related_table
-                                                    and "layer_id_mapping" in v
-                                                    and int(
-                                                        related_table["sourceLayerId"]
-                                                    )
-                                                    in v["layer_id_mapping"]
-                                                ):
-                                                    related_table["sourceLayerId"] = v[
-                                                        "layer_id_mapping"
-                                                    ][
-                                                        int(
-                                                            related_table[
-                                                                "sourceLayerId"
-                                                            ]
-                                                        )
-                                                    ]
-
-                                admin_layer_info = layer["adminLayerInfo"]
-                                if (
-                                    _deep_get(
-                                        admin_layer_info,
-                                        "viewLayerDefinition",
-                                        "table",
-                                    )
-                                    is not None
-                                    and "isMultiServicesView" in layer
-                                    and layer["isMultiServicesView"]
-                                    and "geometryType" in layer
-                                ):
-                                    admin_layer_info["geometryField"]["name"] = (
-                                        admin_layer_info["viewLayerDefinition"][
-                                            "table"
-                                        ]["name"]
-                                        + "."
-                                        + admin_layer_info["geometryField"]["name"]
-                                    )
-
-                                if "tableName" in admin_layer_info:
-                                    del admin_layer_info["tableName"]
-                                if "xssTrustedFields" in admin_layer_info:
-                                    del admin_layer_info["xssTrustedFields"]
-                                if (
-                                    "viewLayerDefinition" in admin_layer_info
-                                    and "table"
-                                    in admin_layer_info["viewLayerDefinition"]
-                                ):
-                                    if (
-                                        "sourceId"
-                                        in admin_layer_info["viewLayerDefinition"][
-                                            "table"
-                                        ]
-                                    ):
-                                        del admin_layer_info["viewLayerDefinition"][
-                                            "table"
-                                        ]["sourceId"]
-                                    if (
-                                        "relatedTables"
-                                        in admin_layer_info["viewLayerDefinition"][
-                                            "table"
-                                        ]
-                                        and len(
-                                            admin_layer_info["viewLayerDefinition"][
-                                                "table"
-                                            ]["relatedTables"]
-                                        )
-                                        > 0
-                                    ):
-                                        for related_table in admin_layer_info[
-                                            "viewLayerDefinition"
-                                        ]["table"]["relatedTables"]:
-                                            if "sourceId" in related_table:
-                                                del related_table["sourceId"]
-
+                            service_item = self.target.content.add(
+                                item_properties=propus,
+                                data=temp_zipped.filename,
+                                folder=self.folder,
+                                owner=self.owner,
+                                item_id=item_id,
+                            )
+                            # new_item_name = self.portal_item.title
+                            # new_item = service_item.publish(publish_parameters = {"name" : new_item_name})
+                            new_item = service_item.publish()
+                            new_item.update(item_properties={"title": temp_name})
+                            self.created_items.append(new_item)
+                        elif "managed database" in str(ex):
+                            raise Exception(
+                                "The target portal's managed database must be an ArcGIS Data Store."
+                            )
                         else:
-                            for key, value in self._clone_mapping["Services"].items():
-                                if _compare_url(key, original_feature_service):
-                                    new_service = value
-                                    # retain this previous logic when admin_layer_info is not already avalible
-                                    admin_layer_info = {}
-                                    view_layer_definition = {}
-                                    view_layer_definition[
-                                        "sourceServiceName"
-                                    ] = os.path.basename(
-                                        os.path.dirname(new_service["url"])
-                                    )
-                                    view_layer_definition[
-                                        "sourceLayerId"
-                                    ] = new_service["layer_id_mapping"][
-                                        int(original_id)
-                                    ]
-                                    view_layer_definition["sourceLayerFields"] = "*"
-                                    admin_layer_info[
-                                        "viewLayerDefinition"
-                                    ] = view_layer_definition
-                                    layer["adminLayerInfo"] = admin_layer_info
-                                    break
+                            raise
 
-                        if self.target.properties.isPortal:
-                            # Store the original drawingInfo to be updated later
-                            if (
-                                "drawingInfo" in layer
-                                and layer["drawingInfo"] is not None
-                            ):
-                                original_drawing_infos[layer["id"]] = layer[
-                                    "drawingInfo"
+                else:
+                    for key in ["layers", "tables", "fullExtent", "hasViews"]:
+                        if key in service_definition:
+                            del service_definition[key]
+
+                    # Determine if service allows schema changes
+                    source_schema_changes_allowed = True
+                    if "sourceSchemaChangesAllowed" in service_definition:
+                        source_schema_changes_allowed = service_definition[
+                            "sourceSchemaChangesAllowed"
+                        ]
+
+                    # Set the extent and spatial reference of the service
+                    new_extent = None
+                    if "spatialReference" in service_definition:
+                        new_extent = _deep_get(service_definition, "initialExtent")
+                        if new_extent is not None:
+                            if "spatialReference" not in new_extent:
+                                new_extent["spatialReference"] = service_definition[
+                                    "spatialReference"
                                 ]
+                            if self._service_extent:
+                                new_extent = json.loads(self._service_extent.JSON)
+                                if "maintain-spatial-ref" in original_item["tags"]:
+                                    new_extent = json.loads(
+                                        project(
+                                            [Geometry(new_extent)],
+                                            in_sr=new_extent["spatialReference"],
+                                            out_sr=service_definition[
+                                                "spatialReference"
+                                            ],
+                                        )[0].JSON
+                                    )
+                                    new_extent["spatialReference"] = service_definition[
+                                        "spatialReference"
+                                    ]
+                            service_definition["initialExtent"] = new_extent
+                            service_definition["spatialReference"] = new_extent[
+                                "spatialReference"
+                            ]
 
-                            # Store the original templates to be updated later
-                            if "templates" in layer and layer["templates"] is not None:
-                                original_templates[layer["id"]] = layer["templates"]
+                    if self.is_view:
+                        properties = [
+                            "name",
+                            "isView",
+                            "sourceSchemaChangesAllowed",
+                            "isUpdatableView",
+                            "capabilities",
+                            "isMultiServicesView",
+                        ]
+                        service_definition_copy = copy.deepcopy(service_definition)
+                        for key, value in service_definition_copy.items():
+                            if key not in properties:
+                                del service_definition[key]
 
-                            # Store the original types to be updated later
-                            if "types" in layer and layer["types"] is not None:
-                                original_types[layer["id"]] = layer["types"]
-
+                    # Remove any unsupported capabilities from layer for Portal
+                    supported_capabilities = [
+                        "Create",
+                        "Query",
+                        "Editing",
+                        "Update",
+                        "Delete",
+                        "Uploads",
+                        "Sync",
+                        "Extract",
+                    ]
                     if self.target.properties.isPortal:
-                        # Remove any unsupported capabilities from layer for Portal
-                        capabilities = _deep_get(layer, "capabilities")
+                        capabilities = _deep_get(service_definition, "capabilities")
                         if capabilities is not None:
-                            layer["capabilities"] = ",".join(
+                            service_definition["capabilities"] = ",".join(
                                 [
                                     x
                                     for x in capabilities.split(",")
@@ -3299,332 +3091,516 @@ class _FeatureServiceDefinition(_TextItemDefinition):
                                 ]
                             )
 
-                    if layer["type"] == "Feature Layer":
-                        _layers.append(layer)
-                    if layer["type"] == "Table":
-                        _tables.append(layer)
+                    # Preserve layer IDs from the source definition
+                    service_definition["preserveLayerIds"] = True
 
-                    if (_x + 1) % chunk_size == 0 or (_x + 1) == total_size:
-                        layers_tables = {}
-                        layers = copy.deepcopy(_layers) if len(_layers) > 0 else []
-                        if self.is_view:
-                            for layer in layers:
-                                del layer["fields"]
-                        layers_tables["layers"] = layers
-
-                        tables = copy.deepcopy(_tables) if len(_tables) > 0 else []
-                        if self.is_view:
-                            for table in tables:
-                                del table["fields"]
-                        layers_tables["tables"] = tables
-
-                        layers_and_tables.append(layers_tables)
-                        _layers = []
-                        _tables = []
-                    _x += 1
-
-                # Add the layer and table definitions to the service
-                # Explicitly add layers first and then tables, otherwise sometimes json.dumps() reverses them and this effects the output service
-                feature_service = FeatureLayerCollection.fromitem(new_item)
-                feature_service_admin = feature_service.manager
-                if len(layers_and_tables) > 0:
-                    for o in layers_and_tables:
-                        definition = '{{"layers" : {0}, "tables" : {1}}}'.format(
-                            json.dumps(o["layers"]),
-                            json.dumps(o["tables"]),
+                    # Create a new feature service
+                    # In some cases isServiceNameAvailable returns true but fails to create the service with error that a service with the name already exists.
+                    #  In these cases catch the error and try again with a unique name.
+                    # In some cases create_service fails silently and returns None as the new_item.
+                    #  In these cases rasie an exception that will be caught and then try again with a unique name.
+                    item_id = None
+                    if (
+                        self._preserve_item_id
+                        and self.target._portal.is_arcgisonline == False
+                    ):
+                        item_id = self.portal_item.itemid
+                    try:
+                        new_item = self.target.content.create_service(
+                            name,
+                            service_type="featureService",
+                            create_params=service_definition,
+                            is_view=self.is_view,
+                            folder=self.folder,
+                            owner=self.owner,
+                            item_id=item_id,
                         )
-                        _add_to_definition(feature_service_admin, definition)
-
-                # Create a lookup between the new and old layer ids
-                layer_id_mapping = {}
-                original_layers = (
-                    layers_definition["layers"] + layers_definition["tables"]
-                )
-                i = 0
-                for layer in feature_service.layers + feature_service.tables:
-                    layer_id_mapping[original_layers[i]["id"]] = layer.properties["id"]
-                    i += 1
-
-                # Create a lookup for the layers and tables using their id
-                new_layers = {}
-                for layer in feature_service.layers + feature_service.tables:
-                    for key, value in layer_id_mapping.items():
-                        if value == layer.properties["id"]:
-                            new_layers[key] = layer
-                            break
-
-                # Create a field mapping object if the case or name of the field has changes
-                layer_field_mapping = {}
-                for layer in layers_definition["layers"] + layers_definition["tables"]:
-                    field_mapping = {}
-                    del_fields = []
-                    layer_id = layer["id"]
-                    new_layer = new_layers[layer_id]
-                    new_layer_properties = new_layer.properties
-
-                    original_fields = _deep_get(layer, "fields")
-                    if (
-                        self.is_view
-                        and len(self.view_sources[layer_id]) == 1
-                        and layer_id in self.view_source_fields.keys()
-                    ):
-                        original_fields = self.view_source_fields[layer_id][0]
-                    new_fields = _deep_get(new_layer_properties, "fields")
-                    if new_fields is None or original_fields is None:
-                        break
-                    new_fields_lower = [f["name"].lower() for f in new_fields]
-
-                    if (
-                        "editFieldsInfo" in layer
-                        and layer["editFieldsInfo"] is not None
-                    ):
-                        if (
-                            "editFieldsInfo" in new_layer_properties
-                            and new_layer_properties["editFieldsInfo"] is not None
-                        ):
-                            for editor_field in [
-                                "creationDateField",
-                                "creatorField",
-                                "editDateField",
-                                "editorField",
-                            ]:
-                                original_editor_field_name = _deep_get(
-                                    layer, "editFieldsInfo", editor_field
-                                )
-                                new_editor_field_name = _deep_get(
-                                    new_layer_properties,
-                                    "editFieldsInfo",
-                                    editor_field,
-                                )
-                                if original_editor_field_name != new_editor_field_name:
-                                    if (
-                                        original_editor_field_name is not None
-                                        and original_editor_field_name != ""
-                                        and new_editor_field_name is not None
-                                        and new_editor_field_name != ""
-                                    ):
-                                        field_mapping[
-                                            original_editor_field_name
-                                        ] = new_editor_field_name
-                                        # Delete old editor tracking fields
-                                        if self.is_view == False:
-                                            try:
-                                                new_delete_field = new_fields[
-                                                    new_fields_lower.index(
-                                                        original_editor_field_name.lower()
-                                                    )
-                                                ]
-                                                del_fields.append(
-                                                    new_delete_field["name"]
-                                                )
-                                            except ValueError:
-                                                pass
-
-                    original_oid_field = _deep_get(layer, "objectIdField")
-                    new_oid_field = _deep_get(new_layer_properties, "objectIdField")
-                    if original_oid_field != new_oid_field:
-                        if (
-                            original_oid_field is not None
-                            and original_oid_field != ""
-                            and new_oid_field is not None
-                            and new_oid_field != ""
-                        ):
-                            field_mapping[original_oid_field] = new_oid_field
-
-                    original_globalid_field = _deep_get(layer, "globalIdField")
-                    new_globalid_field = _deep_get(
-                        new_layer_properties, "globalIdField"
-                    )
-                    if original_globalid_field != new_globalid_field:
-                        if (
-                            original_globalid_field is not None
-                            and original_globalid_field != ""
-                            and new_globalid_field is not None
-                            and new_globalid_field != ""
-                        ):
-                            field_mapping[original_globalid_field] = new_globalid_field
-
-                    for field in original_fields:
-                        if field["name"] in field_mapping:
-                            continue
-                        try:
-                            new_field = new_fields[
-                                new_fields_lower.index(field["name"].lower())
-                            ]
-                            if field["name"] != new_field["name"]:
-                                field_mapping[field["name"]] = new_field["name"]
-                        except ValueError:
-                            new_field = next(
-                                (
-                                    f
-                                    for f in new_fields
-                                    if f["name"][0 : len(field["name"])].lower()
-                                    == field["name"].lower()
-                                ),
-                                None,
+                        if new_item is None:
+                            raise RuntimeError("already exists")
+                        self.created_items.append(new_item)
+                    except RuntimeError as ex:
+                        if "already exists" in str(ex):
+                            name = self._get_unique_name(self.target, name, True)
+                            service_definition["name"] = name
+                            new_item = self.target.content.create_service(
+                                name,
+                                service_type="featureService",
+                                create_params=service_definition,
+                                folder=self.folder,
+                                owner=self.owner,
+                                item_id=item_id,
                             )
-                            if new_field is not None:
-                                field_mapping[field["name"]] = new_field["name"]
+                            self.created_items.append(new_item)
+                        elif "managed database" in str(ex):
+                            raise Exception(
+                                "The target portal's managed database must be an ArcGIS Data Store."
+                            )
+                        else:
+                            raise
 
-                    if len(field_mapping) > 0:
-                        layer_field_mapping[layer_id] = field_mapping
+                    # Get the layer and table definitions from the original service and prepare them for the new service
+                    layers_definition = self.layers_definition
+                    relationships = {}
+                    time_infos = {}
+                    original_drawing_infos = {}
+                    original_templates = {}
+                    original_types = {}
+                    _layers = []
+                    _tables = []
+                    _x = 0
+                    chunk_size = 20
+                    layers_and_tables = []
+                    total_size = len(
+                        layers_definition["layers"] + layers_definition["tables"]
+                    )
 
-                    update_definition = {}
-                    delete_definition = {}
-
-                    if len(del_fields) > 0 or layer_id in layer_field_mapping:
-                        # Delete the old editor tracking fields from the layer
+                    for layer in (
+                        layers_definition["layers"] + layers_definition["tables"]
+                    ):
+                        # Need to remove relationships first and add them back individually
+                        # after all layers and tables have been added to the definition
                         if (
-                            len(del_fields) > 0
-                            and source_schema_changes_allowed == True
+                            "relationships" in layer
+                            and layer["relationships"] is not None
+                            and len(layer["relationships"]) != 0
                         ):
-                            layer_admin = new_layer.manager
-                            delete_definition_fields = []
-                            for field in del_fields:
-                                delete_definition_fields.append({"name": field})
-                            delete_definition["fields"] = delete_definition_fields
+                            relationships[layer["id"]] = layer["relationships"]
+                            layer["relationships"] = []
 
-                        # Update editing templates if field mapping is required
-                        if layer_id in layer_field_mapping:
-                            field_mapping = layer_field_mapping[layer_id]
+                        # Remove time settings first and add them back after the layer has been created
+                        if "timeInfo" in layer and layer["timeInfo"] is not None:
+                            time_infos[layer["id"]] = layer["timeInfo"]
+                            del layer["timeInfo"]
 
-                            if (
-                                "templates" in new_layer_properties
-                                and new_layer_properties["templates"] is not None
-                            ):
-                                templates = new_layer_properties["templates"]
-                                for template in templates:
+                        # Need to remove all indexes duplicated for fields.
+                        # Services get into this state due to a bug in 10.4 and 1.2
+                        field_names = [f["name"].lower() for f in layer["fields"]]
+
+                        unique_fields = []
+                        if "indexes" in layer:
+                            for index in list(layer["indexes"]):
+                                fields = index["fields"].lower()
+                                if fields in unique_fields or fields not in field_names:
+                                    layer["indexes"].remove(index)
+                                else:
+                                    unique_fields.append(fields)
+
+                        # Due to a bug at 10.5.1 any domains for a double field must explicitly have a float code rather than int
+                        for field in layer["fields"]:
+                            field_type = _deep_get(field, "type")
+                            if field_type in [
+                                "esriFieldTypeDouble",
+                                "esriFieldTypeSingle",
+                            ]:
+                                coded_values = _deep_get(field, "domain", "codedValues")
+                                if coded_values is not None:
+                                    for coded_value in coded_values:
+                                        code = _deep_get(coded_value, "code")
+                                        if code is not None:
+                                            coded_value["code"] = float(code)
+
+                        # Set the extent of the feature layer to the specified default extent
+                        if layer["type"] == "Feature Layer" and new_extent:
+                            layer["extent"] = new_extent
+
+                        # Remove hasViews property if exists
+                        if "hasViews" in layer:
+                            del layer["hasViews"]
+
+                        # Update the view layer source properties
+                        if self.is_view:
+                            url = self.view_sources[layer["id"]][0]
+                            original_feature_service = os.path.dirname(url)
+                            original_id = os.path.basename(url)
+
+                            if len(self.view_sources[layer["id"]]) > 1:
+                                new_service = None
+                                for key, value in self._clone_mapping[
+                                    "Services"
+                                ].items():
+                                    if _compare_url(key, original_feature_service):
+                                        new_service = value
+                                        break
+
+                                # validate admin_layer_info
+                                if (
+                                    new_service is not None
+                                    and "adminLayerInfo" in layer
+                                    and "viewLayerDefinition" in layer["adminLayerInfo"]
+                                ):
+                                    layer["adminLayerInfo"]["viewLayerDefinition"][
+                                        "table"
+                                    ]["sourceServiceName"] = os.path.basename(
+                                        os.path.dirname(new_service["url"])
+                                    )
+                                    layer["adminLayerInfo"]["viewLayerDefinition"][
+                                        "table"
+                                    ]["sourceLayerId"] = new_service[
+                                        "layer_id_mapping"
+                                    ][
+                                        int(original_id)
+                                    ]
                                     if (
-                                        "prototype" in template
-                                        and template["prototype"] is not None
+                                        "relatedTables"
+                                        in layer["adminLayerInfo"][
+                                            "viewLayerDefinition"
+                                        ]["table"]
                                     ):
-                                        _update_feature_attributes(
-                                            template["prototype"],
-                                            field_mapping,
+                                        # Update the name of the related table to use the new items name
+                                        for related_table in layer["adminLayerInfo"][
+                                            "viewLayerDefinition"
+                                        ]["table"]["relatedTables"]:
+                                            name = related_table["sourceServiceName"]
+                                            for k, v in self._clone_mapping[
+                                                "Services"
+                                            ].items():
+                                                if (
+                                                    os.path.basename(os.path.dirname(k))
+                                                    == name
+                                                ):
+                                                    related_table[
+                                                        "sourceServiceName"
+                                                    ] = os.path.basename(
+                                                        os.path.dirname(v["url"])
+                                                    )
+                                                    if (
+                                                        "sourceLayerId" in related_table
+                                                        and "layer_id_mapping" in v
+                                                        and int(
+                                                            related_table[
+                                                                "sourceLayerId"
+                                                            ]
+                                                        )
+                                                        in v["layer_id_mapping"]
+                                                    ):
+                                                        related_table[
+                                                            "sourceLayerId"
+                                                        ] = v["layer_id_mapping"][
+                                                            int(
+                                                                related_table[
+                                                                    "sourceLayerId"
+                                                                ]
+                                                            )
+                                                        ]
+
+                                    admin_layer_info = layer["adminLayerInfo"]
+                                    if (
+                                        _deep_get(
+                                            admin_layer_info,
+                                            "viewLayerDefinition",
+                                            "table",
                                         )
-                                update_definition["templates"] = templates
-
-                            if (
-                                "types" in new_layer_properties
-                                and new_layer_properties["types"] is not None
-                            ):
-                                types = new_layer_properties["types"]
-                                for layer_type in types:
-                                    if (
-                                        "templates" in layer_type
-                                        and layer_type["templates"] is not None
+                                        is not None
+                                        and "isMultiServicesView" in layer
+                                        and layer["isMultiServicesView"]
+                                        and "geometryType" in layer
                                     ):
-                                        for template in layer_type["templates"]:
-                                            if (
-                                                "prototype" in template
-                                                and template["prototype"] is not None
-                                            ):
-                                                _update_feature_attributes(
-                                                    template["prototype"],
-                                                    field_mapping,
-                                                )
-                                update_definition["types"] = types
+                                        admin_layer_info["geometryField"]["name"] = (
+                                            admin_layer_info["viewLayerDefinition"][
+                                                "table"
+                                            ]["name"]
+                                            + "."
+                                            + admin_layer_info["geometryField"]["name"]
+                                        )
 
-                    if self.is_view:
-                        # Update field visibility for views
-                        if (
-                            "viewDefinitionQuery" in layer
-                            and layer["viewDefinitionQuery"]
-                        ):
-                            update_definition["viewDefinitionQuery"] = layer[
-                                "viewDefinitionQuery"
-                            ]
-                            if layer_id in layer_field_mapping:
-                                update_definition[
-                                    "viewDefinitionQuery"
-                                ] = _find_and_replace_fields_sql(
-                                    update_definition["viewDefinitionQuery"],
-                                    layer_field_mapping[layer_id],
+                                    if "tableName" in admin_layer_info:
+                                        del admin_layer_info["tableName"]
+                                    if "xssTrustedFields" in admin_layer_info:
+                                        del admin_layer_info["xssTrustedFields"]
+                                    if (
+                                        "viewLayerDefinition" in admin_layer_info
+                                        and "table"
+                                        in admin_layer_info["viewLayerDefinition"]
+                                    ):
+                                        if (
+                                            "sourceId"
+                                            in admin_layer_info["viewLayerDefinition"][
+                                                "table"
+                                            ]
+                                        ):
+                                            del admin_layer_info["viewLayerDefinition"][
+                                                "table"
+                                            ]["sourceId"]
+                                        if (
+                                            "relatedTables"
+                                            in admin_layer_info["viewLayerDefinition"][
+                                                "table"
+                                            ]
+                                            and len(
+                                                admin_layer_info["viewLayerDefinition"][
+                                                    "table"
+                                                ]["relatedTables"]
+                                            )
+                                            > 0
+                                        ):
+                                            for related_table in admin_layer_info[
+                                                "viewLayerDefinition"
+                                            ]["table"]["relatedTables"]:
+                                                if "sourceId" in related_table:
+                                                    del related_table["sourceId"]
+
+                            else:
+                                for key, value in self._clone_mapping[
+                                    "Services"
+                                ].items():
+                                    if _compare_url(key, original_feature_service):
+                                        new_service = value
+                                        # retain this previous logic when admin_layer_info is not already avalible
+                                        admin_layer_info = {}
+                                        view_layer_definition = {}
+                                        view_layer_definition[
+                                            "sourceServiceName"
+                                        ] = os.path.basename(
+                                            os.path.dirname(new_service["url"])
+                                        )
+                                        view_layer_definition[
+                                            "sourceLayerId"
+                                        ] = new_service["layer_id_mapping"][
+                                            int(original_id)
+                                        ]
+                                        view_layer_definition["sourceLayerFields"] = "*"
+                                        admin_layer_info[
+                                            "viewLayerDefinition"
+                                        ] = view_layer_definition
+                                        layer["adminLayerInfo"] = admin_layer_info
+                                        break
+
+                            if self.target.properties.isPortal:
+                                # Store the original drawingInfo to be updated later
+                                if (
+                                    "drawingInfo" in layer
+                                    and layer["drawingInfo"] is not None
+                                ):
+                                    original_drawing_infos[layer["id"]] = layer[
+                                        "drawingInfo"
+                                    ]
+
+                                # Store the original templates to be updated later
+                                if (
+                                    "templates" in layer
+                                    and layer["templates"] is not None
+                                ):
+                                    original_templates[layer["id"]] = layer["templates"]
+
+                                # Store the original types to be updated later
+                                if "types" in layer and layer["types"] is not None:
+                                    original_types[layer["id"]] = layer["types"]
+
+                        if self.target.properties.isPortal:
+                            # Remove any unsupported capabilities from layer for Portal
+                            capabilities = _deep_get(layer, "capabilities")
+                            if capabilities is not None:
+                                layer["capabilities"] = ",".join(
+                                    [
+                                        x
+                                        for x in capabilities.split(",")
+                                        if x in supported_capabilities
+                                    ]
                                 )
 
-                        if len(self.view_sources[layer_id]) == 1:
-                            # only for single source view
-                            # multi source views will have adminLayerInfo that will define all of this
-                            field_updates = []
-                            view_field_names = [
-                                f["name"].lower() for f in layer["fields"]
-                            ]
-                            view_fields = {f["name"]: f for f in layer["fields"]}
-                            if layer_id in self.view_source_fields.keys():
-                                for source_field in self.view_source_fields[layer_id][
-                                    0
+                        if layer["type"] == "Feature Layer":
+                            _layers.append(layer)
+                        if layer["type"] == "Table":
+                            _tables.append(layer)
+
+                        if (_x + 1) % chunk_size == 0 or (_x + 1) == total_size:
+                            layers_tables = {}
+                            layers = copy.deepcopy(_layers) if len(_layers) > 0 else []
+                            if self.is_view:
+                                for layer in layers:
+                                    del layer["fields"]
+                            layers_tables["layers"] = layers
+
+                            tables = copy.deepcopy(_tables) if len(_tables) > 0 else []
+                            if self.is_view:
+                                for table in tables:
+                                    del table["fields"]
+                            layers_tables["tables"] = tables
+
+                            layers_and_tables.append(layers_tables)
+                            _layers = []
+                            _tables = []
+                        _x += 1
+
+                    # Add the layer and table definitions to the service
+                    # Explicitly add layers first and then tables, otherwise sometimes json.dumps() reverses them and this effects the output service
+                    feature_service = FeatureLayerCollection.fromitem(new_item)
+                    feature_service_admin = feature_service.manager
+                    if len(layers_and_tables) > 0:
+                        for o in layers_and_tables:
+                            definition = '{{"layers" : {0}, "tables" : {1}}}'.format(
+                                json.dumps(o["layers"]),
+                                json.dumps(o["tables"]),
+                            )
+                            _add_to_definition(feature_service_admin, definition)
+
+                    # Create a lookup between the new and old layer ids
+                    layer_id_mapping = {}
+                    original_layers = (
+                        layers_definition["layers"] + layers_definition["tables"]
+                    )
+                    i = 0
+                    for layer in feature_service.layers + feature_service.tables:
+                        layer_id_mapping[original_layers[i]["id"]] = layer.properties[
+                            "id"
+                        ]
+                        i += 1
+
+                    # Create a lookup for the layers and tables using their id
+                    new_layers = {}
+                    for layer in feature_service.layers + feature_service.tables:
+                        for key, value in layer_id_mapping.items():
+                            if value == layer.properties["id"]:
+                                new_layers[key] = layer
+                                break
+
+                    # Create a field mapping object if the case or name of the field has changes
+                    layer_field_mapping = {}
+                    for layer in (
+                        layers_definition["layers"] + layers_definition["tables"]
+                    ):
+                        field_mapping = {}
+                        del_fields = []
+                        layer_id = layer["id"]
+                        new_layer = new_layers[layer_id]
+                        new_layer_properties = new_layer.properties
+
+                        original_fields = _deep_get(layer, "fields")
+                        if (
+                            self.is_view
+                            and len(self.view_sources[layer_id]) == 1
+                            and layer_id in self.view_source_fields.keys()
+                        ):
+                            original_fields = self.view_source_fields[layer_id][0]
+                        new_fields = _deep_get(new_layer_properties, "fields")
+                        if new_fields is None or original_fields is None:
+                            break
+                        new_fields_lower = [f["name"].lower() for f in new_fields]
+
+                        if (
+                            "editFieldsInfo" in layer
+                            and layer["editFieldsInfo"] is not None
+                        ):
+                            if (
+                                "editFieldsInfo" in new_layer_properties
+                                and new_layer_properties["editFieldsInfo"] is not None
+                            ):
+                                for editor_field in [
+                                    "creationDateField",
+                                    "creatorField",
+                                    "editDateField",
+                                    "editorField",
                                 ]:
-                                    source_field_name = source_field["name"]
-                                    visible = (
-                                        source_field_name.lower() in view_field_names
+                                    original_editor_field_name = _deep_get(
+                                        layer, "editFieldsInfo", editor_field
                                     )
-                                    field_name = source_field_name
-                                    if layer_id in layer_field_mapping:
-                                        if (
-                                            source_field_name
-                                            in layer_field_mapping[layer_id]
-                                        ):
-                                            field_name = layer_field_mapping[layer_id][
-                                                source_field_name
-                                            ]
-
-                                    field_update = {
-                                        "name": field_name,
-                                        "visible": visible,
-                                    }
-
-                                    # Update domain of a view if it is different from the source feature service
-                                    new_field_names = {f["name"]: f for f in new_fields}
+                                    new_editor_field_name = _deep_get(
+                                        new_layer_properties,
+                                        "editFieldsInfo",
+                                        editor_field,
+                                    )
                                     if (
-                                        source_field_name in view_fields
-                                        and field_name in new_field_names
+                                        original_editor_field_name
+                                        != new_editor_field_name
                                     ):
-                                        new_domain = _deep_get(
-                                            view_fields,
-                                            source_field_name,
-                                            "domain",
-                                        )
-                                        original_domain = _deep_get(
-                                            new_field_names,
-                                            field_name,
-                                            "domain",
-                                        )
-                                        if original_domain != new_domain:
-                                            if _deep_get(
-                                                new_domain, "codedValues"
-                                            ) != _deep_get(
-                                                original_domain,
-                                                "codedValues",
-                                            ) or _deep_get(
-                                                new_domain, "range"
-                                            ) != _deep_get(
-                                                original_domain, "range"
-                                            ):
-                                                field_update["domain"] = new_domain
-                                                field_update["visible"] = visible
-                                                field_updates.append(field_update)
-                                    elif not visible:
-                                        field_updates.append(field_update)
-                                update_definition["fields"] = field_updates
+                                        if (
+                                            original_editor_field_name is not None
+                                            and original_editor_field_name != ""
+                                            and new_editor_field_name is not None
+                                            and new_editor_field_name != ""
+                                        ):
+                                            field_mapping[
+                                                original_editor_field_name
+                                            ] = new_editor_field_name
+                                            # Delete old editor tracking fields
+                                            if self.is_view == False:
+                                                try:
+                                                    new_delete_field = new_fields[
+                                                        new_fields_lower.index(
+                                                            original_editor_field_name.lower()
+                                                        )
+                                                    ]
+                                                    del_fields.append(
+                                                        new_delete_field["name"]
+                                                    )
+                                                except ValueError:
+                                                    pass
 
-                        # Reapply the renderer and feature templates for views created in Portal
-                        if self.target.properties.isPortal:
-                            field_mapping = None
+                        original_oid_field = _deep_get(layer, "objectIdField")
+                        new_oid_field = _deep_get(new_layer_properties, "objectIdField")
+                        if original_oid_field != new_oid_field:
+                            if (
+                                original_oid_field is not None
+                                and original_oid_field != ""
+                                and new_oid_field is not None
+                                and new_oid_field != ""
+                            ):
+                                field_mapping[original_oid_field] = new_oid_field
+
+                        original_globalid_field = _deep_get(layer, "globalIdField")
+                        new_globalid_field = _deep_get(
+                            new_layer_properties, "globalIdField"
+                        )
+                        if original_globalid_field != new_globalid_field:
+                            if (
+                                original_globalid_field is not None
+                                and original_globalid_field != ""
+                                and new_globalid_field is not None
+                                and new_globalid_field != ""
+                            ):
+                                field_mapping[
+                                    original_globalid_field
+                                ] = new_globalid_field
+
+                        for field in original_fields:
+                            if field["name"] in field_mapping:
+                                continue
+                            try:
+                                new_field = new_fields[
+                                    new_fields_lower.index(field["name"].lower())
+                                ]
+                                if field["name"] != new_field["name"]:
+                                    field_mapping[field["name"]] = new_field["name"]
+                            except ValueError:
+                                new_field = next(
+                                    (
+                                        f
+                                        for f in new_fields
+                                        if f["name"][0 : len(field["name"])].lower()
+                                        == field["name"].lower()
+                                    ),
+                                    None,
+                                )
+                                if new_field is not None:
+                                    field_mapping[field["name"]] = new_field["name"]
+
+                        if len(field_mapping) > 0:
+                            layer_field_mapping[layer_id] = field_mapping
+
+                        update_definition = {}
+                        delete_definition = {}
+
+                        if len(del_fields) > 0 or layer_id in layer_field_mapping:
+                            # Delete the old editor tracking fields from the layer
+                            if (
+                                len(del_fields) > 0
+                                and source_schema_changes_allowed == True
+                            ):
+                                layer_admin = new_layer.manager
+                                delete_definition_fields = []
+                                for field in del_fields:
+                                    delete_definition_fields.append({"name": field})
+                                delete_definition["fields"] = delete_definition_fields
+
+                            # Update editing templates if field mapping is required
                             if layer_id in layer_field_mapping:
                                 field_mapping = layer_field_mapping[layer_id]
 
-                            if layer_id in original_drawing_infos:
-                                drawing_info = original_drawing_infos[layer_id]
-                                if field_mapping is not None:
-                                    layer_definition = {"drawingInfo": drawing_info}
-                                    _update_layer_definition_fields(
-                                        layer_definition, field_mapping
-                                    )
-                                update_definition["drawingInfo"] = drawing_info
-
-                            if layer_id in original_templates:
-                                templates = original_templates[layer_id]
-                                if field_mapping is not None:
+                                if (
+                                    "templates" in new_layer_properties
+                                    and new_layer_properties["templates"] is not None
+                                ):
+                                    templates = new_layer_properties["templates"]
                                     for template in templates:
                                         if (
                                             "prototype" in template
@@ -3634,11 +3610,13 @@ class _FeatureServiceDefinition(_TextItemDefinition):
                                                 template["prototype"],
                                                 field_mapping,
                                             )
-                                update_definition["templates"] = templates
+                                    update_definition["templates"] = templates
 
-                            if layer_id in original_types:
-                                types = original_types[layer_id]
-                                if field_mapping is not None:
+                                if (
+                                    "types" in new_layer_properties
+                                    and new_layer_properties["types"] is not None
+                                ):
+                                    types = new_layer_properties["types"]
                                     for layer_type in types:
                                         if (
                                             "templates" in layer_type
@@ -3654,329 +3632,480 @@ class _FeatureServiceDefinition(_TextItemDefinition):
                                                         template["prototype"],
                                                         field_mapping,
                                                     )
-                                update_definition["types"] = types
+                                    update_definition["types"] = types
 
-                    # Add time settings back to the layer
-                    if layer_id in time_infos:
-                        time_info = time_infos[layer_id]
-                        start_time = _deep_get(time_info, "startTimeField")
-                        if start_time and start_time in field_mapping:
-                            time_info["startTimeField"] = field_mapping[start_time]
-                        elif start_time == "":
-                            time_info["startTimeField"] = None
-                        end_time = _deep_get(time_info, "endTimeField")
-                        if end_time and end_time in field_mapping:
-                            time_info["endTimeField"] = field_mapping[end_time]
-                        elif end_time == "":
-                            time_info["endTimeField"] = None
-                        update_definition["timeInfo"] = time_info
-
-                    # Update the definition of the layer
-                    if len(update_definition) > 0 or len(delete_definition) > 0:
-                        layer_admin = new_layer.manager
-                        if len(update_definition) > 0:
-                            layer_admin.update_definition(update_definition)
-                        if len(delete_definition) > 0:
-                            layer_admin.delete_from_definition(delete_definition)
-
-                # Add the relationships back to the layers
-                relationship_field_mapping = {}
-                if len(relationships) > 0:
-                    for layer_id in relationships:
-                        for relationship in relationships[layer_id]:
-                            if layer_id in layer_field_mapping:
-                                field_mapping = layer_field_mapping[layer_id]
-                                if relationship["keyField"] in field_mapping:
-                                    relationship["keyField"] = field_mapping[
-                                        relationship["keyField"]
-                                    ]
-                            related_table_id = relationship["relatedTableId"]
-                            if related_table_id in layer_field_mapping:
-                                field_mapping = layer_field_mapping[related_table_id]
-                                if layer_id not in relationship_field_mapping:
-                                    relationship_field_mapping[layer_id] = {}
-                                relationship_field_mapping[layer_id][
-                                    relationship["id"]
-                                ] = field_mapping
-
-                    if self.is_view == False:
-                        relationships_copy = copy.deepcopy(relationships)
-                        for layer_id in relationships_copy:
-                            for relationship in relationships_copy[layer_id]:
-                                relationship["relatedTableId"] = layer_id_mapping[
-                                    relationship["relatedTableId"]
+                        if self.is_view:
+                            # Update field visibility for views
+                            if (
+                                "viewDefinitionQuery" in layer
+                                and layer["viewDefinitionQuery"]
+                            ):
+                                update_definition["viewDefinitionQuery"] = layer[
+                                    "viewDefinitionQuery"
                                 ]
+                                if layer_id in layer_field_mapping:
+                                    update_definition[
+                                        "viewDefinitionQuery"
+                                    ] = _find_and_replace_fields_sql(
+                                        update_definition["viewDefinitionQuery"],
+                                        layer_field_mapping[layer_id],
+                                    )
 
-                        relationships_definition = {"layers": []}
-                        for key, value in layer_id_mapping.items():
-                            if key in relationships_copy:
-                                relationships_definition["layers"].append(
-                                    {
-                                        "id": value,
-                                        "relationships": relationships_copy[key],
-                                    }
-                                )
-                        feature_service_admin.add_to_definition(
-                            relationships_definition
+                            if len(self.view_sources[layer_id]) == 1:
+                                # only for single source view
+                                # multi source views will have adminLayerInfo that will define all of this
+                                field_updates = []
+                                view_field_names = [
+                                    f["name"].lower() for f in layer["fields"]
+                                ]
+                                view_fields = {f["name"]: f for f in layer["fields"]}
+                                if layer_id in self.view_source_fields.keys():
+                                    for source_field in self.view_source_fields[
+                                        layer_id
+                                    ][0]:
+                                        source_field_name = source_field["name"]
+                                        visible = (
+                                            source_field_name.lower()
+                                            in view_field_names
+                                        )
+                                        field_name = source_field_name
+                                        if layer_id in layer_field_mapping:
+                                            if (
+                                                source_field_name
+                                                in layer_field_mapping[layer_id]
+                                            ):
+                                                field_name = layer_field_mapping[
+                                                    layer_id
+                                                ][source_field_name]
+
+                                        field_update = {
+                                            "name": field_name,
+                                            "visible": visible,
+                                        }
+
+                                        # Update domain of a view if it is different from the source feature service
+                                        new_field_names = {
+                                            f["name"]: f for f in new_fields
+                                        }
+                                        if (
+                                            source_field_name in view_fields
+                                            and field_name in new_field_names
+                                        ):
+                                            new_domain = _deep_get(
+                                                view_fields,
+                                                source_field_name,
+                                                "domain",
+                                            )
+                                            original_domain = _deep_get(
+                                                new_field_names,
+                                                field_name,
+                                                "domain",
+                                            )
+                                            if original_domain != new_domain:
+                                                if _deep_get(
+                                                    new_domain, "codedValues"
+                                                ) != _deep_get(
+                                                    original_domain,
+                                                    "codedValues",
+                                                ) or _deep_get(
+                                                    new_domain, "range"
+                                                ) != _deep_get(
+                                                    original_domain, "range"
+                                                ):
+                                                    field_update["domain"] = new_domain
+                                                    field_update["visible"] = visible
+                                                    field_updates.append(field_update)
+                                        elif not visible:
+                                            field_updates.append(field_update)
+                                    update_definition["fields"] = field_updates
+
+                            # Reapply the renderer and feature templates for views created in Portal
+                            if self.target.properties.isPortal:
+                                field_mapping = None
+                                if layer_id in layer_field_mapping:
+                                    field_mapping = layer_field_mapping[layer_id]
+
+                                if layer_id in original_drawing_infos:
+                                    drawing_info = original_drawing_infos[layer_id]
+                                    if field_mapping is not None:
+                                        layer_definition = {"drawingInfo": drawing_info}
+                                        _update_layer_definition_fields(
+                                            layer_definition, field_mapping
+                                        )
+                                    update_definition["drawingInfo"] = drawing_info
+
+                                if layer_id in original_templates:
+                                    templates = original_templates[layer_id]
+                                    if field_mapping is not None:
+                                        for template in templates:
+                                            if (
+                                                "prototype" in template
+                                                and template["prototype"] is not None
+                                            ):
+                                                _update_feature_attributes(
+                                                    template["prototype"],
+                                                    field_mapping,
+                                                )
+                                    update_definition["templates"] = templates
+
+                                if layer_id in original_types:
+                                    types = original_types[layer_id]
+                                    if field_mapping is not None:
+                                        for layer_type in types:
+                                            if (
+                                                "templates" in layer_type
+                                                and layer_type["templates"] is not None
+                                            ):
+                                                for template in layer_type["templates"]:
+                                                    if (
+                                                        "prototype" in template
+                                                        and template["prototype"]
+                                                        is not None
+                                                    ):
+                                                        _update_feature_attributes(
+                                                            template["prototype"],
+                                                            field_mapping,
+                                                        )
+                                    update_definition["types"] = types
+
+                        # Add time settings back to the layer
+                        if layer_id in time_infos:
+                            time_info = time_infos[layer_id]
+                            start_time = _deep_get(time_info, "startTimeField")
+                            if start_time and start_time in field_mapping:
+                                time_info["startTimeField"] = field_mapping[start_time]
+                            elif start_time == "":
+                                time_info["startTimeField"] = None
+                            end_time = _deep_get(time_info, "endTimeField")
+                            if end_time and end_time in field_mapping:
+                                time_info["endTimeField"] = field_mapping[end_time]
+                            elif end_time == "":
+                                time_info["endTimeField"] = None
+                            update_definition["timeInfo"] = time_info
+
+                        # Update the definition of the layer
+                        if len(update_definition) > 0 or len(delete_definition) > 0:
+                            layer_admin = new_layer.manager
+                            if len(update_definition) > 0:
+                                layer_admin.update_definition(update_definition)
+                            if len(delete_definition) > 0:
+                                layer_admin.delete_from_definition(delete_definition)
+
+                    # Add the relationships back to the layers
+                    relationship_field_mapping = {}
+                    if len(relationships) > 0:
+                        for layer_id in relationships:
+                            for relationship in relationships[layer_id]:
+                                if layer_id in layer_field_mapping:
+                                    field_mapping = layer_field_mapping[layer_id]
+                                    if relationship["keyField"] in field_mapping:
+                                        relationship["keyField"] = field_mapping[
+                                            relationship["keyField"]
+                                        ]
+                                related_table_id = relationship["relatedTableId"]
+                                if related_table_id in layer_field_mapping:
+                                    field_mapping = layer_field_mapping[
+                                        related_table_id
+                                    ]
+                                    if layer_id not in relationship_field_mapping:
+                                        relationship_field_mapping[layer_id] = {}
+                                    relationship_field_mapping[layer_id][
+                                        relationship["id"]
+                                    ] = field_mapping
+
+                        if self.is_view == False:
+                            relationships_copy = copy.deepcopy(relationships)
+                            for layer_id in relationships_copy:
+                                for relationship in relationships_copy[layer_id]:
+                                    relationship["relatedTableId"] = layer_id_mapping[
+                                        relationship["relatedTableId"]
+                                    ]
+
+                            relationships_definition = {"layers": []}
+                            for key, value in layer_id_mapping.items():
+                                if key in relationships_copy:
+                                    relationships_definition["layers"].append(
+                                        {
+                                            "id": value,
+                                            "relationships": relationships_copy[key],
+                                        }
+                                    )
+                            feature_service_admin.add_to_definition(
+                                relationships_definition
+                            )
+
+                    # look here!
+                    # Get the item properties from the original item
+                    item_properties = self._get_item_properties(self.item_extent)
+                    del item_properties["url"]
+
+                    # Merge type keywords from what is created by default for the new item and what was in the original item
+                    type_keywords = list(new_item["typeKeywords"])
+                    type_keywords.extend(item_properties["typeKeywords"].split(","))
+                    type_keywords = list(set(type_keywords))
+
+                    # Replace type keyword if it references an item id of cloned item, ex. Survey123
+                    for keyword in list(type_keywords):
+                        if keyword in self._clone_mapping["Item IDs"]:
+                            type_keywords.remove(keyword)
+                            type_keywords.append(
+                                self._clone_mapping["Item IDs"][keyword]
+                            )
+                    item_properties["typeKeywords"] = ",".join(type_keywords)
+
+                    # Get the collection of layers and tables from the item data
+                    data = self.data
+                    layers = []
+                    if data and "layers" in data and data["layers"] is not None:
+                        layers += [layer for layer in data["layers"]]
+                    if data and "tables" in data and data["tables"] is not None:
+                        layers += [layer for layer in data["tables"]]
+
+                    # Update any pop-up, labeling or renderer field references
+                    for layer_id in layer_field_mapping:
+                        layer = next(
+                            (layer for layer in layers if layer["id"] == layer_id),
+                            None,
                         )
+                        if layer:
+                            _update_layer_fields(
+                                layer,
+                                layer_field_mapping[layer_id],
+                                layer_field_mapping,
+                            )
 
-                # Get the item properties from the original item
-                item_properties = self._get_item_properties(self.item_extent)
-                del item_properties["url"]
-
-                # Merge type keywords from what is created by default for the new item and what was in the original item
-                type_keywords = list(new_item["typeKeywords"])
-                type_keywords.extend(item_properties["typeKeywords"].split(","))
-                type_keywords = list(set(type_keywords))
-
-                # Replace type keyword if it references an item id of cloned item, ex. Survey123
-                for keyword in list(type_keywords):
-                    if keyword in self._clone_mapping["Item IDs"]:
-                        type_keywords.remove(keyword)
-                        type_keywords.append(self._clone_mapping["Item IDs"][keyword])
-                item_properties["typeKeywords"] = ",".join(type_keywords)
-
-                # Get the collection of layers and tables from the item data
-                data = self.data
-                layers = []
-                if data and "layers" in data and data["layers"] is not None:
-                    layers += [layer for layer in data["layers"]]
-                if data and "tables" in data and data["tables"] is not None:
-                    layers += [layer for layer in data["tables"]]
-
-                # Update any pop-up, labeling or renderer field references
-                for layer_id in layer_field_mapping:
-                    layer = next(
-                        (layer for layer in layers if layer["id"] == layer_id),
-                        None,
-                    )
-                    if layer:
-                        _update_layer_fields(
-                            layer,
-                            layer_field_mapping[layer_id],
-                            layer_field_mapping,
+                    for layer_id in relationship_field_mapping:
+                        layer = next(
+                            (layer for layer in layers if layer["id"] == layer_id),
+                            None,
                         )
+                        if layer:
+                            _update_layer_related_fields(
+                                layer, relationship_field_mapping[layer_id]
+                            )
 
-                for layer_id in relationship_field_mapping:
-                    layer = next(
-                        (layer for layer in layers if layer["id"] == layer_id),
-                        None,
+                    # Update the layer id
+                    for layer in layers:
+                        if layer["id"] in layer_id_mapping:
+                            layer["id"] = layer_id_mapping[layer["id"]]
+
+                    # Set the data to the text properties of the item
+                    if data:
+                        if self._is_view:
+                            # Remove any adminLayerInfo from the layers data
+                            if data and "layers" in data:
+                                for layer_data in data["layers"]:
+                                    if "adminLayerInfo" in layer_data:
+                                        del layer_data["adminLayerInfo"]
+                            # Remove any adminLayerInfo from the tables data
+                            if data and "tables" in data:
+                                for table_data in data["tables"]:
+                                    if "adminLayerInfo" in table_data:
+                                        del table_data["adminLayerInfo"]
+                        item_properties["text"] = json.dumps(data)
+
+                    # If the item title has a guid, check if it is in the clone_mapping and replace if it is.
+                    guids = re.findall(
+                        "[0-9A-F]{32}", item_properties["title"], re.IGNORECASE
                     )
-                    if layer:
-                        _update_layer_related_fields(
-                            layer, relationship_field_mapping[layer_id]
-                        )
+                    for guid in guids:
+                        if guid in self._clone_mapping["Group IDs"]:
+                            item_properties["title"] = item_properties["title"].replace(
+                                guid, self._clone_mapping["Group IDs"][guid]
+                            )
+                        elif guid in self._clone_mapping["Item IDs"]:
+                            item_properties["title"] = item_properties["title"].replace(
+                                guid, self._clone_mapping["Item IDs"][guid]
+                            )
 
-                # Update the layer id
-                for layer in layers:
-                    if layer["id"] in layer_id_mapping:
-                        layer["id"] = layer_id_mapping[layer["id"]]
-
-                # Set the data to the text properties of the item
-                if data:
-                    if self._is_view:
-                        # Remove any adminLayerInfo from the layers data
-                        if data and "layers" in data:
-                            for layer_data in data["layers"]:
-                                if "adminLayerInfo" in layer_data:
-                                    del layer_data["adminLayerInfo"]
-                        # Remove any adminLayerInfo from the tables data
-                        if data and "tables" in data:
-                            for table_data in data["tables"]:
-                                if "adminLayerInfo" in table_data:
-                                    del table_data["adminLayerInfo"]
-                    item_properties["text"] = json.dumps(data)
-
-                # If the item title has a guid, check if it is in the clone_mapping and replace if it is.
-                guids = re.findall(
-                    "[0-9A-F]{32}", item_properties["title"], re.IGNORECASE
-                )
-                for guid in guids:
-                    if guid in self._clone_mapping["Group IDs"]:
-                        item_properties["title"] = item_properties["title"].replace(
-                            guid, self._clone_mapping["Group IDs"][guid]
-                        )
-                    elif guid in self._clone_mapping["Item IDs"]:
-                        item_properties["title"] = item_properties["title"].replace(
-                            guid, self._clone_mapping["Item IDs"][guid]
-                        )
-
-                # swizzle in new WF ids
-                if "Workforce Project" in item_properties["typeKeywords"]:
-                    old_group_id = item_properties["properties"][
-                        "workforceProjectGroupId"
-                    ]
-                    item_properties["properties"][
-                        "workforceProjectGroupId"
-                    ] = self._clone_mapping["Group IDs"][old_group_id]
-
-                    # set up dispatcher webmap properties
-                    old_dispatcher_webmap_id = item_properties["properties"][
-                        "workforceDispatcherMapId"
-                    ]
-                    new_dispatcher_webmap_id = self._clone_mapping["Item IDs"][
-                        old_dispatcher_webmap_id
-                    ]
-                    item_properties["properties"][
-                        "workforceDispatcherMapId"
-                    ] = new_dispatcher_webmap_id
-
-                    # replace operational layers with new data
-                    dispatcher_webmap_item = self.target.content.get(
-                        new_dispatcher_webmap_id
-                    )
-                    wm_item_data = dispatcher_webmap_item.get_data()
-                    wm_item_data = self._swizzle_workforce_layers(
-                        wm_item_data, new_item, original_item["id"]
-                    )
-                    dispatcher_webmap_item.update(
-                        item_properties={
-                            "properties": {"workforceFeatureServiceId": new_item.id},
-                            "text": json.dumps(wm_item_data),
-                        }
-                    )
-
-                    # set up worker webmap properties
-                    old_worker_webmap_id = item_properties["properties"][
-                        "workforceWorkerMapId"
-                    ]
-                    new_worker_webmap_id = self._clone_mapping["Item IDs"][
-                        old_worker_webmap_id
-                    ]
-                    item_properties["properties"][
-                        "workforceWorkerMapId"
-                    ] = new_worker_webmap_id
-
-                    # replace operational layers with new data
-                    worker_webmap_item = self.target.content.get(new_worker_webmap_id)
-                    wm_item_data = worker_webmap_item.get_data()
-                    wm_item_data = self._swizzle_workforce_layers(
-                        wm_item_data, new_item, original_item["id"]
-                    )
-                    worker_webmap_item.update(
-                        item_properties={
-                            "properties": {"workforceFeatureServiceId": new_item.id},
-                            "text": json.dumps(wm_item_data),
-                        }
-                    )
-
-                    # move items to folder
-                    folder_name = self._get_unique_name(
-                        self.target,
-                        new_item.title,
-                        force_add_guid_suffix=True,
-                    )
-                    self.target.content.create_folder(folder_name)
-                    new_item.move(folder_name)
-                    worker_webmap_item.move(folder_name)
-                    dispatcher_webmap_item.move(folder_name)
-                    new_item.protect(True)
-                    worker_webmap_item.protect(True)
-                    dispatcher_webmap_item.protect(True)
-
-                    # ensure owner is dispatcher
-                    dispatchers_fl = FeatureLayer(
-                        url=new_item.url + "/2", gis=self.target
-                    )
-                    dispatchers_df = dispatchers_fl.query("1=1", as_df=True)
-                    if self.owner not in dispatchers_df.userid.values:
-                        dispatchers_fl.edit_features(
-                            adds=[
-                                arcgis.features.Feature(
-                                    attributes={
-                                        "name": new_item._gis.users.me.fullName,
-                                        "userid": self.owner,
-                                    }
-                                )
-                            ]
-                        )
-
-                    # add relationships
-                    try:
-                        worker_webmap_item.add_relationship(
-                            new_item, "WorkforceMap2FeatureService"
-                        )
-                        dispatcher_webmap_item.add_relationship(
-                            new_item, "WorkforceMap2FeatureService"
-                        )
-                    except Exception:
-                        # relationship is not required
-                        pass
-
-                # Update the item definition of the service
-                thumbnail = self.thumbnail
-                if not thumbnail and self.portal_item:
-                    temp_dir = os.path.join(self._temp_dir.name, original_item["id"])
-                    if not os.path.exists(temp_dir):
-                        os.makedirs(temp_dir)
-                    thumbnail = self.portal_item.download_thumbnail(temp_dir)
-                new_item.update(item_properties=item_properties, thumbnail=thumbnail)
-
-                # Clone any item resources
-                self._clone_resources(new_item)
-
-                # Copy features from original item
-                if self.copy_data and not self.is_view:
-                    spatial_reference = None
-                    if "spatialReference" in feature_service.properties:
-                        spatial_reference = feature_service.properties[
-                            "spatialReference"
+                    # swizzle in new WF ids
+                    if "Workforce Project" in item_properties["typeKeywords"]:
+                        old_group_id = item_properties["properties"][
+                            "workforceProjectGroupId"
                         ]
-                    self._add_features(
-                        new_layers,
-                        relationships,
-                        layer_field_mapping,
-                        spatial_reference,
+                        item_properties["properties"][
+                            "workforceProjectGroupId"
+                        ] = self._clone_mapping["Group IDs"][old_group_id]
+
+                        # set up dispatcher webmap properties
+                        old_dispatcher_webmap_id = item_properties["properties"][
+                            "workforceDispatcherMapId"
+                        ]
+                        new_dispatcher_webmap_id = self._clone_mapping["Item IDs"][
+                            old_dispatcher_webmap_id
+                        ]
+                        item_properties["properties"][
+                            "workforceDispatcherMapId"
+                        ] = new_dispatcher_webmap_id
+
+                        # replace operational layers with new data
+                        dispatcher_webmap_item = self.target.content.get(
+                            new_dispatcher_webmap_id
+                        )
+                        wm_item_data = dispatcher_webmap_item.get_data()
+                        wm_item_data = self._swizzle_workforce_layers(
+                            wm_item_data, new_item, original_item["id"]
+                        )
+                        dispatcher_webmap_item.update(
+                            item_properties={
+                                "properties": {
+                                    "workforceFeatureServiceId": new_item.id
+                                },
+                                "text": json.dumps(wm_item_data),
+                            }
+                        )
+
+                        # set up worker webmap properties
+                        old_worker_webmap_id = item_properties["properties"][
+                            "workforceWorkerMapId"
+                        ]
+                        new_worker_webmap_id = self._clone_mapping["Item IDs"][
+                            old_worker_webmap_id
+                        ]
+                        item_properties["properties"][
+                            "workforceWorkerMapId"
+                        ] = new_worker_webmap_id
+
+                        # replace operational layers with new data
+                        worker_webmap_item = self.target.content.get(
+                            new_worker_webmap_id
+                        )
+                        wm_item_data = worker_webmap_item.get_data()
+                        wm_item_data = self._swizzle_workforce_layers(
+                            wm_item_data, new_item, original_item["id"]
+                        )
+                        worker_webmap_item.update(
+                            item_properties={
+                                "properties": {
+                                    "workforceFeatureServiceId": new_item.id
+                                },
+                                "text": json.dumps(wm_item_data),
+                            }
+                        )
+
+                        # move items to folder
+                        folder_name = self._get_unique_name(
+                            self.target,
+                            new_item.title,
+                            force_add_guid_suffix=True,
+                        )
+                        self.target.content.create_folder(folder_name)
+                        new_item.move(folder_name)
+                        worker_webmap_item.move(folder_name)
+                        dispatcher_webmap_item.move(folder_name)
+                        new_item.protect(True)
+                        worker_webmap_item.protect(True)
+                        dispatcher_webmap_item.protect(True)
+
+                        # ensure owner is dispatcher
+                        dispatchers_fl = FeatureLayer(
+                            url=new_item.url + "/2", gis=self.target
+                        )
+                        dispatchers_df = dispatchers_fl.query("1=1", as_df=True)
+                        if self.owner not in dispatchers_df.userid.values:
+                            dispatchers_fl.edit_features(
+                                adds=[
+                                    arcgis.features.Feature(
+                                        attributes={
+                                            "name": new_item._gis.users.me.fullName,
+                                            "userid": self.owner,
+                                        }
+                                    )
+                                ]
+                            )
+
+                        # add relationships
+                        try:
+                            worker_webmap_item.add_relationship(
+                                new_item, "WorkforceMap2FeatureService"
+                            )
+                            dispatcher_webmap_item.add_relationship(
+                                new_item, "WorkforceMap2FeatureService"
+                            )
+                        except Exception:
+                            # relationship is not required
+                            pass
+
+                    # Update the item definition of the service
+                    thumbnail = self.thumbnail
+                    if not thumbnail and self.portal_item:
+                        temp_dir = os.path.join(
+                            self._temp_dir.name, original_item["id"]
+                        )
+                        if not os.path.exists(temp_dir):
+                            os.makedirs(temp_dir)
+                        thumbnail = self.portal_item.download_thumbnail(temp_dir)
+                    new_item.update(
+                        item_properties=item_properties, thumbnail=thumbnail
                     )
 
-                # once copy data has taken place, do WF necessary data migration
-                if "Workforce Project" in new_item.typeKeywords:
-                    # use wf module to migrate assignment types
-                    new_proj = arcgis.apps.workforce.Project(new_item)
-                    if not self.copy_data:
-                        at_fl = FeatureLayer(
-                            url=original_item["url"] + "/3",
+                    # Clone any item resources
+                    self._clone_resources(new_item)
+
+                    # Copy features from original item
+                    if self.copy_data and not self.is_view:
+                        spatial_reference = None
+                        if "spatialReference" in feature_service.properties:
+                            spatial_reference = feature_service.properties[
+                                "spatialReference"
+                            ]
+                        self._add_features(
+                            new_layers,
+                            relationships,
+                            layer_field_mapping,
+                            spatial_reference,
+                        )
+
+                    # once copy data has taken place, do WF necessary data migration
+                    if "Workforce Project" in new_item.typeKeywords:
+                        # use wf module to migrate assignment types
+                        new_proj = arcgis.apps.workforce.Project(new_item)
+                        if not self.copy_data:
+                            at_fl = FeatureLayer(
+                                url=original_item["url"] + "/3",
+                                gis=self.portal_item._gis,
+                            )
+                            at_features = at_fl.query("1=1")
+                            new_proj.assignment_types_table.edit_features(
+                                adds=at_features, use_global_ids=True
+                            )
+
+                        # use wf module to migrate integrations
+                        integrations_fl = FeatureLayer(
+                            original_item["url"] + "/4",
                             gis=self.portal_item._gis,
                         )
-                        at_features = at_fl.query("1=1")
-                        new_proj.assignment_types_table.edit_features(
-                            adds=at_features, use_global_ids=True
-                        )
-
-                    # use wf module to migrate integrations
-                    integrations_fl = FeatureLayer(
-                        original_item["url"] + "/4",
-                        gis=self.portal_item._gis,
-                    )
-                    integrations_features = integrations_fl.query("1=1")
-                    if not self.copy_data:
-                        new_proj.integrations_table.edit_features(
-                            adds=integrations_features, use_global_ids=True
-                        )
-
-                    # update item ids in the integrations url
-                    new_integrations = new_proj.integrations_table.query("1=1")
-                    for i, feature in enumerate(new_integrations):
-                        try:
-                            old_url = integrations_features.features[i].attributes[
-                                new_proj._integration_schema.url_template
-                            ]
-                            url_parts = list(urllib.parse.urlparse(old_url))
-                            query_dict = dict(urllib.parse.parse_qsl(url_parts[4]))
-                            old_item_id = query_dict["itemID"]
-                            query_dict["itemID"] = self._clone_mapping["Item IDs"][
-                                old_item_id
-                            ]
-                            url_parts[4] = urllib.parse.urlencode(
-                                query_dict, safe="${},"
+                        integrations_features = integrations_fl.query("1=1")
+                        if not self.copy_data:
+                            new_proj.integrations_table.edit_features(
+                                adds=integrations_features, use_global_ids=True
                             )
-                            feature.attributes[
-                                new_proj._integration_schema.url_template
-                            ] = urllib.parse.urlunparse(url_parts)
-                        except KeyError:
-                            # itemid does not necessarily exist in the url template
-                            continue
-                    new_proj.integrations_table.edit_features(updates=new_integrations)
+
+                        # update item ids in the integrations url
+                        new_integrations = new_proj.integrations_table.query("1=1")
+                        for i, feature in enumerate(new_integrations):
+                            try:
+                                old_url = integrations_features.features[i].attributes[
+                                    new_proj._integration_schema.url_template
+                                ]
+                                url_parts = list(urllib.parse.urlparse(old_url))
+                                query_dict = dict(urllib.parse.parse_qsl(url_parts[4]))
+                                old_item_id = query_dict["itemID"]
+                                query_dict["itemID"] = self._clone_mapping["Item IDs"][
+                                    old_item_id
+                                ]
+                                url_parts[4] = urllib.parse.urlencode(
+                                    query_dict, safe="${},"
+                                )
+                                feature.attributes[
+                                    new_proj._integration_schema.url_template
+                                ] = urllib.parse.urlunparse(url_parts)
+                            except KeyError:
+                                # itemid does not necessarily exist in the url template
+                                continue
+                        new_proj.integrations_table.edit_features(
+                            updates=new_integrations
+                        )
 
             # share items
             _share_item_with_groups(
@@ -3984,13 +4113,19 @@ class _FeatureServiceDefinition(_TextItemDefinition):
             )
             self.resolved = True
             self._clone_mapping["Item IDs"][original_item["id"]] = new_item["id"]
-            self._clone_mapping["Services"][original_item["url"].rstrip("/")] = {
-                "id": new_item["id"],
-                "url": new_item["url"].rstrip("/"),
-                "layer_field_mapping": layer_field_mapping,
-                "layer_id_mapping": layer_id_mapping,
-                "relationship_field_mapping": relationship_field_mapping,
-            }
+            if export_service:
+                self._clone_mapping["Services"][original_item["url"].rstrip("/")] = {
+                    "id": new_item["id"],
+                    "url": new_item["url"].rstrip("/"),
+                }
+            else:
+                self._clone_mapping["Services"][original_item["url"].rstrip("/")] = {
+                    "id": new_item["id"],
+                    "url": new_item["url"].rstrip("/"),
+                    "layer_field_mapping": layer_field_mapping,
+                    "layer_id_mapping": layer_id_mapping,
+                    "relationship_field_mapping": relationship_field_mapping,
+                }
             return new_item
         except Exception as ex:
             raise _ItemCreateException(
