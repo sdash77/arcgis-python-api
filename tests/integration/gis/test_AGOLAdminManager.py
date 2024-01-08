@@ -1,9 +1,5 @@
-import sys
-
-# sys.path.insert(0, r"C:\SVN\geosaurus_master\src")
 import unittest
 import os
-from arcgis.gis import GIS
 from arcgis.gis.admin import AGOLAdminManager
 from arcgis.gis.admin._ux import UX
 from arcgis.gis.admin._collaboration import CollaborationManager
@@ -18,50 +14,28 @@ from arcgis.gis.admin._security import PasswordPolicy
 from arcgis.gis.admin._usage import AGOLUsageReports
 from arcgis.gis.admin._license import LicenseManager
 from datetime import datetime
+import pandas as pd
+from utils.decorators import admin_agol_profile
 
-
-online_admin = GIS(profile="your_online_admin_profile", verify_cert=False)
-# create an admin
-admin = AGOLAdminManager(gis=online_admin)
-
-
+@admin_agol_profile
 class TestPortalAdminManager(unittest.TestCase):
-    def test_properties(self):
-        ux_manager = admin.ux
-        assert isinstance(ux_manager, UX)
+    @classmethod
+    def setUpClass(self):
+        self.admin = AGOLAdminManager(gis=self.gis)
 
-        collaboration = admin.collaborations
-        assert isinstance(collaboration, CollaborationManager)
-
-        cat_schema = admin.category_schema
-        assert isinstance(cat_schema, CategoryManager)
-
-        id_provider = admin.idp
-        assert isinstance(id_provider, IdentityProviderManager)
-
-        location = admin.location_tracking
-        assert isinstance(location, LocationTrackingManager)
-
-        social_providers = admin.social_providers
-        assert isinstance(social_providers, SocialProviders)
-
-        credits = admin.credits
-        assert isinstance(credits, CreditManager)
-
-        metadata = admin.metadata
-        assert isinstance(metadata, MetadataManager)
-
-        pass_policy = admin.password_policy
-        assert isinstance(pass_policy, PasswordPolicy)
-
-        usage_reports = admin.usage_reports
-        assert isinstance(usage_reports, AGOLUsageReports)
-
-        license = admin.license
-        assert isinstance(license, LicenseManager)
-
-        urls = admin.urls
-        assert isinstance(urls, dict)
+    def test_properties_are_instances_of_expected_type(self):
+        assert isinstance(self.admin.ux, UX)
+        assert isinstance(self.admin.collaborations, CollaborationManager)
+        assert isinstance(self.admin.category_schema, CategoryManager)
+        assert isinstance(self.admin.idp, IdentityProviderManager)
+        assert isinstance(self.admin.location_tracking, LocationTrackingManager)
+        assert isinstance(self.admin.social_providers, SocialProviders)
+        assert isinstance(self.admin.credits, CreditManager)
+        assert isinstance(self.admin.metadata, MetadataManager)
+        assert isinstance(self.admin.password_policy, PasswordPolicy)
+        assert isinstance(self.admin.usage_reports, AGOLUsageReports)
+        assert isinstance(self.admin.license, LicenseManager)
+        assert isinstance(self.admin.urls, dict)
 
     def test_set_ux_program(self):
         """
@@ -72,36 +46,54 @@ class TestPortalAdminManager(unittest.TestCase):
         Check the changed value is different than the original
         Go back to original value
         """
-        ux_program = admin._user_experience_program
+        ux_program = self.admin._user_experience_program
         # test changing to other value then what it already is
         new_value = False if ux_program else True
         assert ux_program != new_value
         # change value then change back
-        admin._user_experience_program = new_value
-        admin._user_experience_program = ux_program
+        self.admin._user_experience_program = new_value
+        assert self.admin._user_experience_program == new_value
+        self.admin._user_experience_program = ux_program
         # make sure value is back to original setting
-        final_value = admin._user_experience_program
+        final_value = self.admin._user_experience_program
         assert ux_program == final_value
 
     def test_schedule_tasks(self):
         """
         tests if receive scheduled tasks, if any
         """
-        tasks = admin.scheduled_tasks()
+        tasks = self.admin.scheduled_tasks()
         assert isinstance(tasks, list)
 
-    def test_get_history(self):
+    def test_get_history_csv(self):
         """
-        tests if receive login history
+        tests if receive login history as csv file saved to disk
         """
         today = datetime.now()
-        history = admin.history(start_date=today)
+        history = self.admin.history(start_date=today)
         assert isinstance(history, str)
         assert history
+        assert os.path.isfile(history)
         os.remove(history)
 
+    def test_get_history_df(self):
+        """
+        tests if receive login history as DataFrame
+        """
+        today = datetime.now()
+        history = self.admin.history(start_date=today, data_format='df')
+        assert isinstance(history, pd.DataFrame)
+
+    def test_get_history_json(self):
+        """
+        tests if receive login history as list
+        """
+        today = datetime.today()
+        history = self.admin.history(start_date=today, data_format='json')
+        assert isinstance(history, list)
+
     def test_agol_usage_report(self):
-        usage_reports = admin.usage_reports
+        usage_reports = self.admin.usage_reports
         reports = [
             "content",
             "users",
@@ -112,12 +104,16 @@ class TestPortalAdminManager(unittest.TestCase):
         date_obj = datetime.strptime(date_str, date_format)
         for report in reports:
             with self.subTest(report):
-                generated = usage_reports.generate_report(
-                    focus="org",
-                    report_type=report,
-                    duration="monthly",
-                    start_time=date_obj,
-                )
+                try:
+                    generated = usage_reports.generate_report(
+                        focus="org",
+                        report_type=report,
+                        duration="monthly",
+                        start_time=date_obj,
+                    )
+                except Exception as e:
+                    assert "already generated" in str(e)
+                    continue
                 assert generated
                 assert generated.result().delete()
 

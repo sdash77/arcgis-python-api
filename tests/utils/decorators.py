@@ -58,7 +58,6 @@ def _get_profile_parameterized_class(*args):
         # at least one profile has a gis property
         # add the properties
         __profiles_properties += ("gis", "proxies")
-    print(__profiles_properties, _profiles_values)
     return parameterized_class(
         __profiles_properties,
         _profiles_values,
@@ -76,7 +75,7 @@ def _get_credentials_parameterized_class(*args):
 # endregion
 
 # region credential decorators
-enterprise_and_online_credentials = _get_credentials_parameterized_class(
+enterprise_and_agol_credentials = _get_credentials_parameterized_class(
     _enterprise_credential_parameters,
     _agol_credential_parameters,
 )
