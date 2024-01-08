@@ -1,0 +1,50 @@
+name: Unit Test
+on:
+  pull_request: {}
+  workflow_dispatch: {}
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        shell: bash -el {0}
+    env:
+      ARCGIS_LAST_RELEASE: 2.2.0
+    steps:
+      - uses: actions/checkout@v4
+        if: github.event_name == 'pull_request'
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+      - uses: actions/checkout@v4
+        if: github.event_name == 'workflow_dispatch'
+      - uses: actions/checkout@v4
+        with:
+          ref: binaries/main
+          path: binaries
+      - uses: conda-incubator/setup-miniconda@v3
+        with:
+          python-version: 3.9
+      - name: Install dependencies
+        run: |
+          conda install -c main nose2 --yes
+          conda install -c esri arcgis=${{ env.ARCGIS_LAST_RELEASE }}.* --only-deps --yes
+          conda install -c esri-build pydantic --yes
+          conda install -c esri-build puremagic --yes
+          conda install -c main "pyarrow>=11" --yes
+      - name: Install arcgis
+        run: |
+          # copy binaries to relevant paths
+          cp ./binaries/linux/py3.9/graph/* ./src/arcgis/graph
+          cp ./binaries/linux/py3.9/knn/* ./src/arcgis/learn/_utils
+          cp ./binaries/linux/py3.9/tracking-engine/* ./src/arcgis/learn/_tracking
+
+          python -m pip install -e ./src --no-deps
+      - name: Run smoke tests
+        working-directory: ./tests
+        run: |
+          python -m nose2 -s smoke
+      - name: Run unit tests
+        working-directory: ./tests
+        run: |
+          python -m nose2 -s unit
