@@ -1,41 +1,70 @@
-import unittest
 import os
-from arcgis.gis.admin import AGOLAdminManager
-from arcgis.gis.admin._ux import UX
-from arcgis.gis.admin._collaboration import CollaborationManager
-from arcgis.gis.admin._catagoryschema import CategoryManager
-from arcgis.gis.admin._idp import IdentityProviderManager
-from arcgis.gis.admin import AGOLAdminManager
-from arcgis.apps.tracker import LocationTrackingManager
-from arcgis.gis.admin._socialproviders import SocialProviders
-from arcgis.gis.admin._creditmanagement import CreditManager
-from arcgis.gis.admin._metadata import MetadataManager
-from arcgis.gis.admin._security import PasswordPolicy
-from arcgis.gis.admin._usage import AGOLUsageReports
-from arcgis.gis.admin._license import LicenseManager
-from datetime import datetime
 import pandas as pd
-from utils.decorators import admin_agol_profile
+import unittest
+from arcgis.apps.tracker import LocationTrackingManager
+from arcgis.gis.admin import AGOLAdminManager, PortalAdminManager
+from arcgis.gis.admin._catagoryschema import CategoryManager
+from arcgis.gis.admin._collaboration import CollaborationManager
+from arcgis.gis.admin._creditmanagement import CreditManager
+from arcgis.gis.admin._federation import Federation
+from arcgis.gis.admin._idp import IdentityProviderManager
+from arcgis.gis.admin._license import LicenseManager
+from arcgis.gis.admin._livingatlas import LivingAtlas
+from arcgis.gis.admin._logs import Logs
+from arcgis.gis.admin._machines import Machines
+from arcgis.gis.admin._metadata import MetadataManager
+from arcgis.gis.admin._security import PasswordPolicy, Security
+from arcgis.gis.admin._site import Site
+from arcgis.gis.admin._socialproviders import SocialProviders
+from arcgis.gis.admin._system import System
+from arcgis.gis.admin._usage import AGOLUsageReports
+from arcgis.gis.admin._ux import UX
+from arcgis.gis.admin._wh import WebhookManager
+from arcgis.gis.server.sm import ServerManager
+from arcgis._impl.common._isd import InsensitiveDict
+from datetime import datetime
+from utils.decorators import admin_enterprise_and_agol_profiles
 
-@admin_agol_profile
-class TestPortalAdminManager(unittest.TestCase):
+@admin_enterprise_and_agol_profiles
+class TestAdminManager(unittest.TestCase):
     @classmethod
     def setUpClass(self):
-        self.admin = AGOLAdminManager(gis=self.gis)
+        if self.gis._is_agol:
+            self.admin = AGOLAdminManager(gis=self.gis)
+        else:
+            self.admin = PortalAdminManager(url=f"{self.gis.url}/sharing/rest/", gis=self.gis)
 
     def test_properties_are_instances_of_expected_type(self):
-        assert isinstance(self.admin.ux, UX)
-        assert isinstance(self.admin.collaborations, CollaborationManager)
+        dict_or_insensitive = (dict, InsensitiveDict)
         assert isinstance(self.admin.category_schema, CategoryManager)
+        assert isinstance(self.admin.collaborations, CollaborationManager)
         assert isinstance(self.admin.idp, IdentityProviderManager)
+        assert isinstance(self.admin.license, LicenseManager)
         assert isinstance(self.admin.location_tracking, LocationTrackingManager)
-        assert isinstance(self.admin.social_providers, SocialProviders)
-        assert isinstance(self.admin.credits, CreditManager)
         assert isinstance(self.admin.metadata, MetadataManager)
         assert isinstance(self.admin.password_policy, PasswordPolicy)
-        assert isinstance(self.admin.usage_reports, AGOLUsageReports)
-        assert isinstance(self.admin.license, LicenseManager)
-        assert isinstance(self.admin.urls, dict)
+        assert isinstance(self.admin.social_providers, SocialProviders)
+        assert isinstance(self.admin.ux, UX)
+        if self.gis._is_agol:
+            assert isinstance(self.admin.credits, CreditManager)
+            assert isinstance(self.admin.urls, dict_or_insensitive)
+            assert self.admin.urls
+            assert isinstance(self.admin.usage_reports, AGOLUsageReports)
+        else:
+            assert isinstance(self.admin.federation, Federation)
+            assert isinstance(self.admin.living_atlas, LivingAtlas)
+            assert isinstance(self.admin.logs, Logs)
+            assert isinstance(self.admin.machines, Machines)
+            assert isinstance(self.admin.mode, dict_or_insensitive)
+            assert self.admin.mode
+            assert isinstance(self.admin.security, Security)
+            assert isinstance(self.admin.servers, ServerManager)
+            assert isinstance(self.admin.servers.properties, dict_or_insensitive)
+            assert self.admin.servers.properties
+            assert isinstance(self.admin.site, Site)
+            assert isinstance(self.admin.system, System)
+            assert isinstance(self.admin.webhooks, WebhookManager)
+        
 
     def test_set_ux_program(self):
         """
@@ -46,6 +75,8 @@ class TestPortalAdminManager(unittest.TestCase):
         Check the changed value is different than the original
         Go back to original value
         """
+        if not self.gis._is_agol:
+            self.skipTest("Only available for ArcGIS Online")
         ux_program = self.admin._user_experience_program
         # test changing to other value then what it already is
         new_value = False if ux_program else True
@@ -69,6 +100,8 @@ class TestPortalAdminManager(unittest.TestCase):
         """
         tests if receive login history as csv file saved to disk
         """
+        if not self.gis._is_agol:
+            self.skipTest("Only available for ArcGIS Online")
         today = datetime.now()
         history = self.admin.history(start_date=today)
         assert isinstance(history, str)
@@ -80,6 +113,8 @@ class TestPortalAdminManager(unittest.TestCase):
         """
         tests if receive login history as DataFrame
         """
+        if not self.gis._is_agol:
+            self.skipTest("Only available for ArcGIS Online")
         today = datetime.now()
         history = self.admin.history(start_date=today, data_format='df')
         assert isinstance(history, pd.DataFrame)
@@ -88,11 +123,15 @@ class TestPortalAdminManager(unittest.TestCase):
         """
         tests if receive login history as list
         """
+        if not self.gis._is_agol:
+            self.skipTest("Only available for ArcGIS Online")
         today = datetime.today()
         history = self.admin.history(start_date=today, data_format='json')
         assert isinstance(history, list)
 
     def test_agol_usage_report(self):
+        if not self.gis._is_agol:
+            self.skipTest("Only available for ArcGIS Online")
         usage_reports = self.admin.usage_reports
         reports = [
             "content",
