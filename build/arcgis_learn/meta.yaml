@@ -41,7 +41,6 @@ requirements:
     - libgdal=3.4.1=h82bb817_3 #[win]
     - libnetcdf 4.6.1 #[win]
     - libtiff >=4.3.0
-    - libcurl
     - markdown-it-py >=2.2.0
     - matplotlib==3.4.2 #[py==37 or not win]
     - matplotlib==3.6.0 #[py!=37 and win]
