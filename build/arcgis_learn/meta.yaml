@@ -73,7 +73,7 @@ requirements:
     - scikit-plot 0.3.7.*
     - scikit-image=0.17.2
     - shap>=0.36.0
-    - spacy=2.2.4.*
+    - spacy>=3.5.*
     - spconv 2.1.* #[win]
     - tensorboard >=2.3.0
     - tensorboardx=2.2.*
