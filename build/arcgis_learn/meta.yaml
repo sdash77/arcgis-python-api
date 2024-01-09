@@ -53,7 +53,6 @@ requirements:
     - mmengine=0.7.3
     - mmsegmentation=0.30.0
     - multi-scale-deformable-attention 1.0.0.*
-    - nb_conda_kernels
     - nbconvert=6.4.4
     - networkx=2.8.4
     - notebook>=6, <7
