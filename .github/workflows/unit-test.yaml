@@ -50,3 +50,5 @@ jobs:
         working-directory: ./tests
         run: |
           python -m nose2 -s unit
+        # run unit tests even if smoke tests fail
+        if: success() || failure()
