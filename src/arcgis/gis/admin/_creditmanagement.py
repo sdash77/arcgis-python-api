@@ -17,7 +17,7 @@ class CreditManager(object):
         >>> cm = gis.admin.credits
         >>> cm
         
-        <arcgis.gis.admin._creditmanagement.CreditManager object at <memory_address>>
+        <arcgis.gis.admin._creditmanagement.CreditManager object at 0x...>
     """
 
     _gis = None
