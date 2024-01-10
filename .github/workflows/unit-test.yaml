@@ -59,6 +59,10 @@ jobs:
           conda install -c esri-build puremagic --yes
           conda install -c main "pyarrow>=11" --yes
         if: steps.restore-cache.outputs.cache-hit != 'true'
+      - name: Show conda environment
+        run: |
+          conda list
+          conda info
       - name: Save Cache
         id: save-cache
         uses: actions/cache/save@v3
