@@ -34,7 +34,7 @@ jobs:
         uses: actions/cache/restore@v3
         with:
           path: ${{ steps.conda-info.outputs.conda-env-path }}
-          key: conda-${{ runner.os }}-arcgis${{ env.ARCGIS_LAST_RELEASE }}-${{ hashFiles('environment.yml', 'build/arcgis/meta.yaml', 'src/requirements.txt', 'src/setup.py') }}
+          key: conda-${{ runner.os }}-arcgis${{ env.ARCGIS_LAST_RELEASE }}-${{ hashFiles('.github/workflows/unit-test.yaml', 'environment.yml', 'build/arcgis/meta.yaml', 'src/requirements.txt', 'src/setup.py') }}
           restore-keys: |
             conda-${{ runner.os }}-arcgis${{ env.ARCGIS_LAST_RELEASE }}-
       - name: Install dependencies
