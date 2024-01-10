@@ -109,6 +109,13 @@ def setup_env():
     run_shell_command(" ".join(widget_install_cmd))
     run_shell_command(" ".join(widget_enable_cmd))
 
+def should_smoketest_arcgis_learn():
+    test_arcgis_learn = os.environ.get("TEST_ARCGIS_LEARN", "true")
+    return test_arcgis_learn.lower() in ["true", "yes", "1"]
+
+def should_allow_testing_against_packaged():
+    return os.environ.get("ALLOW_INSTALLED_ARCGIS", "false").lower() in ["true", "yes", "1"]
+
 
 def run_unittest_on(
     paths,
