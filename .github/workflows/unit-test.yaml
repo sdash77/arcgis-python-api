@@ -9,8 +9,6 @@ jobs:
     defaults:
       run:
         shell: bash -el {0}
-    env:
-      ARCGIS_LAST_RELEASE: 2.2.0
     steps:
       - uses: actions/checkout@v4
         if: github.event_name == 'pull_request'
@@ -29,18 +27,22 @@ jobs:
         id: conda-info
         run: |
           echo "conda-env-path=$CONDA_PREFIX" >> $GITHUB_OUTPUT
+      - name: Get arcgis release info
+        id: arcgis-info
+        run: |
+          echo "latest-version=$(conda search -c esri arcgis --json | jq -r '[ .[][].version] | max')" >> $GITHUB_OUTPUT
       - name: Load Cache
         id: restore-cache
         uses: actions/cache/restore@v3
         with:
           path: ${{ steps.conda-info.outputs.conda-env-path }}
-          key: conda-${{ runner.os }}-arcgis${{ env.ARCGIS_LAST_RELEASE }}-${{ hashFiles('.github/workflows/unit-test.yaml', 'environment.yml', 'build/arcgis/meta.yaml', 'src/requirements.txt', 'src/setup.py') }}
+          key: conda-${{ runner.os }}-arcgis${{ steps.arcgis-info.outputs.latest-version }}-${{ hashFiles('.github/workflows/unit-test.yaml', 'environment.yml', 'build/arcgis/meta.yaml', 'src/requirements.txt', 'src/setup.py') }}
           restore-keys: |
-            conda-${{ runner.os }}-arcgis${{ env.ARCGIS_LAST_RELEASE }}-
+            conda-${{ runner.os }}-arcgis${{ steps.arcgis-info.outputs.latest-version }}-
       - name: Install dependencies
         run: |
           conda install -c main nose2 --yes
-          conda install -c esri arcgis=${{ env.ARCGIS_LAST_RELEASE }}.* --only-deps --yes
+          conda install -c esri arcgis=${{ steps.arcgis-info.outputs.latest-version }} --only-deps --yes
           conda install -c esri-build pydantic --yes
           conda install -c esri-build puremagic --yes
           conda install -c main "pyarrow>=11" --yes
