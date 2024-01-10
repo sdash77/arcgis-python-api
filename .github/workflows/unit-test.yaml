@@ -25,6 +25,18 @@ jobs:
       - uses: conda-incubator/setup-miniconda@v3
         with:
           python-version: 3.9
+      - name: Get conda environment path
+        id: conda-info
+        run: |
+          echo "conda-env-path=$CONDA_PREFIX" >> $GITHUB_OUTPUT
+      - name: Load Cache
+        id: restore-cache
+        uses: actions/cache/restore@v3
+        with:
+          path: ${{ steps.conda-info.outputs.conda-env-path }}
+          key: conda-${{ runner.os }}-arcgis${{ env.ARCGIS_LAST_RELEASE }}-${{ hashFiles('environment.yml', 'build/arcgis/meta.yaml', 'src/requirements.txt', 'src/setup.py') }}
+          restore-keys: |
+            conda-${{ runner.os }}-arcgis${{ env.ARCGIS_LAST_RELEASE }}-
       - name: Install dependencies
         run: |
           conda install -c main nose2 --yes
@@ -32,6 +44,14 @@ jobs:
           conda install -c esri-build pydantic --yes
           conda install -c esri-build puremagic --yes
           conda install -c main "pyarrow>=11" --yes
+        if: steps.restore-cache.outputs.cache-hit != 'true'
+      - name: Save Cache
+        id: save-cache
+        uses: actions/cache/save@v3
+        with:
+          path: ${{ steps.conda-info.outputs.conda-env-path }}
+          key: ${{ steps.restore-cache.outputs.cache-primary-key }}
+        if: steps.restore-cache.outputs.cache-hit != 'true'
       - name: Install arcgis
         run: |
           # copy binaries to relevant paths
