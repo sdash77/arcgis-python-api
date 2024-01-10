@@ -4349,7 +4349,7 @@ class UserManager(object):
             return None
 
     # ----------------------------------------------------------------------
-    def get(self, username: str):
+    def get(self, username: str, outside_org=True):
         """
         The ``get`` method retrieves the :class:`~arcgis.gis.User` object for the specified username.
 
@@ -4358,6 +4358,11 @@ class UserManager(object):
         ------------------     --------------------------------------------------------------------
         username               Required string. The user to get as a string. This can be the
                                user's login name or the user's ID.
+        ------------------     --------------------------------------------------------------------
+        outside_org            Optional boolean. When working with AGOL portals, setting this
+                               to `True` will include users from other organizations in ArcGIS
+                               Online. Does not make a difference in Enterprise portals. Defaults
+                               to `True`.
         ==================     ====================================================================
 
         :return:
@@ -4373,6 +4378,11 @@ class UserManager(object):
         try:
             with _common_utils._DisableLogger():
                 user = self._portal.get_user(username)
+                if user and not outside_org:
+                    org_id = self._gis._portal._properties.get("id")
+                    user_org_id = user.get("orgId")
+                    if user_org_id != org_id:
+                        user = None
 
         except RuntimeError as re:
             if re.args[0].__contains__("User does not exist or is inaccessible"):
