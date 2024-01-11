@@ -90,14 +90,16 @@ jobs:
         working-directory: ./tests
         run: |
           python -m nose2 -s unit --plugin nose2.plugins.junitxml --junit-xml --junit-xml-path=unit_py${{ matrix.python-version }}_${{ runner.os }}_testreport.xml
-        # run unit tests even if smoke tests fail
+        # always run unit tests, except for cancellation
         if: success() || failure()
       - name: Upload test report
         uses: actions/upload-artifact@v4
         with:
           name: test-results-py${{ matrix.python-version }}-${{ matrix.os }}
-          path: ./tests/*.xml
+          path: ./tests/*_testreport.xml
           if-no-files-found: ignore
+        # always upload test results, except for cancellation
+        if: success() || failure()
 
   report:
     needs: test
@@ -113,6 +115,12 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           merge-multiple: true
+      - name: Aggregate test reports
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results
+          path: ./*_testreport.xml
+          if-no-files-found: ignore
       - name: Publish test reports
         uses: EnricoMi/publish-unit-test-result-action@v2
         with:
