@@ -307,7 +307,8 @@ class PageManager(object):
 
         # share page with content and core team groups
         if collab_group:
-            item.share(groups=[collab_group])
+            i = self._gis.content.get(item.get("id"))
+            i.sharing.groups.add(collab_group)
 
         # protect page from accidental deletion
         item.protect(enable=True)
