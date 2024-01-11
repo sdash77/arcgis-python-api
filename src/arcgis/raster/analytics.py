@@ -10241,7 +10241,7 @@ def predict_using_regression_model(
 
 def locate_regions(
     input_raster,
-    input_existing_regions=None,
+    input_existing_regions: Optional[Union[ImageryLayer, FeatureLayer]]=None,
     total_area: Optional[float] = None,
     area_units: Optional[str] = None,
     number_of_regions: Optional[int] = 1,
