@@ -12,11 +12,11 @@ class CreditManager(object):
     .. code-block:: python
 
         >>> from arcgis.gis import GIS
-        
+
         >>> gis = GIS(profile='your_online_admin_account')
         >>> cm = gis.admin.credits
         >>> cm
-        
+
         <arcgis.gis.admin._creditmanagement.CreditManager object at 0x...>
     """
 
@@ -99,13 +99,13 @@ class CreditManager(object):
         ===========================     ====================================================================
 
         :return: Boolean. True if successful else False
-        
+
         .. code-block:: python
-        
+
             # Usage Example:
             >>> from arcgis.gis import GIS
             >>> gis = GIS(profile="your_online_admin_profile")
-            
+
             >>> credit_mgr = gis.admin.credits
             >>> credit_mgr.allocate("gis_editor", 250)
         """
@@ -170,9 +170,9 @@ class CreditManager(object):
         -------------------   -----------------------------------------------
         time_frame            Optional string. The time frame to create the
                               report for.
-                              
+
                               Allowed values:
-                              
+
                               * *today*
                               * *week* (default)
                               * *7days*
@@ -189,24 +189,24 @@ class CreditManager(object):
         ===================   ===============================================
 
         returns: dictionary
-        
+
         .. code-block:: python
-        
+
             # Usage Example:
             >>> import datetime as dt
             >>> from arcgis.gis import GIS
-            
+
             >>> gis = GIS(profile="your_online_admin_profile")
-            
+
             >>> credit_mgr = gis.admin.credits
-            
+
             >>> start_date = dt.datetime(2024, 1, 4, 9)
             >>> end_date = dt.datetime(2024, 1, 2, 9)
-            
+
             >>> usage_report_dict = credit_mgr.credit_usage(start_time=start_date,
                                                             end_time=end_date)
             >>> usage_report_dict
-            
+
             {'intnotebks': 11.9,
              'schdnotebks': 2.225,
              'geocode': 167.67,
