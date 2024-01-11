@@ -82,12 +82,37 @@ jobs:
       - name: Run smoke tests
         working-directory: ./tests
         run: |
-          python -m nose2 -s smoke
+          python -m nose2 -s smoke --plugin nose2.plugins.junitxml --junit-xml --junit-xml-path=smoke_py${{ matrix.python-version }}_${{ runner.os }}_testreport.xml
         env:
           TEST_ARCGIS_LEARN: false
       - name: Run unit tests
         working-directory: ./tests
         run: |
-          python -m nose2 -s unit
+          python -m nose2 -s unit --plugin nose2.plugins.junitxml --junit-xml --junit-xml-path=unit_py${{ matrix.python-version }}_${{ runner.os }}_testreport.xml
         # run unit tests even if smoke tests fail
         if: success() || failure()
+      - name: Upload test report
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results-py${{ matrix.python-version }}-${{ matrix.os }}
+          path: ./tests/*.xml
+          if-no-files-found: ignore
+
+  report:
+    needs: test
+    if: success() || failure()
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      issues: read
+      checks: write
+      pull-requests: write
+    steps:
+      - name: Download test reports
+        uses: actions/download-artifact@v4
+        with:
+          merge-multiple: true
+      - name: Publish test reports
+        uses: EnricoMi/publish-unit-test-result-action@v2
+        with:
+          files: "*_testreport.xml"
