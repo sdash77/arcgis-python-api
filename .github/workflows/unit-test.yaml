@@ -98,6 +98,7 @@ jobs:
           name: test-results-py${{ matrix.python-version }}-${{ matrix.os }}
           path: ./tests/*_testreport.xml
           if-no-files-found: ignore
+          retention-days: 1
         # always upload test results, except for cancellation
         if: success() || failure()
 
