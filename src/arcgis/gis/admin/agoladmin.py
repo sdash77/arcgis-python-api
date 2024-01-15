@@ -13,6 +13,7 @@ from ._resources import PortalResourceManager
 from ._base import BasePortalAdmin
 from ...apps.tracker._location_tracking import LocationTrackingManager
 from ._dsmgr import DataStoreMetricsManager
+from ._partnercollab import PartneredCollabManager
 from arcgis.auth.tools import LazyLoader
 import urllib.parse
 
@@ -35,6 +36,7 @@ class AGOLAdminManager(object):
     :param collaborations: the CollaborationManager object (optional)
     """
 
+    _collabmgr: PartneredCollabManager | None = None
     _con = None
     _gis = None
     _ux = None
@@ -90,6 +92,19 @@ class AGOLAdminManager(object):
 
             self._ux = UX(gis=self._gis)
         return self._ux
+
+    # ----------------------------------------------------------------------
+    @property
+    def partnered_collaboration(self) -> PartneredCollabManager:
+        """
+        returns a manager to work with partnered collaboration
+
+        :return: PartneredCollabManager
+        """
+        if self._collabmgr is None:
+            url: str = self._gis.resturl + "portal/self/tustedOrgs"
+            self._collabmgr = PartneredCollabManager(url=url, gis=self._gis)
+        return self._collabmgr
 
     # ----------------------------------------------------------------------
     @property

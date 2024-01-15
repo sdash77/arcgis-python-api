@@ -1,5 +1,5 @@
 # model settings
-custom_imports = dict(imports=["arcgis.learn.models._prithivi_archs"])
+custom_imports = dict(imports=["arcgis.learn.models._prithvi_archs"])
 
 bands = [1, 2, 3, 8, 11, 12]
 # required bands Blue, Green, Red, Narrow NIR, SWIR 1, SWIR 2

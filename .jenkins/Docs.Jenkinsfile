@@ -32,11 +32,10 @@ pipeline {
                 }
                 stage('Deploy') {
                     steps {
-                        dir('docs/api_ref/build') {
-                            sh 'zip -r html.zip html'
-                            sh 'cp html.zip /media/geosaurus_public/docs/python-api/master'
-                        }
                         dir('docs/api_ref/build/html') {
+                            sh 'zip -r ../html.zip *'
+                            sh 'cp ../html.zip /media/geosaurus_public/docs/python-api/master'
+
                             // clean and deploy to crdata share
                             sh 'rm -rf /media/crdata_apiref/*'
                             sh 'cp -r . /media/crdata_apiref'
@@ -64,11 +63,10 @@ pipeline {
                 }
                 stage('Deploy') {
                     steps {
-                        dir('docs/api_ref/build') {
-                            sh 'zip -r json.zip json'
-                            sh 'cp json.zip /media/geosaurus_public/docs/python-api/master'
-                        }
                         dir('docs/api_ref/build/json') {
+                            sh 'zip -r ../json.zip *'
+                            sh 'cp ../json.zip /media/geosaurus_public/docs/python-api/master'
+
                             // clean and deploy to geosaurus share (master)
                             sh 'rm -rf /media/geosaurus_public/docs/python-api/master/json/*'
                             sh 'cp -r . /media/geosaurus_public/docs/python-api/master/json'
