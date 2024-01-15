@@ -3,7 +3,7 @@
 import unittest
 from arcgis.gis import GIS, Item
 from arcgis.apps.storymap import Briefing, Themes
-from arcgis.apps.storymap import Image, Slide
+from arcgis.apps.storymap import Image, BriefingSlide
 
 profiles = ["your_online_profile", "your_enterprise_profile"]
 
@@ -56,7 +56,7 @@ class TestStoryMap(unittest.TestCase):
                 assert len(briefing.slides) == 1
 
                 # Create a slide
-                slide = Slide(layout="single")
+                slide = BriefingSlide(layout="single")
                 briefing.add(slide)
 
                 # assert some properties
