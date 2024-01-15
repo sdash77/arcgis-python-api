@@ -154,7 +154,7 @@ def _get_tags_and_tokens_collection(path, ignore_tag_order=False, encoding="UTF-
 
 
 def _convert_csv_to_ner_json(path, text_key="input", encoding="UTF-8"):
-    csv_data = pd.read_csv(path, encoding=encoding).dropna(axis=0, how='all')
+    csv_data = pd.read_csv(path, encoding=encoding).dropna(axis=0, how="all")
     keys = set(csv_data.keys())
     if text_key not in keys:
         raise Exception(
