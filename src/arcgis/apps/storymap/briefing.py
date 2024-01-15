@@ -447,7 +447,7 @@ class Briefing(object):
         This method will save your Story Map to your active GIS. The story will be saved
         with unpublished changes unless `publish` parameter is specified to True.
 
-        The title only needs to be specified if a change is wanted, otherwise exisiting title
+        The title only needs to be specified if a change is wanted, otherwise existing title
         is used.
 
         .. warning::
@@ -510,7 +510,7 @@ class Briefing(object):
         ===============     ====================================================================
         **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
-        title               Optional string. The title of the duplicated story. Only availble
+        title               Optional string. The title of the duplicated story. Only available
                             for ArcGIS Online.
         ===============     ====================================================================
 

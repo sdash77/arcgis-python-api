@@ -59,7 +59,7 @@ class TextStyles(Enum):
 
 class Scales(Enum):
     """
-    Scale is a unitless way of describing how any distance on the map translates
+    Scale is a unit-less way of describing how any distance on the map translates
     to a real-world distance. For example, a map at a 1:24,000 scale communicates that 1 unit
     on the screen represents 24,000 of the same unit in the real world.
     So one inch on the screen represents 24,000 inches in the real world.
@@ -309,7 +309,7 @@ class Image:
     @property
     def alt_text(self):
         """
-        Get/Set the alternte text property for the image.
+        Get/Set the alternate text property for the image.
 
         ==================  ========================================
         **Parameter**        **Description**
@@ -643,7 +643,7 @@ class Video:
         """
         if self._existing is True:
             if self.resource_node:
-                # If resouce node exists it means the video comes from a file path
+                # If resource node exists it means the video comes from a file path
                 return self._story._properties["resources"][self.resource_node]["data"][
                     "resourceId"
                 ]
@@ -688,7 +688,7 @@ class Video:
     @property
     def alt_text(self):
         """
-        Get/Set the alternte text property for the video.
+        Get/Set the alternate text property for the video.
 
         ==================  ========================================
         **Parameter**        **Description**
@@ -906,14 +906,14 @@ class Audio:
             raise ValueError(
                 "To add an audio from an embedded url, use the Embed content class. Update audio with file path only."
             )
-        # Assing audio node properties
+        # Assign audio node properties
         self._story = kwargs.pop("story", None)
         self._type = "audio"
         self.node = kwargs.pop("node_id", None)
         # If node does not exist yet, create new instance
         self._existing = self._check_node()
         if self._existing is True:
-            # Get existing resouce node
+            # Get existing resource node
             self.resource_node = self._story._properties["nodes"][self.node]["data"][
                 "audio"
             ]
@@ -1020,7 +1020,7 @@ class Audio:
     @property
     def alt_text(self):
         """
-        Get/Set the alternte text property for the audio.
+        Get/Set the alternate text property for the audio.
 
         ==================  ========================================
         **Parameter**        **Description**
@@ -1124,7 +1124,7 @@ class Audio:
         # Assign new path
         self._path = new_audio
 
-        # Assign new resouce id, get old one to delete resource
+        # Assign new resource id, get old one to delete resource
         resource_id = self._story._properties["resources"][self.resource_node]["data"][
             "resourceId"
         ]
@@ -1255,7 +1255,7 @@ class Embed:
     @property
     def alt_text(self):
         """
-        Get/Set the alternte text property for the embed.
+        Get/Set the alternate text property for the embed.
 
         ==================  ========================================
         **Parameter**        **Description**
@@ -1378,7 +1378,7 @@ class Map:
         # Check if node exists else create new instance
         self._existing = self._check_node()
         if self._existing:
-            # Gather all exisiting properties needed
+            # Gather all existing properties needed
             self.resource_node = self._story._properties["nodes"][self.node]["data"][
                 "map"
             ]
@@ -1605,7 +1605,7 @@ class Map:
         ------------------  ----------------------------------------
         scale               Optional Scales enum class value or dict with 'scale' and 'zoom' keys.
 
-                            Scale is a unitless way of describing how any distance on the map translates
+                            Scale is a unit-less way of describing how any distance on the map translates
                             to a real-world distance. For example, a map at a 1:24,000 scale communicates that 1 unit
                             on the screen represents 24,000 of the same unit in the real world.
                             So one inch on the screen represents 24,000 inches in the real world.
@@ -1788,7 +1788,7 @@ class Map:
     @property
     def alt_text(self):
         """
-        Get/Set the alternte text property for the map.
+        Get/Set the alternate text property for the map.
 
         ==================  ========================================
         **Parameter**        **Description**
@@ -1913,7 +1913,7 @@ class Map:
                 "itemType"
             ]
         ):
-            raise ValueError("New Map must be of same type as the exisiting map.")
+            raise ValueError("New Map must be of same type as the existing map.")
 
         # Get all the old properties but update with new map where needed
 
@@ -2436,7 +2436,7 @@ class Gallery:
     @property
     def alt_text(self):
         """
-        Get/Set the alternte text property for the swipe.
+        Get/Set the alternate text property for the swipe.
 
         ==================  ========================================
         **Parameter**        **Description**
@@ -2697,7 +2697,7 @@ class Swipe:
     @property
     def alt_text(self):
         """
-        Get/Set the alternte text property for the swipe.
+        Get/Set the alternate text property for the swipe.
 
         ==================  ========================================
         **Parameter**        **Description**
@@ -2832,7 +2832,7 @@ class Sidecar:
 
     A sidecar is composed of slides. Slides are composed of two sub structures: a narrative panel and a media panel.
     The media node can be a(n): Image, Video, Embed, Map, or Swipe.
-    The narrative panel can contain mulitple types of content including Image, Video, Embed, Button, Text, Map, and more.
+    The narrative panel can contain multiple types of content including Image, Video, Embed, Button, Text, Map, and more.
 
     .. note::
         Once you create a Sidecar instance you must add it to the story to be able to edit it further.
@@ -3321,7 +3321,7 @@ class Sidecar:
             self._story._properties["nodes"][self.node]["children"].insert(
                 slide_number, slide_node
             )
-            # Update slide definition for the class to relect new list
+            # Update slide definition for the class to reflect new list
             self._slides = self._story._properties["nodes"][self.node]["children"]
             return {"New Slide": slide_node}
         else:
@@ -3943,7 +3943,7 @@ class MapAction:
         ------------------  ----------------------------------------
         scale               Required Scales enum class value or int.
 
-                            Scale is a unitless way of describing how any distance on the map translates
+                            Scale is a unit-less way of describing how any distance on the map translates
                             to a real-world distance. For example, a map at a 1:24,000 scale communicates that 1 unit
                             on the screen represents 24,000 of the same unit in the real world.
                             So one inch on the screen represents 24,000 inches in the real world.
@@ -4177,7 +4177,7 @@ class Code:
     def _update_content(self, content):
         if self._language in ["html", "json"]:
             # same encoding for html and json
-            content = html.ecape(content)
+            content = html.escape(content)
         # set new content
         self._content = content
         # update dictionary properties
