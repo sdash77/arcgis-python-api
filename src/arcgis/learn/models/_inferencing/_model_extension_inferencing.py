@@ -774,23 +774,23 @@ class ChildImageClassifier:
         input_image_tensor = torch.tensor(input_image).to(self.device).float()
 
         prithvimod = [
-            "prithivi100m_burn_scar",
-            "prithivi100m_crop_classification",
-            "prithivi100m_sen1floods",
-            "prithivi100m",
+            "prithvi100m_burn_scar",
+            "prithvi100m_crop_classification",
+            "prithvi100m_sen1floods",
+            "prithvi100m",
         ]
-        prithivi = True if model_info.get("Kwargs")["model"] in prithvimod else False
+        prithvi = True if model_info.get("Kwargs")["model"] in prithvimod else False
 
         if (
-            prithivi
-            and model_info.get("Kwargs")["model"] != "prithivi100m_crop_classification"
+            prithvi
+            and model_info.get("Kwargs")["model"] != "prithvi100m_crop_classification"
             and input_image_tensor.max() > 1
         ):
             input_image_tensor = input_image_tensor / 10000
 
         if "NormalizationStats" in model_info:
             normalized_image_tensor = normalize_batch(
-                input_image_tensor.cpu(), model_info, prithivi=prithivi
+                input_image_tensor.cpu(), model_info, prithvi=prithvi
             )
             normalized_image_tensor = normalized_image_tensor.float().to(
                 input_image_tensor.device

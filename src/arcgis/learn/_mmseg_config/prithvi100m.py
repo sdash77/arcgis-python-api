@@ -13,7 +13,7 @@ modchkp = OrderedDict(
 torch.save(modchkp, os.path.join(hub_dir, "checkpoints", "Prithvi_100M_Encoder.pth"))
 
 # model settings
-custom_imports = dict(imports=["arcgis.learn.models._prithivi_archs"])
+custom_imports = dict(imports=["arcgis.learn.models._prithvi_archs"])
 
 bands = [0, 1, 2, 3, 4, 5]
 nframes = 3
