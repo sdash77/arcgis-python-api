@@ -1,24 +1,84 @@
 name: Unit Test
 on:
-  pull_request: {}
-  workflow_dispatch: {}
+  pull_request:
+  workflow_dispatch:
+    inputs:
+      linux:
+        type: boolean
+        description: Run unit tests on Linux?
+        required: false
+        default: true
+      macos:
+        type: boolean
+        description: Run unit tests on macOS?
+        required: false
+        default: false
+      windows:
+        type: boolean
+        description: Run unit tests on Windows?
+        required: false
+        default: false
+      py39:
+        type: boolean
+        description: Run unit tests on Python 3.9?
+        required: false
+        default: false
+      py310:
+        type: boolean
+        description: Run unit tests on Python 3.10?
+        required: false
+        default: false
+      py311:
+        type: boolean
+        description: Run unit tests on Python 3.11?
+        required: false
+        default: true
 
 jobs:
+  construct-matrix:
+    name: Construct matrix parameters
+    runs-on: ubuntu-latest
+    outputs:
+      matrix: ${{ steps.set-matrix.outputs.matrix }}
+    steps:
+      - name: Determine matrix
+        id: set-matrix
+        # defaults to running linux and python 3.11 on pull requests
+        # uses inputs to determine which platforms and python versions to run on for workflow_dispatch
+        run: |
+          matrix=$(echo {} | jq '. |= {"os": [], "python_version": []}' | jq -r tostring)
+          if [ "${{ github.event_name == 'pull_request' || github.event.inputs.linux }}" = 'true' ]; then
+            echo "Running on Linux"
+            matrix=$(echo $matrix | jq '.os |= ["ubuntu-latest"]' | jq -r tostring)
+          fi
+          if [ "${{ github.event.inputs.macos }}" = 'true' ]; then
+            echo "Running on macOS"
+            matrix=$(echo $matrix | jq '.os |= ["macos-latest"]' | jq -r tostring)
+          fi
+          if [ "${{ github.event.inputs.windows }}" = 'true' ]; then
+            echo "Running on Windows"
+            matrix=$(echo $matrix | jq '.os |= ["windows-latest"]' | jq -r tostring)
+          fi
+          if [ "${{ github.event.inputs.py39 }}" = 'true' ]; then
+            echo "Running on Python 3.9"
+            matrix=$(echo $matrix | jq '.python_version |= ["3.9"]' | jq -r tostring)
+          fi
+          if [ "${{ github.event.inputs.py310 }}" == 'true' ]; then
+            echo "Running on Python 3.10"
+            matrix=$(echo $matrix | jq '.python_version |= ["3.10"]' | jq -r tostring)
+          fi
+          if [ "${{ github.event_name == 'pull_request' || github.event.inputs.py311 }}" == 'true' ]; then
+            echo "Running on Python 3.11"
+            matrix=$(echo $matrix | jq '.python_version |= ["3.11"]' | jq -r tostring)
+          fi
+          echo "matrix=$matrix" >> $GITHUB_OUTPUT
   test:
     runs-on: ${{ matrix.os }}
     timeout-minutes: 30
+    needs: [construct-matrix]
     strategy:
       fail-fast: false
-      matrix:
-        python-version: ["3.9", "3.10", "3.11"]
-        os: [ubuntu-latest, macos-latest, windows-latest]
-        include:
-          - os: ubuntu-latest
-            binary-os: linux
-          - os: macos-latest
-            binary-os: linux
-          - os: windows-latest
-            binary-os: windows
+      matrix: ${{fromJson(needs.construct-matrix.outputs.matrix)}}
     defaults:
       run:
         shell: bash -el {0}
@@ -35,7 +95,7 @@ jobs:
           path: binaries
       - uses: conda-incubator/setup-miniconda@v3
         with:
-          python-version: ${{ matrix.python-version }}
+          python-version: ${{ matrix.python_version }}
       - name: Get conda environment path
         id: conda-info
         run: |
@@ -49,9 +109,9 @@ jobs:
         uses: actions/cache/restore@v3
         with:
           path: ${{ steps.conda-info.outputs.conda-env-path }}
-          key: conda-${{ matrix.os }}-py${{ matrix.python-version }}-arcgis${{ steps.arcgis-info.outputs.latest-version }}-${{ hashFiles('.github/workflows/unit-test.yaml', 'environment.yml', 'build/arcgis/meta.yaml', 'src/requirements.txt', 'src/setup.py') }}
+          key: conda-${{ matrix.os }}-py${{ matrix.python_version }}-arcgis${{ steps.arcgis-info.outputs.latest-version }}-${{ hashFiles('.github/workflows/unit-test.yaml', 'environment.yml', 'build/arcgis/meta.yaml', 'src/requirements.txt', 'src/setup.py') }}
           restore-keys: |
-            conda-${{ matrix.os }}-py${{ matrix.python-version }}-arcgis${{ steps.arcgis-info.outputs.latest-version }}-
+            conda-${{ matrix.os }}-py${{ matrix.python_version }}-arcgis${{ steps.arcgis-info.outputs.latest-version }}-
       - name: Install dependencies
         run: |
           conda install -c main nose2 --yes
@@ -72,30 +132,37 @@ jobs:
           path: ${{ steps.conda-info.outputs.conda-env-path }}
           key: ${{ steps.restore-cache.outputs.cache-primary-key }}
         if: steps.restore-cache.outputs.cache-hit != 'true'
+      - name: Copy binary dependencies
+        if: runner.os == 'Linux' || runner.os == 'macOS'
+        run: |
+          cp ./binaries/linux/py${{ matrix.python_version }}/graph/* ./src/arcgis/graph
+          cp ./binaries/linux/py${{ matrix.python_version }}/knn/* ./src/arcgis/learn/_utils
+          cp ./binaries/linux/py${{ matrix.python_version }}/tracking-engine/* ./src/arcgis/learn/_tracking
+      - name: Copy binary dependencies
+        if: runner.os == 'Windows'
+        run: |
+          cp ./binaries/windows/py${{ matrix.python_version }}/graph/* ./src/arcgis/graph
+          cp ./binaries/windows/py${{ matrix.python_version }}/knn/* ./src/arcgis/learn/_utils
+          cp ./binaries/windows/py${{ matrix.python_version }}/tracking-engine/* ./src/arcgis/learn/_tracking
       - name: Install arcgis
         run: |
-          # copy binaries to relevant paths
-          cp ./binaries/${{ matrix.binary-os }}/py${{ matrix.python-version }}/graph/* ./src/arcgis/graph
-          cp ./binaries/${{ matrix.binary-os }}/py${{ matrix.python-version }}/knn/* ./src/arcgis/learn/_utils
-          cp ./binaries/${{ matrix.binary-os }}/py${{ matrix.python-version }}/tracking-engine/* ./src/arcgis/learn/_tracking
-
           python -m pip install -e ./src --no-deps
       - name: Run smoke tests
         working-directory: ./tests
         run: |
-          python -m nose2 -s smoke --plugin nose2.plugins.junitxml --junit-xml --junit-xml-path=smoke_py${{ matrix.python-version }}_${{ runner.os }}_testreport.xml
+          python -m nose2 -s smoke --plugin nose2.plugins.junitxml --junit-xml --junit-xml-path=smoke_py${{ matrix.python_version }}_${{ runner.os }}_testreport.xml
         env:
           TEST_ARCGIS_LEARN: false
       - name: Run unit tests
         working-directory: ./tests
         run: |
-          python -m nose2 -s unit --plugin nose2.plugins.junitxml --junit-xml --junit-xml-path=unit_py${{ matrix.python-version }}_${{ runner.os }}_testreport.xml
+          python -m nose2 -s unit --plugin nose2.plugins.junitxml --junit-xml --junit-xml-path=unit_py${{ matrix.python_version }}_${{ runner.os }}_testreport.xml
         # always run unit tests, except for cancellation
         if: success() || failure()
       - name: Upload test report
         uses: actions/upload-artifact@v4
         with:
-          name: test-results-py${{ matrix.python-version }}-${{ matrix.os }}
+          name: test-results-py${{ matrix.python_version }}-${{ matrix.os }}
           path: ./tests/*_testreport.xml
           if-no-files-found: ignore
           retention-days: 1
