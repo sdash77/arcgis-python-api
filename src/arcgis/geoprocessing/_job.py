@@ -965,9 +965,12 @@ class OMJob(GPJob):
                         item_info = mission_json["items"][key]
                         if "itemId" in item_info.keys():
                             item_object = mission._gis.content.get(item_info["itemId"])
-                            deleted = item_object.delete()
-                            if deleted:
-                                mission_json["items"].update({key: {}})
+                            try:
+                                if item_object:
+                                    deleted = item_object.delete()
+                            except:
+                                pass
+                            mission_json["items"].update({key: {}})
 
             if item_name == "dsm" or item_name == "dtm" or item_name == "ortho":
                 if "items" in mission_json.keys():
@@ -978,13 +981,16 @@ class OMJob(GPJob):
                                 item_object = mission._gis.content.get(
                                     item_info["itemId"]
                                 )
-                                deleted = item_object.delete()
-                                if deleted:
-                                    mission_json["items"].update({key: {}})
-                                    if key in mission_json["jobs"].keys():
-                                        mission_json["jobs"].update(
-                                            {key: {"checked": False}}
-                                        )
+                                try:
+                                    if item_object:
+                                        deleted = item_object.delete()
+                                except:
+                                    pass
+                                mission_json["items"].update({key: {}})
+                                if key in mission_json["jobs"].keys():
+                                    mission_json["jobs"].update(
+                                        {key: {"checked": False}}
+                                    )
 
             if processing_states is not None:
                 mission_json["processingSettings"].update(
