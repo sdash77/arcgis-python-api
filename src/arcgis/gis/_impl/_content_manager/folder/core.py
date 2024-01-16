@@ -823,7 +823,7 @@ class Folders:
     @lru_cache(maxsize=255)
     def _me(self) -> dict[str, Any]:
         """Gets the logged in user."""
-        url: str = f"{self._gis._portal.resturl}/community/self"
+        url: str = f"{self._gis._portal.resturl}community/self"
         params = {
             "f": "json",
         }
