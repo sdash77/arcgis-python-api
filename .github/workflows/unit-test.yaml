@@ -103,6 +103,7 @@ jobs:
           fi
           echo "matrix=$matrix" >> $GITHUB_OUTPUT
   test:
+    name: Run unit tests on ${{ matrix.os }} with Python ${{ matrix.python_version }}
     runs-on: ${{ matrix.os }}
     timeout-minutes: 30
     needs: [preflight]
@@ -114,17 +115,21 @@ jobs:
       run:
         shell: bash -el {0}
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout code
+        uses: actions/checkout@v4
         if: github.event_name == 'pull_request'
         with:
           ref: ${{ github.event.pull_request.head.sha }}
-      - uses: actions/checkout@v4
+      - name: Checkout code
+        uses: actions/checkout@v4
         if: github.event_name == 'workflow_dispatch' || github.event_name == 'schedule'
-      - uses: actions/checkout@v4
+      - name: Checkout binaries
+        uses: actions/checkout@v4
         with:
           ref: binaries/main
           path: binaries
-      - uses: conda-incubator/setup-miniconda@v3
+      - name: Configure conda
+        uses: conda-incubator/setup-miniconda@v3
         with:
           python-version: ${{ matrix.python_version }}
       - name: Get conda environment path
@@ -201,6 +206,7 @@ jobs:
         if: success() || failure()
 
   report:
+    name: Publish test reports
     needs: test
     if: success() || failure()
     runs-on: ubuntu-latest
