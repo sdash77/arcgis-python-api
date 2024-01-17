@@ -41,7 +41,7 @@ on:
 
 jobs:
   preflight:
-    name: Run preflight configuration
+    name: Run test preflight configuration
     runs-on: ubuntu-latest
     outputs:
       matrix: ${{ steps.set-matrix.outputs.matrix }}
@@ -102,8 +102,7 @@ jobs:
             matrix=$(echo $matrix | jq '.python_version |= ["3.11"]' | jq -r tostring)
           fi
           echo "matrix=$matrix" >> $GITHUB_OUTPUT
-  test:
-    name: Run unit tests on ${{ matrix.os }} with Python ${{ matrix.python_version }}
+  unit-test:
     runs-on: ${{ matrix.os }}
     timeout-minutes: 30
     needs: [preflight]
@@ -207,7 +206,7 @@ jobs:
 
   report:
     name: Publish test reports
-    needs: test
+    needs: [unit-test]
     if: success() || failure()
     runs-on: ubuntu-latest
     permissions:
