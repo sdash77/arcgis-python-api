@@ -101,6 +101,7 @@ _agol_profile_parameters = ("agol", "your_online_profile")
 _agol_admin_profile_parameters = ("agol_admin", "your_online_admin_profile")
 _enterprise_profile_parameters = ("enterprise", "your_enterprise_profile")
 _enterprise_admin_profile_parameters = ("enterprise_admin", "your_ent_admin_profile")
+_k8s_profile_parameters = ("k8s", "your_kubernetes_profile")
 
 
 # endregion
@@ -118,3 +119,4 @@ enterprise_and_agol_profiles = _get_profile_parameterized_class(
 admin_enterprise_and_agol_profiles = _get_profile_parameterized_class(
     _agol_admin_profile_parameters, _enterprise_admin_profile_parameters
 )
+k8s_profile = _get_profile_parameterized_class(_k8s_profile_parameters)
