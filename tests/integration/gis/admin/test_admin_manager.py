@@ -23,9 +23,10 @@ from arcgis.gis.admin._wh import WebhookManager
 from arcgis.gis.server.sm import ServerManager
 from arcgis._impl.common._isd import InsensitiveDict
 from datetime import datetime
-from utils.decorators import admin_enterprise_and_agol_profiles
+from utils.decorators import admin_enterprise_and_agol_profiles, default_timeout_class
 
 @admin_enterprise_and_agol_profiles
+@default_timeout_class
 class TestAdminManager(unittest.TestCase):
     @classmethod
     def setUpClass(self):

@@ -84,13 +84,14 @@ def timeout(seconds=None, use_signals=True, timeout_exception=TimeoutError, exce
                     if new_seconds:
                         signal.setitimer(signal.ITIMER_REAL, 0)
                         signal.signal(signal.SIGALRM, old)
-            return new_function
         else:
             @wraps(function)
             def new_function(*args, **kwargs):
                 timeout_wrapper = _Timeout(function, timeout_exception, exception_message, seconds)
                 return timeout_wrapper(*args, **kwargs)
-            return new_function
+        # adding timeout_set to skip adding timeout_class
+        new_function.timeout_set = True
+        return new_function
 
     return decorate
 
@@ -173,3 +174,28 @@ class _Timeout(object):
             if flag:
                 return load
             raise load
+
+###################################
+# begin class decorator, not included in https://github.com/pnpnpn/timeout-decorator
+# inspired by https://stackoverflow.com/a/18912081
+###################################
+import inspect
+
+def decorate_all_with(decorator, predicate=None):
+    """Apply a decorator to all methods that satisfy a predicate, if given."""
+
+    if predicate is None:
+        predicate = lambda _: True
+
+    def decorate_all(cls):
+        for name, method in [func for func in inspect.getmembers(cls, inspect.isfunction) if func[0].startswith('test')]:
+            if predicate(method):
+                setattr(cls, name, decorator(method))
+
+        return cls
+
+    return decorate_all
+
+def timeout_class(seconds=None, use_signals=True, timeout_exception=TimeoutError, exception_message=None):
+    _timeout = timeout(seconds=seconds, use_signals=use_signals, timeout_exception=timeout_exception, exception_message=exception_message)
+    return decorate_all_with(_timeout, predicate=lambda method: getattr(method, 'timeout_set', False) is False)

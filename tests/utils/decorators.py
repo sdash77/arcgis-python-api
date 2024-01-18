@@ -1,18 +1,29 @@
 from os import environ
 from parameterized import parameterized, parameterized_class
 from unittest import SkipTest
-from .timeout_decorator import timeout as _timeout
+from .timeout_decorator import timeout as _timeout, timeout_class as _timeout_class
 from arcgis.gis import GIS
 from arcgis.auth.tools._util import detect_proxy
 
 PROXIES = detect_proxy(True)  # Handles Fiddler when True
 
+DEFAULT_TIMEOUT_SECONDS = 60
+EXTENDED_TIMEOUT_SECONDS = 300
+MAXIMUM_TIMEOUT_SECONDS = 600
+
 def timeout(seconds):
     """Decorator that will timeout a test after a specified number of seconds"""
     return _timeout(seconds=seconds, timeout_exception=SkipTest, exception_message=f"Aborting test, timed out at {seconds} seconds")
-default_timeout = timeout(60)
-extended_timeout = timeout(300)
-maximum_timeout = timeout(600)
+default_timeout = timeout(DEFAULT_TIMEOUT_SECONDS)
+extended_timeout = timeout(EXTENDED_TIMEOUT_SECONDS)
+maximum_timeout = timeout(MAXIMUM_TIMEOUT_SECONDS)
+
+def timeout_class(seconds):
+    """Decorator that will timeout all tests in a class after a specified number of seconds"""
+    return _timeout_class(seconds=seconds, timeout_exception=SkipTest, exception_message=f"Aborting test, timed out at {seconds} seconds")
+default_timeout_class = timeout_class(DEFAULT_TIMEOUT_SECONDS)
+extended_timeout_class = timeout_class(EXTENDED_TIMEOUT_SECONDS)
+maximum_timeout_class = timeout_class(MAXIMUM_TIMEOUT_SECONDS)
 
 # region credential property definitions
 _credentials_properties = ("connection_name", "portal_url", "username", "password")
