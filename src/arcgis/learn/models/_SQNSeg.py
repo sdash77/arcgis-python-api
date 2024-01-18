@@ -21,6 +21,7 @@ try:
     from pathlib import Path
     from .._utils.common import _get_emd_path
     from .._data import _raise_fastai_import_error
+    from copy import deepcopy
 
     HAS_FASTAI = True
 except Exception as e:
@@ -93,8 +94,9 @@ class SQNSeg(PointCNN):
         self.encoder_params["num_classes"] = data.c
         if not isinstance(data, _EmptyData):
             data = prepare_data_dict(
-                data, self.sample_point_num, self.encoder_params, is_sqn=True
+                deepcopy(data), self.sample_point_num, self.encoder_params, is_sqn=True
             )
+        self._data = data
         self.learn = Learner(
             data,
             SQNRandLANet(self.encoder_params, data.extra_dim + 3),
