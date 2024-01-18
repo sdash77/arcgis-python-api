@@ -60,6 +60,13 @@ _agol_api_key_credential_parameters = (
 )
 # endregion
 
+_gis_by_profile = {}
+def _get_gis(profile):
+    """Returns a gis for a profile"""
+    if profile not in _gis_by_profile:
+        _gis_by_profile[profile] = GIS(profile=profile, verify_cert=False, proxy=PROXIES)
+    return _gis_by_profile[profile]
+    
 
 # region parameterized_class constructors
 def _get_profile_parameterized_class(*args):
@@ -72,7 +79,7 @@ def _get_profile_parameterized_class(*args):
     for profile_config in [*args]:
         try:
             profile_config += (
-                GIS(profile=profile_config[1], verify_cert=False, proxy=PROXIES),
+                _get_gis(profile_config[1]),
                 PROXIES,
             )
             gis_set = True
