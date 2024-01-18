@@ -779,11 +779,17 @@ class ChildImageClassifier:
             "prithvi100m_sen1floods",
             "prithvi100m",
         ]
-        prithvi = True if model_info.get("Kwargs")["model"] in prithvimod else False
 
+        prithvi = (
+            True
+            if model_info.get("Kwargs", {}).get("model", None) in prithvimod
+            else False
+        )
+        # For all Prithvi models excluding the Crop classification model
         if (
             prithvi
-            and model_info.get("Kwargs")["model"] != "prithvi100m_crop_classification"
+            and model_info.get("Kwargs", {}).get("model", None)
+            != "prithvi100m_crop_classification"
             and input_image_tensor.max() > 1
         ):
             input_image_tensor = input_image_tensor / 10000
