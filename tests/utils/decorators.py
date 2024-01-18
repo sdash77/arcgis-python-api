@@ -10,8 +10,9 @@ PROXIES = detect_proxy(True)  # Handles Fiddler when True
 def timeout(seconds):
     """Decorator that will timeout a test after a specified number of seconds"""
     return _timeout(seconds=seconds, timeout_exception=SkipTest, exception_message=f"Aborting test, timed out at {seconds} seconds")
-default_timeout = timeout(300)
-extended_timeout = timeout(600)
+default_timeout = timeout(60)
+extended_timeout = timeout(300)
+maximum_timeout = timeout(600)
 
 # region credential property definitions
 _credentials_properties = ("connection_name", "portal_url", "username", "password")
