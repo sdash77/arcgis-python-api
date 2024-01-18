@@ -193,7 +193,7 @@ class Mission:
             for key in mission_json["items"].keys():
                 if key == product:
                     item_info = mission_json["items"][key]
-                    if "itemId" in item_info.keys():
+                    if isinstance(item_info, dict) and "itemId" in item_info.keys():
                         item_object = self._gis.content.get(item_info["itemId"])
                         deleted = item_object.delete()
                         if deleted:
@@ -202,6 +202,8 @@ class Mission:
                                 mission_json["jobs"].update({key: {"checked": False}})
                             self._update_mission_json(mission_json)
                             return True
+                    elif item_info is None:
+                        return False
         return False
 
     def delete(self):
@@ -224,27 +226,37 @@ class Mission:
 
             item_dict = mission_json.get("items", {})
 
-            image_collection_item_id = item_dict.get("imageCollection", {}).get(
-                "itemId", None
-            )
+            image_collection_item_id = None
+            ic_info = item_dict.get("imageCollection", {})
+            if isinstance(ic_info, dict):
+                image_collection_item_id = ic_info.get("itemId", None)
 
             image_collection_item = None
             if image_collection_item_id is not None:
                 image_collection_item = gis.content.get(image_collection_item_id)
 
-            dsm_item_id = item_dict.get("dsm", {}).get("itemId", None)
+            dsm_item_id = None
+            dsm_info = item_dict.get("dsm", {})
+            if isinstance(dsm_info, dict):
+                dsm_item_id = dsm_info.get("itemId", None)
 
             dsm_item = None
             if dsm_item_id is not None:
                 dsm_item = gis.content.get(dsm_item_id)
 
-            dtm_item_id = item_dict.get("dtm", {}).get("itemId", None)
+            dtm_item_id = None
+            dtm_info = item_dict.get("dtm", {})
+            if isinstance(dtm_info, dict):
+                dtm_item_id = dtm_info.get("itemId", None)
 
             dtm_item = None
             if dtm_item_id is not None:
                 dtm_item = gis.content.get(dtm_item_id)
 
-            ortho_item_id = item_dict.get("ortho", {}).get("itemId", None)
+            ortho_item_id = None
+            ortho_info = item_dict.get("ortho", {})
+            if isinstance(ortho_info, dict):
+                ortho_item_id = ortho_info.get("itemId", None)
 
             ortho_item = None
             if ortho_item_id is not None:
@@ -605,13 +617,34 @@ class Mission:
 
         if gpjob.done():
             try:
+                gps_data = []
+                gps_info_list = ["name", "lat", "long", "alt", "acq"]
+                if not gps_data:
+                    try:
+                        lyr = image_collection.layers[0]
+                        gps_info = lyr.query_gps_info()["images"]
+                        for img_info in gps_info:
+                            from arcgis.raster._util import _to_datetime
+
+                            acq = _to_datetime(img_info["acquisitionDate"]).isoformat()
+                            gps = img_info["gps"]
+                            name = img_info["name"]
+                            lat = gps["latitude"]
+                            long = gps["longitude"]
+                            alt = gps["altitude"]
+                            gps_val = [name, lat, long, alt, acq]
+                            dict_gps = dict(zip(gps_info_list, gps_val))
+                            gps_data.append(dict_gps)
+                    except:
+                        gps_data = mission_json["sourceData"]["gps"]
+
                 from datetime import datetime
 
                 lyr = image_collection.layers[0]
 
                 image_count = lyr.query(return_count_only=True)
                 mission_json = mission._mission_json
-                ##########mission_json["sourceData"]["gps"].append(gps_data)
+                mission_json["sourceData"]["gps"] = gps_data
                 mission_json["sourceData"]["imageCount"] = image_count
 
                 ## Set extent
