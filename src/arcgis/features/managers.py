@@ -2346,8 +2346,8 @@ class FeatureLayerCollectionManager(_GISResource):
         import os
         from . import FeatureLayerCollection
 
-        regex = r"^[-a-zA-Z0-9_]*$"
-        if len(re.findall(regex, name)) == 0:
+        regex: str = r"[$&+,:;=?@#|'<>.^*()%!-]"
+        if len(re.findall(regex, name)) > 0:
             raise ValueError(
                 "The service `name` cannot contain any spaces or special characters except underscores."
             )
