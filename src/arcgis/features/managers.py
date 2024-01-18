@@ -2319,7 +2319,7 @@ class FeatureLayerCollectionManager(_GISResource):
 
         .. code-block:: python  (optional)
 
-           USAGE EXAMPLE: Create a veiw from a hosted feature layer
+           USAGE EXAMPLE: Create a view from a hosted feature layer
 
            crime_fl_item = gis.content.search("2012 crime")[0]
            crime_flc = FeatureLayerCollection.fromitem(crime_fl_item)
@@ -2390,11 +2390,11 @@ class FeatureLayerCollectionManager(_GISResource):
                     "isUpdatableView": updateable,
                     "spatialReference": spatial_reference,
                     "initialExtent": extent or fs.properties["initialExtent"],
-                    "capabilities": capabilities or fs.properties["capabilties"],
+                    "capabilities": capabilities or fs.properties["capabilities"],
                     "preserveLayerIds": preserve_layer_ids,
                 }
             ),
-            "tags": tags if tags else item.tags,
+            "tags": tags if tags else ",".join(item.tags),
             "snippet": snippet if snippet else item.snippet,
             "description": description if description else item.description,
             "outputType": "featureService",
@@ -2636,7 +2636,7 @@ class FeatureLayerCollectionManager(_GISResource):
                 ] + [
                     {"name": fld["name"], "visible": False}
                     for fld in self.layers[0].properties["fields"]
-                    if not fld["name"].lower() in [f.lower() for f in visible_fields]
+                    if fld["name"].lower() not in [f.lower() for f in visible_fields]
                 ]
             else:
                 values["fields"] = [
