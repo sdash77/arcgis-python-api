@@ -4,7 +4,7 @@ import os
 import json
 import mimetypes
 from functools import lru_cache
-
+from typing import Any
 import requests
 from arcgis.auth import EsriSession
 from arcgis.auth.tools import LazyLoader

@@ -1,21 +1,23 @@
 from __future__ import annotations
 import time
-import concurrent.futures
+import logging
 import requests
+import concurrent.futures
 from typing import Any
 from arcgis.auth import EsriSession
 from arcgis.auth.tools import LazyLoader
 
 _arcgis = LazyLoader("arcgis")
+_log = logging.getLogger()
 
 
 ###########################################################################
 class PublishJob(object):
     """
-    Represents a Single Editing Job.  The `EditFeatureJob` class allows for the
-    asynchronous operation of the :meth:`~arcgis.features.FeatureLayer.edit_features`
-    method. This class is not intended for users to initialize directly, but is
-    retuned by :meth:`~arcgis.features.FeatureLayer.edit_features` when `future=True`.
+    Represents a Single Publishing Job.  The `PublishJo` class allows for the
+    asynchronous operation of the `publish` method. This class is not
+    intended for users to initialize directly, but is returned by
+    :meth:`~arcgis.gis._impl._content_manager.publish`.
 
 
     ================  ===============================================================
@@ -23,7 +25,13 @@ class PublishJob(object):
     ----------------  ---------------------------------------------------------------
     session           Required EsriSession.  The connection object to use
     ----------------  ---------------------------------------------------------------
-    connection        The GIS connection object.
+    payload           Required dict. The response JSON from the `publish` method.
+    ----------------  ---------------------------------------------------------------
+    status_url        Required str. The URL of the status endpoint.
+    ----------------  ---------------------------------------------------------------
+    job_id            Required str.  The unique identifier of the job to watch.
+    ----------------  ---------------------------------------------------------------
+    gis               Required GIS. The GIS object for the organization doing the work.
     ================  ===============================================================
 
     """
@@ -55,11 +63,12 @@ class PublishJob(object):
         if job_id is None and payload.get("type", "Map Service") != "Map Service":
             raise ValueError("job_id cannot be NULL")
 
-    def _cache_status(self, manager) -> bool:
+    def _cache_status(self, manager) -> bool | dict:
         """
         Checks the cache status.
         """
         i: int = 1
+        has_error: bool = True
         while True:
             res: list = []
             if i < 5:
@@ -68,19 +77,32 @@ class PublishJob(object):
             manager._hydrated = False
             time.sleep(i * 1)
             for lod in manager.properties.get("lodInfos", []):
-                res.append(
-                    lod.get("status", "failed").lower()
-                    in [
-                        "failed",
-                        "complete",
-                        "failure",
-                        "error",
-                        "completed",
-                    ]
-                )
+                if lod.get("status", "failed").lower() in [
+                    "complete",
+                    "completed",
+                ]:
+                    res.append(True)
+                elif lod.get("status", "failed").lower() in [
+                    "failed",
+                    "failure",
+                    "error",
+                ]:
+                    res.append(True)
+                    has_error = True
+                    _log.warning(
+                        f"The caching process encountered an issue on LOD: {lod}"
+                    )
+                else:
+                    res.append(False)  #  still processing/waiting
             if all(res):
-                return True
-        return manager.properties
+                break
+        if all(res) and has_error == False:
+            return True
+        else:
+            _log.warning(
+                f"The caching process encountered an issue. Please see the manager's properties to triage the issue."
+            )
+            return False
 
     def build_cache(
         self,
