@@ -11252,7 +11252,7 @@ class User(dict):
         ----------------  --------------------------------------------------------
         report_type       Required String. The type of organizational report to
                           generate. The allowed arguments are:
-                          
+
                           * *credits*
                           * *content*
                           * *users*
@@ -11260,29 +11260,29 @@ class User(dict):
         ----------------  --------------------------------------------------------
         start_time        Required Datetime. The time from which the report
                           generates information.
-                          
+
                           * If *duration* is *weekly*, the day component must
                             evaluate to a *Sunday* or *Monday* UTC
                           * If *duration* is *monthly*, the day component must
                             evaluate to the first of the month
-                            
+
                           .. note::
                               Values must be in the UTC timezone.
-                          
+
                           If argument is not provided:
-                          
+
                           * and *duration* is either *weekly* or *monthly*,
                             the report will generate from the closest Sunday.
                           * and *duration* is *daily*, the report will
-                            generate from the current day/time in UTC. 
+                            generate from the current day/time in UTC.
         ----------------  --------------------------------------------------------
         duration          Optional String. The time frame for which the reports are
                           created.  The allowed values are:
-                          
+
                           * *monthly*
                           * *weekly*
                           * *daily* - only available if *report_type* is *activity*
-                          
+
                           .. note::
                               Argument is required when setting *report_type*
                               argument to *activity* or *credits*.
@@ -11295,25 +11295,25 @@ class User(dict):
 
             >>> import datetime as _dt
             >>> from arcgis.gis import GIS
-            
+
             >>> gis = GIS(profile="your_online_admin_profile")
-            
+
             >>> org_users = gis.users.search("*")
             >>> org_user = org_users[3]
-            
+
             >>> sept22 = _dt.datetime(2022, 9, 1, 16)
-            
+
             >>> content_report = org_user.report(report_type = "content",
                                                  start_time = sept22,
                                                  duration = "monthly")
-            
+
             # Usage Example #2
             >>> sun_dec10 = _dt.datetime(2023, 12, 10, 17)
-            
+
             >>> activity_report = org_user.report(report_type = "activity",
                                                   start_time = sun_dec10,
                                                   duration = "weekly")
-            
+
         :return:
             :class: A *CSV* `~arcgis.gis.Item` that can be downloaded.
 
