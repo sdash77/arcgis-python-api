@@ -1,12 +1,13 @@
 import unittest
 from arcgis.gis.admin._dsmgr import DataStoreMetricsManager
-from utils.decorators import admin_agol_profile
+from utils.decorators import admin_agol_profile, integration_test
 from utils.logging import enable_verbose_logging
 
 
 enable_verbose_logging()
 
 @admin_agol_profile
+@integration_test
 class TestAGOLDatastoreMetrics(unittest.TestCase):
     def test_dmm(self):
         """tests the admin endpoint for the metric manager"""

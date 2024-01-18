@@ -25,6 +25,11 @@ default_timeout_class = timeout_class(DEFAULT_TIMEOUT_SECONDS)
 extended_timeout_class = timeout_class(EXTENDED_TIMEOUT_SECONDS)
 maximum_timeout_class = timeout_class(MAXIMUM_TIMEOUT_SECONDS)
 
+# integration_test decorator marks a test as an integration test
+# currently only sets the default timeout for the test
+# call additional default decorators as needed
+integration_test = default_timeout_class
+
 # region credential property definitions
 _credentials_properties = ("connection_name", "portal_url", "username", "password")
 _profiles_properties = ("profile_description", "profile")
