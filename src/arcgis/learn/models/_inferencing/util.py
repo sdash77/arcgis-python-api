@@ -60,7 +60,7 @@ def scale_batch(
 
 
 def normalize_batch(
-    image_batch, model_info=None, normalization_stats=None, prithivi=False
+    image_batch, model_info=None, normalization_stats=None, prithvi=False
 ):
     if normalization_stats is None:
         normalization_stats = model_info.get("NormalizationStats", None)
@@ -70,7 +70,7 @@ def normalize_batch(
     scaled_std_values = np.array(normalization_stats["scaled_std_values"])[
         model_info["ExtractBands"]
     ].reshape(1, -1, 1, 1)
-    if prithivi:
+    if prithvi:
         img_normed = (image_batch - scaled_mean_values) / scaled_std_values
         return img_normed
     else:
