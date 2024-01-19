@@ -1,10 +1,10 @@
 import unittest
 from arcgis.gis import GIS
 from arcgis.auth import EsriAPIKeyAuth, EsriSession, EsriKerberosAuth
-from utils.decorators import agol_api_key_credentials
+from utils.decorators import credentials
 
 
-@agol_api_key_credentials
+@credentials.agol_api_key
 class TestApiKey(unittest.TestCase):
     """Tests working with the API Key"""
 

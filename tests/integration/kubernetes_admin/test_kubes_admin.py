@@ -2,9 +2,9 @@ import unittest
 from arcgis.gis.kubernetes._admin.kadmin import KubernetesAdmin
 from arcgis.gis.kubernetes._admin._system import SystemManager
 from arcgis.gis.kubernetes._admin._adaptors import WebAdaptorManager
-from utils.decorators import k8s_profile
+from utils.decorators import profiles
 
-@k8s_profile
+@profiles.k8s
 class TestKubernetesAdmin(unittest.TestCase):
     """General Test Cases for Kubernetes"""
 

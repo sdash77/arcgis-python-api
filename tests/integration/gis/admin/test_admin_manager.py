@@ -23,9 +23,9 @@ from arcgis.gis.admin._wh import WebhookManager
 from arcgis.gis.server.sm import ServerManager
 from arcgis._impl.common._isd import InsensitiveDict
 from datetime import datetime
-from utils.decorators import admin_enterprise_and_agol_profiles, integration_test
+from utils.decorators import profiles, integration_test
 
-@admin_enterprise_and_agol_profiles
+@profiles.admin_enterprise_and_agol
 @integration_test
 class TestAdminManager(unittest.TestCase):
     @classmethod

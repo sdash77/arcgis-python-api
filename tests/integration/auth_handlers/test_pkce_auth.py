@@ -1,13 +1,13 @@
 import unittest
 from arcgis.auth import EsriPKCEAuth, EsriSession
 from arcgis.gis import GIS
-from utils.decorators import enterprise_and_agol_profiles
+from utils.decorators import profiles
 from utils.logging import enable_verbose_logging
 
 enable_verbose_logging()
 
 
-@enterprise_and_agol_profiles
+@profiles.enterprise_and_agol
 class TestPkceAuthHandler(unittest.TestCase):
     def test_esri_session(self):
         """tests the esri session auth"""

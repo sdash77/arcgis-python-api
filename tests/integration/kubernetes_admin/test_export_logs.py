@@ -1,12 +1,12 @@
 import sys
 import os
 import unittest
-from utils.decorators import k8s_profile, default_timeout
+from utils.decorators import profiles, default_timeout
 from utils.logging import enable_verbose_logging
 
 enable_verbose_logging()
 
-@k8s_profile
+@profiles.k8s
 class TestKubernetesExportLogs(unittest.TestCase):
     @default_timeout
     def test_export_log(self):
