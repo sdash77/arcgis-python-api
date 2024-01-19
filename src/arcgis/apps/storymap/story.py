@@ -744,6 +744,7 @@ class StoryMap(object):
                 Content.Timeline,
                 Content.Sidecar,
                 Content.Code,
+                Content.Table,
             ]
         ] = None,
         caption: Optional[str] = None,
@@ -773,10 +774,8 @@ class StoryMap(object):
                             :class:`~arcgis.apps.storymap.story_content.Sidecar`
                             :class:`~arcgis.apps.storymap.story_content.Swipe`,
                             :class:`~arcgis.apps.storymap.story_content.Separator`,
-                            :class:`~arcgis.apps.storymap.story_content.Code`
-
-
-                            If none is provided, a separator is added.
+                            :class:`~arcgis.apps.storymap.story_content.Code`,
+                            :class:`~arcgis.apps.storymap.story_content.Table`
         ---------------     --------------------------------------------------------------------
         caption             Optional String. Custom text to caption the webmap.
         ---------------     --------------------------------------------------------------------

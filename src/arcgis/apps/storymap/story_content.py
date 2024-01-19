@@ -16,6 +16,7 @@ os = LazyLoader("os")
 io = LazyLoader("io")
 _parse = LazyLoader("urllib.parse")
 utils = LazyLoader("arcgis.apps.storymap._utils")
+pd = LazyLoader("pandas")
 
 
 class Language(Enum):
@@ -3998,7 +3999,7 @@ class Code:
     Code will show as a block of code in your Storymap.
 
     .. note::
-        Once you create an Code instance you must add it to the story to be able to edit it further.
+        Once you create a Code instance you must add it to the story to be able to edit it further.
 
     ==================      ====================================================================
     **Parameter**            **Description**
@@ -4590,3 +4591,170 @@ class Block:
         ] = self._content
 
         return True
+
+
+###############################################################################################################
+class Table:
+    """
+    Class representing a `table block`.
+    Table will show as a gridded table in your Storymap.
+
+    .. note::
+        Once you create a Table instance you must add it to the story to be able to edit it further.
+
+    ==================      ====================================================================
+    **Parameter**            **Description**
+    ------------------      --------------------------------------------------------------------
+    rows                    Optional int. The number of rows in the table. Table supports a maximum
+                            of 10 rows. Minimum of 2 rows supported.
+    ------------------      --------------------------------------------------------------------
+    columns                 Optional int. The number of columns in the table. Table supports a
+                            maximum of 8 columns. Minimum of 1 column supported.
+    ==================      ====================================================================
+    """
+
+    def __init__(
+        self,
+        rows: Optional[int] = None,
+        columns: Optional[int] = None,
+        **kwargs,
+    ):
+        # Can be created from scratch or already exist in story
+        # Code is not an immersive node
+        self._story = kwargs.pop("story", None)
+        self._type = "table"
+        self.node = kwargs.pop("node_id", None)
+        # If node doesn't already exist, create new instance
+        self._existing = self._check_node()
+        if self._existing is True:
+            self._numRows = self._story._properties["nodes"][self.node]["data"][
+                "numRows"
+            ]
+            self._numColumns = self._story._properties["nodes"][self.node]["data"][
+                "numColumns"
+            ]
+            self._cells = (
+                self._story._properties["nodes"][self.node]["data"]["cells"]
+                if "cells" in self._story._properties["nodes"][self.node]["data"]
+                else {}
+            )
+        else:
+            # Create new instance, notice no resource node is needed for code
+            self._numRows = rows if rows and (rows > 2 and rows <= 10) else 2
+            self._numColumns = (
+                columns if columns and (columns > 1 and columns <= 8) else 1
+            )
+            self._cells = {}
+            self.node = "n-" + uuid.uuid4().hex[0:6]
+
+    # ----------------------------------------------------------------------
+    @property
+    def content(self):
+        """
+        Get the content of the table as a panda's DataFrame.
+        Each cell content is held within a dictionary where the
+        'value' key is the text of the cell. The other key that can be included in
+        the dictionary is the 'textAlignment' key.
+
+        ===============     ====================================================================
+        **Parameter**        **Description**
+        ---------------     --------------------------------------------------------------------
+        content             Required pandas DataFrame. The content of the table as a pandas
+                            DataFrame. The index of the DataFrame will be the row headers and
+                            the columns of the DataFrame will be the column headers.
+        ===============     ====================================================================
+
+        """
+        if self._existing is True:
+            df = pd.DataFrame.from_dict(
+                self._cells,
+                orient="index",
+                columns=[f"{i}" for i in range(self._numColumns)],
+            )
+            # Iterate through the DataFrame
+            for column in df.columns:
+                for index, cell_value in enumerate(df[column]):
+                    # Check if the cell value is a dictionary and has the key "value"
+                    if isinstance(cell_value, dict) and "value" in cell_value:
+                        # Update the value key to be an instance of the text class
+                        df.at[str(index), column]["value"] = Text(cell_value["value"])
+            return df
+
+    # ----------------------------------------------------------------------
+    @content.setter
+    def content(self, content: pd.DataFrame):
+        if self._existing is True and isinstance(content, pd.DataFrame):
+            # check that the number of rows and columns didn't change, if so update
+            if (
+                content.shape[0] != self._numRows
+                or content.shape[1] != self._numColumns
+            ):
+                # add check that rows are not more than 10 and columns are not more than 8.
+                if content.shape[0] > 10 or content.shape[0] < 2:
+                    raise ValueError("A table can only have between 2-10 rows.")
+                if content.shape[1] > 8 or content.shape[1] < 1:
+                    raise ValueError("A table can only have between 1-8 columns.")
+
+                # Update the number of rows and columns
+                self._numRows = content.shape[0]
+                self._numColumns = content.shape[1]
+                self._story._properties["nodes"][self.node]["data"][
+                    "numRows"
+                ] = self._numRows
+                self._story._properties["nodes"][self.node]["data"][
+                    "numColumns"
+                ] = self._numColumns
+            # First go through each cell and if the value is a text instance, keep only the text
+            for column in content.columns:
+                for index, cell_value in enumerate(content[column]):
+                    if not isinstance(cell_value, dict):
+                        raise ValueError(
+                            "The content of each cell must be a dictionary. The text is held in the key 'value'."
+                        )
+                    if isinstance(cell_value["value"], Text):
+                        content.at[str(index), column]["value"] = cell_value[
+                            "value"
+                        ]._text
+            # convert the dataframe to a dictionary
+            self._cells = content.to_dict(orient="index")
+            self._story._properties["nodes"][self.node]["data"]["cells"] = self._cells
+
+    # ----------------------------------------------------------------------
+    def __str__(self) -> str:
+        return "Table"
+
+    # ----------------------------------------------------------------------
+    def __repr__(self) -> str:
+        return self.__str__()
+
+    # ----------------------------------------------------------------------
+    def delete(self):
+        """
+        Delete the node
+
+        :return: True if successful.
+        """
+        return self._story._delete(self.node)
+
+    # ----------------------------------------------------------------------
+    def _add_to_story(self, story=None, **kwargs):
+        self._story = story
+        self._existing = True
+        # Create embed node, no resource node needed
+        self._story._properties["nodes"][self.node] = {
+            "type": "table",
+            "data": {
+                "numRows": self._numRows,
+                "numColumns": self._numColumns,
+            },
+            "config": {"size": "full"},
+        }
+
+    # ----------------------------------------------------------------------
+    def _check_node(self):
+        if self._story is None:
+            return False
+        elif self.node is None:
+            return False
+        else:
+            return True
