@@ -106,6 +106,8 @@ class credentials:
         return parameterized_class(
             _credentials_properties,
             [*args],
+            # default test name is {class_name}_{index}_{connection_name}; override to remove index:
+            class_name_func=lambda cls, _, param: f"{cls.__name__}_{parameterized.to_safe_name(param['connection_name'])}",
         )
 
     # region decorators
@@ -189,6 +191,8 @@ class profiles:
         return parameterized_class(
             __profiles_properties,
             _profiles_values,
+            # default test name is {class_name}_{index}_{profile_description}; override to remove index:
+            class_name_func=lambda cls, _, param: f"{cls.__name__}_{parameterized.to_safe_name(param['profile_description'])}",
         )
 
     # region decorators
