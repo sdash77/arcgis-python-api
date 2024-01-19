@@ -6,14 +6,16 @@ import json
 import tempfile
 
 from datetime import datetime
-from typing import Optional
+from typing import Optional, Any, Iterator
 from .._impl._con import Connection
 from ...gis import GIS, Item, User
 from ._resources import PortalResourceManager
 from ._base import BasePortalAdmin
 from ...apps.tracker._location_tracking import LocationTrackingManager
 from ._dsmgr import DataStoreMetricsManager
+from ._partnercollab import PartneredCollabManager
 from arcgis.auth.tools import LazyLoader
+import urllib.parse
 
 _pd = LazyLoader("pandas")
 
@@ -34,6 +36,7 @@ class AGOLAdminManager(object):
     :param collaborations: the CollaborationManager object (optional)
     """
 
+    _collabmgr: PartneredCollabManager | None = None
     _con = None
     _gis = None
     _ux = None
@@ -62,14 +65,14 @@ class AGOLAdminManager(object):
         self.resources = PortalResourceManager(gis=self._gis)
 
     # ----------------------------------------------------------------------
-    def __str__(self):
+    def __str__(self) -> str:
         return "< %s @ %s >" % (
             type(self).__name__,
             self._gis._portal.resturl,
         )
 
     # ----------------------------------------------------------------------
-    def __repr__(self):
+    def __repr__(self) -> str:
         return "< %s @ %s >" % (
             type(self).__name__,
             self._gis._portal.resturl,
@@ -77,7 +80,7 @@ class AGOLAdminManager(object):
 
     # ----------------------------------------------------------------------
     @property
-    def ux(self):
+    def ux(self) -> "UX":
         """returns a UX/UI manager
 
         :return:
@@ -89,6 +92,19 @@ class AGOLAdminManager(object):
 
             self._ux = UX(gis=self._gis)
         return self._ux
+
+    # ----------------------------------------------------------------------
+    @property
+    def partnered_collaboration(self) -> PartneredCollabManager:
+        """
+        returns a manager to work with partnered collaboration
+
+        :return: PartneredCollabManager
+        """
+        if self._collabmgr is None:
+            url: str = self._gis.resturl + "portal/self/tustedOrgs"
+            self._collabmgr = PartneredCollabManager(url=url, gis=self._gis)
+        return self._collabmgr
 
     # ----------------------------------------------------------------------
     @property
@@ -158,6 +174,55 @@ class AGOLAdminManager(object):
         return self._collaborations
 
     # ----------------------------------------------------------------------
+    def content(
+        self,
+        item_type: "ItemTypeEnum" | None = None,
+        sort_field: str | None = "created",
+        order: str | None = "asc",
+    ) -> Iterator[dict[str, Any]]:
+        """
+        The portal content operation allows an administrator to return a
+        list of all items in the organization. Only available to
+        administrators with a privilege to view all items in the
+        organization.
+
+        ===========================     ====================================================================
+        **Parameter**                    **Description**
+        ---------------------------     --------------------------------------------------------------------
+        item_type                       Optional ItemTypeEnum. The item type to filter by.
+        ---------------------------     --------------------------------------------------------------------
+        sort_field                      Optional String. Field to sort by.
+        ---------------------------     --------------------------------------------------------------------
+        order                           Optional String. The sort order of the return data.
+        ===========================     ====================================================================
+
+        """
+        params: dict = {
+            "sortField": sort_field or "",
+            "sortOrder": order or "",
+            "f": "json",
+            "start": 1,
+            "num": 100,
+        }
+
+        if item_type:
+            params["types"] = item_type.value
+        url: str = f"{self._gis._portal.resturl}content/portals/{self._gis.properties.get('id')}"
+        session = self._gis._con._session
+        resp = session.get(url=url, params=params)
+        resp.raise_for_status()
+        data: dict = resp.json()
+
+        while data["items"]:
+            for i in data["items"]:
+                yield Item(gis=self._gis, itemid=i["id"], itemdict=i)
+            if data.get("nextStart") == -1:
+                break
+            params["start"] = data["nextStart"]
+            resp = session.get(url=url, params=params)
+            data: dict = resp.json()
+
+    # ----------------------------------------------------------------------
     @property
     def category_schema(self):
         """
@@ -203,8 +268,8 @@ class AGOLAdminManager(object):
         """
         return LocationTrackingManager(self._gis)
 
-    @property
     # ----------------------------------------------------------------------
+    @property
     def social_providers(self):
         """
         This resource allows for the setting and configuration of the social providers

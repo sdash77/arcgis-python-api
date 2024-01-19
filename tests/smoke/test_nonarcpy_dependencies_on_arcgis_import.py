@@ -51,7 +51,7 @@ class TestNonarcpyDependenciesOnArcgisImport(unittest.TestCase):
     def test_no_fastai(self):
         try:
             configure_imports(
-                __import__real=self.__import__real, modules_to_raise_importerrors=["fastai"]
+                __import__real=self.__import__real, modules_to_raise_importerrors=["fastai"], modules_to_return_magicmocks=[] if should_smoketest_arcgis_learn() else ["torch", "torchvision", "timm"]
             )
             builtins.__import__ = ic
             clear_arcgis_import_cache()

@@ -156,6 +156,20 @@ PasswordPolicy
     :undoc-members:
     :show-inheritance:
 
+PartneredCollabManager
+----------------------
+.. autoclass:: arcgis.gis.admin.PartneredCollabManager
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+PartneredCollaboration
+----------------------
+.. autoclass:: arcgis.gis.admin.PartneredCollaboration
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
 PortalResourceManager
 ---------------------
 .. autoclass:: arcgis.gis.admin.PortalResourceManager
