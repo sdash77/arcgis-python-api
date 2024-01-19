@@ -58,6 +58,18 @@ def _get_gis(profile):
 
 
 class credentials:
+    """
+    A set of decorators that inject credentials into tests.
+
+    Sets the following properties on the test class:
+    self.connection_name: the unique connection name, appended to the test name (e.g. agol, enterprise)
+    self.portal_url: the portal url
+    self.username: the username
+    self.password: the password
+
+    If multiple credentials are injected, the test will be run once for each credential.
+    """
+
     _enterprise_credential_parameters = (
         "enterprise",
         environ.get(
@@ -83,6 +95,7 @@ class credentials:
     )
 
     def _get_credentials_parameterized_class(*args):
+        """Returns a parameterized class for the credentials parameters from provided args"""
         _credentials_properties = (
             "connection_name",
             "portal_url",
@@ -95,30 +108,53 @@ class credentials:
             [*args],
         )
 
+    # region decorators
     @classproperty
     def enterprise(cls):
+        """Run tests for enterprise credentials"""
         return cls._get_credentials_parameterized_class(
             cls._enterprise_credential_parameters
         )
 
     @classproperty
     def agol(cls):
+        """Run tests for agol credentials"""
         return cls._get_credentials_parameterized_class(cls._agol_credential_parameters)
 
     @classproperty
     def enterprise_and_agol(cls):
+        """Run tests for enterprise and agol credentials"""
         return cls._get_credentials_parameterized_class(
             cls._agol_credential_parameters, cls._enterprise_credential_parameters
         )
 
     @classproperty
     def agol_api_key(cls):
+        """
+        Run tests for agol api key credential
+
+        Note: self.password represents the api key; no username is required
+        """
         return cls._get_credentials_parameterized_class(
             cls._agol_api_key_credential_parameters
         )
 
+    # endregion
+
 
 class profiles:
+    """
+    A set of decorators that inject profiles into tests.
+
+    Sets the following properties on the test class:
+    self.profile_description: the unique profile description, appended to the test name (e.g. agol, agol_admin, enterprise)
+    self.profile: the profile name
+    self.gis: the GIS for the profile, if connection is successful
+    self.proxies: the detected proxies, if any
+
+    If multiple profiles are injected, the test will be run once for each profile.
+    """
+
     _agol_profile_parameters = ("agol", "your_online_profile")
     _agol_admin_profile_parameters = ("agol_admin", "your_online_admin_profile")
     _enterprise_profile_parameters = ("enterprise", "your_enterprise_profile")
@@ -155,36 +191,46 @@ class profiles:
             _profiles_values,
         )
 
+    # region decorators
     @classproperty
     def admin_agol(cls):
+        """Run tests for agol admin profile"""
         return cls._get_profile_parameterized_class(cls._agol_admin_profile_parameters)
 
     @classproperty
     def agol(cls):
+        """Run tests for agol profile"""
         return cls._get_profile_parameterized_class(cls._agol_profile_parameters)
 
     @classproperty
     def admin_enterprise(cls):
+        """Run tests for enterprise admin profile"""
         return cls._get_profile_parameterized_class(
             cls._enterprise_admin_profile_parameters
         )
 
     @classproperty
     def enterprise(cls):
+        """Run tests for enterprise profile"""
         return cls._get_profile_parameterized_class(cls._enterprise_profile_parameters)
 
     @classproperty
     def enterprise_and_agol(cls):
+        """Run tests for enterprise and agol profiles"""
         return cls._get_profile_parameterized_class(
             cls._agol_profile_parameters, cls._enterprise_profile_parameters
         )
 
     @classproperty
     def admin_enterprise_and_agol(cls):
+        """Run tests for enterprise and agol admin profiles"""
         return cls._get_profile_parameterized_class(
             cls._agol_admin_profile_parameters, cls._enterprise_admin_profile_parameters
         )
 
     @classproperty
     def k8s(cls):
+        """Run tests for kubernetes profile"""
         return cls._get_profile_parameterized_class(cls._k8s_profile_parameters)
+
+    # endregion

@@ -1,19 +1,17 @@
 import unittest
-from utils.decorators import enterprise_and_agol_profiles, integration_test
+from utils.decorators import profiles, integration_test
 from utils.logging import enable_verbose_logging
 
 enable_verbose_logging()
 
 
-@enterprise_and_agol_profiles
+@profiles.enterprise_and_agol
 # ^^^ runs tests for each profile
 # sets `self.profile` to the profile name
 # sets `self.gis` to the GIS for the profile, if connection is successful
 # sets `self.proxies` to the detected proxies, if any
-# other profile decorators:
-# @admin_enterprise_and_agol_profiles
-# @k8s_profile
-# see tests/utils/decorators.py for additional decorators
+# 
+# see tests/utils/decorators.py for available credential and profile decorators
 @integration_test
 # ^^^ marks the test as an integration test
 # sets the default timeout for the test
