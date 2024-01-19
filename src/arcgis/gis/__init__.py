@@ -15222,7 +15222,7 @@ class Item(dict):
 
             if item_properties is not None:
                 if "tags" in item_properties:
-                    if type(item_properties["tags"]) is list:
+                    if isinstance(item_properties["tags"], list):
                         item_properties["tags"] = ",".join(item_properties["tags"])
                 if "access" in item_properties:
                     access = item_properties.pop("access")
