@@ -71,32 +71,27 @@ class StoryMap(object):
         gis: Optional[arcgis.gis.GIS] = None,
     ):
         # Section: Set up gis
+        self._setup_gis(gis)
+        self._setup_storymap(item)
+
+    def _setup_gis(self, gis):
         if gis is None:
             # If no gis, find active env
             gis = arcgis.env.active_gis
             self._gis = gis
-        else:
-            self._gis = gis
-        if gis is None or gis._portal.is_logged_in is False:
-            # Check to see if user is authenticated
-            raise Exception("Must be logged into a Portal Account")
 
-        # Section: Set up existing story
+        if not (gis and gis._portal.is_logged_in):
+            raise ValueError("Must be logged into a Portal Account")
+
+    def _setup_storymap(self, item):
         if item and isinstance(item, str):
             # Get item using the item id
-            item = gis.content.get(item)
+            item = self._gis.content.get(item)
             if item is None:
                 # Error with storymap in current gis
-                raise ValueError(
-                    "Cannot find storymap associated with this item id in your portal. Please check it is correct."
-                )
+                raise ValueError("Cannot find storymap associated with this item id.")
         if item and isinstance(item, arcgis.gis.Item) and item.type == "StoryMap":
-            # Set item properties from existing item
-            self._item = item
-            self._itemid = self._item.itemid
-            self._resources = self._item.resources.list()
-            # Create existing story
-            self._create_existing_storymap()
+            self._setup_existing_storymap(item)
         elif (
             item
             and isinstance(item, arcgis.gis.Item)
@@ -111,104 +106,107 @@ class StoryMap(object):
         self._url = self._get_url()
 
     # ----------------------------------------------------------------------
-    def _create_existing_storymap(self):
-        # Get properties from most recent resource file.
-        # Can have multiple drafts so need to account for this.
-        # Draft file will be of form: draft_{13 digit timestamp}.json or draft.json
-        saved_drafts = []
-        for resource in self._resources:
-            for key, val in resource.items():
-                # Find all drafts in the resources and add to a list
-                if key == "resource" and (
-                    re.match("draft_[0-9]{13}.json", val) or re.match("draft.json", val)
-                ):
-                    saved_drafts.append(val)
-        # Find the correct draft to use
-        if len(saved_drafts) == 1:
-            # Only one draft saved
-            # Open JSON draft file for properties
-            data = self._item.resources.get(saved_drafts[0], try_json=True)
-            self._properties = data
-        elif len(saved_drafts) > 1:
-            # Multiple drafts saved
-            # Remove draft.json because oldest one
-            if "draft.json" in saved_drafts:
-                idx = saved_drafts.index("draft.json")
-                del saved_drafts[idx]
-            # check remaining to find most recent
-            start = saved_drafts[0][6:19]  # get only timestamp
-            current = saved_drafts[0]
-            for draft in saved_drafts:
-                compare = draft[6:19]
-                if start < compare:
-                    start = compare
-                    current = draft
-            # Open most recent JSON draft file for properties
-            data = self._item.resources.get(current, try_json=True)
-            self._properties = data
+    def _setup_existing_storymap(self, item):
+        saved_drafts = [
+            resource["resource"]
+            for resource in item.resources.list()
+            if self._is_draft(resource["resource"])
+        ]
+
+        if saved_drafts:
+            current_draft = self._get_most_recent_draft(saved_drafts)
+            self._properties = item.resources.get(current_draft, try_json=True)
         else:
-            # Storymap has no draft json so look for published json
-            data = self._item.resources.get("published_data.json", try_json=True)
-            self._properties = data
+            self._properties = item.resources.get("published_data.json", try_json=True)
+        self._item = item
+        self._itemid = item.itemid
+
+    @staticmethod
+    def _is_draft(resource):
+        return re.match(r"draft_[0-9]{13}\.json|draft\.json", resource)
+
+    def _get_most_recent_draft(self, drafts):
+        drafts.remove("draft.json") if "draft.json" in drafts else None
+        return max(drafts, key=lambda x: x[6:19]) if drafts else None
 
     # ----------------------------------------------------------------------
     def _create_new_storymap(self):
-        # Get template from _ref folder
-        template = copy.deepcopy(arcgis.apps.storymap._ref.storymap_2)
-        # Add correct by-line and locale
-        template["nodes"]["n-aTn8ak"]["data"]["byline"] = self._gis._username
-        template["nodes"]["n-4xkUEe"]["config"]["storyLocale"] = (
-            self._gis.users.me.culture if self._gis.users.me.culture else "en-US"
-        )
+        # Step 1: Get template from _ref folder
+        template = self._get_storymap_template()
 
-        # Create unique story node id
-        story_node = "n-" + uuid.uuid4().hex[0:6]
-        template["root"] = story_node
-        template["nodes"][story_node] = template["nodes"]["n-4xkUEe"]
-        del template["nodes"]["n-4xkUEe"]
-        # Set properties for the story
+        # Step 2: Customize template
+        self._customize_template(template)
+
+        # Step 3: Create a unique story node id
+        self._create_unique_story_node(template)
+
+        # Step 4: Set properties for the story
         self._properties = template
-        # Create text for resource call
-        text = json.dumps(template)
-        # Create a temporary title
-        title = "StoryMap via Python %s" % uuid.uuid4().hex[:10]
-        # Create draft resource name
-        draft = "draft_" + str(int(time.time() * 1000)) + ".json"
-        # Will be posted as a draft
-        sm_version = self._gis._con.get("https://storymaps.arcgis.com/version")[
-            "version"
-        ]
-        keywords = ",".join(
-            [
-                "arcgis-storymaps",
-                "StoryMap",
-                "Web Application",
-                "smstatusdraft",
-                "smversiondraft:" + sm_version,
-                "python-api",
-                "smeditorapp:python-api-" + arcgis.__version__,
-                "smdraftresourceid:" + draft,
-            ]
-        )
-        # Get default thumbnail for a new item
+
+        # Step 5: Create a temporary title
+        title = f"StoryMap via Python {uuid.uuid4().hex[:10]}"
+
+        # Step 6: Create draft resource name
+        draft = f"draft_{int(time.time() * 1000)}.json"
+
+        # Step 7: Set keywords
+        keywords = self._get_keywords(draft)
+
+        # Step 8: Get default thumbnail for a new item
         thumbnail = self._get_thumbnail()
-        # Set the item properties dict to add new item to active gis
+
+        # Step 9: Set the item properties
         item_properties = {
             "title": title,
             "typeKeywords": keywords,
             "type": "StoryMap",
         }
-        # Add item to active gis and set properties
-        item = self._gis.content.add(
+
+        # Step 10: Add item to active GIS and set properties
+        self._item = self._gis.content.add(
             item_properties=item_properties, thumbnail=thumbnail
         )
-        # Assign to story properties
-        self._item = item
-        self._itemid = item.itemid
-        # Make a resource call with the template to create json draft needed
-        utils._add_resource(self, resource_name=draft, text=text, access="private")
-        # Assign resources to item
+        self._itemid = self._item.itemid
+
+        # Step 11: Make a resource call with the template to create json draft needed
+        utils._add_resource(
+            self, resource_name=draft, text=json.dumps(template), access="private"
+        )
+
+        # Step 12: Assign resources to item
         self._resources = self._item.resources.list()
+
+    def _get_storymap_template(self):
+        return copy.deepcopy(arcgis.apps.storymap._ref.storymap_2)
+
+    def _customize_template(self, template):
+        template["nodes"]["n-aTn8ak"]["data"]["byline"] = self._gis._username
+        template["nodes"]["n-4xkUEe"]["config"]["storyLocale"] = (
+            self._gis.users.me.culture or "en-US"
+        )
+
+    def _create_unique_story_node(self, template):
+        story_node = "n-" + uuid.uuid4().hex[:6]
+        template["root"] = story_node
+        template["nodes"][story_node] = template["nodes"]["n-4xkUEe"]
+        del template["nodes"]["n-4xkUEe"]
+
+    def _get_keywords(self, draft):
+        sm_version = self._gis._con.get("https://storymaps.arcgis.com/version")[
+            "version"
+        ]
+        return ",".join(
+            [
+                "arcgis-storymaps",
+                "StoryMap",
+                "Web Application",
+                "smstatusdraft",
+                f"smversiondraft:{sm_version}",
+                "python-api",
+                f"smeditorapp:python-api-{arcgis.__version__}",
+                f"smdraftresourceid:{draft}",
+            ]
+        )
 
     # ----------------------------------------------------------------------
     def _repr_html_(self):
@@ -245,7 +243,7 @@ class StoryMap(object):
             )
         else:
             # Enterprise
-            self._url = "https://{portal}/apps/storymaps/stories/{storyid}".format(
+            self._url = "{portal}/apps/storymaps/stories/{storyid}".format(
                 portal=self._gis.url, storyid=self._itemid
             )
         return self._url
@@ -316,7 +314,11 @@ class StoryMap(object):
         """
         # story_locale is found in story node (i.e. root node id)
         root = self._properties["root"]
-        return self._properties["nodes"][root]["config"]["storyLocale"]
+        return (
+            self._properties["nodes"][root]["config"]["storyLocale"]
+            if "storyLocale" in self._properties["nodes"][root]["config"]
+            else "en-US"
+        )
 
     # ----------------------------------------------------------------------
     @story_locale.setter
@@ -366,20 +368,11 @@ class StoryMap(object):
         """
         contents = []
         # get the values from the nodes list and return only these
-        nodes = self._create_node_dict()
+        nodes = utils._create_node_dict(self)
         for node in nodes:
             content = list(node.values())[0]
             contents.append(content)
         return contents
-
-    # ----------------------------------------------------------------------
-    def _create_node_dict(self):
-        """
-        Method called by the nodes property and the get method. However, the nodes
-        property will transform the keys whereas the get method needs they keys
-        to be class instances.
-        """
-        return utils._create_node_dict(self)
 
     # ----------------------------------------------------------------------
     @property
@@ -654,65 +647,86 @@ class StoryMap(object):
             >>> story = StoryMap()
             >>> story.credits("Python Dev" , "Python API Team", "Thank You", "A big thank you to those who contributed")
         """
+        # Validate parameters
+        if (heading is None and description is not None) or (
+            heading is not None and description is None
+        ):
+            raise ValueError(
+                "Both heading and description should be provided if one is provided."
+            )
+
+        # Find credit node
+        credits_node_id = self._get_credits_node_id()
+
+        # Get existing children or initialize an empty list
+        children = self._properties["nodes"][credits_node_id].get("children", [])
+
+        # Add content and attribution if provided
+        nodes = self._add_content_and_attribution(content, attribution)
+
+        # Update or add heading
+        self._update_or_add_heading(heading, children)
+
+        # Update or add description
+        self._update_or_add_description(description, children)
+
+        # Add nodes to children of credits
+        self._properties["nodes"][credits_node_id]["children"].extend(nodes)
+        return self._properties["nodes"][credits_node_id]["children"]
+
+    def _get_credits_node_id(self):
         # Find credit node
         dict_node = self.get(type="credits")[0]
         # Get credit node id
         for key, value in dict_node.items():
-            credits_node = key
-        if "children" in self._properties["nodes"][credits_node]:
-            children = self._properties["nodes"][credits_node]["children"]
-        else:
-            children = []
+            return key
 
+    def _generate_unique_node_id(self):
+        return "n-" + uuid.uuid4().hex[:6]
+
+    def _add_content_and_attribution(self, content, attribution):
         nodes = []
         if content or attribution:
             # Create new content node
-            node = "n-" + uuid.uuid4().hex[0:6]
-            self._properties["nodes"][node] = {
+            node_id = self._generate_unique_node_id()
+            self._properties["nodes"][node_id] = {
                 "type": "attribution",
                 "data": {"content": content, "attribution": attribution},
             }
-            nodes.append(node)
+            nodes.append(node_id)
+        return nodes
 
+    def _update_or_add_heading(self, heading, children):
         # Create new heading and remove old one
         if heading:
             # Create new content node
-            node = "n-" + uuid.uuid4().hex[0:6]
-            self._properties["nodes"][node] = {
+            # Create new heading node
+            node_id = self._generate_unique_node_id()
+            self._properties["nodes"][node_id] = {
                 "type": "text",
                 "data": {"text": heading, "type": "h4"},
             }
-            nodes.append(node)
-            # Find and remove node corresponding to current heading
-            for child in children:
-                if (
-                    self._properties["nodes"][child]["type"] == "text"
-                    and self._properties["nodes"][child]["data"]["type"] == "h4"
-                ):
-                    del self._properties["nodes"][child]
-                    self._properties["nodes"][credits_node]["children"].remove(child)
+            children = self._update_or_remove_node(children, "text", "h4")
 
+    def _update_or_add_description(self, description, children):
         if description:
-            # Create new content node
-            node = "n-" + uuid.uuid4().hex[0:6]
-            self._properties["nodes"][node] = {
+            # Create new description node
+            node_id = self._generate_unique_node_id()
+            self._properties["nodes"][node_id] = {
                 "type": "text",
                 "data": {"text": description, "type": "paragraph"},
             }
-            nodes.append(node)
-            # Find and remove node corresponding to current heading
-            for child in children:
-                if (
-                    self._properties["nodes"][child]["type"] == "text"
-                    and self._properties["nodes"][child]["data"]["type"] == "paragraph"
-                ):
-                    del self._properties["nodes"][child]
-                    self._properties["nodes"][credits_node]["children"].remove(child)
+            children = self._update_or_remove_node(children, "text", "paragraph")
 
-        # Add to children of credits
-        for node_id in nodes:
-            self._properties["nodes"][credits_node]["children"].append(node_id)
-        return self._properties["nodes"][credits_node]["children"]
+    def _update_or_remove_node(self, children, node_type, data_type):
+        for child in children:
+            if (
+                self._properties["nodes"][child]["type"] == node_type
+                and self._properties["nodes"][child]["data"]["type"] == data_type
+            ):
+                del self._properties["nodes"][child]
+                children.remove(child)
+        return children
 
     # ----------------------------------------------------------------------
     def add(
@@ -812,32 +826,10 @@ class StoryMap(object):
         node_id = content.node if content is not None else "n-" + uuid.uuid4().hex[0:6]
 
         # Find instance of content and call correct method
-        if isinstance(content, Content.Image):
-            content._add_image(caption, alt_text, display, self)
-        elif isinstance(content, Content.Gallery):
-            content._add_gallery(caption, alt_text, display, self)
-        elif isinstance(content, Content.Video):
-            content._add_video(caption, alt_text, display, self)
-        elif isinstance(content, Content.Audio):
-            content._add_audio(caption, alt_text, display, self)
-        elif isinstance(content, Content.Map):
-            content._add_map(caption, alt_text, display, story=self)
-        elif isinstance(content, Content.Embed):
-            content._add_link(caption, alt_text, display, self)
-        elif isinstance(content, Content.Button):
-            content._add_button(self)
-        elif isinstance(content, Content.Text):
-            content._add_text(self)
-        elif isinstance(content, Content.Timeline):
-            content._add_timeline(self)
-        elif isinstance(content, Content.Sidecar):
-            content._add_sidecar(self)
-        elif isinstance(content, Content.Swipe):
-            content._add_swipe(caption, alt_text, display, self)
-        elif isinstance(content, Content.Code):
-            content._add_code(story=self)
-        elif isinstance(content, Content.Table):
-            content._add_table(story=self)
+        if content:
+            content._add_to_story(
+                story=self, caption=caption, alt_text=alt_text, display=display
+            )
         else:
             content = Content.Separator(story=self, node_id=node_id)
             content._add_separator(story=self)
@@ -910,7 +902,7 @@ class StoryMap(object):
         This method will save your Story Map to your active GIS. The story will be saved
         with unpublished changes unless `publish` parameter is specified to True.
 
-        The title only needs to be specified if a change is wanted, otherwise exisiting title
+        The title only needs to be specified if a change is wanted, otherwise existing title
         is used.
 
         .. warning::

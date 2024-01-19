@@ -1,17 +1,19 @@
 from __future__ import annotations
 from enum import Enum
+import struct
 from typing import Optional, Union
 import uuid
 from arcgis.auth.tools import LazyLoader
 
 arcgis = LazyLoader("arcgis")
+briefing = LazyLoader("arcgis.apps.storymap.briefing")
 urllib3 = LazyLoader("urllib3")
 requests = LazyLoader("requests")
 mimetypes = LazyLoader("mimetypes")
-pil_image = LazyLoader("PIL.Image")
+puremagic = LazyLoader("puremagic")
 html = LazyLoader("html")
 os = LazyLoader("os")
-_io = LazyLoader("io")
+io = LazyLoader("io")
 _parse = LazyLoader("urllib.parse")
 utils = LazyLoader("arcgis.apps.storymap._utils")
 pd = LazyLoader("pandas")
@@ -19,7 +21,7 @@ pd = LazyLoader("pandas")
 
 class Language(Enum):
     """
-    Represents the supported Languages for the Code Block.
+    Represents the supported Languages for the Code Content.
     """
 
     TEXT = "txt"
@@ -44,7 +46,7 @@ class Language(Enum):
 
 class TextStyles(Enum):
     """
-    Represents the Supported Text Styles Type Enumerations.
+    Represents the Supported Text Styles for the Text Content.
     Example: Text(text="foo", style=TextStyles.HEADING)
     """
 
@@ -59,10 +61,12 @@ class TextStyles(Enum):
 
 class Scales(Enum):
     """
-    Scale is a unitless way of describing how any distance on the map translates
+    Scale is a unit-less way of describing how any distance on the map translates
     to a real-world distance. For example, a map at a 1:24,000 scale communicates that 1 unit
     on the screen represents 24,000 of the same unit in the real world.
     So one inch on the screen represents 24,000 inches in the real world.
+
+    This can be used for methods involving viewpoint in the Map Content.
     """
 
     WORLD = {"scale": 147914382, "zoom": 2}
@@ -89,10 +93,34 @@ class Scales(Enum):
     ROOM = {"scale": 100, "zoom": 22}
 
 
+class LayoutType(Enum):
+    """
+    This depicts the various layout types that can be used for a BriefingSlide.
+    """
+
+    SINGLE = "single"
+    DOUBLE = "double"
+
+
+class SublayoutType(Enum):
+    """
+    Depicts the various subtypes for a BriefingSlide. For example, if the layout type is
+    `DOUBLE` then the sublayout type can be `THREE_SEVEN` or `SEVEN_THREE` or `ONE_ONE`.
+    """
+
+    THREE_SEVEN = "3-7"
+    SEVEN_THREE = "7-3"
+    ONE_ONE = "1-1"
+
+
 ###############################################################################################################
 class Separator:
     """
+    Add a subtle break in between different sections of your story. The exact look of the separator will vary based on the theme you have chosen.
+
     Class representing a `separator`. You can use this class to edit and remove separators from a storymap.
+    This refers to the main separator content type that can be added to a story. For timeline separators use
+    the Timeline class.
     """
 
     def __init__(self, **kwargs) -> None:
@@ -104,10 +132,10 @@ class Separator:
 
     # ----------------------------------------------------------------------
     def __repr__(self) -> str:
-        return "Image"
+        return "Separator"
 
     # ----------------------------------------------------------------------
-    def _add_separator(self, story=None):
+    def _add_to_story(self, story=None, **kwargs):
         # Assign the story
         self._story = story
 
@@ -150,7 +178,7 @@ class Image:
         self._story = kwargs.pop("story", None)
         self._type = "image"
         # Keep track if URL since different representation style in story dictionary
-        self._url = False
+        self._is_url = False
         self.node = kwargs.pop("node_id", None)
         # If node exists in story, then create from resources and node dictionary provided.
         # If node doesn't already exist, create a new instance.
@@ -167,8 +195,8 @@ class Image:
                 == "uri"
             ):
                 # Indicate that the image comes from a url
-                self._url = True
-            if self._url is True:
+                self._is_url = True
+            if self._is_url is True:
                 # Path differs whether from file path or url originally
                 self._path = self._story._properties["resources"][self.resource_node][
                     "data"
@@ -185,7 +213,7 @@ class Image:
 
             # Determine if url or file path
             if _parse.urlparse(self._path).scheme == "https":
-                self._url = True
+                self._is_url = True
 
     # ----------------------------------------------------------------------
     def __str__(self) -> str:
@@ -234,7 +262,7 @@ class Image:
             The image that is being used.
         """
         if self._existing is True:
-            if self._url is False:
+            if self._is_url is False:
                 return self._story._properties["resources"][self.resource_node]["data"][
                     "resourceId"
                 ]
@@ -280,7 +308,7 @@ class Image:
     @property
     def alt_text(self):
         """
-        Get/Set the alternte text property for the image.
+        Get/Set the alternate text property for the image.
 
         ==================  ========================================
         **Parameter**        **Description**
@@ -328,12 +356,18 @@ class Image:
         return utils._delete(self._story, self.node)
 
     # ----------------------------------------------------------------------
-    def _add_image(self, caption=None, alt_text=None, display=None, story=None):
+    def _add_to_story(self, story, **kwargs):
         # Assign the story
         self._story = story
         self._existing = True
+
+        # Get parameters
+        caption = kwargs.pop("caption", None)
+        alt_text = kwargs.pop("alt_text", None)
+        display = kwargs.pop("display", None)
+
         # Make an add resource call if not url
-        if self._url is False:
+        if self._is_url is False:
             utils._add_resource(self._story, self._path)
 
         # Create image nodes. This is similar for file path and url
@@ -348,121 +382,156 @@ class Image:
         }
 
         # Create resource node. Different if file path or url
-        if self._url is False:
+        width, height = self._get_image_dimensions(self._path)
+        if self._is_url is False:
             # Get image properties and create the resourceId that corresponds to the resource added
-            im = pil_image.open(self._path)
-            w, h = im.size
             self._story._properties["resources"][self.resource_node] = {
                 "type": "image",
                 "data": {
                     "resourceId": os.path.basename(os.path.normpath(self._path)),
                     "provider": "item-resource",
-                    "height": h,
-                    "width": w,
+                    "height": height,
+                    "width": width,
                 },
             }
         else:
             # Get image properties and assign the image src
-            data = requests.get(self._path).content
-            im = pil_image.open(_io.BytesIO(data))
-            w, h = im.size
             self._story._properties["resources"][self.resource_node] = {
                 "type": "image",
                 "data": {
                     "src": self._path,
                     "provider": "uri",
-                    "height": h,
-                    "width": w,
+                    "height": height,
+                    "width": width,
                 },
             }
+
+    # ----------------------------------------------------------------------
+    def _get_image_dimensions(self, image_source):
+        if image_source.startswith("http://") or image_source.startswith("https://"):
+            # If the source is a URL, fetch the image data
+            response = requests.get(image_source)
+            if response.status_code == 200:
+                image_data = response.content
+            else:
+                print(f"Failed to fetch image from URL: {image_source}")
+                return None
+        else:
+            # Assume the source is a local file path
+            with open(image_source, "rb") as f:
+                image_data = f.read()
+
+        # Use puremagic to get MIME type
+        mime_info = puremagic.magic_string(image_data)[0]
+
+        # Check if it's an image
+        if mime_info.mime_type.startswith("image/"):
+            # Use BytesIO to create a file-like object for both local files and fetched data
+            with io.BytesIO(image_data) as image_file:
+                # Read the first few bytes to identify the image format
+                header = image_file.read(32)
+
+                if header.startswith(b"\xff\xd8\xff\xe0\x00\x10JFIF"):  # JPEG
+                    # Extract dimensions from the APP0 segment
+                    width, height = struct.unpack(">HH", header[7:11])
+                    return width, height
+
+                elif header.startswith(b"\x89PNG\r\n\x1a\n"):  # PNG
+                    # Extract dimensions from the IHDR chunk
+                    width, height = struct.unpack(">II", header[16:24])
+                    return width, height
+
+        return None
+
+    # ----------------------------------------------------------------------
+    def _update_url_date(self, new_image):
+        # New image is a Url
+        self._is_url = True
+        # Use puremagic to get image dimensions
+        width, height = self._get_image_dimensions(new_image)
+        self._update_dimensions(width, height)
+
+        # Update resource dictionary
+        self._update_resource_data(new_image)
+
+    # ----------------------------------------------------------------------
+    def _get_resource_id(self):
+        return (
+            self._story._properties["resources"][self.resource_node]["data"][
+                "resourceId"
+            ]
+            if "resourceId"
+            in self._story._properties["resources"][self.resource_node]["data"]
+            else None
+        )
+
+    # ----------------------------------------------------------------------
+    def _update_file_path_data(self, new_image):
+        # Update the height and width for the image
+        # Use puremagic to get image dimensions
+        width, height = self._get_image_dimensions(new_image)
+        self._update_dimensions(width, height)
+
+        # Update resource dictionary
+        resource_id = self._get_resource_id()
+        # Update where file path is held
+        self._story._properties["resources"][self.resource_node]["data"][
+            "resourceId"
+        ] = os.path.basename(os.path.normpath(new_image))
+        # Delete path if item was previously a url
+        if "src" in self._story._properties["resources"][self.resource_node]["data"]:
+            del self._story._properties["resources"][self.resource_node]["data"]["src"]
+        # Update provider
+        self._story._properties["resources"][self.resource_node]["data"][
+            "provider"
+        ] = "item-resource"
+        # Update the resource by removing old and adding new
+        if resource_id:
+            utils._remove_resource(self._story, resource_id)
+        utils._add_resource(self._story, new_image)
+
+    # ----------------------------------------------------------------------
+    def _update_dimensions(self, width, height):
+        self._story._properties["resources"][self.resource_node]["data"][
+            "height"
+        ] = height
+        self._story._properties["resources"][self.resource_node]["data"][
+            "width"
+        ] = width
+
+    # ----------------------------------------------------------------------
+    def _update_resource_data(self, new_image):
+        # Update resource dictionary
+        # Do not need to make a resource
+        self._story._properties["resources"][self.resource_node]["data"][
+            "src"
+        ] = new_image
+        # Delete if the image was previously a file path
+        if (
+            "resourceId"
+            in self._story._properties["resources"][self.resource_node]["data"]
+        ):
+            del self._story._properties["resources"][self.resource_node]["data"][
+                "resourceId"
+            ]
+        # Update provider
+        self._story._properties["resources"][self.resource_node]["data"][
+            "provider"
+        ] = "uri"
 
     # ----------------------------------------------------------------------
     def _update_image(self, new_image):
         # Check if new_image is url or path
         if _parse.urlparse(new_image).scheme == "https":
-            # New image is a Url
-            self._url = True
-            # Update the height and width for the image
-            data = requests.get(new_image).content
-            im = pil_image.open(_io.BytesIO(data))
-            w, h = im.size
-            self._story._properties["resources"][self.resource_node]["data"][
-                "height"
-            ] = h
-            self._story._properties["resources"][self.resource_node]["data"][
-                "width"
-            ] = w
-
-            # Update resource dictionary
-            # Do not need to make a resource
-            self._story._properties["resources"][self.resource_node]["data"][
-                "src"
-            ] = new_image
-            # Delete if the image was previously a file path
-            if (
-                "resouceId"
-                in self._story._properties["resources"][self.resource_node]["data"]
-            ):
-                del self._story._properties["resources"][self.resource_node]["data"][
-                    "resourceId"
-                ]
-            # Update provider
-            self._story._properties["resources"][self.resource_node]["data"][
-                "provider"
-            ] = "uri"
+            self._update_url_date(new_image)
         else:
-            # Update the height and width for the image
-            self._url = False
-            im = pil_image.open(new_image)
-            w, h = im.size
-            self._story._properties["resources"][self.resource_node]["data"][
-                "height"
-            ] = h
-            self._story._properties["resources"][self.resource_node]["data"][
-                "width"
-            ] = w
-
-            # Update resource dictionary
-            resource_id = (
-                self._story._properties["resources"][self.resource_node]["data"][
-                    "resourceId"
-                ]
-                if "resourceId"
-                in self._story._properties["resources"][self.resource_node]["data"]
-                else None
-            )
-            # Update where file path is held
-            self._story._properties["resources"][self.resource_node]["data"][
-                "resourceId"
-            ] = os.path.basename(os.path.normpath(new_image))
-            # Delete path if item was previously a url
-            if (
-                "src"
-                in self._story._properties["resources"][self.resource_node]["data"]
-            ):
-                del self._story._properties["resources"][self.resource_node]["data"][
-                    "src"
-                ]
-            # Update provider
-            self._story._properties["resources"][self.resource_node]["data"][
-                "provider"
-            ] = "item-resource"
-            # Update the resource by removing old and adding new
-            if resource_id:
-                utils._remove_resource(self._story, resource_id)
-            utils._add_resource(self._story, new_image)
+            self._update_file_path_data(new_image)
         # Set new path
-        self._path = new_image
+        return new_image
 
     # ----------------------------------------------------------------------
-    def _check_node(self):
-        # Node is not in the story if no story or node id is present
-        if self._story is None:
-            return False
-        elif self.node is None:
-            return False
-        else:
-            return True
+    def _check_node(self) -> bool:
+        return self._story is not None and self.node is not None
 
 
 ###############################################################################################################
@@ -493,7 +562,7 @@ class Video:
         self._story = kwargs.pop("story", None)
         self._type = "video"
         # Hold whether video is url, this will impact the dictionary structure
-        self._url = False
+        self._is_url = False
         self.node = kwargs.pop("node_id", None)
         # Check if node already in story, else create new instance
         self._existing = self._check_node()
@@ -510,13 +579,13 @@ class Video:
                 # Node is of embedType: video and video came from url
                 self.resource_node = None
                 self._path = self._story._properties["nodes"][self.node]["data"]["url"]
-                self._url = True
+                self._is_url = True
         else:
             # Create new instance of Video
             self._path = path
             self.node = "n-" + uuid.uuid4().hex[0:6]
             if _parse.urlparse(path).scheme == "https":
-                self._url = True
+                self._is_url = True
                 self.resource_node = None
             else:
                 self.resource_node = "r-" + uuid.uuid4().hex[0:6]
@@ -573,7 +642,7 @@ class Video:
         """
         if self._existing is True:
             if self.resource_node:
-                # If resouce node exists it means the video comes from a file path
+                # If resource node exists it means the video comes from a file path
                 return self._story._properties["resources"][self.resource_node]["data"][
                     "resourceId"
                 ]
@@ -618,7 +687,7 @@ class Video:
     @property
     def alt_text(self):
         """
-        Get/Set the alternte text property for the video.
+        Get/Set the alternate text property for the video.
 
         ==================  ========================================
         **Parameter**        **Description**
@@ -651,7 +720,7 @@ class Video:
             Cannot change display when video is created from a url
         """
         if self._existing is True:
-            if self._url is True:
+            if self._is_url is True:
                 return self._story._properties["nodes"][self.node]["data"]["display"]
             else:
                 return self._story._properties["nodes"][self.node]["config"]["size"]
@@ -660,7 +729,7 @@ class Video:
     @display.setter
     def display(self, display):
         if self._existing is True:
-            if self._url is True:
+            if self._is_url is True:
                 self._story._properties["nodes"][self.node]["data"]["display"] = display
         return self.display
 
@@ -674,64 +743,79 @@ class Video:
         return utils._delete(self._story, self.node)
 
     # ----------------------------------------------------------------------
-    def _add_video(
+    def _add_to_story(
         self,
-        caption=None,
-        alt_text=None,
-        display=None,
         story=None,
-        node_id=None,
-        resource_node=None,
+        **kwargs,
     ):
         # Add the story to the node
         self._story = story
         self._existing = True
-        if node_id:
-            # If node already exists (updating node)
-            self.node = node_id
-        if resource_node:
-            # If node already exists (updating node)
-            self.resource_node = resource_node
-        if self._url is False:
+        # Get parameters
+        caption = kwargs.pop("caption", None)
+        alt_text = kwargs.pop("alt_text", None)
+        display = kwargs.pop("display", None)
+
+        if not self._is_url:
             # Make an add resource call since it is a file path
             utils._add_resource(self._story, self._path)
 
             # Create video nodes for file path
-            self._story._properties["nodes"][self.node] = {
-                "type": "video",
-                "data": {
-                    "video": self.resource_node,
-                    "caption": "" if caption is None else caption,
-                    "alt": "" if alt_text is None else alt_text,
-                },
-                "config": {
-                    "size": display,
-                },
-            }
+            self._create_video_node(caption, alt_text, display)
 
             # Create resource node for file path
-            self._story._properties["resources"][self.resource_node] = {
-                "type": "video",
-                "data": {
-                    "resourceId": os.path.basename(os.path.normpath(self._path)),
-                    "provider": "item-resource",
-                },
-            }
+            self._create_resource_node()
         else:
-            # Path is a url so node will be type embed and embedType: video
-            # No resource call or resource node is made
-            self._story._properties["nodes"][self.node] = {
-                "type": "embed",
-                "data": {
-                    "url": self._path,
-                    "embedType": "video",
-                    "caption": "" if caption is None else caption,
-                    "alt": "" if alt_text is None else alt_text,
-                    "display": "inline",
-                    "aspectRatio": 1.778,
-                    "addedAsEmbedCode": True,
-                },
-            }
+            # Path is a URL, so create an embed node
+            self._create_embed_node(caption=caption, alt_text=alt_text)
+
+    # ----------------------------------------------------------------------
+    def _create_video_node(self, caption, alt_text, display):
+        """
+        Create a video node for a file path.
+        """
+        self._story._properties["nodes"][self.node] = {
+            "type": "video",
+            "data": {
+                "video": self.resource_node,
+                "caption": caption or "",
+                "alt": alt_text or "",
+            },
+            "config": {
+                "size": display,
+            },
+        }
+
+    # ----------------------------------------------------------------------
+    def _create_resource_node(self):
+        """
+        Create a resource node for a file path.
+        """
+        self._story._properties["resources"][self.resource_node] = {
+            "type": "video",
+            "data": {
+                "resourceId": os.path.basename(os.path.normpath(self._path)),
+                "provider": "item-resource",
+            },
+        }
+
+    # ----------------------------------------------------------------------
+    def _create_embed_node(self, caption=None, alt_text=None):
+        """
+        Create an embed node for a URL.
+        """
+        self._story._properties["nodes"][self.node] = {
+            "type": "embed",
+            "data": {
+                "url": self._path,
+                "embedType": "video",
+                "caption": caption or "",
+                "alt": alt_text or "",
+                "display": "inline",
+                "aspectRatio": 1.778,
+                "addedAsEmbedCode": True,
+            },
+        }
 
     # ----------------------------------------------------------------------
     def _update_video(self, new_video):
@@ -746,42 +830,54 @@ class Video:
             utils._remove_resource(self._story, resource_id)
             # Remove the resource node since should not exist for url. Will be added back if file path
             del self._story._properties["resources"][self.resource_node]
-        if _parse.urlparse(new_video).scheme == "https":
-            # New video is a url
-            self._url = True
+
+        video_scheme = _parse.urlparse(new_video).scheme
+
+        if video_scheme == "https":
+            # New video is a URL
+            self._is_url = True
             self.resource_node = None
-            # Update the node by making add video call with correct parameters
-            self._add_video(
-                caption=self.caption,
-                alt_text=self.alt_text,
-                story=self._story,
-                node_id=self.node,
-            )
+            # Update the node by making the add video call with correct parameters
+            self._update_video_url()
         else:
             # If the node was not a file path before, need to create resource id
             if self.resource_node is None:
                 self.resource_node = "r-" + uuid.uuid4().hex[0:6]
             # display depends on self._url so get it before
             display = self.display
-            self._url = False
-            # Update the node by making add video call with correct parameters
-            self._add_video(
-                caption=self.caption,
-                alt_text=self.alt_text,
-                display=display,
-                story=self._story,
-                node_id=self.node,
-                resource_node=self.resource_node,
-            )
+            self._is_url = False
+            # Update the node by making the add video call with correct parameters
+            self._update_video_file(display)
 
     # ----------------------------------------------------------------------
-    def _check_node(self):
-        if self._story is None:
-            return False
-        elif self.node is None:
-            return False
-        else:
-            return True
+    def _update_video_url(self):
+        """
+        Update video node with a new URL.
+        """
+        self._add_to_story(
+            caption=self.caption,
+            alt_text=self.alt_text,
+            story=self._story,
+            node_id=self.node,
+        )
+
+    # ----------------------------------------------------------------------
+    def _update_video_file(self, display):
+        """
+        Update video node with a new file path.
+        """
+        self._add_to_story(
+            caption=self.caption,
+            alt_text=self.alt_text,
+            display=display,
+            story=self._story,
+            node_id=self.node,
+            resource_node=self.resource_node,
+        )
+
+    # ----------------------------------------------------------------------
+    def _check_node(self) -> bool:
+        return self._story is not None and self.node is not None
 
 
 ###############################################################################################################
@@ -804,19 +900,19 @@ class Audio:
     def __init__(self, path: Optional[str] = None, **kwargs):
         # Can be created from scratch or already exist in story
         # Audio is not an immersive node
-        if _parse.urlparse(path).scheme == "https":
-            # Audio cannot be added by Url at this time.
+        if not path or _parse.urlparse(path).scheme == "https":
+            # Audio cannot be added by URL at this time.
             raise ValueError(
-                "To add an audio from an embedded url, use the Embed content class."
+                "To add an audio from an embedded url, use the Embed content class. Update audio with file path only."
             )
-        # Assing audio node properties
+        # Assign audio node properties
         self._story = kwargs.pop("story", None)
         self._type = "audio"
         self.node = kwargs.pop("node_id", None)
         # If node does not exist yet, create new instance
         self._existing = self._check_node()
         if self._existing is True:
-            # Get existing resouce node
+            # Get existing resource node
             self.resource_node = self._story._properties["nodes"][self.node]["data"][
                 "audio"
             ]
@@ -923,7 +1019,7 @@ class Audio:
     @property
     def alt_text(self):
         """
-        Get/Set the alternte text property for the audio.
+        Get/Set the alternate text property for the audio.
 
         ==================  ========================================
         **Parameter**        **Description**
@@ -972,29 +1068,48 @@ class Audio:
         return utils._delete(self._story, self.node)
 
     # ----------------------------------------------------------------------
-    def _add_audio(
+    def _add_to_story(
         self,
-        caption=None,
-        alt_text=None,
-        display=None,
         story=None,
+        **kwargs,
     ):
         self._story = story
         self._existing = True
+
+        # Get parameters
+        caption = kwargs.pop("caption", None)
+        alt_text = kwargs.pop("alt_text", None)
+        display = kwargs.pop("display", None)
+
         # Make an add resource call
         utils._add_resource(self._story, self._path)
-        # Create image nodes
+
+        # Create audio nodes
+        self._create_audio_node(caption, alt_text, display)
+
+        # Create resource node
+        self._create_resource_node()
+
+    # ----------------------------------------------------------------------
+    def _create_audio_node(self, caption, alt_text, display):
+        """
+        Create an audio node in the story.
+        """
         self._story._properties["nodes"][self.node] = {
             "type": "audio",
             "data": {
                 "audio": self.resource_node,
-                "caption": "" if caption is None else caption,
-                "alt": "" if alt_text is None else alt_text,
+                "caption": caption or "",
+                "alt": alt_text or "",
             },
             "config": {"size": display},
         }
 
-        # Create resource node
+    # ----------------------------------------------------------------------
+    def _create_resource_node(self):
+        """
+        Create a resource node for the audio.
+        """
         self._story._properties["resources"][self.resource_node] = {
             "type": "audio",
             "data": {
@@ -1008,7 +1123,7 @@ class Audio:
         # Assign new path
         self._path = new_audio
 
-        # Assign new resouce id, get old one to delete resource
+        # Assign new resource id, get old one to delete resource
         resource_id = self._story._properties["resources"][self.resource_node]["data"][
             "resourceId"
         ]
@@ -1022,12 +1137,7 @@ class Audio:
 
     # ----------------------------------------------------------------------
     def _check_node(self):
-        if self._story is None:
-            return False
-        elif self.node is None:
-            return False
-        else:
-            return True
+        return self._story is not None and self.node is not None
 
 
 ###############################################################################################################
@@ -1144,7 +1254,7 @@ class Embed:
     @property
     def alt_text(self):
         """
-        Get/Set the alternte text property for the embed.
+        Get/Set the alternate text property for the embed.
 
         ==================  ========================================
         **Parameter**        **Description**
@@ -1193,20 +1303,33 @@ class Embed:
         return utils._delete(self._story, self.node)
 
     # ----------------------------------------------------------------------
-    def _add_link(self, caption=None, alt_text=None, display="card", story=None):
+    def _add_to_story(self, story=None, **kwargs):
         self._story = story
         self._existing = True
+
+        # Get parameters
+        caption = kwargs.pop("caption", None)
+        alt_text = kwargs.pop("alt_text", None)
+        display = kwargs.pop("display", None)
+
         sections = _parse.urlparse(self._path)
         # Create embed node, no resource node needed
+        self._create_link_node(caption, alt_text, display, sections)
+
+    # ----------------------------------------------------------------------
+    def _create_link_node(self, caption, alt_text, display, sections):
+        """
+        Create a link node in the story.
+        """
         self._story._properties["nodes"][self.node] = {
             "type": "embed",
             "data": {
                 "url": self._path,
                 "embedType": "link",
                 "title": sections.netloc,
-                "description": "" if caption is None else caption,
+                "description": caption or "",
                 "providerUrl": sections.netloc,
-                "alt": "" if alt_text is None else alt_text,
+                "alt": alt_text or "",
                 "display": display,
             },
         }
@@ -1226,12 +1349,7 @@ class Embed:
 
     # ----------------------------------------------------------------------
     def _check_node(self):
-        if self._story is None:
-            return False
-        elif self.node is None:
-            return False
-        else:
-            return True
+        return self._story is not None and self.node is not None
 
 
 ###############################################################################################################
@@ -1259,7 +1377,7 @@ class Map:
         # Check if node exists else create new instance
         self._existing = self._check_node()
         if self._existing:
-            # Gather all exisiting properties needed
+            # Gather all existing properties needed
             self.resource_node = self._story._properties["nodes"][self.node]["data"][
                 "map"
             ]
@@ -1486,7 +1604,7 @@ class Map:
         ------------------  ----------------------------------------
         scale               Optional Scales enum class value or dict with 'scale' and 'zoom' keys.
 
-                            Scale is a unitless way of describing how any distance on the map translates
+                            Scale is a unit-less way of describing how any distance on the map translates
                             to a real-world distance. For example, a map at a 1:24,000 scale communicates that 1 unit
                             on the screen represents 24,000 of the same unit in the real world.
                             So one inch on the screen represents 24,000 inches in the real world.
@@ -1669,7 +1787,7 @@ class Map:
     @property
     def alt_text(self):
         """
-        Get/Set the alternte text property for the map.
+        Get/Set the alternate text property for the map.
 
         ==================  ========================================
         **Parameter**        **Description**
@@ -1735,9 +1853,15 @@ class Map:
         return utils._delete(self._story, self.node)
 
     # ----------------------------------------------------------------------
-    def _add_map(self, caption=None, alt_text=None, display=None, story=None):
+    def _add_to_story(self, story=None, **kwargs):
         self._story = story
         self._existing = True
+
+        # Get parameters
+        caption = kwargs.pop("caption", None)
+        alt_text = kwargs.pop("alt_text", None)
+        display = kwargs.pop("display", None)
+
         # Create webmap nodes
         # This represents the map as seen in the story
         self._story._properties["nodes"][self.node] = {
@@ -1788,7 +1912,7 @@ class Map:
                 "itemType"
             ]
         ):
-            raise ValueError("New Map must be of same type as the exisiting map.")
+            raise ValueError("New Map must be of same type as the existing map.")
 
         # Get all the old properties but update with new map where needed
 
@@ -1828,12 +1952,7 @@ class Map:
 
     # ----------------------------------------------------------------------
     def _check_node(self):
-        if self._story is None:
-            return False
-        elif self.node is None:
-            return False
-        else:
-            return True
+        return self._story is not None and self.node is not None
 
 
 ###############################################################################################################
@@ -2019,7 +2138,7 @@ class Text:
         return utils._delete(self._story, self.node)
 
     # ----------------------------------------------------------------------
-    def _add_text(self, story=None):
+    def _add_to_story(self, story=None, **kwargs):
         self._story = story
         self._existing = True
         self._story._properties["nodes"][self.node] = {
@@ -2036,13 +2155,7 @@ class Text:
 
     # ----------------------------------------------------------------------
     def _check_node(self):
-        # Check if node exists
-        if self._story is None:
-            return False
-        elif self.node is None:
-            return False
-        else:
-            return True
+        return self._story is not None and self.node is not None
 
 
 ###############################################################################################################
@@ -2163,7 +2276,7 @@ class Button:
         return utils._delete(self._story, self.node)
 
     # ----------------------------------------------------------------------
-    def _add_button(self, story):
+    def _add_to_story(self, story, **kwargs):
         self._story = story
         self._existing = True
         self._story._properties["nodes"][self.node] = {
@@ -2322,7 +2435,7 @@ class Gallery:
     @property
     def alt_text(self):
         """
-        Get/Set the alternte text property for the swipe.
+        Get/Set the alternate text property for the swipe.
 
         ==================  ========================================
         **Parameter**        **Description**
@@ -2377,7 +2490,7 @@ class Gallery:
                 for image in images:
                     if image.node in self._story._properties["nodes"]:
                         image.node = "n-" + uuid.uuid4().hex[0:6]
-                    image._add_image(story=self._story)
+                    image._add_to_story(story=self._story)
                     self._story._properties["nodes"][self.node]["children"].append(
                         image.node
                     )
@@ -2406,9 +2519,15 @@ class Gallery:
         return self.images
 
     # ----------------------------------------------------------------------
-    def _add_gallery(self, caption=None, alt_text=None, display=None, story=None):
+    def _add_to_story(self, story=None, **kwargs):
         self._story = story
         self._existing = True
+
+        # Get parameters
+        caption = kwargs.pop("caption", None)
+        alt_text = kwargs.pop("alt_text", None)
+        display = kwargs.pop("display", None)
+
         # Create image nodes
         self._story._properties["nodes"][self.node] = {
             "type": "gallery",
@@ -2445,7 +2564,7 @@ class Gallery:
 ###############################################################################################################
 class Swipe:
     """
-    Create an Swipe node.
+    Create a Swipe node.
 
     .. note::
         Once you create a Swipe instance you must add it to the story to be able to edit it further.
@@ -2577,7 +2696,7 @@ class Swipe:
     @property
     def alt_text(self):
         """
-        Get/Set the alternte text property for the swipe.
+        Get/Set the alternate text property for the swipe.
 
         ==================  ========================================
         **Parameter**        **Description**
@@ -2668,9 +2787,15 @@ class Swipe:
             return False
 
     # ----------------------------------------------------------------------
-    def _add_swipe(self, caption=None, alt_text=None, display=None, story=None):
+    def _add_to_story(self, story=None, **kwargs):
         self._story = story
         self._existing = True
+
+        # Get parameters
+        caption = kwargs.pop("caption", None)
+        alt_text = kwargs.pop("alt_text", None)
+        display = kwargs.pop("display", None)
+
         # Create swipe node
         self._story._properties["nodes"][self.node] = {
             "type": "swipe",
@@ -2684,24 +2809,19 @@ class Swipe:
             self._story._properties["nodes"][self.node]["config"] = {"size": display}
 
     # ----------------------------------------------------------------------
-    def _add_item_story(self, content):
+    def _add_item_story(self, content: Union[Image, Map]):
         if content and content.node in self._story._properties["nodes"]:
             content.node = "n-" + uuid.uuid4().hex[0:6]
+
+        content._add_to_story(story=self._story)
         if isinstance(content, Image):
-            content._add_image(story=self._story)
             self._media_type = "image"
         elif isinstance(content, Map):
-            content._add_map(story=self._story)
             self._media_type = "webmap"
 
     # ----------------------------------------------------------------------
     def _check_node(self):
-        if self._story is None:
-            return False
-        elif self.node is None:
-            return False
-        else:
-            return True
+        return self._story is not None and self.node is not None
 
 
 ###############################################################################################################
@@ -2711,7 +2831,7 @@ class Sidecar:
 
     A sidecar is composed of slides. Slides are composed of two sub structures: a narrative panel and a media panel.
     The media node can be a(n): Image, Video, Embed, Map, or Swipe.
-    The narrative panel can contain mulitple types of content including Image, Video, Embed, Button, Text, Map, and more.
+    The narrative panel can contain multiple types of content including Image, Video, Embed, Button, Text, Map, and more.
 
     .. note::
         Once you create a Sidecar instance you must add it to the story to be able to edit it further.
@@ -2762,9 +2882,10 @@ class Sidecar:
         return "Sidecar"
 
     # ----------------------------------------------------------------------
-    def _add_sidecar(
+    def _add_to_story(
         self,
         story=None,
+        **kwargs,
     ):
         # Add the story to the node
         self._story = story
@@ -3199,7 +3320,7 @@ class Sidecar:
             self._story._properties["nodes"][self.node]["children"].insert(
                 slide_number, slide_node
             )
-            # Update slide definition for the class to relect new list
+            # Update slide definition for the class to reflect new list
             self._slides = self._story._properties["nodes"][self.node]["children"]
             return {"New Slide": slide_node}
         else:
@@ -3256,33 +3377,22 @@ class Sidecar:
         if content and content.node in self._story._properties["nodes"]:
             content.node = "n-" + uuid.uuid4().hex[0:6]
         if isinstance(content, Image):
-            content._add_image(display="wide", story=self._story)
+            content._add_to_story(display="wide", story=self._story)
         elif isinstance(content, Video):
-            content._add_video(display="wide", story=self._story)
+            content._add_to_story(display="wide", story=self._story)
         elif isinstance(content, Embed):
-            content._add_link(display="card", story=self._story)
+            content._add_to_story(display="card", story=self._story)
         elif isinstance(content, Map):
-            content._add_map(display="wide", story=self._story)
-        elif isinstance(content, Text):
-            content._add_text(story=self._story)
-        elif isinstance(content, Button):
-            content._add_button(story=self._story)
+            content._add_to_story(display="wide", story=self._story)
         elif isinstance(content, Audio):
-            content._add_audio(display="wide", story=self._story)
-        elif isinstance(content, Timeline):
-            content._add_timeline(story=self._story)
-        elif isinstance(content, Swipe):
-            content._add_swipe(story=self._story)
+            content._add_to_story(display="wide", story=self._story)
+        else:
+            content._add_to_story(story=self._story)
 
     # ----------------------------------------------------------------------
     def _check_node(self):
         # Node is not in the story if no story or node id is present
-        if self._story is None:
-            return False
-        elif self.node is None:
-            return False
-        else:
-            return True
+        return self._story is not None and self.node is not None
 
 
 ###############################################################################################################
@@ -3345,7 +3455,7 @@ class Timeline:
         return "Timeline"
 
     # ----------------------------------------------------------------------
-    def _add_timeline(
+    def _add_to_story(
         self,
         story=None,
     ):
@@ -3601,20 +3711,12 @@ class Timeline:
     def _add_item_story(self, content):
         if content.node in self._story._properties["nodes"]:
             content.node = "n-" + uuid.uuid4().hex[0:6]
-        if isinstance(content, Image):
-            content._add_image(story=self._story)
-        elif isinstance(content, Text):
-            content._add_text(story=self._story)
+        content._add_to_story(story=self._story)
 
     # ----------------------------------------------------------------------
     def _check_node(self):
         # Node is not in the story if no story or node id is present
-        if self._story is None:
-            return False
-        elif self.node is None:
-            return False
-        else:
-            return True
+        return self._story is not None and self.node is not None
 
 
 ###############################################################################################################
@@ -3740,12 +3842,7 @@ class MapTour:
     # ----------------------------------------------------------------------
     def _check_node(self):
         # Node is not in the story if no story or node id is present
-        if self._story is None:
-            return False
-        elif self.node is None:
-            return False
-        else:
-            return True
+        return self._story is not None and self.node is not None
 
 
 ###############################################################################################################
@@ -3845,7 +3942,7 @@ class MapAction:
         ------------------  ----------------------------------------
         scale               Required Scales enum class value or int.
 
-                            Scale is a unitless way of describing how any distance on the map translates
+                            Scale is a unit-less way of describing how any distance on the map translates
                             to a real-world distance. For example, a map at a 1:24,000 scale communicates that 1 unit
                             on the screen represents 24,000 of the same unit in the real world.
                             So one inch on the screen represents 24,000 inches in the real world.
@@ -3892,18 +3989,13 @@ class MapAction:
     # ----------------------------------------------------------------------
     def _check_node(self):
         # Node is not in the story if no story or node id is present
-        if self._story is None:
-            return False
-        elif self.node is None:
-            return False
-        else:
-            return True
+        return self._story is not None and self.node is not None
 
 
 ###############################################################################################################
 class Code:
     """
-    Class representing a `code block`.
+    Class representing a `code` content card.
     Code will show as a block of code in your Storymap.
 
     .. note::
@@ -3958,24 +4050,6 @@ class Code:
             self.node = "n-" + uuid.uuid4().hex[0:6]
 
     # ----------------------------------------------------------------------
-    @property
-    def properties(self):
-        """
-        Get properties for the Code.
-
-        .. note::
-            To change various properties of the Code use the other property setters.
-
-        :return:
-            A dictionary depicting the node dictionary for the code.
-            If nothing is returned, make sure the content is part of the story.
-        """
-        if self._existing is True:
-            return {
-                "node_dict": self._story._properties["nodes"][self.node],
-            }
-
-    # ----------------------------------------------------------------------
     def __str__(self) -> str:
         return f"Code: {self.language}"
 
@@ -3985,7 +4059,7 @@ class Code:
 
     # ----------------------------------------------------------------------
     @property
-    def content(self):
+    def content(self) -> str:
         """
         Get/Set the content property.
 
@@ -3998,18 +4072,19 @@ class Code:
         :return:
             The content that is being used.
         """
-        if self._existing is True:
-            return self._story._properties["nodes"][self.node]["data"]["content"]
+        return self._content
 
     # ----------------------------------------------------------------------
     @content.setter
-    def content(self, content):
+    def content(self, content: str):
         if self._existing is True:
             self._update_content(content)
+        else:
+            self._content = content
 
     # ----------------------------------------------------------------------
     @property
-    def language(self):
+    def language(self) -> str:
         """
         Get/Set the language property.
 
@@ -4022,15 +4097,11 @@ class Code:
         :return:
             The language that is being used.
         """
-        if self._existing is True:
-            if "lang" in self._story._properties["nodes"][self.node]["data"]:
-                return self._story._properties["nodes"][self.node]["data"]["lang"]
-            else:
-                return "txt"
+        return self._language
 
     # ----------------------------------------------------------------------
     @language.setter
-    def language(self, language):
+    def language(self, language: Language | str):
         if self._existing is True:
             # Figure out correct language
             if isinstance(language, Language):
@@ -4055,7 +4126,7 @@ class Code:
 
     # ----------------------------------------------------------------------
     @property
-    def line_number(self):
+    def line_number(self) -> bool:
         """
         Get/Set whether line number property is set.
 
@@ -4087,7 +4158,7 @@ class Code:
         return self._story._delete(self.node)
 
     # ----------------------------------------------------------------------
-    def _add_code(self, story=None):
+    def _add_to_story(self, story=None):
         self._story = story
         self._existing = True
         # Create embed node, no resource node needed
@@ -4105,7 +4176,7 @@ class Code:
     def _update_content(self, content):
         if self._language in ["html", "json"]:
             # same encoding for html and json
-            content = html.ecape(content)
+            content = html.escape(content)
         # set new content
         self._content = content
         # update dictionary properties
@@ -4113,114 +4184,85 @@ class Code:
 
     # ----------------------------------------------------------------------
     def _check_node(self):
-        if self._story is None:
-            return False
-        elif self.node is None:
-            return False
-        else:
-            return True
+        return self._story is not None and self.node is not None
 
 
 ###############################################################################################################
-class Slide:
+class BriefingSlide:
     """
-    Create a Slide for a Briefing.
+    Represents a Slide for a Briefing.
 
     .. note::
-        Once you create a Slide instance you must add it to the briefing to be able to edit it further.
-
-    ===============     ====================================================================
-    **Parameter**        **Description**
-    ---------------     --------------------------------------------------------------------
-    layout              Required string, the layout type of the slide.
-                        Values: "single" | "double"
-    ---------------     --------------------------------------------------------------------
-    sublayout           Optional string, the sublayout type of the slide. Only applicable
-                        when the layout is "double".
-                        Values: "3-7" | "7-3" | "1-1"
-    ---------------     --------------------------------------------------------------------
-    title               Optional string or :class:`~arcgis.apps.storymap.story_content.Text` object, the title of the slide.
-    ===============     ====================================================================
-
-    .. code-block:: python
-
-        >>> my_briefing.slides #use to find slides
-
-        # Method 1: Use the Slide Class
-        >>> slide = Slide()
-
+        To create a new slide use the `add` method in the Briefing class.
     """
 
     def __init__(
         self,
-        layout: Optional[str] = None,
-        sublayout: Optional[str] = None,
-        title: Optional[str] = None,
         **kwargs,
     ):
-        self._story = kwargs.pop("story", None)
-        self._type = "briefing-slide"
-        self.node = kwargs.pop("node_id", None)
+        self._story: briefing.Briefing = kwargs.pop("story")
+        self._type: str = "briefing-slide"
+        self.node: str = kwargs.pop("node_id", None)
+        layout: Union[LayoutType, str] = kwargs.pop("layout", "single")
+        sublayout: Union[SublayoutType, str] | None = kwargs.pop("sublayout", None)
+        title: Text | str | None = kwargs.pop("title", None)
 
-        # Check if node exists else create new instance
-        self._existing = self._check_node()
-        if self._existing is True:
-            if "data" in self._story._properties["nodes"][self.node]:
-                if (
-                    self._story._properties["nodes"][self.node]["data"]["layout"]
-                    == "cover"
-                ):
-                    self._children = self._story._properties["nodes"][self.node][
-                        "children"
-                    ]
-                else:
-                    self._children = self._story._properties["nodes"][self.node][
-                        "data"
-                    ]["contents"]
-            else:
-                # Empty slide node
-                self._children = {}
+        # Check if node exists else create a new instance
+        self._existing: bool = self._check_node()
 
-            # set the layout and sublayout
-            self._layout = self._story._properties["nodes"][self.node]["data"]["layout"]
-            if "sublayout" in self._story._properties["nodes"][self.node]["data"]:
-                self._sublayout = self._story._properties["nodes"][self.node]["data"][
-                    "sublayout"
-                ]
-            else:
-                self._sublayout = None
-            # For editing purposes, have children even if empty
-            self._fix_children()
+        if self._existing:
+            self._initialize_existing_slide()
         else:
-            self.node = "n-" + uuid.uuid4().hex[0:6]
-            self._children = {}
-            if layout in ["single", "double"]:
-                self._layout = layout
-            else:
-                raise Exception("Layout must be one of the following: single, double")
-            # if sublayout is 5-5 or None then leave as None. 5-5 is taken as None in json
-            self._sublayout = sublayout if sublayout in ["3-7", "7-3"] else None
-            if title:
-                # If string then need to create text node and add to story
-                if isinstance(title, str):
-                    title = Text(title, TextStyles.SUBHEADING)
-            self._title = title if title else None
+            self._initialize_new_slide(layout, sublayout, title)
 
-    # ----------------------------------------------------------------------
+    def _initialize_existing_slide(self):
+        # Existing slide logic
+        if "data" in self._story._properties["nodes"][self.node]:
+            node_data = self._story._properties["nodes"][self.node]["data"]
+            self._children: dict = node_data.get("contents", {})
+            self._layout: str = node_data.get("layout", None)
+            self._sublayout: str = node_data.get("sublayout", None)
+            self._fix_children()
+
+    def _initialize_new_slide(self, layout, sublayout, title):
+        # New slide logic
+        self.node: str = "n-" + uuid.uuid4().hex[0:6]
+        self._children: dict = {}
+
+        # set layout and sublayout
+        if layout in LayoutType.__members__.values():
+            self._layout: str = layout.value
+        elif layout in ["single", "double"]:
+            self._layout: str = layout
+        else:
+            raise ValueError("Layout must be one of the following: single, double")
+
+        if sublayout and sublayout in SublayoutType.__members__.values():
+            self._sublayout: str = sublayout.value
+        elif sublayout and sublayout in ["3-7", "7-3", "1-1"]:
+            self._sublayout: str = sublayout
+        elif sublayout:
+            raise ValueError("Invalid sublayout type")
+
+        # set title
+        if title:
+            self._title: Text = (
+                Text(title, TextStyles.SUBHEADING) if isinstance(title, str) else title
+            )
+        else:
+            self._title: Text | None = None
+
     def _fix_children(self):
-        """
-        A slide can have multiple blocks of content. This method will ensure that the content
-        dictionary has these blocks even if they are empty.
-
-        We will set the values to be empty lists. This will be dealt with when user adds content.
-        """
+        # Logic for fixing children
         if self._layout == "single":
-            # For a single slide make sure "0" key present in content. Check node data and then update _children
-            # If not missing, we don't need to do anything in this case
-            if (
-                "0"
-                not in self._story._properties["nodes"][self.node]["data"]["contents"]
-            ):
+            self._fix_single_layout()
+        elif self._layout == "double":
+            self._fix_double_layout()
+
+    def _fix_single_layout(self):
+        if self._existing:
+            # Logic for fixing single layout
+            if "0" not in self._children:
                 self._story._properties["nodes"][self.node]["data"]["contents"][
                     "0"
                 ] = []
@@ -4228,86 +4270,19 @@ class Slide:
                     "contents"
                 ]
             self._delete_keys(1)
-        elif self._layout == "double":
-            # Double will have "0" and "1". If one is missing, add it in.
-            if (
-                "0"
-                not in self._story._properties["nodes"][self.node]["data"]["contents"]
-            ):
-                self._story._properties["nodes"][self.node]["data"]["contents"][
-                    "0"
-                ] = []
-            if (
-                "1"
-                not in self._story._properties["nodes"][self.node]["data"]["contents"]
-            ):
-                self._story._properties["nodes"][self.node]["data"]["contents"][
-                    "1"
-                ] = []
+
+    def _fix_double_layout(self):
+        # Logic for fixing double layout
+        if self._existing:
+            for key in ["0", "1"]:
+                if key not in self._children:
+                    self._story._properties["nodes"][self.node]["data"]["contents"][
+                        key
+                    ] = []
             self._children = self._story._properties["nodes"][self.node]["data"][
                 "contents"
             ]
             self._delete_keys(2)
-        elif self._layout in ["single-double", "double-single"]:
-            # These will have "0", "1", "2"
-            if (
-                "0"
-                not in self._story._properties["nodes"][self.node]["data"]["contents"]
-            ):
-                self._story._properties["nodes"][self.node]["data"]["contents"][
-                    "0"
-                ] = []
-            if (
-                "1"
-                not in self._story._properties["nodes"][self.node]["data"]["contents"]
-            ):
-                self._story._properties["nodes"][self.node]["data"]["contents"][
-                    "1"
-                ] = []
-            if (
-                "2"
-                not in self._story._properties["nodes"][self.node]["data"]["contents"]
-            ):
-                self._story._properties["nodes"][self.node]["data"]["contents"][
-                    "2"
-                ] = []
-            self._children = self._story._properties["nodes"][self.node]["data"][
-                "contents"
-            ]
-            self._delete_keys(3)
-        elif self._layout == "grid":
-            # This will have "0", "1", "2", "3"
-            if (
-                "0"
-                not in self._story._properties["nodes"][self.node]["data"]["contents"]
-            ):
-                self._story._properties["nodes"][self.node]["data"]["contents"][
-                    "0"
-                ] = []
-            if (
-                "1"
-                not in self._story._properties["nodes"][self.node]["data"]["contents"]
-            ):
-                self._story._properties["nodes"][self.node]["data"]["contents"][
-                    "1"
-                ] = []
-            if (
-                "2"
-                not in self._story._properties["nodes"][self.node]["data"]["contents"]
-            ):
-                self._story._properties["nodes"][self.node]["data"]["contents"][
-                    "2"
-                ] = []
-            if (
-                "3"
-                not in self._story._properties["nodes"][self.node]["data"]["contents"]
-            ):
-                self._story._properties["nodes"][self.node]["data"]["contents"][
-                    "3"
-                ] = []
-            self._children = self._story._properties["nodes"][self.node]["data"][
-                "contents"
-            ]
 
     # ----------------------------------------------------------------------
     def _delete_keys(self, value):
@@ -4317,7 +4292,7 @@ class Slide:
                 del self._story._properties["nodes"][self.node]["data"]["contents"][
                     str(key)
                 ]
-            except Exception:
+            except KeyError:
                 pass
 
     # ----------------------------------------------------------------------
@@ -4330,7 +4305,7 @@ class Slide:
 
     # ----------------------------------------------------------------------
     @property
-    def blocks(self):
+    def blocks(self) -> list[Block]:
         """
         Get blocks of the Slide. Blocks hold content of various types such as
         Text, Image, Map, Swipe, etc. If you want to edit the content you can access
@@ -4339,27 +4314,24 @@ class Slide:
         :return:
             A list of blocks in the slide
         """
-        if self._existing is True:
-            # If the slide is a cover slide, then the children are the contents
-            if self._story._properties["nodes"][self.node]["data"]["layout"] == "cover":
-                # self._children is a list of node ids in this case
-                return [
-                    utils._assign_node_class(self._story, node_id)
-                    for node_id in self._children
-                ]
+        # If the slide is a cover slide, then the children are the contents
+        if self._story._properties["nodes"][self.node]["data"]["layout"] == "cover":
+            # self._children is a list of node ids in this case
+            return [
+                utils._assign_node_class(self._story, node_id)
+                for node_id in self._children
+            ]
 
-            # Slide is not a cover slide and has contents, even if empty
-            contents = []
-            for key, _ in self._children.items():
-                # the key will be "0", "1", "2", "3" depending on the layout
-                contents.append(Block(key, self, self._story))
-            return contents
-        else:
-            return None
+        # Slide is not a cover slide and has contents, even if empty
+        contents = []
+        for key, _ in self._children.items():
+            # the key will be "0", "1", "2", "3" depending on the layout
+            contents.append(Block(key, self, self._story))
+        return contents
 
     # ----------------------------------------------------------------------
     @property
-    def title(self):
+    def title(self) -> Text | None:
         """
         Get/Set the title of the slide.
 
@@ -4372,20 +4344,7 @@ class Slide:
         title               Text instance or string depicting the title of the slide.
         ===============     ====================================================================
         """
-        if self._existing is True:
-            if self._story._properties["nodes"][self.node]["data"]["layout"] == "cover":
-                return None
-            else:
-                if "title" in self._story._properties["nodes"][self.node]["data"]:
-                    # Return the Text instance that represents the title of the slide
-                    title_node = self._story._properties["nodes"][self.node]["data"][
-                        "title"
-                    ]
-                    return utils._assign_node_class(self._story, title_node)
-                else:
-                    return None
-        else:
-            return None
+        return self._title
 
     # ----------------------------------------------------------------------
     @title.setter
@@ -4394,46 +4353,28 @@ class Slide:
             # If string then need to create text node and add to story
             if isinstance(title, str):
                 title = Text(title, TextStyles.SUBHEADING)
-                self._add_item_story(title)
+                title._add_to_story(story=self._story)
             elif isinstance(title, Text):
                 # If text created but not in story
                 if title._existing is False:
-                    self._add_item_story(title)
+                    title._add_to_story(story=self._story)
             # Set the title node id in data of slide
             self._story._properties["nodes"][self.node]["data"]["title"] = title.node
-            self._title = title
+        self._title = title
 
     # ----------------------------------------------------------------------
     @property
-    def layout(self):
+    def layout(self) -> str:
         """
         Get/Set the layout of the slide.
         :return:
             A string of the layout type.
         """
-        if self._existing is True:
-            return self._story._properties["nodes"][self.node]["data"]["layout"]
-        else:
-            return None
-
-    # ----------------------------------------------------------------------
-    # TODO: Keeping since will be used at later time
-    # @layout.setter
-    # def layout(self, layout):
-    #     if self._existing is True:
-    #         # check if layout is cover, cannot change the layout
-    #         if self._story._properties["nodes"][self.node]["data"]["layout"] == "cover":
-    #             raise Exception("The cover slide layout cannot be changed.")
-    #         elif layout in ["single", "double", "single-double", "double-single", "grid"]:
-    #             self._story._properties["nodes"][self.node]["data"]["layout"] = layout
-    #             self._layout = layout
-    #             self._fix_children()
-    #     else:
-    #         raise Exception("The slide must be part of a briefing before editing.")
+        return self._layout
 
     # ----------------------------------------------------------------------
     @property
-    def sublayout(self):
+    def sublayout(self) -> str:
         """
         Get/Set the sublayout when the layout is "double". This determines
         the proportion of the slide that the content takes up.
@@ -4449,71 +4390,28 @@ class Slide:
                             Values for "grid": "2-2" | "3-2" | "2-3"
         ===============     ====================================================================
         """
-        if self._existing is True:
-            if self._story._properties["nodes"][self.node]["data"]["layout"] == "cover":
-                return None
-            if "sublayout" in self._story._properties["nodes"][self.node]["data"]:
-                # sublayout is defined
-                return self._story._properties["nodes"][self.node]["data"]["sublayout"]
-            elif (
-                self._story._properties["nodes"][self.node]["data"]["layout"]
-                != "single"
-            ):
-                # layout is mroe than single but sublayout is not defined
-                return "1-1"
-            else:
-                return None
-        else:
-            return None
+        return self._sublayout
 
     # ----------------------------------------------------------------------
     @sublayout.setter
     def sublayout(self, sublayout):
-        if self._existing is True:
-            if (
-                self._story._properties["nodes"][self.node]["data"]["layout"]
-                == "double"
-            ):
-                if sublayout in ["3-7", "7-3", "1-1"]:
-                    self._story._properties["nodes"][self.node]["data"][
-                        "sublayout"
-                    ] = sublayout
-                    self._sublayout = sublayout
-            elif (
-                self._story._properties["nodes"][self.node]["data"]["layout"]
-                == "single-double"
-            ):
-                if sublayout in ["1-1", "3-2"]:
-                    self._story._properties["nodes"][self.node]["data"][
-                        "sublayout"
-                    ] = sublayout
-                    self._sublayout = sublayout
-            elif (
-                self._story._properties["nodes"][self.node]["data"]["layout"]
-                == "double-single"
-            ):
-                if sublayout in ["1-1", "2-3"]:
-                    self._story._properties["nodes"][self.node]["data"][
-                        "sublayout"
-                    ] = sublayout
-                    self._sublayout = sublayout
-            elif (
-                self._story._properties["nodes"][self.node]["data"]["layout"] == "grid"
-            ):
-                if sublayout in ["2-2", "3-2", "2-3"]:
-                    self._story._properties["nodes"][self.node]["data"][
-                        "sublayout"
-                    ] = sublayout
-                    self._sublayout = sublayout
-            else:
-                raise Exception(
-                    "The layout is not of the correct value for the type of layout."
-                )
+        if sublayout not in SublayoutType.__members__.values():
+            raise ValueError("Invalid sublayout value.")
+
+        self._sublayout = sublayout
+
+        if self._existing:
+            layout = self._story._properties["nodes"][self.node]["data"]["layout"]
+            if layout in ["double", "single-double", "double-single", "grid"]:
+                self._story._properties["nodes"][self.node]["data"][
+                    "sublayout"
+                ] = sublayout
         else:
-            raise Exception("The slide must be part of a briefing before editing.")
+            self._sublayout = sublayout
+            self._fix_children()
 
     # ----------------------------------------------------------------------
-    def delete(self):
+    def delete(self) -> bool:
         """
         Delete the node
 
@@ -4525,7 +4423,7 @@ class Slide:
             return False
 
     # ----------------------------------------------------------------------
-    def _add_slide(self, story=None):
+    def _add_to_story(self, story=None, **kwargs):
         self._story = story
         self._existing = True
         # Create swipe node
@@ -4537,9 +4435,11 @@ class Slide:
             self._story._properties["nodes"][self.node]["data"][
                 "sublayout"
             ] = self._sublayout
+
+        # Add title if it exists
         if self._title:
             if self._title._existing is False:
-                self._add_item_story(self._title)
+                self._title._add_to_story(story=self._story)
             self._story._properties["nodes"][self.node]["data"][
                 "title"
             ] = self._title.node
@@ -4547,41 +4447,37 @@ class Slide:
         self._fix_children()
 
     # ----------------------------------------------------------------------
-    def _add_item_story(self, content):
-        if content and content.node in self._story._properties["nodes"]:
-            content.node = "n-" + uuid.uuid4().hex[0:6]
-        if isinstance(content, Text):
-            content._add_text(story=self._story)
-
-    # ----------------------------------------------------------------------
     def _check_node(self):
-        if self._story is None:
-            return False
-        elif self.node is None:
-            return False
-        else:
-            return True
+        return self._story is not None and self.node is not None
 
 
 ###############################################################################################################
 class Block:
     """
-    Represents a block in a slide.
-    This class can be accessed from the slide class and should not be created by a user.
+    Represents a block in a briefing slide.
+
+    .. note::
+        Blocks are automatically created when you create a new slide. You can access the blocks
+        through the `blocks` property of the slide. Do not create this class directly.
     """
 
-    def __init__(self, block_index, slide, story) -> None:
-        self._index = block_index
-        self._slide = slide
+    def __init__(self, block_index, slide: BriefingSlide, story) -> None:
+        self._index: int = block_index
+        self._slide: BriefingSlide = slide
         self._story = story
         # list of strings or single node as string
-        self._content = self._story._properties["nodes"][self._slide.node]["data"][
-            "contents"
-        ][str(self._index)]
+        self._content: list[str] | str = self._story._properties["nodes"][
+            self._slide.node
+        ]["data"]["contents"][str(self._index)]
 
     # ----------------------------------------------------------------------
     def __str__(self) -> str:
-        return "Block: " + str(self._index)
+        if self._index == 0 and self._slide.layout == "single":
+            return "Block"
+        elif self._index == 0 and self._slide.layout == "double":
+            return "Left Block"
+        elif self._index == 1 and self._slide.layout == "double":
+            return "Right Block"
 
     # ----------------------------------------------------------------------
     def __repr__(self) -> str:
@@ -4589,7 +4485,7 @@ class Block:
 
     # ----------------------------------------------------------------------
     @property
-    def content(self):
+    def content(self) -> list:
         """
         Get the contents of the block. This will return a list of the content
         objects in the block. The content objects can be of type Text, Image, Map, etc.
@@ -4598,7 +4494,7 @@ class Block:
             A list of content objects in the block.
         """
         if isinstance(self._content, list) and len(self._content) > 0:
-            # This is a list of node ids
+            # This is a list of content items
             return [
                 utils._assign_node_class(self._story, node_id)
                 for node_id in self._content
@@ -4611,7 +4507,7 @@ class Block:
             return utils._assign_node_class(self._story, self._content)
 
     # ----------------------------------------------------------------------
-    def add_content(self, content):
+    def add_content(self, content: Text | Image | Video | Embed | Map | Swipe) -> bool:
         """
         Add content to the block.
 
@@ -4629,9 +4525,6 @@ class Block:
         :return:
             True if successful.
         """
-        # check that the slide exists
-        if self._slide._check_node() is False:
-            raise Exception("The slide must be part of a briefing before editing.")
         # check that the content is not None
         if content is None:
             raise Exception(
@@ -4645,20 +4538,15 @@ class Block:
 
         # If content is text and the current content is a list, append to the list
         if isinstance(content, Text) and isinstance(self._content, list):
-            self._add_item_story(content)
+            content._add_to_story(story=self._story)
             self._content.append(content.node)
         # If content is text and the current content is not a list, create a list and append
         elif isinstance(content, Text) and not isinstance(self._content, list):
-            self._add_item_story(content)
-            # check if current content is Text, if so add to the list if not create a list with just new content
-            if isinstance(self.content, Text):
-                self._content = [self._content, content.node]
-            else:
-                self._content = [content.node]
-            self._content = [content.node]
-        # If another type then assign to content's node id, this overwrites what is currently there
+            content._add_to_story(story=self._story)
+            self._content = [self._content, content.node]
+        # If another type, then assign to content's node id, this overwrites what is currently there
         else:
-            self._add_item_story(content)
+            content._add_to_story(story=self._story)
             self._content = content.node
 
         # add to the slide in the story
@@ -4668,7 +4556,7 @@ class Block:
         return True
 
     # ----------------------------------------------------------------------
-    def delete_content(self, index: Optional[int] = None):
+    def delete_content(self, index: Optional[int] = None) -> bool:
         """
         Delete content from the block.
 
@@ -4682,52 +4570,27 @@ class Block:
 
         :return: True if successful.
         """
-        if self._slide._check_node() is False:
-            raise Exception("The slide must be part of a briefing before editing.")
         if index is None:
             # delete all content
             self._content = []
-            self._story._properties["nodes"][self._slide.node]["data"]["contents"][
-                str(self._index)
-            ] = self._content
         elif isinstance(index, int):
             # delete content at index
             if isinstance(self._content, list) and len(self._content) > 0:
-                del self._content[index]
-                self._story._properties["nodes"][self._slide.node]["data"]["contents"][
-                    str(self._index)
-                ] = self._content
+                if 0 <= index < len(self._content):
+                    del self._content[index]
+                else:
+                    raise Exception("Index is out of range.")
             else:
                 raise Exception("There is no content at the specified index.")
         else:
             raise Exception("The index must be an integer.")
+
+        # Update the story with the modified content
+        self._story._properties["nodes"][self._slide._node]["data"]["contents"][
+            str(self._index)
+        ] = self._content
+
         return True
-
-    # ----------------------------------------------------------------------
-    def _add_item_story(self, content):
-        if content and content.node in self._story._properties["nodes"]:
-            content.node = "n-" + uuid.uuid4().hex[0:6]
-        if isinstance(content, Text):
-            content._add_text(story=self._story)
-        elif isinstance(content, Image):
-            content._add_image(story=self._story)
-        elif isinstance(content, Video):
-            content._add_video(story=self._story)
-        elif isinstance(content, Embed):
-            content._add_embed(story=self._story)
-        elif isinstance(content, Map):
-            content._add_map(story=self._story)
-        elif isinstance(content, Swipe):
-            content._add_swipe(story=self._story)
-
-    # ----------------------------------------------------------------------
-    def _check_node(self):
-        if self._story is None:
-            return False
-        elif self.node is None:
-            return False
-        else:
-            return True
 
 
 ###############################################################################################################
@@ -4874,7 +4737,7 @@ class Table:
         return self._story._delete(self.node)
 
     # ----------------------------------------------------------------------
-    def _add_table(self, story=None):
+    def _add_to_story(self, story=None, **kwargs):
         self._story = story
         self._existing = True
         # Create embed node, no resource node needed
