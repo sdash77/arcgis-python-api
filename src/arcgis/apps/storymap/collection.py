@@ -465,7 +465,7 @@ class Collection(object):
         ===============     ====================================================================
         **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
-        item                Required object. The item to add to the collection or file path to a pdf.
+        item                Required object. Either an Image, Video, or Embed content type object.
         ---------------     --------------------------------------------------------------------
         title               Optional string. The title of the item to add under the thumbnail in the collection.
         ---------------     --------------------------------------------------------------------
@@ -482,14 +482,8 @@ class Collection(object):
             position = len(self._properties["nodes"][ui_node]["data"]["items"])
         # If the item is an Image, Video or Embed, add the node to the collection
         if isinstance(item, (content.Image, content.Video, content.Embed)):
-            if isinstance(item, content.Image):
-                item._add_image(story=self)
-            elif isinstance(item, content.Video):
-                item._add_video(story=self)
-            elif isinstance(item, content.Embed):
-                item._add_embed(story=self)
-
-            item_dict = {"nodeId": item.ndoe}
+            item._add_to_story(story=self)
+            item_dict = {"nodeId": item._node}
             extra = self._add_custom_properties(title, thumbnail)
             item_dict.update(extra)
 

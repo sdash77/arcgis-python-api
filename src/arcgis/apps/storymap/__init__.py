@@ -20,7 +20,7 @@ from .story_content import (
     TextStyles,
     Scales,
     MapTour,
-    Slide,
+    BriefingSlide,
     Code,
     Language,
 )

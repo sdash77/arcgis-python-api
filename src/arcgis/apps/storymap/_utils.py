@@ -730,7 +730,7 @@ def _assign_node_class(story, node_id):
     if node_type == "separator":
         node = Content.Separator(story=story, node_id=node_id)
     elif node_type == "briefing-slide":
-        node = Content.Slide(story=story, node_id=node_id)
+        node = Content.BriefingSlide(story=story, node_id=node_id)
     elif node_type == "code":
         node = Content.Code(story=story, node_id=node_id)
     elif node_type == "image":
@@ -739,6 +739,8 @@ def _assign_node_class(story, node_id):
         node = Content.Video(story=story, node_id=node_id)
     elif node_type == "audio":
         node = Content.Audio(story=story, node_id=node_id)
+    elif node_type == "table":
+        node = Content.Table(story=story, node_id=node_id)
     elif node_type == "embed":
         # embed has subtype: video or link
         subtype = story._properties["nodes"][node_id]["data"]["embedType"]
