@@ -197,9 +197,16 @@ class SharingManager:
                                 groups will be unshared.
         ======================  ========================================================
         """
-        url: str = "{resturl}content/users/{owner}/shareItems".format(
-            resturl=self._gis._portal.resturl, owner=self._item.owner
-        )
+        # if not in org use different url
+
+        if self._gis.users.get(self._item.owner, outside_org=False):
+            url: str = "{resturl}content/users/{owner}/shareItems".format(
+                resturl=self._gis._portal.resturl, owner=self._item.owner
+            )
+        else:
+            url: str = "{resturl}content/items/{itemid}/share".format(
+                resturl=self._gis._portal.resturl, itemid=self._item.itemid
+            )
 
         params: dict[str, Any] = {
             "f": "json",
@@ -254,9 +261,16 @@ class SharingManager:
                                 groups will be unshared.
         ======================  ========================================================
         """
-        url: str = "{resturl}content/users/{owner}/unshareItems".format(
-            resturl=self._gis._portal.resturl, owner=self._item.owner
-        )
+        # if not in org use different url
+
+        if self._gis.users.get(self._item.owner, outside_org=False):
+            url: str = "{resturl}content/users/{owner}/unshareItems".format(
+                resturl=self._gis._portal.resturl, owner=self._item.owner
+            )
+        else:
+            url: str = "{resturl}content/items/{itemid}/unshare".format(
+                resturl=self._gis._portal.resturl, itemid=self._item.itemid
+            )
 
         params: dict[str, Any] = {
             "f": "json",

@@ -1,9 +1,10 @@
-import sys
-sys.path.insert(0, r"C:\workspace\geosaurus\src")
+# import sys
+
+# sys.path.insert(0, r"C:\workspace\geosaurus\src")
 import unittest
-from arcgis.gis import GIS, Item
+from arcgis.gis import GIS
 from arcgis.apps.storymap import Briefing, Themes
-from arcgis.apps.storymap import Image, Slide, Text
+from arcgis.apps.storymap import Image, Text
 
 profiles = ["your_online_profile", "your_enterprise_profile"]
 
@@ -56,8 +57,7 @@ class TestStoryMap(unittest.TestCase):
                 assert len(briefing.slides) == 1
 
                 # Create a slide
-                slide = Slide(layout="single")
-                briefing.add(slide)
+                slide = briefing.add("single")
 
                 # assert some properties
                 assert briefing.slides
@@ -87,8 +87,7 @@ class TestStoryMap(unittest.TestCase):
             assert len(briefing.slides) == 1
 
             # Create a slide
-            slide = Slide(layout="single")
-            briefing.add(slide)
+            slide = briefing.add("single")
 
             txt = Text("Testing Adding Text Attachments")
             slide.blocks[0].add(txt)
