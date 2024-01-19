@@ -6,6 +6,7 @@ import uuid
 from arcgis.auth.tools import LazyLoader
 
 arcgis = LazyLoader("arcgis")
+briefing = LazyLoader("arcgis.apps.storymap.briefing")
 urllib3 = LazyLoader("urllib3")
 requests = LazyLoader("requests")
 mimetypes = LazyLoader("mimetypes")
@@ -109,9 +110,6 @@ class SublayoutType(Enum):
     THREE_SEVEN = "3-7"
     SEVEN_THREE = "7-3"
     ONE_ONE = "1-1"
-    THREE_TWO = "3-2"
-    TWO_THREE = "2-3"
-    TWO_TWO = "2-2"
 
 
 ###############################################################################################################
@@ -4191,44 +4189,26 @@ class Code:
 ###############################################################################################################
 class BriefingSlide:
     """
-    Create a Slide for a Briefing.
+    Represents a Slide for a Briefing.
 
     .. note::
-        Once you create a Slide instance you must add it to the briefing to be able to edit it further.
-
-    ===============     ====================================================================
-    **Parameter**        **Description**
-    ---------------     --------------------------------------------------------------------
-    layout              Required LayoutType, the layout type of the slide.
-    ---------------     --------------------------------------------------------------------
-    sublayout           Optional SubLayoutType, the sublayout type of the slide. Only applicable
-                        when the layout is "double".
-    ---------------     --------------------------------------------------------------------
-    title               Optional string or :class:`~arcgis.apps.storymap.story_content.Text` object, the title of the slide.
-    ===============     ====================================================================
-
-    .. code-block:: python
-
-        >>> my_briefing.slides #use to find slides
-
-        # Method 1: Use the Slide Class
-        >>> slide = BriefingSlide()
-
+        To create a new slide use the `add` method in the Briefing class.
     """
 
     def __init__(
         self,
-        layout: Optional[LayoutType | str] = None,
-        sublayout: Optional[SublayoutType | str] = None,
-        title: Optional[str] = None,
         **kwargs,
     ):
-        self._story = kwargs.pop("story", None)
-        self._type = "briefing-slide"
-        self.node = kwargs.pop("node_id", None)
+        self._story: briefing.Briefing = kwargs.pop("story")
+        self._type: str = "briefing-slide"
+        self.node: str = kwargs.pop("node_id", None)
+        layout: Union[LayoutType, str] = kwargs.pop("layout", "single")
+        sublayout: Union[SublayoutType, str] | None = kwargs.pop("sublayout", None)
+        title: Text | str | None = kwargs.pop("title", None)
 
         # Check if node exists else create a new instance
-        self._existing = self._check_node()
+        self._existing: bool = self._check_node()
+
         if self._existing:
             self._initialize_existing_slide()
         else:
@@ -4238,35 +4218,38 @@ class BriefingSlide:
         # Existing slide logic
         if "data" in self._story._properties["nodes"][self.node]:
             node_data = self._story._properties["nodes"][self.node]["data"]
-            self._children = node_data.get("contents", {})
-            self._layout = node_data.get("layout", None)
-            self._sublayout = node_data.get("sublayout", None)
+            self._children: dict = node_data.get("contents", {})
+            self._layout: str = node_data.get("layout", None)
+            self._sublayout: str = node_data.get("sublayout", None)
             self._fix_children()
 
     def _initialize_new_slide(self, layout, sublayout, title):
         # New slide logic
-        self.node = "n-" + uuid.uuid4().hex[0:6]
-        self._children = {}
+        self.node: str = "n-" + uuid.uuid4().hex[0:6]
+        self._children: dict = {}
 
+        # set layout and sublayout
         if layout in LayoutType.__members__.values():
-            self._layout = layout.value
+            self._layout: str = layout.value
+        elif layout in ["single", "double"]:
+            self._layout: str = layout
         else:
             raise ValueError("Layout must be one of the following: single, double")
 
         if sublayout and sublayout in SublayoutType.__members__.values():
-            self._sublayout = sublayout.value
+            self._sublayout: str = sublayout.value
+        elif sublayout and sublayout in ["3-7", "7-3", "1-1"]:
+            self._sublayout: str = sublayout
         elif sublayout:
             raise ValueError("Invalid sublayout type")
+
+        # set title
         if title:
             self._title: Text = (
                 Text(title, TextStyles.SUBHEADING) if isinstance(title, str) else title
             )
-            self._add_to_story(self._title)
         else:
-            self._title = None
-
-        # For editing purposes, have children even if empty
-        self._fix_children()
+            self._title: Text | None = None
 
     def _fix_children(self):
         # Logic for fixing children
@@ -4276,23 +4259,29 @@ class BriefingSlide:
             self._fix_double_layout()
 
     def _fix_single_layout(self):
-        # Logic for fixing single layout
-        if "0" not in self._children:
-            self._story._properties["nodes"][self.node]["data"]["contents"]["0"] = []
-            self._children = self._story._properties["nodes"][self.node]["data"][
-                "contents"
-            ]
-        self._delete_keys(1)
+        if self._existing:
+            # Logic for fixing single layout
+            if "0" not in self._children:
+                self._story._properties["nodes"][self.node]["data"]["contents"][
+                    "0"
+                ] = []
+                self._children = self._story._properties["nodes"][self.node]["data"][
+                    "contents"
+                ]
+            self._delete_keys(1)
 
     def _fix_double_layout(self):
         # Logic for fixing double layout
-        for key in ["0", "1"]:
-            if key not in self._children:
-                self._story._properties["nodes"][self.node]["data"]["contents"][
-                    key
-                ] = []
-        self._children = self._story._properties["nodes"][self.node]["data"]["contents"]
-        self._delete_keys(2)
+        if self._existing:
+            for key in ["0", "1"]:
+                if key not in self._children:
+                    self._story._properties["nodes"][self.node]["data"]["contents"][
+                        key
+                    ] = []
+            self._children = self._story._properties["nodes"][self.node]["data"][
+                "contents"
+            ]
+            self._delete_keys(2)
 
     # ----------------------------------------------------------------------
     def _delete_keys(self, value):
@@ -4324,25 +4313,20 @@ class BriefingSlide:
         :return:
             A list of blocks in the slide
         """
-        if self._existing is True:
-            # If the slide is a cover slide, then the children are the contents
-            if self._story._properties["nodes"][self.node]["data"]["layout"] == "cover":
-                # self._children is a list of node ids in this case
-                return [
-                    utils._assign_node_class(self._story, node_id)
-                    for node_id in self._children
-                ]
+        # If the slide is a cover slide, then the children are the contents
+        if self._story._properties["nodes"][self.node]["data"]["layout"] == "cover":
+            # self._children is a list of node ids in this case
+            return [
+                utils._assign_node_class(self._story, node_id)
+                for node_id in self._children
+            ]
 
-            # Slide is not a cover slide and has contents, even if empty
-            contents = []
-            for key, _ in self._children.items():
-                # the key will be "0", "1", "2", "3" depending on the layout
-                contents.append(Block(key, self, self._story))
-            return contents
-        else:
-            raise ValueError(
-                "The slide must be part of a story before editing and getting Blocks."
-            )
+        # Slide is not a cover slide and has contents, even if empty
+        contents = []
+        for key, _ in self._children.items():
+            # the key will be "0", "1", "2", "3" depending on the layout
+            contents.append(Block(key, self, self._story))
+        return contents
 
     # ----------------------------------------------------------------------
     @property
@@ -4470,17 +4454,20 @@ class BriefingSlide:
 class Block:
     """
     Represents a block in a briefing slide.
-    This class can be accessed from the slide class and should not be created by a user.
+
+    .. note::
+        Blocks are automatically created when you create a new slide. You can access the blocks
+        through the `blocks` property of the slide. Do not create this class directly.
     """
 
-    def __init__(self, block_index, slide, story) -> None:
-        self._index = block_index
-        self._slide = slide
+    def __init__(self, block_index, slide: BriefingSlide, story) -> None:
+        self._index: int = block_index
+        self._slide: BriefingSlide = slide
         self._story = story
         # list of strings or single node as string
-        self._content = self._story._properties["nodes"][self._slide.node]["data"][
-            "contents"
-        ][str(self._index)]
+        self._content: list[str] | str = self._story._properties["nodes"][
+            self._slide.node
+        ]["data"]["contents"][str(self._index)]
 
     # ----------------------------------------------------------------------
     def __str__(self) -> str:
@@ -4537,9 +4524,6 @@ class Block:
         :return:
             True if successful.
         """
-        # check that the slide exists
-        if self._slide._check_node() is False:
-            raise Exception("The slide must be part of a briefing before editing.")
         # check that the content is not None
         if content is None:
             raise Exception(
@@ -4585,8 +4569,6 @@ class Block:
 
         :return: True if successful.
         """
-        if self._slide._check_node() is False:
-            raise Exception("The slide must be part of a briefing before editing.")
         if index is None:
             # delete all content
             self._content = []
@@ -4608,7 +4590,3 @@ class Block:
         ] = self._content
 
         return True
-
-    # ----------------------------------------------------------------------
-    def _check_node(self):
-        return self._story is not None and self.node is not None

@@ -62,9 +62,9 @@ class Briefing(object):
         # Section: Set up existing story
         if item and isinstance(item, str):
             item = self._get_item_by_id(item)
-        self._validate_item(item)
 
         if self._is_existing_briefing(item):
+            self._validate_item(item)
             self._create_existing_briefing()
         else:
             # If no item was provided create a new story map
@@ -345,7 +345,9 @@ class Briefing(object):
     # ----------------------------------------------------------------------
     def add(
         self,
-        slides: list[Content.BriefingSlide],
+        layout: str,
+        sublayout: Optional[str] = None,
+        title: Optional[str] = None,
         position: Optional[int] = None,
     ):
         """
@@ -357,33 +359,31 @@ class Briefing(object):
         ===============     ====================================================================
         **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
-        slides              Required list of :class:`~arcgis.apps.storymap.story_content.BriefingSlide`.
-                            The list of slides to be added to the story. The order of the slides
-                            in the list is the order in which they will appear in the briefing.
+        layout              Required LayoutType or string, the layout type of the slide.
+        ---------------     --------------------------------------------------------------------
+        sublayout           Optional SubLayoutType or string, the sublayout type of the slide. Only applicable
+                            when the layout is "double".
+        ---------------     --------------------------------------------------------------------
+        title               Optional string or :class:`~arcgis.apps.storymap.story_content.Text` object, the title of the slide.
         ---------------     --------------------------------------------------------------------
         position            Optional Integer. Indicates the position in which the slide will be
                             added. If no position is provided, the slide will be placed at the end.
         ===============     ====================================================================
 
-        :return: True if the slide was added successfully.
+        :return: The new slide that was added to the story
 
         """
-        # Check that slides is a list
-        slides: list[Content.BriefingSlide] = (
-            slides if isinstance(slides, list) else [slides]
+        slide = Content.BriefingSlide(
+            layout=layout, sublayout=sublayout, title=title, story=self
         )
-        for slide in slides:
-            if not isinstance(slide, Content.BriefingSlide):
-                raise ValueError("Only Slide objects can be added to a Briefing.")
 
-        for slide in slides:
-            # Add slide to story
-            slide._add_to_story(story=self)
+        # Add slide to story
+        slide._add_to_story(story=self)
 
-            # Add to story children
-            utils._add_child(self, node_id=slide.node, position=position)
+        # Add to story children
+        utils._add_child(self, node_id=slide.node, position=position)
 
-        return True
+        return slide
 
     # ----------------------------------------------------------------------
     def move(
