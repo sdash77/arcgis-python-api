@@ -1020,6 +1020,7 @@ class Connection(object):
                         # _log.error(errordetail)
 
         errormessage = errormessage + "\n(Error Code: " + str(errorcode) + ")"
+        raise Exception(errormessage)
 
     def post_multipart(
         self, path: str, params: dict = None, files: list = None, **kwargs

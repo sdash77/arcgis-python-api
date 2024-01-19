@@ -16,7 +16,7 @@ class SharingLevel(Enum):
     ======================  ========================================================
     **Parameter**            **Description**
     ----------------------  --------------------------------------------------------
-    ORG                     Sets the value to have organizational visiblity and only
+    ORG                     Sets the value to have organizational visibility and only
                             authenticated users within the GIS can see/use the item.
     ----------------------  --------------------------------------------------------
     PRIVATE                 Sets the item's sharing level to hidden/private and only
@@ -73,11 +73,11 @@ class SharingGroupManager:
         g: str | arcgis.gis.Group | None = None
         g = [grp.id for grp in self.list()]
         do_update = False
-        if hasattr(group, "id") and getattr(group, "id") not in g:
+        if hasattr(group, "id") and not getattr(group, "id") in g:
             g.append(getattr(group, "id"))
             groups: str = ",".join(g)
             do_update = True
-        elif isinstance(group, str) and group not in g:
+        elif isinstance(group, str) and not group in g:
             g.append(group)
             groups: str = ",".join(g)
             do_update = True
@@ -347,7 +347,7 @@ class SharingManager:
         results: dict[str, Any] = {"groups": sw.get("groups", [])}
         if sw["everyone"]:
             results["level"] = SharingLevel.EVERYONE
-        elif sw["everyone"] is False and sw["org"]:
+        elif sw["everyone"] == False and sw["org"]:
             results["level"] = SharingLevel.ORG
         else:
             results["level"] = SharingLevel.PRIVATE
