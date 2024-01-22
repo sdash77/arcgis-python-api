@@ -100,6 +100,11 @@ class LayoutType(Enum):
 
     SINGLE = "single"
     DOUBLE = "double"
+    TITLELESSSINGLE = "titleless-single"
+    TITLELESSDOUBLE = "titleless-double"
+    FULL = "full"
+    SECTIONDOUBLE = "section-double"
+    SECTIONSINGLE = "section-single"
 
 
 class SublayoutType(Enum):
@@ -4206,6 +4211,7 @@ class BriefingSlide:
         layout: Union[LayoutType, str] = kwargs.pop("layout", "single")
         sublayout: Union[SublayoutType, str] | None = kwargs.pop("sublayout", None)
         title: Text | str | None = kwargs.pop("title", None)
+        subtitle: Text | str | None = kwargs.pop("subtitle", None)
 
         # Check if node exists else create a new instance
         self._existing: bool = self._check_node()
@@ -4213,7 +4219,7 @@ class BriefingSlide:
         if self._existing:
             self._initialize_existing_slide()
         else:
-            self._initialize_new_slide(layout, sublayout, title)
+            self._initialize_new_slide(layout, sublayout, title, subtitle)
 
     def _initialize_existing_slide(self):
         # Existing slide logic
@@ -4222,9 +4228,15 @@ class BriefingSlide:
             self._children: dict = node_data.get("contents", {})
             self._layout: str = node_data.get("layout", None)
             self._sublayout: str = node_data.get("sublayout", None)
+
+            subtitle = node_data.get("subtitle", None)
+            if subtitle:
+                self._subtitle: Text | None = utils._assign_node_class(
+                    story=self._story, node_id=subtitle
+                )
             self._fix_children()
 
-    def _initialize_new_slide(self, layout, sublayout, title):
+    def _initialize_new_slide(self, layout, sublayout, title, subtitle):
         # New slide logic
         self.node: str = "n-" + uuid.uuid4().hex[0:6]
         self._children: dict = {}
@@ -4232,10 +4244,20 @@ class BriefingSlide:
         # set layout and sublayout
         if layout in LayoutType.__members__.values():
             self._layout: str = layout.value
-        elif layout in ["single", "double"]:
+        elif layout in [
+            "single",
+            "double",
+            "titleless-single",
+            "titleless-double",
+            "full",
+            "section-single",
+            "section-double",
+        ]:
             self._layout: str = layout
         else:
-            raise ValueError("Layout must be one of the following: single, double")
+            raise ValueError(
+                "Layout must be one of the following: single, double, titleless-single, titleless-double, full, section-single, section-double"
+            )
 
         if sublayout and sublayout in SublayoutType.__members__.values():
             self._sublayout: str = sublayout.value
@@ -4252,11 +4274,25 @@ class BriefingSlide:
         else:
             self._title: Text | None = None
 
+        # set subtitle
+        if subtitle:
+            self._subtitle: Text = (
+                Text(subtitle, TextStyles.PARAGRAPH)
+                if isinstance(subtitle, str)
+                else subtitle
+            )
+        else:
+            self._subtitle: Text | None = None
+
     def _fix_children(self):
-        # Logic for fixing children
-        if self._layout == "single":
+        # Logic for fixing children, section double is special case
+        if (
+            "single" in self._layout
+            or self._layout == "full"
+            or self._layout == "section-double"
+        ):
             self._fix_single_layout()
-        elif self._layout == "double":
+        elif "double" in self._layout:
             self._fix_double_layout()
 
     def _fix_single_layout(self):
@@ -4349,6 +4385,8 @@ class BriefingSlide:
     # ----------------------------------------------------------------------
     @title.setter
     def title(self, title: Union[Text, str]):
+        if self._layout in ["titleless-single", "titleless-double", "full"]:
+            raise Exception("This slide does not have a title.")
         if self._existing is True:
             # If string then need to create text node and add to story
             if isinstance(title, str):
@@ -4361,6 +4399,32 @@ class BriefingSlide:
             # Set the title node id in data of slide
             self._story._properties["nodes"][self.node]["data"]["title"] = title.node
         self._title = title
+
+    # ----------------------------------------------------------------------
+    @property
+    def subtitle(self):
+        """Get/Set the subtitle when the layout is either 'section-single' or 'section-double'."""
+        return self._subtitle
+
+    # ----------------------------------------------------------------------
+    @subtitle.setter
+    def subtitle(self, subtitle: Union[Text, str]):
+        if self._layout not in ["section-single", "section-double"]:
+            raise Exception("This slide does not have a subtitle.")
+        if self._existing is True:
+            # If string then need to create text node and add to story
+            if isinstance(subtitle, str):
+                subtitle = Text(subtitle, TextStyles.PARAGRAPH)
+                subtitle._add_to_story(story=self._story)
+            elif isinstance(subtitle, Text):
+                # If text created but not in story
+                if subtitle._existing is False:
+                    subtitle._add_to_story(story=self._story)
+            # Set the title node id in data of slide
+            self._story._properties["nodes"][self.node]["data"][
+                "subtitle"
+            ] = subtitle.node
+        self._subtitle = subtitle
 
     # ----------------------------------------------------------------------
     @property
@@ -4472,11 +4536,11 @@ class Block:
 
     # ----------------------------------------------------------------------
     def __str__(self) -> str:
-        if self._index == 0 and self._slide.layout == "single":
+        if self._index == "0" and self._slide.layout == "single":
             return "Block"
-        elif self._index == 0 and self._slide.layout == "double":
+        elif self._index == "0" and self._slide.layout == "double":
             return "Left Block"
-        elif self._index == 1 and self._slide.layout == "double":
+        elif self._index == "1" and self._slide.layout == "double":
             return "Right Block"
 
     # ----------------------------------------------------------------------
@@ -4504,7 +4568,7 @@ class Block:
             return []
         else:
             # There is only one content in the block
-            return utils._assign_node_class(self._story, self._content)
+            return [utils._assign_node_class(self._story, self._content)]
 
     # ----------------------------------------------------------------------
     def add_content(self, content: Text | Image | Video | Embed | Map | Swipe) -> bool:

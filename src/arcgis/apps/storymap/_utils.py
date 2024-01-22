@@ -650,12 +650,13 @@ def _add_child(story, node_id, position=None):
         # for briefings, the only child is the ui
         # the ui node has the slides
         principal_id = story._properties["nodes"][root_id]["children"][0]
+        last = len(story._properties["nodes"][principal_id]["children"])
     else:
         # for storymap the children are the root
         principal_id = root_id
+        # find the last position. If only one node then the last position is 1
+        last = len(story._properties["nodes"][principal_id]["children"]) - 1
 
-    # find the last position. If only one node then the last position is 1
-    last = len(story._properties["nodes"][principal_id]["children"]) - 1
     if last == 0:
         # briefings only have cover when you start
         last = 1
