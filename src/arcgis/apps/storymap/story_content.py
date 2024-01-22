@@ -4244,6 +4244,8 @@ class BriefingSlide:
             self._sublayout: str = sublayout
         elif sublayout:
             raise ValueError("Invalid sublayout type")
+        else:
+            self._sublayout: str | None = None
 
         # set title
         if title:
