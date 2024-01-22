@@ -348,6 +348,7 @@ class Briefing(object):
         layout: str,
         sublayout: Optional[str] = None,
         title: Optional[str] = None,
+        subtitle: Optional[str] = None,
         position: Optional[int] = None,
     ):
         """
@@ -365,6 +366,10 @@ class Briefing(object):
                             when the layout is "double".
         ---------------     --------------------------------------------------------------------
         title               Optional string or :class:`~arcgis.apps.storymap.story_content.Text` object, the title of the slide.
+                            Text can only be of type heading (h2).
+        ---------------     --------------------------------------------------------------------
+        subtitle            Optional string or :class:`~arcgis.apps.storymap.story_content.Text` object, the subtitle of the slide.
+                            Text can only be of type paragraph.
         ---------------     --------------------------------------------------------------------
         position            Optional Integer. Indicates the position in which the slide will be
                             added. If no position is provided, the slide will be placed at the end.
@@ -374,7 +379,11 @@ class Briefing(object):
 
         """
         slide = Content.BriefingSlide(
-            layout=layout, sublayout=sublayout, title=title, story=self
+            layout=layout,
+            sublayout=sublayout,
+            title=title,
+            subtitle=subtitle,
+            story=self,
         )
 
         # Add slide to story

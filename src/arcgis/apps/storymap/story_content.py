@@ -2132,6 +2132,7 @@ class Text:
         if self._existing is True:
             self._story._properties["nodes"][self.node]["data"]["text"] = text
             return self.text
+        self._text = text
 
     # ----------------------------------------------------------------------
     def delete(self):
@@ -4234,6 +4235,14 @@ class BriefingSlide:
                 self._subtitle: Text | None = utils._assign_node_class(
                     story=self._story, node_id=subtitle
                 )
+            else:
+                self._subtitle: Text | None = None
+
+            title_node = node_data.get("title", None)
+            if title_node:
+                self._title: Text = utils._assign_node_class(self._story, title_node)
+            else:
+                self._title: Text | None = None
             self._fix_children()
 
     def _initialize_new_slide(self, layout, sublayout, title, subtitle):
@@ -4265,6 +4274,8 @@ class BriefingSlide:
             self._sublayout: str = sublayout
         elif sublayout:
             raise ValueError("Invalid sublayout type")
+        else:
+            self._sublayout: str | None = None
 
         # set title
         if title:
@@ -4390,7 +4401,7 @@ class BriefingSlide:
         if self._existing is True:
             # If string then need to create text node and add to story
             if isinstance(title, str):
-                title = Text(title, TextStyles.SUBHEADING)
+                title = Text(title, TextStyles.HEADING)
                 title._add_to_story(story=self._story)
             elif isinstance(title, Text):
                 # If text created but not in story
