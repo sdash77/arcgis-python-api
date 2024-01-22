@@ -150,6 +150,7 @@ jobs:
       - name: Install dependencies
         run: |
           conda install -c main nose2 --yes
+          conda install conda-forge::requests-mock
           conda install -c esri arcgis=${{ steps.arcgis-info.outputs.latest-version }} --only-deps --yes
           conda install -c esri-build pydantic --yes
           conda install -c esri-build puremagic --yes
