@@ -286,7 +286,7 @@ class LogManager(BaseServer):
 
         logs = self._con.post(path=url, postdata=params)
         # determine if more logs are available to query
-        has_more = logs["hasMore"]
+        has_more = logs.get("hasMore", False)
 
         # If the hasMore member of the response object is true,
         # pass the end time as the startTime parameter
@@ -308,7 +308,7 @@ class LogManager(BaseServer):
                 max_records_return -= 5000
                 # new logs to query
                 new_logs = self._con.post(path=url, postdata=params)
-                has_more = new_logs["hasMore"]
+                has_more = new_logs.get("hasMore", False)
                 # append new log messages to logs to return
                 for log_message in new_logs["logMessages"]:
                     logs["logMessages"].append(log_message)

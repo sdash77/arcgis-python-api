@@ -81,13 +81,14 @@ class Mission:
 
         mission_product = copy.deepcopy(items_prods)
         for key, val in items_prods.items():
-            if "itemId" in val.keys():
-                if key == "imageCollection":
-                    key = "image_collection"
-                    mission_product[key] = self._gis.content.get(val["itemId"])
-                    del mission_product["imageCollection"]
-                else:
-                    mission_product[key] = self._gis.content.get(val["itemId"])
+            if val is not None and isinstance(val, dict):
+                if "itemId" in val.keys():
+                    if key == "imageCollection":
+                        key = "image_collection"
+                        mission_product[key] = self._gis.content.get(val["itemId"])
+                        del mission_product["imageCollection"]
+                    else:
+                        mission_product[key] = self._gis.content.get(val["itemId"])
         return mission_product
 
     @property
