@@ -2127,6 +2127,7 @@ class Text:
         if self._existing is True:
             self._story._properties["nodes"][self.node]["data"]["text"] = text
             return self.text
+        self._text = text
 
     # ----------------------------------------------------------------------
     def delete(self):
@@ -4222,7 +4223,11 @@ class BriefingSlide:
             self._children: dict = node_data.get("contents", {})
             self._layout: str = node_data.get("layout", None)
             self._sublayout: str = node_data.get("sublayout", None)
-            self._title: str = node_data.get("title", None)
+            title_node = node_data.get("title", None)
+            if title_node:
+                self._title: Text = utils._assign_node_class(self._story, title_node)
+            else:
+                self._title: Text | None = None
             self._fix_children()
 
     def _initialize_new_slide(self, layout, sublayout, title):
@@ -4355,7 +4360,7 @@ class BriefingSlide:
         if self._existing is True:
             # If string then need to create text node and add to story
             if isinstance(title, str):
-                title = Text(title, TextStyles.SUBHEADING)
+                title = Text(title, TextStyles.HEADING)
                 title._add_to_story(story=self._story)
             elif isinstance(title, Text):
                 # If text created but not in story
