@@ -4222,6 +4222,7 @@ class BriefingSlide:
             self._children: dict = node_data.get("contents", {})
             self._layout: str = node_data.get("layout", None)
             self._sublayout: str = node_data.get("sublayout", None)
+            self._title: str = node_data.get("title", None)
             self._fix_children()
 
     def _initialize_new_slide(self, layout, sublayout, title):
@@ -4243,6 +4244,8 @@ class BriefingSlide:
             self._sublayout: str = sublayout
         elif sublayout:
             raise ValueError("Invalid sublayout type")
+        else:
+            self._sublayout: str | None = None
 
         # set title
         if title:

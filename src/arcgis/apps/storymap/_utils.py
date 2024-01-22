@@ -108,10 +108,7 @@ def cover(
             )
         if media.node not in story._properties["nodes"]:
             # must be added to story resources
-            if media._type == "image":
-                media._add_image(story=story)
-            else:
-                media._add_video(story=story)
+            media._add_to_story(story=story)
         story._properties["nodes"][story_cover_node]["children"] = [media.node]
     else:
         # get original image
