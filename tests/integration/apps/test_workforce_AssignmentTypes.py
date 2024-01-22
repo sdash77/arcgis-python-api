@@ -54,7 +54,10 @@ def setUpModule():
     print("Is Pro installed: ", PreconditionChecks.check_Pro_installed())
     print("Host OS: " + PreconditionChecks.get_OS())
 
+from utils.decorators import integration_test
 
+
+@integration_test
 class Test_Workforce_Assignment_Types(unittest.TestCase):
     """
     Test to verify that assignments types can be fetched, updated, added, deleted

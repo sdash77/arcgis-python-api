@@ -10,6 +10,7 @@ import unittest
 from arcgis.auth.tools._util import detect_proxy
 from arcgis.gis import GIS, Item
 from arcgis.gis._impl._content_manager import Folder, Folders
+from utils.decorators import integration_test
 
 __logger__ = logging.getLogger()
 
@@ -1029,7 +1030,7 @@ TEXT_DATA = {
 
 ###########################################################################
 
-
+@integration_test
 class TestFolderAddContent(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
@@ -1194,7 +1195,7 @@ class TestFolderAddContent(unittest.TestCase):
 
 ###########################################################################
 
-
+@integration_test
 class TestFolder(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
@@ -1253,7 +1254,7 @@ class TestFolder(unittest.TestCase):
 
 ###########################################################################
 
-
+@integration_test
 class TestFolders(unittest.TestCase):
     @classmethod
     def setUpClass(cls):

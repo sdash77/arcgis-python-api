@@ -15,6 +15,7 @@ from arcgis.gis import GIS
 from arcgis.gis import ContentManager
 from arcgis.features import Feature
 from arcgis.mapping import WebMap
+from utils.decorators import integration_test
 
 profiles = ["your_online_profile", "your_enterprise_profile", "your_ent_admin_profile"]
 
@@ -22,6 +23,7 @@ flc = """{"layers":[{"layerDefinition":{"currentVersion":10.8,"id":0,"name":"gce
 
 
 ########################################################################
+@integration_test
 class TestCloneItems(unittest.TestCase):
     """tests simple clone items workflow for sanity reasons"""
 

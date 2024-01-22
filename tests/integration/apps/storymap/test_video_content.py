@@ -4,10 +4,12 @@ import unittest
 from arcgis.gis import GIS
 from arcgis.apps.storymap import StoryMap
 from arcgis.apps.storymap.story_content import Video
+from utils.decorators import integration_test
 
 profiles = ["your_online_profile", "your_enterprise_profile"]
 
 
+@integration_test
 class TestVideoContent(unittest.TestCase):
     """Test adding an video and seeing properties"""
 

@@ -61,9 +61,13 @@ except:
     WINDOWS = False
 
 
+from utils.decorators import integration_test
+
+
 @unittest.skipIf(
     WINDOWS == False or SKIP_IWA == True, "Operating System is not Windows"
 )
+@integration_test
 class TestWinAuth(unittest.TestCase):
     def test_win_auth(self):
         auth = EsriWindowsAuth(username=iwa_user, password=iwa_pw)
@@ -148,6 +152,7 @@ class TestWinAuth(unittest.TestCase):
     WINDOWS == False or SKIP_KERBEROS == True,
     "Operating System is not Windows",
 )
+@integration_test
 class TestKerberos(unittest.TestCase):
     def test_kerberos(self):
         """Tests the Kerberos"""
@@ -187,6 +192,7 @@ class TestKerberos(unittest.TestCase):
 @unittest.skipIf(
     WINDOWS == False or SKIP_LDAP == True, "Operating System is not Windows"
 )
+@integration_test
 class TestLDAPAuth(unittest.TestCase):
     """LDAP Test"""
 
