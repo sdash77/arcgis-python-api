@@ -346,11 +346,11 @@ class Briefing(object):
     def add(
         self,
         layout: str,
+        *,
         sublayout: Optional[str] = None,
         title: Optional[str] = None,
         subtitle: Optional[str] = None,
         section_position: Optional[str] = None,
-        *,
         position: Optional[int] = None,
     ):
         """
