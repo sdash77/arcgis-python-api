@@ -10,7 +10,7 @@ import urllib.parse
 from functools import lru_cache
 
 _arcgis_gis = LazyLoader("arcgis.gis")
-
+_log = logging.getLogger()
 
 @lru_cache(maxsize=255)
 def _get_org_id(url: str, session: EsriSession, return_type: str = "url_key") -> str:
