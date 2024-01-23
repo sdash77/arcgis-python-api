@@ -2866,7 +2866,7 @@ class Test_Item_arcgis_online(unittest.TestCase):
             )
 
             # try sharing to the group in the org
-            share_result = data_item.share(groups=[group3])
+            share_result = data_item.sharing._share(groups=[group3])
 
             import time
 

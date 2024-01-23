@@ -23,6 +23,8 @@ from .story_content import (
     BriefingSlide,
     Code,
     Language,
+    SlideLayout,
+    SlideSubLayout,
 )
 
 __all__ = ["JournalStoryMap", "StoryMap", "Briefing"]

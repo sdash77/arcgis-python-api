@@ -108,10 +108,7 @@ def cover(
             )
         if media.node not in story._properties["nodes"]:
             # must be added to story resources
-            if media._type == "image":
-                media._add_image(story=story)
-            else:
-                media._add_video(story=story)
+            media._add_to_story(story=story)
         story._properties["nodes"][story_cover_node]["children"] = [media.node]
     else:
         # get original image
@@ -256,11 +253,11 @@ def save(
         story._item.update(item_properties=p)
 
         if sharing == "private":
-            story._item.share(everyone=False, org=False, groups=None)
+            story._item.sharing.sharing_level = "PRIVATE"
         elif sharing == "org":
-            story._item.share(org=True)
+            story._item.sharing.sharing_level = "ORGANIZATION"
         elif sharing == "public":
-            story._item.share(everyone=True)
+            story._item.sharing.sharing_level = "EVERYONE"
 
         if (
             story._gis._con._session.auth
@@ -650,12 +647,13 @@ def _add_child(story, node_id, position=None):
         # for briefings, the only child is the ui
         # the ui node has the slides
         principal_id = story._properties["nodes"][root_id]["children"][0]
+        last = len(story._properties["nodes"][principal_id]["children"])
     else:
         # for storymap the children are the root
         principal_id = root_id
+        # find the last position. If only one node then the last position is 1
+        last = len(story._properties["nodes"][principal_id]["children"]) - 1
 
-    # find the last position. If only one node then the last position is 1
-    last = len(story._properties["nodes"][principal_id]["children"]) - 1
     if last == 0:
         # briefings only have cover when you start
         last = 1

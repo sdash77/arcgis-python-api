@@ -55,7 +55,7 @@ class TestItemContentStatus(unittest.TestCase):
 
         wm = WebMap()
         item = wm.save({"title": "testwebmap", "tags": "a,c,d", "snippet": "snippet"})
-        item.share(everyone=True)
+        item.sharing.sharing_level = "EVERYONE"
         with self.assertRaises(Exception) as context:
             item.content_status = "public_authoritative"
         item.protect(False)
@@ -70,7 +70,7 @@ class TestItemContentStatus(unittest.TestCase):
             item = wm.save(
                 {"title": "testwebmap", "tags": "a,c,d", "snippet": "snippet"}
             )
-            item.share(everyone=True)
+            item.sharing.sharing_level = "EVERYONE"
             if item:
                 assert isinstance(item, Item)
                 orig_status = item.content_status
