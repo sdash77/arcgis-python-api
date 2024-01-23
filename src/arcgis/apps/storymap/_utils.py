@@ -253,11 +253,11 @@ def save(
         story._item.update(item_properties=p)
 
         if sharing == "private":
-            story._item.share(everyone=False, org=False, groups=None)
+            story._item.sharing.sharing_level = "PRIVATE"
         elif sharing == "org":
-            story._item.share(org=True)
+            story._item.sharing.sharing_level = "ORGANIZATION"
         elif sharing == "public":
-            story._item.share(everyone=True)
+            story._item.sharing.sharing_level = "EVERYONE"
 
         if (
             story._gis._con._session.auth
