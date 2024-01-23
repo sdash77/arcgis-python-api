@@ -21,27 +21,27 @@ def enable_verbose_logging(root):
     root.addHandler(handler)
 
 
-profiles = ['your_online_admin_profile']
+profiles = ["your_online_admin_profile"]
 PROXIES = detect_proxy(True)  # Handles Fiddler when True
 enable_verbose_logging(__logger__)
+
 
 class TestPartneredCollaboration(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         cls.gis = GIS(
-            profile='your_online_admin_profile', verify_cert=False, proxy=PROXIES
+            profile="your_online_admin_profile", verify_cert=False, proxy=PROXIES
         )
-        cls.dest_url: str = (
-            "https://pythonapi.maps.arcgis.com/home/index.html"
-        )
+        cls.dest_url: str = "https://pythonapi.maps.arcgis.com/home/index.html"
 
     def test_admin_property(self):
         from arcgis.gis.admin import PartneredCollabManager
+
         gis: GIS = self.gis
         assert gis.users.me.role == "org_admin"
         assert gis.admin.partnered_collaboration
         assert isinstance(gis.admin.partnered_collaboration, PartneredCollabManager)
-                          
+
     def test_partnered_collab_properties(self):
         from types import GeneratorType
 
@@ -56,7 +56,10 @@ class TestPartneredCollaboration(unittest.TestCase):
         collab = self.gis.admin.partnered_collaboration
         coordinators: list = list(collab.coordinators)
         if len(coordinators) == 0:
-            assert self.gis.users.me.role == 'org_admin' or self.gis.users.me.role_id == 'iCCCCCCCCCCCCCCC'
+            assert (
+                self.gis.users.me.role == "org_admin"
+                or self.gis.users.me.role_id == "iCCCCCCCCCCCCCCC"
+            )
             collab.coordinators = [self.gis.users.me]
             coordinators: list = list(collab.coordinators)
             assert len(list(coordinators)) > 0

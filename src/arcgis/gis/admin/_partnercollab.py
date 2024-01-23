@@ -12,6 +12,7 @@ from functools import lru_cache
 _arcgis_gis = LazyLoader("arcgis.gis")
 _log = logging.getLogger()
 
+
 @lru_cache(maxsize=255)
 def _get_org_id(url: str, session: EsriSession, return_type: str = "url_key") -> str:
     parsed: urllib.parse.ParseResult = urllib.parse.urlparse(url)
@@ -48,25 +49,25 @@ class PartneredCollaboration:
 
     @property
     def session(self) -> EsriSession:
-        """ Returns an :class:`~arcgis.auth.api.EsriSession` object."""
+        """Returns an :class:`~arcgis.auth.api.EsriSession` object."""
         return self._session
 
     @property
     def properties(self) -> dict[str, Any]:
         """Returns a dictionary indicating various attributes of the
         *collaboration* from the perspective of the organization.
-        
+
         .. code-block:: python
-        
+
             #Usage Example
             >>> from arcgis.gis import GIS
             >>> gis = GIS(profile="your_online_admin_profile")
-            
+
             >>> partner_collab_mgr = gis.admin.partnered_collaboration
-            
+
             >>> partner_collab = next(partner_collab_mgr.collaboration(include_hub=False))
             >>> partner_collab.properties
-            
+
             {'from': {'orgId': 'JXM4...',
                       'usersAccess': True,
                       'established': 1706041472000,
@@ -78,7 +79,7 @@ class PartneredCollaboration:
                     'name': 'My Account',
                     'hub': False,
                     'state': 'active'}}
-        
+
         """
         if self._properties is None:
             url: str = f"{self.url}"
@@ -98,20 +99,20 @@ class PartneredCollaboration:
 
         :returns: Boolean. `False` means the collaboration is not suspended.
              `True` means the partnership is suspended.
-             
+
         .. code-block:: python
-        
+
             # Usage Example: Suspend the collaboration
             >>> from arcgis.gis import GIS
             >>> gis = GIS(profile="your_online_admin_profile")
-            
+
             >>> partner_collab_mgr = gis.admin.partnered_collaboration
             >>> partner_collab = next(partner_collab_mgr.collaborations())
-            
+
             # Get current suspension status
             >>> partner_collab.suspend
             False
-            
+
             # Suspend the collaboration
             >>> partner_collab.suspend = True
         """
@@ -152,16 +153,16 @@ class PartneredCollaboration:
         """Property used to get or set the ability for collaboration members
         to search for :class:`users <arcgis.gis.User>` with public or organization
         access profiles within collaborating organizations.
-        
+
         .. code-block:: python
-        
+
             # Usage Example:
             >>> from arcgis.gis import GIS
             >>> gis = GIS(profile="your_online_admin_profile")
-            
+
             >>> partner_collab = next(gis.admin.partnered_collaboration.collaborations())
             >>> parnter_collab.search_users = True
-        """        
+        """
         return self.properties["to"]["usersAccess"]
 
     @search_users.setter
@@ -184,7 +185,7 @@ class PartneredCollaboration:
 
     def delete(self, message: str | None = None) -> bool:
         """This operation ends the partnered collaboration
-        
+
         =============     ================================================
         **Parameter**     **Description**
         -------------     ------------------------------------------------
@@ -222,7 +223,7 @@ class PartneredCollaboration:
 
     def accept(self, user_access: bool) -> bool:
         """Accepts the invitation and establishes a partnered collaboration.
-        
+
         =================     =============================================
         **Parameter**         **Description**
         -----------------     ---------------------------------------------
@@ -250,6 +251,7 @@ class PartneredCollaboration:
             _log.warning("Collaboration already established, skipping")
             return False
 
+
 class PartneredCollabManager:
     """
     A class for managing *partnered collaborations*, which are utilized
@@ -261,23 +263,23 @@ class PartneredCollabManager:
     `Understanding collaborations <https://doc.arcgis.com/en/arcgis-online/administer/understand-collaborations.htm#ESRI_SECTION1_1FA3EDFCBDBE432AA9EE9B0FB62AB5F8>`_.
     For detailed workflow example, please read `The Power of Partnered
     Collaboration <https://www.esri.com/arcgis-blog/products/arcgis-online/administration/the-power-of-partnered-collaboration-in-arcgis-online/?rsource=https%3A%2F%2Flinks.esri.com%2Fagol-help%2Fblog%2Fpartnered-collaboration>`_.
-    
+
     A user **must** have administrator privileges to access this object.
     Instances are not meant to be created directly, but rather returned
     using the :attr:`~arcgis.gis.admin.partnered_colloboration`
     property of an :class:`ArcGIS Online Administrator <arcgis.gis.admin.AGOLAdminManager>`
     object.
-    
+
     .. code-block:: python
-    
+
         # Usage Example:
         >>> from arcgis.gis import GIS
         >>> gis = GIS(profile="your_online_admin_profile")
-        
+
         >>> agol_mgr = gis.admin
         >>> partnered_collab_mgr = agol_mgr.partnered_colloboration
         >>> partnered_collab_mgr
-        
+
         <arcgis.gis.admin._partnercollab.PartneredCollabManager object at <memory address>>
     """
 
@@ -310,23 +312,23 @@ class PartneredCollabManager:
         """
         Returns various attributes about partnered collaborations of the
         current organzations.
-        
+
         .. note::
             ArcGIS Hub is implemented with a similar mechanism to Partnered
             Collaborations. Properties about the relationship with ArcGIS
             Hub is returned in this dictionary as well.
-        
+
         .. code-block:: python
-        
+
             # Usage Example: Organization that initiated a Partner Collaboration
             #                and uses Hub Basic
-            
+
             >>> from arcgis.gis import GIS
             >>> gis = GIS(profile="your_online_admin_profile")
-            
+
             >>> collab_mgr = gis.admin.partnered_collaboration
             >>> collab_mgr.properties
-            
+
             {'total': 2,
              'start': 1,
              'num': 10,
@@ -353,8 +355,8 @@ class PartneredCollabManager:
                                     'name': 'Organization for Demo',
                                     'hub': False,
                                     'state': 'active'}}]}
-        
-           
+
+
         :return: dict
         """
         if self._properties is None:
@@ -385,7 +387,7 @@ class PartneredCollabManager:
     ) -> Generator[PartneredCollaboration]:
         """Returns a Python generator that can retrieve all the *partnered
         collaborations* for the current organization.
-        
+
         ===============     ====================================================
         **Parameter**       **Description**
         ---------------     ----------------------------------------------------
@@ -394,19 +396,19 @@ class PartneredCollabManager:
                             the generator returned by this method. Default value
                             is `False`.
         ===============     ====================================================
-        
+
         .. code-block:: python
-        
+
             # Usage Example:
             >>> from arcgis.gis import GIS
             >>> gis = GIS(profile="your_online_admin_profile")
-            
+
             >>> partner_collab_mgr = gis.admin.partnered_collaboration
             >>> partner_collab_gen = partner_collab_mgr.collaborations()
-            
+
             >>> partner_collab_obj = next(partner_collab_gen)
             >>> partner_collab_obj
-            
+
             <arcgis.gis.admin._partnercollab.PartneredCollaboration object at 0x...>
         """
         url: str = f"{self.url}"
@@ -443,7 +445,7 @@ class PartneredCollabManager:
         partner collaborations. This property also serves as the way to set
         additional coordinators by assigning a list of :class:`~arcgis.gis.User`
         objects.
-        
+
         .. note::
             In order to serve as *coordinators*, users must be either an
             *Administrator* in the org or assigned the *Facilitator* role. In
@@ -451,23 +453,23 @@ class PartneredCollabManager:
             or *Everyone*.
             See `Manage collaboration coordinators <https://doc.arcgis.com/en/arcgis-online/administer/manage-partnered-collaborations.htm#ESRI_SECTION1_DE8B1894C2914A26AF5AD3D822CC3524>`_
             for details.
-            
+
         .. code-block:: python
-        
+
             #Usage example to set coordinators
-            
+
             >>> from arcgis.gis import GIS
             >>> gis = GIS(profile="your_online_admin_profile")
-            
+
             >>> partner_clb_mgr = gis.admin.partnered_collaboration
-            
+
             >>> new_coordinators = [usr for usr in gis.users.search("*")
                                     if usr.role == "org_admin"][:3]
             >>> partner_clb_mgr.coordinators = new_coordinators
-            
+
             >>> for clb_coordinator in partner_clb_mgr.coordinators:
                     print(f"{clb_coordinator.username:25}{type(clb_coordinator)}")
-                    
+
             Collab_Coordinator1      <class 'arcgis.gis.User'>
             Org_Admin_Overall        <class 'arcgis.gis.User'>
         """
@@ -529,7 +531,7 @@ class PartneredCollabManager:
         ----------------  ---------------------------------------------------------------
         org_id            Optional String. The ID of the organization to partner with.
         ----------------  ---------------------------------------------------------------
-        search_users      Optional boolean. Allows partnered organization members to 
+        search_users      Optional boolean. Allows partnered organization members to
                           search for :class:`users <arcgis.gis.User>` within your
                           organization.
         ================  ===============================================================
