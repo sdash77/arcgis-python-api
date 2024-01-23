@@ -1173,10 +1173,17 @@ class Embed:
         if self._existing is True:
             # Get the link path
             self._path = self._story._properties["nodes"][self.node]["data"]["url"]
+
+            # check if offline dependent
+            if "dependent" in self._story._properties["nodes"][self.node]["data"]:
+                self._offline_dependent = self._story._properties["nodes"][self.node][
+                    "data"
+                ]["dependent"]["offline"]
         else:
             # Create new instance, notice no resource node is needed for embed
             self._path = path
             self.node = "n-" + uuid.uuid4().hex[0:6]
+            self._offline_dependent = None
 
     # ----------------------------------------------------------------------
     @property
@@ -1195,6 +1202,46 @@ class Embed:
             return {
                 "node_dict": self._story._properties["nodes"][self.node],
             }
+
+    # ----------------------------------------------------------------------
+    @property
+    def offline_media(self):
+        """
+        Get/Set the offline media property for the embed.
+
+        ==================  ========================================
+        **Parameter**        **Description**
+        ------------------  ----------------------------------------
+        offline_media       Image or Video. The new offline_media for the Embed.
+        ==================  ========================================
+
+        :return:
+            The offline media that is being used.
+        """
+        if self._existing is True:
+            if self._offline_dependent:
+                return utils._assign_node_class(
+                    story=self._story, node_id=self._offline_dependent
+                )
+        return None
+
+    # ----------------------------------------------------------------------
+    @offline_media.setter
+    def offline_media(self, value: Image | Video):
+        if self._existing:
+            # can only set for briefing
+            if isinstance(self._story, briefing.Briefing):
+                if isinstance(value, Image) or isinstance(value, Video):
+                    value._add_to_story(story=self._story)
+                    self._offline_dependent = value.node
+                else:
+                    raise ValueError("offline_media must be an Image or Video")
+            else:
+                raise ValueError("offline_media can only be set for a Briefing")
+        else:
+            raise ValueError(
+                "offline_media can only be set for an Embed that has been added to a Briefing."
+            )
 
     # ----------------------------------------------------------------------
     def __str__(self) -> str:
@@ -1436,6 +1483,12 @@ class Map:
                 self._lighting_date = self._story._properties["resources"][
                     self.resource_node
                 ]["data"]["lightingDate"]
+
+            # check if offline dependents exist
+            if "dependents" in self._story._properties["nodes"][self.node]:
+                self._offline_dependent = self._story._properties["nodes"][self.node][
+                    "dependents"
+                ]["offline"]
         else:
             # Create new instance
             if isinstance(item, str):
@@ -1454,6 +1507,7 @@ class Map:
             self.resource_node = "r-" + item.id
             self._path = item
             self._type = item.type
+            self._offline_dependent = None
             if item.type == "Web Map":
                 self._extent = map_item._mapview.extent
                 if map_item._mapview.center is None:
@@ -1851,6 +1905,96 @@ class Map:
             return self.display
 
     # ----------------------------------------------------------------------
+    @property
+    def offline_media(self):
+        """
+        Get/Set the offline media. This is an alternative version of this media
+        for offline viewing using the ArcGIS StoryMaps Briefings app.
+
+        .. note::
+            This property is only available for ArcGIS StoryMaps Briefings and
+            the map must be part of the Briefing before setting this property.
+
+        ==================  ========================================
+        **Parameter**        **Description**
+        ------------------  ----------------------------------------
+        offline_media       The new offline media for the Map or Scene.
+                            This can either be the item of
+                            a Mobile Map Package or Mobile Scene Package or it
+                            can be an item of type Image or Video from Story Contents.
+        ==================  ========================================
+        """
+        # find the type of dependent based on the type of the dependent
+        # either an Image, Video, or ArcGIS Item.
+        if self._existing is True:
+            if self._offline_dependent:
+                # Find it in the story
+                node = self._story._properties["nodes"][self._offline_dependent]
+                # Find the type of dependent
+                if node["type"] in ["image", "video"]:
+                    return utils._assign_node_class(
+                        story=self._story, node_id=self._offline_dependent
+                    )
+                else:
+                    # Find the itemId of the dependent
+                    resource = self._story._properties["resources"][
+                        node["data"]["package"]
+                    ]
+                    item_id = resource["data"]["itemId"]
+                    return self._story._gis.content.get(item_id)
+        else:
+            return None
+
+    # ----------------------------------------------------------------------
+    @offline_media.setter
+    def offline_media(self, value: arcgis.gis.Item | Image | Video):
+        if self._existing:
+            if not isinstance(self._story, briefing.Briefing):
+                raise ValueError("offline_media can only be set for a Briefing")
+            if isinstance(value, arcgis.gis.Item):
+                # check if item is a MMPK or MSPK
+                if value.type in ["Mobile Map Package", "Mobile Scene Package"]:
+                    # create new node
+                    self._create_offline_node(value)
+                    # update dependent
+                    self._story._properties["nodes"][self.node]["dependents"] = {
+                        "offline": self._offline_dependent
+                    }
+                else:
+                    raise ValueError(
+                        "Item must be of type Mobile Map Package or Mobile Scene Package"
+                    )
+            elif isinstance(value, Image) or isinstance(value, Video):
+                value._add_to_story(story=self._story)
+                self._offline_dependent = value.node
+                # update dependent
+                self._story._properties["nodes"][self.node]["dependents"] = {
+                    "offline": self._offline_dependent
+                }
+            else:
+                raise ValueError("Value must be an Item, Image, or Video")
+
+    def _create_offline_node(self, item):
+        """
+        Create an offline node in the story.
+        """
+        self._offline_dependent = "n-" + uuid.uuid4().hex[0:6]
+        self._story._properties["nodes"][self._offline_dependent] = {
+            "type": "mobile-package",
+            "data": {
+                "package": "r-" + item.id,
+                "title": item.title,
+            },
+        }
+        self._story._properties["resources"]["r-" + item.id] = {
+            "type": "portal-item",
+            "data": {
+                "itemId": item.id,
+                "itemType": item.type,
+            },
+        }
+
+    # ----------------------------------------------------------------------
     def delete(self):
         """
         Delete the node
@@ -2002,6 +2146,10 @@ class Text:
 
 
                             Ex: custom_color = "080"
+    -------------------     --------------------------------------------------------------------
+    size                    Optional String. Used for 'paragraph', 'bullet-list', or 'numbered-list'.
+                            The size of the text. For a Storymap it can be 'large' or 'medium'.
+                            For a Briefing it can be 'large', 'medium', or 'small'.
     ==================      ====================================================================
 
 
@@ -2011,13 +2159,6 @@ class Text:
     **Type**                **Text**
     -------------------     --------------------------------------------------------------------
     paragraph               String can contain the following tags for text formatting:
-                            <strong>, <em>, <a href="{link}" rel="noopener noreferer" target="_blank"
-                            and a class attribute to indicate color formatting:
-                            class=sm-text-color-{values} attribute in the <strong> | <em> | <a> | <span> tags
-
-                            Values: `themeColor1` | `themeColor2` | `themeColor3` | `customTextColors`
-    -------------------     --------------------------------------------------------------------
-    large-paragraph         String can contain the following tags for text formatting:
                             <strong>, <em>, <a href="{link}" rel="noopener noreferer" target="_blank"
                             and a class attribute to indicate color formatting:
                             class=sm-text-color-{values} attribute in the <strong> | <em> | <a> | <span> tags
@@ -2052,6 +2193,7 @@ class Text:
         text: Optional[str] = None,
         style: TextStyles = TextStyles.PARAGRAPH,
         color: str = None,
+        size: str = None,
         **kwargs,
     ):
         # Can be created from scratch or already exist in story
@@ -2064,6 +2206,7 @@ class Text:
         if self._existing is True:
             self._text = self._story._properties["nodes"][self.node]["data"]["text"]
             self._style = self._story._properties["nodes"][self.node]["data"]["type"]
+            self._size = self._story._properties["nodes"][self.node]["data"]["textSize"]
         else:
             self.node = "n-" + uuid.uuid4().hex[0:6]
             self._text = text
@@ -2080,6 +2223,16 @@ class Text:
                 self._color = color
             else:
                 self._color = None
+
+            # Size only applies to certain styles
+            if self._style in [
+                "paragraph",
+                "bullet-list",
+                "numbered-list",
+            ]:
+                self._size = size
+            else:
+                self._size = None
 
     # ----------------------------------------------------------------------
     def __str__(self) -> str:
@@ -2135,6 +2288,44 @@ class Text:
         self._text = text
 
     # ----------------------------------------------------------------------
+    @property
+    def size(self):
+        """
+        Get/Set the size for the text node.
+
+        ==================  ==================================================
+        **Parameter**        **Description**
+        ------------------  --------------------------------------------------
+        size                Optional String. The new size to be displayed.
+                            Applicable for Paragraph, Bullet List, and Numbered List.
+
+                            Values: `small` | `medium` | `large`
+
+                            .. note::
+                                "small" can only be used in a Briefing.
+        ==================  ==================================================
+
+        :return:
+            The size for the node.
+            If nothing is returned, make sure the content is part of the story.
+        """
+        return self._size
+
+    # ----------------------------------------------------------------------
+    @size.setter
+    def size(self, size):
+        if self._existing is True:
+            # check for common errors
+            if size not in ["small", "medium", "large"]:
+                raise ValueError("Size must be 'small', 'medium', or 'large'")
+            if size == "small" and not isinstance(self._story, briefing.Briefing):
+                raise ValueError("Size 'small' can only be used in a Briefing")
+
+            self._story._properties["nodes"][self.node]["data"]["textSize"] = size
+
+        self._size = size
+
+    # ----------------------------------------------------------------------
     def delete(self):
         """
         Delete the node
@@ -2158,6 +2349,11 @@ class Text:
             self._story._properties["nodes"][self.node]["data"]["customTextColors"] = [
                 self._color
             ]
+        if self._size is not None:
+            # if story is not a briefing and size is 'small' then set to 'medium'
+            if not isinstance(self._story, briefing.Briefing) and self._size == "small":
+                self._size = "medium"
+            self._story._properties["nodes"][self.node]["data"]["textSize"] = self._size
 
     # ----------------------------------------------------------------------
     def _check_node(self):
@@ -4394,13 +4590,13 @@ class BriefingSlide:
         # Slide is not a cover slide and has contents, even if empty
         contents = []
         for key, _ in self._children.items():
-            # the key will be "0", "1", "2", "3" depending on the layout
+            # the key will be "0", "1" depending on the layout
             contents.append(Block(key, self, self._story))
         return contents
 
     # ----------------------------------------------------------------------
     @property
-    def title(self) -> Text | None:
+    def title(self) -> str | None:
         """
         Get/Set the title of the slide.
 
@@ -4413,7 +4609,10 @@ class BriefingSlide:
         title               Text instance or string depicting the title of the slide.
         ===============     ====================================================================
         """
-        return self._title
+        if self._title:
+            return self._title.text
+        else:
+            return None
 
     # ----------------------------------------------------------------------
     @title.setter
@@ -4439,9 +4638,12 @@ class BriefingSlide:
 
     # ----------------------------------------------------------------------
     @property
-    def subtitle(self):
+    def subtitle(self) -> str | None:
         """Get/Set the subtitle when the layout is either 'section-single' or 'section-double'."""
-        return self._subtitle
+        if self._subtitle:
+            return self._subtitle.text
+        else:
+            return None
 
     # ----------------------------------------------------------------------
     @subtitle.setter
