@@ -8,8 +8,10 @@ from arcgis.gis import GIS
 from arcgis.features.layer import FeatureLayerCollection
 import arcgis.features
 import parcel_fabric_utils as pfutils
+from utils.decorators import integration_test
 
 
+@integration_test
 class TestAnalyzeLSA(unittest.TestCase):
     """Apply LSA on a small fabric.  Test sync and async"""
 

@@ -9,6 +9,7 @@ import pandas as pd
 from arcgis.auth.tools._util import detect_proxy
 from arcgis.gis import GIS
 from arcgis.features import FeatureLayer
+from utils.decorators import integration_test
 
 __logger__ = logging.getLogger()
 
@@ -288,6 +289,7 @@ DATA = {
 }
 
 
+@integration_test
 class TestApplyEditsSeDF(unittest.TestCase):
     @classmethod
     def setUpClass(cls):

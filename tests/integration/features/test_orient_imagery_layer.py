@@ -12,6 +12,7 @@ from arcgis.gis._impl._dataclasses._contentds import (
     ItemTypeEnum,
     ItemProperties,
 )
+from utils.decorators import integration_test
 
 __logger__ = logging.getLogger()
 
@@ -34,6 +35,7 @@ QA_LABS = r"\\qalab_server\pydata\v109\geosaurus\oriented_image_layer"
 DATASET = "OI_sample.gdb.zip"
 
 
+@integration_test
 class TestOrientedImageryLayer(unittest.TestCase):
     @classmethod
     def setUpClass(cls):

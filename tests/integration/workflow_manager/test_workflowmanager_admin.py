@@ -6,10 +6,12 @@ import datetime
 import re
 
 import workflowmanager_setup
+from utils.decorators import integration_test
 
 
 ###########################################################################
 # @unittest.SkipTest
+@integration_test
 class TestWorkflowManager(unittest.TestCase):
     """Tests the workflow manager Functionality"""
 

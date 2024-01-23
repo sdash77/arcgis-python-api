@@ -15,6 +15,7 @@ from arcgis.gis.admin import (
 )
 import tempfile
 import requests
+from utils.decorators import integration_test
 
 # Download Image to Temp File to be used for logo, background, etc.
 image_url = "https://previews.123rf.com/images/stephane106/stephane1060705/stephane106070500053/927250-isolated-earth-globe-on-white-background-the-map-is-public-domain-from-nasa-visibleearth-nasa-gov-.jpg"
@@ -40,6 +41,7 @@ PROXIES = detect_proxy(True)  # Handles Fiddler when True
 enable_verbose_logging(__logger__)
 
 
+@integration_test
 class Test_UXClass(unittest.TestCase):
     """Tests UX Class"""
 
@@ -194,6 +196,7 @@ class Test_UXClass(unittest.TestCase):
                     ux.gallery_group = gall_grp
 
 
+@integration_test
 class Test_HomePageSettingsClass(unittest.TestCase):
     """Tests Home Page Editor Class"""
 
@@ -274,6 +277,7 @@ class Test_HomePageSettingsClass(unittest.TestCase):
                     assert hps.set_contact_email(contact_email)
 
 
+@integration_test
 class Test_MapSettingsClass(unittest.TestCase):
     """Tests Org Map Settings Class"""
 
@@ -379,6 +383,7 @@ class Test_MapSettingsClass(unittest.TestCase):
                 ms.bing_map(bing_key="REMOVE")
 
 
+@integration_test
 class Test_ItemSettingsClass(unittest.TestCase):
     """Tests Org Item Settings Class"""
 
@@ -416,6 +421,7 @@ class Test_ItemSettingsClass(unittest.TestCase):
                 it_set.metadata_format = frmt
 
 
+@integration_test
 class Test_SecuritySettingsClass(unittest.TestCase):
     """Tests Org Security Settings Class"""
 

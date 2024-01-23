@@ -5,6 +5,7 @@ import sys, datetime
 
 
 from arcgis.gis import GIS
+from utils.decorators import integration_test
 
 profiles = [
     "your_kubernetes_profile"
@@ -12,6 +13,7 @@ profiles = [
 VERIFY_CERT = False  # Boolean T/F
 
 
+@integration_test
 class TestLogsAdminTemplate(unittest.TestCase):
     """
     Tests the Kubernetes Admin Logs Functions

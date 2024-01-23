@@ -13,8 +13,10 @@ from arcgis.features.layer import FeatureLayerCollection, FeatureSet
 from arcgis.features._parcel import ParcelFabricManager
 
 import parcel_fabric_utils as pfutils
+from utils.decorators import integration_test
 
 
+@integration_test
 class TestShrinkReconstructSeeds(unittest.TestCase):
     gis = None
     vms = None

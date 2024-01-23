@@ -6,12 +6,14 @@ import uuid
 from arcgis.gis import GIS, User, UserManager, Group, GroupManager
 from arcgis.auth.tools._util import detect_proxy
 from arcgis.gis.sharing import UserInvitationManager
+from utils.decorators import integration_test
 
 PROFILES = ["your_online_admin_profile", "your_ent_admin_profile"]
 
 proxies = detect_proxy(True)
 
 
+@integration_test
 class TestUserInvitationManager(unittest.TestCase):
     """Tests the user invitation manager"""
 

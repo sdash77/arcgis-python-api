@@ -1,14 +1,14 @@
 import sys
 import os
 import unittest
-from utils.decorators import profiles, default_timeout
+from utils.decorators import integration_test, profiles
 from utils.logging import enable_verbose_logging
 
 enable_verbose_logging()
 
 @profiles.k8s
+@integration_test
 class TestKubernetesExportLogs(unittest.TestCase):
-    @default_timeout
     def test_export_log(self):
         admin = self.gis.admin
         lm = admin.logs
@@ -20,7 +20,6 @@ class TestKubernetesExportLogs(unittest.TestCase):
         except:
             pass
 
-    @default_timeout
     def test_export_log_parameters(self):
         admin = self.gis.admin
         lm = admin.logs

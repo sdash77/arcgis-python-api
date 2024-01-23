@@ -8,8 +8,10 @@ from arcgis.gis import GIS
 from arcgis.features.layer import FeatureLayerCollection
 from arcgis.features._parcel import ParcelFabricManager
 import parcel_fabric_utils as pfutils
+from utils.decorators import integration_test
 
 
+@integration_test
 class TestTransferParcels(unittest.TestCase):
     """Tests the Transfer Parcel function from the parcel fabric SOE"""
 

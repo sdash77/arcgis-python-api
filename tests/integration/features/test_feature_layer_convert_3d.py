@@ -6,6 +6,7 @@ import unittest
 
 from arcgis.gis import GIS
 from arcgis.features import FeatureLayer
+from utils.decorators import integration_test
 
 gis = GIS(profile="your_dev_profile", verify_cert=False)
 
@@ -14,6 +15,7 @@ layer = FeatureLayer(
 )
 
 
+@integration_test
 class TestConvert3DFeatureLayer(unittest.TestCase):
     def test_convert_3d(self):
         """

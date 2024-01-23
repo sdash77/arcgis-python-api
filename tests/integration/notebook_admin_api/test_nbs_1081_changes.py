@@ -10,6 +10,7 @@ from arcgis.gis import GIS
 from arcgis.gis.nb import NotebookServer, NotebookManager
 from arcgis.gis.tasks._schedule import TaskManager, Task
 from arcgis.gis.tasks._schedule import Run
+from utils.decorators import integration_test
 
 try:
     url = "https://datasciencedev.esri.com/portal"
@@ -23,6 +24,7 @@ except:
     SKIP_TESTS = True
 ###########################################################################
 @unittest.skipIf(SKIP_TESTS == True, "Cannot connect to Testing Server and/or Portal")
+@integration_test
 class TestGISAdminAllTasks1081(unittest.TestCase):
     # ----------------------------------------------------------------------
     def test_user_search(self):
@@ -51,6 +53,7 @@ class TestGISAdminAllTasks1081(unittest.TestCase):
 
 ###########################################################################
 @unittest.skipIf(SKIP_TESTS == True, "Cannot connect to Testing Server and/or Portal")
+@integration_test
 class TestUserScheduleTasks1081(unittest.TestCase):
     # ----------------------------------------------------------------------
     def test_task_properties(self):
@@ -152,6 +155,7 @@ class TestUserScheduleTasks1081(unittest.TestCase):
 
 
 @unittest.skipIf(SKIP_TESTS == True, "Cannot connect to Testing Server and/or Portal")
+@integration_test
 class TestNotebookServer1081(unittest.TestCase):
     """Tests New 10.8.1 Functionality"""
 
@@ -167,6 +171,7 @@ class TestNotebookServer1081(unittest.TestCase):
 
 
 @unittest.skipIf(SKIP_TESTS == True, "Cannot connect to Testing Server and/or Portal")
+@integration_test
 class TestNotebookServer109(unittest.TestCase):
     """Tests New 10.9 Functionality"""
 

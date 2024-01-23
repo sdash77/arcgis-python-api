@@ -9,6 +9,7 @@ from arcgis.gis import GIS
 from arcgis.geometry import Geometry
 from typing import Generator
 import requests
+from utils.decorators import integration_test
 
 # change these variables as needed
 # server_url should point to existent testing graph, if applicable
@@ -81,6 +82,7 @@ except:
 
 
 @unittest.skipIf(SKIP, "Cannot login or get service")
+@integration_test
 class TestImport(unittest.TestCase):
     def test_import(self):
         from arcgis.graph import KnowledgeGraph
@@ -92,6 +94,7 @@ class TestImport(unittest.TestCase):
 
 
 @unittest.skipIf(SKIP, "Cannot login or get service")
+@integration_test
 class TestKGMethods(unittest.TestCase):
     """tests the methods"""
 
@@ -426,6 +429,7 @@ class TestKGMethods(unittest.TestCase):
 
 
 @unittest.skipIf(SKIP, "Cannot login or get service")
+@integration_test
 class TestKGService(unittest.TestCase):
     """tests the properties"""
 

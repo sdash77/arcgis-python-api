@@ -15,6 +15,7 @@ from configparser import ConfigParser
 from pathlib import Path
 import json
 import datetime
+from utils.decorators import integration_test
 
 # region PreCondition check
 test_skip = False
@@ -55,6 +56,7 @@ def setUpModule():
     print("Host OS: " + PreconditionChecks.get_OS())
 
 
+@integration_test
 class Test_WebMap_AGO(unittest.TestCase):
     """
     Test to check if a ImageryLayer object works with builtin portal

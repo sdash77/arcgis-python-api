@@ -1,8 +1,10 @@
 import sys
 import unittest
 from arcgis.gis import GIS
+from utils.decorators import integration_test
 
 
+@integration_test
 class TestMarketPlaceManager(unittest.TestCase):
     """Tests the <username>/report API"""
 

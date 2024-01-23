@@ -11,6 +11,7 @@ from arcgis.gis import GIS
 from arcgis.features import GeoAccessor
 from arcgis.geocoding import Geocoder
 import pandas as pd
+from utils.decorators import integration_test
 
 __logger__ = logging.getLogger()
 
@@ -30,6 +31,7 @@ PROXIES = detect_proxy(True)  # Handles Fiddler when True
 enable_verbose_logging(__logger__)
 
 
+@integration_test
 class TestGeoAccessorFromDFGeocoding(unittest.TestCase):
     def test_geocoding_over_1000_records(self):
         # OR geocoder has a max batch size of 1000

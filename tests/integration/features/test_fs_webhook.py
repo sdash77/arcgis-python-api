@@ -9,6 +9,7 @@ from arcgis.features.managers import (
     WebHookEvents,
     WebHookScheduleInfo,
 )
+from utils.decorators import integration_test
 
 hook_end_point_url = "https://en1dx5cd33emv.x.pipedream.net/"
 SKIPIF = False
@@ -38,6 +39,7 @@ except:
 
 
 @unittest.skipIf(SKIPIF, msg)
+@integration_test
 class TestFeatureServiceWebHook(unittest.TestCase):
     """
     Tests the AGOL Webhook Service Framework

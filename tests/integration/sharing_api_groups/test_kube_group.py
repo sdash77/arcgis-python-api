@@ -29,6 +29,7 @@ from arcgis.gis import (
 )
 from arcgis.gis._impl._jb import StatusJob
 from integration.config import QALAB_ROOT_PATH
+from utils.decorators import integration_test
 
 profiles = ["your_kubernetes_profile"]
 # ['your_online_profile', 'your_enterprise_profile', 'your_kubernetes_profile']  # profile names go here
@@ -69,6 +70,7 @@ except:
 
 ###########################################################################
 # @unittest.skip('verified')
+@integration_test
 class TestGroupImportExport(unittest.TestCase):
     """Tests the Group Import/Export Methods on a Group Object"""
 
@@ -138,6 +140,7 @@ class TestGroupImportExport(unittest.TestCase):
 
 ###########################################################################
 # @unittest.skip('verified')
+@integration_test
 class TestImport2Group(unittest.TestCase):
     """tests the import methods"""
 
@@ -329,6 +332,7 @@ class TestImport2Group(unittest.TestCase):
 
 ###########################################################################
 # @unittest.skip('verified')
+@integration_test
 class TestGroup(unittest.TestCase):
     """
     Tests the `Group` class operations
@@ -450,6 +454,7 @@ class TestGroup(unittest.TestCase):
 
 ###########################################################################
 # @unittest.skip('verified')
+@integration_test
 class TestGroupApplication(unittest.TestCase):
     """
     Tests the `GroupApplication` class operations
@@ -550,6 +555,7 @@ class TestGroupApplication(unittest.TestCase):
 
 ###########################################################################
 # @unittest.skip('verified')
+@integration_test
 class TestGroupManager(unittest.TestCase):
     """
     Tests the `GroupManager` class operations

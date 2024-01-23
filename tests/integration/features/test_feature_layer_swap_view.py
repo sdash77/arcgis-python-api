@@ -8,6 +8,7 @@ import unittest
 from arcgis.auth.tools._util import detect_proxy
 from arcgis.gis import GIS, Item, ItemProperties, ItemTypeEnum
 from arcgis.features import FeatureLayerCollection, FeatureLayer
+from utils.decorators import integration_test
 
 __logger__ = logging.getLogger()
 
@@ -27,6 +28,7 @@ PROXIES = detect_proxy(True)  # Handles Fiddler when True
 enable_verbose_logging(__logger__)
 
 
+@integration_test
 class TestFeatureLayerCollectionSwap(unittest.TestCase):
     """Tests the swap view logic"""
 

@@ -6,8 +6,10 @@ from arcgis.gis import GIS
 import unittest
 import os
 from arcgis.mapping._types import VectorTileLayer
+from utils.decorators import integration_test
 
 
+@integration_test
 class TestVectorTileLayerClass_online(unittest.TestCase):
     """
     Tests the Vector Tile Layer Class

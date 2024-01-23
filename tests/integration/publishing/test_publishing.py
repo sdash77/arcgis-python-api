@@ -7,6 +7,7 @@ import logging
 import unittest
 from arcgis.auth.tools._util import detect_proxy
 from arcgis.gis import GIS
+from utils.decorators import integration_test
 
 __logger__ = logging.getLogger()
 
@@ -54,6 +55,7 @@ def clean_up_items(gis):
 
 
 @unittest.skip("i work")
+@integration_test
 class TestPublishingTPKAGOL(unittest.TestCase):
     """Tests the publishing the vector tile package process"""
 
@@ -184,6 +186,7 @@ class TestPublishingTPKAGOL(unittest.TestCase):
 
 
 # @unittest.skip("i work")
+@integration_test
 class TestPublishingTPKEnterprise(unittest.TestCase):
     """Tests the publishing the vector tile package process"""
 
@@ -310,6 +313,7 @@ class TestPublishingTPKEnterprise(unittest.TestCase):
 
 
 # @unittest.skip("i work")
+@integration_test
 class TestPublishingNoParmetersEnterprise(unittest.TestCase):
     """Tests the publishing process for with datasets that do not have publish parameters"""
 
@@ -429,6 +433,7 @@ class TestPublishingNoParmetersEnterprise(unittest.TestCase):
 
 
 # @unittest.skip("i work")
+@integration_test
 class TestPublishingNoParmetersAGOL(unittest.TestCase):
     """Tests the publishing process for with datasets that do not have publish parameters"""
 

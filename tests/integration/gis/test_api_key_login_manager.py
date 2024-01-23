@@ -3,6 +3,7 @@ import unittest.mock
 from arcgis.gis import GIS, Item
 from arcgis.gis._impl._apikeys import APIKeyManager, APIKey
 from arcgis.auth.tools._util import detect_proxy
+from utils.decorators import integration_test
 
 PROXIES = detect_proxy(True)
 gis = GIS(
@@ -15,6 +16,7 @@ USERNAME = gis.users.me.username is None
 
 ###########################################################################
 @unittest.skipIf(USERNAME, "Cannot Access Developer Account")
+@integration_test
 class TestLoginWithAPIKey(unittest.TestCase):
     def test_login_api_key(self):
         apk: APIKeyManager = gis.api_keys
@@ -81,6 +83,7 @@ class TestLoginWithAPIKey(unittest.TestCase):
 
 ###########################################################################
 @unittest.skipIf(USERNAME, "Cannot Access Developer Account")
+@integration_test
 class TestAPIKeyManager(unittest.TestCase):
     """Tests the Manager Operations"""
 
@@ -116,6 +119,7 @@ class TestAPIKeyManager(unittest.TestCase):
 
 ###########################################################################
 @unittest.skipIf(USERNAME, "Cannot Access Developer Account")
+@integration_test
 class TestAPIKey(unittest.TestCase):
     """Tests the API Key Operations"""
 

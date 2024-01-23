@@ -6,6 +6,7 @@ import unittest
 import os
 from arcgis.gis import GIS
 from arcgis.mapping._types import VectorTileLayer, VectorTileLayerManager
+from utils.decorators import integration_test
 
 # Initialize manager
 online_admin = GIS(profile="your_online_profile", verify_cert=False)
@@ -21,6 +22,7 @@ fs_tile_layer = VectorTileLayer.fromitem(fs_vector_tile_item)
 fs_vtl_manager = fs_tile_layer.manager
 
 
+@integration_test
 class TestVectorTileLayerManager(unittest.TestCase):
     def test_refresh(self):
         """

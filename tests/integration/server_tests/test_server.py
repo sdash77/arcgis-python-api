@@ -102,6 +102,7 @@ from arcgis.gis.server.admin._security import (
 from arcgis.gis.server.admin._services import Extension, Service, ServiceManager
 from arcgis.gis.server.admin._uploads import Uploads
 from arcgis.gis.server.admin._usagereports import Report, ReportManager
+from utils.decorators import integration_test
 
 #############################################################################
 AGOL_URL = None
@@ -111,6 +112,7 @@ AGOL_PASSWORD = None
 if AGOL_USERNAME and AGOL_PASSWORD:
 
     # @unittest.SkipTest
+    @integration_test
     class ServerAGOLTest(unittest.TestCase):
         """test the AGOL Server functionality"""
 
@@ -236,6 +238,7 @@ if AGOL_USERNAME and AGOL_PASSWORD:
 
 #############################################################################
 # @unittest.SkipTest
+@integration_test
 class ServerPortalTest(unittest.TestCase):
     """tests the connection to arcgis server object from portal"""
 
@@ -298,6 +301,7 @@ class ServerPortalTest(unittest.TestCase):
 
 ############################################################################
 # @unittest.SkipTest
+@integration_test
 class ServerCatalogCreationTests(unittest.TestCase):
     """
     test server login
@@ -375,6 +379,7 @@ class ServerCatalogCreationTests(unittest.TestCase):
 
 ############################################################################
 # @unittest.SkipTest
+@integration_test
 class ServerPropertyTest(unittest.TestCase):
     """
     test server login & properties on class
@@ -466,6 +471,7 @@ class ServerPropertyTest(unittest.TestCase):
 
 ############################################################################
 # @unittest.SkipTest
+@integration_test
 class catalog_info_test(unittest.TestCase):
     """
     test server catalog view for a server
@@ -501,6 +507,7 @@ class catalog_info_test(unittest.TestCase):
 
 ############################################################################
 # @unittest.SkipTest
+@integration_test
 class server_logs_test(unittest.TestCase):
     """
     test server catalog view for a server
@@ -531,6 +538,7 @@ class server_logs_test(unittest.TestCase):
 
 ############################################################################
 # @unittest.SkipTest
+@integration_test
 class server_machines_test(unittest.TestCase):
     """
     test server machines module
@@ -575,6 +583,7 @@ class server_machines_test(unittest.TestCase):
 
 ############################################################################
 # @unittest.SkipTest
+@integration_test
 class server_usagereports_test(unittest.TestCase):
     """
     test server usage module
@@ -634,6 +643,7 @@ class server_usagereports_test(unittest.TestCase):
 
 ############################################################################
 # @unittest.SkipTest
+@integration_test
 class server_userandusers_test(unittest.TestCase):
     """
     test server usage module

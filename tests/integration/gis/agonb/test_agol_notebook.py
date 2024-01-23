@@ -18,6 +18,7 @@ from arcgis.gis.agonb.runtime import RuntimeManager
 from arcgis.gis.agonb.nb import NotebookManager
 from arcgis.gis.agonb.containers import Container, ContainerManager
 from arcgis.gis.agonb.snapshot import SnapShot, SnapshotManager
+from utils.decorators import integration_test
 
 __logger__ = logging.getLogger()
 
@@ -116,6 +117,7 @@ notebook_json = {
 }
 
 
+@integration_test
 class TestAGOLNotebookManager(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
